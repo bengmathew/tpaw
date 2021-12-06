@@ -39,7 +39,7 @@ export const Index = React.memo(() => {
         <div className=" flex flex-col justify-start items-stretch">
           <h2 className="font-bold text-xl ">SPENDING DURING RETIREMENT</h2>
           <p className="text-base font-font2 lighten-2">
-            Results from running {tpawResult.args.numRuns} simulations.
+            Results from simulating your retirement {tpawResult.args.numRuns} times.
           </p>
 
           <Measure bounds onResize={({bounds}) => setBounds(fGet(bounds))}>
