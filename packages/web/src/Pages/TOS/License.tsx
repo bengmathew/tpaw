@@ -40,7 +40,7 @@ export const License = React.memo(() => {
         <h2 className="font-bold text-xl mt-6">Source Code</h2>
         <p className="mt-4">
           The source code for this website is available on{' '}
-          <Link href="https://github.com/bengmathew/tpawplanner">
+          <Link href="https://github.com/bengmathew/tpaw">
             <a className="underline">GitHub</a>
           </Link>
           .
