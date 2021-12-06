@@ -1,25 +1,25 @@
-import { faArrowsV } from '@fortawesome/pro-regular-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {faArrowsV} from '@fortawesome/pro-regular-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
-import React, { useEffect, useState } from 'react'
-import Measure, { BoundingRect } from 'react-measure'
-import { getDefaultParams } from '../../TPAWSimulator/DefaultParams'
-import { fGet } from '../../Utils/Utils'
-import { WithWindowWidth } from '../../Utils/WithWindowSize'
-import { AppPage } from '../App/AppPage'
-import { useTPAW } from '../App/WithTPAW'
-import { AgeCard } from './Cards/AgeCard'
-import { CurrentPortfolioValueCard } from './Cards/CurrentPortfolioValueCard'
-import { ExtraSpendingCard } from './Cards/ExtraSpendingCard'
-import { LegacyCard } from './Cards/LegacyCard'
-import { ReturnsAndInflationCard } from './Cards/ReturnsAndInflationCard'
-import { SavingsCard } from './Cards/SavingsCard'
-import { SpendingCeilingValueCard } from './Cards/SpendingCeilingCard'
-import { DistributionCanvasReact } from './Chart/DistributionCanvasReact'
-import { LegacyDisplay } from './LegacyDisplay'
-import { MainControls } from './MainControls'
-import { Reset } from './Reset'
-import { Share } from './Share'
+import React, {useEffect, useState} from 'react'
+import Measure, {BoundingRect} from 'react-measure'
+import {getDefaultParams} from '../../TPAWSimulator/DefaultParams'
+import {fGet} from '../../Utils/Utils'
+import {WithWindowWidth} from '../../Utils/WithWindowSize'
+import {AppPage} from '../App/AppPage'
+import {useTPAW} from '../App/WithTPAW'
+import {AgeCard} from './Cards/AgeCard'
+import {CurrentPortfolioValueCard} from './Cards/CurrentPortfolioValueCard'
+import {ExtraSpendingCard} from './Cards/ExtraSpendingCard'
+import {LegacyCard} from './Cards/LegacyCard'
+import {ReturnsAndInflationCard} from './Cards/ReturnsAndInflationCard'
+import {SavingsCard} from './Cards/SavingsCard'
+import {SpendingCeilingValueCard} from './Cards/SpendingCeilingCard'
+import {DistributionCanvasReact} from './Chart/DistributionCanvasReact'
+import {LegacyDisplay} from './LegacyDisplay'
+import {MainControls} from './MainControls'
+import {Reset} from './Reset'
+import {Share} from './Share'
 
 const maxYScale = 1.1
 
@@ -30,16 +30,19 @@ export const Index = React.memo(() => {
 
   const [maxY, setMaxY] = useState(0)
   useEffect(() => {
-    if (maxY === 0 && tpawResult) setMaxY(tpawResult.maxWithdrawal * maxYScale)
+    if (maxY === 0 && tpawResult)
+      setMaxY(Math.max(1, tpawResult.maxWithdrawal * maxYScale))
   }, [maxY, tpawResult])
-  const handleRescale = () => setMaxY(tpawResult.maxWithdrawal * maxYScale)
+  const handleRescale = () =>
+    setMaxY(Math.max(1, tpawResult.maxWithdrawal * maxYScale))
   return (
     <WithWindowWidth>
       <AppPage title="TPAW Planner">
         <div className=" flex flex-col justify-start items-stretch">
           <h2 className="font-bold text-xl ">SPENDING DURING RETIREMENT</h2>
           <p className="text-base font-font2 lighten-2">
-            Results from simulating your retirement {tpawResult.args.numRuns} times.
+            Results from simulating your retirement {tpawResult.args.numRuns}{' '}
+            times.
           </p>
 
           <Measure bounds onResize={({bounds}) => setBounds(fGet(bounds))}>
@@ -77,7 +80,7 @@ export const Index = React.memo(() => {
           </div>
           <div className="flex flex-col items-start gap-y-5 mt-4">
             <AgeCard params={params} />
-            <CurrentPortfolioValueCard/>
+            <CurrentPortfolioValueCard />
             <SavingsCard params={params} />
             <ExtraSpendingCard params={params} />
             <SpendingCeilingValueCard {...{params, tpawResult}} />
