@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react'
 import { historicalReturns } from '../TPAWSimulator/HistoricalReturns'
 import { runTPAWSimulation } from '../TPAWSimulator/RunTPAWSimulation'
 import { TPAWParams } from '../TPAWSimulator/TPAWParams'
+import { _loadBalance } from '../TPAWSimulator/Worker/TPAWRunInWorker'
+import { Config } from './Config'
 
 export const Test = React.memo(() => {
+  if(Config.client.production) throw new Error()
   const [rows, setRows] = useState<string[][]>([])
   useEffect(() => {
     const result = runTPAWSimulation(testParams, {
@@ -13,6 +16,7 @@ export const Test = React.memo(() => {
       .map(x => x.savingsPortfolioEndingBalance)
       .map((x, i) => [(x - excel[i]).toFixed(10), `${x}`])
     setRows(delta)
+
   }, [])
 
   return (

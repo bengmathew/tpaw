@@ -1,9 +1,9 @@
 import _ from 'lodash'
-import { noCase } from '../../Utils/Utils'
-import { historicalReturns } from '../HistoricalReturns'
-import { runTPAWSimulation } from '../RunTPAWSimulation'
-import { StatsTools } from '../StatsTools'
-import { TPAWWorkerArgs, TPAWWorkerResult } from './TPAWWorkerTypes'
+import {noCase} from '../../Utils/Utils'
+import {historicalReturns} from '../HistoricalReturns'
+import {runTPAWSimulation} from '../RunTPAWSimulation'
+import {StatsTools} from '../StatsTools'
+import {TPAWWorkerArgs, TPAWWorkerResult} from './TPAWWorkerTypes'
 
 const randomStore = new Map<number, Map<number, number>>()
 

@@ -1,11 +1,10 @@
 import _ from 'lodash'
-import { fGet, noCase } from '../../Utils/Utils'
-import { StatsTools } from '../StatsTools'
-import { TPAWParams } from '../TPAWParams'
+import {fGet, noCase} from '../../Utils/Utils'
+import {StatsTools} from '../StatsTools'
+import {TPAWParams} from '../TPAWParams'
 import {
-  TPAWWorkerArgs,
   TPAWWorkerResult,
-  TPAWWorkerRunSimulationResult
+  TPAWWorkerRunSimulationResult,
 } from './TPAWWorkerTypes'
 
 export class TPAWRunInWorker {
@@ -48,25 +47,21 @@ export class TPAWRunInWorker {
     )
   }
 
-  private _postMessage(message: TPAWWorkerArgs) {
-    const [worker, ...workers] = this._workers
-    this._workers = [...workers, worker]
-    worker.postMessage(message)
-  }
 
   private _runSimulation(
+    worker: Worker,
     numRuns: number,
     params: TPAWParams
   ): Promise<TPAWWorkerRunSimulationResult> {
     const taskID = _.uniqueId()
-    this._postMessage({taskID, type: 'runSimulation', args: {numRuns, params}})
+    worker.postMessage({taskID, type: 'runSimulation', args: {numRuns, params}})
     return new Promise<TPAWWorkerRunSimulationResult>(resolve =>
       this._resolvers.runSimulation.set(taskID, resolve)
     )
   }
-  private _sortRows(data: number[][]): Promise<number[][]> {
+  private _sortRows(worker: Worker, data: number[][]): Promise<number[][]> {
     const taskID = _.uniqueId()
-    this._postMessage({taskID, type: 'sortRows', args: {data}})
+    worker.postMessage({taskID, type: 'sortRows', args: {data}})
     return new Promise<number[][]>(resolve =>
       this._resolvers.sortRows.set(taskID, resolve)
     )
@@ -78,13 +73,14 @@ export class TPAWRunInWorker {
     params: TPAWParams,
     percentiles: number[]
   ) {
-    const numRunsByWorker = this._workers.map(() =>
-      Math.floor(numRuns / this._workers.length)
-    )
-    numRunsByWorker[numRunsByWorker.length - 1] +=
-      numRuns % this._workers.length
     const runsByWorker = await Promise.all(
-      numRunsByWorker.map(numRuns => this._runSimulation(numRuns, params))
+      this._workers.map((worker, i) =>
+        this._runSimulation(
+          worker,
+          _loadBalance(i, numRuns, this._workers.length).length,
+          params
+        )
+      )
     )
 
     if (status.canceled) return null
@@ -94,19 +90,17 @@ export class TPAWRunInWorker {
       firstYearOfSomeRun,
     } = _mergeRunsByWorker(runsByWorker)
 
-    const withdrawalsByWorkerByYearsIntoRetirementByRun = _.chunk(
-      withdrawalsByYearsIntoRetirementByRun,
-      Math.round(
-        withdrawalsByYearsIntoRetirementByRun.length / this._workers.length
-      )
-    )
-
     const withdrawalsByWorkerByYearsIntoRetirementByRunSorted =
       await Promise.all(
-        withdrawalsByWorkerByYearsIntoRetirementByRun.map(x =>
-          this._sortRows(x)
-        )
+        this._workers.map((worker, i) => {
+          const {start, length} = _loadBalance(i, numRuns, this._workers.length)
+          return this._sortRows(
+            worker,
+            withdrawalsByYearsIntoRetirementByRun.slice(start, start + length)
+          )
+        })
       )
+
     if (status.canceled) return null
     const withdrawalsByYearsIntoRetirementByRunSorted = _.flatten(
       withdrawalsByWorkerByYearsIntoRetirementByRunSorted
@@ -120,8 +114,9 @@ export class TPAWRunInWorker {
       withdrawalsByYearsIntoRetirementByPercentile
     ).map((data, i) => ({data, percentile: percentiles[i]}))
 
-    const legacyByRunSorted = (await this._sortRows([legacyByRun]))[0]
-    if (status.canceled) return null
+    const legacyByRunSorted = (
+      await this._sortRows(this._workers[0], [legacyByRun])
+    )[0]
 
     const legacyByPercentile = StatsTools.pickPercentilesFromSorted(
       [legacyByRunSorted],
@@ -176,4 +171,16 @@ const _mergeRunsByWorker = (
     firstYearOfSomeRun,
     legacyByRun,
   }
+}
+
+export const _loadBalance = (
+  worker: number,
+  numJobs: number,
+  numWorkers: number
+) => {
+  const remainder = numJobs % numWorkers
+  const minJobsPerWorker = Math.floor(numJobs / numWorkers)
+  const start = worker * minJobsPerWorker + Math.min(remainder, worker)
+  const length = minJobsPerWorker + (worker < remainder ? 1 : 0)
+  return {start, length}
 }
