@@ -39,8 +39,20 @@ export const Index = React.memo(() => {
     <WithWindowWidth>
       <AppPage title="TPAW Planner">
         <div className=" flex flex-col justify-start items-stretch">
-          <h2 className="font-bold text-xl ">SPENDING DURING RETIREMENT</h2>
-          <p className="text-base font-font2 lighten-2">
+          {/* <h2 className="font-bold text-xl ">ABOUT</h2> */}
+          <p className=" ">
+            Total Portfolio Allocation and Withdrawal (TPAW) is a retirement
+            strategy that uses the total portfolio approach to calculate asset
+            allocation and withdrawal.{' '}
+            <Link href="/about">
+              <a className="underline">Learn more</a>
+            </Link>
+            .
+          </p>
+          <h2 className="font-bold text-xl mt-6 ">
+            SPENDING DURING RETIREMENT
+          </h2>
+          <p className="text-base lighten-2">
             Results from simulating your retirement {tpawResult.args.numRuns}{' '}
             times.
           </p>
