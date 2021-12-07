@@ -16,7 +16,7 @@ export const About = React.memo(() => {
           {`The total portfolio approach means that the present value of future
           savings and retirement income, valued using the bond rate, is
           counted as bonds in the portfolio. A fixed asset allocation is
-          maintained on this "total portfolio." Retirement withdrawals are
+          maintained on this total portfolio. Retirement withdrawals are
           calculated by amortizing the total portfolio over retirement years
           (amortization based withdrawal).`}
         </p>
