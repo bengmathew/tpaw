@@ -8,7 +8,7 @@ export const About = React.memo(() => {
         <h1 className="font-bold text-4xl ">About</h1>
         <p className="mt-6">
           TPAW was developed by Ben Mathew on the Bogleheads
-          thread:{' '}
+          thread {' '}
           <a
             className="underline"
             target="_blank"
@@ -20,7 +20,7 @@ export const About = React.memo(() => {
           . 
           </p>
           <p className="mt-4">
-          Software for this site was written by Ben’s brother, Jacob Mathew.
+          The software for this website was written by Ben’s brother, Jacob Mathew.
         </p>
       </div>
     </AppPage>
