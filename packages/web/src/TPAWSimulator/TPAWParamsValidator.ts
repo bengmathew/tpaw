@@ -35,7 +35,8 @@ const _leTest = (y: number) => (x: number) => {
 
 // ----------- MAIN ---------//
 
-const _ageRange = Validator.chain(Validator.number(), _geTest(0), _leTest(110))
+export const MAX_AGE = 120
+const _ageRange = Validator.chain(Validator.number(), _geTest(0), _leTest(MAX_AGE))
 
 const _ageValidator = Validator.chain(
   Validator.object({

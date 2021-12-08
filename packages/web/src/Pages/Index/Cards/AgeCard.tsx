@@ -5,6 +5,7 @@ import _ from 'lodash'
 import React from 'react'
 import { getDefaultParams } from '../../../TPAWSimulator/DefaultParams'
 import { checkYearRange, TPAWParams } from '../../../TPAWSimulator/TPAWParams'
+import { MAX_AGE } from '../../../TPAWSimulator/TPAWParamsValidator'
 import { StateObj } from '../../../Utils/UseStateObj'
 import { SliderInput } from '../../Common/Inputs/SliderInput/SliderInput'
 import { ToggleSwitch } from '../../Common/Inputs/ToggleSwitch'
@@ -77,7 +78,7 @@ export const AgeCard = React.memo(
             setParams(params => ({...params, age}))
           }}
           formatValue={x => `${x}`}
-          domain={_.range(120).map(value => ({
+          domain={_.range(MAX_AGE+1).map(value => ({
             value,
             tick:
               value % 10 === 0 ? 'large' : value % 2 === 0 ? 'small' : 'none',
