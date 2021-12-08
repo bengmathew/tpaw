@@ -89,7 +89,7 @@ export const AgeCard = React.memo(
               className="mr-2 text-red-500"
               icon={faExclamationCircle}
             />{' '}
-            {`One or more entries in the "Future Savings and Retirement Income" section or "Extra Spending" section has a year that is out-of-bounds or an starting year later than the ending year.`}
+            {`One or more entries in the "Future Savings and Retirement Income" section or "Extra Spending" section has a year that is out-of-bounds or a starting year later than the ending year.`}
           </h2>
         )}
       </CardItem>

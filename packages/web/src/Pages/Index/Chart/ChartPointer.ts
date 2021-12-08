@@ -100,27 +100,27 @@ export class ChartPointer {
       return scale.curr.y(interpolatedY) - 2
     })
     const textYs = ys.map(y => y - 20)
-    const boxYs = textYs.map(
-      y => y - measure.fontBoundingBoxAscent - padding.y / 2
-    )
     const boxWithoutY = {
       x: ageX + offsetX,
       width: measure.width + padding.x,
       height:
-        measure.fontBoundingBoxAscent +
-        measure.fontBoundingBoxDescent +
+        measure.actualBoundingBoxAscent +
+        measure.actualBoundingBoxDescent +
         padding.y,
     }
-    boxYs.reduceRight((a, y, i) => {
-      if (i === boxYs.length - 1) return null
-      boxYs[i] = Math.max(boxYs[i + 1] + boxWithoutY.height + 5, y)
-      return null
-    }, null)
+    // y+1 because empirically it seems to center better.
+    const boxYs = textYs.map(y => y + 1 - (boxWithoutY.height - padding.y / 2))
 
-    boxYs.forEach((y, i) => {
-      const prevTop = i === 0 ? plotArea.y + plotArea.height : boxYs[i - 1]
-      boxYs[i] = Math.min(prevTop - 5 - boxWithoutY.height, y)
-    })
+    // boxYs.reduceRight((a, y, i) => {
+    //   if (i === boxYs.length - 1) return null
+    //   boxYs[i] = Math.max(boxYs[i + 1] + boxWithoutY.height + 5, y)
+    //   return null
+    // }, null)
+
+    // boxYs.forEach((y, i) => {
+    //   const prevTop = i === 0 ? plotArea.y + plotArea.height : boxYs[i - 1]
+    //   boxYs[i] = Math.min(prevTop - 5 - boxWithoutY.height, y)
+    // })
 
     const targetLabelSide =
       boxWithoutY.x + boxWithoutY.width + 20 > plotArea.x + plotArea.width
@@ -152,45 +152,41 @@ export class ChartPointer {
 
     highlightIndexes.forEach((highlightI, i) => {
       const y = ys[i]
+      const box = {...boxWithoutY, y: boxYs[i]}
+
       ctx.save()
-      // ctx.globalAlpha = linearFnFomPoints(0, 0.5, 1, 1)(this._transition.curr) 
       ctx.globalAlpha = 1
       const scale = linearFnFomPoints(0, 1, 1, 1)(this._transition.curr)
       ctx.translate(ageX, y)
       ctx.scale(scale, scale)
       ctx.translate(-ageX, -y)
 
+      // Draw the target.
       ctx.beginPath()
       ctx.ellipse(ageX, y, 4, 4, 0, 0, Math.PI * 4)
       ctx.lineWidth = 2
       ctx.fillStyle = 'black'
       ctx.fill()
 
-      const box = {...boxWithoutY, y: boxYs[i]}
-
+      // Draw the line from target to bubble.
       ctx.beginPath()
       ctx.moveTo(ageX, y)
       ctx.lineTo(boxHandleX, box.y + box.height * 0.5)
       ctx.lineWidth = 1
       ctx.strokeStyle = 'black'
       ctx.stroke()
+      ctx.fill()
 
+      // Draw the bubble background.
       ctx.beginPath()
       ChartUtils.roundRect(ctx, box, 5)
       ctx.fillStyle = 'black'
       ctx.fill()
 
-      // ctx.lineWidth = 1
-      // ctx.strokeStyle = 'black'
-      // ctx.stroke()
-
+      // Draw the text.
       ctx.globalAlpha = 1
       ctx.fillStyle = 'white'
-      ctx.fillText(
-        texts[i],
-        box.x + padding.x / 2,
-        boxYs[i] + measure.fontBoundingBoxAscent + padding.y / 2
-      )
+      ctx.fillText(texts[i], box.x + padding.x / 2, textYs[i])
       ctx.restore()
     })
 
