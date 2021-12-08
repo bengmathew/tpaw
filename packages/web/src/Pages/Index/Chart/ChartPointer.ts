@@ -111,16 +111,16 @@ export class ChartPointer {
     // y+1 because empirically it seems to center better.
     const boxYs = textYs.map(y => y + 1 - (boxWithoutY.height - padding.y / 2))
 
-    // boxYs.reduceRight((a, y, i) => {
-    //   if (i === boxYs.length - 1) return null
-    //   boxYs[i] = Math.max(boxYs[i + 1] + boxWithoutY.height + 5, y)
-    //   return null
-    // }, null)
+    boxYs.reduceRight((a, y, i) => {
+      if (i === boxYs.length - 1) return null
+      boxYs[i] = Math.max(boxYs[i + 1] + boxWithoutY.height + 5, y)
+      return null
+    }, null)
 
-    // boxYs.forEach((y, i) => {
-    //   const prevTop = i === 0 ? plotArea.y + plotArea.height : boxYs[i - 1]
-    //   boxYs[i] = Math.min(prevTop - 5 - boxWithoutY.height, y)
-    // })
+    boxYs.forEach((y, i) => {
+      const prevTop = i === 0 ? plotArea.y + plotArea.height : boxYs[i - 1]
+      boxYs[i] = Math.min(prevTop - 5 - boxWithoutY.height, y)
+    })
 
     const targetLabelSide =
       boxWithoutY.x + boxWithoutY.width + 20 > plotArea.x + plotArea.width
@@ -186,7 +186,8 @@ export class ChartPointer {
       // Draw the text.
       ctx.globalAlpha = 1
       ctx.fillStyle = 'white'
-      ctx.fillText(texts[i], box.x + padding.x / 2, textYs[i])
+      // the -1.5 is for visual center.
+      ctx.fillText(texts[i], box.x + padding.x / 2, box.y - 1.5 + box.height - padding.y/2)
       ctx.restore()
     })
 
