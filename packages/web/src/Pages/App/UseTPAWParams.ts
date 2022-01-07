@@ -2,12 +2,16 @@ import _ from 'lodash'
 import {useRouter} from 'next/dist/client/router'
 import {useEffect, useState} from 'react'
 import {getDefaultParams} from '../../TPAWSimulator/DefaultParams'
-import {historicalReturns} from '../../TPAWSimulator/HistoricalReturns'
-import {TPAWParams} from '../../TPAWSimulator/TPAWParams'
+import {
+  numericYear,
+  TPAWParams,
+  TPAWParamsWithoutHistorical,
+  ValueForYearRange,
+} from '../../TPAWSimulator/TPAWParams'
+import {TPAWParamsV1WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV1'
+import {tpawParamsV1Validator} from '../../TPAWSimulator/TPAWParamsV1Validator'
 import {tpawParamsValidator} from '../../TPAWSimulator/TPAWParamsValidator'
-import {StateObj} from '../../Utils/UseStateObj'
 import {Validator} from '../../Utils/Validator'
-import { Config } from '../Config'
 import {AppError} from './AppError'
 
 type _History = {stack: TPAWParams[]; curr: number}
@@ -25,12 +29,12 @@ const _new = ({stack, curr}: _History, params: TPAWParams) => ({
   curr: 0,
 })
 
-export function useTPAWParams(): StateObj<TPAWParams> {
+export function useTPAWParams() {
   const router = useRouter()
   const [history, setHistory] = useState(() => ({
     stack: [
-      _parseURLParams(router.query['params']) ??
-        _parseURLParams(window.localStorage.getItem('params')) ??
+      _parseExternalParams(router.query['params']) ??
+        _parseExternalParams(window.localStorage.getItem('params')) ??
         getDefaultParams(),
     ],
     curr: 0,
@@ -54,11 +58,11 @@ export function useTPAWParams(): StateObj<TPAWParams> {
       void router.replace(url)
     }
     window.localStorage.setItem('params', tpawParamsForURL(value))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
   return {
-    value,
-    set: (params: TPAWParams | ((params: TPAWParams) => TPAWParams)) => {
+    params: value,
+    setParams: (params: TPAWParams | ((params: TPAWParams) => TPAWParams)) => {
       setHistory(history =>
         _new(
           history,
@@ -72,12 +76,18 @@ export function useTPAWParams(): StateObj<TPAWParams> {
 export const tpawParamsForURL = (params: TPAWParams) =>
   JSON.stringify(_removeHistorical(params))
 
-function _parseURLParams(str: string | string[] | undefined | null) {
+function _parseExternalParams(str: string | string[] | undefined | null) {
   if (typeof str !== 'string') return null
   try {
     const parsed = JSON.parse(str)
     try {
-      return _addHistorical(tpawParamsValidator(parsed))
+      let v2: TPAWParamsWithoutHistorical
+      if (parsed.v === 2) {
+        v2 = tpawParamsValidator(parsed)
+      } else {
+        v2 = _v1ToV2(tpawParamsV1Validator(parsed))
+      }
+      return _addHistorical(v2)
     } catch (e) {
       if (e instanceof Validator.Failed) {
         throw new AppError(`Error in parameter: ${e.fullMessage}`)
@@ -87,24 +97,20 @@ function _parseURLParams(str: string | string[] | undefined | null) {
     }
   } catch (e) {
     if (e instanceof SyntaxError) {
-      throw new AppError('URL is not well formatted.')
+      throw new AppError('Parameters are not well formatted.')
     } else {
       throw e
     }
   }
 }
 
-type _WithoutHistorical = Omit<TPAWParams, 'returns'> & {
-  returns: Omit<TPAWParams['returns'], 'historical'>
-}
-
-const _removeHistorical = (params: TPAWParams): _WithoutHistorical => {
+const _removeHistorical = (params: TPAWParams): TPAWParamsWithoutHistorical => {
   const p: any = _.cloneDeep(params)
   delete p.returns.historical
   return p
 }
 
-const _addHistorical = (params: _WithoutHistorical): TPAWParams => ({
+const _addHistorical = (params: TPAWParamsWithoutHistorical): TPAWParams => ({
   ...params,
   returns: {
     ...params.returns,
@@ -117,3 +123,33 @@ const _addHistorical = (params: _WithoutHistorical): TPAWParams => ({
     },
   },
 })
+
+const _v1ToV2 = (
+  v1: TPAWParamsV1WithoutHistorical
+): TPAWParamsWithoutHistorical => {
+  const savings: ValueForYearRange[] = []
+  const retirementIncome: ValueForYearRange[] = []
+  v1.savings.forEach(x => {
+    const start = numericYear(v1, x.yearRange.start)
+    const end = numericYear(v1, x.yearRange.end)
+    if (start < v1.age.retirement && end >= v1.age.retirement) {
+      savings.push({
+        ...x,
+        yearRange: {...x.yearRange, end: 'retirement' as const},
+      })
+      retirementIncome.push({
+        ...x,
+        yearRange: {...x.yearRange, start: 'retirement' as const},
+      })
+    } else {
+      start < v1.age.retirement ? savings.push(x) : retirementIncome.push(x)
+    }
+  })
+
+  return {
+    v: 2,
+    ...v1,
+    savings,
+    retirementIncome,
+  }
+}

@@ -1,9 +1,9 @@
-import {Validator} from '../Utils/Validator'
-import {TPAWParams} from './TPAWParams'
+import { Validator } from '../Utils/Validator'
+import { TPAWParams, TPAWParamsWithoutHistorical } from './TPAWParams'
 
 // ----------- UTILS ---------//
 // const strAsNum = () =>
-//   Validator.chain(Validator.string(), (x: string) => {
+//   chain(string(), (x: string) => {
 //     if (
 //       !x.match(/[^0123456789.-]/) &&
 //       x.indexOf('.') === x.lastIndexOf('.') &&
@@ -17,12 +17,14 @@ import {TPAWParams} from './TPAWParams'
 //     throw new Validator.Failed('Not a number.')
 //   })
 
-// const strAsOrNum = () => Validator.union(Validator.number(), strAsNum())
+// const strAsOrNum = () => union(number(), strAsNum())
+const {number, string, constant, chain, object, union, array, boolean} =
+  Validator
 
 const numRangeInclusive = (min: number, max: number) =>
-  Validator.chain(Validator.number(), _geTest(min), _leTest(max))
+  chain(number(), _geTest(min), _leTest(max))
 
-const numGE = (min: number) => Validator.chain(Validator.number(), _geTest(min))
+const numGE = (min: number) => chain(number(), _geTest(min))
 
 const _geTest = (y: number) => (x: number) => {
   if (x < y) throw new Validator.Failed(`Less than ${y}.`)
@@ -36,10 +38,10 @@ const _leTest = (y: number) => (x: number) => {
 // ----------- MAIN ---------//
 
 export const MAX_AGE = 120
-const _ageRange = Validator.chain(Validator.number(), _geTest(0), _leTest(MAX_AGE))
+const _ageRange = chain(number(), _geTest(0), _leTest(MAX_AGE))
 
-const _ageValidator = Validator.chain(
-  Validator.object({
+const _ageValidator = chain(
+  object({
     start: _ageRange,
     retirement: _ageRange,
     end: _ageRange,
@@ -62,54 +64,57 @@ const _ageValidator = Validator.chain(
     return age
   }
 )
-const _yearRangeEdge = Validator.union(
-  Validator.number(),
-  Validator.constant('start'),
-  Validator.constant('lastWorkingYear'),
-  Validator.constant('retirement'),
-  Validator.constant('end')
+const _yearRangeEdge = union(
+  number(),
+  constant('start'),
+  constant('lastWorkingYear'),
+  constant('retirement'),
+  constant('end')
 )
-const _valueForYearRangeValidator = Validator.object({
-  label: Validator.union(Validator.string(), Validator.constant(null)),
-  yearRange: Validator.object({start: _yearRangeEdge, end: _yearRangeEdge}),
+const _valueForYearRangeValidator = object({
+  label: union(string(), constant(null)),
+  yearRange: object({start: _yearRangeEdge, end: _yearRangeEdge}),
   value: numGE(0),
-  nominal: Validator.boolean(),
+  nominal: boolean(),
 })
 
-export const tpawParamsValidator = Validator.object({
-  age: _ageValidator,
-  returns: Validator.object({
-    expected: Validator.object({
-      stocks: numRangeInclusive(-0.01, 0.1),
-      bonds: numRangeInclusive(-0.01, 0.1),
+export const tpawParamsValidator: Validator<TPAWParamsWithoutHistorical> =
+  object({
+    v: constant(2),
+    age: _ageValidator,
+    returns: object({
+      expected: object({
+        stocks: numRangeInclusive(-0.01, 0.1),
+        bonds: numRangeInclusive(-0.01, 0.1),
+      }),
     }),
-  }),
 
-  inflation: numRangeInclusive(-0.01, 0.1),
-  targetAllocation: Validator.object({
-    regularPortfolio: Validator.object({
-      stocks: numRangeInclusive(0, 1),
+    inflation: numRangeInclusive(-0.01, 0.1),
+    targetAllocation: object({
+      regularPortfolio: object({
+        stocks: numRangeInclusive(0, 1),
+      }),
+      legacyPortfolio: object({
+        stocks: numRangeInclusive(0, 1),
+      }),
     }),
-    legacyPortfolio: Validator.object({
-      stocks: numRangeInclusive(0, 1),
+    scheduledWithdrawalGrowthRate: numRangeInclusive(-0.03, 0.03),
+    savingsAtStartOfStartYear: numGE(0),
+    savings: array(_valueForYearRangeValidator),
+    retirementIncome: array(_valueForYearRangeValidator),
+    spendingCeiling: union(constant(null), numGE(0)),
+    withdrawals: object({
+      fundedByBonds: array(_valueForYearRangeValidator),
+      fundedByRiskPortfolio: array(_valueForYearRangeValidator),
     }),
-  }),
-  scheduledWithdrawalGrowthRate: numRangeInclusive(-0.03, 0.03),
-  savingsAtStartOfStartYear: numGE(0),
-  savings: Validator.array(_valueForYearRangeValidator),
-  spendingCeiling: Validator.union(Validator.constant(null), numGE(0)),
-  withdrawals: Validator.object({
-    fundedByBonds: Validator.array(_valueForYearRangeValidator),
-    fundedByRiskPortfolio: Validator.array(_valueForYearRangeValidator),
-  }),
-  legacy: Validator.object({
-    total: numGE(0),
-    external: Validator.array(
-      Validator.object({
-        label: Validator.union(Validator.string(), Validator.constant(null)),
-        value: numGE(0),
-        nominal: Validator.boolean(),
-      })
-    ),
-  }),
-})
+    legacy: object({
+      total: numGE(0),
+      external: array(
+        object({
+          label: union(string(), constant(null)),
+          value: numGE(0),
+          nominal: boolean(),
+        })
+      ),
+    }),
+  })

@@ -1,13 +1,13 @@
-import React, {useState} from 'react'
+import React, { useState } from 'react'
 import Measure from 'react-measure'
-import {lineFromPoints} from '../../../../Utils/SVG/LineFromPoints'
-import {useSVGSizing} from '../../../../Utils/SVG/UseSVGSizing'
-import {assertFalse, fGet} from '../../../../Utils/Utils'
-import {SliderAxis} from './SliderAxis'
-import {SliderPointerEdge} from './SliderPointerEdge'
-import {SliderPointerRound} from './SliderPointerRound'
-import {SliderTicks} from './SliderTicks'
-import {usePointerXAxisDrag} from './UsePointerXAxisDrag'
+import { lineFromPoints } from '../../../../Utils/SVG/LineFromPoints'
+import { useSVGSizing } from '../../../../Utils/SVG/UseSVGSizing'
+import { assertFalse, fGet } from '../../../../Utils/Utils'
+import { SliderAxis } from './SliderAxis'
+import { SliderPointerEdge } from './SliderPointerEdge'
+import { SliderPointerRound } from './SliderPointerRound'
+import { SliderTicks } from './SliderTicks'
+import { usePointerXAxisDrag } from './UsePointerXAxisDrag'
 
 export const SliderInput = React.memo(
   ({

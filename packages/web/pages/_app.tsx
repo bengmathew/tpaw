@@ -2,7 +2,7 @@ import type {AppProps} from 'next/app'
 import {useRouter} from 'next/dist/client/router'
 import React, {useEffect, useState} from 'react'
 import {GlobalErrorBoundary} from '../src/Pages/App/GlobalErrorBoundary'
-import {WithTPAW} from '../src/Pages/App/WithTPAW'
+import {WithSimulation} from '../src/Pages/App/WithSimulation'
 import '../styles/globals.css'
 
 function MyApp({Component, pageProps}: AppProps) {
@@ -16,9 +16,9 @@ function MyApp({Component, pageProps}: AppProps) {
 
   return (
     <GlobalErrorBoundary>
-      <WithTPAW>
+      <WithSimulation>
         <Component {...pageProps} />
-      </WithTPAW>
+      </WithSimulation>
     </GlobalErrorBoundary>
   )
 }

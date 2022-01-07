@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import {numOfYears} from '../Utils/NumOfYears'
 import {historicalReturns} from './HistoricalReturns'
+import {tpawParamsValidator} from './TPAWParamsValidator'
 
 export type YearRangeFixedEdge =
   | 'start'
@@ -19,6 +20,7 @@ export type ValueForYearRange = {
 }
 
 export type TPAWParams = {
+  v: 2
   age: {
     start: number
     retirement: number
@@ -44,6 +46,7 @@ export type TPAWParams = {
   scheduledWithdrawalGrowthRate: number
   savingsAtStartOfStartYear: number
   savings: ValueForYearRange[]
+  retirementIncome: ValueForYearRange[]
   withdrawals: {
     fundedByBonds: ValueForYearRange[]
     fundedByRiskPortfolio: ValueForYearRange[]
@@ -53,12 +56,16 @@ export type TPAWParams = {
     external: {label: string | null; value: number; nominal: boolean}[]
   }
 }
+export type TPAWParamsWithoutHistorical = Omit<TPAWParams, 'returns'> & {
+  returns: Omit<TPAWParams['returns'], 'historical'>
+}
 
 export type TPAWParamsProcessed2 = ReturnType<typeof processTPAWParams>
 export function processTPAWParams(
   params: TPAWParams,
   randomIndexesIntoHistoricalReturnsByYear?: (year: number) => number
 ) {
+  tpawParamsValidator(params)
   const {inflation, ...paramsWithoutInflation} = params
   const _completeAllocation = ({stocks}: {stocks: number}) => ({
     stocks,
@@ -93,7 +100,7 @@ export function processTPAWParams(
 }
 
 function _processByYearParams(params: TPAWParams) {
-  const {age, savings, withdrawals} = params
+  const {age, savings, retirementIncome, withdrawals} = params
   const byYear = _.times(numOfYears(age), () => ({
     savings: 0,
     withdrawals: {fundedByBonds: 0, fundedByRiskPortfolio: 0},
@@ -118,6 +125,7 @@ function _processByYearParams(params: TPAWParams) {
   }
 
   exec(savings, (t, v) => (t.savings += v))
+  exec(retirementIncome, (t, v) => (t.savings += v))
   exec(withdrawals.fundedByBonds, (t, v) => (t.withdrawals.fundedByBonds += v))
   exec(
     withdrawals.fundedByRiskPortfolio,
@@ -177,15 +185,3 @@ export const numericYear = (
     ? age.end
     : x
 
-export const checkYearRange = (
-  params: TPAWParams,
-  yearRange: ValueForYearRange['yearRange']
-) => {
-  const start = numericYear(params, yearRange.start)
-  const end = numericYear(params, yearRange.end)
-  return start < params.age.start || end > params.age.end
-    ? ('outOfBounds' as const)
-    : start > end
-    ? ('startGreaterThanEnd' as const)
-    : ('ok' as const)
-}

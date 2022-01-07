@@ -4,8 +4,9 @@ import {UseTPAWWorkerResult} from '../../TPAWSimulator/Worker/UseTPAWWorker'
 import {formatCurrency} from '../../Utils/FormatCurrency'
 import {formatPercentage} from '../../Utils/FormatPercentage'
 import {AppPage} from '../App/AppPage'
+import { AppPageDark } from '../App/AppPageDark'
 // import { useTPAW } from '../Common/UseTPAW/UseTPAW'
-import {useTPAW} from '../App/WithTPAW'
+import {useSimulation} from '../App/WithSimulation'
 
 type _Props = {
   withdrawal: TPAWSimulationForYear['withdrawalAchieved'] & {
@@ -37,7 +38,7 @@ const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
 }
 
 export const TasksForThisYear = React.memo(() => {
-  const {params: paramsObj, tpawResult} = useTPAW()
+  const { tpawResult} = useSimulation()
   
   const props = _getProps(tpawResult)
 

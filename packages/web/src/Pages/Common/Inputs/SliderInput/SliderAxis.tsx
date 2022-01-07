@@ -14,7 +14,7 @@ export const SliderAxis = React.memo(
     return (
       <g>
         <path
-          className="stroke-current text-gray-400"
+          className="stroke-current text-gray-200"
           strokeWidth={1}
           d={lineFromPoints([
             [0, 0],
@@ -22,7 +22,7 @@ export const SliderAxis = React.memo(
           ])}
         />
         <path
-          className="stroke-current text-gray-900"
+          className="stroke-current text-gray-400"
           strokeWidth={1}
           d={lineFromPoints([
             [scale.x(activeRange.start), 0],
@@ -30,7 +30,7 @@ export const SliderAxis = React.memo(
           ])}
         />
         <path
-          className="stroke-current text-gray-400"
+          className="stroke-current text-gray-200"
           strokeWidth={1}
           d={lineFromPoints([
             [scale.x(activeRange.end), 0],

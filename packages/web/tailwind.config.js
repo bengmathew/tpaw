@@ -1,4 +1,9 @@
 const colors = require('tailwindcss/colors')
+delete colors.lightBlue
+delete colors.warmGray
+delete colors.trueGray
+delete colors.blueGray
+delete colors.coolGray
 
 module.exports = {
   mode: 'jit',
@@ -8,7 +13,7 @@ module.exports = {
     fontFamily: {
       font1: ['Montserrat', 'sans-serif'],
       font2: ['Karla', 'sans-serif'],
-      mono: ['monospace'],
+      mono: ['Roboto Mono', 'monospace'],
     },
 
     colors: {
@@ -26,7 +31,6 @@ module.exports = {
       successBlockBG: colors.green[500],
       successBlockFG: colors.gray[100],
       amberFG: colors.yellow[600],
-
 
       ...colors,
     },

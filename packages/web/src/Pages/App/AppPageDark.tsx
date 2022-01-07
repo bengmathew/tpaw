@@ -1,13 +1,13 @@
 import Head from 'next/head'
 import Link from 'next/link'
 import React, {ReactElement} from 'react'
-import { Footer } from './Footer'
+import {Footer} from './Footer'
 
-export const AppPage = React.memo(
+export const AppPageDark = React.memo(
   ({children, title}: {children: ReactElement; title: string}) => {
     return (
       <div
-        className="font-font1 min-h-screen grid text-gray-800"
+        className="font-font1 min-h-screen grid text-gray-200 bg-gray-800"
         style={{grid: 'auto 1fr auto/auto'}}
       >
         <Head>
@@ -22,11 +22,11 @@ export const AppPage = React.memo(
           </Link>
         </div>
         <div className="flex justify-center">
-          <div className=" w-full max-w-[1200px] overflow-visible px-2 sm:px-10 md:px-20 mt-8 mb-4 ">
+          <div className=" w-full max-w-[1000px] overflow-visible p-2 sm:p-4 bg-white text-gray-700 rounded-xl">
             {children}
           </div>
         </div>
-        <Footer className="flex justify-center my-2  gap-x-4 sm:gap-x-4"/>
+        <Footer className="flex justify-center my-2  gap-x-4 sm:gap-x-4" />
       </div>
     )
   }
