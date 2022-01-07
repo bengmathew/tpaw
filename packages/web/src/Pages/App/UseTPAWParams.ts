@@ -135,7 +135,7 @@ const _v1ToV2 = (
     if (start < v1.age.retirement && end >= v1.age.retirement) {
       savings.push({
         ...x,
-        yearRange: {...x.yearRange, end: 'retirement' as const},
+        yearRange: {...x.yearRange, end: 'lastWorkingYear' as const},
       })
       retirementIncome.push({
         ...x,
