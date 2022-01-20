@@ -6,15 +6,15 @@ delete colors.blueGray
 delete colors.coolGray
 
 module.exports = {
-  mode: 'jit',
-  purge: ['./pages/**/*.{js,ts,jsx,tsx}', './src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: false, // or 'media' or 'class'
+  content: ['./pages/**/*.{js,ts,jsx,tsx}', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'media', 
   theme: {
     fontFamily: {
       font1: ['Montserrat', 'sans-serif'],
       font2: ['Karla', 'sans-serif'],
       mono: ['Roboto Mono', 'monospace'],
     },
+
 
     colors: {
       pageBG: 'white',
@@ -35,10 +35,7 @@ module.exports = {
       ...colors,
     },
 
-    extend: {},
   },
-  variants: {
-    extend: {},
-  },
+
   plugins: [],
 }

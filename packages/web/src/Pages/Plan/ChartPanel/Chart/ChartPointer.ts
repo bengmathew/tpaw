@@ -81,8 +81,8 @@ export class ChartPointer {
     ctx.font = ChartUtils.getMonoFont(11)
     ctx.textAlign = 'left'
     const texts = highlightIndexes.map(i => ({
-      left: `${tpawResult.src.args.percentiles[i]}th`,
-      middle: '-',
+      left: `${tpawResult.src.args.percentiles[i]}`,
+      middle: 'th',
       right: `${formatCurrency(tpawResult.data[i](targetAge))}`,
     }))
     const maxWidthMeasureLeft = fGet(
@@ -91,15 +91,18 @@ export class ChartPointer {
         x => x.width
       )
     )
-    const maxWidthMeasureMiddle = fGet(
-      _.maxBy(
-        texts.map(text => ctx.measureText(text.middle)),
-        x => x.width
-      )
-    )
+
     const maxWidthMeasureRight = fGet(
       _.maxBy(
         texts.map(text => ctx.measureText(text.right)),
+        x => x.width
+      )
+    )
+
+    ctx.font = ChartUtils.getMonoFont(9)
+    const maxWidthMeasureMiddle = fGet(
+      _.maxBy(
+        texts.map(text => ctx.measureText(text.middle)),
         x => x.width
       )
     )
@@ -135,28 +138,6 @@ export class ChartPointer {
       return scale.curr.y(interpolatedY) - 2
     })
 
-    // const targetBoxYs = (() => {
-    //   let boxYs = highlightIndexes.map((highlightI, i) =>
-    //     Math.max(
-    //       scale.target.y(maxY.target),
-    //       scale.target.y(tpawResult.data[highlightI](targetAge)) -
-    //         20 -
-    //         (boxWithoutY.height - padding.y / 2)
-    //     )
-    //   )
-
-    //   boxYs.reduceRight((a, y, i) => {
-    //     if (i === boxYs.length - 1) return null
-    //     boxYs[i] = Math.max(boxYs[i + 1] + boxWithoutY.height + gapY, y)
-    //     return null
-    //   }, null)
-
-    //   boxYs.forEach((y, i) => {
-    //     const prevTop = i === 0 ? plotArea.y + plotArea.height : boxYs[i - 1]
-    //     boxYs[i] = Math.min(prevTop - gapY - boxWithoutY.height, y)
-    //   })
-    //   return boxYs
-    // })()
     const targetBoxYs = (() => {
       let pointRange = {
         end: scale.target.y(tpawResult.data[highlightIndexes[0]](targetAge)),
@@ -250,7 +231,7 @@ export class ChartPointer {
       ctx.bezierCurveTo(
         ageX + offsetX * 0.35 * this._labelSideInfo.curr,
         pointYs[i],
-        boxHandleX - offsetX * .5 * this._labelSideInfo.curr,
+        boxHandleX - offsetX * 0.5 * this._labelSideInfo.curr,
         box.y + box.height * 0.5,
         boxHandleX,
         box.y + box.height * 0.5
@@ -270,12 +251,12 @@ export class ChartPointer {
       ctx.restore()
     })
     //    Draw the bubble background.
-    ctx.globalAlpha = 0.7
+    ctx.globalAlpha = 1
     ctx.beginPath()
     ChartUtils.roundRect(ctx, bubbleBox, 10)
-    ctx.fillStyle = ChartUtils.color.gray[1000]
+    ctx.fillStyle = ChartUtils.color.gray[700]
     ctx.fill()
-    ctx.strokeStyle = ChartUtils.color.gray[1000]
+    ctx.strokeStyle = ChartUtils.color.gray[700]
     ctx.stroke()
     highlightIndexes.forEach((highlightI, i) => {
       const box = {...boxWithoutY, y: fGet(this._boxYsInfo)[i].curr}
@@ -292,14 +273,24 @@ export class ChartPointer {
       // Draw the text.
       ctx.globalAlpha = 1
       ctx.fillStyle = ChartUtils.color.gray[200]
-      // the -1.5 is for visual center.
+      // the -1 is for visual center.
       const textY = box.y - 1 + box.height - padding.y / 2
-
+      
+      ctx.font = ChartUtils.getMonoFont(11)
       ctx.textAlign = 'right'
       ctx.fillText(
         texts[i].left,
         box.x + padding.x / 2 + maxWidthMeasureLeft.width,
         textY
+      )
+
+      ctx.globalAlpha = 1
+      ctx.font = ChartUtils.getMonoFont(8)
+      ctx.textAlign = 'left'
+      ctx.fillText(
+        texts[i].middle,
+        box.x + padding.x / 2 + maxWidthMeasureLeft.width,
+        textY - 2
       )
       // ctx.textAlign = 'left'
       // ctx.fillText(
@@ -307,6 +298,9 @@ export class ChartPointer {
       //   box.x + padding.x / 2 + maxWidthMeasureLeft.width + textGapX,
       //   textY
       // )
+
+      ctx.globalAlpha = 1
+      ctx.font = ChartUtils.getMonoFont(11)
       ctx.textAlign = 'right'
       ctx.fillText(texts[i].right, box.x + box.width - padding.x / 2, textY)
 

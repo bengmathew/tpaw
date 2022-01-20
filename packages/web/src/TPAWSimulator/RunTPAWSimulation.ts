@@ -1,7 +1,8 @@
 import _ from 'lodash'
 import { numOfYears } from '../Utils/NumOfYears'
 import { fGet } from '../Utils/Utils'
-import { processTPAWParams, TPAWParams, TPAWParamsProcessed2 } from './TPAWParams'
+import { TPAWParams } from './TPAWParams'
+import { processTPAWParams, TPAWParamsProcessed } from './TPAWParamsProcessed'
 
 export type TPAWSimulationResult = ReturnType<typeof runTPAWSimulation>
 export function runTPAWSimulation(
@@ -31,7 +32,7 @@ export function runTPAWSimulation(
 
 export type TPAWSimulationForYear = ReturnType<typeof runASingleYear>
 export function runASingleYear(
-  params: TPAWParamsProcessed2,
+  params: TPAWParamsProcessed,
   yearIndex: number,
   prev: {
     returns: {
@@ -214,6 +215,13 @@ export function runASingleYear(
         params.byYear[yearIndex].withdrawals.fundedByRiskPortfolio
       )
       regular = Math.min(regular, params.spendingCeiling)
+    }
+    if (params.spendingFloor !== null) {
+      extra = Math.max(
+        extra,
+        params.byYear[yearIndex].withdrawals.fundedByRiskPortfolio
+      )
+      regular = Math.max(regular, params.spendingFloor)
     }
     return {essential, legacy, extra, regular}
   })()

@@ -1,21 +1,24 @@
-import {faTrash} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {Switch} from '@headlessui/react'
+import { faTrash } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Switch } from '@headlessui/react'
 import _ from 'lodash'
-import React, {useState} from 'react'
+import React, { useState } from 'react'
 import {
-  numericYear,
   TPAWParams,
   ValueForYearRange,
   YearRangeEdge,
-  YearRangeFixedEdge,
+  YearRangeFixedEdge
 } from '../../../../TPAWSimulator/TPAWParams'
-import {fGet, noCase} from '../../../../Utils/Utils'
-import {AmountInput, useAmountInputState} from '../../../Common/Inputs/AmountInput'
-import {SliderInput} from '../../../Common/Inputs/SliderInput/SliderInput'
-import {ToggleSwitch} from '../../../Common/Inputs/ToggleSwitch'
-import {ConfirmAlert} from '../../../Common/Modal/ConfirmAlert'
-import {ModalBase} from '../../../Common/Modal/ModalBase'
+import { numericYear } from '../../../../TPAWSimulator/TPAWParamsProcessed'
+import { fGet, noCase } from '../../../../Utils/Utils'
+import {
+  AmountInput,
+  useAmountInputState
+} from '../../../Common/Inputs/AmountInput'
+import { SliderInput } from '../../../Common/Inputs/SliderInput/SliderInput'
+import { ToggleSwitch } from '../../../Common/Inputs/ToggleSwitch'
+import { ConfirmAlert } from '../../../Common/Modal/ConfirmAlert'
+import { ModalBase } from '../../../Common/Modal/ModalBase'
 
 const allPossibleFixes = [
   'start',
@@ -114,6 +117,10 @@ export const ValueForYearRangeInput = React.memo(
           : value % 1 === 0
           ? ('small' as const)
           : ('none' as const),
+      special:
+        type === 'full' && !isRetired && value === params.age.retirement
+          ? 'red'
+          : '',
     }))
     const sliderProps = {
       className: '',
@@ -143,8 +150,7 @@ export const ValueForYearRangeInput = React.memo(
         nominal,
       })
     }
-    const clampYear = (year: number) =>
-      _.clamp(year, domainStart, domainEnd)
+    const clampYear = (year: number) => _.clamp(year, domainStart, domainEnd)
 
     const FixSwitch = React.memo(
       ({fix, label}: {fix: YearRangeFixedEdge; label: string}) => (

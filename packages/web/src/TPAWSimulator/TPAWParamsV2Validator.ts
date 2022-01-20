@@ -1,23 +1,7 @@
 import { Validator } from '../Utils/Validator'
-import { TPAWParams, TPAWParamsWithoutHistorical } from './TPAWParams'
+import { TPAWParamsV2, TPAWParamsV2WithoutHistorical } from './TPAWParamsV2'
 
-// ----------- UTILS ---------//
-// const strAsNum = () =>
-//   chain(string(), (x: string) => {
-//     if (
-//       !x.match(/[^0123456789.-]/) &&
-//       x.indexOf('.') === x.lastIndexOf('.') &&
-//       [0, -1].includes(x.indexOf('-')) &&
-//       [0, -1].includes(x.lastIndexOf('-')) &&
-//       x.length > 0 &&
-//       !isNaN(parseFloat(x))
-//     ) {
-//       return parseFloat(x)
-//     }
-//     throw new Validator.Failed('Not a number.')
-//   })
 
-// const strAsOrNum = () => union(number(), strAsNum())
 const {number, string, constant, chain, object, union, array, boolean} =
   Validator
 
@@ -37,8 +21,8 @@ const _leTest = (y: number) => (x: number) => {
 
 // ----------- MAIN ---------//
 
-export const MAX_AGE = 120
-const _ageRange = chain(number(), _geTest(0), _leTest(MAX_AGE))
+const MAX_AGE_V2 = 120
+const _ageRange = chain(number(), _geTest(0), _leTest(MAX_AGE_V2))
 
 const _ageValidator = chain(
   object({
@@ -46,7 +30,7 @@ const _ageValidator = chain(
     retirement: _ageRange,
     end: _ageRange,
   }),
-  (age): TPAWParams['age'] => {
+  (age): TPAWParamsV2['age'] => {
     const {start, retirement, end} = age
     if (retirement < start) {
       throw new Validator.Failed('Retirement age is earlier than current age.')
@@ -78,7 +62,7 @@ const _valueForYearRangeValidator = object({
   nominal: boolean(),
 })
 
-export const tpawParamsValidator: Validator<TPAWParamsWithoutHistorical> =
+export const tpawParamsV2Validator: Validator<TPAWParamsV2WithoutHistorical> =
   object({
     v: constant(2),
     age: _ageValidator,

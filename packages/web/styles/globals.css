@@ -29,7 +29,9 @@ a {
 @tailwind utilities;
 
 @layer utilities {
-  @variants responsive {
+    .bg-inherit {
+      background-color: inherit;
+    }
     .lighten {
       @apply opacity-70;
     }
@@ -81,6 +83,13 @@ a {
       @apply fixed z-50 inset-0 overflow-y-auto flex items-center justify-center;
     }
 
+    .plan-pr {
+      @apply pr-2 sm:pr-4 md:pr-8 lg:pr-[calc(50vw-496px)]
+    }
+    .plan-pl {
+      @apply pl-2 sm:pl-4 md:pl-8 lg:pl-[calc(50vw-496px)]
+    }
 
-  }
+
+  
 }

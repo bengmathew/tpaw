@@ -1,19 +1,23 @@
-import { faArrowsV, faLongArrowRight } from '@fortawesome/pro-light-svg-icons'
+import { faArrowsV, faLongArrowAltRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 import Measure, { BoundingRect } from 'react-measure'
 import { fGet } from '../../../Utils/Utils'
 import { useSimulation } from '../../App/WithSimulation'
-import { LegacyDisplay } from './LegacyDisplay'
-import { MainControls } from './MainControls'
 import { DistributionCanvasReact } from './Chart/DistributionCanvasReact'
+import { LegacyDisplay } from './LegacyDisplay'
 
-const maxYScale = 1
+const maxYScaleWithCeiling = 1.25
+const maxYScaleWithoutCeiling = 1
 
 export const ChartPanel = React.memo(
   ({className = ''}: {className?: string}) => {
-    const {tpawResult, highlightPercentiles} = useSimulation()
+    const {params, tpawResult, highlightPercentiles} = useSimulation()
+    const maxYScale =
+      params.spendingCeiling === null
+        ? maxYScaleWithoutCeiling
+        : maxYScaleWithCeiling
 
     const [bounds, setBounds] = useState<BoundingRect | null>(null)
 
@@ -21,7 +25,7 @@ export const ChartPanel = React.memo(
     useEffect(() => {
       if (maxY === 0 && tpawResult)
         setMaxY(Math.max(1, tpawResult.maxWithdrawal * maxYScale))
-    }, [maxY, tpawResult])
+    }, [maxY, maxYScale, tpawResult])
     const handleRescale = () =>
       setMaxY(Math.max(1, tpawResult.maxWithdrawal * maxYScale))
 
@@ -54,10 +58,9 @@ export const ChartPanel = React.memo(
             </div>
           )}
         </Measure>
-        <MainControls />
-        <div className="flex justify-between items-end ">
+        <div className="flex justify-between items-end text-lg">
           <button
-            className="flex items-center py-2  -mb-2 font-medium"
+            className="flex items-center py-2  -mb-2 font-medium "
             onClick={handleRescale}
           >
             <FontAwesomeIcon className="mr-1 text-[13px]" icon={faArrowsV} />
@@ -66,7 +69,7 @@ export const ChartPanel = React.memo(
           <Link href="/tasks-for-this-year">
             <a className="flex items-center gap-x-2">
               <h2 className="font-medium">Tasks for this year</h2>
-              <FontAwesomeIcon icon={faLongArrowRight} />
+              <FontAwesomeIcon icon={faLongArrowAltRight} />
             </a>
           </Link>
         </div>

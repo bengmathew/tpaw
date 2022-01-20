@@ -2,7 +2,7 @@ import {TPAWParams} from './TPAWParams'
 
 export function getDefaultParams() {
   const params: TPAWParams = {
-    v: 2,
+    v: 3,
     age: {
       start: 35,
       retirement: 65,
@@ -49,6 +49,7 @@ export function getDefaultParams() {
       fundedByRiskPortfolio: [],
     },
     spendingCeiling: null,
+    spendingFloor: null,
     legacy: {
       total: 0,
       external: [],

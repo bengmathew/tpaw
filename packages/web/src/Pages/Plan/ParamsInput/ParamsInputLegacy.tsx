@@ -3,7 +3,9 @@ import {faPen} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import React, {useEffect, useMemo, useState} from 'react'
-import {processTPAWParams, TPAWParams} from '../../../TPAWSimulator/TPAWParams'
+import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
+import {processTPAWParams} from '../../../TPAWSimulator/TPAWParamsProcessed'
+import {Contentful} from '../../../Utils/Contentful'
 import {formatCurrency} from '../../../Utils/FormatCurrency'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
 import {preciseRange} from '../../../Utils/PreciseRange'
@@ -12,6 +14,7 @@ import {useSimulation} from '../../App/WithSimulation'
 import {AmountInput, useAmountInputState} from '../../Common/Inputs/AmountInput'
 import {LabeledValueInput} from '../../Common/Inputs/LabeledValueInput'
 import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
+import {usePlanContent} from '../Plan'
 
 type _InputState = {isEdit: false} | {isEdit: true; editIndex: number} | null
 
@@ -30,6 +33,7 @@ export const ParamsInputLegacy = React.memo(() => {
 // This is needed for AmountInput to pull new values on resetDefault.
 const _Inner = React.memo(() => {
   const {params, setParams} = useSimulation()
+  const content = usePlanContent()
   const valueState = useAmountInputState(params.legacy.total)
 
   const [input, setInput] = useState<_InputState>(null)
@@ -43,10 +47,7 @@ const _Inner = React.memo(() => {
   }
   return (
     <div className="">
-      <p className="">
-        How much money would you like to leave as a legacy? Enter a target in
-        real dollars.
-      </p>
+      <Contentful.RichText body={content.legacy.introAmount.fields.body} p="" />
       <div className={`flex items-center gap-x-2 mt-2`}>
         <AmountInput
           className="mt-2"
@@ -67,11 +68,10 @@ const _Inner = React.memo(() => {
         </button>
       </div>
 
-      <p className="mt-6">
-        Enter any assets that will apply towards this target like life insurance
-        and home equity. This will be subtracted from the target and the
-        portfolio will be used to fund the remainder.
-      </p>
+      <Contentful.RichText
+        body={content.legacy.introAssets.fields.body}
+        p="mt-6"
+      />
       <div className="flex justify-start gap-x-4 items-center  my-2 ">
         <button
           className="flex items-center justify-center gap-x-2 py-1 pr-2  "

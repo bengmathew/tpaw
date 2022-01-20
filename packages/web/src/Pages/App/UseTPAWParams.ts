@@ -3,14 +3,19 @@ import {useRouter} from 'next/dist/client/router'
 import {useEffect, useState} from 'react'
 import {getDefaultParams} from '../../TPAWSimulator/DefaultParams'
 import {
-  numericYear,
   TPAWParams,
+  tpawParamsValidator,
   TPAWParamsWithoutHistorical,
   ValueForYearRange,
 } from '../../TPAWSimulator/TPAWParams'
+import { numericYear } from '../../TPAWSimulator/TPAWParamsProcessed'
 import {TPAWParamsV1WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV1'
 import {tpawParamsV1Validator} from '../../TPAWSimulator/TPAWParamsV1Validator'
-import {tpawParamsValidator} from '../../TPAWSimulator/TPAWParamsValidator'
+import {TPAWParamsV2WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV2'
+import {
+  tpawParamsV2Validator,
+} from '../../TPAWSimulator/TPAWParamsV2Validator'
+import {TPAWParamsV3WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV3'
 import {Validator} from '../../Utils/Validator'
 import {AppError} from './AppError'
 
@@ -81,13 +86,15 @@ function _parseExternalParams(str: string | string[] | undefined | null) {
   try {
     const parsed = JSON.parse(str)
     try {
-      let v2: TPAWParamsWithoutHistorical
-      if (parsed.v === 2) {
-        v2 = tpawParamsValidator(parsed)
+      let v3: TPAWParamsWithoutHistorical
+      if (parsed.v === 3) {
+        v3 = tpawParamsValidator(parsed)
+      } else if (parsed.v === 2) {
+        v3 = _v2ToV3(tpawParamsV2Validator(parsed))
       } else {
-        v2 = _v1ToV2(tpawParamsV1Validator(parsed))
+        v3 = _v2ToV3(_v1ToV2(tpawParamsV1Validator(parsed)))
       }
-      return _addHistorical(v2)
+      return _addHistorical(v3)
     } catch (e) {
       if (e instanceof Validator.Failed) {
         throw new AppError(`Error in parameter: ${e.fullMessage}`)
@@ -126,7 +133,7 @@ const _addHistorical = (params: TPAWParamsWithoutHistorical): TPAWParams => ({
 
 const _v1ToV2 = (
   v1: TPAWParamsV1WithoutHistorical
-): TPAWParamsWithoutHistorical => {
+): TPAWParamsV2WithoutHistorical => {
   const savings: ValueForYearRange[] = []
   const retirementIncome: ValueForYearRange[] = []
   v1.savings.forEach(x => {
@@ -151,5 +158,15 @@ const _v1ToV2 = (
     ...v1,
     savings,
     retirementIncome,
+  }
+}
+
+const _v2ToV3 = (
+  v2: TPAWParamsV2WithoutHistorical
+): TPAWParamsV3WithoutHistorical => {
+  return {
+    ..._.cloneDeep(v2),
+    v: 3,
+    spendingFloor: null,
   }
 }

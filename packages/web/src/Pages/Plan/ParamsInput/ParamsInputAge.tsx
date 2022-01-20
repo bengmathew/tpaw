@@ -1,18 +1,21 @@
-import {faExclamationCircle} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {Switch} from '@headlessui/react'
+import { faExclamationCircle } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Switch } from '@headlessui/react'
 import _ from 'lodash'
 import React from 'react'
-import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
-import {MAX_AGE} from '../../../TPAWSimulator/TPAWParamsValidator'
-import {joinWithCommaAnd} from '../../../Utils/JoinWithAnd'
-import {useSimulation} from '../../App/WithSimulation'
-import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
-import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
-import {paramsInputValidate} from './Helpers/ParamInputValidate'
-import {paramsInputLabel} from './Helpers/ParamsInputLabel'
+import { getDefaultParams } from '../../../TPAWSimulator/DefaultParams'
+import { MAX_AGE } from '../../../TPAWSimulator/TPAWParams'
+import { Contentful } from '../../../Utils/Contentful'
+import { joinWithCommaAnd } from '../../../Utils/JoinWithAnd'
+import { useSimulation } from '../../App/WithSimulation'
+import { SliderInput } from '../../Common/Inputs/SliderInput/SliderInput'
+import { ToggleSwitch } from '../../Common/Inputs/ToggleSwitch'
+import { usePlanContent } from '../Plan'
+import { paramsInputValidate } from './Helpers/ParamInputValidate'
+import { paramsInputLabel } from './Helpers/ParamsInputLabel'
 
 export const ParamsInputAge = React.memo(() => {
+  const content = usePlanContent()
   const {params, setParams} = useSimulation()
   const retired = params.age.start === params.age.retirement
   const subHeading = retired
@@ -21,13 +24,13 @@ export const ParamsInputAge = React.memo(() => {
 
   const warnings = _.compact([
     !paramsInputValidate(params, 'futureSavings')
-      ? paramsInputLabel('futureSavings')
+      ? paramsInputLabel('future-savings')
       : undefined,
     !paramsInputValidate(params, 'retirementIncome')
-      ? paramsInputLabel('retirementIncome')
+      ? paramsInputLabel('income-during-retirement')
       : undefined,
     !paramsInputValidate(params, 'extraSpending')
-      ? paramsInputLabel('extraSpending')
+      ? paramsInputLabel('extra-spending')
       : undefined,
   ]).map(x => `"${x}"`)
 
@@ -59,11 +62,14 @@ export const ParamsInputAge = React.memo(() => {
         </Switch.Group>
       </div>
       <div className="pt-4">
-        <p className="">
-          {retired
-            ? `Select your current age and the maximum age for planning.`
-            : `Select your current age, the age your plan to retire, and the maximum age for planning.`}
-        </p>
+        <Contentful.RichText
+          body={
+            retired
+              ? content.age.introRetired.fields.body
+              : content.age.introNotRetired.fields.body
+          }
+          p=""
+        />
       </div>
       <SliderInput
         key={`${retired}`}

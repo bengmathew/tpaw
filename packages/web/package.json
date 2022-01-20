@@ -10,6 +10,7 @@
     "tsc": "tsc"
   },
   "dependencies": {
+    "@contentful/rich-text-react-renderer": "^15.11.1",
     "@fortawesome/fontawesome-svg-core": "^1.2.36",
     "@fortawesome/free-solid-svg-icons": "^5.15.4",
     "@fortawesome/pro-duotone-svg-icons": "^5.15.4",
@@ -19,11 +20,14 @@
     "@fortawesome/react-fontawesome": "^0.1.16",
     "@headlessui/react": "^1.4.1",
     "@mojotech/json-type-validation": "^3.1.0",
+    "@sentry/nextjs": "^6.16.1",
     "@visx/event": "^2.1.2",
     "@visx/scale": "^2.1.2",
     "@visx/shape": "^2.2.2",
     "@visx/text": "^2.1.2",
     "@visx/voronoi": "^2.1.2",
+    "contentful": "^9.1.5",
+    "cookie": "^0.4.1",
     "gsap": "^3.8.0",
     "lodash": "^4.17.21",
     "next": "^12.0.2",
@@ -35,17 +39,18 @@
     "react-transition-group": "^4.4.2"
   },
   "devDependencies": {
+    "@types/cookie": "^0.4.1",
     "@types/qs": "^6.9.7",
     "@types/react": "17.0.29",
     "@types/react-dom": "^17.0.11",
     "@types/react-measure": "^2.0.8",
     "@types/react-transition-group": "^4.4.4",
-    "autoprefixer": "^10.3.7",
+    "autoprefixer": "^10.4.2",
     "eslint": "7.23.0",
     "eslint-config-next": "12.0.1",
-    "postcss": "^8.3.9",
+    "postcss": "^8.4.5",
     "prettier": "^2.4.1",
-    "tailwindcss": "^2.2.17",
-    "typescript": "4.4.4"
+    "tailwindcss": "^3.0.15",
+    "typescript": "^4.5.4"
   }
 }

@@ -1,8 +1,13 @@
-import {fGet} from '../Utils/Utils'
+import { fGet } from '../Utils/Utils'
 
 export class Config {
   static get server() {
-    return {}
+    return {
+      contentful: {
+        space: `${fGet(process.env.CONTENTFUL_SPACE_ID)}`,
+        accessToken: `${fGet(process.env.CONTENTFUL_ACCESS_TOKEN)}`,
+      },
+    }
   }
 
   static get client() {

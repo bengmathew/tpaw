@@ -1,9 +1,11 @@
 import React from 'react'
-import { Plan } from '../src/Pages/Plan/Plan'
-import { WithWindowSize } from '../src/Utils/WithWindowSize'
+import {Plan, PlanContent, planGetStaticProps} from '../src/Pages/Plan/Plan'
+import {WithWindowSize} from '../src/Utils/WithWindowSize'
 
-export default React.memo(() => (
+export default React.memo((planContent: PlanContent) => (
   <WithWindowSize>
-    <Plan />
+    <Plan {...planContent} />
   </WithWindowSize>
 ))
+
+export const getStaticProps = planGetStaticProps

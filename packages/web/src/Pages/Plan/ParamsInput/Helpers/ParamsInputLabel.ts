@@ -1,24 +1,28 @@
 import {noCase} from '../../../../Utils/Utils'
-import {ParamsInputTypes} from './ParamsInputTypes'
+import {ParamsInputType} from './ParamsInputType'
 
-export const paramsInputLabel = (type: ParamsInputTypes) => {
+export const paramsInputLabel = (type: ParamsInputType) => {
   switch (type) {
     case 'age':
       return 'Age'
-    case 'currentPortfolioValue':
+    case 'risk-and-time-preference':
+      return 'Risk And Time Preference'
+    case 'current-portfolio-value':
       return 'Current Portfolio Value'
-    case 'futureSavings':
+    case 'future-savings':
       return 'Future Savings'
-    case 'retirementIncome':
+    case 'income-during-retirement':
       return 'Income During Retirement'
-    case 'extraSpending':
+    case 'extra-spending':
       return 'Extra Spending'
-    case 'spendingCeiling':
-      return 'Spending Ceiling'
+    case 'spending-ceiling-and-floor':
+      return 'Spending Ceiling and Floor'
     case 'legacy':
       return 'Legacy'
-    case 'expectedReturnsAndInflation':
-      return 'Expected Returns and Inflation'
+    case 'expected-returns':
+      return 'Expected Returns'
+    case 'inflation':
+      return 'Inflation'
     default:
       noCase(type)
   }

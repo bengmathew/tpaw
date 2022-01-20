@@ -1,19 +1,23 @@
+import * as cookie from 'cookie'
 import React, { useEffect, useState } from 'react'
-import { runTPAWSimulation } from '../TPAWSimulator/RunTPAWSimulation'
 import { TPAWParams } from '../TPAWSimulator/TPAWParams'
+import { Contentful } from '../Utils/Contentful'
 import { Config } from './Config'
 
 export const Test = React.memo(() => {
   if (Config.client.production) throw new Error()
+
   const [rows, setRows] = useState<string[][]>([])
   useEffect(() => {
-    const result = runTPAWSimulation(testParams, {
-      randomIndexesIntoHistoricalReturnsByYear,
-    })
-    const delta = result.byYearFromNow
-      .map(x => x.savingsPortfolioEndingBalance)
-      .map((x, i) => [(x - excel[i]).toFixed(10), `${x}`])
-    setRows(delta)
+
+
+    // const result = runTPAWSimulation(testParams, {
+    //   randomIndexesIntoHistoricalReturnsByYear,
+    // })
+    // const delta = result.byYearFromNow
+    //   .map(x => x.savingsPortfolioEndingBalance)
+    //   .map((x, i) => [(x - excel[i]).toFixed(10), `${x}`])
+    // setRows(delta)
   }, [])
 
   return (
@@ -59,7 +63,7 @@ const excel = [
 ]
 
 const testParams: TPAWParams = {
-  v: 2,
+  v: 3,
   age: {
     start: 25,
     retirement: 55,
@@ -120,6 +124,7 @@ const testParams: TPAWParams = {
     ],
   },
   spendingCeiling: null,
+  spendingFloor: null,
   legacy: {
     total: 300000,
     external: [],

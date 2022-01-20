@@ -1,5 +1,7 @@
 import React from 'react'
+import {Contentful} from '../../../Utils/Contentful'
 import {useSimulation} from '../../App/WithSimulation'
+import {usePlanContent} from '../Plan'
 import {ByYearSchedule} from './ByYearSchedule/ByYearSchedule'
 import {
   paramsInputValidate,
@@ -8,7 +10,7 @@ import {
 
 export const ParamsInputExtraSpending = React.memo(() => {
   const {params} = useSimulation()
-
+  const content = usePlanContent()
   const warn = paramsInputValidate(params, 'extraSpending')
 
   const defaultYearRange = {
@@ -18,16 +20,10 @@ export const ParamsInputExtraSpending = React.memo(() => {
 
   return (
     <div className="">
-      <p className="mb-2">
-        If you have extra spending needs during any years of your retirement,
-        you can account for that here. For example, travel during early
-        retirement, mortgage payments, and kids college tuition.
-      </p>
-      <p className="mb-2">
-        You can categorize your extra spending as essential or discretionary.
-        Essential spending will be funded with 100% bonds. Discretionary
-        spending will be funded by your regular portfolio.
-      </p>
+      <Contentful.RichText
+        body={content.extraSpending.intro.fields.body}
+        p="mb-6"
+      />
       <ByYearSchedule
         className=""
         type="full"
@@ -41,7 +37,7 @@ export const ParamsInputExtraSpending = React.memo(() => {
         }
       />
       <ByYearSchedule
-        className="mt-4"
+        className=""
         type="full"
         heading="Discretionary"
         addHeading="Add a Discretionary Expense"

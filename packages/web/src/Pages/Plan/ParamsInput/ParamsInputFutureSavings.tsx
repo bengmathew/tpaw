@@ -1,24 +1,28 @@
-import { faExclamation } from '@fortawesome/pro-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {faExclamation} from '@fortawesome/pro-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
-import { default as React } from 'react'
-import { useTPAWParams } from '../../App/UseTPAWParams'
-import { useSimulation } from '../../App/WithSimulation'
+import {default as React} from 'react'
+import {Contentful} from '../../../Utils/Contentful'
+import {useTPAWParams} from '../../App/UseTPAWParams'
+import {useSimulation} from '../../App/WithSimulation'
+import {usePlanContent} from '../Plan'
 import {
   ByYearSchedule,
-  ByYearScheduleEntry
+  ByYearScheduleEntry,
 } from './ByYearSchedule/ByYearSchedule'
-import { paramsInputValidateYearRange } from './Helpers/ParamInputValidate'
+import {paramsInputValidateYearRange} from './Helpers/ParamInputValidate'
 
 export const ParamsInputFutureSavings = React.memo(
   ({onBack}: {onBack: () => void}) => {
     const {age} = useTPAWParams().params
+    const content = usePlanContent()
     if (age.start === age.retirement) return <_Retired onBack={onBack} />
     return (
       <div className="">
-        <p className="">
-          Enter how much you expect to save during your remaining working years.
-        </p>
+        <Contentful.RichText
+          body={content.futureSavings.intro.fields.body}
+          p=""
+        />
         <ByYearSchedule
           className=""
           type="beforeRetirement"

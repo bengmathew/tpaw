@@ -1,19 +1,19 @@
-import {faMinus, faPlus} from '@fortawesome/pro-light-svg-icons'
-import {faExclamationCircle, faPen} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import { faMinus, faPlus } from '@fortawesome/pro-light-svg-icons'
+import { faExclamationCircle, faPen } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
-import React, {useState} from 'react'
+import React, { useState } from 'react'
 import {
   TPAWParams,
   ValueForYearRange,
-  YearRange,
+  YearRange
 } from '../../../../TPAWSimulator/TPAWParams'
-import {formatCurrency} from '../../../../Utils/FormatCurrency'
-import {smartDeltaFn} from '../../../../Utils/SmartDeltaFn'
-import {assertFalse, noCase} from '../../../../Utils/Utils'
-import {useSimulation} from '../../../App/WithSimulation'
-import {paramsInputValidateYearRange} from '../Helpers/ParamInputValidate'
-import {ValueForYearRangeInput} from './ValueForYearRangeInput'
+import { formatCurrency } from '../../../../Utils/FormatCurrency'
+import { smartDeltaFn } from '../../../../Utils/SmartDeltaFn'
+import { assertFalse, noCase } from '../../../../Utils/Utils'
+import { useSimulation } from '../../../App/WithSimulation'
+import { paramsInputValidateYearRange } from '../Helpers/ParamInputValidate'
+import { ValueForYearRangeInput } from './ValueForYearRangeInput'
 
 type _InputState = {isEdit: false} | {isEdit: true; editIndex: number} | null
 export const ByYearSchedule = React.memo(
@@ -179,7 +179,7 @@ export const ByYearScheduleEntry = React.memo(
               )}
             </div>
           </div>
-          <h2 className="">{_yearRangeToStr(entry.yearRange)}</h2>
+          <h2 className="">{byYearScheduleYearRangeToStr(entry.yearRange)}</h2>
           {validation !== 'ok' && (
             <h2 className="  text-red-500">
               <FontAwesomeIcon
@@ -206,7 +206,7 @@ export const ByYearScheduleEntry = React.memo(
   }
 )
 
-const _yearRangeToStr = (yearRange: ValueForYearRange['yearRange']) =>
+export const byYearScheduleYearRangeToStr = (yearRange: YearRange) =>
   yearRange.start === yearRange.end
     ? `at ${_textForSingle(yearRange.start)}`
     : `from ${_textForRange(yearRange.start, 'first')} ${_textForRange(
@@ -215,7 +215,7 @@ const _yearRangeToStr = (yearRange: ValueForYearRange['yearRange']) =>
       )}`
 
 const _textForRange = (
-  x: ValueForYearRange['yearRange']['start'],
+  x: YearRange['start'],
   type: 'first' | 'second'
 ) => {
   if (x === 'start') {

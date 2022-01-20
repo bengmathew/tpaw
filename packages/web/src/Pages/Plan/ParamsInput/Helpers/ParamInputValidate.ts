@@ -1,8 +1,8 @@
 import {
-  numericYear,
   TPAWParams,
   ValueForYearRange,
 } from '../../../../TPAWSimulator/TPAWParams'
+import { numericYear } from '../../../../TPAWSimulator/TPAWParamsProcessed'
 import {noCase} from '../../../../Utils/Utils'
 
 type _Type = 'futureSavings' | 'retirementIncome' | 'extraSpending'
