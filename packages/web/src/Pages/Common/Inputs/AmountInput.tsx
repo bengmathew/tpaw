@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import React, { useState } from 'react'
+import React, {useState} from 'react'
 
 export type AmountInputState = ReturnType<typeof useAmountInputState>
 export function useAmountInputState(initial: number | null) {
@@ -17,12 +17,12 @@ export const AmountInput = React.memo(
     className = '',
     state: {amount, amountStr, setAmountStr},
     onAccept = () => {},
-    disabled = false
+    disabled = false,
   }: {
     className?: string
     state: AmountInputState
     onAccept?: (value: number) => void
-    disabled?:boolean
+    disabled?: boolean
   }) => {
     return (
       <input

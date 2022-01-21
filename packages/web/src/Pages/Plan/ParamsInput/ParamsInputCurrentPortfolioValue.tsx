@@ -9,7 +9,6 @@ export const ParamsInputCurrentPortfolioValue = React.memo(() => {
   const {params} = useSimulation()
   const [key, setKey] = useState(0)
   useEffect(() => setKey(k => k + 1), [params])
-
   return <_Inner key={key} />
 })
 

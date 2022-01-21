@@ -1,33 +1,34 @@
-import { Document } from '@contentful/rich-text-types'
-import { faTimes } from '@fortawesome/pro-light-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { gsap } from 'gsap'
+import {Document} from '@contentful/rich-text-types'
+import {faTimes} from '@fortawesome/pro-light-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import {gsap} from 'gsap'
 import Head from 'next/head'
-import { useRouter } from 'next/router'
-import React, { useRef, useState } from 'react'
-import { Transition } from 'react-transition-group'
-import { Contentful } from '../../../Utils/Contentful'
-import { useURLParam } from '../../../Utils/UseURLParam'
-import { noCase } from '../../../Utils/Utils'
-import { useWindowSize } from '../../../Utils/WithWindowSize'
-import { Footer } from '../../App/Footer'
-import { usePlanContent } from '../Plan'
-import { paramsInputLabel } from './Helpers/ParamsInputLabel'
+import {useRouter} from 'next/router'
+import React, {useRef, useState} from 'react'
+import {Transition} from 'react-transition-group'
+import {Contentful} from '../../../Utils/Contentful'
+import {useURLParam} from '../../../Utils/UseURLParam'
+import {noCase} from '../../../Utils/Utils'
+import {useWindowSize} from '../../../Utils/WithWindowSize'
+import {Footer} from '../../App/Footer'
+import {usePlanContent} from '../Plan'
+import {paramsInputLabel} from './Helpers/ParamsInputLabel'
 import {
-  isParamsInputType, ParamsInputType,
-  paramsInputTypes
+  isParamsInputType,
+  ParamsInputType,
+  paramsInputTypes,
 } from './Helpers/ParamsInputType'
-import { ParamsInputAge } from './ParamsInputAge'
-import { ParamsInputCurrentPortfolioValue } from './ParamsInputCurrentPortfolioValue'
-import { ParamsInputExpectedReturns } from './ParamsInputExpectedReturns'
-import { ParamsInputExtraSpending } from './ParamsInputExtraSpending'
-import { ParamsInputFutureSavings } from './ParamsInputFutureSavings'
-import { ParamsInputIncomeDuringRetirement } from './ParamsInputIncomeDuringRetirement'
-import { ParamsInputInflation } from './ParamsInputInflation'
-import { ParamsInputLegacy } from './ParamsInputLegacy'
-import { ParamsInputRiskAndTimePreference } from './ParamsInputRiskAndTimePreference'
-import { ParamsInputSpendingCeilingAndFloor } from './ParamsInputSpendingCeilingAndFloor'
-import { ParamsInputSummary } from './ParamsInputSummary'
+import {ParamsInputAge} from './ParamsInputAge'
+import {ParamsInputCurrentPortfolioValue} from './ParamsInputCurrentPortfolioValue'
+import {ParamsInputExpectedReturns} from './ParamsInputExpectedReturns'
+import {ParamsInputExtraSpending} from './ParamsInputExtraSpending'
+import {ParamsInputFutureSavings} from './ParamsInputFutureSavings'
+import {ParamsInputIncomeDuringRetirement} from './ParamsInputIncomeDuringRetirement'
+import {ParamsInputInflation} from './ParamsInputInflation'
+import {ParamsInputLegacy} from './ParamsInputLegacy'
+import {ParamsInputRiskAndTimePreference} from './ParamsInputRiskAndTimePreference'
+import {ParamsInputSpendingCeilingAndFloor} from './ParamsInputSpendingCeilingAndFloor'
+import {ParamsInputSummary} from './ParamsInputSummary'
 
 type _State = 'summary' | ParamsInputType
 
@@ -121,33 +122,6 @@ const _Detail = React.memo(
     const windowSize = useWindowSize()
     const onDone = () => setState('summary')
 
-    const Body = React.memo(() => {
-      switch (type) {
-        case 'age':
-          return <ParamsInputAge />
-        case 'risk-and-time-preference':
-          return <ParamsInputRiskAndTimePreference />
-        case 'current-portfolio-value':
-          return <ParamsInputCurrentPortfolioValue />
-        case 'future-savings':
-          return <ParamsInputFutureSavings onBack={onDone} />
-        case 'income-during-retirement':
-          return <ParamsInputIncomeDuringRetirement />
-        case 'extra-spending':
-          return <ParamsInputExtraSpending />
-        case 'spending-ceiling-and-floor':
-          return <ParamsInputSpendingCeilingAndFloor />
-        case 'legacy':
-          return <ParamsInputLegacy />
-        case 'expected-returns':
-          return <ParamsInputExpectedReturns />
-        case 'inflation':
-          return <ParamsInputInflation />
-        default:
-          noCase(type)
-      }
-    })
-
     return (
       <Transition
         in={state === type}
@@ -177,7 +151,7 @@ const _Detail = React.memo(
                   className={`sticky top-0 z-10 mb-6 ${bgClassName} bg-opacity-90`}
                   {...{type, setState}}
                 />
-                <Body />
+                <_Body {...{type, onDone}} />
               </div>
               <div
                 className={` pt-4 overflow-scroll pl-8 plan-pr bg-gray-200  `}
@@ -206,7 +180,7 @@ const _Detail = React.memo(
               </div>
 
               <div className="plan-pl plan-pr pb-8">
-                <Body />
+                <_Body {...{type, onDone}} />
               </div>
               <div
                 className={`bg-gray-200  pt-4 opacity-70 plan-pl plan-pr grid`}
@@ -230,7 +204,7 @@ const _Detail = React.memo(
                 className={`sticky top-0 z-10  mb-6 ${bgClassName} bg-opacity-90`}
                 {...{type, setState}}
               />
-              <Body />
+              <_Body {...{type, onDone}} />
             </div>
             <_RichText
               className={`bg-gray-200 border-t-2 border-black  pt-4 pb-10  opacity-70 overflow-scroll px-4`}
@@ -241,6 +215,35 @@ const _Detail = React.memo(
         )}
       </Transition>
     )
+  }
+)
+
+const _Body = React.memo(
+  ({type, onDone}: {type: ParamsInputType; onDone: () => void}) => {
+    switch (type) {
+      case 'age':
+        return <ParamsInputAge />
+      case 'risk-and-time-preference':
+        return <ParamsInputRiskAndTimePreference />
+      case 'current-portfolio-value':
+        return <ParamsInputCurrentPortfolioValue />
+      case 'future-savings':
+        return <ParamsInputFutureSavings onBack={onDone} />
+      case 'income-during-retirement':
+        return <ParamsInputIncomeDuringRetirement />
+      case 'extra-spending':
+        return <ParamsInputExtraSpending />
+      case 'spending-ceiling-and-floor':
+        return <ParamsInputSpendingCeilingAndFloor />
+      case 'legacy':
+        return <ParamsInputLegacy />
+      case 'expected-returns':
+        return <ParamsInputExpectedReturns />
+      case 'inflation':
+        return <ParamsInputInflation />
+      default:
+        noCase(type)
+    }
   }
 )
 

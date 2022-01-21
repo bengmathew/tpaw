@@ -1,6 +1,6 @@
 import { faSpider } from '@fortawesome/pro-light-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-// import * as Sentry from '@sentry/nextjs'
+import * as Sentry from '@sentry/nextjs'
 import { useRouter } from 'next/dist/client/router'
 import React, { ReactNode, useEffect, useState } from 'react'
 import { createContext } from '../../Utils/CreateContext'
@@ -32,8 +32,7 @@ export const _ErrorFallback = React.memo(({error}: {error: Error}) => {
 
   const router = useRouter()
   useEffect(() => {
-    // Not using sentry for now because it does not yet work on Next.js v12.
-    // Sentry.captureException(error)
+    Sentry.captureException(error)
     router.events.on('routeChangeComplete', () => window.location.reload())
   }, [error, router])
 

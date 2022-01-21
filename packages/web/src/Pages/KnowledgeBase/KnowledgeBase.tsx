@@ -92,7 +92,6 @@ const _Outline = React.memo(
       <div className={`${className}`}>
         <div className="ml-4">
           {outline.fields.items.map((item, i) => {
-            console.dir(item)
             if (_isArticle(item)) {
               const {slug, publicTitle} = item.fields
               return <_Link key={i} slug={slug} title={publicTitle} />
