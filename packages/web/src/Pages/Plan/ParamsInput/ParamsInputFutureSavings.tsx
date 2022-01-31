@@ -21,7 +21,7 @@ export const ParamsInputFutureSavings = React.memo(
       <div className="">
         <Contentful.RichText
           body={content.futureSavings.intro.fields.body}
-          p=""
+          p="p-base"
         />
         <ByYearSchedule
           className=""
@@ -49,9 +49,13 @@ const _Retired = React.memo(({onBack}: {onBack: () => void}) => {
           <span className="text-sm">Warning</span>{' '}
           <FontAwesomeIcon icon={faExclamation} />
         </span>
-        {`You are currently retired but still have the following entries for
-        future savings. These will be ignored. Further contributions towards
-        your retirement should be entered in the "Retirement Income" section.`}
+        <span className="p-base">
+          <span className="text-errorFG">
+            {`You are currently retired but still have the following entries for
+            future savings. These will be ignored. Further contributions towards
+            your retirement should be entered in the "Retirement Income" section.`}
+          </span>
+        </span>
       </p>
       <button
         className="btn-sm btn-dark mt-4"

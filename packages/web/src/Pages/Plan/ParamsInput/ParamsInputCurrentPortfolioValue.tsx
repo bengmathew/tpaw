@@ -22,7 +22,7 @@ const _Inner = React.memo(() => {
     <div className="">
       <Contentful.RichText
         body={content.currentPortfolioValue.intro.fields.body}
-        p=""
+        p="p-base"
       />
       <AmountInput
         className="mt-4"

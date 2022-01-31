@@ -119,7 +119,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(() => {
       <RadioGroup.Description>
         <Contentful.RichText
           body={content.spendingCeilingAndFloor.intro.fields.body}
-          p="mb-4"
+          p="mb-4 p-base"
         />
       </RadioGroup.Description>
       <RadioGroup.Option value="none" className=" outline-none">

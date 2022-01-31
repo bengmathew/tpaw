@@ -25,6 +25,9 @@ export function drawPercentiles(context: ChartContext) {
   ctx.strokeStyle = ChartUtils.color.gray['500']
   _drawMergingLines(context, percentileInfo.highlightIndexes, ageRange, 1.2)
 
+  ctx.strokeStyle = ChartUtils.color.gray['500']
+  _drawMergingLines(context, [percentileInfo.highlightIndexes[2]], ageRange, 1.2)
+
   ctx.restore()
 }
 

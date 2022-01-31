@@ -10,7 +10,7 @@ export const ParamsInputIncomeDuringRetirement = React.memo(() => {
     <div className="">
         <Contentful.RichText
           body={content.incomeDuringRetirement.intro.fields.body}
-          p=""
+          p="p-base"
         />
       <ByYearSchedule
         className=""

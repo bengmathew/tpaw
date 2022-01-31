@@ -39,12 +39,10 @@ export const ParamsInput = React.memo(
   ({
     className = '',
     bgClassName,
-    showFooter,
     allowSplit,
   }: {
     className?: string
     bgClassName: string
-    showFooter: boolean
     allowSplit: boolean
   }) => {
     const stateIn = useURLParam('input') ?? 'summary'
@@ -80,7 +78,6 @@ export const ParamsInput = React.memo(
             highlight,
             setState,
             bgClassName,
-            showFooter,
             duration,
             displacement,
             allowSplit,
@@ -154,17 +151,13 @@ const _Detail = React.memo(
                 <_Body {...{type, onDone}} />
               </div>
               <div
-                className={` pt-4 overflow-scroll pl-8 plan-pr bg-gray-200  `}
+                className={`grid pt-4 overflow-scroll bg-gray-200  `}
+                style={{grid: '1fr auto / 1fr'}}
               >
-                <div
-                  className="grid  h-full opacity-70 "
-                  style={{grid: '1fr auto / 1fr'}}
-                >
-                  <_RichText className="pb-10">
-                    {content.body.fields.body}
-                  </_RichText>
-                  <Footer className="flex gap-x-4 lighten justify-center w-full py-2 " />
+                <div className="pl-8 plan-pr  h-full opacity-70 mb-20">
+                  <_RichText className="">{content.body.fields.body}</_RichText>
                 </div>
+                <Footer />
               </div>
             </div>
           ) : (
@@ -186,10 +179,10 @@ const _Detail = React.memo(
                 className={`bg-gray-200  pt-4 opacity-70 plan-pl plan-pr grid`}
                 style={{grid: '1fr auto/1fr'}}
               >
-                <_RichText className="pb-10">
+                <_RichText className="pb-20">
                   {content.body.fields.body}
                 </_RichText>
-                <Footer className="flex gap-x-4 justify-center py-2 lighten-2" />
+                <Footer />
               </div>
             </div>
           )
@@ -206,11 +199,10 @@ const _Detail = React.memo(
               />
               <_Body {...{type, onDone}} />
             </div>
-            <_RichText
-              className={`bg-gray-200 border-t-2 border-black  pt-4 pb-10  opacity-70 overflow-scroll px-4`}
-            >
-              {content.body.fields.body}
-            </_RichText>
+            <div className="bg-gray-200 border-t-2 border-black  pt-4 opacity-70 overflow-scroll px-4">
+              <_RichText className={`pb-16`}>{content.body.fields.body}</_RichText>
+              <Footer />
+            </div>
           </div>
         )}
       </Transition>
@@ -254,7 +246,7 @@ const _RichText = React.memo(
         <Contentful.RichText
           body={children}
           li="list-disc ml-5"
-          p="mb-3"
+          p="p-base mb-3"
           h1="font-bold text-lg mb-3"
           h2="font-bold text-lg mt-6 mb-3"
           a="underline"

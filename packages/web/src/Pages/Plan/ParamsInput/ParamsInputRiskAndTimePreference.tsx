@@ -15,7 +15,7 @@ export const ParamsInputRiskAndTimePreference = React.memo(
       <div className="">
         <Contentful.RichText
           body={content.riskAndTimePreference.intro.fields.body}
-          p="mb-2"
+          p="mb-2 p-base"
         />
         <div
           className="grid my-2 items-center"

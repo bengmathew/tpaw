@@ -1,17 +1,19 @@
-import { faSpider } from '@fortawesome/pro-light-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {faSpider} from '@fortawesome/pro-light-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import * as Sentry from '@sentry/nextjs'
-import { useRouter } from 'next/dist/client/router'
-import React, { ReactNode, useEffect, useState } from 'react'
-import { createContext } from '../../Utils/CreateContext'
-import { ErrorBoundary } from '../../Utils/ErrorBoundary'
-import { Config } from '../Config'
-import { AppError } from './AppError'
-import { AppPage } from './AppPage'
+import {useRouter} from 'next/dist/client/router'
+import React, {ReactNode, useEffect, useState} from 'react'
+import {createContext} from '../../Utils/CreateContext'
+import {ErrorBoundary} from '../../Utils/ErrorBoundary'
+import {Config} from '../Config'
+import {AppError} from './AppError'
+import {AppPage} from './AppPage'
+import {Footer} from './Footer'
+import {Header} from './Header'
 
 type Value = {setGlobalError: (error: Error) => void}
 const [Context, useSetGlobalError] = createContext<Value>('GlobalErrorCallback')
-export { useSetGlobalError }
+export {useSetGlobalError}
 
 export const GlobalErrorBoundary = React.memo(
   ({children}: {children: ReactNode}) => {
@@ -36,14 +38,18 @@ export const _ErrorFallback = React.memo(({error}: {error: Error}) => {
     router.events.on('routeChangeComplete', () => window.location.reload())
   }, [error, router])
 
-
   return (
-    <AppPage title="TPAW Planner - Error">
-      <div className="flex h-full flex-col justify-center items-center p-4">
-        <div className="flex items-center gap-x-4">
-          <FontAwesomeIcon className="text-[60px]" icon={faSpider} />
-          <h2 className="text-xl ">{_message(error)}</h2>
+    <AppPage title={'Error - TPAW Planner'} curr={'other'}>
+      <div className="grid h-screen" style={{grid: '1fr auto/auto'}}>
+        <div className="flex flex-col items-center mb-10">
+          <div className="flex h-full flex-col justify-center items-center p-4">
+            <div className="flex items-center gap-x-4">
+              <FontAwesomeIcon className="text-[60px]" icon={faSpider} />
+              <h2 className="text-xl ">{_message(error)}</h2>
+            </div>
+          </div>
         </div>
+        <Footer />
       </div>
     </AppPage>
   )

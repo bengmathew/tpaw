@@ -47,7 +47,7 @@ const _Inner = React.memo(() => {
   }
   return (
     <div className="">
-      <Contentful.RichText body={content.legacy.introAmount.fields.body} p="" />
+      <Contentful.RichText body={content.legacy.introAmount.fields.body} p="p-base" />
       <div className={`flex items-center gap-x-2 mt-2`}>
         <AmountInput
           className="mt-2"
@@ -70,7 +70,7 @@ const _Inner = React.memo(() => {
 
       <Contentful.RichText
         body={content.legacy.introAssets.fields.body}
-        p="mt-6"
+        p="mt-6 p-base mb-4"
       />
       <div className="flex justify-start gap-x-4 items-center  my-2 ">
         <button

@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import {ChartContext} from './ChartContext'
-import {ChartUtils} from './ChartUtils'
+import { ChartContext } from './ChartContext'
+import { ChartUtils } from './ChartUtils'
 
 export function drawAgeAxis(context: ChartContext) {
   const {ctx, tpawResult, scale} = context
@@ -38,7 +38,7 @@ function _drawTickValues(
   const pixelsPerTick = scale.target.x(1) - scale.target.x(0)
   const [tickLength, strokeAndFillStyle, font] =
     type === 'large'
-      ? ([15, ChartUtils.color.gray['700'], ChartUtils.getFont(14)] as const)
+      ? ([15, ChartUtils.color.gray['700'], ChartUtils.getFont(13)] as const)
       : type === 'medium'
       ? ([10, ChartUtils.color.gray['500'], ChartUtils.getFont(11)] as const)
       : ([3, ChartUtils.color.gray['400'], ChartUtils.getFont(8)] as const)
@@ -46,16 +46,10 @@ function _drawTickValues(
   ctx.fillStyle = strokeAndFillStyle
   tickValues.forEach(age => {
     const x = scale.curr.x(age)
-
-    if (
-      Math.abs(x - plotArea.x) > 20 &&
-      Math.abs(x - (plotArea.x + plotArea.width)) > 20
-    ) {
-      ctx.moveTo(x, y)
-      ctx.lineTo(x, y + tickLength)
-      if (type !== 'small' || pixelsPerTick > 20) {
-        ctx.fillText(`${age}`, x, y + tickLength + 2)
-      }
+    ctx.moveTo(x, y)
+    ctx.lineTo(x, y + tickLength)
+    if (type !== 'small' || pixelsPerTick > 15) {
+      ctx.fillText(`${age}`, x, y + tickLength + 2)
     }
   })
   ctx.strokeStyle = strokeAndFillStyle

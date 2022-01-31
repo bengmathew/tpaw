@@ -41,7 +41,7 @@ export const ParamsInputAge = React.memo(() => {
         style={{grid: ' auto / auto 1fr '}}
       >
         <Switch.Group>
-          <Switch.Label className="">Are you retired?</Switch.Label>
+          <Switch.Label className="p-base">Are you retired?</Switch.Label>
           <ToggleSwitch
             className=""
             enabled={retired}
@@ -68,7 +68,7 @@ export const ParamsInputAge = React.memo(() => {
               ? content.age.introRetired.fields.body
               : content.age.introNotRetired.fields.body
           }
-          p=""
+          p="p-base"
         />
       </div>
       <SliderInput
@@ -94,15 +94,17 @@ export const ParamsInputAge = React.memo(() => {
         }))}
       />
       {warnings.length > 0 && (
-        <h2 className="text-red-500 mt-2">
-          <FontAwesomeIcon
-            className="mr-2 text-red-500"
-            icon={faExclamationCircle}
-          />{' '}
-          {`One or more entries in the ${joinWithCommaAnd(warnings)} ${
-            warnings.length > 1 ? 'sections' : 'section'
-          } has a year that is out-of-bounds or a starting year later than the ending year.`}
-        </h2>
+        <div className="p-base">
+          <h2 className="text-errorFG mt-2">
+            <FontAwesomeIcon
+              className="mr-2 text-errorFG"
+              icon={faExclamationCircle}
+            />{' '}
+            {`One or more entries in the ${joinWithCommaAnd(warnings)} ${
+              warnings.length > 1 ? 'sections' : 'section'
+            } has a year that is out-of-bounds or a starting year later than the ending year.`}
+          </h2>
+        </div>
       )}
     </div>
   )

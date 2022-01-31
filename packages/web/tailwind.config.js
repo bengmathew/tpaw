@@ -7,7 +7,7 @@ delete colors.coolGray
 
 module.exports = {
   content: ['./pages/**/*.{js,ts,jsx,tsx}', './src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: 'media', 
+  darkMode: 'media',
   theme: {
     fontFamily: {
       font1: ['Montserrat', 'sans-serif'],
@@ -32,9 +32,15 @@ module.exports = {
       successBlockFG: colors.gray[100],
       amberFG: colors.yellow[600],
 
+      theme1: colors.teal[600],
+
       ...colors,
     },
-
+    extend: {
+      screens: {
+        learn: '900px',
+      },
+    },
   },
 
   plugins: [],

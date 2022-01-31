@@ -181,17 +181,19 @@ export const ByYearScheduleEntry = React.memo(
           </div>
           <h2 className="">{byYearScheduleYearRangeToStr(entry.yearRange)}</h2>
           {validation !== 'ok' && (
-            <h2 className="  text-red-500">
+            <h2 className="  ">
               <FontAwesomeIcon
-                className="mr-2 text-red-500"
+                className="mr-2 text-errorFG"
                 icon={faExclamationCircle}
               />
               <span className="">
-                {validation === 'outOfBounds'
-                  ? 'ignoring out-of-bound years'
-                  : validation === 'startGreaterThanEnd'
-                  ? 'ignored - starting year is later than ending year.'
-                  : noCase(validation)}
+                <span className="text-errorFG">
+                  {validation === 'outOfBounds'
+                    ? 'ignoring out-of-bound years'
+                    : validation === 'startGreaterThanEnd'
+                    ? 'ignored - starting year is later than ending year.'
+                    : noCase(validation)}
+                </span>
               </span>
             </h2>
           )}

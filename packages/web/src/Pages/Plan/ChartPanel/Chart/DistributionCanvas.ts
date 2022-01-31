@@ -1,20 +1,20 @@
 import {localPoint} from '@visx/event'
 import {gsap} from 'gsap'
 import _ from 'lodash'
-import {UseTPAWWorkerResult} from '../../../../TPAWSimulator/Worker/UseTPAWWorker'
+import { UseTPAWWorkerResult } from '../../../../TPAWSimulator/Worker/UseTPAWWorker'
 import {
   linearFnFomPoints,
-  linearFnFromPointAndSlope,
+  linearFnFromPointAndSlope
 } from '../../../../Utils/LinearFn'
-import {SimpleRange} from '../../../../Utils/SimpleRange'
-import {fGet} from '../../../../Utils/Utils'
-import {ChartContext} from './ChartContext'
-import {ChartPointer} from './ChartPointer'
+import { SimpleRange } from '../../../../Utils/SimpleRange'
+import { fGet } from '../../../../Utils/Utils'
+import { ChartContext } from './ChartContext'
+import { ChartPointer } from './ChartPointer'
+import { Size } from './ChartUtils'
+import { drawAgeAxis } from './DrawAgeAxis'
+import { drawPercentiles } from './DrawPercentiles'
+import { drawSmallYAxis } from './DrawSmallYAxis'
 
-import {ChartUtils, Size} from './ChartUtils'
-import {drawAgeAxis} from './DrawAgeAxis'
-import {drawHeading} from './DrawHeading'
-import {drawPercentiles} from './DrawPercentiles'
 
 type _Size = {width: number; height: number}
 export class DistributionCanvas {
@@ -128,6 +128,7 @@ export class DistributionCanvas {
 
     drawAgeAxis(chartContext)
     drawPercentiles(chartContext)
+    drawSmallYAxis(chartContext)
     // drawHeading(chartContext)
     this._pointer?.draw(chartContext)
   }
@@ -157,7 +158,12 @@ const _chartContext = (
   size: Size
 ): ChartContext => {
   // Padding on top to allow for tooltip bleeding out of plotArea.
-  const padding = {left: 4, top: 10, bottom: 35, right: 4}
+  const padding = {
+    left: 10,
+    top: Math.max(30, size.height - size.width * 0.65),
+    bottom: 35,
+    right: 10,
+  }
   const viewPort = {x: 0, y: 0, ...size}
   const headingHeight = 0
   const plotArea = {

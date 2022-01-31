@@ -275,7 +275,7 @@ export class ChartPointer {
       ctx.fillStyle = ChartUtils.color.gray[200]
       // the -1 is for visual center.
       const textY = box.y - 1 + box.height - padding.y / 2
-      
+
       ctx.font = ChartUtils.getMonoFont(11)
       ctx.textAlign = 'right'
       ctx.fillText(

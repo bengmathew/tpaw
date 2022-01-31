@@ -22,7 +22,7 @@ export const ParamsInputExtraSpending = React.memo(() => {
     <div className="">
       <Contentful.RichText
         body={content.extraSpending.intro.fields.body}
-        p="mb-6"
+        p="mb-6 p-base"
       />
       <ByYearSchedule
         className=""

@@ -1,4 +1,4 @@
-import {faExclamation} from '@fortawesome/pro-light-svg-icons'
+import {faExclamation} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {gsap, Power1} from 'gsap'
 import _ from 'lodash'
@@ -10,7 +10,7 @@ import {formatPercentage} from '../../../Utils/FormatPercentage'
 import {fGet, noCase} from '../../../Utils/Utils'
 import {Footer} from '../../App/Footer'
 import {useSimulation} from '../../App/WithSimulation'
-import { ChartUtils } from '../ChartPanel/Chart/ChartUtils'
+import {ChartUtils} from '../ChartPanel/Chart/ChartUtils'
 import {byYearScheduleYearRangeToStr} from './ByYearSchedule/ByYearSchedule'
 import {paramsInputValidate} from './Helpers/ParamInputValidate'
 import {paramsInputLabel} from './Helpers/ParamsInputLabel'
@@ -25,7 +25,6 @@ export const ParamsInputSummary = React.memo(
     setState,
     allowSplit,
     bgClassName,
-    showFooter,
     duration,
     displacement,
   }: {
@@ -34,7 +33,6 @@ export const ParamsInputSummary = React.memo(
     setState: (state: ParamsInputType) => void
     allowSplit: boolean
     bgClassName: string
-    showFooter: boolean
     duration: number
     displacement: number
   }) => {
@@ -62,18 +60,14 @@ export const ParamsInputSummary = React.memo(
       >
         {tstate => (
           <div
-            className={`${
-              allowSplit
-                ? 'px-2 sm:px-4 md:px-8 lg:px-[calc(50vw-496px)]'
-                : 'px-4'
-            } 
+            className={`${allowSplit ? 'plan-pr plan-pl' : 'px-4'} 
             grid
-            absolute w-full h-full top-0  pb-4 overflow-scroll 
+            absolute w-full h-full top-0  overflow-scroll 
             ${tstate === 'exited' ? 'opacity-0' : ''}`} // This is needed if we start in exited state.
             ref={summaryRef}
             style={{grid: '1fr auto/1fr'}}
           >
-            <div className="flex flex-col items-start">
+            <div className="flex flex-col items-start mb-16">
               <div className="self-stretch flex justify-end sticky top-0 z-10 ">
                 <div
                   className={`flex gap-x-4  py-2 bg-opacity-80 rounded-full ${bgClassName}`}
@@ -85,7 +79,7 @@ export const ParamsInputSummary = React.memo(
               <div className="flex flex-col gap-y-2 relative z-0">
                 <_Button type="age" {...{setState, highlight}} />
                 <div className="mt-2">
-                  <h2 className="font-medium text-base">Savings and Income</h2>
+                  <h2 className="font-medium">Savings and Income</h2>
                   <div className="flex flex-col gap-y-2 mt-4 ml-8">
                     <_Button
                       type="current-portfolio-value"
@@ -106,7 +100,7 @@ export const ParamsInputSummary = React.memo(
                   </div>
                 </div>
                 <div className="mt-2">
-                  <h2 className="font-medium text-base">Spending</h2>
+                  <h2 className="font-medium">Spending</h2>
                   <div className="flex flex-col gap-y-2 mt-4 ml-8">
                     <_Button
                       type="extra-spending"
@@ -122,7 +116,7 @@ export const ParamsInputSummary = React.memo(
                 </div>
 
                 <div className="mt-2">
-                  <h2 className="font-medium text-base">
+                  <h2 className="font-medium">
                     Expected Returns and Inflation
                   </h2>
                   <div className="flex flex-col gap-y-2 mt-4 ml-8">
@@ -141,9 +135,7 @@ export const ParamsInputSummary = React.memo(
               </div>
             </div>
 
-            {showFooter && (
-              <Footer className="flex justify-center  gap-x-4 mt-8 lighten-2" />
-            )}
+            <Footer />
           </div>
         )}
       </Transition>
@@ -172,7 +164,11 @@ const _Button = React.memo(
       gsap.fromTo(
         ref.current,
         {backgroundColor: `${ChartUtils.color.gray[300]}FF`},
-        {backgroundColor: `${ChartUtils.color.gray[300]}00`, duration: 1, ease:Power1.easeIn}
+        {
+          backgroundColor: `${ChartUtils.color.gray[300]}00`,
+          duration: 1,
+          ease: Power1.easeIn,
+        }
       )
     }, [highlight, type])
 
@@ -183,9 +179,7 @@ const _Button = React.memo(
         ref={ref}
       >
         <div className=" flex items-center">
-          <h2 className="font-medium text-base sm:text-base ">
-            {paramsInputLabel(type)}
-          </h2>
+          <h2 className="font-medium  ">{paramsInputLabel(type)}</h2>
           {warn && (
             <h2 className="h-[20px] w-[20px] flex items-center justify-center ml-2 text-[11px] rounded-full bg-errorBlockBG text-errorBlockFG">
               <FontAwesomeIcon icon={faExclamation} />

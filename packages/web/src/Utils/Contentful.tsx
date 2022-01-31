@@ -1,19 +1,16 @@
-import {documentToReactComponents} from '@contentful/rich-text-react-renderer'
+import { documentToReactComponents } from '@contentful/rich-text-react-renderer'
 import {
   Block,
   BLOCKS,
   Document,
   Inline,
-  INLINES,
-  MARKS,
+  INLINES
 } from '@contentful/rich-text-types'
-import {faExternalLink} from '@fortawesome/pro-light-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import * as contentful from 'contentful'
 import Link from 'next/link'
 import React from 'react'
-import {Config} from '../Pages/Config'
-import {assert, fGet} from './Utils'
+import { Config } from '../Pages/Config'
+import { assert, fGet } from './Utils'
 
 export namespace Contentful {
   export type InlineEntry = {
@@ -133,8 +130,10 @@ export namespace Contentful {
       h1 = '',
       h2 = '',
       li = '',
+      ol = '',
       p = '',
-      a = 'underline',
+      p6 = '',
+      a = 'underline ',
       aExternalLink = 'text-[12px] ml-1',
       bold = 'font-bold',
     }: {
@@ -142,7 +141,9 @@ export namespace Contentful {
       h1?: string
       h2?: string
       p?: string
+      p6?: string
       li?: string
+      ol?: string
       a?: string
       aExternalLink?: string
       bold?: string
@@ -154,6 +155,7 @@ export namespace Contentful {
 
         return `/${target.fields.type}/${target.fields.slug}`
       }
+      const linkStyle: React.CSSProperties = {overflowWrap: 'anywhere'}
 
       return (
         <>
@@ -165,36 +167,50 @@ export namespace Contentful {
               [BLOCKS.HEADING_2]: (node, children) => (
                 <h2 className={h2}>{children}</h2>
               ),
+              [BLOCKS.HEADING_6]: (node, children) => (
+                <p className={p6}>{children}</p>
+              ),
               [BLOCKS.PARAGRAPH]: (node, children) => (
                 <p className={p}>{children}</p>
               ),
               [BLOCKS.LIST_ITEM]: (node, children) => (
                 <li className={li}>{children}</li>
               ),
+              [BLOCKS.OL_LIST]: (node, children) => (
+                <ol className={ol}>{children}</ol>
+              ),
               [INLINES.HYPERLINK]: (node, children) => {
                 const href = node.data.uri as string
                 return href.startsWith('/') ? (
                   <Link href={href}>
-                    <a className={a}>{children}</a>
+                    <a className={a} style={linkStyle}>
+                      {children}
+                    </a>
                   </Link>
                 ) : (
-                  <a className={a} href={href} target="_blank" rel="noreferrer">
+                  <a
+                    className={a}
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={linkStyle}
+                  >
                     {children}
-                    {/* <FontAwesomeIcon
-                      className={aExternalLink}
-                      icon={faExternalLink}
-                    /> */}
                   </a>
                 )
               },
               [INLINES.ENTRY_HYPERLINK]: (node, children) => (
                 <Link href={href(node)}>
-                  <a className={a}>{children}</a>
+                  <a className={`${a}`} style={linkStyle}>
+                    {children}
+                  </a>
                 </Link>
               ),
-              [MARKS.BOLD]: (node, children) => (
-                <span className={bold}>{children}</span>
-              ),
+              // This does not seem to work!
+              // [MARKS.BOLD]: (node, children) => {
+              //   console.dir(node)
+              //   return <span className={bold}>{children}</span>
+              // },
             },
           })}
         </>

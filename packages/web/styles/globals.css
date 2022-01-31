@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
 
@@ -29,6 +29,21 @@ a {
 @tailwind utilities;
 
 @layer utilities {
+    .p-base {
+      @apply font-font2 text-lg text-gray-600
+    }
+
+    .page {
+      @apply font-font1 min-h-screen text-gray-800;
+    }
+    .mt-header {
+      @apply mt-[47px]
+    }
+    
+    .pt-header {
+      @apply pt-[47px]
+    }
+
     .bg-inherit {
       background-color: inherit;
     }
@@ -84,10 +99,14 @@ a {
     }
 
     .plan-pr {
-      @apply pr-2 sm:pr-4 md:pr-8 lg:pr-[calc(50vw-496px)]
+      /* @apply pr-3 sm:pr-4 md:pr-10 lg:pr-[calc(50vw-470px)] */
+      @apply pr-3 sm:pr-4 md:pr-16 
+      /* @apply pr-3 */
     }
     .plan-pl {
-      @apply pl-2 sm:pl-4 md:pl-8 lg:pl-[calc(50vw-496px)]
+      /* @apply pl-3 sm:pl-4 md:pl-10 lg:pl-[calc(50vw-470px)] */
+      @apply pl-3 sm:pl-4 md:pl-16
+       /* @apply pl-3  */
     }
 
 

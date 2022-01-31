@@ -32,7 +32,7 @@ export const ParamsInputInflation = React.memo(() => {
         >
           <Contentful.RichText
             body={content.inflation.intro.fields.body}
-            p="col-span-2 mb-2"
+            p="col-span-2 mb-2 p-base"
           />
 
           <h2 className="">Inflation</h2>

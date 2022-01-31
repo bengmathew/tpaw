@@ -34,7 +34,7 @@ export const ParamsInputExpectedReturns = React.memo(() => {
         >
           <Contentful.RichText
             body={content.expectedReturns.intro.fields.body}
-            p="col-span-2 mb-2"
+            p="col-span-2 mb-2 p-base"
           />
 
           <h2 className=" whitespace-nowrap">Stocks</h2>

@@ -1,11 +1,9 @@
 import {GetStaticProps} from 'next'
-import Head from 'next/head'
-import Link from 'next/link'
 import React from 'react'
 import {Contentful} from '../../Utils/Contentful'
 import {createContext} from '../../Utils/CreateContext'
 import {useWindowSize} from '../../Utils/WithWindowSize'
-import {Footer} from '../App/Footer'
+import {AppPage} from '../App/AppPage'
 import {ChartPanel} from './ChartPanel/ChartPanel'
 import {ParamsInput} from './ParamsInput/ParamsInput'
 
@@ -93,64 +91,39 @@ export const Plan = React.memo((planContent: PlanContent) => {
   const isPortrait = aspectRatio < 1.1
   return (
     <PlanContentContext.Provider value={planContent}>
-      <div className="font-font1 h-screen text-gray-800 ">
-        <Head>
-          <title>TPAW Planner</title>
-        </Head>
-        <div
-          className=" h-full grid "
-          style={{
-            grid: isPortrait
-              ? '"chart" auto "params" 1fr /1fr'
-              : '"params chart" 1fr /1fr 2fr',
-          }}
-        >
-          {isPortrait ? (
-            <div
-              className=" flex flex-col items-center border-b-4 border-gray-700 plan-pl plan-pr"
-              style={{gridArea: 'chart'}}
-            >
-              <Link href="/">
-                <a className="font-bold  text-xl md:text-3xl mt-1 py-1 sm:py-2 ">
-                  TPAW Planner
-                </a>
-              </Link>
-              <ChartPanel className=" w-full " />
-            </div>
-          ) : (
-            <div
-              className="grid min-h-full overflow-scroll px-4"
-              style={{grid: 'auto 1fr auto/1fr', gridArea: 'chart'}}
-            >
-              <div className="flex justify-center mb-8">
-                <Link href="/">
-                  <a className="text-3xl font-bold my-2">TPAW Planner</a>
-                </Link>
-              </div>
-              <div className="flex flex-col justify-center">
-                <ChartPanel className=" " />
-              </div>
-              <Footer className="flex justify-center  gap-x-4 mt-8 lighten-2 mb-2" />
-            </div>
-          )}
-          {isPortrait ? (
-            <ParamsInput
-              className=""
-              bgClassName="bg-pageBG"
-              showFooter
-              allowSplit
-            />
-          ) : (
-            <ParamsInput
-              // className="border-r-4 border-gray-700"
-              className=""
-              bgClassName="bg-gray-100"
-              showFooter={false}
-              allowSplit={false}
-            />
-          )}
-        </div>
-      </div>
+      <AppPage
+        className="h-screen grid"
+        title="TPAW Planner"
+        curr="plan"
+        style={{
+          grid: isPortrait
+            ? '"chart" auto "params" 1fr /1fr'
+            : '"params chart" 1fr /1fr 2fr',
+        }}
+      >
+        {isPortrait ? (
+          <ChartPanel
+            className="h-[350px] sm:h-[400px] md:h-[470px] lg:h-[525px] w-full px-3 border-b-4 border-gray-700"
+            isPortrait
+          />
+        ) : (
+          <ChartPanel className="px-3" isPortrait={false} />
+        )}
+        {isPortrait ? (
+          <ParamsInput
+            className=""
+            bgClassName="bg-pageBG"
+            allowSplit
+          />
+        ) : (
+          <ParamsInput
+            className=""
+            bgClassName="bg-gray-100"
+            
+            allowSplit={false}
+          />
+        )}
+      </AppPage>
     </PlanContentContext.Provider>
   )
 })
