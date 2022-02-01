@@ -208,7 +208,6 @@ export namespace Contentful {
               ),
               // This does not seem to work!
               // [MARKS.BOLD]: (node, children) => {
-              //   console.dir(node)
               //   return <span className={bold}>{children}</span>
               // },
             },

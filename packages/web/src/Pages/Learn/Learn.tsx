@@ -1,17 +1,18 @@
-import {faChevronUp, faStream} from '@fortawesome/pro-regular-svg-icons'
-import {faChevronRight, faHomeAlt} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {Transition} from '@headlessui/react'
+import { faChevronUp, faStream } from '@fortawesome/pro-regular-svg-icons'
+import { faChevronRight, faHomeAlt } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Transition } from '@headlessui/react'
 import _ from 'lodash'
-import {GetStaticProps, InferGetStaticPropsType} from 'next'
+import { GetStaticProps, InferGetStaticPropsType } from 'next'
 import Link from 'next/link'
-import React, {useState} from 'react'
+import { useRouter } from 'next/router'
+import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 // import {Transition} from 'react-transition-group'
-import {Contentful} from '../../Utils/Contentful'
-import {assert} from '../../Utils/Utils'
-import {AppPage} from '../App/AppPage'
-import {Footer} from '../App/Footer'
+import { Contentful } from '../../Utils/Contentful'
+import { assert } from '../../Utils/Utils'
+import { AppPage } from '../App/AppPage'
+import { Footer } from '../App/Footer'
 
 export const learnGetStaticProps: GetStaticProps<{
   outline: Contentful.FetchedKnowledgeBaseOutline
@@ -21,6 +22,7 @@ export const learnGetStaticProps: GetStaticProps<{
   assert(slugArr instanceof Array)
   if (slugArr.length > 1) return {notFound: true}
   const slug = slugArr.length > 0 ? slugArr[0] : 'knowledge-base-start' // ignore everything but last
+
   return {
     props: {
       outline: await Contentful.fetchKnowledgeBaseOutline(
@@ -55,6 +57,7 @@ const _Desktop = React.memo(
       <div
         className={` min-h-screen hidden learn:grid`}
         style={{grid: '1fr auto/ 1fr 2fr'}}
+        tabIndex={0}
       >
         <div className="bg-gray-100 h-screen p-4 sticky top-0 pt-header overflow-scroll">
           <_Outline
@@ -126,7 +129,11 @@ const _MobileOutline = React.memo(
     setShowContents: (x: boolean) => void
   }) => {
     return ReactDOM.createPortal(
-      <Transition className="page" show={showContents} onClick={() => setShowContents(false)}>
+      <Transition
+        className="page"
+        show={showContents}
+        onClick={() => setShowContents(false)}
+      >
         <Transition.Child
           className="fixed inset-0 bg-black bg-opacity-50 "
           enter="transition-opacity duration-300"
@@ -170,9 +177,28 @@ const _Content = React.memo(
       flatOutline,
       x => x.slug === content.fields.slug
     )
+    const firstIndex = _.findIndex(
+      flatOutline,
+      x => x.slug === content.fields.slug
+    )
     const next =
       lastIndex === flatOutline.length - 1 ? null : flatOutline[lastIndex + 1]
+    const prev = firstIndex === 0 ? null : flatOutline[firstIndex - 1]
     const parentChain = _parentChain(flatOutline, lastIndex)
+
+    const router = useRouter()
+    useEffect(() => {
+      const handler = (e: KeyboardEvent) => {
+        if (e.key === 'ArrowRight' && next) {
+          void router.push(next.slug)
+        }
+        if (e.key === 'ArrowLeft' && prev) {
+          void router.push(prev.slug)
+        }
+      }
+      window.addEventListener('keydown', handler)
+      return () => window.removeEventListener('keydown', handler)
+    }, [next, prev, router])
 
     return (
       <div className={`${className} `}>
@@ -190,9 +216,7 @@ const _Content = React.memo(
                   icon={faChevronRight}
                 />
                 <Link href={x.slug}>
-                  <a className="font-bold text-lg mr-4">
-                    {x.title}
-                  </a>
+                  <a className="font-bold text-lg mr-4">{x.title}</a>
                 </Link>
               </React.Fragment>
             ))}
@@ -207,7 +231,6 @@ const _Content = React.memo(
           p="my-4 p-base"
           p6=" p-base"
           ol="list-decimal ml-5"
-          
         />
         {next && (
           <div

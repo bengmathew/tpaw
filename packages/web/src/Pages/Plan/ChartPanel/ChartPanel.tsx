@@ -29,7 +29,6 @@ export const ChartPanel = React.memo(
     }, [maxY, maxYScale, tpawResult])
     const handleRescale = () =>
       setMaxY(Math.max(1, tpawResult.maxWithdrawal * maxYScale))
-    console.dir(bounds?.width ?? 0)
 
     return (
       <div

@@ -1,24 +1,45 @@
 import _ from 'lodash'
-import { numOfYears } from '../Utils/NumOfYears'
-import { fGet } from '../Utils/Utils'
-import { TPAWParams } from './TPAWParams'
-import { processTPAWParams, TPAWParamsProcessed } from './TPAWParamsProcessed'
+import {numOfYears} from '../Utils/NumOfYears'
+import {assert, fGet} from '../Utils/Utils'
+import {TPAWParams} from './TPAWParams'
+import {processTPAWParams, TPAWParamsProcessed} from './TPAWParamsProcessed'
 
 export type TPAWSimulationResult = ReturnType<typeof runTPAWSimulation>
 export function runTPAWSimulation(
   paramsIn: TPAWParams,
-  opts: {
+  realizedReturnsFromSimulation: {
+    simulationUsingExpectedReturns: TPAWSimulationForYear[]
     randomIndexesIntoHistoricalReturnsByYear?: (year: number) => number
-  } = {}
+  } | null
 ) {
   const params = processTPAWParams(
     paramsIn,
-    opts.randomIndexesIntoHistoricalReturnsByYear
+    realizedReturnsFromSimulation
+      ? realizedReturnsFromSimulation.randomIndexesIntoHistoricalReturnsByYear
+      : undefined
   )
+  if (realizedReturnsFromSimulation)
+    assert(
+      realizedReturnsFromSimulation.simulationUsingExpectedReturns.length ===
+        numOfYears(params.age)
+    )
+
   const byYearFromNow: TPAWSimulationForYear[] = []
 
   _.range(numOfYears(params.age)).reduce((prev, yearIndex) => {
-    const result = runASingleYear(params, yearIndex, prev)
+    const result = runASingleYear(
+      params,
+      yearIndex,
+      realizedReturnsFromSimulation
+        ? {
+            simulationUsingExpectedReturns:
+              realizedReturnsFromSimulation.simulationUsingExpectedReturns[
+                yearIndex
+              ],
+          }
+        : null,
+      prev
+    )
     byYearFromNow.push(result)
     return result
   }, null as null | TPAWSimulationForYear)
@@ -34,15 +55,17 @@ export type TPAWSimulationForYear = ReturnType<typeof runASingleYear>
 export function runASingleYear(
   params: TPAWParamsProcessed,
   yearIndex: number,
+  realizedReturnsFromSimulation: {
+    simulationUsingExpectedReturns: {
+      wealthAndSpending: {
+        wealth: number
+        presentValueOfExtraWithdrawals: number
+        presentValueOfDesiredLegacy: number
+        presentValueOfRegularWithdrawals: number
+      }
+    }
+  } | null,
   prev: {
-    returns: {
-      expected: {legacyPortfolio: number; regularPortfolio: number}
-      realized: {legacyPortfolio: number; regularPortfolio: number}
-    }
-    growthOfADollar: {
-      expected: {legacyPortfolio: number; regularPortfolio: number}
-      realized: {legacyPortfolio: number; regularPortfolio: number}
-    }
     savingsPortfolioEndingBalance: number
   } | null
 ) {
@@ -51,24 +74,23 @@ export function runASingleYear(
     const _expected = (allocation: {stocks: number; bonds: number}) =>
       params.returns.expected.bonds * allocation.bonds +
       params.returns.expected.stocks * allocation.stocks
-    const _realized = (allocation: {stocks: number; bonds: number}) =>
-      params.returns.realized[yearIndex].bonds * allocation.bonds +
-      params.returns.realized[yearIndex].stocks * allocation.stocks
+    const _realized = realizedReturnsFromSimulation
+      ? (allocation: {stocks: number; bonds: number}) =>
+          params.returns.realized[yearIndex].bonds * allocation.bonds +
+          params.returns.realized[yearIndex].stocks * allocation.stocks
+      : _expected
 
     return {
       expected: {
-        stocks: params.returns.expected.stocks,
-        bonds: params.returns.expected.bonds,
+        stocks: _expected({stocks: 1, bonds: 0}),
+        bonds: _expected({stocks: 0, bonds: 1}),
         essentialExpenses: _expected({stocks: 0, bonds: 1}),
         legacyPortfolio: _expected(params.targetAllocation.legacyPortfolio),
         regularPortfolio: _expected(params.targetAllocation.regularPortfolio),
       },
       realized: {
-        stocks: params.returns.realized[yearIndex].stocks,
-        bonds: params.returns.realized[yearIndex].bonds,
-        essentialExpenses: _realized({stocks: 0, bonds: 1}),
-        legacyPortfolio: _realized(params.targetAllocation.legacyPortfolio),
-        regularPortfolio: _realized(params.targetAllocation.regularPortfolio),
+        stocks: _realized({stocks: 1, bonds: 0}),
+        bonds: _realized({stocks: 0, bonds: 1}),
       },
     }
   })()
@@ -110,46 +132,8 @@ export function runASingleYear(
     return {savings, withdrawals}
   })()
 
-  // ---- GROWTH OF A DOLLAR ----
-  const growthOfADollar = (() => {
-    return {
-      expected: {
-        legacyPortfolio: prev
-          ? prev.growthOfADollar.expected.legacyPortfolio *
-            (1 + prev.returns.expected.legacyPortfolio)
-          : 1,
-
-        regularPortfolio: prev
-          ? prev.growthOfADollar.expected.regularPortfolio *
-            (1 + prev.returns.expected.regularPortfolio)
-          : 1,
-      },
-      realized: {
-        legacyPortfolio: prev
-          ? prev.growthOfADollar.realized.legacyPortfolio *
-            (1 + prev.returns.realized.legacyPortfolio)
-          : 1,
-
-        regularPortfolio: prev
-          ? prev.growthOfADollar.realized.regularPortfolio *
-            (1 + prev.returns.realized.regularPortfolio)
-          : 1,
-      },
-    }
-  })()
-
-  // ---- SCALE ----
-  const scale = (() => ({
-    legacyPortfolio:
-      growthOfADollar.realized.legacyPortfolio /
-      growthOfADollar.expected.legacyPortfolio,
-    regularPortfolio:
-      growthOfADollar.realized.regularPortfolio /
-      growthOfADollar.expected.regularPortfolio,
-  }))()
-
   // ---- WEALTH AND SPENDING ----
-  const wealthAndSpending = (() => {
+  const {scale, ...wealthAndSpending} = (() => {
     const startingBalanceOfSavingsPortfolio = prev
       ? prev.savingsPortfolioEndingBalance
       : params.savingsAtStartOfStartYear
@@ -161,20 +145,62 @@ export function runASingleYear(
       netPresentValue.withdrawals.fundedByBonds('addCurrYear'),
       wealth
     )
+
+    const scale = (() => {
+      if (!realizedReturnsFromSimulation) return {legacy: 0, extraWithdrawls: 0}
+      const {simulationUsingExpectedReturns} = realizedReturnsFromSimulation
+
+      const elasticityOfWealthWRTStocks =
+        (simulationUsingExpectedReturns.wealthAndSpending
+          .presentValueOfDesiredLegacy /
+          simulationUsingExpectedReturns.wealthAndSpending.wealth) *
+          params.targetAllocation.legacyPortfolio.stocks +
+        (simulationUsingExpectedReturns.wealthAndSpending
+          .presentValueOfExtraWithdrawals /
+          simulationUsingExpectedReturns.wealthAndSpending.wealth) *
+          params.targetAllocation.regularPortfolio.stocks +
+        (simulationUsingExpectedReturns.wealthAndSpending
+          .presentValueOfRegularWithdrawals /
+          simulationUsingExpectedReturns.wealthAndSpending.wealth) *
+          params.targetAllocation.regularPortfolio.stocks
+
+      const elasticityOfExtraWithdrawalGoalsWRTWealth =
+        params.targetAllocation.regularPortfolio.stocks /
+        elasticityOfWealthWRTStocks
+
+      const elasticityOfLegacyGoalsWRTWealth =
+        params.targetAllocation.legacyPortfolio.stocks /
+        elasticityOfWealthWRTStocks
+
+      const percentIncreaseInWealthOverScheduled =
+        wealth / simulationUsingExpectedReturns.wealthAndSpending.wealth - 1
+
+      const legacy = Math.max(
+        percentIncreaseInWealthOverScheduled * elasticityOfLegacyGoalsWRTWealth,
+        -1
+      )
+      const extraWithdrawls = Math.max(
+        percentIncreaseInWealthOverScheduled *
+          elasticityOfExtraWithdrawalGoalsWRTWealth,
+        -1
+      )
+      return {legacy, extraWithdrawls}
+    })()
+
     const presentValueOfExtraWithdrawals = Math.min(
       netPresentValue.withdrawals.fundedByRiskPortfolio('addCurrYear') *
-        scale.regularPortfolio,
+        (1 + scale.extraWithdrawls),
       wealth - presentValueOfEssentialExpenses
     )
     const presentValueOfDesiredLegacy = Math.min(
-      (params.legacy.target * scale.legacyPortfolio) /
+      (params.legacy.target * (1 + scale.legacy)) /
         Math.pow(
           1 + returns.expected.legacyPortfolio,
           numOfYears(params.age) - yearIndex
         ),
       wealth - presentValueOfEssentialExpenses - presentValueOfExtraWithdrawals
     )
-    const presentValuesOfRegularWithdrawals =
+    const presentValueOfRegularWithdrawals =
       wealth -
       presentValueOfEssentialExpenses -
       presentValueOfDesiredLegacy -
@@ -186,7 +212,8 @@ export function runASingleYear(
       presentValueOfEssentialExpenses,
       presentValueOfExtraWithdrawals,
       presentValueOfDesiredLegacy,
-      presentValuesOfRegularWithdrawals,
+      presentValueOfRegularWithdrawals,
+      scale,
     }
   })()
 
@@ -196,12 +223,12 @@ export function runASingleYear(
     const legacy = 0
     let extra =
       params.byYear[yearIndex].withdrawals.fundedByRiskPortfolio *
-      scale.regularPortfolio
+      (1 + scale.extraWithdrawls)
 
     let regular = (() => {
       if (params.age.start + yearIndex < params.age.retirement) return 0
 
-      const P = wealthAndSpending.presentValuesOfRegularWithdrawals
+      const P = wealthAndSpending.presentValueOfRegularWithdrawals
       const r = returns.expected.regularPortfolio
       const g = params.scheduledWithdrawalGrowthRate
       const n = numOfYears(params.age) - yearIndex
@@ -266,18 +293,18 @@ export function runASingleYear(
     )
     const presentValueOfExtraWithdrawals = Math.min(
       netPresentValue.withdrawals.fundedByRiskPortfolio('skipCurrYear') *
-        scale.regularPortfolio,
+        (1 + scale.extraWithdrawls),
       wealth - presentValueOfEssentialExpenses
     )
     const presentValueOfDesiredLegacy = Math.min(
-      (params.legacy.target * scale.legacyPortfolio) /
+      (params.legacy.target * (1 + scale.legacy)) /
         Math.pow(
           1 + returns.expected.legacyPortfolio,
           numOfYears(params.age) - yearIndex
         ),
       wealth - presentValueOfEssentialExpenses - presentValueOfExtraWithdrawals
     )
-    const presentValuesOfRegularWithdrawals =
+    const presentValueOfRegularWithdrawals =
       wealth -
       presentValueOfEssentialExpenses -
       presentValueOfDesiredLegacy -
@@ -289,7 +316,7 @@ export function runASingleYear(
       presentValueOfEssentialExpenses,
       presentValueOfDesiredLegacy,
       presentValueOfExtraWithdrawals,
-      presentValuesOfRegularWithdrawals,
+      presentValueOfRegularWithdrawals,
     }
   })()
 
@@ -301,7 +328,7 @@ export function runASingleYear(
         params.targetAllocation.legacyPortfolio.stocks +
       portfolioAfterIncomeAndWithdrawals.presentValueOfExtraWithdrawals *
         params.targetAllocation.regularPortfolio.stocks +
-      portfolioAfterIncomeAndWithdrawals.presentValuesOfRegularWithdrawals *
+      portfolioAfterIncomeAndWithdrawals.presentValueOfRegularWithdrawals *
         params.targetAllocation.regularPortfolio.stocks
 
     const stocksAchieved = Math.min(balance, stocksTarget)
@@ -325,7 +352,6 @@ export function runASingleYear(
   return {
     returns,
     scale,
-    growthOfADollar,
     wealthAndSpending,
     withdrawalTarget,
     withdrawalAchieved,
