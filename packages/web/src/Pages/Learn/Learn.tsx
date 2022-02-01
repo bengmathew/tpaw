@@ -190,10 +190,10 @@ const _Content = React.memo(
     useEffect(() => {
       const handler = (e: KeyboardEvent) => {
         if (e.key === 'ArrowRight' && next) {
-          void router.push(next.slug)
+          void router.push(_href(next.slug))
         }
         if (e.key === 'ArrowLeft' && prev) {
-          void router.push(prev.slug)
+          void router.push(_href(prev.slug))
         }
       }
       window.addEventListener('keydown', handler)
