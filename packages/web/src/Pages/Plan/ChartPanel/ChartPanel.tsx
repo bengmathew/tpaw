@@ -102,7 +102,7 @@ export const ChartPanel = React.memo(
           )}
         </Measure>
 
-        <LegacyDisplay className="absolute top-[55px]" />
+        <LegacyDisplay className={`absolute left-3 ${isPortrait?'top-[60px]':'top-[145px]'}`} />
       </div>
     )
   }
