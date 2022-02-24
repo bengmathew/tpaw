@@ -40,9 +40,7 @@ export class TPAWRunInWorker {
     sortRows: new Map<string, (value: number[][]) => void>(),
   }
   constructor() {
-    // TODO:
-    // const numWorkers = navigator.hardwareConcurrency || 4
-    const numWorkers = 1
+    const numWorkers = navigator.hardwareConcurrency || 4
     this._workers = _.range(numWorkers).map(
       () => new Worker(new URL('./TPAWWorker.ts', import.meta.url))
     )

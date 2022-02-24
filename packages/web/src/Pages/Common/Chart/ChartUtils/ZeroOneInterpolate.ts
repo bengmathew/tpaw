@@ -1,6 +1,5 @@
 import { linearFnFomPoints } from '../../../../Utils/LinearFn'
 
-// TODO: Make private to ChartDataTransition?
 export const zeroOneInterpolate = (
   atZero: number,
   atOne: number,

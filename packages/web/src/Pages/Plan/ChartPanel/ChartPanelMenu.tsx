@@ -1,9 +1,8 @@
-import {faChevronRight} from '@fortawesome/pro-solid-svg-icons'
-import {faCaretDown, faInfo} from '@fortawesome/pro-solid-svg-icons'
+import {faCaretDown, faChevronRight} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {gsap} from 'gsap'
 import _ from 'lodash'
-import React, {Dispatch, useMemo, useState} from 'react'
+import React, {useMemo, useState} from 'react'
 import ReactDOM from 'react-dom'
 import {Contentful} from '../../../Utils/Contentful'
 import {fGet, noCase} from '../../../Utils/Utils'
@@ -30,12 +29,10 @@ export const ChartPanelMenu = React.memo(
     className = '',
     type,
     onSelect,
-    setShowDescriptionPopUp,
   }: {
     className?: string
     type: ChartPanelType
     onSelect: (type: ChartPanelType) => void
-    setShowDescriptionPopUp: Dispatch<boolean>
   }) => {
     const windowSize = useWindowSize()
     const simulation = useSimulation()
@@ -110,12 +107,15 @@ export const ChartPanelMenu = React.memo(
           <div className="">
             <h2 className="">
               {label.map((x, i) => (
-                <>
+                <React.Fragment key={i}>
                   <span>{x}</span>
                   {i !== label.length - 1 && (
-                    <FontAwesomeIcon className="mx-2 text-sm sm:text-base lighten-2" icon={faChevronRight} />
+                    <FontAwesomeIcon
+                      className="mx-2 text-sm sm:text-base lighten-2"
+                      icon={faChevronRight}
+                    />
                   )}
-                </>
+                </React.Fragment>
               ))}
             </h2>
             {subLabel && (
@@ -124,12 +124,7 @@ export const ChartPanelMenu = React.memo(
           </div>
           <FontAwesomeIcon className="mt-1" icon={faCaretDown} />
         </button>
-        <button
-          className="sm:hidden rounded-full w-[23px] h-[23px] bg-gray-700 text-gray-100 text-[11px]"
-          onClick={() => setShowDescriptionPopUp(true)}
-        >
-          <FontAwesomeIcon icon={faInfo} />
-        </button>
+
         {ReactDOM.createPortal(
           <div
             className=" page fixed inset-0"
@@ -226,14 +221,17 @@ const _Button = React.memo(
       >
         <div className="">
           <h2 className="text-base sm:text-lg font-bold">
-          {label.map((x, i) => (
-                <>
-                  <span>{x}</span>
-                  {i !== label.length - 1 && (
-                    <FontAwesomeIcon className="mx-2 text-xs sm:text-sm lighten-2" icon={faChevronRight} />
-                  )}
-                </>
-              ))}
+            {label.map((x, i) => (
+              <React.Fragment key={i}>
+                <span>{x}</span>
+                {i !== label.length - 1 && (
+                  <FontAwesomeIcon
+                    className="mx-2 text-xs sm:text-sm lighten-2"
+                    icon={faChevronRight}
+                  />
+                )}
+              </React.Fragment>
+            ))}
           </h2>
           {subLabel && (
             <h2 className="text-sm sm:text-base font-semibold -mt-1">

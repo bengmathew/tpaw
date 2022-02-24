@@ -53,12 +53,3 @@ export function chartDataTransitionCurrNumArr<Data>(
   return target.map((t, i) => zeroOneInterpolate(prev[i], t, dataTransition))
 }
 
-// TODO: Remove
-export const chartDataTransitionNew = (
-  target: number,
-  curr: ChartDataTransition<number>
-): ChartDataTransition<number> => ({
-  prev: chartDataTransitionCurrNum(curr, x => x),
-  target,
-  transition: 0,
-})

@@ -1,3 +1,5 @@
+import {faInfo} from '@fortawesome/pro-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {useRouter} from 'next/router'
 import React, {useCallback, useEffect, useMemo, useState} from 'react'
 import Measure from 'react-measure'
@@ -163,28 +165,33 @@ export function useChartPanel({
             className="flex flex-col items-start absolute w-full  px-3 z-10 bg-pageBG"
             ref={measureRef}
           >
-            <Measure
-              bounds
-              onResize={({bounds}) => setTitleWidth(fGet(bounds).width)}
+            <div
+              className={`flex justify-between items-start w-full ${
+                headingSize.width - titleWidth < 300 || windowSize.width < 640
+                  ? 'pt-header'
+                  : ''
+              }`}
             >
-              {({measureRef}) => (
-                <div
-                  className={`${
-                    headingSize.width - titleWidth < 300 ||
-                    windowSize.width < 640
-                      ? 'pt-header'
-                      : ''
-                  }`}
-                  ref={measureRef}
-                >
-                  <ChartPanelMenu
-                    type={state.type}
-                    onSelect={handleChangeType}
-                    setShowDescriptionPopUp={setShowDescriptionPopUp}
-                  />
-                </div>
-              )}
-            </Measure>
+              <Measure
+                bounds
+                onResize={({bounds}) => setTitleWidth(fGet(bounds).width)}
+              >
+                {({measureRef}) => (
+                  <div className="" ref={measureRef}>
+                    <ChartPanelMenu
+                      type={state.type}
+                      onSelect={handleChangeType}
+                    />
+                  </div>
+                )}
+              </Measure>
+              <button
+                className="sm:hidden mt-2 rounded-full w-[23px] h-[23px] bg-gray-700 text-gray-100 text-[11px]"
+                onClick={() => setShowDescriptionPopUp(true)}
+              >
+                <FontAwesomeIcon icon={faInfo} />
+              </button>
+            </div>
             <ChartPanelDescription
               type={state.type}
               {...{showDescriptionPopUp, setShowDescriptionPopUp}}
