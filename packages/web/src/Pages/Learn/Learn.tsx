@@ -67,11 +67,11 @@ const _Desktop = React.memo(
           />
         </div>
         <div
-          className="grid pl-8 relative pt-header "
+          className="grid pl-8 relative pt-header max-w-[650px] "
           style={{grid: '1fr auto/1fr'}}
         >
           <_Content
-            className="relative z-0 pr-8 max-w-[650px] mb-20  mt-4"
+            className="relative z-0 pr-8 mb-20  mt-4"
             {...{content, outline}}
           />
           <Footer />
@@ -320,7 +320,7 @@ const _Link = React.memo(
         />
         <span
           className={`font-semibold ${
-            isCurrent ? 'text-theme1' : 'text-gray-700'
+            isCurrent ? 'text-theme1Dark' : 'text-gray-700'
           }`}
         >
           {title}

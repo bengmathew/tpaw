@@ -10,7 +10,7 @@ import {formatPercentage} from '../../../Utils/FormatPercentage'
 import {fGet, noCase} from '../../../Utils/Utils'
 import {Footer} from '../../App/Footer'
 import {useSimulation} from '../../App/WithSimulation'
-import {ChartUtils} from '../ChartPanel/Chart/ChartUtils'
+import { ChartUtils } from '../../Common/Chart/ChartUtils/ChartUtils'
 import {byYearScheduleYearRangeToStr} from './ByYearSchedule/ByYearSchedule'
 import {paramsInputValidate} from './Helpers/ParamInputValidate'
 import {paramsInputLabel} from './Helpers/ParamsInputLabel'
@@ -24,7 +24,6 @@ export const ParamsInputSummary = React.memo(
     highlight,
     setState,
     allowSplit,
-    bgClassName,
     duration,
     displacement,
   }: {
@@ -32,7 +31,6 @@ export const ParamsInputSummary = React.memo(
     highlight: ParamsInputType | null
     setState: (state: ParamsInputType) => void
     allowSplit: boolean
-    bgClassName: string
     duration: number
     displacement: number
   }) => {
@@ -60,7 +58,7 @@ export const ParamsInputSummary = React.memo(
       >
         {tstate => (
           <div
-            className={`${allowSplit ? 'plan-pr plan-pl' : 'px-4'} 
+            className={`text-gray-600 ${allowSplit ? 'plan-pr plan-pl' : 'px-4'} 
             grid
             absolute w-full h-full top-0  overflow-scroll 
             ${tstate === 'exited' ? 'opacity-0' : ''}`} // This is needed if we start in exited state.
@@ -68,9 +66,9 @@ export const ParamsInputSummary = React.memo(
             style={{grid: '1fr auto/1fr'}}
           >
             <div className="flex flex-col items-start mb-16">
-              <div className="self-stretch flex justify-end sticky top-0 z-10 ">
+              <div className="self-stretch flex justify-end  ">
                 <div
-                  className={`flex gap-x-4  py-2 bg-opacity-80 rounded-full ${bgClassName}`}
+                  className={`flex gap-x-4  py-2`}
                 >
                   <Reset />
                   <Share />
@@ -79,7 +77,7 @@ export const ParamsInputSummary = React.memo(
               <div className="flex flex-col gap-y-2 relative z-0">
                 <_Button type="age" {...{setState, highlight}} />
                 <div className="mt-2">
-                  <h2 className="font-medium">Savings and Income</h2>
+                  <h2 className="font-semibold">Savings and Income</h2>
                   <div className="flex flex-col gap-y-2 mt-4 ml-8">
                     <_Button
                       type="current-portfolio-value"
@@ -100,7 +98,7 @@ export const ParamsInputSummary = React.memo(
                   </div>
                 </div>
                 <div className="mt-2">
-                  <h2 className="font-medium">Spending</h2>
+                  <h2 className="font-semibold">Spending</h2>
                   <div className="flex flex-col gap-y-2 mt-4 ml-8">
                     <_Button
                       type="extra-spending"
@@ -116,7 +114,7 @@ export const ParamsInputSummary = React.memo(
                 </div>
 
                 <div className="mt-2">
-                  <h2 className="font-medium">
+                  <h2 className="font-semibold">
                     Expected Returns and Inflation
                   </h2>
                   <div className="flex flex-col gap-y-2 mt-4 ml-8">
@@ -179,7 +177,7 @@ const _Button = React.memo(
         ref={ref}
       >
         <div className=" flex items-center">
-          <h2 className="font-medium  ">{paramsInputLabel(type)}</h2>
+          <h2 className="font-semibold  ">{paramsInputLabel(type)}</h2>
           {warn && (
             <h2 className="h-[20px] w-[20px] flex items-center justify-center ml-2 text-[11px] rounded-full bg-errorBlockBG text-errorBlockFG">
               <FontAwesomeIcon icon={faExclamation} />
@@ -188,7 +186,7 @@ const _Button = React.memo(
         </div>
 
         {_.flatten([_text(type, params)]).map((text, i) => (
-          <h2 key={i} className="text-sm lighten-2">
+          <h2 key={i} className="text-sm lighten">
             {text}
           </h2>
         ))}

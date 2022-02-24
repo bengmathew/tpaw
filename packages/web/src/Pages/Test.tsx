@@ -11,25 +11,26 @@ export const Test = React.memo(() => {
   const [rows, setRows] = useState<string[][]>([])
 
   useEffect(() => {
+    const params = testParams
     const simulationUsingExpectedReturns = runTPAWSimulation(
-      testParams,
+      params,
       null
     ).byYearFromNow
 
-    const result = runTPAWSimulation(testParams, {
+    const result = runTPAWSimulation(params, {
       simulationUsingExpectedReturns,
       randomIndexesIntoHistoricalReturnsByYear,
     })
     const delta = result.byYearFromNow
-      .map(x => x.withdrawal)
+      .map(x => x.withdrawalAchieved.total)
       .map((x, i) => [
-        `${i + testParams.age.start}`,
-        (x - excel[i]).toFixed(10),
+        `${i + params.age.start}`,
+        `${x - excel[i]}`,
         `${formatCurrency(x)}`,
         `${x}`,
       ])
-    // .slice(30, 31)
     setRows(delta)
+    console.dir(result.byYearFromNow[30])
   }, [])
 
   return (
@@ -61,18 +62,18 @@ export const Test = React.memo(() => {
 
 const excel = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 33139.87991, 34381.7998, 35535.58675, 109109.1077, 36988.32408,
-  38554.71586, 39805.86501, 39628.63842, 40670.20002, 41865.05113, 43254.25183,
-  40998.6241, 41552.68172, 41928.66716, 41714.11509, 39357.36416, 40132.59094,
-  40882.33671, 40361.34975, 41019.51749, 41014.02493, 41754.84778, 40728.83522,
-  43001.86675, 45720.40458, 46582.75394, 49506.09918, 51115.98513, 51928.55046,
-  52824.3226, 53034.80522, 51248.0923, 49674.74647, 48321.7706, 51328.68388,
-  49395.77456, 52523.4986, 52116.98104, 56273.75241, 57594.53796, 55459.31348,
-  58327.86432, 58798.63632, 60198.88888, 57770.06358, 58308.72307,
+  0, 0, 0, 0, 33996.97948, 36515.23335, 40819.66427, 39047.23173, 43282.84372,
+  38642.9173, 38319.86888, 41266.22232, 40328.67974, 41360.64665, 42276.505,
+  43892.50694, 47211.72622, 46141.98058, 47080.35786, 47697.01953, 50255.33648,
+  50230.94697, 56982.40524, 60566.23041, 57757.97577, 55540.16595, 53381.92747,
+  53425.15133, 59193.47445, 63332.54282, 65104.49289, 71132.33506, 71657.30804,
+  74150.14793, 76264.39493, 84537.21839, 77955.49397, 85801.11707, 80446.64488,
+  84921.79502, 94142.43829, 97608.06911, 101613.1702, 91215.93683, 94060.64039,
+  101020.0051, 94153.9511, 87748.30235, 81002.60827, 79256.98725,
 ]
 
 const testParams: TPAWParams = {
-  v: 3,
+  v: 4,
   age: {
     start: 25,
     retirement: 55,
@@ -96,7 +97,7 @@ const testParams: TPAWParams = {
     regularPortfolio: {stocks: 0.3},
     legacyPortfolio: {stocks: 0.7},
   },
-  scheduledWithdrawalGrowthRate: 0.01,
+  scheduledWithdrawalGrowthRate: 0.02,
   savingsAtStartOfStartYear: 50000,
   savings: [
     {
@@ -104,6 +105,7 @@ const testParams: TPAWParams = {
       yearRange: {start: 'start', end: 54},
       value: 25000,
       nominal: false,
+      id: 0,
     },
   ],
   retirementIncome: [
@@ -112,6 +114,7 @@ const testParams: TPAWParams = {
       yearRange: {start: 70, end: 'end'},
       value: 30000,
       nominal: false,
+      id: 0,
     },
   ],
   withdrawals: {
@@ -124,27 +127,28 @@ const testParams: TPAWParams = {
       // },
     ],
     fundedByRiskPortfolio: [
-      {
-        label: null,
-        yearRange: {start: 58, end: 58},
-        value: 100000,
-        nominal: false,
-      },
+      // {
+      //   label: null,
+      //   yearRange: {start: 58, end: 58},
+      //   value: 100000,
+      //   nominal: false,
+      //   id: 1,
+      // },
     ],
   },
   spendingCeiling: null,
   spendingFloor: null,
   legacy: {
-    total: 300000,
+    total: 0,
     external: [],
   },
 }
 
 const randomIndexesIntoHistoricalReturnsByYear = (year: number) =>
   [
-    136, 24, 150, 98, 91, 53, 50, 5, 47, 111, 111, 64, 12, 121, 77, 61, 64, 41,
-    24, 76, 79, 38, 116, 63, 106, 9, 108, 2, 87, 109, 5, 150, 25, 139, 55, 91,
-    89, 19, 74, 91, 131, 18, 2, 25, 60, 110, 97, 48, 136, 41, 97, 145, 54, 112,
-    118, 105, 91, 101, 102, 12, 17, 124, 145, 51, 64, 121, 108, 125, 146, 20, 7,
-    90, 140, 60, 26, 53,
+    103, 34, 47, 58, 62, 105, 115, 6, 101, 60, 111, 146, 62, 21, 73, 122, 87,
+    48, 52, 31, 136, 122, 129, 60, 9, 124, 56, 35, 108, 102, 28, 8, 20, 115, 71,
+    137, 54, 120, 16, 114, 74, 149, 120, 114, 97, 79, 98, 112, 4, 49, 64, 49,
+    89, 8, 34, 82, 75, 69, 74, 101, 121, 107, 127, 46, 68, 57, 91, 23, 67, 40,
+    28, 37, 37, 107, 43, 38,
   ].map(x => x - 1)[year]

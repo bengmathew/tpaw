@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import {noCase} from '../../Utils/Utils'
 import {historicalReturns} from '../HistoricalReturns'
-import {runTPAWSimulation} from '../RunTPAWSimulation'
+import {runTPAWSimulation, TPAWSimulationForYear} from '../RunTPAWSimulation'
 import {StatsTools} from '../StatsTools'
 import {TPAWWorkerArgs, TPAWWorkerResult} from './TPAWWorkerTypes'
 
@@ -43,23 +43,35 @@ addEventListener('message', event => {
           })
         )
 
-        const withdrawalsByRunByYearFromNow = runs.map(x =>
-          x.byYearFromNow.map(x => x.withdrawal)
-        )
-        const withdrawalsByYearFromNowByRun = StatsTools.pivot(
-          withdrawalsByRunByYearFromNow
-        )
-        const withdrawalsByYearsIntoRetirementByRun =
-          withdrawalsByYearFromNowByRun.slice(
-            params.age.retirement - params.age.start
-          )
-
-        const legacyByRun = runs.map(x => x.legacy)
+        const _selectAndPivot = (fn: (x: TPAWSimulationForYear) => number) =>
+          StatsTools.pivot(runs.map(x => x.byYearFromNow.map(fn)))
 
         const result = {
-          withdrawalsByYearsIntoRetirementByRun,
+          byYearsFromNowByRun: {
+            withdrawals: {
+              total: _selectAndPivot(x => x.withdrawalAchieved.total),
+              essential: _selectAndPivot(x => x.withdrawalAchieved.essential),
+              extra: _selectAndPivot(x => x.withdrawalAchieved.extra),
+              regular: _selectAndPivot(x => x.withdrawalAchieved.regular),
+            },
+            startingBalanceOfSavingsPortfolio: _selectAndPivot(
+              x => x.wealthAndSpending.startingBalanceOfSavingsPortfolio
+            ),
+            endingBalanceOfSavingsPortfolio: _selectAndPivot(
+              x => x.savingsPortfolioEndingBalance
+            ),
+            savingsPortfolioStockAllocation: _selectAndPivot(
+              x => x.savingsPortfolioAllocation.asPercentage.stocks ?? 0
+            ),
+            withdrawalFromSavingsRate: _selectAndPivot(
+              x => x.withdrawalAchieved.fromSavingsRate
+            ),
+          },
           firstYearOfSomeRun: runs[0].byYearFromNow[0],
-          legacyByRun,
+          legacyByRun: runs.map(x => x.legacy),
+          endingBalanceOfSavingsPortfolioByRun: runs.map(
+            x => x.endingBalanceOfSavingsPortfolio
+          ),
         }
 
         const reply: TPAWWorkerResult = {

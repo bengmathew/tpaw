@@ -1,16 +1,17 @@
-import { faCircle as faCircleDuotone } from '@fortawesome/pro-duotone-svg-icons'
-import { faMinus, faPlus } from '@fortawesome/pro-light-svg-icons'
-import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { RadioGroup, Switch } from '@headlessui/react'
+import {faCircle as faCircleDuotone} from '@fortawesome/pro-duotone-svg-icons'
+import {faMinus, faPlus} from '@fortawesome/pro-light-svg-icons'
+import {faCircle as faCircleRegular} from '@fortawesome/pro-regular-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import {RadioGroup, Switch} from '@headlessui/react'
 import _ from 'lodash'
-import React, { useState } from 'react'
-import { Contentful } from '../../../Utils/Contentful'
-import { fGet, noCase } from '../../../Utils/Utils'
-import { useSimulation } from '../../App/WithSimulation'
-import { AmountInput, useAmountInputState } from '../../Common/Inputs/AmountInput'
-import { ToggleSwitch } from '../../Common/Inputs/ToggleSwitch'
-import { usePlanContent } from '../Plan'
+import React, {useMemo, useState} from 'react'
+import {Contentful} from '../../../Utils/Contentful'
+import {retirementYears} from '../../../Utils/RetirementYears'
+import {fGet, noCase} from '../../../Utils/Utils'
+import {useSimulation} from '../../App/WithSimulation'
+import {AmountInput, useAmountInputState} from '../../Common/Inputs/AmountInput'
+import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
+import {usePlanContent} from '../Plan'
 
 type _Type = 'none' | 'fixedSpending' | 'separateCeilingAndFloor'
 
@@ -26,7 +27,22 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(() => {
       : 'separateCeilingAndFloor'
   )
 
-  const {minWithdrawal, maxWithdrawal} = tpawResult
+  const {minWithdrawal, maxWithdrawal} = useMemo(() => {
+    const last = fGet(
+      _.last(tpawResult.withdrawals.total.byPercentileByYearsFromNow)
+    ).data
+    const first = fGet(
+      _.first(tpawResult.withdrawals.total.byPercentileByYearsFromNow)
+    ).data
+    const maxWithdrawal = Math.max(
+      ...retirementYears(tpawResult.args.params, last)
+    )
+    const minWithdrawal = Math.min(
+      ...retirementYears(tpawResult.args.params, first)
+    )
+    return {minWithdrawal, maxWithdrawal}
+  }, [tpawResult])
+
   const [lastFixedEntry, setLastFixedEntry] = useState(
     params.spendingCeiling === params.spendingFloor
       ? params.spendingCeiling
@@ -69,10 +85,12 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(() => {
     type === 'fixedSpending' ? false : params.spendingFloor !== null
   )
   const [lastFloorEntry, setLastFloorEntry] = useState(params.spendingFloor)
-  const firstWithdrawalOfFirstHighlightPercentile =
-    tpawResult.withdrawalsByPercentileByYearsIntoRetirement[
+  const firstWithdrawalOfFirstHighlightPercentile = retirementYears(
+    tpawResult.args.params,
+    tpawResult.withdrawals.total.byPercentileByYearsFromNow[
       tpawResult.args.percentiles.indexOf(highlightPercentiles[0])
-    ].data[0]
+    ].data
+  )[0]
   const defaultFloorAmount = _roundUp(
     firstWithdrawalOfFirstHighlightPercentile,
     10000

@@ -33,6 +33,7 @@ module.exports = {
       amberFG: colors.yellow[600],
 
       theme1: colors.teal[600],
+      theme1Dark: colors.teal[700],
 
       ...colors,
     },

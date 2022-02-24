@@ -34,10 +34,10 @@ export const LegacyDisplay = React.memo(
               className={`grid text-[11px] sm:text-[12px] gap-x-4 lighten `}
               style={{grid: 'auto / auto 1fr'}}
             >
-              {legacyByPercentile.map(({legacy, percentile}) => (
+              {legacyByPercentile.map(({data, percentile}) => (
                 <React.Fragment key={percentile}>
                   <h2 className="text-left">{`${percentile}th`}</h2>
-                  <h2 className="text-right">{`${formatCurrency(legacy)}`}</h2>
+                  <h2 className="text-right">{`${formatCurrency(data)}`}</h2>
                 </React.Fragment>
               ))}
             </div>

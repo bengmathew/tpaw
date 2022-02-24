@@ -131,6 +131,7 @@ export namespace Contentful {
       h2 = '',
       li = '',
       ol = '',
+      ul = '',
       p = '',
       p6 = '',
       a = 'underline ',
@@ -143,6 +144,7 @@ export namespace Contentful {
       p?: string
       p6?: string
       li?: string
+      ul?: string
       ol?: string
       a?: string
       aExternalLink?: string
@@ -175,6 +177,9 @@ export namespace Contentful {
               ),
               [BLOCKS.LIST_ITEM]: (node, children) => (
                 <li className={li}>{children}</li>
+              ),
+              [BLOCKS.UL_LIST]: (node, children) => (
+                <ol className={ul}>{children}</ol>
               ),
               [BLOCKS.OL_LIST]: (node, children) => (
                 <ol className={ol}>{children}</ol>

@@ -17,7 +17,7 @@ export const AppPage = React.memo(
     className?: string
   }) => {
     return (
-      <div className={`${className} page`} style={style}>
+      <div className={`${className} page relative z-0`} style={style}>
         <Head>
           <title>{title}</title>
         </Head>

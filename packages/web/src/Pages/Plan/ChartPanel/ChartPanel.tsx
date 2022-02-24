@@ -1,109 +1,244 @@
-import {faArrowsV, faLongArrowAltRight} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import Link from 'next/link'
-import React, {useEffect, useState} from 'react'
-import Measure, {BoundingRect} from 'react-measure'
-import {fGet} from '../../../Utils/Utils'
+import {useRouter} from 'next/router'
+import React, {useCallback, useEffect, useMemo, useState} from 'react'
+import Measure from 'react-measure'
+import {formatCurrency} from '../../../Utils/FormatCurrency'
+import {formatPercentage} from '../../../Utils/FormatPercentage'
+import {useURLParam} from '../../../Utils/UseURLParam'
+import {assert, fGet, noCase} from '../../../Utils/Utils'
+import {useWindowSize} from '../../../Utils/WithWindowSize'
 import {useSimulation} from '../../App/WithSimulation'
-import {DistributionCanvasReact} from './Chart/DistributionCanvasReact'
+import {ChartPanelButtons} from './ChartPanelButtons'
+import {ChartPanelDescription} from './ChartPanelDescription'
+import {ChartPanelMenu} from './ChartPanelMenu'
+import {
+  ChartPanelType,
+  isChartPanelSpendingDiscretionaryType,
+  isChartPanelSpendingEssentialType,
+  isChartPanelType,
+} from './ChartPanelType'
 import {LegacyDisplay} from './LegacyDisplay'
+import {TPAWChart} from './TPAWChart'
+import {
+  tpawChartData,
+  TPAWChartData,
+  tpawChartDataScaled,
+  tpawChartDataYRange,
+} from './TPAWChartData'
 
-const maxYScaleWithCeiling = 1.25
-const maxYScaleWithoutCeiling = 1
+type _State = {
+  type: ChartPanelType
+  data: TPAWChartData
+  yRange: {start: number; end: number}
+  externalTopPadding: number
+  stateKey: number
+}
 
-export const ChartPanel = React.memo(
-  ({className = '', isPortrait}: {className?: string; isPortrait: boolean}) => {
-    const {params, tpawResult, highlightPercentiles} = useSimulation()
-    const maxYScale =
-      params.spendingCeiling === null
-        ? maxYScaleWithoutCeiling
-        : maxYScaleWithCeiling
+export function useChartPanel({
+  className = '',
+  isPortrait,
+}: {
+  className?: string
+  isPortrait: boolean
+}) {
+  const {tpawResult, highlightPercentiles} = useSimulation()
+  const {params} = tpawResult.args
 
-    const [bounds, setBounds] = useState<BoundingRect | null>(null)
+  const [titleWidth, setTitleWidth] = useState(0)
+  const [headingSize, setHeadingSize] = useState<{
+    width: number
+    height: number
+  }>({width: 0, height: 100})
+  const windowSize = useWindowSize()
+  const router = useRouter()
+  const topPadding = headingSize.height
 
-    const [maxY, setMaxY] = useState(0)
+  const panelTypeInStr = useURLParam('view') ?? ''
+  const panelTypeIn = isChartPanelType(params, panelTypeInStr)
+    ? panelTypeInStr
+    : 'spending-total'
 
-    useEffect(() => {
-      if (maxY === 0 && tpawResult)
-        setMaxY(Math.max(1, tpawResult.maxWithdrawal * maxYScale))
-    }, [maxY, maxYScale, tpawResult])
-    const handleRescale = () =>
-      setMaxY(Math.max(1, tpawResult.maxWithdrawal * maxYScale))
+  const [state, setState] = useState<_State>(() => {
+    const type = panelTypeIn
+    const data = tpawChartData(type, tpawResult, highlightPercentiles)
+    return {
+      type,
+      data,
+      yRange: tpawChartDataYRange(data),
+      externalTopPadding: topPadding,
+      stateKey: 0,
+    }
+  })
 
-    return (
-      <div
-        className={`${className} relative pb-2 grid`}
-        style={{
-          grid: isPortrait
-            ? '"label" auto "plot" 1fr "buttons" auto/1fr'
-            : '"label" auto "buttons" auto "plot" 1fr/1fr',
-          gridArea: 'chart',
-        }}
-      >
-        <div
-          className={`${
-            (bounds?.width ?? 0) > 700 ? 'mt-4' : 'pt-header mt-2 sm:mt-0'
-          }`}
-        >
-          <h2 className="text-xl sm:text-2xl -mt-1 font-bold">
-            Spending During Retirement
-          </h2>
-          <h2 className="text-[13px] lighten -mt-1">
-            Results from simulating your retirement {tpawResult.args.numRuns}{' '}
-            times.
-          </h2>
-        </div>
-        <div
-          className={`grid  text-lg 
-          ${isPortrait ? ' items-end ' : 'mt-3 '}`}
-          style={{
-            gridArea: 'buttons',
-            grid: isPortrait
-              ? '"rescale tasks" auto/1fr auto'
-              : '"tasks" auto "rescale" auto/auto',
-          }}
-        >
-          <Link href="/tasks-for-this-year">
-            <a
-              className="flex items-center gap-x-2"
-              style={{gridArea: 'tasks'}}
-            >
-              <h2 className="font-medium">Tasks for this year</h2>
-              <FontAwesomeIcon icon={faLongArrowAltRight} />
-            </a>
-          </Link>
+  const [yAxisformat, lastAgeIsLegacy] = useMemo(
+    () => _info(state.type),
+    [state.type]
+  )
 
-          <button
-            className="flex items-center py-2  -mb-2 font-medium "
-            onClick={handleRescale}
-            style={{gridArea: 'rescale'}}
-          >
-            <FontAwesomeIcon className="mr-1 text-[13px]" icon={faArrowsV} />
-            <span className="">Rescale</span>
-          </button>
-        </div>
-        <Measure bounds onResize={({bounds}) => setBounds(fGet(bounds))}>
-          {({measureRef}) => (
-            <div
-              className=" -mx-[8px] relative z-0"
-              // className="h-[30vh] -mx-[8px] relative z-0"
-              ref={measureRef}
-              style={{gridArea: 'plot'}}
-            >
-              <div className=" absolute">
-                {bounds !== null && (
-                  <DistributionCanvasReact
-                    {...{tpawResult, maxY, highlightPercentiles}}
-                    size={bounds}
-                  />
-                )}
-              </div>
-            </div>
-          )}
-        </Measure>
+  useEffect(() => {
+    setState(prev => ({
+      type: prev.type,
+      data: tpawChartData(prev.type, tpawResult, highlightPercentiles),
+      yRange: prev.yRange,
+      externalTopPadding: prev.externalTopPadding,
+      stateKey: prev.stateKey,
+    }))
+    // HighlighPercentiles is a const.
+  }, [tpawResult, highlightPercentiles])
 
-        <LegacyDisplay className={`absolute left-3 ${isPortrait?'top-[60px]':'top-[145px]'}`} />
-      </div>
+  const handleRescale = useCallback(() => {
+    setState(prev => {
+      return {
+        type: prev.type,
+        data: prev.data,
+        yRange: tpawChartDataYRange(prev.data),
+        externalTopPadding: prev.externalTopPadding,
+        stateKey: prev.stateKey,
+      }
+    })
+  }, [])
+
+  const handleChangeType = (type: ChartPanelType) => {
+    const yRange = tpawChartDataYRange(
+      tpawChartData(type, tpawResult, highlightPercentiles)
     )
+    const url = new URL(window.location.href)
+    if (type === 'spending-total') {
+      url.searchParams.delete('view')
+    } else {
+      url.searchParams.set('view', type)
+    }
+    void router.push(url)
+
+    setState(prev => ({
+      type,
+      data: tpawChartDataScaled(prev.data, yRange),
+      yRange,
+      externalTopPadding: prev.externalTopPadding,
+      stateKey: prev.stateKey + 1,
+    }))
   }
-)
+
+  useEffect(() => {
+    handleChangeType(panelTypeIn)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panelTypeIn])
+
+  useEffect(() => {
+    setState(prev => {
+      assert(prev.type === state.type)
+      return {
+        type: prev.type,
+        data: tpawChartData(prev.type, tpawResult, highlightPercentiles),
+        yRange: prev.yRange,
+        externalTopPadding: prev.externalTopPadding,
+        stateKey: prev.stateKey,
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.type])
+
+  useEffect(() => {
+    setState(prev => {
+      assert(prev.type === state.type)
+      return {
+        type: prev.type,
+        data: prev.data,
+        yRange: prev.yRange,
+        externalTopPadding: topPadding,
+        stateKey: prev.stateKey,
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topPadding])
+
+  const [showDescriptionPopUp, setShowDescriptionPopUp] = useState(false)
+  const render = (
+    <div
+      className={`${className} relative pb-2 grid`}
+      style={{gridArea: 'chart', grid: '"top" 1fr "bottom" auto/ 1fr'}}
+    >
+      <Measure bounds onResize={({bounds}) => setHeadingSize(fGet(bounds))}>
+        {({measureRef}) => (
+          <div
+            className="flex flex-col items-start absolute w-full  px-3 z-10 bg-pageBG"
+            ref={measureRef}
+          >
+            <Measure
+              bounds
+              onResize={({bounds}) => setTitleWidth(fGet(bounds).width)}
+            >
+              {({measureRef}) => (
+                <div
+                  className={`${
+                    headingSize.width - titleWidth < 300 ||
+                    windowSize.width < 640
+                      ? 'pt-header'
+                      : ''
+                  }`}
+                  ref={measureRef}
+                >
+                  <ChartPanelMenu
+                    type={state.type}
+                    onSelect={handleChangeType}
+                    setShowDescriptionPopUp={setShowDescriptionPopUp}
+                  />
+                </div>
+              )}
+            </Measure>
+            <ChartPanelDescription
+              type={state.type}
+              {...{showDescriptionPopUp, setShowDescriptionPopUp}}
+            />
+            {!isPortrait && (
+              <ChartPanelButtons
+                className="w-full"
+                isPortrait={isPortrait}
+                handleRescale={handleRescale}
+              />
+            )}
+          </div>
+        )}
+      </Measure>
+      <div className="grid" style={{grid: '1fr auto /1fr'}}>
+        <TPAWChart
+          className=" -mx-3 relative z-0"
+          {...{...state, yAxisformat, lastAgeIsLegacy}}
+        />
+        {isPortrait && (
+          <ChartPanelButtons
+            className=""
+            isPortrait={isPortrait}
+            handleRescale={handleRescale}
+          />
+        )}
+      </div>
+
+      <LegacyDisplay
+        className={`absolute left-3 ${
+          isPortrait ? 'top-[60px]' : 'top-[145px]'
+        }`}
+      />
+    </div>
+  )
+  return [handleChangeType, state.type, render] as const
+}
+
+const _info = (type: ChartPanelType): [(x: number) => string, boolean] => {
+  switch (type) {
+    case 'spending-total':
+    case 'spending-regular':
+      return [formatCurrency, false]
+    case 'portfolio':
+      return [formatCurrency, true]
+    case 'glide-path':
+      return [formatPercentage(0), false]
+    case 'withdrawal-rate':
+      return [formatPercentage(1), false]
+    default:
+      if (isChartPanelSpendingEssentialType(type))
+        return [formatCurrency, false]
+      if (isChartPanelSpendingDiscretionaryType(type))
+        return [formatCurrency, false]
+      noCase(type)
+  }
+}

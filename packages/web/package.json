@@ -20,6 +20,7 @@
     "@fortawesome/react-fontawesome": "^0.1.16",
     "@headlessui/react": "^1.4.1",
     "@mojotech/json-type-validation": "^3.1.0",
+    "@popperjs/core": "^2.11.2",
     "@sentry/nextjs": "^6.16.1",
     "@visx/event": "^2.1.2",
     "@visx/scale": "^2.1.2",
@@ -35,6 +36,7 @@
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "react-measure": "^2.5.2",
+    "react-popper": "^2.2.5",
     "react-spring": "^9.3.0",
     "react-transition-group": "^4.4.2"
   },

@@ -1,3 +1,5 @@
+import {noNegZero} from './NoNegZero'
+
 // creating the formatter on server was causing "maximumFractionDigits value is out of range"
 export const formatCurrency = (x: number) =>
   new Intl.NumberFormat('en-US', {
@@ -7,4 +9,4 @@ export const formatCurrency = (x: number) =>
     // https://stackoverflow.com/a/48562260
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(x)
+  }).format(noNegZero(x))

@@ -7,18 +7,18 @@ import {
   TPAWParams,
   ValueForYearRange,
   YearRangeEdge,
-  YearRangeFixedEdge
+  YearRangeFixedEdge,
 } from '../../../../TPAWSimulator/TPAWParams'
-import { numericYear } from '../../../../TPAWSimulator/TPAWParamsProcessed'
-import { fGet, noCase } from '../../../../Utils/Utils'
+import {numericYear} from '../../../../TPAWSimulator/TPAWParamsProcessed'
+import {fGet, noCase} from '../../../../Utils/Utils'
 import {
   AmountInput,
-  useAmountInputState
+  useAmountInputState,
 } from '../../../Common/Inputs/AmountInput'
-import { SliderInput } from '../../../Common/Inputs/SliderInput/SliderInput'
-import { ToggleSwitch } from '../../../Common/Inputs/ToggleSwitch'
-import { ConfirmAlert } from '../../../Common/Modal/ConfirmAlert'
-import { ModalBase } from '../../../Common/Modal/ModalBase'
+import {SliderInput} from '../../../Common/Inputs/SliderInput/SliderInput'
+import {ToggleSwitch} from '../../../Common/Inputs/ToggleSwitch'
+import {ConfirmAlert} from '../../../Common/Modal/ConfirmAlert'
+import {ModalBase} from '../../../Common/Modal/ModalBase'
 
 const allPossibleFixes = [
   'start',
@@ -148,6 +148,7 @@ export const ValueForYearRangeInput = React.memo(
           end: year(yearRange.end),
         },
         nominal,
+        id: initial.id,
       })
     }
     const clampYear = (year: number) => _.clamp(year, domainStart, domainEnd)

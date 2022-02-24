@@ -1,11 +1,34 @@
 import _ from 'lodash'
 import {fGet, noCase} from '../../Utils/Utils'
+import {TPAWSimulationForYear} from '../RunTPAWSimulation'
 import {StatsTools} from '../StatsTools'
 import {TPAWParams} from '../TPAWParams'
 import {
   TPAWWorkerResult,
   TPAWWorkerRunSimulationResult,
 } from './TPAWWorkerTypes'
+
+export type TPAWRunInWorkerByPercentileByYearsFromNow = {
+  byPercentileByYearsFromNow: {data: number[]; percentile: number}[]
+}
+
+export type TPAWRunInWorkerResult = {
+  withdrawals: {
+    total: TPAWRunInWorkerByPercentileByYearsFromNow
+    essential: TPAWRunInWorkerByPercentileByYearsFromNow
+    extra: TPAWRunInWorkerByPercentileByYearsFromNow
+    regular: TPAWRunInWorkerByPercentileByYearsFromNow
+  }
+  startingBalanceOfSavingsPortfolio: TPAWRunInWorkerByPercentileByYearsFromNow
+  savingsPortfolioStockAllocation: TPAWRunInWorkerByPercentileByYearsFromNow
+  withdrawalFromSavingsRate: TPAWRunInWorkerByPercentileByYearsFromNow
+  legacyByPercentile: {data: number; percentile: number}[]
+  endingBalanceOfSavingsPortfolioByPercentile: {
+    data: number
+    percentile: number
+  }[]
+  firstYearOfSomeRun: TPAWSimulationForYear
+}
 
 export class TPAWRunInWorker {
   private _workers: Worker[]
@@ -17,8 +40,9 @@ export class TPAWRunInWorker {
     sortRows: new Map<string, (value: number[][]) => void>(),
   }
   constructor() {
-    const numWorkers = navigator.hardwareConcurrency || 4
-
+    // TODO:
+    // const numWorkers = navigator.hardwareConcurrency || 4
+    const numWorkers = 1
     this._workers = _.range(numWorkers).map(
       () => new Worker(new URL('./TPAWWorker.ts', import.meta.url))
     )
@@ -47,7 +71,6 @@ export class TPAWRunInWorker {
     )
   }
 
-
   private _runSimulation(
     worker: Worker,
     numRuns: number,
@@ -72,7 +95,7 @@ export class TPAWRunInWorker {
     numRuns: number,
     params: TPAWParams,
     percentiles: number[]
-  ) {
+  ): Promise<TPAWRunInWorkerResult | null> {
     const runsByWorker = await Promise.all(
       this._workers.map((worker, i) =>
         this._runSimulation(
@@ -85,60 +108,104 @@ export class TPAWRunInWorker {
 
     if (status.canceled) return null
     const {
-      withdrawalsByYearsIntoRetirementByRun,
+      byYearsFromNowByRun,
       legacyByRun,
+      endingBalanceOfSavingsPortfolioByRun,
       firstYearOfSomeRun,
-    } = _mergeRunsByWorker(runsByWorker)
+    } =  runsByWorker[0]
+    _mergeRunsByWorker(runsByWorker)
 
-    const withdrawalsByWorkerByYearsIntoRetirementByRunSorted =
-      await Promise.all(
+    const _processForByPercentileByYearsFromNow = async (
+      numberByYearsFromNowByRun: number[][]
+    ) => {
+      const numberByWorkerByYearsFromNowByRunSorted = await Promise.all(
         this._workers.map((worker, i) => {
           const {start, length} = _loadBalance(i, numRuns, this._workers.length)
           return this._sortRows(
             worker,
-            withdrawalsByYearsIntoRetirementByRun.slice(start, start + length)
+            numberByYearsFromNowByRun.slice(start, start + length)
           )
         })
       )
 
-    if (status.canceled) return null
-    const withdrawalsByYearsIntoRetirementByRunSorted = _.flatten(
-      withdrawalsByWorkerByYearsIntoRetirementByRunSorted
-    )
-    const withdrawalsByYearsIntoRetirementByPercentile =
-      StatsTools.pickPercentilesFromSorted(
-        withdrawalsByYearsIntoRetirementByRunSorted,
+      if (status.canceled) return null
+      const numberByYearsFromNowByRunSorted = _.flatten(
+        numberByWorkerByYearsFromNowByRunSorted
+      )
+      const numberByYearsFromNowByPercentile =
+        StatsTools.pickPercentilesFromSorted(
+          numberByYearsFromNowByRunSorted,
+          percentiles
+        )
+      const byPercentileByYearsFromNow = StatsTools.pivot(
+        numberByYearsFromNowByPercentile
+      ).map((data, i) => ({data, percentile: percentiles[i]}))
+
+      return {byPercentileByYearsFromNow}
+    }
+
+    const _processForByPercentile = async (numberByRun: number[]) => {
+      const numberByRunSorted = (
+        await this._sortRows(this._workers[0], [numberByRun])
+      )[0]
+
+      return StatsTools.pickPercentilesFromSorted(
+        [numberByRunSorted],
         percentiles
-      )
-    const withdrawalsByPercentileByYearsIntoRetirement = StatsTools.pivot(
-      withdrawalsByYearsIntoRetirementByPercentile
-    ).map((data, i) => ({data, percentile: percentiles[i]}))
+      )[0].map((data, i) => ({data, percentile: percentiles[i]}))
+    }
 
-    const legacyByRunSorted = (
-      await this._sortRows(this._workers[0], [legacyByRun])
-    )[0]
-
-    const legacyByPercentile = StatsTools.pickPercentilesFromSorted(
-      [legacyByRunSorted],
-      percentiles
-    )[0].map((legacy, i) => ({legacy, percentile: percentiles[i]}))
-
-    const maxWithdrawal = Math.max(
-      ...withdrawalsByPercentileByYearsIntoRetirement.map(x =>
-        Math.max(...x.data)
-      )
+    const withdrawalsTotal = await _processForByPercentileByYearsFromNow(
+      byYearsFromNowByRun.withdrawals.total
     )
-    const minWithdrawal = Math.min(
-      ...withdrawalsByPercentileByYearsIntoRetirement.map(x =>
-        Math.min(...x.data)
-      )
+    if (withdrawalsTotal === null) return null
+    const withdrawalsEssential = await _processForByPercentileByYearsFromNow(
+      byYearsFromNowByRun.withdrawals.essential
     )
+    if (withdrawalsEssential === null) return null
+    const withdrawalsExtra = await _processForByPercentileByYearsFromNow(
+      byYearsFromNowByRun.withdrawals.extra
+    )
+    if (withdrawalsExtra === null) return null
+    const withdrawalsRegular = await _processForByPercentileByYearsFromNow(
+      byYearsFromNowByRun.withdrawals.regular
+    )
+    if (withdrawalsRegular === null) return null
+    const startingBalanceOfSavingsPortfolio =
+      await _processForByPercentileByYearsFromNow(
+        byYearsFromNowByRun.startingBalanceOfSavingsPortfolio
+      )
+    if (startingBalanceOfSavingsPortfolio === null) return null
+    const savingsPortfolioStockAllocation =
+      await _processForByPercentileByYearsFromNow(
+        byYearsFromNowByRun.savingsPortfolioStockAllocation
+      )
+    if (savingsPortfolioStockAllocation === null) return null
+    const withdrawalFromSavingsRate =
+      await _processForByPercentileByYearsFromNow(
+        byYearsFromNowByRun.withdrawalFromSavingsRate
+      )
+    if (withdrawalFromSavingsRate === null) return null
+
+    const legacyByPercentile = await _processForByPercentile(legacyByRun)
+    if (status.canceled) return null
+    const endingBalanceOfSavingsPortfolioByPercentile =
+      await _processForByPercentile(endingBalanceOfSavingsPortfolioByRun)
+    if (status.canceled) return null
+
     const result = {
-      withdrawalsByPercentileByYearsIntoRetirement,
+      withdrawals: {
+        total: withdrawalsTotal,
+        essential: withdrawalsEssential,
+        extra: withdrawalsExtra,
+        regular: withdrawalsRegular,
+      },
+      startingBalanceOfSavingsPortfolio,
+      savingsPortfolioStockAllocation,
+      withdrawalFromSavingsRate,
       firstYearOfSomeRun,
       legacyByPercentile,
-      minWithdrawal,
-      maxWithdrawal,
+      endingBalanceOfSavingsPortfolioByPercentile,
     }
 
     return status.canceled ? null : result
@@ -148,28 +215,72 @@ export class TPAWRunInWorker {
     this._workers.forEach(x => x.terminate())
   }
 }
+const _mergeNumberByWorkerByYearsFromNowByRun = (
+  numberByWorkerByYearsFromNowByRun: number[][][]
+) => {
+  const numOfRetirementYears = numberByWorkerByYearsFromNowByRun[0].length
+  const numberByYearsFromNowByWorkerByRun = _.times(
+    numOfRetirementYears,
+    x => [] as number[][]
+  )
+
+  for (const numberByYearsFromNowByRun of numberByWorkerByYearsFromNowByRun) {
+    numberByYearsFromNowByRun.forEach((x, i) =>
+      numberByYearsFromNowByWorkerByRun[i].push(x)
+    )
+  }
+
+  const numberByYearsFromNowByRun = numberByYearsFromNowByWorkerByRun.map(row =>
+    _.flatten(row)
+  )
+
+  return numberByYearsFromNowByRun
+}
 
 const _mergeRunsByWorker = (
   runsByWorker: TPAWWorkerRunSimulationResult[]
 ): TPAWWorkerRunSimulationResult => {
-  const withdrawalsByYearsIntoRetirementByWorkerByRun = _.range(
-    runsByWorker[0].withdrawalsByYearsIntoRetirementByRun.length
-  ).map(x => [] as number[][])
-
-  for (const runs of runsByWorker) {
-    runs.withdrawalsByYearsIntoRetirementByRun.forEach((x, i) =>
-      withdrawalsByYearsIntoRetirementByWorkerByRun[i].push(x)
-    )
+  const byYearsFromNowByRun = {
+    withdrawals: {
+      total: _mergeNumberByWorkerByYearsFromNowByRun(
+        runsByWorker.map(x => x.byYearsFromNowByRun.withdrawals.total)
+      ),
+      essential: _mergeNumberByWorkerByYearsFromNowByRun(
+        runsByWorker.map(x => x.byYearsFromNowByRun.withdrawals.essential)
+      ),
+      extra: _mergeNumberByWorkerByYearsFromNowByRun(
+        runsByWorker.map(x => x.byYearsFromNowByRun.withdrawals.extra)
+      ),
+      regular: _mergeNumberByWorkerByYearsFromNowByRun(
+        runsByWorker.map(x => x.byYearsFromNowByRun.withdrawals.regular)
+      ),
+    },
+    startingBalanceOfSavingsPortfolio: _mergeNumberByWorkerByYearsFromNowByRun(
+      runsByWorker.map(
+        x => x.byYearsFromNowByRun.startingBalanceOfSavingsPortfolio
+      )
+    ),
+    savingsPortfolioStockAllocation: _mergeNumberByWorkerByYearsFromNowByRun(
+      runsByWorker.map(
+        x => x.byYearsFromNowByRun.savingsPortfolioStockAllocation
+      )
+    ),
+    withdrawalFromSavingsRate: _mergeNumberByWorkerByYearsFromNowByRun(
+      runsByWorker.map(x => x.byYearsFromNowByRun.withdrawalFromSavingsRate)
+    ),
   }
-  const withdrawalsByYearsIntoRetirementByRun =
-    withdrawalsByYearsIntoRetirementByWorkerByRun.map(row => _.flatten(row))
+
   const firstYearOfSomeRun = runsByWorker[0].firstYearOfSomeRun
 
   const legacyByRun = _.flatten(runsByWorker.map(s => s.legacyByRun))
+  const endingBalanceOfSavingsPortfolioByRun = _.flatten(
+    runsByWorker.map(s => s.endingBalanceOfSavingsPortfolioByRun)
+  )
   return {
-    withdrawalsByYearsIntoRetirementByRun,
+    byYearsFromNowByRun,
     firstYearOfSomeRun,
     legacyByRun,
+    endingBalanceOfSavingsPortfolioByRun,
   }
 }
 

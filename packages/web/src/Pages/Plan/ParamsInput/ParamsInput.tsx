@@ -2,15 +2,19 @@ import {Document} from '@contentful/rich-text-types'
 import {faTimes} from '@fortawesome/pro-light-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {gsap} from 'gsap'
+import _ from 'lodash'
 import Head from 'next/head'
 import {useRouter} from 'next/router'
-import React, {useRef, useState} from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 import {Transition} from 'react-transition-group'
 import {Contentful} from '../../../Utils/Contentful'
 import {useURLParam} from '../../../Utils/UseURLParam'
 import {noCase} from '../../../Utils/Utils'
 import {useWindowSize} from '../../../Utils/WithWindowSize'
 import {Footer} from '../../App/Footer'
+import {useSimulation} from '../../App/WithSimulation'
+import {chartPanelLabel} from '../ChartPanel/ChartPanelLabel'
+import {ChartPanelType} from '../ChartPanel/ChartPanelType'
 import {usePlanContent} from '../Plan'
 import {paramsInputLabel} from './Helpers/ParamsInputLabel'
 import {
@@ -39,17 +43,26 @@ export const ParamsInput = React.memo(
   ({
     className = '',
     bgClassName,
-    allowSplit,
+    isPortrait,
+    chartType,
+    setChartType,
   }: {
     className?: string
     bgClassName: string
-    allowSplit: boolean
+    isPortrait: boolean
+    chartType: ChartPanelType
+    setChartType: (type: ChartPanelType) => void
   }) => {
-    const stateIn = useURLParam('input') ?? 'summary'
-    const state: _State = isParamsInputType(stateIn) ? stateIn : 'summary'
+    const simulation = useSimulation()
+    const stateInStr = useURLParam('input') ?? 'summary'
+    const stateIn = isParamsInputType(stateInStr) ? stateInStr : 'summary'
+    // const state: _State = isParamsInputType(stateIn) ? stateIn : 'summary'
+    const [state, setStateLocal] = useState<_State>(stateIn)
+
     const router = useRouter()
     const [highlight, setHighlight] = useState<ParamsInputType | null>(null)
     const setState = (newState: _State) => {
+      setStateLocal(newState)
       const url = new URL(window.location.href)
       if (newState === 'summary') {
         if (state !== 'summary') setHighlight(state)
@@ -61,6 +74,18 @@ export const ParamsInput = React.memo(
       void router.push(url)
     }
 
+    // This indirection for dev ergonomics because in dev update is very slow
+    // when saving state directly in URL.
+    useEffect(() => {
+      setState(stateIn)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stateIn])
+    const chartLabel = chartPanelLabel(
+      simulation.params,
+      chartType,
+      'full'
+    )
+
     return (
       <div
         className={`${className} ${bgClassName} relative overflow-hidden h-full `}
@@ -68,8 +93,12 @@ export const ParamsInput = React.memo(
       >
         <Head>
           <title>
-            Plan - {state === 'summary' ? '' : `${paramsInputLabel(state)} - `}
-            TPAW Planner
+            Plan
+            {chartType === 'spending-total'
+              ? ''
+              : ` - View:${_.compact([...chartLabel.label, chartLabel.subLabel]).join(' - ')}`}
+            {state === 'summary' ? '' : ` - Input: ${paramsInputLabel(state)}`}{' '}
+            - TPAW Planner
           </title>
         </Head>
         <ParamsInputSummary
@@ -77,22 +106,22 @@ export const ParamsInput = React.memo(
             isOpen: state === 'summary',
             highlight,
             setState,
-            bgClassName,
             duration,
             displacement,
-            allowSplit,
+            allowSplit: isPortrait,
           }}
+          allowSplit={isPortrait}
         />
         {paramsInputTypes.map((type, i) => (
           <_Detail
             key={i}
-            {...{
-              type,
-              state,
-              setState,
-              allowSplit,
-              bgClassName,
-            }}
+            allowSplit={isPortrait}
+            type={type}
+            state={state}
+            setState={setState}
+            bgClassName={bgClassName}
+            chartType={chartType}
+            setChartType={setChartType}
           />
         ))}
       </div>
@@ -107,12 +136,16 @@ const _Detail = React.memo(
     setState,
     bgClassName,
     allowSplit,
+    chartType,
+    setChartType,
   }: {
     type: ParamsInputType
     state: _State
     setState: (state: ParamsInputType | 'summary') => void
     bgClassName: string
     allowSplit: boolean
+    chartType: ChartPanelType
+    setChartType: (type: ChartPanelType) => void
   }) => {
     const detailRef = useRef<HTMLDivElement | null>(null)
     const content = useContent(type)
@@ -148,13 +181,13 @@ const _Detail = React.memo(
                   className={`sticky top-0 z-10 mb-6 ${bgClassName} bg-opacity-90`}
                   {...{type, setState}}
                 />
-                <_Body {...{type, onDone}} />
+                <_Body {...{type, onDone, chartType, setChartType}} />
               </div>
               <div
                 className={`grid pt-4 overflow-scroll bg-gray-200  `}
                 style={{grid: '1fr auto / 1fr'}}
               >
-                <div className="pl-8 plan-pr  h-full opacity-70 mb-20">
+                <div className="pl-8 plan-pr  h-full opacity-90 mb-20">
                   <_RichText className="">{content.body.fields.body}</_RichText>
                 </div>
                 <Footer />
@@ -173,10 +206,10 @@ const _Detail = React.memo(
               </div>
 
               <div className="plan-pl plan-pr pb-8">
-                <_Body {...{type, onDone}} />
+                <_Body {...{type, onDone, chartType, setChartType}} />
               </div>
               <div
-                className={`bg-gray-200  pt-4 opacity-70 plan-pl plan-pr grid`}
+                className={`bg-gray-200  pt-4 opacity-90 plan-pl plan-pr grid`}
                 style={{grid: '1fr auto/1fr'}}
               >
                 <_RichText className="pb-20">
@@ -197,10 +230,13 @@ const _Detail = React.memo(
                 className={`sticky top-0 z-10  mb-6 ${bgClassName} bg-opacity-90`}
                 {...{type, setState}}
               />
-              <_Body {...{type, onDone}} />
+              <_Body {...{type, onDone, chartType, setChartType}} />
             </div>
-            <div className="bg-gray-200 border-t-2 border-black  pt-4 opacity-70 overflow-scroll px-4">
-              <_RichText className={`pb-16`}>{content.body.fields.body}</_RichText>
+            <div className="bg-gray-200 border-t-2 border-black  pt-4 opacity-90 overflow-scroll px-4 grid" 
+                style={{grid: '1fr auto/1fr'}}>
+              <_RichText className={`pb-16`}>
+                {content.body.fields.body}
+              </_RichText>
               <Footer />
             </div>
           </div>
@@ -211,7 +247,17 @@ const _Detail = React.memo(
 )
 
 const _Body = React.memo(
-  ({type, onDone}: {type: ParamsInputType; onDone: () => void}) => {
+  ({
+    type,
+    onDone,
+    chartType,
+    setChartType,
+  }: {
+    type: ParamsInputType
+    onDone: () => void
+    chartType: ChartPanelType
+    setChartType: (type: ChartPanelType) => void
+  }) => {
     switch (type) {
       case 'age':
         return <ParamsInputAge />
@@ -224,7 +270,12 @@ const _Body = React.memo(
       case 'income-during-retirement':
         return <ParamsInputIncomeDuringRetirement />
       case 'extra-spending':
-        return <ParamsInputExtraSpending />
+        return (
+          <ParamsInputExtraSpending
+            chartType={chartType}
+            setChartType={setChartType}
+          />
+        )
       case 'spending-ceiling-and-floor':
         return <ParamsInputSpendingCeilingAndFloor />
       case 'legacy':
@@ -245,7 +296,8 @@ const _RichText = React.memo(
       <div className={`${className}`}>
         <Contentful.RichText
           body={children}
-          li="list-disc ml-5"
+          ul="list-disc ml-5"
+          ol="list-decimal ml-5"
           p="p-base mb-3"
           h1="font-bold text-lg mb-3"
           h2="font-bold text-lg mt-6 mb-3"

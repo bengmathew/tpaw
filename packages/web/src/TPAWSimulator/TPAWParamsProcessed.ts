@@ -1,8 +1,14 @@
 import _ from 'lodash'
 import {numOfYears} from '../Utils/NumOfYears'
+import {nominalToReal} from '../Utils/NominalToReal'
 import {historicalReturns} from './HistoricalReturns'
-import { TPAWParams, tpawParamsValidator, ValueForYearRange, YearRangeEdge } from './TPAWParams'
-
+import {
+  TPAWParams,
+  tpawParamsValidator,
+  ValueForYearRange,
+  YearRange,
+  YearRangeEdge,
+} from './TPAWParams'
 
 export type TPAWParamsProcessed = ReturnType<typeof processTPAWParams>
 export function processTPAWParams(
@@ -15,7 +21,7 @@ export function processTPAWParams(
     stocks,
     bonds: 1 - stocks,
   })
-  return {
+  const result = {
     ...paramsWithoutInflation,
     returns: _processReturnsParams(
       params,
@@ -34,13 +40,14 @@ export function processTPAWParams(
       const {total} = params.legacy
       const external = _.sum(
         params.legacy.external.map(x =>
-          _realValue(x, params, numOfYears(params.age))
+          nominalToReal(x, params.inflation, numOfYears(params.age))
         )
       )
       const target = Math.max(total - external, 0)
       return {totall: total, external, target}
     })(),
   }
+  return result
 }
 
 function _processByYearParams(params: TPAWParams) {
@@ -60,10 +67,10 @@ function _processByYearParams(params: TPAWParams) {
       const offset = start - age.start
       _.times(Math.max(0, end + 1 - start), () => value).forEach((v, i) => {
         const yearsFromNow = i + offset
-        const value = nominal
-          ? v / Math.pow(1 + params.inflation, yearsFromNow)
-          : v
-        updater(byYear[i + offset], value)
+        updater(
+          byYear[yearsFromNow],
+          nominalToReal({value: v, nominal}, params.inflation, yearsFromNow)
+        )
       })
     })
   }
@@ -109,12 +116,6 @@ function _processReturnsParams(
   return {...returns, historicalAdjusted, realized}
 }
 
-const _realValue = (
-  {value, nominal}: {value: number; nominal: boolean},
-  params: TPAWParams,
-  yearsFromNow: number
-) => (nominal ? value / Math.pow(1 + params.inflation, yearsFromNow) : value)
-
 export const numericYear = (
   {age}: {age: {start: number; retirement: number; end: number}},
   x: YearRangeEdge
@@ -129,3 +130,7 @@ export const numericYear = (
     ? age.end
     : x
 
+export const numericYearRange = (
+  params: {age: {start: number; retirement: number; end: number}},
+  x: YearRange
+) => ({start: numericYear(params, x.start), end: numericYear(params, x.end)})

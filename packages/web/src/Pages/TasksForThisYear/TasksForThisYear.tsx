@@ -88,7 +88,7 @@ const _Summary = React.memo(
       <div className={className}>
         <div className="mt-2 p-base">
           <p className="mb-2">
-            {withdrawalText} your portfolio and rebalance your portfolio of{' '}
+            {withdrawalText} your portfolio and rebalance your remaining portfolio of{' '}
             <_Value>{allocation.balance}</_Value> to the following asset
             allocation:
           </p>
@@ -165,7 +165,7 @@ const _HowMuchToSpend = React.memo(
       >
         <h2 className="">Extra - Essential</h2>
         <h2 className="text-right">
-          <_Value>{withdrawal.essentail}</_Value>
+          <_Value>{withdrawal.essential}</_Value>
         </h2>
         <h2 className="">Extra - Discretionary</h2>
         <h2 className="text-right">

@@ -1,8 +1,8 @@
 import _ from 'lodash'
-import {numOfYears} from '../Utils/NumOfYears'
-import {assert, fGet} from '../Utils/Utils'
-import {TPAWParams} from './TPAWParams'
-import {processTPAWParams, TPAWParamsProcessed} from './TPAWParamsProcessed'
+import { numOfYears } from '../Utils/NumOfYears'
+import { assert, fGet } from '../Utils/Utils'
+import { TPAWParams } from './TPAWParams'
+import { processTPAWParams, TPAWParamsProcessed } from './TPAWParamsProcessed'
 
 export type TPAWSimulationResult = ReturnType<typeof runTPAWSimulation>
 export function runTPAWSimulation(
@@ -43,12 +43,11 @@ export function runTPAWSimulation(
     byYearFromNow.push(result)
     return result
   }, null as null | TPAWSimulationForYear)
-  return {
-    byYearFromNow,
-    legacy:
-      fGet(_.last(byYearFromNow)).savingsPortfolioEndingBalance +
-      params.legacy.external,
-  }
+
+  const lastYear = fGet(_.last(byYearFromNow))
+  const endingBalanceOfSavingsPortfolio = lastYear.savingsPortfolioEndingBalance
+  const legacy = endingBalanceOfSavingsPortfolio + params.legacy.external
+  return {byYearFromNow, endingBalanceOfSavingsPortfolio, legacy}
 }
 
 export type TPAWSimulationForYear = ReturnType<typeof runASingleYear>
@@ -151,29 +150,40 @@ export function runASingleYear(
       const {simulationUsingExpectedReturns} = realizedReturnsFromSimulation
 
       const elasticityOfWealthWRTStocks =
-        (simulationUsingExpectedReturns.wealthAndSpending
-          .presentValueOfDesiredLegacy /
-          simulationUsingExpectedReturns.wealthAndSpending.wealth) *
-          params.targetAllocation.legacyPortfolio.stocks +
-        (simulationUsingExpectedReturns.wealthAndSpending
-          .presentValueOfExtraWithdrawals /
-          simulationUsingExpectedReturns.wealthAndSpending.wealth) *
-          params.targetAllocation.regularPortfolio.stocks +
-        (simulationUsingExpectedReturns.wealthAndSpending
-          .presentValueOfRegularWithdrawals /
-          simulationUsingExpectedReturns.wealthAndSpending.wealth) *
-          params.targetAllocation.regularPortfolio.stocks
+        simulationUsingExpectedReturns.wealthAndSpending.wealth === 0
+          ? (params.targetAllocation.legacyPortfolio.stocks +
+              params.targetAllocation.regularPortfolio.stocks +
+              params.targetAllocation.regularPortfolio.stocks) /
+            3
+          : (simulationUsingExpectedReturns.wealthAndSpending
+              .presentValueOfDesiredLegacy /
+              simulationUsingExpectedReturns.wealthAndSpending.wealth) *
+              params.targetAllocation.legacyPortfolio.stocks +
+            (simulationUsingExpectedReturns.wealthAndSpending
+              .presentValueOfExtraWithdrawals /
+              simulationUsingExpectedReturns.wealthAndSpending.wealth) *
+              params.targetAllocation.regularPortfolio.stocks +
+            (simulationUsingExpectedReturns.wealthAndSpending
+              .presentValueOfRegularWithdrawals /
+              simulationUsingExpectedReturns.wealthAndSpending.wealth) *
+              params.targetAllocation.regularPortfolio.stocks
 
       const elasticityOfExtraWithdrawalGoalsWRTWealth =
-        params.targetAllocation.regularPortfolio.stocks /
-        elasticityOfWealthWRTStocks
+        elasticityOfWealthWRTStocks === 0
+          ? 0
+          : params.targetAllocation.regularPortfolio.stocks /
+            elasticityOfWealthWRTStocks
 
       const elasticityOfLegacyGoalsWRTWealth =
-        params.targetAllocation.legacyPortfolio.stocks /
-        elasticityOfWealthWRTStocks
+        elasticityOfWealthWRTStocks === 0
+          ? 0
+          : params.targetAllocation.legacyPortfolio.stocks /
+            elasticityOfWealthWRTStocks
 
       const percentIncreaseInWealthOverScheduled =
-        wealth / simulationUsingExpectedReturns.wealthAndSpending.wealth - 1
+        simulationUsingExpectedReturns.wealthAndSpending.wealth === 0
+          ? 0
+          : wealth / simulationUsingExpectedReturns.wealthAndSpending.wealth - 1
 
       const legacy = Math.max(
         percentIncreaseInWealthOverScheduled * elasticityOfLegacyGoalsWRTWealth,
@@ -205,6 +215,7 @@ export function runASingleYear(
       presentValueOfEssentialExpenses -
       presentValueOfDesiredLegacy -
       presentValueOfExtraWithdrawals
+
     return {
       startingBalanceOfSavingsPortfolio,
       presentValueOfFutureSavings,
@@ -259,26 +270,28 @@ export function runASingleYear(
     const currentYearIncome = params.byYear[yearIndex].savings
     const availableFunds = savings + currentYearIncome
 
-    const essentail = Math.min(withdrawalTarget.essential, availableFunds)
+    const essential = Math.min(withdrawalTarget.essential, availableFunds)
     const legacy = 0
-    const extra = Math.min(withdrawalTarget.extra, availableFunds - essentail)
+    const extra = Math.min(withdrawalTarget.extra, availableFunds - essential)
     const regular =
       params.age.start + yearIndex < params.age.retirement
         ? 0
-        : Math.min(withdrawalTarget.regular, availableFunds - essentail - extra)
-    const total = essentail + legacy + extra + regular
+        : Math.min(withdrawalTarget.regular, availableFunds - essential - extra)
+    const total = essential + legacy + extra + regular
     const fromSavings = total - currentYearIncome
+    const fromSavingsRate = savings === 0 ? 0 : fromSavings / savings
 
     return {
       savings,
       currentYearIncome,
       availableFunds,
-      essentail,
+      essential,
       legacy,
       extra,
       regular,
       total,
       fromSavings,
+      fromSavingsRate,
     }
   })()
 
@@ -346,9 +359,6 @@ export function runASingleYear(
     savingsPortfolioAllocation.stocksAchieved * (1 + returns.realized.stocks) +
     savingsPortfolioAllocation.bonds * (1 + returns.realized.bonds)
 
-  // ---- WITHDRAWAL ----
-  const withdrawal = withdrawalAchieved.total
-
   return {
     returns,
     scale,
@@ -358,7 +368,6 @@ export function runASingleYear(
     portfolioAfterIncomeAndWithdrawals,
     savingsPortfolioAllocation,
     savingsPortfolioEndingBalance,
-    withdrawal,
   }
 }
 

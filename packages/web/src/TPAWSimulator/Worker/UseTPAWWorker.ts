@@ -1,29 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
-import { asyncEffect } from '../../Utils/AsyncEffect'
-import { fGet } from '../../Utils/Utils'
-import { TPAWSimulationForYear } from '../RunTPAWSimulation'
-import { TPAWParams } from '../TPAWParams'
-import { TPAWRunInWorker } from './TPAWRunInWorker'
+import {useEffect, useRef, useState} from 'react'
+import {asyncEffect} from '../../Utils/AsyncEffect'
+import {fGet} from '../../Utils/Utils'
+import {TPAWParams} from '../TPAWParams'
+import {TPAWRunInWorker, TPAWRunInWorkerResult} from './TPAWRunInWorker'
 
 type _Args = {numRuns: number; params: TPAWParams; percentiles: number[]}
-export type UseTPAWWorkerResult = {
-  withdrawalsByPercentileByYearsIntoRetirement: {
-    data: number[]
-    percentile: number
-  }[]
-  legacyByPercentile: {legacy: number; percentile: number}[]
-  firstYearOfSomeRun: TPAWSimulationForYear
-  minWithdrawal: number
-  maxWithdrawal: number
-  args: _Args
-}
+export type UseTPAWWorkerResult = TPAWRunInWorkerResult & {args: _Args}
+
 type State =
   | null
-  | {
-      isRunning: true
-      args: _Args
-      prevInfo: UseTPAWWorkerResult | null
-    }
+  | {isRunning: true; args: _Args; prevInfo: UseTPAWWorkerResult | null}
   | {isRunning: false; resultInfo: UseTPAWWorkerResult}
 
 export function useTPAWWorker(

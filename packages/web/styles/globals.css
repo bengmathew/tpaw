@@ -29,12 +29,28 @@ a {
 @tailwind utilities;
 
 @layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.10);
+  }
+
+  .text-shadow-md {
+    text-shadow: 0 4px 8px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 15px 30px rgba(0,0,0,0.11), 0 5px 15px rgba(0,0,0,0.08);
+  }
+
+  .text-shadow-none {
+    text-shadow: none;
+  }
+
     .p-base {
       @apply font-font2 text-lg text-gray-600
     }
 
     .page {
-      @apply font-font1 min-h-screen text-gray-800;
+      @apply font-font1 min-h-screen text-gray-800 ;
     }
     .mt-header {
       @apply mt-[47px]

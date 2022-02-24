@@ -6,14 +6,14 @@ import React, { useState } from 'react'
 import {
   TPAWParams,
   ValueForYearRange,
-  YearRange
+  YearRange,
 } from '../../../../TPAWSimulator/TPAWParams'
-import { formatCurrency } from '../../../../Utils/FormatCurrency'
-import { smartDeltaFn } from '../../../../Utils/SmartDeltaFn'
-import { assertFalse, noCase } from '../../../../Utils/Utils'
-import { useSimulation } from '../../../App/WithSimulation'
-import { paramsInputValidateYearRange } from '../Helpers/ParamInputValidate'
-import { ValueForYearRangeInput } from './ValueForYearRangeInput'
+import {formatCurrency} from '../../../../Utils/FormatCurrency'
+import {smartDeltaFn} from '../../../../Utils/SmartDeltaFn'
+import {assertFalse, noCase} from '../../../../Utils/Utils'
+import {useSimulation} from '../../../App/WithSimulation'
+import {paramsInputValidateYearRange} from '../Helpers/ParamInputValidate'
+import {ValueForYearRangeInput} from './ValueForYearRangeInput'
 
 type _InputState = {isEdit: false} | {isEdit: true; editIndex: number} | null
 export const ByYearSchedule = React.memo(
@@ -25,6 +25,7 @@ export const ByYearSchedule = React.memo(
     addHeading,
     editHeading,
     defaultYearRange,
+    onBeforeDelete,
     type,
   }: {
     className?: string
@@ -37,6 +38,7 @@ export const ByYearSchedule = React.memo(
     addHeading: string
     editHeading: string
     defaultYearRange: ValueForYearRange['yearRange']
+    onBeforeDelete?: (id: number) => void
     type: 'full' | 'beforeRetirement' | 'afterRetirement'
   }) => {
     const {params, setParams} = useSimulation()
@@ -63,16 +65,16 @@ export const ByYearSchedule = React.memo(
             </button>
           </div>
         ) : (
-          <div className="flex justify-start gap-x-4 items-center  my-2 ">
+          <div className="flex justify-start gap-x-4 items-center  ">
             <button
-              className="flex items-center justify-center gap-x-2  mt-4  "
+              className="flex items-center justify-center gap-x-2  mt-4  py-2 "
               onClick={() => setInput({isEdit: false})}
             >
               <FontAwesomeIcon className="text-2xl" icon={faPlus} />
             </button>
           </div>
         )}
-        <div className="flex flex-col gap-y-6 mt-4 ">
+        <div className="flex flex-col gap-y-6 mt-2 ">
           {entries(params).map((entry, i) => (
             <ByYearScheduleEntry
               key={i}
@@ -102,6 +104,8 @@ export const ByYearSchedule = React.memo(
                     yearRange: defaultYearRange,
                     value: null,
                     nominal: false,
+                    // -1 in case there are no entires.
+                    id: Math.max(-1, ...entries(params).map(x => x.id)) + 1,
                   }
             }
             heading={input.isEdit ? editHeading : addHeading}
@@ -118,7 +122,8 @@ export const ByYearSchedule = React.memo(
               input.isEdit
                 ? () => {
                     const p = _.cloneDeep(params)
-                    entries(p).splice(input.editIndex, 1)
+                    const [entry] = entries(p).splice(input.editIndex, 1)
+                    onBeforeDelete?.(entry.id)
                     setParams(p)
                     setInput(null)
                   }
@@ -216,10 +221,7 @@ export const byYearScheduleYearRangeToStr = (yearRange: YearRange) =>
         'second'
       )}`
 
-const _textForRange = (
-  x: YearRange['start'],
-  type: 'first' | 'second'
-) => {
+const _textForRange = (x: YearRange['start'], type: 'first' | 'second') => {
   if (x === 'start') {
     return type === 'first' ? 'now' : assertFalse()
   }

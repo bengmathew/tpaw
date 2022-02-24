@@ -14,6 +14,7 @@ export const paramsInputTypes = [
   'risk-and-time-preference',
 ] as const
 export type ParamsInputType = typeof paramsInputTypes[number]
+
 export const isParamsInputType = (x: string): x is ParamsInputType =>
   (paramsInputTypes as readonly string[]).includes(x)
 

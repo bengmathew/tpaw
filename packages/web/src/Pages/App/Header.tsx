@@ -6,18 +6,18 @@ export const Header = React.memo(
     return (
       <div
         className={`fixed top-0  right-0 w-full sm:w-auto 
-        flex justify-between sm:flex-row-reverse items-stretch gap-x-4  
-         h-[47px] opacity-100 bg-gray-200 sm:bg-pageBG
-       px-3  sm:px-4 sm:rounded-bl-lg border-b-2 sm:border-b-0 border-gray-700 `}
-      >
-        <_Button href="/" label="TPAWplanner" isCurrent={false} />
+        flex justify-between  items-stretch gap-x-4  
+         h-[47px] opacity-100 bg-theme1 sm:bg-theme1
+       px-3  sm:px-4 sm:rounded-bl-lg  border-gray-700 text-lg sm:text-base z-50`}
+       >
+       <_Button href="/" label="TPAWplanner" isCurrent={false} />
         <div className="flex gap-x-4">
-          <_Button href="/plan" label="Plan" isCurrent={curr === 'plan'} />
           <_Button
             href="/learn"
             label="Learn"
             isCurrent={curr === 'learn'}
           />
+          <_Button href="/plan" label="Plan" isCurrent={curr === 'plan'} />
         </div>
       </div>
     )
@@ -37,8 +37,8 @@ const _Button = React.memo(
     return (
       <Link href={href}>
         <a
-          className={`flex items-end font-bold pb-2 ${
-            isCurrent ? 'text-theme1' : ''
+          className={`flex items-center font-bold  ${
+            isCurrent ? 'text-gray-100' : 'text-stone-900'
           }`}
         >
           {label}

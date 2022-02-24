@@ -14,9 +14,20 @@ export type TPAWWorkerResult =
       type: 'runSimulation'
       taskID: string
       result: {
-        withdrawalsByYearsIntoRetirementByRun: number[][]
+        byYearsFromNowByRun: {
+          withdrawals: {
+            total: number[][]
+            essential: number[][]
+            extra: number[][]
+            regular: number[][]
+          }
+          startingBalanceOfSavingsPortfolio: number[][]
+          savingsPortfolioStockAllocation: number[][]
+          withdrawalFromSavingsRate: number[][]
+        }
         firstYearOfSomeRun: TPAWSimulationForYear
         legacyByRun: number[]
+        endingBalanceOfSavingsPortfolioByRun: number[]
       }
     }
   | {type: 'sortRows'; taskID: string; result: number[][]}
