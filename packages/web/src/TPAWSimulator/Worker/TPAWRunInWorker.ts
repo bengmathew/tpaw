@@ -110,8 +110,7 @@ export class TPAWRunInWorker {
       legacyByRun,
       endingBalanceOfSavingsPortfolioByRun,
       firstYearOfSomeRun,
-    } =  runsByWorker[0]
-    _mergeRunsByWorker(runsByWorker)
+    } = _mergeRunsByWorker(runsByWorker)
 
     const _processForByPercentileByYearsFromNow = async (
       numberByYearsFromNowByRun: number[][]
