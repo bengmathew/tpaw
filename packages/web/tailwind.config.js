@@ -12,7 +12,6 @@ module.exports = {
     fontFamily: {
       font1: ['Montserrat', 'sans-serif'],
       font2: ['Karla', 'sans-serif'],
-      font3: ['Tangerine', 'serif'],
       mono: ['Roboto Mono', 'monospace'],
     },
 
