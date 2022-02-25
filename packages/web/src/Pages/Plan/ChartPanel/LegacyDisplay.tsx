@@ -1,10 +1,10 @@
 import _ from 'lodash'
-import React, { useMemo } from 'react'
-import { formatCurrency } from '../../../Utils/FormatCurrency'
-import { useSimulation } from '../../App/WithSimulation'
+import React, {CSSProperties, useMemo} from 'react'
+import {formatCurrency} from '../../../Utils/FormatCurrency'
+import {useSimulation} from '../../App/WithSimulation'
 
 export const LegacyDisplay = React.memo(
-  ({className = ''}: {className?: string}) => {
+  ({className = '', style}: {className?: string; style?: CSSProperties}) => {
     const {params, tpawResult} = useSimulation()
     const legacyByPercentile = useMemo(
       () =>
@@ -23,6 +23,7 @@ export const LegacyDisplay = React.memo(
     return (
       <div
         className={`${className}  bg-gray-100  border border-gray-400 rounded-xl  flex  `}
+        style={style}
       >
         <div className=" rounded-lg px-2 py-1">
           <div className="font-semibold sm:font-medium text-sm sm:text-base w-full flex items-center justify-between gap-x-2">

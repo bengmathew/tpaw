@@ -221,9 +221,8 @@ export function useChartPanel({
       </div>
 
       <LegacyDisplay
-        className={`absolute left-3 ${
-          isPortrait ? 'top-[60px]' : 'top-[145px]'
-        }`}
+        className={`absolute left-3`}
+        style={{top:`${headingSize.height+10}px`}}
       />
     </div>
   )

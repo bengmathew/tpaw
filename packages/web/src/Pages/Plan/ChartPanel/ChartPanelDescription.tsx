@@ -32,13 +32,13 @@ export const ChartPanelDescription = React.memo(
         style={{gridArea: 'info'}}
         ref={ref}
       >
-        <div className="hidden sm:block lighten">
+        <div className="hidden sm:block">
           <Contentful.RichText
             body={content.intro.fields.body}
-            p="p-base inline"
+            p="p-base inline lighten"
           />{' '}
           <button
-            className="bg-gray-300 text-gray-700 px-2 py-0 rounded-full text-base"
+            className="bg-gray-300 text-gray-500 px-2 py-0 rounded-full text-base"
             onClick={() => setShowDescriptionPopUp(true)}
           >
             Details
