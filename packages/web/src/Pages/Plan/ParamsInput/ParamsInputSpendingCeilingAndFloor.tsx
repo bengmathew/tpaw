@@ -1,4 +1,5 @@
-import {faCircle as faCircleDuotone} from '@fortawesome/pro-duotone-svg-icons'
+// import {faCircleDot as faCircleDuotone} from '@fortawesome/pro-duotone-svg-icons'
+import {faCircle as faCircleSelected} from '@fortawesome/pro-solid-svg-icons'
 import {faMinus, faPlus} from '@fortawesome/pro-light-svg-icons'
 import {faCircle as faCircleRegular} from '@fortawesome/pro-regular-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
@@ -148,7 +149,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(() => {
             >
               <FontAwesomeIcon
                 className="mr-2"
-                icon={checked ? faCircleDuotone : faCircleRegular}
+                icon={checked ? faCircleSelected : faCircleRegular}
               />{' '}
               No ceiling or floor
             </RadioGroup.Label>
@@ -166,7 +167,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(() => {
             >
               <FontAwesomeIcon
                 className="mr-2"
-                icon={checked ? faCircleDuotone : faCircleRegular}
+                icon={checked ? faCircleSelected : faCircleRegular}
               />{' '}
               Separate ceiling and floor
             </RadioGroup.Label>
@@ -282,7 +283,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(() => {
             >
               <FontAwesomeIcon
                 className="mr-2"
-                icon={checked ? faCircleDuotone : faCircleRegular}
+                icon={checked ? faCircleSelected : faCircleRegular}
               />{' '}
               Fixed spending <span className="">(ceiling = floor)</span>
             </RadioGroup.Label>
