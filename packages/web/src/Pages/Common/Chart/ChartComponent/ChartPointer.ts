@@ -2,7 +2,7 @@ import {gsap} from 'gsap'
 import _ from 'lodash'
 import {linearFnFomPoints} from '../../../../Utils/LinearFn'
 import {assert} from '../../../../Utils/Utils'
-import {ChartState} from '../Chart'
+import {ChartFullState} from '../Chart'
 import {ChartContext} from '../ChartContext'
 import {
   ChartDataTransition,
@@ -20,7 +20,7 @@ const duration = 1
 
 const boxXOffset = 35
 const lineDash = [10, 5]
-const xLabelFontSize = 12
+const xLabelFontSize = 14
 
 type _DataFn<Data> = (
   data: Data
@@ -33,7 +33,7 @@ export type ChartPointerContext<Data> = ChartContext<Data> & {
 export interface ChartPointerComponent<Data> {
   setState: (
     ctx: CanvasRenderingContext2D,
-    state: ChartState<Data> & {pointerState: ChartPointerState},
+    state: ChartFullState<Data> & {pointerState: ChartPointerState},
     pointerTransition: number,
     registerAnimation: ChartRegisterAnimation
   ) => void
@@ -60,7 +60,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
 
   constructor(
     public dataFn: _DataFn<Data>,
-    public formatX: (x: number) => string,
+    public formatX: (data:Data, x: number) => string,
     public formatY: (x: number) => string,
     components: readonly ChartPointerComponent<Data>[]
   ) {
@@ -78,7 +78,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
 
   setPointerPosition(
     position: {x: number} | null,
-    state: ChartState<Data>,
+    state: ChartFullState<Data>,
     ctx: CanvasRenderingContext2D,
     registerAnimation: ChartRegisterAnimation,
     inside = position !== null
@@ -135,7 +135,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
   }
 
   setState(
-    state: ChartState<Data>,
+    state: ChartFullState<Data>,
     context: CanvasRenderingContext2D,
     registerAnimation: ChartRegisterAnimation
   ) {
@@ -242,11 +242,11 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
 
 type _BoxInfo = ReturnType<typeof _boxInfo>['boxInfo']
 const _boxInfo = <Data>(
-  state: ChartState<Data>,
+  state: ChartFullState<Data>,
   graphX: number,
   dataFn: _DataFn<Data>,
   formatY: (x: number) => string,
-  formatX: (x: number) => string,
+  formatX: (data:Data, x: number) => string,
   ctx: CanvasRenderingContext2D
 ) => {
   const {plotArea, viewPort, scale, data} = state
@@ -262,7 +262,7 @@ const _boxInfo = <Data>(
   const yLabelMeasures = yLabels.map(y => ctx.measureText(y))
   const yTextMeasureMaxWidth = Math.max(...yTextMeasures.map(x => x.width))
   const yLabelMeasureMaxWidth = Math.max(...yLabelMeasures.map(x => x.width))
-  const xText = formatX(dataX)
+  const xText = formatX(data, dataX)
 
   ctx.font = ChartUtils.getFont(xLabelFontSize, 'bold')
   const xTextHeight = ctx.measureText(xText).actualBoundingBoxAscent

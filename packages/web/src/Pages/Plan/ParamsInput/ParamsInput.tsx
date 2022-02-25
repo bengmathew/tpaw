@@ -187,7 +187,9 @@ const _Detail = React.memo(
                 className={`grid pt-4 overflow-scroll bg-gray-200  `}
                 style={{grid: '1fr auto / 1fr'}}
               >
+
                 <div className="pl-8 plan-pr  h-full opacity-90 mb-20">
+                <h2 className="font-bold uppercase  text-sm -mt-2 mb-4 text-gray-500">Instructions</h2>
                   <_RichText className="">{content.body.fields.body}</_RichText>
                 </div>
                 <Footer />
@@ -210,8 +212,9 @@ const _Detail = React.memo(
               </div>
               <div
                 className={`bg-gray-200  pt-4 opacity-90 plan-pl plan-pr grid`}
-                style={{grid: '1fr auto/1fr'}}
+                style={{grid: 'auto 1fr auto/1fr'}}
               >
+                <h2 className="font-bold uppercase  text-sm -mt-2 mb-4 text-gray-500">Instructions</h2>
                 <_RichText className="pb-20">
                   {content.body.fields.body}
                 </_RichText>
@@ -225,15 +228,16 @@ const _Detail = React.memo(
             style={{grid: 'auto minmax(45vh, 1fr)/1fr'}}
             ref={detailRef}
           >
-            <div className={`overflow-scroll px-4 pb-6`}>
+            <div className={`overflow-scroll px-10 pt-2 pb-8`}>
               <_Heading
                 className={`sticky top-0 z-10  mb-6 ${bgClassName} bg-opacity-90`}
                 {...{type, setState}}
               />
               <_Body {...{type, onDone, chartType, setChartType}} />
             </div>
-            <div className="bg-gray-200 border-t-2 border-black  pt-4 opacity-90 overflow-scroll px-4 grid" 
-                style={{grid: '1fr auto/1fr'}}>
+            <div className="bg-gray-200 border-t-2 border-gray-600  pt-8 opacity-90 overflow-scroll px-10 grid" 
+                style={{grid: 'auto 1fr auto/1fr'}}>
+                <h2 className="font-bold uppercase  text-sm -mt-2 mb-4 text-gray-500">Instructions</h2>
               <_RichText className={`pb-16`}>
                 {content.body.fields.body}
               </_RichText>
@@ -330,7 +334,7 @@ const _Heading = React.memo(
         >
           <FontAwesomeIcon icon={faTimes} />
         </button>
-        <h2 className="font-bold text-xl text-center ">
+        <h2 className="font-bold text-lg sm:text-xl text-center ">
           {paramsInputLabel(type)}
         </h2>
       </div>

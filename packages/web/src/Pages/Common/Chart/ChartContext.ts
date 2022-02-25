@@ -1,8 +1,8 @@
-import {ChartState} from './Chart'
+import {ChartFullState} from './Chart'
 import {ChartDataTransition} from './ChartUtils/ChartDataTransition'
 
 export type ChartContext<Data> = {
   ctx: CanvasRenderingContext2D
-  stateTransition: ChartDataTransition<ChartState<Data>>
-  currState: Omit<ChartState<Data>, 'data'>
+  stateTransition: ChartDataTransition<ChartFullState<Data>>
+  currState: Omit<ChartFullState<Data>, 'data'>
 }

@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import {linearFnFomPoints} from '../../../../Utils/LinearFn'
 import {assert} from '../../../../Utils/Utils'
-import {ChartState} from '../Chart'
+import {ChartFullState} from '../Chart'
 import {chartDataTransitionCurrObj} from '../ChartUtils/ChartDataTransition'
 import {ChartUtils, Rect, RectExt, rectExt} from '../ChartUtils/ChartUtils'
 import {
@@ -21,7 +21,7 @@ export class ChartXAxis<Data> implements ChartPointerComponent<Data> {
 
   setState(
     ctx: CanvasRenderingContext2D,
-    state: ChartState<Data> & {pointerState: ChartPointerState},
+    state: ChartFullState<Data> & {pointerState: ChartPointerState},
     pointerTransition: number
   ) {
     const target = _labelBox(

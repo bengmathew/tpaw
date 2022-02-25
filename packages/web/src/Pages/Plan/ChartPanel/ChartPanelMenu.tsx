@@ -67,6 +67,7 @@ export const ChartPanelMenu = React.memo(
       timeline.fromTo(popperElement, {scale: 0.95}, {scale: 1, duration}, 0)
     }
     const handleHide = (type: ChartPanelType | null) => {
+      if(type) onSelect(type)
       fGet(overlayElement).style.opacity = '0'
       fGet(popperElement).style.opacity = '0'
       const timeline = gsap.timeline({
@@ -76,17 +77,6 @@ export const ChartPanelMenu = React.memo(
         },
       })
       timeline.to(popperElement, {scale: 0.95, duration}, 0)
-      timeline.to(
-        referenceElement,
-        {
-          opacity: 1,
-          duration: duration * 0.5,
-          onComplete: () => {
-            if (type) onSelect(type)
-          },
-        },
-        0
-      )
     }
 
     const buttonProps = {
@@ -111,7 +101,7 @@ export const ChartPanelMenu = React.memo(
                   <span>{x}</span>
                   {i !== label.length - 1 && (
                     <FontAwesomeIcon
-                      className="mx-2 text-sm sm:text-base lighten-2"
+                      className="mx-1.5 text-sm sm:text-base lighten-2"
                       icon={faChevronRight}
                     />
                   )}
@@ -337,14 +327,15 @@ const _Chart = React.memo(
     data: TPAWChartData
     isCurrent: boolean
   }) => {
-    const xyRange = useMemo(
-      () => ({
+    const state = useMemo(() => {
+      const xyRange = {
         x: {start: data.age.start, end: data.age.end},
         y: {start: data.min.y, end: data.max.y},
-      }),
-      [data]
-    )
-    const padding = useMemo(() => ({left: 0, top: 0, bottom: 0, right: 0}), [])
+      }
+      const padding = {left: 0, top: 0, bottom: 0, right: 0}
+      return {data, xyRange, padding, animation:null}
+    }, [data])
+
     const components = useMemo(
       () => [
         chartDrawDataLines<TPAWChartData>({
@@ -380,8 +371,8 @@ const _Chart = React.memo(
     return (
       <ChartReact<TPAWChartData>
         className={`${className}`}
-        stateKey={0}
-        animated={{data, xyRange, padding}}
+        state={state}
+        animationForBoundsChange={null}
         components={components}
       />
     )

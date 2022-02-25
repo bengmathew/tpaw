@@ -59,7 +59,7 @@ const _Desktop = React.memo(
         style={{grid: '1fr auto/ 1fr 2fr'}}
         tabIndex={0}
       >
-        <div className="bg-gray-100 h-screen p-4 sticky top-0 pt-header overflow-scroll">
+        <div className="bg-gray-100 h-screen py-4 px-8 sticky top-0 pt-header overflow-scroll">
           <_Outline
             className="mt-6"
             outline={outline}

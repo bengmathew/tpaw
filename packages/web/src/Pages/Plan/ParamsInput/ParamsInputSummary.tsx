@@ -58,7 +58,7 @@ export const ParamsInputSummary = React.memo(
       >
         {tstate => (
           <div
-            className={`text-gray-600 ${allowSplit ? 'plan-pr plan-pl' : 'px-4'} 
+            className={`text-gray-600 ${allowSplit ? 'plan-pr plan-pl' : 'px-8'} 
             grid
             absolute w-full h-full top-0  overflow-scroll 
             ${tstate === 'exited' ? 'opacity-0' : ''}`} // This is needed if we start in exited state.

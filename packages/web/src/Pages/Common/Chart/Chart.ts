@@ -19,9 +19,9 @@ export type ChartPadding = {
   top: number
   bottom: number
 }
-const duration = 1
+export type ChartAnimation = {ease: gsap.EaseFunction; duration: number}
 
-type _ChartStateBase<Data> = {
+export type ChartState<Data> = {
   size: {width: number; height: number}
   padding: ChartPadding
   data: Data
@@ -32,16 +32,14 @@ type _ChartStateDerived = {
   plotArea: RectExt
   scale: {x: LinearFn; y: LinearFn}
 }
-export type ChartState<Data> = _ChartStateBase<Data> & _ChartStateDerived
+export type ChartFullState<Data> = ChartState<Data> & _ChartStateDerived
 
 export class Chart<Data> {
   private _canvas
   private _ctx: CanvasRenderingContext2D
   private readonly _handleDraw = () => this._draw()
-  private _id = _.uniqueId()
 
-  private _stateKey: number | string = 0
-  private _stateTransition: ChartDataTransition<ChartState<Data>>
+  private _stateTransition: ChartDataTransition<ChartFullState<Data>>
   private _components: readonly ChartComponent<Data>[]
   private _stateAnimation: ReturnType<typeof gsap.to> | null = null
   private _activeAnimations: (gsap.core.Tween | gsap.core.Timeline)[] = []
@@ -68,10 +66,10 @@ export class Chart<Data> {
     }
   }
 
+
   constructor(
     canvas: HTMLCanvasElement,
-    baseState: _ChartStateBase<Data>,
-    stateKey: number | string,
+    baseState: ChartState<Data>,
     components: readonly ChartComponent<Data>[]
   ) {
     this._canvas = canvas
@@ -101,10 +99,8 @@ export class Chart<Data> {
     this._ctx = fGet(canvas.getContext('2d'))
 
     const state = {...baseState, ..._derivedState(baseState)}
-    this._stateKey = stateKey
     this._stateTransition = {target: state, prev: state, transition: 1}
-    this.setState(baseState, stateKey)
-    gsap.ticker.add(this._handleDraw)
+    this.setState(baseState, null)
   }
 
   destroy() {
@@ -122,7 +118,7 @@ export class Chart<Data> {
     this._components = components
     this._draw()
   }
-  setState(baseState: _ChartStateBase<Data>, stateKey: string | number) {
+  setState(baseState: ChartState<Data>, animation: ChartAnimation | null) {
     const {size, padding, data, xyRange} = baseState
     const target = {
       size,
@@ -131,33 +127,36 @@ export class Chart<Data> {
       xyRange,
       ..._derivedState(baseState),
     }
-    this._stateTransition.prev =
-      this._stateKey === stateKey
-        ? {
-            data:
-              // This is a hack because we can't interpolate data. The correct
-              // solution is to have a separate data transition that we accept
-              // will be jerky if data changes before transition end, which is
-              // probably not a common case. The rest of the state can change
-              // without causing the jerk. This was encountered when padding
-              // changed right after data changed.
-              this._stateTransition.transition < 0.5 &&
-              this._stateTransition.target.data === data
-                ? this._stateTransition.prev.data
-                : this._stateTransition.target.data,
-            ..._interpolateState(this._stateTransition),
-          }
-        : target
+    this._stateTransition.prev = animation
+      ? {
+          data:
+            // This is a hack because we can't interpolate data. The correct
+            // solution is to have a separate data transition that we accept
+            // will be jerky if data changes before transition end, which is
+            // probably not a common case. The rest of the state can change
+            // without causing the jerk. This was encountered when padding
+            // changed right after data changed.
+            this._stateTransition.transition < 0.5 &&
+            this._stateTransition.target.data === data
+              ? this._stateTransition.prev.data
+              : this._stateTransition.target.data,
+          ..._interpolateState(this._stateTransition),
+        }
+      : target
     this._stateTransition.target = target
-    this._stateKey = stateKey
+
     this._stateAnimation?.kill()
-    this._stateAnimation = this._registerAnimation(
-      gsap.fromTo(
-        this._stateTransition,
-        {transition: 0},
-        {transition: 1, ease: 'power4', duration}
+    if (animation) {
+      this._stateAnimation = this._registerAnimation(
+        gsap.fromTo(
+          this._stateTransition,
+          {transition: 0},
+          {transition: 1, ease: 'power4', duration: animation.duration}
+        )
       )
-    )
+    } else {
+      this._stateTransition.transition = 1
+    }
     if (
       size.width !== this._stateTransition.prev.size.width ||
       size.height !== this._stateTransition.prev.size.width
@@ -235,8 +234,8 @@ const _derivedState = ({
 }
 
 const _interpolateState = <Data>(
-  stateTransition: ChartDataTransition<ChartState<Data>>
-): Omit<ChartState<Data>, 'data'> => {
+  stateTransition: ChartDataTransition<ChartFullState<Data>>
+): Omit<ChartFullState<Data>, 'data'> => {
   // Don't interpolate the size.
   const size = stateTransition.target.size
   const padding = chartDataTransitionCurrObj(stateTransition, x => x.padding)

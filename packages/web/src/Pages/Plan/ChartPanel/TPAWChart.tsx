@@ -1,45 +1,53 @@
 import _ from 'lodash'
 import React, {CSSProperties, useCallback, useEffect, useMemo} from 'react'
 import {linearFnFomPoints} from '../../../Utils/LinearFn'
+import {SimpleRange} from '../../../Utils/SimpleRange'
 import {fGet} from '../../../Utils/Utils'
+import {ChartAnimation} from '../../Common/Chart/Chart'
 import {chartDrawDataLines} from '../../Common/Chart/ChartComponent/ChartDrawDataLines'
 import {ChartMinMaxYAxis} from '../../Common/Chart/ChartComponent/ChartMinMaxYAxis'
 import {ChartPointer} from '../../Common/Chart/ChartComponent/ChartPointer'
 import {ChartXAxis} from '../../Common/Chart/ChartComponent/ChartXAxis'
-import {ChartReact} from '../../Common/Chart/ChartReact'
+import {ChartReact, ChartReactState} from '../../Common/Chart/ChartReact'
 import {ChartUtils} from '../../Common/Chart/ChartUtils/ChartUtils'
 import {TPAWChartData} from './TPAWChartData'
+
+export type TPAWChartState = {
+  data: TPAWChartData
+  yRange: SimpleRange
+  externalTopPadding: number
+  animation: ChartAnimation|null
+}
 
 export const TPAWChart = React.memo(
   ({
     className = '',
     style,
-    yRange,
-    externalTopPadding,
-    yAxisformat,
+    yAxisFormat,
     lastAgeIsLegacy,
-    data,
-    stateKey,
+    state: stateIn,
+    animationForBoundsChange,
   }: {
     className?: string
     style?: CSSProperties
-    yRange: {start: number; end: number}
-    externalTopPadding: number
-    yAxisformat: (x: number) => string
+    state: TPAWChartState
+    yAxisFormat: (x: number) => string
+    animationForBoundsChange: ChartAnimation
     lastAgeIsLegacy: boolean
-    data: TPAWChartData
-    stateKey: number
   }) => {
-    const xyRange = useMemo(
-      () => ({
+    const state = useMemo((): ChartReactState<TPAWChartData> => {
+      const {yRange, data, externalTopPadding, animation} = stateIn
+      const xyRange = {
         x: {start: data.age.start, end: data.age.end},
         y: yRange,
-      }),
-      [yRange, data]
-    )
-
-    const padding = useCallback(
-      ({width, height: heightIn}) => {
+      }
+      const padding = ({
+        width,
+        height: heightIn,
+      }: {
+        width: number
+        height: number
+      }) => {
         const baseTop = 30 + externalTopPadding
         const aspectIn = width / (heightIn - baseTop)
         const aspect =
@@ -52,13 +60,14 @@ export const TPAWChart = React.memo(
           bottom: 35,
           right: 15,
         }
-      },
-      [externalTopPadding]
-    )
+      }
+      return {xyRange, data, padding, animation}
+    }, [stateIn])
 
     const pointerFormatX = useCallback(
-      x => (x === data.age.end && lastAgeIsLegacy ? 'Legacy' : `Age ${x}`),
-      [data.age.end, lastAgeIsLegacy]
+      (data: TPAWChartData, x: number) =>
+        x === data.age.end && lastAgeIsLegacy ? 'Legacy' : `Age ${x}`,
+      [lastAgeIsLegacy]
     )
 
     const components = useMemo(
@@ -85,7 +94,7 @@ export const TPAWChart = React.memo(
         })
 
         const minMaxYAxis = new ChartMinMaxYAxis<TPAWChartData>(
-          yAxisformat,
+          yAxisFormat,
           ChartUtils.color.gray[800],
           data => data.max.x,
           (data, x) => ({
@@ -103,8 +112,8 @@ export const TPAWChart = React.memo(
             data.percentiles
               .filter(x => x.isHighlighted)
               .map(x => ({line: x.data, label: `${x.percentile}`})),
-          age => `Age ${age}`,
-          yAxisformat,
+          pointerFormatX,
+          yAxisFormat,
           [xAxis]
         )
         const byName = {minorLine, majorLine, minMaxYAxis, xAxis, pointer}
@@ -116,17 +125,17 @@ export const TPAWChart = React.memo(
     )
 
     useEffect(() => {
-      components.byName.minMaxYAxis.format = yAxisformat
-      components.byName.pointer.formatY = yAxisformat
+      components.byName.minMaxYAxis.format = yAxisFormat
+      components.byName.pointer.formatY = yAxisFormat
       components.byName.pointer.formatX = pointerFormatX
-    }, [yAxisformat, components, pointerFormatX])
+    }, [yAxisFormat, components, pointerFormatX])
 
     return (
       <ChartReact<TPAWChartData>
         className={`${className}`}
         style={style}
-        stateKey={stateKey}
-        animated={{data, xyRange, padding}}
+        state={state}
+        animationForBoundsChange={animationForBoundsChange}
         components={components.arr}
       />
     )

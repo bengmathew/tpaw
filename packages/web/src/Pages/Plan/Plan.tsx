@@ -55,7 +55,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
   const isPortrait = aspectRatio < 1.1
   const [setChartType, chartType, chartPanel] = useChartPanel({
     className: isPortrait
-      ? 'h-[350px] sm:h-[425px] md:h-[500px] lg:h-[550px] w-full px-3 border-b-4 border-gray-700'
+      ? 'h-[350px] sm:h-[425px] md:h-[500px] lg:h-[550px] w-full px-3 border-b-4 border-gray-600'
       : 'px-3',
     isPortrait,
   })
@@ -68,7 +68,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
         style={{
           grid: isPortrait
             ? '"chart" auto "params" 1fr /1fr'
-            : '"params chart" 1fr /1fr 2fr',
+            : '"params chart" 1fr /2fr 3fr',
         }}
       >
         {chartPanel}

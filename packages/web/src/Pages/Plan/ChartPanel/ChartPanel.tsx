@@ -1,5 +1,6 @@
 import {faInfo} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import {Power4, Power1} from 'gsap'
 import {useRouter} from 'next/router'
 import React, {useCallback, useEffect, useMemo, useState} from 'react'
 import Measure from 'react-measure'
@@ -9,6 +10,7 @@ import {useURLParam} from '../../../Utils/UseURLParam'
 import {assert, fGet, noCase} from '../../../Utils/Utils'
 import {useWindowSize} from '../../../Utils/WithWindowSize'
 import {useSimulation} from '../../App/WithSimulation'
+import {ChartAnimation} from '../../Common/Chart/Chart'
 import {ChartPanelButtons} from './ChartPanelButtons'
 import {ChartPanelDescription} from './ChartPanelDescription'
 import {ChartPanelMenu} from './ChartPanelMenu'
@@ -19,21 +21,19 @@ import {
   isChartPanelType,
 } from './ChartPanelType'
 import {LegacyDisplay} from './LegacyDisplay'
-import {TPAWChart} from './TPAWChart'
+import {TPAWChart, TPAWChartState} from './TPAWChart'
 import {
   tpawChartData,
-  TPAWChartData,
   tpawChartDataScaled,
   tpawChartDataYRange,
 } from './TPAWChartData'
 
 type _State = {
   type: ChartPanelType
-  data: TPAWChartData
-  yRange: {start: number; end: number}
-  externalTopPadding: number
-  stateKey: number
-}
+} & TPAWChartState
+
+const morphAnimation: ChartAnimation = {ease: Power4.easeOut, duration: 1.5}
+const normalAnimation: ChartAnimation = {ease: Power1.easeOut, duration: 1}
 
 export function useChartPanel({
   className = '',
@@ -67,11 +67,11 @@ export function useChartPanel({
       data,
       yRange: tpawChartDataYRange(data),
       externalTopPadding: topPadding,
-      stateKey: 0,
+      animation: null,
     }
   })
 
-  const [yAxisformat, lastAgeIsLegacy] = useMemo(
+  const [yAxisFormat, lastAgeIsLegacy] = useMemo(
     () => _info(state.type),
     [state.type]
   )
@@ -82,7 +82,7 @@ export function useChartPanel({
       data: tpawChartData(prev.type, tpawResult, highlightPercentiles),
       yRange: prev.yRange,
       externalTopPadding: prev.externalTopPadding,
-      stateKey: prev.stateKey,
+      animation: normalAnimation,
     }))
     // HighlighPercentiles is a const.
   }, [tpawResult, highlightPercentiles])
@@ -94,12 +94,13 @@ export function useChartPanel({
         data: prev.data,
         yRange: tpawChartDataYRange(prev.data),
         externalTopPadding: prev.externalTopPadding,
-        stateKey: prev.stateKey,
+        animation: normalAnimation,
       }
     })
   }, [])
 
   const handleChangeType = (type: ChartPanelType) => {
+    if (type === state.type) return // this can be caused by update from url., eg back button.
     const yRange = tpawChartDataYRange(
       tpawChartData(type, tpawResult, highlightPercentiles)
     )
@@ -116,10 +117,11 @@ export function useChartPanel({
       data: tpawChartDataScaled(prev.data, yRange),
       yRange,
       externalTopPadding: prev.externalTopPadding,
-      stateKey: prev.stateKey + 1,
+      animation: null,
     }))
   }
 
+  // THis is needed for the browser back button to work.
   useEffect(() => {
     handleChangeType(panelTypeIn)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -133,7 +135,7 @@ export function useChartPanel({
         data: tpawChartData(prev.type, tpawResult, highlightPercentiles),
         yRange: prev.yRange,
         externalTopPadding: prev.externalTopPadding,
-        stateKey: prev.stateKey,
+        animation: morphAnimation,
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -147,7 +149,10 @@ export function useChartPanel({
         data: prev.data,
         yRange: prev.yRange,
         externalTopPadding: topPadding,
-        stateKey: prev.stateKey,
+        // the challenge here is that this can happend during graph change and
+        // resize, so not clear if morphAnimation or normal. altogether ugly hack
+        // is to make it morph in both cases.
+        animation: morphAnimation, 
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -209,7 +214,10 @@ export function useChartPanel({
       <div className="grid" style={{grid: '1fr auto /1fr'}}>
         <TPAWChart
           className=" -mx-3 relative z-0"
-          {...{...state, yAxisformat, lastAgeIsLegacy}}
+          yAxisFormat={yAxisFormat}
+          lastAgeIsLegacy={lastAgeIsLegacy}
+          animationForBoundsChange={normalAnimation}
+          state={state}
         />
         {isPortrait && (
           <ChartPanelButtons
@@ -222,7 +230,7 @@ export function useChartPanel({
 
       <LegacyDisplay
         className={`absolute left-3`}
-        style={{top:`${headingSize.height+10}px`}}
+        style={{top: `${headingSize.height + 10}px`}}
       />
     </div>
   )

@@ -1,4 +1,6 @@
-import {faArrowsV, faLongArrowAltRight} from '@fortawesome/pro-solid-svg-icons'
+import { faClipboardListCheck } from '@fortawesome/pro-solid-svg-icons'
+import { faLongArrowAltRight } from '@fortawesome/pro-regular-svg-icons'
+import {faArrowsV, faCheck, faListCheck} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import React from 'react'
@@ -25,10 +27,11 @@ export const ChartPanelButtons = React.memo(
       >
         <Link href="/tasks-for-this-year">
           <a
-            className="flex items-center gap-x-1 text-lg  "
+            className="flex items-center gap-x-1 text-lg "
             style={{gridArea: 'tasks'}}
           >
-            <h2 className="font-semibold">Tasks for this year</h2>
+          {/* <FontAwesomeIcon className="text-2xl text-gray-700" icon={faClipboardListCheck} /> */}
+            <h2 className="font-medium  ml-2 font-font1 ">Tasks for this year</h2>
             <FontAwesomeIcon icon={faLongArrowAltRight} />
           </a>
         </Link>

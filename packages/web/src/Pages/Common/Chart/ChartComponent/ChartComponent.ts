@@ -1,4 +1,4 @@
-import {ChartState} from '../Chart'
+import {ChartFullState} from '../Chart'
 import {ChartContext} from '../ChartContext'
 
 export type ChartRegisterAnimation = <
@@ -15,12 +15,12 @@ export interface ChartComponent<Data> {
   destroy?: () => void
   setPointerPosition?: (
     position: {x: number; y: number} | null,
-    state: ChartState<Data>,
+    state: ChartFullState<Data>,
     context: CanvasRenderingContext2D,
     registerAnimation: ChartRegisterAnimation
   ) => void
   setState?: (
-    state: ChartState<Data>,
+    state: ChartFullState<Data>,
     context: CanvasRenderingContext2D,
     registerAnimation: ChartRegisterAnimation
   ) => void

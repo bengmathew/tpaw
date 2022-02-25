@@ -1,26 +1,34 @@
 import React, {CSSProperties, useEffect, useRef, useState} from 'react'
 import Measure from 'react-measure'
 import {assert, fGet} from '../../../Utils/Utils'
-import {Chart, ChartPadding, ChartXYRange} from './Chart'
+import {
+  Chart,
+  ChartAnimation,
+  ChartPadding,
+  ChartState,
+  ChartXYRange,
+} from './Chart'
 import {ChartComponent} from './ChartComponent/ChartComponent'
 
+export type ChartReactState<Data> = {
+  padding:
+    | ChartPadding
+    | ((bounds: {width: number; height: number}) => ChartPadding)
+  data: Data
+  xyRange: ChartXYRange
+  animation: ChartAnimation | null
+}
+
 export function ChartReact<Data>({
-  animated: {padding, data, xyRange},
+  state,
   components,
   className = '',
   style,
-  stateKey,
 }: {
-  animated: {
-    padding:
-      | ChartPadding
-      | ((bounds: {width: number; height: number}) => ChartPadding)
-    data: Data
-    xyRange: ChartXYRange
-  }
+  state: ChartReactState<Data>
+  animationForBoundsChange: ChartAnimation | null
   components: readonly ChartComponent<Data>[]
   className?: string
-  stateKey: string | number
   style?: CSSProperties
 }) {
   const chartRef = useRef<Chart<Data> | null>(null)
@@ -31,17 +39,21 @@ export function ChartReact<Data>({
   useEffect(() => {
 
     if (bounds) {
-      fGet(chartRef.current).setState(
-        {
-          size: bounds,
-          padding: typeof padding === 'function' ? padding(bounds) : padding,
-          data,
-          xyRange,
-        },
-        stateKey
-      )
+      const chart = fGet(chartRef.current)
+      chart.setState(_processState(state, bounds), state.animation)
     }
-  }, [bounds, data, xyRange, padding, stateKey])
+    // separate response for state and bounds.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
+
+  useEffect(() => {
+    if (bounds) {
+      fGet(chartRef.current).setState(_processState(state, bounds), null)
+    }
+
+    // separate response for state and bounds.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bounds])
 
   useEffect(() => {
     chartRef.current?.setComponents(components)
@@ -72,16 +84,7 @@ export function ChartReact<Data>({
                     if (canvas && !chartRef.current) {
                       chartRef.current = new Chart(
                         canvas,
-                        {
-                          size: bounds,
-                          data,
-                          xyRange,
-                          padding:
-                            typeof padding === 'function'
-                              ? padding(bounds)
-                              : padding,
-                        },
-                        stateKey,
+                        _processState(state, bounds),
                         components
                       )
                     }
@@ -94,4 +97,16 @@ export function ChartReact<Data>({
       </Measure>
     </div>
   )
+}
+
+function _processState<Data>(
+  {padding, data, xyRange}: ChartReactState<Data>,
+  bounds: {width: number; height: number}
+): ChartState<Data> {
+  return {
+    size: bounds,
+    padding: typeof padding === 'function' ? padding(bounds) : padding,
+    data: data,
+    xyRange: xyRange,
+  }
 }
