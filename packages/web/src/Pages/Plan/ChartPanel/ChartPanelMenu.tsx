@@ -151,7 +151,7 @@ export const ChartPanelMenu = React.memo(
                 <div className=" flex flex-col border- border-gray-400 ">
                   <_Button
                     className="pl-10"
-                    type="spending-regular"
+                    type="spending-general"
                     {...buttonProps}
                   />
                   {params.withdrawals.fundedByBonds.map(x => (
@@ -257,7 +257,7 @@ const useInfo = (panelType: ChartPanelType, allData: _AllChartData) => {
   switch (panelType) {
     case 'spending-total':
       return [content.spending.total.menu, allData.spending.total] as const
-    case 'spending-regular': {
+    case 'spending-general': {
       return [content.spending.regular.menu, allData.spending.regular] as const
     }
     case 'portfolio':
@@ -295,7 +295,7 @@ function useAllChartData() {
     const result = {
       spending: {
         total: _data('spending-total'),
-        regular: _data('spending-regular'),
+        regular: _data('spending-general'),
         essential: new Map(
           params.withdrawals.fundedByBonds.map(x => [
             x.id,

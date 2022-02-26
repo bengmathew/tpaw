@@ -17,7 +17,7 @@ export const chartPanelLabel = (
   switch (panelType) {
     case 'spending-total':
       return {label: ['Spending During Retirement'], subLabel: null}
-    case 'spending-regular':
+    case 'spending-general':
       return {
         label: _.compact([type === 'full' ? 'Spending' : undefined, `General`]),
         subLabel: null,

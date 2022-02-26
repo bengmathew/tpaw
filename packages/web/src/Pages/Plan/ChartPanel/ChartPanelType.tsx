@@ -5,7 +5,7 @@ import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
 // because it helps when adding to useEffect dep list.
 export type ChartPanelType =
   | 'spending-total'
-  | 'spending-regular'
+  | 'spending-general'
   | `spending-essential-${number}`
   | `spending-discretionary-${number}`
   | 'portfolio'
@@ -31,9 +31,9 @@ export const chartPanelSpendingDiscretionaryTypeID = (
 
 const _checkType = (x: string): x is ChartPanelType =>
   x === 'spending-total' ||
-  x === 'spending-regular' ||
-  (x.startsWith('spending-extra-') &&
-    _isDigits(x.substring('spending-extra-'.length))) ||
+  x === 'spending-general' ||
+  (x.startsWith('spending-essential-') &&
+    _isDigits(x.substring('spending-essential-'.length))) ||
   (x.startsWith('spending-discretionary-') &&
     _isDigits(x.substring('spending-discretionary-'.length))) ||
   x === 'portfolio' ||

@@ -91,7 +91,7 @@ export const tpawChartData = (
         [],
         highlightPercentiles
       )
-    case 'spending-regular':
+    case 'spending-general':
       return _data(
         tpawResult,
         x => x.withdrawals.regular,

@@ -240,7 +240,7 @@ export function useChartPanel({
 const _info = (type: ChartPanelType): [(x: number) => string, boolean] => {
   switch (type) {
     case 'spending-total':
-    case 'spending-regular':
+    case 'spending-general':
       return [formatCurrency, false]
     case 'portfolio':
       return [formatCurrency, true]

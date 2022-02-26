@@ -81,7 +81,7 @@ function useContent(type: ChartPanelType) {
   switch (type) {
     case 'spending-total':
       return content.spending.total
-    case 'spending-regular':
+    case 'spending-general':
       return content.spending.regular
     case 'portfolio':
       return content.portfolio
