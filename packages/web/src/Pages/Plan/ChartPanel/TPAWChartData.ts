@@ -25,6 +25,7 @@ import {
 } from './ChartPanelType'
 
 export type TPAWChartData = {
+  label:string
   percentiles: {
     data: (x: number) => number
     percentile: number
@@ -54,6 +55,7 @@ export const tpawChartDataScaled = (
     targetYRange.end
   )
   return {
+    label:`${curr.label} scaled.`,
     percentiles: curr.percentiles.map(({data, percentile, isHighlighted}) => ({
       data: x => scaleY(data(x)),
       percentile,
@@ -84,6 +86,7 @@ export const tpawChartData = (
   switch (type) {
     case 'spending-total':
       return _data(
+        type,
         tpawResult,
         x => x.withdrawals.total,
         spendingYears,
@@ -93,6 +96,7 @@ export const tpawChartData = (
       )
     case 'spending-general':
       return _data(
+        type,
         tpawResult,
         x => x.withdrawals.regular,
         spendingYears,
@@ -103,6 +107,7 @@ export const tpawChartData = (
 
     case 'portfolio':
       return _data(
+        type,
         tpawResult,
         x =>
           _addYear(
@@ -116,6 +121,7 @@ export const tpawChartData = (
       )
     case 'glide-path':
       return _data(
+        type,
         tpawResult,
         x => x.savingsPortfolioStockAllocation,
         'allYears',
@@ -125,6 +131,7 @@ export const tpawChartData = (
       )
     case 'withdrawal-rate':
       return _data(
+        type,
         tpawResult,
         x => x.withdrawalFromSavingsRate,
         'retirementYears',
@@ -140,6 +147,7 @@ export const tpawChartData = (
         )
         assert(index !== -1)
         return _data(
+          type,
           tpawResult,
           x =>
             _separateExtraWithdrawal(
@@ -161,6 +169,7 @@ export const tpawChartData = (
         )
         assert(index !== -1)
         return _data(
+          type,
           tpawResult,
           x =>
             _separateExtraWithdrawal(
@@ -180,7 +189,7 @@ export const tpawChartData = (
 }
 
 const _addYear = (
-  {byPercentileByYearsFromNow}: ReturnType<Parameters<typeof _data>[1]>,
+  {byPercentileByYearsFromNow}: ReturnType<Parameters<typeof _data>[2]>,
   numberByPercentile: {data: number; percentile: number}[]
 ) => ({
   byPercentileByYearsFromNow: byPercentileByYearsFromNow.map(
@@ -235,6 +244,7 @@ const _separateExtraWithdrawal = (
 }
 
 const _data = (
+  label:string,
   tpawResult: UseTPAWWorkerResult,
   dataFn: (
     tpawResult: UseTPAWWorkerResult
@@ -280,7 +290,7 @@ const _data = (
 
   const isAgeInGroup = (age: number) =>
     ageGroups.some(x => x.start <= age && x.end >= age)
-  return {age, percentiles, min, max, modelAgeEnd, isAgeInGroup}
+  return {label, age, percentiles, min, max, modelAgeEnd, isAgeInGroup}
 }
 
 const _addPercentileInfo = <T>(

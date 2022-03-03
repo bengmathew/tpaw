@@ -1,26 +1,26 @@
-import {faCaretDown, faChevronRight} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {gsap} from 'gsap'
+import { faCaretDown, faChevronRight } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { gsap } from 'gsap'
 import _ from 'lodash'
-import React, {useMemo, useState} from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import ReactDOM from 'react-dom'
-import {Contentful} from '../../../Utils/Contentful'
-import {fGet, noCase} from '../../../Utils/Utils'
-import {useWindowSize} from '../../../Utils/WithWindowSize'
-import {useSimulation} from '../../App/WithSimulation'
-import {chartDrawDataLines} from '../../Common/Chart/ChartComponent/ChartDrawDataLines'
-import {ChartReact} from '../../Common/Chart/ChartReact'
-import {ChartUtils} from '../../Common/Chart/ChartUtils/ChartUtils'
-import {usePlanContent} from '../Plan'
-import {chartPanelLabel} from './ChartPanelLabel'
+import { Contentful } from '../../../Utils/Contentful'
+import { fGet, noCase } from '../../../Utils/Utils'
+import { useWindowSize } from '../../../Utils/WithWindowSize'
+import { useSimulation } from '../../App/WithSimulation'
+import { chartDrawDataLines } from '../../Common/Chart/ChartComponent/ChartDrawDataLines'
+import { ChartReact } from '../../Common/Chart/ChartReact'
+import { ChartUtils, rectExt } from '../../Common/Chart/ChartUtils/ChartUtils'
+import { usePlanContent } from '../Plan'
+import { chartPanelLabel } from './ChartPanelLabel'
 import {
   chartPanelSpendingDiscretionaryTypeID,
   chartPanelSpendingEssentialTypeID,
   ChartPanelType,
   isChartPanelSpendingDiscretionaryType,
-  isChartPanelSpendingEssentialType,
+  isChartPanelSpendingEssentialType
 } from './ChartPanelType'
-import {tpawChartData, TPAWChartData} from './TPAWChartData'
+import { tpawChartData, TPAWChartData } from './TPAWChartData'
 
 const duration = 0.5
 const widthForFullSize = 700
@@ -52,8 +52,12 @@ export const ChartPanelMenu = React.memo(
     )
     const allChartData = useAllChartData()
     const {label, subLabel} = chartPanelLabel(params, type, 'full')
+    // Hack to force redraw on open. Seemed like the draws were not taking
+    // effect when the canvas was not visible.
+    const [drawKey, setDrawKey] = useState(0)
 
     const handleShow = () => {
+      setDrawKey(x => x + 1)
       fGet(portalElement).style.visibility = 'visible'
       fGet(portalElement).style.pointerEvents = 'auto'
       fGet(overlayElement).style.opacity = '.7'
@@ -67,7 +71,7 @@ export const ChartPanelMenu = React.memo(
       timeline.fromTo(popperElement, {scale: 0.95}, {scale: 1, duration}, 0)
     }
     const handleHide = (type: ChartPanelType | null) => {
-      if(type) onSelect(type)
+      if (type) onSelect(type)
       fGet(overlayElement).style.opacity = '0'
       fGet(popperElement).style.opacity = '0'
       const timeline = gsap.timeline({
@@ -83,6 +87,7 @@ export const ChartPanelMenu = React.memo(
       currType: type,
       onSelect: (x: ChartPanelType) => handleHide(x),
       allChartData,
+      drawKey,
     }
 
     return (
@@ -191,12 +196,14 @@ const _Button = React.memo(
     onSelect,
     type,
     allChartData,
+    drawKey,
   }: {
     className?: string
     currType: ChartPanelType
     onSelect: (type: ChartPanelType) => void
     type: ChartPanelType
     allChartData: _AllChartData
+    drawKey: number
   }) => {
     const {params} = useSimulation().tpawResult.args
     const [description, chartData] = useInfo(type, allChartData)
@@ -245,6 +252,7 @@ const _Button = React.memo(
             data={chartData}
             className="w-full h-full"
             isCurrent={isCurrent}
+            drawKey={drawKey}
           />
         </div>
       </button>
@@ -317,24 +325,41 @@ function useAllChartData() {
   }, [tpawResult, highlightPercentiles])
 }
 
+const _processData = (data: TPAWChartData) => {
+  const xyRange = {
+    x: {start: data.age.start, end: data.age.end},
+    y: {start: data.min.y, end: data.max.y},
+  }
+  const area = ({width, height}: {width: number; height: number}) => ({
+    viewport: rectExt({x: 0, y: 0, width, height}),
+    padding: {left: 0, top: 0, bottom: 0, right: 0},
+  })
+  return {
+    data,
+    xyRange,
+    area,
+    alpha: 1,
+    animation: null,
+  }
+}
+
 const _Chart = React.memo(
   ({
     className = '',
     data,
     isCurrent,
+    drawKey,
   }: {
     className?: string
     data: TPAWChartData
     isCurrent: boolean
+    drawKey: number
   }) => {
-    const state = useMemo(() => {
-      const xyRange = {
-        x: {start: data.age.start, end: data.age.end},
-        y: {start: data.min.y, end: data.max.y},
-      }
-      const padding = {left: 0, top: 0, bottom: 0, right: 0}
-      return {data, xyRange, padding, animation:null}
-    }, [data])
+    const [state, setState] = useState(() => _processData(data))
+
+    useEffect(() => {
+      setState(_processData(data))
+    }, [data, drawKey])
 
     const components = useMemo(
       () => [
@@ -369,11 +394,10 @@ const _Chart = React.memo(
     )
 
     return (
-      <ChartReact<TPAWChartData>
+      <ChartReact<[TPAWChartData]>
         className={`${className}`}
-        state={state}
+        charts={[{state, components, key: 'menu', order: 0}]}
         animationForBoundsChange={null}
-        components={components}
       />
     )
   }

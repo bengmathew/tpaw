@@ -9,7 +9,7 @@ export type ChartDataTransition<Data> = {
 }
 
 export const chartDataTransitionCurrObj = <
-  Obj extends Record<string, number | Record<string, number>>,
+  Obj extends Record<string, number | Record<string, number> | number[]>,
   Data
 >(
   dataTransition: ChartDataTransition<Data>,
@@ -23,6 +23,15 @@ export const chartDataTransitionCurrObj = <
           prev[key] as number,
           target[key] as number,
           dataTransition
+        )
+      : value instanceof Array
+      ? chartDataTransitionCurrNumArr(
+          {
+            prev: prev[key] as any,
+            target: target[key] as any,
+            transition: dataTransition.transition,
+          },
+          (x: any) => x
         )
       : chartDataTransitionCurrObj(
           {
@@ -52,4 +61,3 @@ export function chartDataTransitionCurrNumArr<Data>(
   const prev = dataFn(dataTransition.prev)
   return target.map((t, i) => zeroOneInterpolate(prev[i], t, dataTransition))
 }
-

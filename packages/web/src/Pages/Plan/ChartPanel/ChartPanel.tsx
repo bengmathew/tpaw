@@ -1,32 +1,35 @@
-import {faInfo} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {Power4, Power1} from 'gsap'
-import {useRouter} from 'next/router'
-import React, {useCallback, useEffect, useMemo, useState} from 'react'
+import { faInfo } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Power1, Power4 } from 'gsap'
+import { useRouter } from 'next/router'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Measure from 'react-measure'
-import {formatCurrency} from '../../../Utils/FormatCurrency'
-import {formatPercentage} from '../../../Utils/FormatPercentage'
-import {useURLParam} from '../../../Utils/UseURLParam'
-import {assert, fGet, noCase} from '../../../Utils/Utils'
-import {useWindowSize} from '../../../Utils/WithWindowSize'
-import {useSimulation} from '../../App/WithSimulation'
-import {ChartAnimation} from '../../Common/Chart/Chart'
-import {ChartPanelButtons} from './ChartPanelButtons'
-import {ChartPanelDescription} from './ChartPanelDescription'
-import {ChartPanelMenu} from './ChartPanelMenu'
+import { formatCurrency } from '../../../Utils/FormatCurrency'
+import { formatPercentage } from '../../../Utils/FormatPercentage'
+import { useURLParam } from '../../../Utils/UseURLParam'
+import { assert, fGet, noCase } from '../../../Utils/Utils'
+import { useWindowSize } from '../../../Utils/WithWindowSize'
+import { SimulationInfo, useSimulation } from '../../App/WithSimulation'
+import { ChartAnimation } from '../../Common/Chart/Chart'
+import { ChartPanelButtons } from './ChartPanelButtons'
+import { ChartPanelDescription } from './ChartPanelDescription'
+import { ChartPanelMenu } from './ChartPanelMenu'
 import {
   ChartPanelType,
   isChartPanelSpendingDiscretionaryType,
   isChartPanelSpendingEssentialType,
-  isChartPanelType,
+  isChartPanelType
 } from './ChartPanelType'
-import {LegacyDisplay} from './LegacyDisplay'
-import {TPAWChart, TPAWChartState} from './TPAWChart'
+import { TPAWChart, TPAWChartState } from './TPAWChart'
 import {
   tpawChartData,
   tpawChartDataScaled,
-  tpawChartDataYRange,
+  tpawChartDataYRange
 } from './TPAWChartData'
+import {
+  tpawChartLegacyData,
+  tpawChartLegacyDataYRange
+} from './TPAWChartLegacyData'
 
 type _State = {
   type: ChartPanelType
@@ -62,10 +65,18 @@ export function useChartPanel({
   const [state, setState] = useState<_State>(() => {
     const type = panelTypeIn
     const data = tpawChartData(type, tpawResult, highlightPercentiles)
+    const legacyData = tpawChartLegacyData(tpawResult, highlightPercentiles)
     return {
       type,
-      data,
-      yRange: tpawChartDataYRange(data),
+      main: {
+        data,
+        yRange: tpawChartDataYRange(data),
+      },
+      legacy: {
+        data: legacyData,
+        yRange: tpawChartLegacyDataYRange(legacyData),
+        show: _shouldShowLegacy(type, tpawResult),
+      },
       externalTopPadding: topPadding,
       animation: null,
     }
@@ -77,13 +88,28 @@ export function useChartPanel({
   )
 
   useEffect(() => {
-    setState(prev => ({
-      type: prev.type,
-      data: tpawChartData(prev.type, tpawResult, highlightPercentiles),
-      yRange: prev.yRange,
-      externalTopPadding: prev.externalTopPadding,
-      animation: normalAnimation,
-    }))
+    setState(prev => {
+      const type = prev.type
+      const show = _shouldShowLegacy(type, tpawResult)
+      const legacyData = tpawChartLegacyData(tpawResult, highlightPercentiles)
+      return {
+        type,
+        main: {
+          data: tpawChartData(type, tpawResult, highlightPercentiles),
+          yRange: prev.main.yRange,
+        },
+        legacy: {
+          data: legacyData,
+          yRange:
+            show && !prev.legacy.show
+              ? tpawChartLegacyDataYRange(legacyData)
+              : prev.legacy.yRange,
+          show,
+        },
+        externalTopPadding: prev.externalTopPadding,
+        animation: normalAnimation,
+      }
+    })
     // HighlighPercentiles is a const.
   }, [tpawResult, highlightPercentiles])
 
@@ -91,8 +117,15 @@ export function useChartPanel({
     setState(prev => {
       return {
         type: prev.type,
-        data: prev.data,
-        yRange: tpawChartDataYRange(prev.data),
+        main: {
+          data: prev.main.data,
+          yRange: tpawChartDataYRange(prev.main.data),
+        },
+        legacy: {
+          data: prev.legacy.data,
+          yRange: tpawChartLegacyDataYRange(prev.legacy.data),
+          show: prev.legacy.show,
+        },
         externalTopPadding: prev.externalTopPadding,
         animation: normalAnimation,
       }
@@ -101,7 +134,7 @@ export function useChartPanel({
 
   const handleChangeType = (type: ChartPanelType) => {
     if (type === state.type) return // this can be caused by update from url., eg back button.
-    const yRange = tpawChartDataYRange(
+    const mainYRange = tpawChartDataYRange(
       tpawChartData(type, tpawResult, highlightPercentiles)
     )
     const url = new URL(window.location.href)
@@ -114,8 +147,15 @@ export function useChartPanel({
 
     setState(prev => ({
       type,
-      data: tpawChartDataScaled(prev.data, yRange),
-      yRange,
+      main: {
+        data: tpawChartDataScaled(prev.main.data, mainYRange),
+        yRange: mainYRange,
+      },
+      legacy: {
+        data: prev.legacy.data,
+        yRange: prev.legacy.yRange,
+        show: prev.legacy.show,
+      },
       externalTopPadding: prev.externalTopPadding,
       animation: null,
     }))
@@ -132,8 +172,15 @@ export function useChartPanel({
       assert(prev.type === state.type)
       return {
         type: prev.type,
-        data: tpawChartData(prev.type, tpawResult, highlightPercentiles),
-        yRange: prev.yRange,
+        main: {
+          data: tpawChartData(prev.type, tpawResult, highlightPercentiles),
+          yRange: prev.main.yRange,
+        },
+        legacy: {
+          data: prev.legacy.data,
+          yRange: prev.legacy.yRange,
+          show: _shouldShowLegacy(prev.type, tpawResult),
+        },
         externalTopPadding: prev.externalTopPadding,
         animation: morphAnimation,
       }
@@ -146,13 +193,20 @@ export function useChartPanel({
       assert(prev.type === state.type)
       return {
         type: prev.type,
-        data: prev.data,
-        yRange: prev.yRange,
+        main: {
+          data: prev.main.data,
+          yRange: prev.main.yRange,
+        },
+        legacy: {
+          data: prev.legacy.data,
+          yRange: prev.legacy.yRange,
+          show: prev.legacy.show,
+        },
         externalTopPadding: topPadding,
         // the challenge here is that this can happend during graph change and
         // resize, so not clear if morphAnimation or normal. altogether ugly hack
         // is to make it morph in both cases.
-        animation: morphAnimation, 
+        animation: morphAnimation,
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -167,7 +221,7 @@ export function useChartPanel({
       <Measure bounds onResize={({bounds}) => setHeadingSize(fGet(bounds))}>
         {({measureRef}) => (
           <div
-            className="flex flex-col items-start absolute w-full  px-3 z-10 bg-pageBG"
+            className="flex flex-col items-start absolute w-full  px-3 z-10 bg-pageBG "
             ref={measureRef}
           >
             <div
@@ -227,11 +281,6 @@ export function useChartPanel({
           />
         )}
       </div>
-
-      <LegacyDisplay
-        className={`absolute left-3`}
-        style={{top: `${headingSize.height + 10}px`}}
-      />
     </div>
   )
   return [handleChangeType, state.type, render] as const
@@ -255,4 +304,28 @@ const _info = (type: ChartPanelType): [(x: number) => string, boolean] => {
         return [formatCurrency, false]
       noCase(type)
   }
+}
+
+const _shouldShowLegacy = (
+  type: ChartPanelType,
+  {args}: SimulationInfo['tpawResult']
+) => {
+  const hasLegacy =
+    args.params.legacy.total > 0 || args.params.spendingCeiling !== null
+  const legacyMakesSense = (() => {
+    switch (type) {
+      case 'spending-total':
+      case 'spending-general':
+      case 'portfolio':
+        return true
+      case 'glide-path':
+      case 'withdrawal-rate':
+        return false
+      default:
+        if (isChartPanelSpendingEssentialType(type)) return true
+        if (isChartPanelSpendingDiscretionaryType(type)) return true
+        noCase(type)
+    }
+  })()
+  return hasLegacy && legacyMakesSense
 }

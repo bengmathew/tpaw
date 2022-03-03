@@ -188,7 +188,7 @@ const _Detail = React.memo(
                 style={{grid: '1fr auto / 1fr'}}
               >
 
-                <div className="pl-8 plan-pr  h-full opacity-90 mb-20">
+                <div className="pl-8 plan-pr pt-4  h-full opacity-90 mb-20">
                 <h2 className="font-bold uppercase  text-sm -mt-2 mb-4 text-gray-500">Instructions</h2>
                   <_RichText className="">{content.body.fields.body}</_RichText>
                 </div>

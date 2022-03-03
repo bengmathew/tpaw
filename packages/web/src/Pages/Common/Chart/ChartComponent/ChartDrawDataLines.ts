@@ -17,7 +17,7 @@ export const chartDrawDataLines = <Data>({
 }): ChartComponent<Data> => ({
   draw: (context: ChartContext<Data>) => {
     const {ctx, stateTransition, currState} = context
-    const {scale, plotArea, viewPort} = currState
+    const {scale, plotArea, viewport} = currState
 
     const dataXs = _.range(
       Math.floor(scale.x.inverse(plotArea.x)),
@@ -29,7 +29,7 @@ export const chartDrawDataLines = <Data>({
     // half the line width will be cropped if 0. Allow bleed into padding at top.
     ctx.rect(
       plotArea.x,
-      viewPort.y,
+      viewport.y,
       plotArea.width,
       plotArea.y + plotArea.height + Math.ceil(lineWidth)
     )

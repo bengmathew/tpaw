@@ -18,7 +18,7 @@ const pad = {
 }
 const duration = 1
 
-const boxXOffset = 35
+const idealBoxXOffset = 35
 const lineDash = [10, 5]
 const xLabelFontSize = 14
 
@@ -51,6 +51,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
       positionX: number
       boxW: number
       boxY: number
+      boxXOffset: number
       boxSide: number
     }>
   } | null = null
@@ -60,7 +61,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
 
   constructor(
     public dataFn: _DataFn<Data>,
-    public formatX: (data:Data, x: number) => string,
+    public formatX: (data: Data, x: number) => string,
     public formatY: (x: number) => string,
     components: readonly ChartPointerComponent<Data>[]
   ) {
@@ -92,7 +93,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
         )
       )
 
-      const {boxInfo, boxY, boxW, boxSide} = _boxInfo(
+      const {boxInfo, boxY, boxW, boxXOffset, boxSide} = _boxInfo(
         state,
         positionX,
         this.dataFn,
@@ -100,10 +101,10 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
         this.formatX,
         ctx
       )
-      const target = {positionX, boxY, boxW, boxSide}
+      const target = {positionX, boxY, boxW, boxXOffset, boxSide}
       const prev = this._state
         ? chartDataTransitionCurrObj(this._state.transition, x => x)
-        : {positionX: position.x, boxY, boxW, boxSide}
+        : {positionX: position.x, boxY, boxW, boxXOffset, boxSide}
 
       for (const component of this._components) {
         ctx.save()
@@ -170,6 +171,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
       boxSide,
       boxY,
       boxW,
+      boxXOffset,
     } = chartDataTransitionCurrObj(this._state.transition, x => x)
     ctx.restore()
     const pointerTransition = {
@@ -195,7 +197,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
     ctx.lineDashOffset = lineDash[0]
     ctx.beginPath()
     ctx.moveTo(graphX, plotArea.y + plotArea.height)
-    // ctx.lineTo(graphX, viewPort.y)
+    // ctx.lineTo(graphX, viewport.y)
     ctx.lineTo(graphX, Math.min(...graphYs))
     ctx.lineWidth = 1.5
     ctx.strokeStyle = ChartUtils.color.gray[500]
@@ -213,7 +215,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
     })
 
     // Draw the box.
-    const boxPosition = {x: graphX, boxY, boxW, boxSide}
+    const boxPosition = {x: graphX, boxY, boxW, boxSide, boxXOffset}
     const textCenterGraphYs = _drawBox(
       this._state.boxInfo,
       boxPosition,
@@ -246,10 +248,10 @@ const _boxInfo = <Data>(
   graphX: number,
   dataFn: _DataFn<Data>,
   formatY: (x: number) => string,
-  formatX: (data:Data, x: number) => string,
+  formatX: (data: Data, x: number) => string,
   ctx: CanvasRenderingContext2D
 ) => {
-  const {plotArea, viewPort, scale, data} = state
+  const {plotArea, viewport, scale, data} = state
   const dataX = Math.round(scale.x.inverse(graphX))
   const dataYs = dataFn(data).map(({line}) => line(dataX))
   const graphYs = dataYs.map(y => scale.y(y))
@@ -265,7 +267,9 @@ const _boxInfo = <Data>(
   const xText = formatX(data, dataX)
 
   ctx.font = ChartUtils.getFont(xLabelFontSize, 'bold')
-  const xTextHeight = ctx.measureText(xText).actualBoundingBoxAscent
+  const xTextMeasure = ctx.measureText(xText)
+  const xTextHeight = xTextMeasure.actualBoundingBoxAscent
+  const xTextWidth = xTextMeasure.width
 
   // Assume there is nothing below the line.
   const textH = yTextMeasures[0].actualBoundingBoxAscent
@@ -283,12 +287,25 @@ const _boxInfo = <Data>(
     plotArea.y + plotArea.height - boxH - 10
   )
   const boxW =
-    yLabelMeasureMaxWidth +
-    yTextMeasureMaxWidth +
-    pad.horz.edge * 2 +
-    pad.horz.between
-  const boxRight = graphX + boxXOffset + boxW
-  const boxSide = boxRight + boxXOffset > plotArea.x + plotArea.width ? -1 : 1
+    Math.max(
+      xTextWidth,
+      yLabelMeasureMaxWidth + yTextMeasureMaxWidth + pad.horz.between
+    ) +
+    pad.horz.edge * 2
+
+  // const boxXOffset = Math.min(idealBoxXOffset, plotArea.width / 2 - boxW)
+  // const boxRight = graphX + boxXOffset + boxW
+  let boxXOffset =
+    idealBoxXOffset *
+    (viewport.width < 200 ? 0.3 : viewport.width < 500 ? 0.5 : 1)
+  const boxPad = viewport.width > 500 ? 5 : -10
+  const boxSide = graphX + boxXOffset + boxW + boxPad < plotArea.right ? 1 : -1
+  boxXOffset = Math.min(
+    boxXOffset,
+    boxSide === 1
+      ? viewport.right - 1 - graphX - boxW
+      : graphX - (viewport.x + 1) - boxW
+  )
 
   return {
     boxInfo: {
@@ -302,6 +319,7 @@ const _boxInfo = <Data>(
     },
     boxY,
     boxW,
+    boxXOffset,
     boxSide,
   }
 }
@@ -320,8 +338,15 @@ const _drawBox = (
     x: graphX,
     boxY,
     boxSide,
+    boxXOffset,
     boxW,
-  }: {x: number; boxY: number; boxSide: number; boxW: number},
+  }: {
+    x: number
+    boxY: number
+    boxSide: number
+    boxXOffset: number
+    boxW: number
+  },
   graphYs: number[],
   ctx: CanvasRenderingContext2D
 ) => {
@@ -364,8 +389,8 @@ const _drawBox = (
     ctx.fillText(yText, box.x + box.width - pad.horz.edge, textGraphY)
     ctx.textAlign = 'left'
 
-    ctx.font = ChartUtils.getMonoFont(8)
-    ctx.fillText('th', labelX, textGraphY - 2)
+    ctx.font = ChartUtils.getMonoFont(7)
+    ctx.fillText('th', labelX, textGraphY - 4)
 
     return textGraphY - textH / 2
   })

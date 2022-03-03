@@ -68,7 +68,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
         style={{
           grid: isPortrait
             ? '"chart" auto "params" 1fr /1fr'
-            : '"params chart" 1fr /2fr 3fr',
+            : '"params chart" 1fr /.6fr 1fr',
         }}
       >
         {chartPanel}

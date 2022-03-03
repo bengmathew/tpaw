@@ -9,14 +9,16 @@ import {ChartMinMaxYAxis} from '../../Common/Chart/ChartComponent/ChartMinMaxYAx
 import {ChartPointer} from '../../Common/Chart/ChartComponent/ChartPointer'
 import {ChartXAxis} from '../../Common/Chart/ChartComponent/ChartXAxis'
 import {ChartReact, ChartReactState} from '../../Common/Chart/ChartReact'
-import {ChartUtils} from '../../Common/Chart/ChartUtils/ChartUtils'
+import {ChartUtils, rectExt} from '../../Common/Chart/ChartUtils/ChartUtils'
+import {chartDrawLegacy} from './LegacyComponents/ChartDrawLegacy'
 import {TPAWChartData} from './TPAWChartData'
+import {TPAWChartLegacyData} from './TPAWChartLegacyData'
 
 export type TPAWChartState = {
-  data: TPAWChartData
-  yRange: SimpleRange
+  main: {data: TPAWChartData; yRange: SimpleRange}
+  legacy: {data: TPAWChartLegacyData; yRange: SimpleRange; show: boolean}
   externalTopPadding: number
-  animation: ChartAnimation|null
+  animation: ChartAnimation | null
 }
 
 export const TPAWChart = React.memo(
@@ -35,33 +37,82 @@ export const TPAWChart = React.memo(
     animationForBoundsChange: ChartAnimation
     lastAgeIsLegacy: boolean
   }) => {
-    const state = useMemo((): ChartReactState<TPAWChartData> => {
-      const {yRange, data, externalTopPadding, animation} = stateIn
-      const xyRange = {
-        x: {start: data.age.start, end: data.age.end},
-        y: yRange,
-      }
-      const padding = ({
-        width,
-        height: heightIn,
-      }: {
-        width: number
-        height: number
-      }) => {
-        const baseTop = 30 + externalTopPadding
-        const aspectIn = width / (heightIn - baseTop)
-        const aspect =
-          aspectIn < 2 ? linearFnFomPoints(1, 1.7, 2, 2)(aspectIn) : aspectIn
-        const height = width / aspect
-
-        return {
-          left: 15,
-          top: heightIn - height,
-          bottom: 35,
-          right: 15,
+    const state = useMemo((): {
+      main: ChartReactState<TPAWChartData>
+      legacy: ChartReactState<TPAWChartLegacyData>
+    } => {
+      const {
+        main: mainIn,
+        legacy: legacyIn,
+        externalTopPadding,
+        animation,
+      } = stateIn
+      const main = (() => {
+        const xyRange = {
+          x: {start: mainIn.data.age.start, end: mainIn.data.age.end},
+          y: mainIn.yRange,
         }
-      }
-      return {xyRange, data, padding, animation}
+        const area = ({
+          width,
+          height: heightIn,
+        }: {
+          width: number
+          height: number
+        }) => {
+          const baseTop = 45 + externalTopPadding
+          const aspectIn = width / (heightIn - baseTop)
+          const aspect =
+            aspectIn < 2 ? linearFnFomPoints(1, 1.7, 2, 2)(aspectIn) : aspectIn
+          const height = width / aspect
+          const viewport = rectExt({
+            x: 0,
+            y: 0,
+            width: width - (legacyIn.show ? (width > 640 ? 115 : 98) : 0),
+            height: heightIn,
+          })
+          const padding = {
+            left: 15,
+            top: heightIn - height,
+            bottom: 35,
+            right: 15,
+          }
+          return {viewport, padding}
+        }
+        return {area, xyRange, data: mainIn.data, alpha: 1, animation}
+      })()
+
+      const legacy = (() => {
+        const xyRange = {
+          x: {start: legacyIn.data.age, end: legacyIn.data.age + 0.1},
+          y: legacyIn.yRange,
+        }
+        const area = ({width, height}: {width: number; height: number}) => {
+          const mainArea = main.area({width, height})
+          const viewport = rectExt({
+            x: mainArea.viewport.right - (width < 640 ? 7 : 0),
+            y: 0,
+            right: width,
+            bottom: mainArea.viewport.bottom,
+          })
+          const padding = {
+            left: 0,
+            top: mainArea.padding.top,
+            bottom: mainArea.padding.bottom,
+            // bottom: 0,
+            right: 15,
+          }
+          return {viewport, padding}
+        }
+        return {
+          area,
+          xyRange,
+          data: legacyIn.data,
+          alpha: legacyIn.show ? 1 : 0,
+          animation,
+        }
+      })()
+
+      return {main, legacy}
     }, [stateIn])
 
     const pointerFormatX = useCallback(
@@ -70,7 +121,7 @@ export const TPAWChart = React.memo(
       [lastAgeIsLegacy]
     )
 
-    const components = useMemo(
+    const mainComponents = useMemo(
       () => {
         const minorLine = chartDrawDataLines<TPAWChartData>({
           lineWidth: 0.5,
@@ -125,18 +176,38 @@ export const TPAWChart = React.memo(
     )
 
     useEffect(() => {
-      components.byName.minMaxYAxis.format = yAxisFormat
-      components.byName.pointer.formatY = yAxisFormat
-      components.byName.pointer.formatX = pointerFormatX
-    }, [yAxisFormat, components, pointerFormatX])
+      mainComponents.byName.minMaxYAxis.format = yAxisFormat
+      mainComponents.byName.pointer.formatY = yAxisFormat
+      mainComponents.byName.pointer.formatX = pointerFormatX
+    }, [yAxisFormat, mainComponents, pointerFormatX])
+
+    const legacyComponents = useMemo(() => {
+      const legacy = chartDrawLegacy()
+      return {
+        arr: [legacy],
+        byName: {legacy},
+      }
+    }, [])
 
     return (
-      <ChartReact<TPAWChartData>
+      <ChartReact<[TPAWChartLegacyData, TPAWChartData]>
         className={`${className}`}
         style={style}
-        state={state}
+        charts={[
+          {
+            state: state.legacy,
+            components: legacyComponents.arr,
+            key: 'legacy',
+            order: 0,
+          },
+          {
+            state: state.main,
+            components: mainComponents.arr,
+            key: 'main',
+            order: 1,
+          },
+        ]}
         animationForBoundsChange={animationForBoundsChange}
-        components={components.arr}
       />
     )
   }

@@ -236,8 +236,8 @@ const _labelBox = (
   const labelGraphY = plotArea.bottom + tickInfo.length + 2
   const y = includeTick
     ? plotArea.bottom
-    : labelGraphY - measure.fontBoundingBoxAscent - pad.top
-  const bottom = labelGraphY + measure.fontBoundingBoxDescent + pad.bottom
+    : labelGraphY - measure.actualBoundingBoxAscent - pad.top
+  const bottom = labelGraphY + measure.actualBoundingBoxDescent + pad.bottom
   return rectExt({
     x: graphX - width / 2,
     y,

@@ -8,6 +8,7 @@ import {ChartComponent} from './ChartComponent/ChartComponent'
 import {ChartContext} from './ChartContext'
 import {
   ChartDataTransition,
+  chartDataTransitionCurrNum,
   chartDataTransitionCurrObj,
 } from './ChartUtils/ChartDataTransition'
 import {rectExt, RectExt} from './ChartUtils/ChartUtils'
@@ -22,13 +23,13 @@ export type ChartPadding = {
 export type ChartAnimation = {ease: gsap.EaseFunction; duration: number}
 
 export type ChartState<Data> = {
-  size: {width: number; height: number}
+  viewport: RectExt
   padding: ChartPadding
   data: Data
   xyRange: ChartXYRange
+  alpha: number
 }
 type _ChartStateDerived = {
-  viewPort: RectExt
   plotArea: RectExt
   scale: {x: LinearFn; y: LinearFn}
 }
@@ -37,25 +38,25 @@ export type ChartFullState<Data> = ChartState<Data> & _ChartStateDerived
 export class Chart<Data> {
   private _canvas
   private _ctx: CanvasRenderingContext2D
-  private readonly _handleDraw = () => this._draw()
 
   private _stateTransition: ChartDataTransition<ChartFullState<Data>>
   private _components: readonly ChartComponent<Data>[]
   private _stateAnimation: ReturnType<typeof gsap.to> | null = null
   private _activeAnimations: (gsap.core.Tween | gsap.core.Timeline)[] = []
+  private _id = _.uniqueId()
 
   private get _registerAnimation() {
     return <T extends gsap.core.Tween | gsap.core.Timeline>(tween: T): T => {
       tween.eventCallback('onStart', () => {
         this._activeAnimations.push(tween)
         if (this._activeAnimations.length === 1) {
-          gsap.ticker.add(this._handleDraw)
+          gsap.ticker.add(this.onDraw)
         }
       })
       const handleDone = () => {
         _.remove(this._activeAnimations, x => x === tween)
         if (this._activeAnimations.length === 0) {
-          gsap.ticker.remove(this._handleDraw)
+          gsap.ticker.remove(this.onDraw)
         }
       }
       tween.eventCallback('onComplete', handleDone)
@@ -66,37 +67,52 @@ export class Chart<Data> {
     }
   }
 
+  pointerMoved(position: {x: number; y: number} | null) {
+    const {viewport} = this._stateTransition.target
+
+    if (
+      position &&
+      (position.x < viewport.x ||
+        viewport.right <= position.x ||
+        position.y < viewport.y ||
+        viewport.bottom <= position.y)
+    ) {
+      position = null
+    }
+    this._components.forEach(x =>
+      x.setPointerPosition?.(
+        position,
+        this._stateTransition.target,
+        this._ctx,
+        this._registerAnimation
+      )
+    )
+    this.onDraw()
+  }
+
+  // private _handlers = {
+  //   pointerMove: (e: PointerEvent) =>
+  //     this._handlePointerPosition(fGet(localPoint(this._canvas, e))),
+  //   pointerEnter: (e: PointerEvent) =>
+  //     this._handlePointerPosition(fGet(localPoint(this._canvas, e))),
+  //   pointerLeave: () => this._handlePointerPosition(null),
+  // }
 
   constructor(
     canvas: HTMLCanvasElement,
     baseState: ChartState<Data>,
-    components: readonly ChartComponent<Data>[]
+    components: readonly ChartComponent<Data>[],
+    private debugName: string,
+    private onDraw:()=>void
   ) {
     this._canvas = canvas
     this._components = components
-
-    const handlePointerPosition = (position: {x: number; y: number} | null) => {
-      this._components.forEach(
-        x =>
-          x.setPointerPosition &&
-          x.setPointerPosition(
-            position,
-            this._stateTransition.target,
-            this._ctx,
-            this._registerAnimation
-          )
-      )
-      this._draw()
-    }
-    this._canvas.onpointermove = e =>
-      handlePointerPosition(fGet(localPoint(this._canvas, e)))
-
-    this._canvas.onpointerenter = e =>
-      handlePointerPosition(fGet(localPoint(this._canvas, e)))
-
-    this._canvas.onpointerleave = () => handlePointerPosition(null)
-
     this._ctx = fGet(canvas.getContext('2d'))
+
+
+    // this._canvas.addEventListener('pointermove', this._handlers.pointerMove)
+    // this._canvas.addEventListener('pointerenter', this._handlers.pointerEnter)
+    // this._canvas.addEventListener('pointerleave', this._handlers.pointerLeave)
 
     const state = {...baseState, ..._derivedState(baseState)}
     this._stateTransition = {target: state, prev: state, transition: 1}
@@ -104,11 +120,20 @@ export class Chart<Data> {
   }
 
   destroy() {
-    this._components.forEach(x => {
-      if (x.destroy) x.destroy()
-    })
+    
+    // this._canvas.removeEventListener('pointermove', this._handlers.pointerMove)
+    // this._canvas.removeEventListener(
+    //   'pointerenter',
+    //   this._handlers.pointerEnter
+    // )
+    // this._canvas.removeEventListener(
+    //   'pointerleave',
+    //   this._handlers.pointerLeave
+    // )
+    this._components.forEach(x => x.destroy?.())
     this._stateAnimation?.kill()
     assert(this._activeAnimations.length === 0)
+
   }
 
   setComponents(components: readonly ChartComponent<Data>[]) {
@@ -116,15 +141,16 @@ export class Chart<Data> {
       if (x.destroy) x.destroy()
     })
     this._components = components
-    this._draw()
+    this.onDraw()
   }
   setState(baseState: ChartState<Data>, animation: ChartAnimation | null) {
-    const {size, padding, data, xyRange} = baseState
+    const {viewport, padding, data, xyRange, alpha} = baseState
     const target = {
-      size,
+      viewport,
       padding,
       data,
       xyRange,
+      alpha,
       ..._derivedState(baseState),
     }
     this._stateTransition.prev = animation
@@ -157,18 +183,7 @@ export class Chart<Data> {
     } else {
       this._stateTransition.transition = 1
     }
-    if (
-      size.width !== this._stateTransition.prev.size.width ||
-      size.height !== this._stateTransition.prev.size.width
-    ) {
-      const canvas = this._canvas
-      canvas.style.width = `${size.width}px`
-      canvas.style.height = `${size.height}px`
-      const dpr = window.devicePixelRatio || 1
-      canvas.width = size.width * dpr
-      canvas.height = size.height * dpr
-      this._ctx.scale(dpr, dpr)
-    }
+
     this._components.forEach(
       x =>
         x.setState &&
@@ -178,16 +193,16 @@ export class Chart<Data> {
           this._registerAnimation
         )
     )
-    this._draw()
+    this.onDraw()
   }
-  private _draw() {
+  draw() {
     const ctx = this._ctx
     const stateTransition = this._stateTransition
     const currState = _interpolateState(stateTransition)
     const chartContext: ChartContext<Data> = {ctx, stateTransition, currState}
+    const {viewport, alpha} = currState
 
-    ctx.clearRect(0, 0, this._canvas.width, this._canvas.height)
-
+    ctx.globalAlpha = alpha
     this._components.forEach(component => {
       ctx.save()
       component.draw(chartContext, this._registerAnimation)
@@ -197,20 +212,19 @@ export class Chart<Data> {
 }
 
 const _derivedState = ({
-  size,
+  viewport,
   padding,
   xyRange,
 }: {
-  size: {width: number; height: number}
+  viewport: RectExt
   padding: ChartPadding
   xyRange: ChartXYRange
 }): _ChartStateDerived => {
-  const viewPort = rectExt({x: 0, y: 0, ...size})
   const plotArea = rectExt({
-    x: padding.left,
-    y: padding.top,
-    width: viewPort.width - padding.left - padding.right,
-    height: viewPort.height - padding.top - padding.bottom,
+    x: viewport.x + padding.left,
+    y: viewport.y + padding.top,
+    width: viewport.width - padding.left - padding.right,
+    height: viewport.height - padding.top - padding.bottom,
   })
   const scale = {
     x: linearFnFomPoints(
@@ -226,24 +240,21 @@ const _derivedState = ({
       plotArea.y
     ),
   }
-  return {
-    viewPort,
-    plotArea,
-    scale,
-  }
+  return {plotArea, scale}
 }
 
 const _interpolateState = <Data>(
   stateTransition: ChartDataTransition<ChartFullState<Data>>
 ): Omit<ChartFullState<Data>, 'data'> => {
-  // Don't interpolate the size.
-  const size = stateTransition.target.size
+  const viewport = chartDataTransitionCurrObj(stateTransition, x => x.viewport)
   const padding = chartDataTransitionCurrObj(stateTransition, x => x.padding)
   const xyRange = chartDataTransitionCurrObj(stateTransition, x => x.xyRange)
+  const alpha = chartDataTransitionCurrNum(stateTransition, x => x.alpha)
   return {
-    size,
+    viewport,
     padding,
     xyRange,
-    ..._derivedState({size, padding, xyRange}),
+    alpha,
+    ..._derivedState({viewport, padding, xyRange}),
   }
 }
