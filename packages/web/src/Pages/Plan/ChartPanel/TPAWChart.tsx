@@ -91,7 +91,7 @@ export const TPAWChart = React.memo(
           const viewport = rectExt({
             x: mainArea.viewport.right - (width < 640 ? 7 : 0),
             y: 0,
-            right: width,
+            width: Math.max(25, width - mainArea.viewport.width),
             bottom: mainArea.viewport.bottom,
           })
           const padding = {
