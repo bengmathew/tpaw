@@ -10,8 +10,11 @@ export namespace StatsTools {
     return _.range(numCols).map(colIndex => rows.map(row => row[colIndex]))
   }
 
-  export function pickPercentilesFromSorted(sortedData: number[][], percentiles: number[]) {
-    if (sortedData.length === 0) return sortedData
+  export function pickPercentilesFromSorted(
+    sortedData: Float64Array[],
+    percentiles: number[]
+  ) {
+    if (sortedData.length === 0) return [] as number[][]
     const indices = percentiles.map(percentile =>
       Math.round((percentile * sortedData[0].length) / 100)
     )

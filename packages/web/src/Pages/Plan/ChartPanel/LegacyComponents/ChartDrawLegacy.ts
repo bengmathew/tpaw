@@ -8,7 +8,7 @@ import {
 import {ChartUtils, rectExt} from '../../../Common/Chart/ChartUtils/ChartUtils'
 import {TPAWChartLegacyData} from '../TPAWChartLegacyData'
 
-const pad = {vert: 6, horz: 5}
+const pad = {vert: 6, horz: 10}
 const _fontSize = 11
 const _lineLength = 10
 export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
@@ -73,7 +73,7 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
       ctx.lineTo(graphX + _lineLength, graphY)
     })
     ctx.lineWidth = 0.5
-    ctx.strokeStyle = ChartUtils.color.gray[500]
+    ctx.strokeStyle = ChartUtils.color.gray[900]
     ctx.stroke()
 
     // Draw the major lines.
@@ -121,7 +121,7 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
       ...majorDataPercentiles.map(x => ctx.measureText(`${x}`).width)
     )
 
-    let yLabelGraphY = plotArea.bottom + yLabelHeight * 1.5 + pad.vert
+    let yLabelGraphY = plotArea.bottom+ yLabelHeight * 1.5 + pad.vert 
     
     const percentileGraphX = plotArea.x + pad.horz
     const thGraphX = percentileGraphX + percentileLabelWidth
@@ -133,10 +133,13 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
       const graphY = scale.y(dataY)
       yLabelGraphY -= yLabelHeight + pad.vert
 
+
+      ctx.fillStyle = ChartUtils.color.gray[900]
       ctx.textAlign = 'right'
       ctx.font = ChartUtils.getMonoFont(_fontSize)
       ctx.fillText(yLabels[i], labelGraphX + yLabelWidth, yLabelGraphY)
 
+      ctx.fillStyle = ChartUtils.color.gray[700]
       ctx.textAlign = 'left'
       ctx.font = ChartUtils.getMonoFont(7)
       ctx.fillText('th', thGraphX, yLabelGraphY - 4)
@@ -168,8 +171,8 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
     })
 
     // Draw the label.
-    ctx.font = ChartUtils.getFont(14, 'bold')
-    ctx.fillStyle = ChartUtils.color.gray[800]
+    ctx.font = ChartUtils.getFont(15, 'bold')
+    ctx.fillStyle = ChartUtils.color.gray[700]
     ctx.textBaseline = 'bottom'
     ctx.textAlign = 'left'
     ctx.fillText(

@@ -7,7 +7,7 @@ export type TPAWWorkerArgs =
       taskID: string
       args: {params: TPAWParams; numRuns: number}
     }
-  | {type: 'sortRows'; taskID: string; args: {data: number[][]}}
+  | {type: 'sortRows'; taskID: string; args: {data: Float64Array[]}}
 
 export type TPAWWorkerResult =
   | {
@@ -16,21 +16,22 @@ export type TPAWWorkerResult =
       result: {
         byYearsFromNowByRun: {
           withdrawals: {
-            total: number[][]
-            essential: number[][]
-            extra: number[][]
-            regular: number[][]
+            total: Float64Array[]
+            essential: Float64Array[]
+            extra: Float64Array[]
+            regular: Float64Array[]
           }
-          startingBalanceOfSavingsPortfolio: number[][]
-          savingsPortfolioStockAllocation: number[][]
-          withdrawalFromSavingsRate: number[][]
+          startingBalanceOfSavingsPortfolio: Float64Array[]
+          savingsPortfolioStockAllocation: Float64Array[]
+          withdrawalFromSavingsRate: Float64Array[]
         }
         firstYearOfSomeRun: TPAWSimulationForYear
-        legacyByRun: number[]
-        endingBalanceOfSavingsPortfolioByRun: number[]
+        legacyByRun: Float64Array
+        endingBalanceOfSavingsPortfolioByRun: Float64Array
+        perf: [['runs', number], ['selectAndPivotPre', number], ['selectAndPivot', number], ['total', number]]
       }
     }
-  | {type: 'sortRows'; taskID: string; result: number[][]}
+  | {type: 'sortRows'; taskID: string; result: Float64Array[]}
 
 export type TPAWWorkerRunSimulationResult = Extract<
   TPAWWorkerResult,

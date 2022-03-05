@@ -59,7 +59,7 @@ export const TPAWChart = React.memo(
           width: number
           height: number
         }) => {
-          const baseTop = 45 + externalTopPadding
+          const baseTop = 30 + externalTopPadding
           const aspectIn = width / (heightIn - baseTop)
           const aspect =
             aspectIn < 2 ? linearFnFomPoints(1, 1.7, 2, 2)(aspectIn) : aspectIn
@@ -67,7 +67,7 @@ export const TPAWChart = React.memo(
           const viewport = rectExt({
             x: 0,
             y: 0,
-            width: width - (legacyIn.show ? (width > 640 ? 115 : 98) : 0),
+            width: width - (legacyIn.show ? (width > 640 ? 120 : 110) : 0),
             height: heightIn,
           })
           const padding = {
@@ -88,17 +88,18 @@ export const TPAWChart = React.memo(
         }
         const area = ({width, height}: {width: number; height: number}) => {
           const mainArea = main.area({width, height})
+          const overlap  = (width < 640 ? 0 : 0)
           const viewport = rectExt({
-            x: mainArea.viewport.right - (width < 640 ? 7 : 0),
+            x: mainArea.viewport.right - overlap,
             y: 0,
-            width: Math.max(25, width - mainArea.viewport.width),
+            width: Math.max(25, width - mainArea.viewport.width) + overlap,
             bottom: mainArea.viewport.bottom,
           })
           const padding = {
             left: 0,
             top: mainArea.padding.top,
-            bottom: mainArea.padding.bottom,
-            // bottom: 0,
+            // bottom: mainArea.padding.bottom,
+            bottom: 17,
             right: 15,
           }
           return {viewport, padding}
