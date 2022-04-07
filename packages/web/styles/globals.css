@@ -45,6 +45,7 @@ a {
     text-shadow: none;
   }
 
+
     .p-base {
       @apply font-font2 text-lg text-gray-600
     }
@@ -101,7 +102,7 @@ a {
     .btn-dark {
       @apply rounded-full text-white  bg-darkGray;
     }
-
+ 
     .btn-dark-warnFG {
       @apply rounded-full text-errorFG  bg-buttonDarkBG;
     }
@@ -111,18 +112,18 @@ a {
     }
 
     .modal-base {
-      @apply fixed z-50 inset-0 overflow-y-auto flex items-center justify-center;
+      @apply font-font1 text-gray-800  fixed z-50 inset-0 overflow-y-auto flex items-center justify-center;
     }
 
     .plan-pr {
-      /* @apply pr-3 sm:pr-4 md:pr-10 lg:pr-[calc(50vw-470px)] */
       @apply pr-3 sm:pr-4 md:pr-16 
-      /* @apply pr-3 */
     }
     .plan-pl {
-      /* @apply pl-3 sm:pl-4 md:pl-10 lg:pl-[calc(50vw-470px)] */
       @apply pl-3 sm:pl-4 md:pl-16
-       /* @apply pl-3  */
+    }
+
+    .plan-ml {
+      @apply ml-3 sm:ml-4 md:ml-16
     }
 
 

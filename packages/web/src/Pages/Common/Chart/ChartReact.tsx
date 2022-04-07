@@ -1,13 +1,14 @@
-import {localPoint} from '@visx/event'
+import { localPoint } from '@visx/event'
 import _ from 'lodash'
-import React, {CSSProperties, useCallback, useEffect, useState} from 'react'
+import {gsap} from 'gsap'
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react'
 import Measure from 'react-measure'
-import {useAssertConst} from '../../../Utils/UseAssertConst'
-import {assert, fGet} from '../../../Utils/Utils'
-import {ChartAnimation, ChartPadding, ChartXYRange} from './Chart'
-import {ChartComponent} from './ChartComponent/ChartComponent'
-import {ChartReactSub} from './ChartReactSub'
-import {RectExt} from './ChartUtils/ChartUtils'
+import { useAssertConst } from '../../../Utils/UseAssertConst'
+import { assert, fGet } from '../../../Utils/Utils'
+import { ChartAnimation, ChartPadding, ChartXYRange } from './Chart'
+import { ChartComponent } from './ChartComponent/ChartComponent'
+import { ChartReactSub } from './ChartReactSub'
+import { RectExt } from './ChartUtils/ChartUtils'
 
 export type ChartReactState<Data> = {
   area: (bounds: {width: number; height: number}) => {
@@ -133,6 +134,7 @@ export function _After<Data extends any[]>({
       canvas.removeEventListener('pointerleave', outHandler)
     }
   }, [canvas, drawTargets])
+  useAssertConst([canvas, drawTargets])
 
   const onDraw = useCallback(() => {
     const ctx = fGet(canvas.getContext('2d'))
@@ -144,6 +146,32 @@ export function _After<Data extends any[]>({
     })
   }, [canvas, drawTargets])
   useAssertConst([canvas, drawTargets])
+
+  const [activeAnimations] = useState<(gsap.core.Tween | gsap.core.Timeline)[]>(
+    []
+  )
+
+  const registerAnimation = useCallback(<T extends gsap.core.Tween | gsap.core.Timeline>(tween: T): T => {
+      tween.eventCallback('onStart', () => {
+        activeAnimations.push(tween)
+        if (activeAnimations.length === 1) {
+          gsap.ticker.add(onDraw)
+        }
+      })
+      const handleDone = () => {
+        _.remove(activeAnimations, x => x === tween)
+        if (activeAnimations.length === 0) {
+          gsap.ticker.remove(onDraw)
+        }
+      }
+      tween.eventCallback('onComplete', handleDone)
+      // As per https://greensock.com/forums/topic/22563-working-example-of-oninterrupt-callback/
+      // this obviates the need to handle "kill"
+      tween.eventCallback('onInterrupt', handleDone)
+      return tween
+    
+  }, [activeAnimations, onDraw])
+  useAssertConst([activeAnimations, onDraw])
 
   return (
     <>
@@ -160,6 +188,7 @@ export function _After<Data extends any[]>({
             registerDrawTarget(key, {draw, pointerMoved, order})
           }
           onDraw={onDraw}
+          registerAnimation={registerAnimation}
         />
       ))}{' '}
     </>

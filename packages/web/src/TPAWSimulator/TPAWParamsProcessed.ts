@@ -1,26 +1,22 @@
 import _ from 'lodash'
-import {numOfYears} from '../Utils/NumOfYears'
 import {nominalToReal} from '../Utils/NominalToReal'
+import {extendTPAWParams} from './TPAWParamsExt'
 import {historicalReturns} from './HistoricalReturns'
-import {
-  TPAWParams,
-  tpawParamsValidator,
-  ValueForYearRange,
-  YearRange,
-  YearRangeEdge,
-} from './TPAWParams'
+import {TPAWParams, tpawParamsValidator, ValueForYearRange} from './TPAWParams'
 
 export type TPAWParamsProcessed = ReturnType<typeof processTPAWParams>
 export function processTPAWParams(
   params: TPAWParams,
   randomIndexesIntoHistoricalReturnsByYear?: (year: number) => number
 ) {
+  const {numYears} = extendTPAWParams(params)
   tpawParamsValidator(params)
   const {inflation, ...paramsWithoutInflation} = params
   const _completeAllocation = ({stocks}: {stocks: number}) => ({
     stocks,
     bonds: 1 - stocks,
   })
+
   const result = {
     ...paramsWithoutInflation,
     returns: _processReturnsParams(
@@ -40,56 +36,71 @@ export function processTPAWParams(
       const {total} = params.legacy
       const external = _.sum(
         params.legacy.external.map(x =>
-          nominalToReal(x, params.inflation, numOfYears(params.age))
+          nominalToReal(x, params.inflation, numYears)
         )
       )
       const target = Math.max(total - external, 0)
       return {totall: total, external, target}
     })(),
+    original: params,
   }
   return result
 }
 
 function _processByYearParams(params: TPAWParams) {
-  const {age, savings, retirementIncome, withdrawals} = params
-  const byYear = _.times(numOfYears(age), () => ({
+  const {people, savings, retirementIncome, withdrawals} = params
+  const {asYFN, withdrawalStartYear, numYears} = extendTPAWParams(params)
+  const withdrawalStart = asYFN(withdrawalStartYear)
+  const lastWorkingYear = withdrawalStart > 0 ? withdrawalStart - 1 : 0
+  const endYear = numYears - 1
+  const byYear = _.times(numYears, () => ({
     savings: 0,
     withdrawals: {fundedByBonds: 0, fundedByRiskPortfolio: 0},
   }))
 
   const exec = (
     values: ValueForYearRange[],
+    minYear: number,
+    maxYear: number,
     updater: (target: typeof byYear[0], value: number) => void
   ) => {
     values.forEach(({yearRange, value, nominal}) => {
-      const start = Math.max(numericYear(params, yearRange.start), age.start)
-      const end = Math.min(numericYear(params, yearRange.end), age.end)
-      const offset = start - age.start
-      _.times(Math.max(0, end + 1 - start), () => value).forEach((v, i) => {
-        const yearsFromNow = i + offset
+      const normYearRange = extendTPAWParams(params).asYFN(yearRange)
+      const start = _.clamp(normYearRange.start, minYear, maxYear)
+      const end = _.clamp(normYearRange.end, start, maxYear)
+      _.range(start, end + 1).forEach((x, yearsFromNow) => {
         updater(
           byYear[yearsFromNow],
-          nominalToReal({value: v, nominal}, params.inflation, yearsFromNow)
+          nominalToReal({value, nominal}, params.inflation, yearsFromNow)
         )
       })
     })
   }
 
-  exec(savings, (t, v) => (t.savings += v))
-  exec(retirementIncome, (t, v) => (t.savings += v))
-  exec(withdrawals.fundedByBonds, (t, v) => (t.withdrawals.fundedByBonds += v))
+  exec(savings, 0, lastWorkingYear, (t, v) => (t.savings += v))
+  exec(retirementIncome, withdrawalStart, endYear, (t, v) => (t.savings += v))
+  exec(
+    withdrawals.fundedByBonds,
+    0,
+    endYear,
+    (t, v) => (t.withdrawals.fundedByBonds += v)
+  )
   exec(
     withdrawals.fundedByRiskPortfolio,
+    0,
+    endYear,
     (t, v) => (t.withdrawals.fundedByRiskPortfolio += v)
   )
   return byYear
 }
 
 function _processReturnsParams(
-  {returns, age}: TPAWParams,
+  params: TPAWParams,
   randomIndexesIntoHistoricalReturnsByYear: (index: number) => number = () =>
     _.random(historicalReturns.length - 1)
 ) {
+  const {returns, people} = params
+  const {numYears} = extendTPAWParams(params)
   const adjustFn = (rate: number, adjustment: number) =>
     Math.exp(Math.log(1 + rate) - adjustment) - 1
 
@@ -110,27 +121,8 @@ function _processReturnsParams(
     bonds: adjustFn(x.bonds, adjustment.bonds),
   }))
 
-  const realized = _.times(numOfYears(age), i =>
+  const realized = _.times(numYears, i =>
     randomIndexesIntoHistoricalReturnsByYear(i)
   ).map(i => historicalAdjusted[i])
   return {...returns, historicalAdjusted, realized}
 }
-
-export const numericYear = (
-  {age}: {age: {start: number; retirement: number; end: number}},
-  x: YearRangeEdge
-) =>
-  x === 'start'
-    ? age.start
-    : x === 'lastWorkingYear'
-    ? age.retirement - 1
-    : x === 'retirement'
-    ? age.retirement
-    : x === 'end'
-    ? age.end
-    : x
-
-export const numericYearRange = (
-  params: {age: {start: number; retirement: number; end: number}},
-  x: YearRange
-) => ({start: numericYear(params, x.start), end: numericYear(params, x.end)})

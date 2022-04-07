@@ -10,7 +10,7 @@ export const ToggleSwitch = React.memo(
   }: {
     className?:string
     enabled: boolean
-    setEnabled: Dispatch<SetStateAction<boolean>>
+    setEnabled: (value:boolean)=>void
     type?: 'twoSided' | 'oneSided'
   }) => {
     return (

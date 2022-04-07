@@ -31,6 +31,7 @@ export function ChartReactSub<Data>({
   debugName,
   registerDrawTarget,
   onDraw,
+  registerAnimation,
 }: {
   state: ChartReactState<Data>
   debugName: string
@@ -43,6 +44,9 @@ export function ChartReactSub<Data>({
     pointerMoved: (position: {x: number; y: number} | null) => void
   }) => () => void
   onDraw: () => void
+  registerAnimation: <T extends gsap.core.Tween | gsap.core.Timeline>(
+    tween: T
+  ) => T
 }) {
   useAssertConst([onDraw])
 
@@ -54,7 +58,8 @@ export function ChartReactSub<Data>({
       _processState(state, bounds),
       components,
       debugName,
-      onDraw
+      onDraw,
+      registerAnimation
     )
     const unregister = registerDrawTarget({
       draw: () => chart.draw(),

@@ -31,7 +31,7 @@ const _ageValidator = chain(
     retirement: _ageRange,
     end: _ageRange,
   }),
-  (age): TPAWParams['age'] => {
+  (age): TPAWParamsV1['age'] => {
     const {start, retirement, end} = age
     if (retirement < start) {
       throw new Validator.Failed('Retirement age is earlier than current age.')

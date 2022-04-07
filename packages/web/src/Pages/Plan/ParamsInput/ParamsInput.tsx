@@ -9,7 +9,7 @@ import React, {useEffect, useRef, useState} from 'react'
 import {Transition} from 'react-transition-group'
 import {Contentful} from '../../../Utils/Contentful'
 import {useURLParam} from '../../../Utils/UseURLParam'
-import {noCase} from '../../../Utils/Utils'
+import {fGet, noCase} from '../../../Utils/Utils'
 import {useWindowSize} from '../../../Utils/WithWindowSize'
 import {Footer} from '../../App/Footer'
 import {useSimulation} from '../../App/WithSimulation'
@@ -22,7 +22,8 @@ import {
   ParamsInputType,
   paramsInputTypes,
 } from './Helpers/ParamsInputType'
-import {ParamsInputAge} from './ParamsInputAge'
+import {ParamsInputAge} from './ParamsInputAge/ParamsInputAge'
+import {ParamsInputBodyProps} from './ParamsInputBody'
 import {ParamsInputCurrentPortfolioValue} from './ParamsInputCurrentPortfolioValue'
 import {ParamsInputExpectedReturns} from './ParamsInputExpectedReturns'
 import {ParamsInputExtraSpending} from './ParamsInputExtraSpending'
@@ -80,11 +81,7 @@ export const ParamsInput = React.memo(
       setState(stateIn)
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stateIn])
-    const chartLabel = chartPanelLabel(
-      simulation.params,
-      chartType,
-      'full'
-    )
+    const chartLabel = chartPanelLabel(simulation.params, chartType, 'full')
 
     return (
       <div
@@ -96,7 +93,10 @@ export const ParamsInput = React.memo(
             Plan
             {chartType === 'spending-total'
               ? ''
-              : ` - View:${_.compact([...chartLabel.label, chartLabel.subLabel]).join(' - ')}`}
+              : ` - View:${_.compact([
+                  ...chartLabel.label,
+                  chartLabel.subLabel,
+                ]).join(' - ')}`}
             {state === 'summary' ? '' : ` - Input: ${paramsInputLabel(state)}`}{' '}
             - TPAW Planner
           </title>
@@ -115,7 +115,7 @@ export const ParamsInput = React.memo(
         {paramsInputTypes.map((type, i) => (
           <_Detail
             key={i}
-            allowSplit={isPortrait}
+            isPortrait={isPortrait}
             type={type}
             state={state}
             setState={setState}
@@ -135,7 +135,7 @@ const _Detail = React.memo(
     state,
     setState,
     bgClassName,
-    allowSplit,
+    isPortrait,
     chartType,
     setChartType,
   }: {
@@ -143,7 +143,7 @@ const _Detail = React.memo(
     state: _State
     setState: (state: ParamsInputType | 'summary') => void
     bgClassName: string
-    allowSplit: boolean
+    isPortrait: boolean
     chartType: ChartPanelType
     setChartType: (type: ChartPanelType) => void
   }) => {
@@ -151,6 +151,12 @@ const _Detail = React.memo(
     const content = useContent(type)
     const windowSize = useWindowSize()
     const onDone = () => setState('summary')
+
+    const layout = !isPortrait
+      ? 'laptop'
+      : windowSize.width > 900
+      ? 'desktop'
+      : 'mobile'
 
     return (
       <Transition
@@ -166,84 +172,107 @@ const _Detail = React.memo(
           )
         }}
         onExiting={() => {
-          gsap.to(detailRef.current, {opacity: 0, x: -displacement, duration})
+          gsap.to(detailRef.current, {opacity: 0, x: displacement, duration})
         }}
       >
-        {allowSplit ? (
-          windowSize.width > 900 ? (
-            <div
-              className={`absolute top-0 h-full w-full grid`}
-              style={{grid: '1fr/1fr 1fr'}}
-              ref={detailRef}
-            >
-              <div className={`overflow-scroll pr-8 plan-pl pb-10`}>
-                <_Heading
-                  className={`sticky top-0 z-10 mb-6 ${bgClassName} bg-opacity-90`}
-                  {...{type, setState}}
-                />
-                <_Body {...{type, onDone, chartType, setChartType}} />
-              </div>
-              <div
-                className={`grid pt-4 overflow-scroll bg-gray-200  `}
-                style={{grid: '1fr auto / 1fr'}}
-              >
-
-                <div className="pl-8 plan-pr pt-4  h-full opacity-90 mb-20">
-                <h2 className="font-bold uppercase  text-sm -mt-2 mb-4 text-gray-500">Instructions</h2>
-                  <_RichText className="">{content.body.fields.body}</_RichText>
-                </div>
-                <Footer />
-              </div>
-            </div>
-          ) : (
-            <div
-              className={`absolute top-0 h-full w-full overflow-scroll grid`}
-              style={{grid: 'auto auto 1fr / 1fr'}}
-              ref={detailRef}
-            >
-              <div
-                className={`sticky top-0 plan-pl plan-pr z-10  mb-6 ${bgClassName} bg-opacity-90`}
-              >
-                <_Heading className="" {...{type, setState}} />
-              </div>
-
-              <div className="plan-pl plan-pr pb-8">
-                <_Body {...{type, onDone, chartType, setChartType}} />
-              </div>
-              <div
-                className={`bg-gray-200  pt-4 opacity-90 plan-pl plan-pr grid`}
-                style={{grid: 'auto 1fr auto/1fr'}}
-              >
-                <h2 className="font-bold uppercase  text-sm -mt-2 mb-4 text-gray-500">Instructions</h2>
-                <_RichText className="pb-20">
-                  {content.body.fields.body}
-                </_RichText>
-                <Footer />
-              </div>
-            </div>
-          )
-        ) : (
+        {layout === 'desktop' ? (
           <div
             className={`absolute top-0 h-full w-full grid`}
-            style={{grid: 'auto minmax(45vh, 1fr)/1fr'}}
+            style={{grid: '1fr/1fr 1fr'}}
             ref={detailRef}
           >
-            <div className={`overflow-scroll px-10 pt-2 pb-8`}>
-              <_Heading
-                className={`sticky top-0 z-10  mb-6 ${bgClassName} bg-opacity-90`}
-                {...{type, setState}}
-              />
-              <_Body {...{type, onDone, chartType, setChartType}} />
+            <_Body
+              className={`pr-8 plan-pl`}
+              {...{
+                type,
+                onDone,
+                chartType,
+                setChartType,
+                bgClassName,
+                setState,
+                layout,
+                
+              }}
+            />
+
+            <div
+              className={`grid pt-4 overflow-scroll bg-gray-200  `}
+              style={{grid: '1fr auto / 1fr'}}
+            >
+              <div className="pl-8 plan-pr pt-4  h-full opacity-90 mb-20">
+                <h2 className="font-bold uppercase  text-sm -mt-2 mb-4 text-gray-500">
+                  Guide
+                </h2>
+                <_RichText className="">{content.body.fields.body}</_RichText>
+              </div>
+              <Footer />
             </div>
-            <div className="bg-gray-200 border-t-2 border-gray-600  pt-8 opacity-90 overflow-scroll px-10 grid" 
-                style={{grid: 'auto 1fr auto/1fr'}}>
-                <h2 className="font-bold uppercase  text-sm -mt-2 mb-4 text-gray-500">Instructions</h2>
+          </div>
+        ) : layout === 'mobile' ? (
+          <div
+            className={`absolute top-0 h-full w-full overflow-scroll grid`}
+            style={{grid: 'max-content auto / 1fr'}}
+            ref={detailRef}
+          >
+            <_Body
+              className={`plan-pl plan-pr`}
+              {...{
+                type,
+                onDone,
+                chartType,
+                setChartType,
+                bgClassName,
+                setState,
+                layout,
+              }}
+            />
+            <div
+              className={`bg-gray-200  pt-4 opacity-90 plan-pl plan-pr grid`}
+              style={{grid: 'auto 1fr auto/1fr'}}
+            >
+              <h2 className="font-bold uppercase  text-sm -mt-2 mb-4 text-gray-500">
+                Guide
+              </h2>
+              <_RichText className="pb-20">
+                {content.body.fields.body}
+              </_RichText>
+              <Footer />
+            </div>
+          </div>
+        ) : layout === 'laptop' ? (
+          <div
+            className={`absolute top-0 h-full w-full grid`}
+            style={{grid: 'max-content auto/1fr'}}
+            ref={detailRef}
+          >
+            <_Body
+              className={`overflow-scroll px-10 `}
+              {...{
+                type,
+                onDone,
+                chartType,
+                setChartType,
+                bgClassName,
+                setState,
+                layout,
+              }}
+            />
+
+            <div
+              className="bg-gray-200 border-t-2 border-gray-600  pt-8 opacity-90 overflow-scroll px-10 grid"
+              style={{grid: 'auto 1fr auto/1fr'}}
+            >
+              <h2 className="font-bold uppercase  text-sm -mt-2 mb-4 text-gray-500">
+                Guide
+              </h2>
               <_RichText className={`pb-16`}>
                 {content.body.fields.body}
               </_RichText>
               <Footer />
             </div>
           </div>
+        ) : (
+          noCase(layout)
         )}
       </Transition>
     )
@@ -252,42 +281,56 @@ const _Detail = React.memo(
 
 const _Body = React.memo(
   ({
+    className = '',
+    bgClassName,
     type,
+    layout,
     onDone,
     chartType,
     setChartType,
+    setState,
   }: {
+    className?: string
+    bgClassName: string
+    layout: 'desktop' | 'mobile' | 'laptop'
     type: ParamsInputType
     onDone: () => void
     chartType: ChartPanelType
     setChartType: (type: ChartPanelType) => void
+    setState: (state: ParamsInputType | 'summary') => void
   }) => {
+    const props: ParamsInputBodyProps = {
+      className,
+      headingProps: {type, setState, bgClassName, layout},
+    }
+
     switch (type) {
       case 'age':
-        return <ParamsInputAge />
+        return <ParamsInputAge {...props} />
       case 'risk-and-time-preference':
-        return <ParamsInputRiskAndTimePreference />
+        return <ParamsInputRiskAndTimePreference {...props} />
       case 'current-portfolio-value':
-        return <ParamsInputCurrentPortfolioValue />
+        return <ParamsInputCurrentPortfolioValue {...props} />
       case 'future-savings':
-        return <ParamsInputFutureSavings onBack={onDone} />
+        return <ParamsInputFutureSavings onBack={onDone} {...props} />
       case 'income-during-retirement':
-        return <ParamsInputIncomeDuringRetirement />
+        return <ParamsInputIncomeDuringRetirement {...props} />
       case 'extra-spending':
         return (
           <ParamsInputExtraSpending
             chartType={chartType}
             setChartType={setChartType}
+            {...props}
           />
         )
       case 'spending-ceiling-and-floor':
-        return <ParamsInputSpendingCeilingAndFloor />
+        return <ParamsInputSpendingCeilingAndFloor {...props} />
       case 'legacy':
-        return <ParamsInputLegacy />
+        return <ParamsInputLegacy {...props} />
       case 'expected-returns':
-        return <ParamsInputExpectedReturns />
+        return <ParamsInputExpectedReturns {...props} />
       case 'inflation':
-        return <ParamsInputInflation />
+        return <ParamsInputInflation {...props} />
       default:
         noCase(type)
     }
@@ -313,19 +356,23 @@ const _RichText = React.memo(
   }
 )
 
-const _Heading = React.memo(
+export const ParamsInputHeading = React.memo(
   ({
-    className = '',
+    bgClassName,
+    layout,
     type,
     setState,
   }: {
-    className?: string
+    bgClassName: string
+    layout: 'desktop' | 'mobile' | 'laptop'
     type: ParamsInputType
     setState: (state: ParamsInputType | 'summary') => void
   }) => {
     return (
       <div
-        className={`relative grid items-center ${className} `}
+        className={`sticky top-0 z-10  mb-6 ${bgClassName} bg-opacity-90  
+        ${layout === 'laptop' ? 'pt-2' : ''}
+         relative grid items-center `}
         style={{grid: 'auto/40px 1fr 40px'}}
       >
         <button

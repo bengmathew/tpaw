@@ -1,23 +1,25 @@
 import _ from 'lodash'
-import {useRouter} from 'next/dist/client/router'
-import {useEffect, useState} from 'react'
-import {getDefaultParams} from '../../TPAWSimulator/DefaultParams'
+import { useRouter } from 'next/dist/client/router'
+import { useEffect, useMemo, useState } from 'react'
+import { getDefaultParams } from '../../TPAWSimulator/DefaultParams'
 import {
   TPAWParams,
   tpawParamsValidator,
-  TPAWParamsWithoutHistorical,
-  ValueForYearRange,
+  TPAWParamsWithoutHistorical
 } from '../../TPAWSimulator/TPAWParams'
-import {numericYear} from '../../TPAWSimulator/TPAWParamsProcessed'
-import {TPAWParamsV1WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV1'
-import {tpawParamsV1Validator} from '../../TPAWSimulator/TPAWParamsV1Validator'
-import {TPAWParamsV2WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV2'
-import {tpawParamsV2Validator} from '../../TPAWSimulator/TPAWParamsV2Validator'
-import {TPAWParamsV3WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV3'
-import {tpawParamsV3Validator} from '../../TPAWSimulator/TPAWParamsV3Validator'
-import {TPAWParamsV4WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV4'
-import {Validator} from '../../Utils/Validator'
-import {AppError} from './AppError'
+import {
+  extendTPAWParams
+} from '../../TPAWSimulator/TPAWParamsExt'
+import { TPAWParamsV1WithoutHistorical } from '../../TPAWSimulator/TPAWParamsV1'
+import { tpawParamsV1Validator } from '../../TPAWSimulator/TPAWParamsV1Validator'
+import { TPAWParamsV2WithoutHistorical } from '../../TPAWSimulator/TPAWParamsV2'
+import { tpawParamsV2Validator } from '../../TPAWSimulator/TPAWParamsV2Validator'
+import { TPAWParamsV3WithoutHistorical } from '../../TPAWSimulator/TPAWParamsV3'
+import { tpawParamsV3Validator } from '../../TPAWSimulator/TPAWParamsV3Validator'
+import { V4Params } from '../../TPAWSimulator/TPAWParamsV4'
+import { V5Params } from '../../TPAWSimulator/TPAWParamsV5'
+import { Validator } from '../../Utils/Validator'
+import { AppError } from './AppError'
 
 type _History = {stack: TPAWParams[]; curr: number}
 const _undo = (history: _History) =>
@@ -86,17 +88,19 @@ function _parseExternalParams(str: string | string[] | undefined | null) {
   try {
     const parsed = JSON.parse(str)
     try {
-      let v4: TPAWParamsWithoutHistorical
-      if (parsed.v === 4) {
-        v4 = tpawParamsValidator(parsed)
+      let v5: TPAWParamsWithoutHistorical
+      if (parsed.v === 5) {
+        v5 = tpawParamsValidator(parsed)
+      } else if (parsed.v === 4) {
+        v5 = _v4ToV5(V4Params.validator(parsed))
       } else if (parsed.v === 3) {
-        v4 = _v3ToV4(tpawParamsV3Validator(parsed))
+        v5 = _v4ToV5(_v3ToV4(tpawParamsV3Validator(parsed)))
       } else if (parsed.v === 2) {
-        v4 = _v3ToV4(_v2ToV3(tpawParamsV2Validator(parsed)))
+        v5 = _v4ToV5(_v3ToV4(_v2ToV3(tpawParamsV2Validator(parsed))))
       } else {
-        v4 = _v3ToV4(_v2ToV3(_v1ToV2(tpawParamsV1Validator(parsed))))
+        v5 = _v4ToV5(_v3ToV4(_v2ToV3(_v1ToV2(tpawParamsV1Validator(parsed)))))
       }
-      return _addHistorical(v4)
+      return _addHistorical(v5)
     } catch (e) {
       if (e instanceof Validator.Failed) {
         throw new AppError(`Error in parameter: ${e.fullMessage}`)
@@ -175,12 +179,12 @@ const _v2ToV3 = (
 }
 const _v3ToV4 = (
   v3: TPAWParamsV3WithoutHistorical
-): TPAWParamsV4WithoutHistorical => {
+): V4Params.ParamsWithoutHistorical => {
   const {retirementIncome, savings, withdrawals, ...rest} = _.cloneDeep(v3)
   const addId = (
     x: TPAWParamsV3WithoutHistorical['savings'][number],
     id: number
-  ): ValueForYearRange => ({...x, id})
+  ): V4Params.ValueForYearRange => ({...x, id})
   retirementIncome
   return {
     ...rest,
@@ -193,3 +197,76 @@ const _v3ToV4 = (
     },
   }
 }
+const _v4ToV5 = (
+  v4: V4Params.ParamsWithoutHistorical
+): V5Params.ParamsWithoutHistorical => {
+  const {age, savings, retirementIncome, withdrawals, ...rest} = v4
+
+  const year = (year: V4Params.YearRangeEdge): V5Params.Year =>
+    year === 'start'
+      ? {type: 'now'}
+      : typeof year === 'number'
+      ? {type: 'numericAge', person: 'person1', age: year}
+      : {
+          type: 'namedAge',
+          person: 'person1',
+          age: year === 'end' ? 'max' : year,
+        }
+
+  const valueForYearRange = ({
+    yearRange,
+    ...rest
+  }: V4Params.ValueForYearRange): V5Params.ValueForYearRange => ({
+    yearRange: {
+      type: 'startAndEnd',
+      start: year(yearRange.start),
+      end: year(yearRange.end),
+    },
+    ...rest,
+  })
+
+  return {
+    ...rest,
+    v: 5,
+    people: {
+      withPartner: false,
+      person1: {
+        ages:
+          age.start === age.retirement
+            ? {
+                type: 'retired',
+                current: age.start,
+                max: age.end,
+              }
+            : {
+                type: 'notRetired',
+                current: age.start,
+                retirement: age.retirement,
+                max: age.end,
+              },
+        displayName: null,
+      },
+    },
+    savings: savings.map(valueForYearRange),
+    retirementIncome: retirementIncome.map(valueForYearRange),
+    withdrawals: {
+      fundedByBonds: withdrawals.fundedByBonds.flatMap(valueForYearRange),
+      fundedByRiskPortfolio:
+        withdrawals.fundedByRiskPortfolio.flatMap(valueForYearRange),
+    },
+  }
+}
+
+export const numericYear = (
+  {age}: {age: {start: number; retirement: number; end: number}},
+  x: V4Params.YearRangeEdge
+) =>
+  x === 'start'
+    ? age.start
+    : x === 'lastWorkingYear'
+    ? age.retirement - 1
+    : x === 'retirement'
+    ? age.retirement
+    : x === 'end'
+    ? age.end
+    : x

@@ -15,6 +15,7 @@ export class ChartXAxis<Data> implements ChartPointerComponent<Data> {
   private _stateTransition: {prev: Rect; target: Rect} | null = null
 
   constructor(
+    private transform: (data: Data, x: number) => number,
     private format: (data: Data, x: number) => string,
     private markFn: (data: Data) => number
   ) {}
@@ -27,10 +28,11 @@ export class ChartXAxis<Data> implements ChartPointerComponent<Data> {
     const target = _labelBox(
       ctx,
       state,
-      x => this.format(state.data, x),
+      x => this.format(state.data, this.transform(state.data, x)),
       Math.round(state.scale.x.inverse(state.pointerState.x)),
       state.pointerState.x,
-      true
+      true,
+      x => this.transform(state.data, x)
     )
     const prev = this._stateTransition
       ? chartDataTransitionCurrObj(
@@ -46,7 +48,9 @@ export class ChartXAxis<Data> implements ChartPointerComponent<Data> {
   draw(context: ChartPointerContext<Data>) {
     const {ctx, currState, pointerTransition, stateTransition} = context
     const {scale, plotArea} = currState
-    const format = (x: number) => this.format(stateTransition.target.data, x)
+    const transform = (x: number) =>
+    this.transform(stateTransition.target.data, x)
+    const format = (x: number) => this.format(stateTransition.target.data, transform(x))
 
     const pixelsPerTick = scale.x(1) - scale.x(0)
     assert(this._stateTransition)
@@ -56,7 +60,7 @@ export class ChartXAxis<Data> implements ChartPointerComponent<Data> {
     const max = Math.floor(scale.x.inverse(plotArea.x + plotArea.width + 1)) + 1
     const ticks = new Map<number, _Tick<Data>>()
     _.range(min, max).forEach(dataX =>
-      ticks.set(dataX, new _Tick(dataX, this.format))
+      ticks.set(dataX, new _Tick(this.transform, dataX, this.format))
     )
 
     // Draw the ticks.
@@ -95,7 +99,8 @@ export class ChartXAxis<Data> implements ChartPointerComponent<Data> {
         format,
         Math.round(markDataX),
         scale.x(markDataX),
-        false
+        false,
+        transform
       )
     })
     const markGraphY = markBox.x + markBox.width / 2
@@ -170,6 +175,7 @@ export class ChartXAxis<Data> implements ChartPointerComponent<Data> {
 
 class _Tick<Data> {
   constructor(
+    private transform: (data: Data, x: number) => number,
     private dataX: number,
     private format: (data: Data, x: number) => string
   ) {}
@@ -181,9 +187,11 @@ class _Tick<Data> {
   ) {
     const {ctx, stateTransition, currState} = context
     const {scale, plotArea} = currState
-    const format = (x: number) => this.format(stateTransition.target.data, x)
+    const transform = (x: number) =>
+    this.transform(stateTransition.target.data, x)
+    const format = (x: number) => this.format(stateTransition.target.data, transform(x))
     const label = format(this.dataX)
-    const type = _tickType(this.dataX)
+    const type = _tickType(transform, this.dataX)
     const tickInfo = _tickInfo(type)
     const graphY = plotArea.bottom
     const targetScale = stateTransition.target.scale
@@ -222,10 +230,11 @@ const _labelBox = (
   format: (x: number) => string,
   dataX: number,
   graphX: number,
-  includeTick: boolean
+  includeTick: boolean,
+  transform: (x: number) => number
 ) => {
   const {plotArea} = state
-  const type = _tickType(dataX)
+  const type = _tickType(transform, dataX)
   const tickInfo = _tickInfo(type)
   ctx.font = tickInfo.font
   ctx.textAlign = 'center'
@@ -246,12 +255,14 @@ const _labelBox = (
   })
 }
 
-const _tickType = (x: number) =>
-  x % 10 === 0
+const _tickType = (transform: (x: number) => number, xIn: number) => {
+  const x = transform(xIn)
+  return x % 10 === 0
     ? ('large' as const)
     : x % 5 === 0
     ? ('medium' as const)
     : ('small' as const)
+}
 
 const _tickInfo = (type: 'large' | 'medium' | 'small') => {
   const result = (length: number, style: string, font: string) => ({

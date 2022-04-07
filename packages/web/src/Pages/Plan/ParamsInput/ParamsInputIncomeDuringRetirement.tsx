@@ -1,29 +1,73 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Contentful } from '../../../Utils/Contentful'
+import { useSimulation } from '../../App/WithSimulation'
 import { usePlanContent } from '../Plan'
-import {ByYearSchedule} from './ByYearSchedule/ByYearSchedule'
-import {paramsInputValidateYearRange} from './Helpers/ParamInputValidate'
+import { ByYearSchedule } from './ByYearSchedule/ByYearSchedule'
+import { EditValueForYearRange } from '../../Common/Inputs/EditValueForYearRange'
+import { ParamsInputBody, ParamsInputBodyProps } from './ParamsInputBody'
 
-export const ParamsInputIncomeDuringRetirement = React.memo(() => {
-  const content = usePlanContent()
-  return (
-    <div className="">
-        <Contentful.RichText
-          body={content.incomeDuringRetirement.intro.fields.body}
-          p="p-base"
-        />
-      <ByYearSchedule
-        className=""
-        type="afterRetirement"
-        heading={null}
-        addHeading="Add to Savings"
-        editHeading="Edit Savings Entry"
-        defaultYearRange={{start: 'start', end: 'lastWorkingYear'}}
-        entries={params => params.retirementIncome}
-        validateYearRange={(params, x) =>
-          paramsInputValidateYearRange(params, 'retirementIncome', x)
-        }
-      />
-    </div>
-  )
-})
+export const ParamsInputIncomeDuringRetirement = React.memo(
+  (props: ParamsInputBodyProps) => {
+    const {params, paramsExt} = useSimulation()
+    const {validYearRange} = paramsExt
+    const content = usePlanContent()
+    const [state, setState] = useState<
+      | {type: 'main'}
+      | {type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean}
+    >({type: 'main'})
+
+    return (
+      <ParamsInputBody {...props}>
+        <div className="">
+          <Contentful.RichText
+            body={content.incomeDuringRetirement.intro.fields.body}
+            p="p-base"
+          />
+          <ByYearSchedule
+            className=""
+            heading={null}
+            entries={params => params.retirementIncome}
+            hideEntry={
+              state.type === 'edit' && state.hideInMain ? state.index : null
+            }
+            allowableYearRange={validYearRange('income-during-retirement')}
+            onEdit={(index, isAdd) =>
+              setState({type: 'edit', isAdd, index, hideInMain: isAdd})
+            }
+            defaultYearRange={{
+              type: 'startAndEnd',
+              start: {type: 'namedAge', person: 'person1', age: 'retirement'},
+              end: {type: 'namedAge', person: 'person1', age: 'max'},
+            }}
+          />
+        </div>
+        {{
+          input:
+            state.type === 'edit'
+              ? transitionOut => (
+                  <EditValueForYearRange
+                    title={
+                      state.isAdd
+                        ? 'Add to Retirement Income'
+                        : 'Edit Retirement Income Entry'
+                    }
+                    setHideInMain={hideInMain =>
+                      setState({...state, hideInMain})
+                    }
+                    transitionOut={transitionOut}
+                    onDone={() => setState({type: 'main'})}
+                    entries={params => params.retirementIncome}
+                    index={state.index}
+                    allowableRange={validYearRange('income-during-retirement')}
+                    choices={{
+                      start: ['retirement', 'numericAge', 'forNumOfYears'],
+                      end: ['maxAge', 'numericAge', 'forNumOfYears'],
+                    }}
+                  />
+                )
+              : undefined,
+        }}
+      </ParamsInputBody>
+    )
+  }
+)

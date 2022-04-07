@@ -1,88 +1,77 @@
-import {faExclamation} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import _ from 'lodash'
-import {default as React} from 'react'
+import {default as React, useState} from 'react'
+import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
 import {Contentful} from '../../../Utils/Contentful'
-import {useTPAWParams} from '../../App/UseTPAWParams'
 import {useSimulation} from '../../App/WithSimulation'
 import {usePlanContent} from '../Plan'
-import {
-  ByYearSchedule,
-  ByYearScheduleEntry,
-} from './ByYearSchedule/ByYearSchedule'
-import {paramsInputValidateYearRange} from './Helpers/ParamInputValidate'
+import {ByYearSchedule} from './ByYearSchedule/ByYearSchedule'
+import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
+import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
 
 export const ParamsInputFutureSavings = React.memo(
-  ({onBack}: {onBack: () => void}) => {
-    const {age} = useTPAWParams().params
+  ({onBack, ...props}: {onBack: () => void} & ParamsInputBodyProps) => {
+    const {params} = useSimulation()
+    const {validYearRange, years} = extendTPAWParams(params)
     const content = usePlanContent()
-    if (age.start === age.retirement) return <_Retired onBack={onBack} />
+
+    const [state, setState] = useState<
+      | {type: 'main'}
+      | {type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean}
+    >({type: 'main'})
+
     return (
-      <div className="">
-        <Contentful.RichText
-          body={content.futureSavings.intro.fields.body}
-          p="p-base"
-        />
-        <ByYearSchedule
-          className=""
-          type="beforeRetirement"
-          heading={null}
-          addHeading="Add to Savings"
-          editHeading="Edit Savings Entry"
-          defaultYearRange={{start: 'start', end: 'lastWorkingYear'}}
-          entries={params => params.savings}
-          validateYearRange={(params, x) =>
-            paramsInputValidateYearRange(params, 'futureSavings', x)
-          }
-        />
-      </div>
+      <ParamsInputBody {...props}>
+        <div className="">
+          <Contentful.RichText
+            body={content.futureSavings.intro.fields.body}
+            p="p-base"
+          />
+          <ByYearSchedule
+            className=""
+            heading={null}
+            entries={params => params.savings}
+            hideEntry={
+              state.type === 'edit' && state.hideInMain ? state.index : null
+            }
+            allowableYearRange={validYearRange('future-savings')}
+            onEdit={(index, isAdd) =>
+              setState({type: 'edit', isAdd, index, hideInMain: isAdd})
+            }
+            defaultYearRange={{
+              type: 'startAndEnd',
+              start: {type: 'now'},
+              end: {
+                type: 'namedAge',
+                person: 'person1',
+                age: 'lastWorkingYear',
+              },
+            }}
+          />
+        </div>
+        {{
+          input:
+            state.type === 'edit'
+              ? transitionOut => (
+                  <EditValueForYearRange
+                    title={
+                      state.isAdd ? 'Add to Savings' : 'Edit Savings Entry'
+                    }
+                    setHideInMain={hideInMain =>
+                      setState({...state, hideInMain})
+                    }
+                    transitionOut={transitionOut}
+                    onDone={() => setState({type: 'main'})}
+                    entries={params => params.savings}
+                    index={state.index}
+                    allowableRange={validYearRange('future-savings')}
+                    choices={{
+                      start: ['now', 'numericAge'],
+                      end: ['lastWorkingYear', 'numericAge', 'forNumOfYears'],
+                    }}
+                  />
+                )
+              : undefined,
+        }}
+      </ParamsInputBody>
     )
   }
 )
-
-const _Retired = React.memo(({onBack}: {onBack: () => void}) => {
-  const {params, setParams} = useSimulation()
-  return (
-    <div>
-      <p className="text-errorFG">
-        <span className="px-2 py-0.5 mr-2 text-[11px] rounded-full bg-errorBlockBG text-errorBlockFG">
-          <span className="text-sm">Warning</span>{' '}
-          <FontAwesomeIcon icon={faExclamation} />
-        </span>
-        <span className="p-base">
-          <span className="text-errorFG">
-            {`You are currently retired but still have the following entries for
-            future savings. These will be ignored. Further contributions towards
-            your retirement should be entered in the "Retirement Income" section.`}
-          </span>
-        </span>
-      </p>
-      <button
-        className="btn-sm btn-dark mt-4"
-        onClick={() => {
-          setParams(params => {
-            const p = _.cloneDeep(params)
-            p.savings = []
-            return p
-          })
-          onBack()
-        }}
-      >
-        Clear Entries
-      </button>
-      <div className={` flex flex-col gap-y-6 mt-4 `}>
-        {params.savings.map((entry, i) => (
-          <ByYearScheduleEntry
-            key={i}
-            className=""
-            params={params}
-            validation={'ok'}
-            entry={entry}
-            onEdit={null}
-            onChangeAmount={null}
-          />
-        ))}
-      </div>
-    </div>
-  )
-})

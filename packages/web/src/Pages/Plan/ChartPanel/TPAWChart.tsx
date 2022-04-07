@@ -26,7 +26,6 @@ export const TPAWChart = React.memo(
     className = '',
     style,
     yAxisFormat,
-    lastAgeIsLegacy,
     state: stateIn,
     animationForBoundsChange,
   }: {
@@ -35,7 +34,6 @@ export const TPAWChart = React.memo(
     state: TPAWChartState
     yAxisFormat: (x: number) => string
     animationForBoundsChange: ChartAnimation
-    lastAgeIsLegacy: boolean
   }) => {
     const state = useMemo((): {
       main: ChartReactState<TPAWChartData>
@@ -49,7 +47,7 @@ export const TPAWChart = React.memo(
       } = stateIn
       const main = (() => {
         const xyRange = {
-          x: {start: mainIn.data.age.start, end: mainIn.data.age.end},
+          x: mainIn.data.years.displayRange,
           y: mainIn.yRange,
         }
         const area = ({
@@ -83,12 +81,12 @@ export const TPAWChart = React.memo(
 
       const legacy = (() => {
         const xyRange = {
-          x: {start: legacyIn.data.age, end: legacyIn.data.age + 0.1},
+          x: {start: legacyIn.data.year, end: legacyIn.data.year + 0.1},
           y: legacyIn.yRange,
         }
         const area = ({width, height}: {width: number; height: number}) => {
           const mainArea = main.area({width, height})
-          const overlap  = (width < 640 ? 0 : 0)
+          const overlap = width < 640 ? 0 : 0
           const viewport = rectExt({
             x: mainArea.viewport.right - overlap,
             y: 0,
@@ -118,8 +116,8 @@ export const TPAWChart = React.memo(
 
     const pointerFormatX = useCallback(
       (data: TPAWChartData, x: number) =>
-        x === data.age.end && lastAgeIsLegacy ? 'Legacy' : `Age ${x}`,
-      [lastAgeIsLegacy]
+        x === data.years.max + 1 ? 'Legacy' : `Age ${data.years.display(x)}`,
+      []
     )
 
     const mainComponents = useMemo(
@@ -155,8 +153,9 @@ export const TPAWChart = React.memo(
           })
         )
         const xAxis = new ChartXAxis<TPAWChartData>(
-          (data, x) => (x === data.modelAgeEnd + 1 ? 'L' : `${x}`),
-          data => data.age.retirement
+          (data, x) => data.years.display(x),
+          (data, x) => (x === data.years.display(data.years.max) + 1 ? 'L' : `${x}`),
+          data => data.years.retirement
         )
 
         const pointer = new ChartPointer<TPAWChartData>(

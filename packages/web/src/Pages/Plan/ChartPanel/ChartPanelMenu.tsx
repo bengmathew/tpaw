@@ -327,7 +327,7 @@ function useAllChartData() {
 
 const _processData = (data: TPAWChartData) => {
   const xyRange = {
-    x: {start: data.age.start, end: data.age.end},
+    x: data.years.displayRange,
     y: {start: data.min.y, end: data.max.y},
   }
   const area = ({width, height}: {width: number; height: number}) => ({

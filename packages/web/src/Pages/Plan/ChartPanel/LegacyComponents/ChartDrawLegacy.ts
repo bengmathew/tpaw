@@ -1,10 +1,7 @@
 import {formatCurrency} from '../../../../Utils/FormatCurrency'
 import {ChartComponent} from '../../../Common/Chart/ChartComponent/ChartComponent'
 import {ChartContext} from '../../../Common/Chart/ChartContext'
-import {
-  chartDataTransitionCurrNum,
-  chartDataTransitionCurrNumArr,
-} from '../../../Common/Chart/ChartUtils/ChartDataTransition'
+import {chartDataTransitionCurrNumArr} from '../../../Common/Chart/ChartUtils/ChartDataTransition'
 import {ChartUtils, rectExt} from '../../../Common/Chart/ChartUtils/ChartUtils'
 import {TPAWChartLegacyData} from '../TPAWChartLegacyData'
 
@@ -15,7 +12,6 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
   draw: (context: ChartContext<TPAWChartLegacyData>) => {
     const {ctx, stateTransition, currState} = context
     const {scale, plotArea, viewport} = currState
-    const dataX = chartDataTransitionCurrNum(stateTransition, x => x.data.age)
     const graphX = plotArea.right - _lineLength
 
     const majorDataYs = chartDataTransitionCurrNumArr(stateTransition, x =>
@@ -121,8 +117,13 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
       ...majorDataPercentiles.map(x => ctx.measureText(`${x}`).width)
     )
 
-    let yLabelGraphY = plotArea.bottom+ yLabelHeight * 1.5 + pad.vert 
-    
+    const yLabelsHeight = (yLabelHeight + pad.vert) * 5 + 15
+    const yLabelsBottom = Math.max(
+      scale.y(majorDataYs[2]),
+      plotArea.y + yLabelsHeight
+    )
+    let yLabelGraphY = yLabelsBottom + yLabelHeight + pad.vert
+
     const percentileGraphX = plotArea.x + pad.horz
     const thGraphX = percentileGraphX + percentileLabelWidth
     const labelGraphX = thGraphX + 15
@@ -132,7 +133,6 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
     majorDataYs.forEach((dataY, i) => {
       const graphY = scale.y(dataY)
       yLabelGraphY -= yLabelHeight + pad.vert
-
 
       ctx.fillStyle = ChartUtils.color.gray[900]
       ctx.textAlign = 'right'

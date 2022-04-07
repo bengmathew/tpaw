@@ -1,4 +1,3 @@
-import * as cookie from 'cookie'
 import React, { useEffect, useState } from 'react'
 import { runTPAWSimulation } from '../TPAWSimulator/RunTPAWSimulation'
 import { TPAWParams } from '../TPAWSimulator/TPAWParams'
@@ -24,7 +23,7 @@ export const Test = React.memo(() => {
     const delta = result.byYearFromNow
       .map(x => x.withdrawalAchieved.total)
       .map((x, i) => [
-        `${i + params.age.start}`,
+        `${i + params.people.person1.ages.current}`,
         `${x - excel[i]}`,
         `${formatCurrency(x)}`,
         `${x}`,
@@ -73,24 +72,17 @@ const excel = [
 ]
 
 const testParams: TPAWParams = {
-  v: 4,
-  age: {
-    start: 25,
-    retirement: 55,
-    end: 100,
+  v: 5,
+  people: {
+    withPartner: false,
+    person1: {
+      displayName: null,
+      ages: {type: 'notRetired', current: 25, retirement: 55, max: 100},
+    },
   },
   returns: {
-    expected: {
-      stocks: 0.035,
-      bonds: 0.01,
-    },
-    historical: {
-      adjust: {
-        type: 'by',
-        stocks: 0.048,
-        bonds: 0.03,
-      },
-    },
+    expected: {stocks: 0.035, bonds: 0.01},
+    historical: {adjust: {type: 'by', stocks: 0.048, bonds: 0.03}},
   },
   inflation: 0.02,
   targetAllocation: {
@@ -102,7 +94,11 @@ const testParams: TPAWParams = {
   savings: [
     {
       label: 'Savings',
-      yearRange: {start: 'start', end: 54},
+      yearRange: {
+        type: 'startAndEnd',
+        start: {type: 'now'},
+        end: {type: 'numericAge', person: 'person1', age: 54},
+      },
       value: 25000,
       nominal: false,
       id: 0,
@@ -111,7 +107,11 @@ const testParams: TPAWParams = {
   retirementIncome: [
     {
       label: 'Social Security',
-      yearRange: {start: 70, end: 'end'},
+      yearRange: {
+        type: 'startAndEnd',
+        start: {type: 'numericAge', person: 'person1', age: 70},
+        end: {type: 'namedAge', person: 'person1', age: 'max'},
+      },
       value: 30000,
       nominal: false,
       id: 0,

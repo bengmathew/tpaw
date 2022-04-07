@@ -45,7 +45,7 @@ export namespace Validator {
       return x
     }
   export const constant =
-    <C extends number | string | null>(c: C) =>
+    <C extends number | string | null | boolean>(c: C) =>
     (x: unknown): C => {
       if (x !== c) {
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

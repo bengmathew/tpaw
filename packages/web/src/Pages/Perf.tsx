@@ -1,9 +1,9 @@
 import _ from 'lodash'
-import React, {useEffect, useRef, useState} from 'react'
-import {TPAWParams} from '../TPAWSimulator/TPAWParams'
-import {TPAWRunInWorker} from '../TPAWSimulator/Worker/TPAWRunInWorker'
-import {fGet} from '../Utils/Utils'
-import {AppPage} from './App/AppPage'
+import React, { useEffect, useRef, useState } from 'react'
+import { TPAWParams } from '../TPAWSimulator/TPAWParams'
+import { TPAWRunInWorker } from '../TPAWSimulator/Worker/TPAWRunInWorker'
+import { fGet } from '../Utils/Utils'
+import { AppPage } from './App/AppPage'
 
 const numRuns = 500
 const highlightPercentiles = [5, 25, 50, 75, 95]
@@ -58,24 +58,17 @@ export const Perf = React.memo(() => {
 })
 
 const params: TPAWParams = {
-  v: 4,
-  age: {
-    start: 25,
-    retirement: 55,
-    end: 100,
+  v: 5,
+  people: {
+    withPartner: false,
+    person1: {
+      displayName: null,
+      ages: {type: 'notRetired', current: 25, retirement: 55, max: 100},
+    },
   },
   returns: {
-    expected: {
-      stocks: 0.035,
-      bonds: 0.01,
-    },
-    historical: {
-      adjust: {
-        type: 'by',
-        stocks: 0.048,
-        bonds: 0.03,
-      },
-    },
+    expected: {stocks: 0.035, bonds: 0.01},
+    historical: {adjust: {type: 'by', stocks: 0.048, bonds: 0.03}},
   },
   inflation: 0.02,
   targetAllocation: {
@@ -87,8 +80,12 @@ const params: TPAWParams = {
   savings: [
     {
       label: 'Savings',
-      yearRange: {start: 'start', end: 54},
-      value: 25000,
+      yearRange: {
+        type: 'startAndEnd',
+        start: {type: 'now'},
+        end: {type: 'namedAge', person: 'person1', age: 'lastWorkingYear'},
+      },
+      value: 10000,
       nominal: false,
       id: 0,
     },
@@ -96,8 +93,12 @@ const params: TPAWParams = {
   retirementIncome: [
     {
       label: 'Social Security',
-      yearRange: {start: 70, end: 'end'},
-      value: 30000,
+      yearRange: {
+        type: 'startAndEnd',
+        start: {type: 'numericAge', person: 'person1', age: 70},
+        end: {type: 'namedAge', person: 'person1', age: 'max'},
+      },
+      value: 20000,
       nominal: false,
       id: 0,
     },
@@ -106,7 +107,11 @@ const params: TPAWParams = {
     fundedByBonds: [
       {
         label: null,
-        yearRange: {start: 76, end: 76},
+        yearRange: {
+          type: 'startAndEnd',
+          start: {type: 'numericAge', person: 'person1', age: 76},
+          end: {type: 'numericAge', person: 'person1', age: 76},
+        },
         value: 100000,
         nominal: false,
         id: 0,
@@ -115,7 +120,11 @@ const params: TPAWParams = {
     fundedByRiskPortfolio: [
       {
         label: null,
-        yearRange: {start: 58, end: 58},
+        yearRange: {
+          type: 'startAndEnd',
+          start: {type: 'numericAge', person: 'person1', age: 58},
+          end: {type: 'numericAge', person: 'person1', age: 58},
+        },
         value: 100000,
         nominal: false,
         id: 1,

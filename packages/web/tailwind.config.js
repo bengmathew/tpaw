@@ -15,10 +15,10 @@ module.exports = {
       mono: ['Roboto Mono', 'monospace'],
     },
 
-
     colors: {
       pageBG: 'white',
       pageFG: colors.gray[800],
+      pageFGLight: colors.gray[600],
       alt: colors.blue[900],
       darkGray: colors.gray[800],
 

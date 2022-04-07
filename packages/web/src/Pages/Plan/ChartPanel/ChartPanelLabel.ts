@@ -1,12 +1,13 @@
 import _ from 'lodash'
-import { TPAWParams } from '../../../TPAWSimulator/TPAWParams'
-import { assert, noCase } from '../../../Utils/Utils'
+import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
+import {trimAndNullify} from '../../../Utils/TrimAndNullify'
+import {assert, noCase} from '../../../Utils/Utils'
 import {
   chartPanelSpendingDiscretionaryTypeID,
   chartPanelSpendingEssentialTypeID,
   ChartPanelType,
   isChartPanelSpendingDiscretionaryType,
-  isChartPanelSpendingEssentialType
+  isChartPanelSpendingEssentialType,
 } from './ChartPanelType'
 
 export const chartPanelLabel = (
@@ -25,7 +26,7 @@ export const chartPanelLabel = (
     case 'portfolio':
       return {label: ['Portfolio'], subLabel: null}
     case 'glide-path':
-      return {label: ['Glide Path'], subLabel: null}
+      return {label: ['Asset Allocation'], subLabel: null}
     case 'withdrawal-rate':
       return {label: ['Withdrawal Rate'], subLabel: null}
     default:
@@ -41,7 +42,8 @@ export const chartPanelLabel = (
           'Essential',
         ])
         const subLabel = `${
-          params.withdrawals.fundedByBonds[index].label ?? '<No label>'
+          trimAndNullify(params.withdrawals.fundedByBonds[index].label) ??
+          '<No label>'
         }`
         return {label, subLabel}
       }

@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useState } from 'react'
+import React, {ReactNode, useEffect, useState} from 'react'
 import ReactDOM from 'react-dom'
 
 type _State = {show: true} | {show: false; onTransitionEnd: (() => void) | null}
@@ -6,11 +6,13 @@ export const ModalBase = React.memo(
   ({
     children,
     onClose,
+    bg = 'bg-pageBG',
   }: {
     children: (
       transitionOut: (onTransitionEnd: () => void) => void
     ) => ReactNode
     onClose?: () => void
+    bg?: string
   }) => {
     const [state, setState] = useState<_State>({
       show: false,
@@ -41,7 +43,7 @@ export const ModalBase = React.memo(
           }}
         />
         <div
-          className={`font-font1 relative bg-pageBG text-pageFG z-10 rounded-lg max-w-2xl p-2 sm:p-4 shadow-xl m-2 sm:m-4
+          className={`font-font1 relative ${bg} text-pageFG z-10 rounded-lg max-w-2xl p-2 sm:p-4 shadow-xl m-2 sm:m-4
           ${
             state.show
               ? 'opacity-100 transform scale-100'
@@ -50,6 +52,7 @@ export const ModalBase = React.memo(
           style={{
             minWidth: 'min(calc(100vw - 20px), 400px)',
             transition: 'opacity .25s ease, transform .25s ease',
+            boxShadow: 'rgba(0, 0, 0, 0.35) 0px 5px 15px',
           }}
         >
           {children(onTransitionEnd => {

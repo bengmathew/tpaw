@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@contentful/rich-text-react-renderer": "^15.11.1",
-    "@fortawesome/fontawesome-svg-core": "^1.2.36",
+    "@fortawesome/fontawesome-svg-core": "^6.1.1",
     "@fortawesome/free-solid-svg-icons": "^6.0.0",
     "@fortawesome/pro-duotone-svg-icons": "^6.0.0",
     "@fortawesome/pro-light-svg-icons": "^6.0.0",
@@ -39,6 +39,7 @@
     "react-measure": "^2.5.2",
     "react-popper": "^2.2.5",
     "react-spring": "^9.3.0",
+    "react-toastify": "^8.2.0",
     "react-transition-group": "^4.4.2"
   },
   "devDependencies": {
@@ -54,6 +55,6 @@
     "postcss": "^8.4.5",
     "prettier": "^2.4.1",
     "tailwindcss": "^3.0.15",
-    "typescript": "^4.5.4"
+    "typescript": "^4.6.3"
   }
 }

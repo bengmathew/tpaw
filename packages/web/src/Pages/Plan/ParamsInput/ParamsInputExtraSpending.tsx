@@ -1,74 +1,166 @@
-import React from 'react'
+import React, {useState} from 'react'
+import {YearRange} from '../../../TPAWSimulator/TPAWParams'
 import {Contentful} from '../../../Utils/Contentful'
 import {useSimulation} from '../../App/WithSimulation'
 import {
+  chartPanelSpendingDiscretionaryTypeID,
   chartPanelSpendingEssentialTypeID,
   ChartPanelType,
+  isChartPanelSpendingDiscretionaryType,
   isChartPanelSpendingEssentialType,
 } from '../ChartPanel/ChartPanelType'
 import {usePlanContent} from '../Plan'
 import {ByYearSchedule} from './ByYearSchedule/ByYearSchedule'
-import {
-  paramsInputValidate,
-  paramsInputValidateYearRange,
-} from './Helpers/ParamInputValidate'
+import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
+import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
 
 export const ParamsInputExtraSpending = React.memo(
   ({
     chartType,
     setChartType,
+    ...props
   }: {
     chartType: ChartPanelType
     setChartType: (type: ChartPanelType) => void
-  }) => {
-    const {params} = useSimulation()
+  } & ParamsInputBodyProps) => {
+    const {paramsExt} = useSimulation()
+    const {years, validYearRange, maxMaxAge, asYFN} = paramsExt
     const content = usePlanContent()
-    const warn = paramsInputValidate(params, 'extraSpending')
+    const [state, setState] = useState<
+      | {type: 'main'}
+      | {
+          type: 'edit'
+          isEssential: boolean
+          isAdd: boolean
+          index: number
+          hideInMain: boolean
+        }
+    >({type: 'main'})
 
-    const defaultYearRange = {
-      start: 'retirement' as const,
-      end: Math.min(params.age.end, params.age.retirement + 5),
+    const allowableRange = validYearRange('extra-spending')
+    const defaultRange: YearRange = {
+      type: 'startAndNumYears',
+      start: years.person1.retirement,
+      numYears: Math.min(
+        5,
+        asYFN(maxMaxAge) + 1 - asYFN(years.person1.retirement)
+      ),
     }
 
     return (
-      <div className="">
-        <Contentful.RichText
-          body={content.extraSpending.intro.fields.body}
-          p="mb-6 p-base"
-        />
-        <ByYearSchedule
-          className="mb-6"
-          type="full"
-          heading="Essential"
-          addHeading="Add an Essential Expense"
-          editHeading="Edit Essential Expense Entry"
-          defaultYearRange={defaultYearRange}
-          entries={params => params.withdrawals.fundedByBonds}
-          onBeforeDelete={id => {
-            if (isChartPanelSpendingEssentialType(chartType)) {
-              const currChartID = chartPanelSpendingEssentialTypeID(chartType)
-              if (id === currChartID) {
-                setChartType('spending-total')
-              }
+      <ParamsInputBody {...props}>
+        <div className="">
+          <Contentful.RichText
+            body={content.extraSpending.intro.fields.body}
+            p="mb-6 p-base"
+          />
+          <ByYearSchedule
+            className="mb-6"
+            heading={'Essential'}
+            entries={params => params.withdrawals.fundedByBonds}
+            hideEntry={
+              state.type === 'edit' && state.isEssential && state.hideInMain
+                ? state.index
+                : null
             }
-          }}
-          validateYearRange={(params, x) =>
-            paramsInputValidateYearRange(params, 'extraSpending', x)
-          }
-        />
-        <ByYearSchedule
-          className=""
-          type="full"
-          heading="Discretionary"
-          addHeading="Add a Discretionary Expense"
-          editHeading="Edit Discretionary Expense Entry"
-          defaultYearRange={defaultYearRange}
-          entries={params => params.withdrawals.fundedByRiskPortfolio}
-          validateYearRange={(params, x) =>
-            paramsInputValidateYearRange(params, 'extraSpending', x)
-          }
-        />
-      </div>
+            allowableYearRange={allowableRange}
+            onEdit={(index, isAdd) =>
+              setState({
+                type: 'edit',
+                isEssential: true,
+                isAdd,
+                index,
+                hideInMain: isAdd,
+              })
+            }
+            defaultYearRange={defaultRange}
+          />
+          <ByYearSchedule
+            className=""
+            heading={'Discretionary'}
+            entries={params => params.withdrawals.fundedByRiskPortfolio}
+            hideEntry={
+              state.type === 'edit' && !state.isEssential && state.hideInMain
+                ? state.index
+                : null
+            }
+            allowableYearRange={allowableRange}
+            onEdit={(index, isAdd) =>
+              setState({
+                type: 'edit',
+                isEssential: false,
+                isAdd,
+                index,
+                hideInMain: isAdd,
+              })
+            }
+            defaultYearRange={defaultRange}
+          />
+        </div>
+        {{
+          input:
+            state.type === 'edit'
+              ? transitionOut => (
+                  <EditValueForYearRange
+                    title={
+                      state.isAdd
+                        ? `Add an ${
+                            state.isEssential ? 'Essential' : 'Discretionary'
+                          } Expense`
+                        : `Edit ${
+                            state.isEssential ? 'Essential' : 'Discretionary'
+                          } Expense Entry`
+                    }
+                    setHideInMain={hideInMain =>
+                      setState({...state, hideInMain})
+                    }
+                    transitionOut={transitionOut}
+                    onDone={() => setState({type: 'main'})}
+                    onBeforeDelete={id => {
+                      if (state.isEssential) {
+                        if (isChartPanelSpendingEssentialType(chartType)) {
+                          const currChartID =
+                            chartPanelSpendingEssentialTypeID(chartType)
+                          if (id === currChartID) {
+                            setChartType('spending-total')
+                          }
+                        }
+                      } else {
+                        if (isChartPanelSpendingDiscretionaryType(chartType)) {
+                          const currChartID =
+                            chartPanelSpendingDiscretionaryTypeID(chartType)
+                          if (id === currChartID) {
+                            setChartType('spending-total')
+                          }
+                        }
+                      }
+                    }}
+                    entries={params =>
+                      state.isEssential
+                        ? params.withdrawals.fundedByBonds
+                        : params.withdrawals.fundedByRiskPortfolio
+                    }
+                    index={state.index}
+                    allowableRange={allowableRange}
+                    choices={{
+                      start: [
+                        'now',
+                        'retirement',
+                        'forNumOfYears',
+                        'numericAge',
+                      ],
+                      end: [
+                        'retirement',
+                        'maxAge',
+                        'numericAge',
+                        'forNumOfYears',
+                      ],
+                    }}
+                  />
+                )
+              : undefined,
+        }}
+      </ParamsInputBody>
     )
   }
 )

@@ -1,65 +1,62 @@
-import { faMinus, faPlus } from '@fortawesome/pro-light-svg-icons'
-import { faExclamationCircle, faPen } from '@fortawesome/pro-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {faMinus, faPlus} from '@fortawesome/pro-light-svg-icons'
+import {faPen} from '@fortawesome/pro-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
-import React, { useState } from 'react'
+import React from 'react'
 import {
   TPAWParams,
   ValueForYearRange,
+  Year,
   YearRange,
 } from '../../../../TPAWSimulator/TPAWParams'
 import {formatCurrency} from '../../../../Utils/FormatCurrency'
-import {smartDeltaFn} from '../../../../Utils/SmartDeltaFn'
-import {assertFalse, noCase} from '../../../../Utils/Utils'
+import {trimAndNullify} from '../../../../Utils/TrimAndNullify'
 import {useSimulation} from '../../../App/WithSimulation'
-import {paramsInputValidateYearRange} from '../Helpers/ParamInputValidate'
-import {ValueForYearRangeInput} from './ValueForYearRangeInput'
+import { smartDeltaFnForAmountInput } from '../../../Common/Inputs/SmartDeltaFnForAmountInput'
+import {YearRangeDisplay} from '../../../Common/YearRangeDisplay'
 
-type _InputState = {isEdit: false} | {isEdit: true; editIndex: number} | null
 export const ByYearSchedule = React.memo(
   ({
     className = '',
     entries,
-    validateYearRange,
-    heading,
-    addHeading,
-    editHeading,
+    hideEntry,
+    allowableYearRange,
     defaultYearRange,
-    onBeforeDelete,
-    type,
+    heading,
+    onEdit,
   }: {
     className?: string
     entries: (params: TPAWParams) => ValueForYearRange[]
-    validateYearRange: (
-      params: TPAWParams,
-      entry: YearRange
-    ) => ReturnType<typeof paramsInputValidateYearRange>
+    hideEntry: number | null
+    defaultYearRange: YearRange
+    allowableYearRange: {start: Year; end: Year}
     heading: string | null
-    addHeading: string
-    editHeading: string
-    defaultYearRange: ValueForYearRange['yearRange']
-    onBeforeDelete?: (id: number) => void
-    type: 'full' | 'beforeRetirement' | 'afterRetirement'
+    onEdit: (index: number, isAdd: boolean) => void
   }) => {
     const {params, setParams} = useSimulation()
-    const [input, setInput] = useState<_InputState>(null)
-
-    const updateParamsForAdd = (params: TPAWParams, entry: ValueForYearRange) =>
-      entries(params).push(entry)
-    const updateParamsForEdit = (
-      params: TPAWParams,
-      entry: ValueForYearRange,
-      i: number
-    ) => (entries(params)[i] = entry)
-
+    const handleAdd = () => {
+      const index = entries(params).length
+      setParams(params => {
+        const clone = _.cloneDeep(params)
+        entries(clone).push({
+          id: Math.max(-1, ...entries(clone).map(x => x.id)) + 1,
+          label: null,
+          value: 0,
+          nominal: false,
+          yearRange: defaultYearRange,
+        })
+        return clone
+      })
+      onEdit(index, true)
+    }
     return (
       <div className={`${className}`}>
         {heading ? (
           <div className="flex justify-between gap-x-4 items-center h-[40px]">
-            <h2 className={'font-bold'}>{heading}</h2>
+            <h2 className={'font-bold text-lg'}>{heading}</h2>
             <button
-              className="flex items-center justify-center gap-x-2 py-1 px-2  "
-              onClick={() => setInput({isEdit: false})}
+              className="flex items-center justify-center gap-x-2 py-1 pl-2  "
+              onClick={handleAdd}
             >
               <FontAwesomeIcon className="text-2xl" icon={faPlus} />
             </button>
@@ -68,187 +65,99 @@ export const ByYearSchedule = React.memo(
           <div className="flex justify-start gap-x-4 items-center  ">
             <button
               className="flex items-center justify-center gap-x-2  mt-4  py-2 "
-              onClick={() => setInput({isEdit: false})}
+              onClick={handleAdd}
             >
               <FontAwesomeIcon className="text-2xl" icon={faPlus} />
             </button>
           </div>
         )}
         <div className="flex flex-col gap-y-6 mt-2 ">
-          {entries(params).map((entry, i) => (
-            <ByYearScheduleEntry
-              key={i}
-              className=""
-              params={params}
-              validation={validateYearRange(params, entry.yearRange)}
-              entry={entry}
-              onEdit={() => setInput({isEdit: true, editIndex: i})}
-              onChangeAmount={amount => {
-                const p = _.cloneDeep(params)
-                updateParamsForEdit(p, {...entry, value: amount}, i)
-                setParams(p)
-                setInput(null)
-              }}
-            />
-          ))}
-        </div>
-        {input && (
-          <ValueForYearRangeInput
-            type={type}
-            params={params}
-            initial={
-              input.isEdit
-                ? entries(params)[input.editIndex]
-                : {
-                    label: '',
-                    yearRange: defaultYearRange,
-                    value: null,
-                    nominal: false,
-                    // -1 in case there are no entires.
-                    id: Math.max(-1, ...entries(params).map(x => x.id)) + 1,
-                  }
-            }
-            heading={input.isEdit ? editHeading : addHeading}
-            onCancel={() => setInput(null)}
-            onDone={entry => {
-              const p = _.cloneDeep(params)
-              input.isEdit
-                ? updateParamsForEdit(p, entry, input.editIndex)
-                : updateParamsForAdd(p, entry)
-              setParams(p)
-              setInput(null)
-            }}
-            onDelete={
-              input.isEdit
-                ? () => {
+          {entries(params).map(
+            (entry, i) =>
+              hideEntry !== i && (
+                <_ByYearScheduleEntry
+                  key={i}
+                  className=""
+                  allowableYearRange={allowableYearRange}
+                  entry={entry}
+                  onEdit={() => onEdit(i, false)}
+                  onChangeAmount={amount => {
                     const p = _.cloneDeep(params)
-                    const [entry] = entries(p).splice(input.editIndex, 1)
-                    onBeforeDelete?.(entry.id)
+                    entries(p)[i] = {...entry, value: amount}
                     setParams(p)
-                    setInput(null)
-                  }
-                : null
-            }
-          />
-        )}
+                  }}
+                />
+              )
+          )}
+        </div>
       </div>
     )
   }
 )
 
-export const ByYearScheduleEntry = React.memo(
+const _ByYearScheduleEntry = React.memo(
   ({
     className = '',
-    params,
-    validation,
+    allowableYearRange,
     entry,
     onEdit,
     onChangeAmount,
   }: {
     className?: string
-    validation: ReturnType<typeof paramsInputValidateYearRange>
-    params: TPAWParams
+    allowableYearRange: {start: Year; end: Year}
     entry: ValueForYearRange
-    onEdit: (() => void) | null
-    onChangeAmount: ((amount: number) => void) | null
+    onEdit: () => void
+    onChangeAmount: (amount: number) => void
   }) => {
+    const {increment, decrement} = smartDeltaFnForAmountInput
+    const valueStr = formatCurrency(entry.value)
     return (
-      <div
-        className={`${className} flex flex-row justify-between items-stretch rounded-lg `}
-      >
-        <div className="">
-          <h2 className="font-medium">{entry.label ?? '<no label>'}</h2>
-          <div className="flex justify-between">
-            <div className="flex items-stretch">
-              <div className="flex flex-row items-center gap-x-2 mr-2">
-                <h2 className="w-[85px]">{formatCurrency(entry.value)}</h2>
-                <h2 className="lighten text-sm">
-                  {entry.nominal ? 'nominal' : 'real'}
-                </h2>
+      <div className={`${className}`}>
+        <div className=" flex flex-row justify-between items-start ">
+          <div className="">
+            <h2 className="font-medium">
+              {trimAndNullify(entry.label) ?? '<no label>'}
+            </h2>
+            <div className="flex justify-between">
+              <div className="flex items-stretch">
+                <div className="flex flex-row items-center gap-x-2 mr-2">
+                  <h2
+                    className=""
+                    style={{width: `${Math.max(8, valueStr.length) * 9}px`}}
+                  >
+                    {valueStr}
+                  </h2>
+                  <h2 className="">
+                    {entry.nominal ? 'nominal' : 'real '}
+                  </h2>
+                </div>
+                <button
+                  className="flex items-center px-2"
+                  onClick={() => onChangeAmount(increment(entry.value))}
+                >
+                  <FontAwesomeIcon className="text-base" icon={faPlus} />
+                </button>
+                <button
+                  className="flex items-center px-2"
+                  onClick={() => onChangeAmount(decrement(entry.value))}
+                >
+                  <FontAwesomeIcon className="text-base" icon={faMinus} />
+                </button>
               </div>
-              {onChangeAmount && (
-                <>
-                  <button
-                    className="flex items-center px-2"
-                    onClick={() => onChangeAmount(increment(entry.value))}
-                  >
-                    <FontAwesomeIcon className="text-base" icon={faPlus} />
-                  </button>
-                  <button
-                    className="flex items-center px-2"
-                    onClick={() => onChangeAmount(decrement(entry.value))}
-                  >
-                    <FontAwesomeIcon className="text-base" icon={faMinus} />
-                  </button>
-                </>
-              )}
             </div>
           </div>
-          <h2 className="">{byYearScheduleYearRangeToStr(entry.yearRange)}</h2>
-          {validation !== 'ok' && (
-            <h2 className="  ">
-              <FontAwesomeIcon
-                className="mr-2 text-errorFG"
-                icon={faExclamationCircle}
-              />
-              <span className="">
-                <span className="text-errorFG">
-                  {validation === 'outOfBounds'
-                    ? 'ignoring out-of-bound years'
-                    : validation === 'startGreaterThanEnd'
-                    ? 'ignored - starting year is later than ending year.'
-                    : noCase(validation)}
-                </span>
-              </span>
-            </h2>
-          )}
-        </div>
-        {onEdit && (
-          <button className="px-2 -mr-2" onClick={onEdit}>
+          <button className="px-2 -mr-2 py-2" onClick={onEdit}>
             <FontAwesomeIcon className="text-lg" icon={faPen} />
           </button>
-        )}
+        </div>
+        <h2 className="">
+          <YearRangeDisplay
+            value={entry.yearRange}
+            range={allowableYearRange}
+            lengthInBrackets={false}
+          />
+        </h2>
       </div>
     )
   }
 )
-
-export const byYearScheduleYearRangeToStr = (yearRange: YearRange) =>
-  yearRange.start === yearRange.end
-    ? `at ${_textForSingle(yearRange.start)}`
-    : `from ${_textForRange(yearRange.start, 'first')} ${_textForRange(
-        yearRange.end,
-        'second'
-      )}`
-
-const _textForRange = (x: YearRange['start'], type: 'first' | 'second') => {
-  if (x === 'start') {
-    return type === 'first' ? 'now' : assertFalse()
-  }
-  if (x === 'lastWorkingYear') {
-    return type === 'first' ? 'last working year' : 'to last working year'
-  }
-  if (x === 'retirement') {
-    return type === 'first' ? 'retirement' : 'to retirement'
-  }
-  if (x === 'end') {
-    return type === 'first' ? assertFalse() : 'onwards'
-  }
-  if (typeof x === 'number') {
-    return type === 'first' ? `age ${x}` : `to ${x}`
-  }
-  noCase(x)
-}
-
-const _textForSingle = (x: ValueForYearRange['yearRange']['start']) => {
-  return typeof x === 'number' ? `age ${x}` : x
-}
-
-const {increment, decrement} = smartDeltaFn([
-  {value: 10000, delta: 1000},
-  {value: 30000, delta: 2000},
-  {value: 100000, delta: 5000},
-  {value: 200000, delta: 10000},
-  {value: 500000, delta: 20000},
-  {value: 1000000, delta: 50000},
-])

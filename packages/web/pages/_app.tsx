@@ -4,6 +4,8 @@ import React, {useEffect, useState} from 'react'
 import {GlobalErrorBoundary} from '../src/Pages/App/GlobalErrorBoundary'
 import {WithSimulation} from '../src/Pages/App/WithSimulation'
 import '../styles/globals.css'
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 /**
  * String.prototype.replaceAll() polyfill
@@ -44,6 +46,8 @@ function MyApp({Component, pageProps}: AppProps) {
       <WithSimulation>
         <Component {...pageProps} />
       </WithSimulation>
+
+      <ToastContainer  />
     </GlobalErrorBoundary>
   )
 }

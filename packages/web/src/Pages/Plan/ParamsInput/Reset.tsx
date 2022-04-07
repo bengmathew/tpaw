@@ -19,7 +19,7 @@ export const Reset = React.memo(() => {
         <ConfirmAlert
           title="Confirm Reset"
           confirmText="Reset"
-          isWarning
+          isWarningButton
           onCancel={() => setShowConfirm(false)}
           onConfirm={() => {
             setShowConfirm(false)

@@ -1,9 +1,7 @@
-import {localPoint} from '@visx/event'
 import {gsap} from 'gsap'
-import _ from 'lodash'
 import {LinearFn, linearFnFomPoints} from '../../../Utils/LinearFn'
 import {SimpleRange} from '../../../Utils/SimpleRange'
-import {assert, fGet} from '../../../Utils/Utils'
+import {fGet} from '../../../Utils/Utils'
 import {ChartComponent} from './ChartComponent/ChartComponent'
 import {ChartContext} from './ChartContext'
 import {
@@ -42,30 +40,6 @@ export class Chart<Data> {
   private _stateTransition: ChartDataTransition<ChartFullState<Data>>
   private _components: readonly ChartComponent<Data>[]
   private _stateAnimation: ReturnType<typeof gsap.to> | null = null
-  private _activeAnimations: (gsap.core.Tween | gsap.core.Timeline)[] = []
-  private _id = _.uniqueId()
-
-  private get _registerAnimation() {
-    return <T extends gsap.core.Tween | gsap.core.Timeline>(tween: T): T => {
-      tween.eventCallback('onStart', () => {
-        this._activeAnimations.push(tween)
-        if (this._activeAnimations.length === 1) {
-          gsap.ticker.add(this.onDraw)
-        }
-      })
-      const handleDone = () => {
-        _.remove(this._activeAnimations, x => x === tween)
-        if (this._activeAnimations.length === 0) {
-          gsap.ticker.remove(this.onDraw)
-        }
-      }
-      tween.eventCallback('onComplete', handleDone)
-      // As per https://greensock.com/forums/topic/22563-working-example-of-oninterrupt-callback/
-      // this obviates the need to handle "kill"
-      tween.eventCallback('onInterrupt', handleDone)
-      return tween
-    }
-  }
 
   pointerMoved(position: {x: number; y: number} | null) {
     const {viewport} = this._stateTransition.target
@@ -103,16 +77,16 @@ export class Chart<Data> {
     baseState: ChartState<Data>,
     components: readonly ChartComponent<Data>[],
     private debugName: string,
-    private onDraw:()=>void
+    private onDraw: () => void,
+    private _registerAnimation: <
+      T extends gsap.core.Tween | gsap.core.Timeline
+    >(
+      tween: T
+    ) => T
   ) {
     this._canvas = canvas
     this._components = components
     this._ctx = fGet(canvas.getContext('2d'))
-
-
-    // this._canvas.addEventListener('pointermove', this._handlers.pointerMove)
-    // this._canvas.addEventListener('pointerenter', this._handlers.pointerEnter)
-    // this._canvas.addEventListener('pointerleave', this._handlers.pointerLeave)
 
     const state = {...baseState, ..._derivedState(baseState)}
     this._stateTransition = {target: state, prev: state, transition: 1}
@@ -120,20 +94,8 @@ export class Chart<Data> {
   }
 
   destroy() {
-    
-    // this._canvas.removeEventListener('pointermove', this._handlers.pointerMove)
-    // this._canvas.removeEventListener(
-    //   'pointerenter',
-    //   this._handlers.pointerEnter
-    // )
-    // this._canvas.removeEventListener(
-    //   'pointerleave',
-    //   this._handlers.pointerLeave
-    // )
     this._components.forEach(x => x.destroy?.())
     this._stateAnimation?.kill()
-    assert(this._activeAnimations.length === 0)
-
   }
 
   setComponents(components: readonly ChartComponent<Data>[]) {

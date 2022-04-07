@@ -1,31 +1,27 @@
 import _ from 'lodash'
-import { TPAWParams, ValueForYearRange } from '../../../TPAWSimulator/TPAWParams'
-import {
-  numericYear,
-  numericYearRange,
-  processTPAWParams
-} from '../../../TPAWSimulator/TPAWParamsProcessed'
-import { TPAWRunInWorkerByPercentileByYearsFromNow } from '../../../TPAWSimulator/Worker/TPAWRunInWorker'
-import { UseTPAWWorkerResult } from '../../../TPAWSimulator/Worker/UseTPAWWorker'
+import {TPAWParams, ValueForYearRange} from '../../../TPAWSimulator/TPAWParams'
+import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
+import {processTPAWParams} from '../../../TPAWSimulator/TPAWParamsProcessed'
+import {TPAWRunInWorkerByPercentileByYearsFromNow} from '../../../TPAWSimulator/Worker/TPAWRunInWorker'
+import {UseTPAWWorkerResult} from '../../../TPAWSimulator/Worker/UseTPAWWorker'
 import {
   linearFnFomPoints,
-  linearFnFromPointAndSlope
+  linearFnFromPointAndSlope,
 } from '../../../Utils/LinearFn'
-import { nominalToReal } from '../../../Utils/NominalToReal'
-import { retirementYears } from '../../../Utils/RetirementYears'
-import { SimpleRange } from '../../../Utils/SimpleRange'
-import { assert, fGet, noCase } from '../../../Utils/Utils'
-import { SimulationInfo } from '../../App/WithSimulation'
+import {nominalToReal} from '../../../Utils/NominalToReal'
+import {SimpleRange} from '../../../Utils/SimpleRange'
+import {assert, fGet, noCase} from '../../../Utils/Utils'
+import {SimulationInfo} from '../../App/WithSimulation'
 import {
   chartPanelSpendingDiscretionaryTypeID,
   chartPanelSpendingEssentialTypeID,
   ChartPanelType,
   isChartPanelSpendingDiscretionaryType,
-  isChartPanelSpendingEssentialType
+  isChartPanelSpendingEssentialType,
 } from './ChartPanelType'
 
 export type TPAWChartData = {
-  label:string
+  label: string
   percentiles: {
     data: (x: number) => number
     percentile: number
@@ -33,8 +29,13 @@ export type TPAWChartData = {
   }[]
   min: {x: number; y: number}
   max: {x: number; y: number}
-  age: {start: number; retirement: number; end: number}
-  modelAgeEnd: number
+  years: {
+    displayRange: SimpleRange
+    retirement: number
+    max: number
+    display: (yearsFromNow: number) => number
+  }
+
   isAgeInGroup: (age: number) => boolean
 }
 
@@ -55,7 +56,7 @@ export const tpawChartDataScaled = (
     targetYRange.end
   )
   return {
-    label:`${curr.label} scaled.`,
+    label: `${curr.label} scaled.`,
     percentiles: curr.percentiles.map(({data, percentile, isHighlighted}) => ({
       data: x => scaleY(data(x)),
       percentile,
@@ -63,8 +64,7 @@ export const tpawChartDataScaled = (
     })),
     min: {x: curr.min.x, y: scaleY(curr.min.y)},
     max: {x: curr.max.x, y: scaleY(curr.max.y)},
-    age: curr.age,
-    modelAgeEnd: curr.modelAgeEnd,
+    years: curr.years,
     isAgeInGroup: curr.isAgeInGroup,
   }
 }
@@ -75,12 +75,14 @@ export const tpawChartData = (
   highlightPercentiles: SimulationInfo['highlightPercentiles']
 ): TPAWChartData => {
   const {params} = tpawResult.args
+  const {asYFN, withdrawalStartYear} = extendTPAWParams(params)
   const {legacy, spendingCeiling, withdrawals} = params
   const hasLegacy = legacy.total !== 0 || spendingCeiling !== null
+  const withdrawalStart = asYFN(withdrawalStartYear)
   const spendingYears = [
     ...params.withdrawals.fundedByBonds,
     ...params.withdrawals.fundedByRiskPortfolio,
-  ].some(x => numericYear(params, x.yearRange.start) < params.age.retirement)
+  ].some(x => asYFN(x.yearRange).start < withdrawalStart)
     ? ('allYears' as const)
     : ('retirementYears' as const)
   switch (type) {
@@ -207,19 +209,12 @@ const _separateExtraWithdrawal = (
   type: 'extra' | 'essential'
 ): TPAWRunInWorkerByPercentileByYearsFromNow => {
   const processedParams = processTPAWParams(params)
-  const yearRange = numericYearRange(params, extraWithdrawal.yearRange)
-  const yearRangeFromNow = {
-    start: yearRange.start - params.age.start,
-    end: yearRange.end - params.age.start,
-  }
+  const yearRange = extendTPAWParams(params).asYFN(extraWithdrawal.yearRange)
 
   const byPercentileByYearsFromNow = x.byPercentileByYearsFromNow.map(
     ({data, percentile}) => ({
       data: data.map((value, yearFromNow) => {
-        if (
-          yearFromNow < yearRangeFromNow.start ||
-          yearFromNow > yearRangeFromNow.end
-        ) {
+        if (yearFromNow < yearRange.start || yearFromNow > yearRange.end) {
           return 0
         }
         const currYearParams = processedParams.byYear[yearFromNow].withdrawals
@@ -244,53 +239,53 @@ const _separateExtraWithdrawal = (
 }
 
 const _data = (
-  label:string,
+  label: string,
   tpawResult: UseTPAWWorkerResult,
   dataFn: (
     tpawResult: UseTPAWWorkerResult
   ) => TPAWRunInWorkerByPercentileByYearsFromNow,
-  years: 'retirementYears' | 'allYears',
+  yearRange: 'retirementYears' | 'allYears',
   yearEndDelta: number,
   ageGroups: SimpleRange[],
   highlightPercentiles: number[]
 ): TPAWChartData => {
   const {args} = tpawResult
-  const age = {
-    start:
-      years === 'retirementYears'
-        ? args.params.age.retirement
-        : args.params.age.start,
-    end: args.params.age.end + yearEndDelta,
-    retirement: args.params.age.retirement,
+  const {params} = args
+  const {asYFN, withdrawalStartYear, pickPerson, maxMaxAge} =
+    extendTPAWParams(params)
+  const retirement = asYFN(withdrawalStartYear)
+  const maxYear = asYFN(maxMaxAge)
+  const xAxisPerson = params.people.withPartner
+    ? pickPerson(params.people.xAxis)
+    : params.people.person1
+  const years: TPAWChartData['years'] = {
+    displayRange: {
+      start: yearRange === 'retirementYears' ? retirement : 0,
+      end: maxYear + yearEndDelta,
+    },
+    retirement,
+    max: maxYear,
+    display: yearsFromNow => yearsFromNow + xAxisPerson.ages.current,
   }
-  const modelAgeEnd = args.params.age.end
   const {byPercentileByYearsFromNow} = dataFn(tpawResult)
-  const byPercentileByYears = byPercentileByYearsFromNow.map(({data}) =>
-    years === 'retirementYears'
-      ? {data: retirementYears(args.params, data)}
-      : {data}
-  )
+
   const percentiles = _addPercentileInfo(
-    _interpolate(byPercentileByYears, age.start),
+    _interpolate(byPercentileByYearsFromNow, years.displayRange),
     args.percentiles,
     highlightPercentiles
   )
 
-  const last = fGet(_.last(byPercentileByYears)).data
-  const first = fGet(_.first(byPercentileByYears)).data
+  const last = fGet(_.last(byPercentileByYearsFromNow)).data
+  const first = fGet(_.first(byPercentileByYearsFromNow)).data
   const maxY = Math.max(...last)
   const minY = Math.min(...first)
-  const indexXToDataX = (indexX: number) =>
-    indexX +
-    (years === 'retirementYears'
-      ? args.params.age.retirement
-      : args.params.age.start)
-  const max = {x: indexXToDataX(last.indexOf(maxY)), y: maxY}
-  const min = {x: indexXToDataX(first.indexOf(minY)), y: minY}
+
+  const max = {x: last.indexOf(maxY), y: maxY}
+  const min = {x: first.indexOf(minY), y: minY}
 
   const isAgeInGroup = (age: number) =>
     ageGroups.some(x => x.start <= age && x.end >= age)
-  return {label, age, percentiles, min, max, modelAgeEnd, isAgeInGroup}
+  return {label, years, percentiles, min, max, isAgeInGroup}
 }
 
 const _addPercentileInfo = <T>(
@@ -305,30 +300,32 @@ const _addPercentileInfo = <T>(
   }))
 }
 
-const _interpolate = (ys: {data: number[]}[], xStart: number) => {
-  const beforeSlope = _avgSlope(ys, 0)
-  const afterSlope = _avgSlope(ys, ys[0].data.length - 1)
-  const xEnd = xStart + ys[0].data.length - 1
+const _interpolate = (
+  ys: {data: number[]}[],
+  {start: xStart, end: xEnd}: SimpleRange
+) => {
+  const beforeSlope = _avgSlope(ys, xStart)
+  const afterSlope = _avgSlope(ys, xEnd)
   return ys.map(({data}) => {
     const extrapolateBefore = linearFnFromPointAndSlope(
       xStart,
-      data[0],
+      data[xStart],
       beforeSlope
     )
     const extrapolateAfter = linearFnFromPointAndSlope(
       xEnd,
-      fGet(_.last(data)),
+      data[xEnd],
       afterSlope
     )
     const interpolated = data
       .slice(0, -1)
       .map((v, i) =>
-        linearFnFomPoints(i + xStart, v, i + xStart + 1, data[i + 1])
+        linearFnFomPoints(i , v, i + 1, data[i + 1])
       )
     const dataFn = (a: number) => {
       if (a <= xStart) return extrapolateBefore(a)
       if (a >= xEnd) return extrapolateAfter(a)
-      const section = Math.floor(a) - xStart
+      const section = Math.floor(a)
       const currFn = interpolated[section]
       const result = currFn(a)
       return result

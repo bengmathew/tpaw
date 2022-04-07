@@ -2,7 +2,7 @@ import {faMinus, faPlus} from '@fortawesome/pro-light-svg-icons'
 import {faPen} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
-import React, {useEffect, useMemo, useState} from 'react'
+import React, {useMemo, useState} from 'react'
 import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
 import {processTPAWParams} from '../../../TPAWSimulator/TPAWParamsProcessed'
 import {Contentful} from '../../../Utils/Contentful'
@@ -12,31 +12,21 @@ import {preciseRange} from '../../../Utils/PreciseRange'
 import {smartDeltaFn} from '../../../Utils/SmartDeltaFn'
 import {useSimulation} from '../../App/WithSimulation'
 import {AmountInput, useAmountInputState} from '../../Common/Inputs/AmountInput'
-import {LabeledValueInput} from '../../Common/Inputs/LabeledValueInput'
+import {EditLabeledAmount} from '../../Common/Inputs/EditLabeldAmount'
 import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
 import {usePlanContent} from '../Plan'
+import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
 
-type _InputState = {isEdit: false} | {isEdit: true; editIndex: number} | null
-
-export const ParamsInputLegacy = React.memo(() => {
-  const {params} = useSimulation()
-  const [key, setKey] = useState(0)
-  useEffect(() => setKey(k => k + 1), [params])
-
-  return (
-    <div className="">
-      <_Inner key={key} />
-    </div>
-  )
-})
-
-// This is needed for AmountInput to pull new values on resetDefault.
-const _Inner = React.memo(() => {
+export const ParamsInputLegacy = React.memo((props: ParamsInputBodyProps) => {
   const {params, setParams} = useSimulation()
   const content = usePlanContent()
   const valueState = useAmountInputState(params.legacy.total)
 
-  const [input, setInput] = useState<_InputState>(null)
+  const [state, setState] = useState<
+    | {type: 'main'}
+    | {type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean}
+  >({type: 'main'})
+
   const paramsProcessed = useMemo(() => processTPAWParams(params), [params])
   const handleAmount = (amount: number) => {
     if (amount === params.legacy.total) return
@@ -45,125 +35,139 @@ const _Inner = React.memo(() => {
     p.legacy.total = amount
     setParams(p)
   }
+
   return (
-    <div className="">
-      <Contentful.RichText body={content.legacy.introAmount.fields.body} p="p-base" />
-      <div className={`flex items-center gap-x-2 mt-2`}>
-        <AmountInput
-          className="mt-2"
-          state={valueState}
-          onAccept={handleAmount}
+    <ParamsInputBody {...props}>
+      <div className="">
+        <h2 className="font-bold text-lg mb-3">Total Legacy Target</h2>
+        <Contentful.RichText
+          body={content.legacy.introAmount.fields.body}
+          p="p-base"
         />
-        <button
-          className={`flex items-center px-2 `}
-          onClick={() => handleAmount(increment(params.legacy.total))}
-        >
-          <FontAwesomeIcon className="text-base" icon={faPlus} />
-        </button>
-        <button
-          className={`flex items-center px-2 `}
-          onClick={() => handleAmount(decrement(params.legacy.total))}
-        >
-          <FontAwesomeIcon className="text-base" icon={faMinus} />
-        </button>
-      </div>
-
-      <Contentful.RichText
-        body={content.legacy.introAssets.fields.body}
-        p="mt-6 p-base mb-4"
-      />
-      <div className="flex justify-start gap-x-4 items-center  my-2 ">
-        <button
-          className="flex items-center justify-center gap-x-2 py-1 pr-2  "
-          onClick={() => setInput({isEdit: false})}
-        >
-          <FontAwesomeIcon className="text-2xl" icon={faPlus} />
-        </button>
-      </div>
-      <div className="flex flex-col gap-y-6 mt-4 ">
-        {params.legacy.external.map((entry, i) => (
-          <_Entry
-            key={i}
-            className=""
-            entry={entry}
-            onEdit={() => setInput({isEdit: true, editIndex: i})}
+        <div className={`flex items-center gap-x-2 mt-2`}>
+          <AmountInput
+            className="mt-2"
+            state={valueState}
+            onAccept={handleAmount}
           />
-        ))}
-      </div>
+          <button
+            className={`flex items-center px-2 `}
+            onClick={() => handleAmount(increment(params.legacy.total))}
+          >
+            <FontAwesomeIcon className="text-base" icon={faPlus} />
+          </button>
+          <button
+            className={`flex items-center px-2 `}
+            onClick={() => handleAmount(decrement(params.legacy.total))}
+          >
+            <FontAwesomeIcon className="text-base" icon={faMinus} />
+          </button>
+        </div>
 
-      {params.legacy.external.length > 0 && (
+        <h2 className="font-bold text-lg mt-10 mb-3">
+          Non-portfolio Sources 
+        </h2>
+        <Contentful.RichText
+          body={content.legacy.introAssets.fields.body}
+          p="p-base mb-4"
+        />
+        <div className="flex justify-start gap-x-4 items-center  my-2 ">
+          <button
+            className="flex items-center justify-center gap-x-2 py-1 pr-2  "
+            onClick={() => {
+              const index = params.legacy.external.length
+              setParams(params => {
+                const clone = _.cloneDeep(params)
+                clone.legacy.external.push({
+                  label: null,
+                  value: 0,
+                  nominal: false,
+                })
+                return clone
+              })
+              setState({type: 'edit', isAdd: true, hideInMain: true, index})
+            }}
+          >
+            <FontAwesomeIcon className="text-2xl" icon={faPlus} />
+          </button>
+        </div>
+        <div className="flex flex-col gap-y-6 mt-4 ">
+          {params.legacy.external.map(
+            (entry, index) =>
+              !(
+                state.type === 'edit' &&
+                state.hideInMain &&
+                state.index === index
+              ) && (
+                <_Entry
+                  key={index}
+                  className=""
+                  entry={entry}
+                  onEdit={() => {
+                    setState({
+                      type: 'edit',
+                      isAdd: false,
+                      hideInMain: false,
+                      index,
+                    })
+                  }}
+                />
+              )
+          )}
+        </div>
+
         <div className="mt-8">
-          <h2 className="font-medium">Remainder Funded by Portfolio</h2>
+          <h2 className="font-bold text-lg mt-10 mb-3">
+            Remainder Funded by Portfolio
+          </h2>
           <h2 className="">
             {formatCurrency(paramsProcessed.legacy.target)}{' '}
-            <span className="lighten text-sm">real</span>
+            <span className="">real</span>
           </h2>
         </div>
-      )}
 
-      {params.legacy.total > 0 && (
-        <>
-          <h2 className="font-medium mt-4">Stock Allocation for Legacy</h2>
-          <SliderInput
-            className=""
-            height={60}
-            pointers={[
-              {
-                value: params.targetAllocation.legacyPortfolio.stocks,
-                type: 'normal',
-              },
-            ]}
-            onChange={([value]) =>
-              setParams(params => {
-                const p = _.cloneDeep(params)
-                p.targetAllocation.legacyPortfolio.stocks = value
-                return p
-              })
-            }
-            formatValue={formatPercentage(0)}
-            domain={preciseRange(0, 1, 0.01, 2).map((value, i) => ({
-              value: value,
-              tick: i % 10 === 0 ? 'large' : i % 2 === 0 ? 'small' : 'none',
-            }))}
-          />
-        </>
-      )}
-      {input && (
-        <LabeledValueInput
-          initial={
-            input.isEdit
-              ? params.legacy.external[input.editIndex]
-              : {
-                  label: '',
-                  value: null,
-                  nominal: false,
-                }
-          }
-          heading={input.isEdit ? 'Edit Legacy Entry' : 'Add Legacy Entry'}
-          onCancel={() => setInput(null)}
-          onDone={entry => {
+        <h2 className="font-bold text-lg mt-10">Stock Allocation for Legacy</h2>
+        <SliderInput
+          className=""
+          height={60}
+          pointers={[
+            {
+              value: params.targetAllocation.legacyPortfolio.stocks,
+              type: 'normal',
+            },
+          ]}
+          onChange={([value]) =>
             setParams(params => {
               const p = _.cloneDeep(params)
-              input.isEdit
-                ? (p.legacy.external[input.editIndex] = entry)
-                : p.legacy.external.push(entry)
+              p.targetAllocation.legacyPortfolio.stocks = value
               return p
             })
-            setInput(null)
-          }}
-          onDelete={
-            input.isEdit
-              ? () => {
-                  const p = _.cloneDeep(params)
-                  p.legacy.external.splice(input.editIndex, 1)
-                  setParams(p)
-                  setInput(null)
-                }
-              : null
           }
+          formatValue={formatPercentage(0)}
+          domain={preciseRange(0, 1, 0.01, 2).map((value, i) => ({
+            value: value,
+            tick: i % 10 === 0 ? 'large' : i % 2 === 0 ? 'small' : 'none',
+          }))}
         />
-      )}
-    </div>
+      </div>
+      {{
+        input:
+          state.type === 'edit'
+            ? transitionOut => (
+                <EditLabeledAmount
+                  title={
+                    state.isAdd ? 'Add a Legacy Entry' : 'Edit Legacy Entry'
+                  }
+                  setHideInMain={hideInMain => setState({...state, hideInMain})}
+                  transitionOut={transitionOut}
+                  onDone={() => setState({type: 'main'})}
+                  entries={params => params.legacy.external}
+                  index={state.index}
+                />
+              )
+            : undefined,
+      }}
+    </ParamsInputBody>
   )
 })
 
@@ -186,7 +190,7 @@ const _Entry = React.memo(
           <div className="flex items-stretch">
             <div className="flex flex-row items-center gap-x-2 mr-2">
               <h2 className="">{formatCurrency(entry.value)}</h2>
-              <h2 className="lighten text-sm">
+              <h2 className="">
                 {entry.nominal ? 'nominal' : 'real'}
               </h2>
             </div>

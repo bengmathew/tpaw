@@ -1,34 +1,34 @@
-import { faInfo } from '@fortawesome/pro-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Power1, Power4 } from 'gsap'
-import { useRouter } from 'next/router'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import {faInfo} from '@fortawesome/pro-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import {Power1, Power4} from 'gsap'
+import {useRouter} from 'next/router'
+import React, {useCallback, useEffect, useMemo, useState} from 'react'
 import Measure from 'react-measure'
-import { formatCurrency } from '../../../Utils/FormatCurrency'
-import { formatPercentage } from '../../../Utils/FormatPercentage'
-import { useURLParam } from '../../../Utils/UseURLParam'
-import { assert, fGet, noCase } from '../../../Utils/Utils'
-import { useWindowSize } from '../../../Utils/WithWindowSize'
-import { SimulationInfo, useSimulation } from '../../App/WithSimulation'
-import { ChartAnimation } from '../../Common/Chart/Chart'
-import { ChartPanelButtons } from './ChartPanelButtons'
-import { ChartPanelDescription } from './ChartPanelDescription'
-import { ChartPanelMenu } from './ChartPanelMenu'
+import {formatCurrency} from '../../../Utils/FormatCurrency'
+import {formatPercentage} from '../../../Utils/FormatPercentage'
+import {useURLParam} from '../../../Utils/UseURLParam'
+import {assert, fGet, noCase} from '../../../Utils/Utils'
+import {useWindowSize} from '../../../Utils/WithWindowSize'
+import {SimulationInfo, useSimulation} from '../../App/WithSimulation'
+import {ChartAnimation} from '../../Common/Chart/Chart'
+import {ChartPanelButtons} from './ChartPanelButtons'
+import {ChartPanelDescription} from './ChartPanelDescription'
+import {ChartPanelMenu} from './ChartPanelMenu'
 import {
   ChartPanelType,
   isChartPanelSpendingDiscretionaryType,
   isChartPanelSpendingEssentialType,
-  isChartPanelType
+  isChartPanelType,
 } from './ChartPanelType'
-import { TPAWChart, TPAWChartState } from './TPAWChart'
+import {TPAWChart, TPAWChartState} from './TPAWChart'
 import {
   tpawChartData,
   tpawChartDataScaled,
-  tpawChartDataYRange
+  tpawChartDataYRange,
 } from './TPAWChartData'
 import {
   tpawChartLegacyData,
-  tpawChartLegacyDataYRange
+  tpawChartLegacyDataYRange,
 } from './TPAWChartLegacyData'
 
 type _State = {
@@ -82,10 +82,7 @@ export function useChartPanel({
     }
   })
 
-  const [yAxisFormat, lastAgeIsLegacy] = useMemo(
-    () => _info(state.type),
-    [state.type]
-  )
+  const [yAxisFormat] = useMemo(() => _info(state.type), [state.type])
 
   useEffect(() => {
     setState(prev => {
@@ -269,7 +266,6 @@ export function useChartPanel({
         <TPAWChart
           className=" -mx-3 relative z-0"
           yAxisFormat={yAxisFormat}
-          lastAgeIsLegacy={lastAgeIsLegacy}
           animationForBoundsChange={normalAnimation}
           state={state}
         />
@@ -286,22 +282,20 @@ export function useChartPanel({
   return [handleChangeType, state.type, render] as const
 }
 
-const _info = (type: ChartPanelType): [(x: number) => string, boolean] => {
+const _info = (type: ChartPanelType): [(x: number) => string] => {
   switch (type) {
     case 'spending-total':
     case 'spending-general':
-      return [formatCurrency, false]
+      return [formatCurrency]
     case 'portfolio':
-      return [formatCurrency, true]
+      return [formatCurrency]
     case 'glide-path':
-      return [formatPercentage(0), false]
+      return [formatPercentage(0)]
     case 'withdrawal-rate':
-      return [formatPercentage(1), false]
+      return [formatPercentage(1)]
     default:
-      if (isChartPanelSpendingEssentialType(type))
-        return [formatCurrency, false]
-      if (isChartPanelSpendingDiscretionaryType(type))
-        return [formatCurrency, false]
+      if (isChartPanelSpendingEssentialType(type)) return [formatCurrency]
+      if (isChartPanelSpendingDiscretionaryType(type)) return [formatCurrency]
       noCase(type)
   }
 }

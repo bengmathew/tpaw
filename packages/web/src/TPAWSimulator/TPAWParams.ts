@@ -1,12 +1,14 @@
-import {TPAWParamsV4, TPAWParamsV4WithoutHistorical} from './TPAWParamsV4'
-import {MAX_AGE_V4, tpawParamsV4Validator} from './TPAWParamsV4Validator'
+import {V5Params} from './TPAWParamsV5'
 
-export type TPAWParams = TPAWParamsV4
-export type TPAWParamsWithoutHistorical = TPAWParamsV4WithoutHistorical
-export type ValueForYearRange = TPAWParams['savings'][number]
-export type YearRange = ValueForYearRange['yearRange']
-export type YearRangeEdge = YearRange['start']
-export type YearRangeFixedEdge = Exclude<YearRangeEdge, number>
+export type TPAWParams = V5Params.Params
+export type TPAWParamsWithoutHistorical = V5Params.ParamsWithoutHistorical
+export type Person = V5Params.Person
+export type People = V5Params.People
+export type Year = V5Params.Year
+export type YearRange = V5Params.YearRange
+export type ValueForYearRange = V5Params.ValueForYearRange
+export type LabeledAmount = V5Params.LabeledAmount
 
-export const tpawParamsValidator = tpawParamsV4Validator
-export const MAX_AGE = MAX_AGE_V4
+export const tpawParamsValidator = V5Params.validator
+export const MAX_AGE = V5Params.MAX_AGE
+export const MAX_LABEL_LENGTH = V5Params.MAX_LABEL_LENGTH

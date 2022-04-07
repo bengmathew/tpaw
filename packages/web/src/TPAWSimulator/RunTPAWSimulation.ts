@@ -1,8 +1,8 @@
 import _ from 'lodash'
-import { numOfYears } from '../Utils/NumOfYears'
-import { assert, fGet } from '../Utils/Utils'
-import { TPAWParams } from './TPAWParams'
-import { processTPAWParams, TPAWParamsProcessed } from './TPAWParamsProcessed'
+import {assert, fGet} from '../Utils/Utils'
+import {TPAWParams} from './TPAWParams'
+import {extendTPAWParams} from './TPAWParamsExt'
+import {processTPAWParams, TPAWParamsProcessed} from './TPAWParamsProcessed'
 
 export type TPAWSimulationResult = ReturnType<typeof runTPAWSimulation>
 export function runTPAWSimulation(
@@ -12,6 +12,7 @@ export function runTPAWSimulation(
     randomIndexesIntoHistoricalReturnsByYear?: (year: number) => number
   } | null
 ) {
+  const {numYears} = extendTPAWParams(paramsIn)
   const params = processTPAWParams(
     paramsIn,
     realizedReturnsFromSimulation
@@ -21,12 +22,12 @@ export function runTPAWSimulation(
   if (realizedReturnsFromSimulation)
     assert(
       realizedReturnsFromSimulation.simulationUsingExpectedReturns.length ===
-        numOfYears(params.age)
+        numYears
     )
 
   const byYearFromNow: TPAWSimulationForYear[] = []
 
-  _.range(numOfYears(params.age)).reduce((prev, yearIndex) => {
+  _.range(numYears).reduce((prev, yearIndex) => {
     const result = runASingleYear(
       params,
       yearIndex,
@@ -68,6 +69,9 @@ export function runASingleYear(
     savingsPortfolioEndingBalance: number
   } | null
 ) {
+  const {asYFN, withdrawalStartYear, numYears} = extendTPAWParams(
+    params.original
+  )
   // ------ RETURNS -----
   const returns = (() => {
     const _expected = (allocation: {stocks: number; bonds: number}) =>
@@ -204,10 +208,7 @@ export function runASingleYear(
     )
     const presentValueOfDesiredLegacy = Math.min(
       (params.legacy.target * (1 + scale.legacy)) /
-        Math.pow(
-          1 + returns.expected.legacyPortfolio,
-          numOfYears(params.age) - yearIndex
-        ),
+        Math.pow(1 + returns.expected.legacyPortfolio, numYears - yearIndex),
       wealth - presentValueOfEssentialExpenses - presentValueOfExtraWithdrawals
     )
     const presentValueOfRegularWithdrawals =
@@ -237,12 +238,12 @@ export function runASingleYear(
       (1 + scale.extraWithdrawls)
 
     let regular = (() => {
-      if (params.age.start + yearIndex < params.age.retirement) return 0
+      if (yearIndex < asYFN(withdrawalStartYear)) return 0
 
       const P = wealthAndSpending.presentValueOfRegularWithdrawals
       const r = returns.expected.regularPortfolio
       const g = params.scheduledWithdrawalGrowthRate
-      const n = numOfYears(params.age) - yearIndex
+      const n = numYears - yearIndex
       if (Math.abs(r - g) < 0.0000000001) return P / n
       return (P * (r - g)) / ((1 - Math.pow((1 + g) / (1 + r), n)) * (1 + r))
     })()
@@ -274,7 +275,7 @@ export function runASingleYear(
     const legacy = 0
     const extra = Math.min(withdrawalTarget.extra, availableFunds - essential)
     const regular =
-      params.age.start + yearIndex < params.age.retirement
+      yearIndex < asYFN(withdrawalStartYear)
         ? 0
         : Math.min(withdrawalTarget.regular, availableFunds - essential - extra)
     const total = essential + legacy + extra + regular
@@ -311,10 +312,7 @@ export function runASingleYear(
     )
     const presentValueOfDesiredLegacy = Math.min(
       (params.legacy.target * (1 + scale.legacy)) /
-        Math.pow(
-          1 + returns.expected.legacyPortfolio,
-          numOfYears(params.age) - yearIndex
-        ),
+        Math.pow(1 + returns.expected.legacyPortfolio, numYears - yearIndex),
       wealth - presentValueOfEssentialExpenses - presentValueOfExtraWithdrawals
     )
     const presentValueOfRegularWithdrawals =

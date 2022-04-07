@@ -1,9 +1,10 @@
 import _ from 'lodash'
-import React, {useState} from 'react'
+import React, { useEffect, useState } from 'react'
 
 export type AmountInputState = ReturnType<typeof useAmountInputState>
-export function useAmountInputState(initial: number | null) {
-  const [amountStr, setAmountStr] = useState(initial ? `${initial}` : '')
+export function useAmountInputState(value: number | null) {
+  const [amountStr, setAmountStr] = useState(value !== null ? `${value}` : '')
+  useEffect(() => setAmountStr(value !== null ? `${value}` : ''), [value])
   const amount = _parse(amountStr)
   return {
     amount,

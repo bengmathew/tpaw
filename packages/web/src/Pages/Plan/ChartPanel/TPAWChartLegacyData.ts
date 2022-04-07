@@ -1,6 +1,7 @@
 import _ from 'lodash'
-import { fGet } from '../../../Utils/Utils'
-import { SimulationInfo } from '../../App/WithSimulation'
+import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
+import {fGet} from '../../../Utils/Utils'
+import {SimulationInfo} from '../../App/WithSimulation'
 
 export type TPAWChartLegacyData = {
   label: string
@@ -9,7 +10,7 @@ export type TPAWChartLegacyData = {
     percentile: number
     isHighlighted: boolean
   }[]
-  age: number
+  year: number
 }
 
 export function tpawChartLegacyData(
@@ -17,14 +18,15 @@ export function tpawChartLegacyData(
   highlightPercentiles: SimulationInfo['highlightPercentiles']
 ): TPAWChartLegacyData {
   const {legacyByPercentile, args} = tpawResult
+  const {numYears} = extendTPAWParams(args.params)
   return {
-    label:'legacy',
+    label: 'legacy',
     percentiles: legacyByPercentile.map(x => ({
       data: x.data,
       percentile: x.percentile,
       isHighlighted: highlightPercentiles.includes(x.percentile),
     })),
-    age: args.params.age.end + 1,
+    year: numYears,
   }
 }
 
