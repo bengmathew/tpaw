@@ -40,7 +40,7 @@ export function processTPAWParams(
         )
       )
       const target = Math.max(total - external, 0)
-      return {totall: total, external, target}
+      return {total, external, target}
     })(),
     original: params,
   }

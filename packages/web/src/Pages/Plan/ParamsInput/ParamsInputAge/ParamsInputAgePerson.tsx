@@ -1,3 +1,4 @@
+import { faGameConsoleHandheld } from '@fortawesome/pro-light-svg-icons'
 import {faTrash} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {Switch} from '@headlessui/react'
@@ -60,7 +61,7 @@ export const ParamsInputAgePerson = React.memo(
               const clone = _.cloneDeep(params)
               const {person1} = clone.people
               clone.people = {withPartner: false, person1}
-              return clone
+              return _setXAxisDisplay(clone)
             })
           }
 
@@ -88,7 +89,7 @@ export const ParamsInputAgePerson = React.memo(
             max: p.ages.max,
           }
         }
-        return clone
+        return _setXAxisDisplay(clone)
       })
     }
     const [person2DeleteError, setPerson2DeleteError] = useState<ReactNode[]>(
@@ -143,7 +144,7 @@ export const ParamsInputAgePerson = React.memo(
                     max: p.ages.max,
                     retirement,
                   }
-                  return clone
+                  return _setXAxisDisplay(clone)
                 })
               }}
             />
@@ -189,7 +190,7 @@ export const ParamsInputAgePerson = React.memo(
                     const p = getPersonInParams(clone)
                     assert(p.ages.type === 'notRetired')
                     p.ages.retirement = value
-                    return clone
+                    return _setXAxisDisplay(clone)
                   })
                 }
                 clamp={value =>
@@ -276,7 +277,6 @@ export const ParamsInputAgePerson = React.memo(
                       (year.age === 'retirement' ||
                         year.age === 'lastWorkingYear')
                     ) {
-                      console.dir(year)
                       return {type: 'now'}
                     } else {
                       return year
@@ -316,7 +316,7 @@ const _person2RequiredMessage = (params: TPAWParamsExt) => {
     <ol className="list-decimal list-outside ml-10">
       {fromRanges.map((x, i) => (
         <li key={i} className="list-item">
-        <ValueForYearRangeDisplay entry={x.entry} range={null} />
+          <ValueForYearRangeDisplay entry={x.entry} range={null} />
         </li>
       ))}
     </ol>,
@@ -348,7 +348,7 @@ const _futureSavingsWarning = (
     <ol className=" list-decimal list-outside ml-10 ">
       {savings.map((x, i) => (
         <li key={i} className="list-item">
-        <ValueForYearRangeDisplay entry={x} range={null} />
+          <ValueForYearRangeDisplay entry={x} range={null} />
         </li>
       ))}
     </ol>,

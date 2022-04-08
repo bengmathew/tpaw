@@ -15,7 +15,6 @@ export const YearRangeDisplay = React.memo(
   }) => {
     const {yearRangeToStr, yearRangeBoundsCheck} = useSimulation().paramsExt
     const parts = yearRangeToStr(value, {lengthInBrackets})
-    console.dir(parts)
     if (!range) return <span>{parts.map(x => x.value).join(' ')}</span>
 
     const boundsCheck = yearRangeBoundsCheck(value, range)

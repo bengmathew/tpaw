@@ -208,7 +208,7 @@ export const extendTPAWParams = (params: TPAWParams) => {
       if (!last || last.type !== type) {
         result.push({type, value})
       } else {
-        last.value = `${last.value}${value.startsWith('.')?'':' '}${value}`
+        last.value = `${last.value}${value.startsWith('.') ? '' : ' '}${value}`
       }
     }
 
@@ -375,9 +375,8 @@ extendTPAWParams.years = (() => {
   const person = (person: 'person1' | 'person2') => ({
     lastWorkingYear: {type: 'namedAge', person, age: 'lastWorkingYear'} as Year,
     retirement: {type: 'namedAge', person, age: 'retirement'} as Year,
-    max: {type: 'namedAge', person: 'person1', age: 'max'} as Year,
-    numericAge: (age: number) =>
-      ({type: 'numericAge', person: 'person1', age} as Year),
+    max: {type: 'namedAge', person, age: 'max'} as Year,
+    numericAge: (age: number) => ({type: 'numericAge', person, age} as Year),
   })
   return {
     now: {type: 'now'} as Year,

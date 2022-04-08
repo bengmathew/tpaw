@@ -203,7 +203,7 @@ const _Button = React.memo(
 
 export const _SectionSummary = React.memo(
   ({className = '', type}: {className?: string; type: ParamsInputType}) => {
-    const {params, paramsExt} = useSimulation()
+    const {params, paramsProcessed, paramsExt} = useSimulation()
     const {validYearRange, pickPerson, yourOrYourPartners} = paramsExt
 
     switch (type) {
@@ -314,7 +314,7 @@ export const _SectionSummary = React.memo(
       }
       case 'legacy': {
         const {total, external} = params.legacy
-        if (total === 0) {
+        if (total === 0 && external.length === 0) {
           return <h2>None</h2>
         } else {
           return (
@@ -327,6 +327,12 @@ export const _SectionSummary = React.memo(
                   {x.nominal ? 'Nominal dollars.' : 'Real dollars.'}
                 </h2>
               ))}
+              {external.length > 0 && (
+                <h2>
+                  Remaining: {formatCurrency(paramsProcessed.legacy.target)}.
+                  Real dollars.
+                </h2>
+              )}
               <h2>
                 Stock Allocation:{' '}
                 {formatPercentage(0)(

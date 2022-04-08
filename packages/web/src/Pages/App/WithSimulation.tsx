@@ -5,6 +5,7 @@ import {
   extendTPAWParams,
   TPAWParamsExt,
 } from '../../TPAWSimulator/TPAWParamsExt'
+import {processTPAWParams, TPAWParamsProcessed} from '../../TPAWSimulator/TPAWParamsProcessed'
 import {
   useTPAWWorker,
   UseTPAWWorkerResult,
@@ -14,6 +15,7 @@ import {useTPAWParams} from './UseTPAWParams'
 
 export type SimulationInfo = {
   params: TPAWParams
+  paramsProcessed: TPAWParamsProcessed
   paramsExt: TPAWParamsExt
   setParams: (params: TPAWParams | ((params: TPAWParams) => TPAWParams)) => void
   tpawResult: UseTPAWWorkerResult
@@ -35,6 +37,7 @@ export const WithSimulation = ({children}: {children: ReactNode}) => {
   const value = useMemo(
     () => ({
       params,
+      paramsProcessed: processTPAWParams(params),
       paramsExt: extendTPAWParams(params),
       setParams,
       numRuns,
