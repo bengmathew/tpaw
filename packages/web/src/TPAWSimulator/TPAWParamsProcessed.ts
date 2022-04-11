@@ -68,7 +68,7 @@ function _processByYearParams(params: TPAWParams) {
       const normYearRange = extendTPAWParams(params).asYFN(yearRange)
       const start = _.clamp(normYearRange.start, minYear, maxYear)
       const end = _.clamp(normYearRange.end, start, maxYear)
-      _.range(start, end + 1).forEach((x, yearsFromNow) => {
+      _.range(start, end + 1).forEach((yearsFromNow) => {
         updater(
           byYear[yearsFromNow],
           nominalToReal({value, nominal}, params.inflation, yearsFromNow)
