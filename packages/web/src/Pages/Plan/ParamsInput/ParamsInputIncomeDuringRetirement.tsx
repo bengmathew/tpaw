@@ -1,15 +1,15 @@
-import React, { useState } from 'react'
-import { Contentful } from '../../../Utils/Contentful'
-import { useSimulation } from '../../App/WithSimulation'
-import { usePlanContent } from '../Plan'
-import { ByYearSchedule } from './ByYearSchedule/ByYearSchedule'
-import { EditValueForYearRange } from '../../Common/Inputs/EditValueForYearRange'
-import { ParamsInputBody, ParamsInputBodyProps } from './ParamsInputBody'
+import React, {useState} from 'react'
+import {Contentful} from '../../../Utils/Contentful'
+import {useSimulation} from '../../App/WithSimulation'
+import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
+import {usePlanContent} from '../Plan'
+import {ByYearSchedule} from './ByYearSchedule/ByYearSchedule'
+import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
 
 export const ParamsInputIncomeDuringRetirement = React.memo(
   (props: ParamsInputBodyProps) => {
     const {params, paramsExt} = useSimulation()
-    const {validYearRange} = paramsExt
+    const {validYearRange, years} = paramsExt
     const content = usePlanContent()
     const [state, setState] = useState<
       | {type: 'main'}
@@ -36,8 +36,11 @@ export const ParamsInputIncomeDuringRetirement = React.memo(
             }
             defaultYearRange={{
               type: 'startAndEnd',
-              start: {type: 'namedAge', person: 'person1', age: 'retirement'},
-              end: {type: 'namedAge', person: 'person1', age: 'max'},
+              start:
+                params.people.person1.ages.type === 'retired'
+                  ? years.now
+                  : years.person1.retirement,
+              end: years.person1.max,
             }}
           />
         </div>

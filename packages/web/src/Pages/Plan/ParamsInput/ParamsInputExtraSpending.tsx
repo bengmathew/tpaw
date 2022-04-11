@@ -2,6 +2,7 @@ import React, {useState} from 'react'
 import {YearRange} from '../../../TPAWSimulator/TPAWParams'
 import {Contentful} from '../../../Utils/Contentful'
 import {useSimulation} from '../../App/WithSimulation'
+import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
 import {
   chartPanelSpendingDiscretionaryTypeID,
   chartPanelSpendingEssentialTypeID,
@@ -11,7 +12,6 @@ import {
 } from '../ChartPanel/ChartPanelType'
 import {usePlanContent} from '../Plan'
 import {ByYearSchedule} from './ByYearSchedule/ByYearSchedule'
-import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
 import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
 
 export const ParamsInputExtraSpending = React.memo(
@@ -23,7 +23,7 @@ export const ParamsInputExtraSpending = React.memo(
     chartType: ChartPanelType
     setChartType: (type: ChartPanelType) => void
   } & ParamsInputBodyProps) => {
-    const {paramsExt} = useSimulation()
+    const {paramsExt, params} = useSimulation()
     const {years, validYearRange, maxMaxAge, asYFN} = paramsExt
     const content = usePlanContent()
     const [state, setState] = useState<
@@ -40,7 +40,10 @@ export const ParamsInputExtraSpending = React.memo(
     const allowableRange = validYearRange('extra-spending')
     const defaultRange: YearRange = {
       type: 'startAndNumYears',
-      start: years.person1.retirement,
+      start:
+        params.people.person1.ages.type === 'retired'
+          ? years.now
+          : years.person1.retirement,
       numYears: Math.min(
         5,
         asYFN(maxMaxAge) + 1 - asYFN(years.person1.retirement)
