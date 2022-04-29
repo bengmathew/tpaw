@@ -345,7 +345,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
               bottom: 10,
             },
             headingMarginBottom,
-            menuButtonFontSize: 18,
+            menuButtonScale: 1,
           }
         }
 
