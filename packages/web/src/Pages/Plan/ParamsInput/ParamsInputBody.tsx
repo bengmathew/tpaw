@@ -1,19 +1,18 @@
-import { Transition } from '@headlessui/react'
-import { gsap } from 'gsap'
+import {gsap} from 'gsap'
 import {
   default as React,
   ReactElement,
   useEffect,
   useLayoutEffect,
   useRef,
-  useState
+  useState,
 } from 'react'
-import { assert, fGet } from '../../../Utils/Utils'
-import { useWindowSize } from '../../../Utils/WithWindowSize'
-import { ModalBase } from '../../Common/Modal/ModalBase'
-import { ParamsInputHeading } from './ParamsInput'
+import {Padding, paddingCSS} from '../../../Utils/Geometry'
+import {fGet} from '../../../Utils/Utils'
+import {Footer} from '../../App/Footer'
+import {ModalBase} from '../../Common/Modal/ModalBase'
 
-const duration = 500
+const duration = 500 / 1000
 
 export type ParamsInputBodyProps = Omit<
   React.ComponentProps<typeof ParamsInputBody>,
@@ -22,12 +21,14 @@ export type ParamsInputBodyProps = Omit<
 
 export const ParamsInputBody = React.memo(
   ({
-    className,
-    headingProps,
+    layout,
+    padding,
+    cardPadding,
     children: childrenIn,
   }: {
-    className: string
-    headingProps: React.ComponentProps<typeof ParamsInputHeading>
+    layout: 'mobile' | 'laptop' | 'desktop'
+    padding: Padding
+    cardPadding: Padding
     children:
       | ReactElement
       | [
@@ -40,20 +41,17 @@ export const ParamsInputBody = React.memo(
           }
         ]
   }) => {
-    const {layout} = headingProps
     const [content, children] =
       childrenIn instanceof Array ? childrenIn : ([childrenIn, null] as const)
 
     const child = {...children, content}
 
     return layout === 'mobile' ? (
-      <_Mobile className={className} headingProps={headingProps}>
-        {child}
-      </_Mobile>
+      <_Mobile padding={padding}>{child}</_Mobile>
     ) : (
       <_LaptopAndDesktop
-        className={className}
-        headingProps={headingProps}
+        padding={padding}
+        cardPadding={cardPadding}
         layout={layout}
       >
         {child}
@@ -65,23 +63,19 @@ export const ParamsInputBody = React.memo(
 export const _LaptopAndDesktop = React.memo(
   ({
     layout,
-    className,
-    headingProps,
+    padding,
+    cardPadding,
     children,
   }: {
     layout: 'laptop' | 'desktop'
-    className: string
-    headingProps: React.ComponentProps<typeof ParamsInputHeading>
+    padding: Padding
+    cardPadding: Padding
     children: {
       content: ReactElement
       error?: ReactElement
       input?: (transitionOut: (onDone: () => void) => void) => ReactElement
     }
   }) => {
-    const sizerRef = useRef<HTMLDivElement | null>(null)
-    const mainRef = useRef<HTMLDivElement | null>(null)
-    const [main, setMain] = useState<HTMLDivElement | null>(null)
-    const [input, setInput] = useState<HTMLDivElement | null>(null)
     const [state, setState] = useState<
       {type: 'main'; onDone?: () => void} | {type: 'input'}
     >({type: 'main'})
@@ -92,128 +86,113 @@ export const _LaptopAndDesktop = React.memo(
       }
     }, [hasInput])
 
-    const [mainH, setMainH] = useState(0)
-    const [inputH, setInputH] = useState(0)
-    let height = state.type === 'input' ? inputH : mainH
-    const windowSize = useWindowSize()
-    if (layout === 'laptop') {
-      height = Math.min(windowSize.height * 0.55, height)
-    }
+    const mainScrollRef = useRef<HTMLDivElement | null>(null)
+    const inputScrollRef = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
-      // To prevent initial resize to 0 and then to height. Initial size will
-      // be set in a useLayoutEffect.
-      if (height === 0) return
-      const sizer = fGet(sizerRef.current)
-      if (layout === 'desktop') {
-        // Size is set by parent grid.
-        sizer.style.height = 'inherit'
-      } else if (layout === 'laptop') {
-        // Size is set manually here.
-        gsap.to(sizer, {height: `${height}px`})
-      }
-    }, [height, layout])
-
-    useLayoutEffect(() => {
-      if (!main) return
-      const mainObserver = new ResizeObserver(() => {
-        setMainH(main.getBoundingClientRect().height)
-      })
-      mainObserver.observe(main)
-      return () => mainObserver.disconnect()
-    }, [main])
-
-    useLayoutEffect(() => {
-      if (!input) return
-      const inputObserver = new ResizeObserver(() => {
-        setInputH(input.getBoundingClientRect().height)
-      })
-      inputObserver.observe(fGet(input))
-      return () => inputObserver.disconnect()
-    }, [input])
-
-    useLayoutEffect(() => {
-      const height = fGet(mainRef.current).getBoundingClientRect().height
-      fGet(sizerRef.current).style.height = `${height}px`
-    }, [])
+      if (!inputScrollRef.current) return
+      const tween = gsap.timeline()
+      const toMain = state.type === 'main'
+      const mainScroll = fGet(mainScrollRef.current)
+      const inputScroll = inputScrollRef.current
+      mainScroll.style.display = 'block'
+      inputScroll.style.display = 'block'
+      tween.to(
+        mainScroll,
+        {
+          opacity: toMain ? 1 : 0,
+          x: toMain ? 0 : -16,
+          onComplete: () => {
+            if (state.type === 'main') {
+              state.onDone?.()
+              setState({type: 'main'})
+            } else {
+              mainScroll.style.display = 'none'
+            }
+          },
+          duration,
+        },
+        0
+      )
+      tween.fromTo(
+        inputScroll,
+        toMain ? {opacity: 1, x: 0} : {opacity: 0, x: 16},
+        {
+          ...(toMain ? {opacity: 0, x: 16} : {opacity: 1, x: 0}),
+          duration,
+        },
+        0
+      )
+    }, [state])
 
     return (
-      <div className={`relative`} ref={sizerRef}>
+      <>
         {/* Scroll Container. Main and input needs separate scroll containers,
            so they don't interfere with each other's scroll. */}
-        <Transition
-          // Needed to preserve scroll.
-          unmount={false}
-          show={state.type === 'main'}
-          // Classname should be inside scroll container, because padding should
-          // be inside it to place scrollbar at edge.
-          className={`absolute inset-0 transition-all overflow-y-scroll  ${className}`}
-          enterFrom="opacity-0 -translate-x-4"
-          leaveTo="opacity-0 -translate-x-4"
-          style={{transitionDuration: `${duration}ms`}}
+        <div
+          className={`absolute inset-0  max-h-full overflow-y-scroll `}
+          ref={mainScrollRef}
         >
           <div
-            className=""
-            ref={main => {
-              // Main is needed as state to trigger resizeObserver creation and
-              // destruction. But as state, main will not be available in
-              // initial useLayoutEffect to set size, so we need mainRef as
-              // well.
-              mainRef.current = main
-              setMain(main)
-            }}
+            className={`h-full ${layout !== 'laptop' ? 'grid' : ''}`}
+            style={{grid: '1fr auto/1fr'}}
           >
-            <ParamsInputHeading {...headingProps} />
-            <div className="pb-8">{children.content}</div>
-            {children?.error && (
-              // Cannot set mb-3 and bottom-3 because it leads to scroll.
-              <div className="pb-3 sticky bottom-0">
-                <div className=" bg-red-100 rounded-lg p-2">
-                  {children?.error}
-                </div>
+            <div
+              className="" // Padding should be inside scroll container to place scrollbar at
+              // edge and at main to get full height.
+              style={{padding: paddingCSS(padding)}}
+            >
+              <div
+                className="bg-cardBG rounded-2xl"
+                style={{padding: paddingCSS(cardPadding)}}
+              >
+                <div className="">{children.content}</div>
               </div>
-            )}
+              {children?.error && (
+                // Cannot set mb-3 and bottom-3 because it leads to scroll.
+                <div className=" sticky bottom-0 pt-4">
+                  <div className=" bg-red-100 rounded-lg p-2">
+                    {children?.error}
+                  </div>
+                </div>
+              )}
+            </div>
+            {layout !== 'laptop' && <Footer />}
           </div>
-        </Transition>
+        </div>
         {children?.input && (
           // Scroll container. Main and input needs separate scroll containers,
           // so they don't interfere with each other's scroll.
-          <Transition
-            show={state.type === 'input'}
-            // Classname should be inside scroll container, because padding
-            // should be inside it to place scrollbar at edge.
-            className={`absolute inset-0  transition-all overflow-y-scroll ${className}`}
-            enterFrom="opacity-0 translate-x-4"
-            leaveTo="opacity-0 translate-x-4"
-            afterLeave={() => {
-              assert(state.type === 'main')
-              state.onDone?.()
-              setState({type: 'main'})
-            }}
-            style={{transitionDuration: `${duration}ms`}}
+          <div
+            className={`absolute inset-0  overflow-y-scroll`}
+            ref={inputScrollRef}
+            // Padding should be inside scroll container to place scrollbar at
+            // edge and at input to get full height.
+            style={{padding: paddingCSS(padding)}}
           >
-            <div className={``} ref={setInput}>
-              <div className="pb-8">
+            <div
+              className={`bg-cardBG rounded-2xl`}
+              style={{padding: paddingCSS(cardPadding)}}
+            >
+              <div className="">
                 {fGet(children.input)(onDone =>
                   setState({type: 'main', onDone})
                 )}
               </div>
             </div>
-          </Transition>
+          </div>
         )}
-      </div>
+      </>
     )
   }
 )
 
 export const _Mobile = React.memo(
   ({
-    className,
-    headingProps,
+    padding,
     children,
   }: {
-    className: string
-    headingProps: React.ComponentProps<typeof ParamsInputHeading>
+    padding: Padding
     children: {
       content: ReactElement
       error?: ReactElement
@@ -221,19 +200,35 @@ export const _Mobile = React.memo(
     }
   }) => {
     const [showInput, setShowInput] = useState(false)
+    const [showError, setShowError] = useState(false)
     const hasInput = children.input !== undefined
     useLayoutEffect(() => {
       if (hasInput) setShowInput(true)
     }, [hasInput])
+
+    useEffect(() => {
+      if (!children.error) setShowError(false)
+    }, [children.error])
     return (
-      <div className={className}>
-        <ParamsInputHeading {...headingProps} />
-        <div className="pb-8">{children.content}</div>
-        {children?.error && (
-          <div className="pb-3 sticky bottom-0">
-            <div className=" bg-red-100 rounded-lg p-2">{children?.error}</div>
+      <div
+        className="absolute inset-0  max-h-full"
+        style={{padding: paddingCSS(padding)}}
+      >
+        <div className="h-full grid  overflow-y-scroll" style={{grid: '1fr auto/1fr'}}>
+          <div className="pb-16">{children.content}</div>
+          <div className="-mb-[60px] pb-[60px]">
+            <Footer />
           </div>
-        )}
+        </div>
+        <button
+          className={`text-errorFG font-bold sticky bottom-[10px] h-[50px] bg-pageBG rounded-full px-4 mt-2
+            ${children?.error ? 'visible' : ' invisible'}`}
+          disabled={!children.error}
+          style={{boxShadow: 'rgba(0, 0, 0, 0.35) 0px 5px 10px'}}
+          onClick={() => setShowError(true)}
+        >
+          Warning!
+        </button>
         {showInput && (
           <ModalBase>
             {transitionOut => (
@@ -246,6 +241,11 @@ export const _Mobile = React.memo(
                 )}
               </div>
             )}
+          </ModalBase>
+        )}
+        {showError && (
+          <ModalBase bg="bg-red-100" onClose={() => setShowError(false)}>
+            {() => <div className="  rounded-lg p-2">{children?.error}</div>}
           </ModalBase>
         )}
       </div>

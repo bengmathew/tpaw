@@ -51,7 +51,7 @@ a {
     }
 
     .page {
-      @apply font-font1 min-h-screen text-gray-800 ;
+      @apply font-font1 min-h-screen text-pageFG ;
     }
     .mt-header {
       @apply mt-[47px]

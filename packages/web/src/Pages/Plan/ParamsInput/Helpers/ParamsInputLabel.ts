@@ -4,9 +4,9 @@ import {ParamsInputType} from './ParamsInputType'
 export const paramsInputLabel = (type: ParamsInputType) => {
   switch (type) {
     case 'age':
-      return 'Age'
+      return 'Age and Retirement'
     case 'risk-and-time-preference':
-      return 'Risk And Time Preference'
+      return 'Risk and Time Preference'
     case 'current-portfolio-value':
       return 'Current Portfolio Value'
     case 'future-savings':

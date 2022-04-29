@@ -43,13 +43,14 @@ export const ModalBase = React.memo(
           }}
         />
         <div
-          className={`font-font1 relative ${bg} text-pageFG z-10 rounded-lg max-w-2xl p-2 sm:p-4 shadow-xl m-2 sm:m-4
+          className={`font-font1 relative ${bg} text-pageFG z-10 rounded-lg max-w-2xl p-2 sm:p-4 shadow-xl m-2 sm:m-4 overflow-y-scroll
           ${
             state.show
               ? 'opacity-100 transform scale-100'
               : 'opacity-0 transform scale-90'
           }`}
           style={{
+            maxHeight:'70vh',
             minWidth: 'min(calc(100vw - 20px), 400px)',
             transition: 'opacity .25s ease, transform .25s ease',
             boxShadow: 'rgba(0, 0, 0, 0.35) 0px 5px 15px',

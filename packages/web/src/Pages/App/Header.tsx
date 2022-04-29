@@ -1,15 +1,18 @@
 import Link from 'next/link'
 import React from 'react'
 
+export const headerHeight = 47
 export const Header = React.memo(
   ({curr}: {curr: 'plan' | 'learn' | 'other'}) => {
     return (
       <div
         className={`fixed top-0  right-0 w-full sm:w-auto 
         flex justify-between  items-stretch gap-x-4  
-         h-[47px] opacity-100 bg-theme1 sm:bg-theme1
+          opacity-100 bg-theme1
        px-3  sm:px-4 sm:rounded-bl-lg  border-gray-700 text-lg sm:text-base z-50`}
+       style={{height:`${headerHeight}px`}}
        >
+        
        <_Button href="/" label="TPAWplanner" isCurrent={false} />
         <div className="flex gap-x-4">
           <_Button

@@ -17,8 +17,11 @@ module.exports = {
 
     colors: {
       pageBG: 'white',
+      planBG: colors.gray[100],
       pageFG: colors.gray[800],
+      cardBG: 'rgba(255,255,255, .9)',
       pageFGLight: colors.gray[600],
+      boldFG: colors.indigo[800],
       alt: colors.blue[900],
       darkGray: colors.gray[800],
 
@@ -31,7 +34,9 @@ module.exports = {
       successBlockBG: colors.green[500],
       successBlockFG: colors.gray[100],
       amberFG: colors.yellow[600],
-
+      // theme2: '#f7dacd',
+      // theme2: '#9ed4cf',
+      // theme2:colors.gray[300],
       theme1: colors.teal[600],
       theme1Dark: colors.teal[700],
 

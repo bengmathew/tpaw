@@ -1,8 +1,17 @@
-import {ChartFullState} from './Chart'
+import { Size } from '../../../Utils/Geometry'
+import {ChartState, ChartStateDerived} from './Chart'
 import {ChartDataTransition} from './ChartUtils/ChartDataTransition'
 
 export type ChartContext<Data> = {
-  ctx: CanvasRenderingContext2D
-  stateTransition: ChartDataTransition<ChartFullState<Data>>
-  currState: Omit<ChartFullState<Data>, 'data'>
+  chartSize: Size
+  pointer: {x: number; y: number}
+  dataTransition: ChartDataTransition<Data>
+  stateTransition: ChartDataTransition<ChartState>
+  currState: ChartState
+  derivedState: {
+    prev: ChartStateDerived
+    target: ChartStateDerived
+    curr: ChartStateDerived
+  }
+  canvasContext: CanvasRenderingContext2D
 }

@@ -25,16 +25,15 @@ export const ChartPanelButtons = React.memo(
             : '"rescale tasks" auto/1fr auto',
         }}
       >
-        <Link href="/tasks-for-this-year">
+        {/* <Link href="/tasks-for-this-year">
           <a
             className="flex items-center gap-x-1 text-lg "
             style={{gridArea: 'tasks'}}
           >
-          {/* <FontAwesomeIcon className="text-2xl text-gray-700" icon={faClipboardListCheck} /> */}
             <h2 className="font-medium  ml-2 font-font1 ">Tasks for this year</h2>
             <FontAwesomeIcon icon={faLongArrowAltRight} />
           </a>
-        </Link>
+        </Link> */}
         <div className="">
           <button
             className="flex items-center py-2   rounded-full bg-gray-700 text-gray-100  btn-sm "

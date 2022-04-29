@@ -17,25 +17,24 @@ export const ChartPanelDescription = React.memo(
     type,
     showDescriptionPopUp,
     setShowDescriptionPopUp,
-    ref
+    ref,
   }: {
     className?: string
     type: ChartPanelType
     showDescriptionPopUp: boolean
     setShowDescriptionPopUp: Dispatch<boolean>
-    ref?:(x:HTMLElement|null)=>void
+    ref?: (x: HTMLElement | null) => void
   }) => {
     const content = useContent(type)
     return (
       <div
         className={`${className} text-lg sm:text-lg font-font2`}
-        style={{gridArea: 'info'}}
         ref={ref}
       >
         <div className="hidden sm:block">
           <Contentful.RichText
             body={content.intro.fields.body}
-            p="p-base inline lighten"
+            p="text-base inline lighten"
           />{' '}
           <button
             className="bg-gray-300 text-gray-500 px-2 py-0 rounded-full text-base"

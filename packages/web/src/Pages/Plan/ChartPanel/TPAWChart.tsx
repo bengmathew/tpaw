@@ -1,50 +1,45 @@
 import _ from 'lodash'
-import React, {CSSProperties, useCallback, useEffect, useMemo} from 'react'
-import {linearFnFomPoints} from '../../../Utils/LinearFn'
-import {SimpleRange} from '../../../Utils/SimpleRange'
-import {fGet} from '../../../Utils/Utils'
-import {ChartAnimation} from '../../Common/Chart/Chart'
-import {chartDrawDataLines} from '../../Common/Chart/ChartComponent/ChartDrawDataLines'
-import {ChartMinMaxYAxis} from '../../Common/Chart/ChartComponent/ChartMinMaxYAxis'
-import {ChartPointer} from '../../Common/Chart/ChartComponent/ChartPointer'
-import {ChartXAxis} from '../../Common/Chart/ChartComponent/ChartXAxis'
-import {ChartReact, ChartReactState} from '../../Common/Chart/ChartReact'
-import {ChartUtils, rectExt} from '../../Common/Chart/ChartUtils/ChartUtils'
-import {chartDrawLegacy} from './LegacyComponents/ChartDrawLegacy'
-import {TPAWChartData} from './TPAWChartData'
-import {TPAWChartLegacyData} from './TPAWChartLegacyData'
+import React, { useCallback, useEffect, useMemo } from 'react'
+import { RectExt, rectExt } from '../../../Utils/Geometry'
+import { SimpleRange } from '../../../Utils/SimpleRange'
+import { fGet } from '../../../Utils/Utils'
+import { ChartAnimation } from '../../Common/Chart/Chart'
+import { chartDrawDataLines } from '../../Common/Chart/ChartComponent/ChartDrawDataLines'
+import { ChartMinMaxYAxis } from '../../Common/Chart/ChartComponent/ChartMinMaxYAxis'
+import { ChartPointer } from '../../Common/Chart/ChartComponent/ChartPointer'
+import { ChartXAxis } from '../../Common/Chart/ChartComponent/ChartXAxis'
+import { ChartReact } from '../../Common/Chart/ChartReact'
+import { ChartReactState } from '../../Common/Chart/ChartReactSub'
+import { ChartUtils } from '../../Common/Chart/ChartUtils/ChartUtils'
+import { chartDrawLegacy } from './LegacyComponents/ChartDrawLegacy'
+import { TPAWChartData } from './TPAWChartData'
+import { TPAWChartLegacyData } from './TPAWChartLegacyData'
 
 export type TPAWChartState = {
   main: {data: TPAWChartData; yRange: SimpleRange}
   legacy: {data: TPAWChartLegacyData; yRange: SimpleRange; show: boolean}
-  externalTopPadding: number
   animation: ChartAnimation | null
 }
 
 export const TPAWChart = React.memo(
   ({
-    className = '',
-    style,
     yAxisFormat,
     state: stateIn,
-    animationForBoundsChange,
+    startingPosition,
+    chartRef,
+    extraPaddingTop
   }: {
-    className?: string
-    style?: CSSProperties
+    startingPosition: RectExt
     state: TPAWChartState
     yAxisFormat: (x: number) => string
-    animationForBoundsChange: ChartAnimation
+    chartRef: (chart: {setPosition: (position: RectExt) => void}) => void
+    extraPaddingTop:number
   }) => {
     const state = useMemo((): {
       main: ChartReactState<TPAWChartData>
       legacy: ChartReactState<TPAWChartLegacyData>
     } => {
-      const {
-        main: mainIn,
-        legacy: legacyIn,
-        externalTopPadding,
-        animation,
-      } = stateIn
+      const {main: mainIn, legacy: legacyIn, animation} = stateIn
       const main = (() => {
         const xyRange = {
           x: mainIn.data.years.displayRange,
@@ -57,15 +52,14 @@ export const TPAWChart = React.memo(
           width: number
           height: number
         }) => {
-          const baseTop = 30 + externalTopPadding
+          const baseTop = 35 + extraPaddingTop
           const aspectIn = width / (heightIn - baseTop)
-          const aspect =
-            aspectIn < 2 ? linearFnFomPoints(1, 1.7, 2, 2)(aspectIn) : aspectIn
+          const aspect = Math.max(1.25, aspectIn)
           const height = width / aspect
           const viewport = rectExt({
             x: 0,
             y: 0,
-            width: width - (legacyIn.show ? (width > 640 ? 120 : 110) : 0),
+            width: width - (legacyIn.show ? 115 : 0),
             height: heightIn,
           })
           const padding = {
@@ -112,7 +106,7 @@ export const TPAWChart = React.memo(
       })()
 
       return {main, legacy}
-    }, [stateIn])
+    }, [extraPaddingTop, stateIn])
 
     const pointerFormatX = useCallback(
       (data: TPAWChartData, x: number) =>
@@ -154,7 +148,8 @@ export const TPAWChart = React.memo(
         )
         const xAxis = new ChartXAxis<TPAWChartData>(
           (data, x) => data.years.display(x),
-          (data, x) => (x === data.years.display(data.years.max) + 1 ? 'L' : `${x}`),
+          (data, x) =>
+            x === data.years.display(data.years.max) + 1 ? 'L' : `${x}`,
           data => data.years.retirement
         )
 
@@ -167,7 +162,7 @@ export const TPAWChart = React.memo(
           yAxisFormat,
           [xAxis]
         )
-        const byName = {minorLine, majorLine, minMaxYAxis, xAxis, pointer}
+        const byName = {minorLine, majorLine, minMaxYAxis, pointer, xAxis}
         const arr = [minorLine, majorLine, minMaxYAxis, pointer]
         return {byName, arr}
       },
@@ -191,8 +186,6 @@ export const TPAWChart = React.memo(
 
     return (
       <ChartReact<[TPAWChartLegacyData, TPAWChartData]>
-        className={`${className}`}
-        style={style}
         charts={[
           {
             state: state.legacy,
@@ -207,7 +200,8 @@ export const TPAWChart = React.memo(
             order: 1,
           },
         ]}
-        animationForBoundsChange={animationForBoundsChange}
+        startingPosition={startingPosition}
+        chartRef={chartRef}
       />
     )
   }

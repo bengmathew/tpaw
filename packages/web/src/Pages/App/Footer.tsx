@@ -3,7 +3,7 @@ import React from 'react'
 
 export const Footer = React.memo(
   ({
-    className = 'flex text-sm lighten justify-center my-2  gap-x-4 ',
+    className = 'flex text-sm lighten justify-center py-2  gap-x-4 ',
   }: {
     className?: string
   }) => {

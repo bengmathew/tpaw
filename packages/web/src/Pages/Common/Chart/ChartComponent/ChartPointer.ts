@@ -1,8 +1,8 @@
 import {gsap} from 'gsap'
 import _ from 'lodash'
 import {linearFnFomPoints} from '../../../../Utils/LinearFn'
-import {assert} from '../../../../Utils/Utils'
-import {ChartFullState} from '../Chart'
+import {assert, fGet, noCase} from '../../../../Utils/Utils'
+import {ChartStateDerived} from '../Chart'
 import {ChartContext} from '../ChartContext'
 import {
   ChartDataTransition,
@@ -26,34 +26,27 @@ type _DataFn<Data> = (
   data: Data
 ) => {line: (x: number) => number; label: string}[]
 
-export type ChartPointerState = {x: number}
+export type ChartPointerState = {dataX: number}
 export type ChartPointerContext<Data> = ChartContext<Data> & {
   pointerTransition: ChartDataTransition<ChartPointerState>
 }
 export interface ChartPointerComponent<Data> {
   setState: (
     ctx: CanvasRenderingContext2D,
-    state: ChartFullState<Data> & {pointerState: ChartPointerState},
+    data: Data,
+    chartStateDerived: ChartStateDerived,
+    pointerState: ChartPointerState,
     pointerTransition: number,
     registerAnimation: ChartRegisterAnimation
   ) => void
-  draw: (
-    context: ChartPointerContext<Data>,
-    registerAnimation: ChartRegisterAnimation
-  ) => void
+  draw: (context: ChartPointerContext<Data>) => void
   destroy: () => void
 }
 
 export class ChartPointer<Data> implements ChartComponent<Data> {
   private _state: {
-    boxInfo: _BoxInfo
-    transition: ChartDataTransition<{
-      positionX: number
-      boxW: number
-      boxY: number
-      boxXOffset: number
-      boxSide: number
-    }>
+    notAnimatedBoxInfo: _NotAnimatedBoxInfo
+    transition: ChartDataTransition<{dataX: number} & _AnimatedBoxInfo>
   } | null = null
   private _animation: gsap.core.Tween | null = null
 
@@ -77,54 +70,76 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
     this._components.forEach(x => x.destroy())
   }
 
-  setPointerPosition(
-    position: {x: number} | null,
-    state: ChartFullState<Data>,
-    ctx: CanvasRenderingContext2D,
-    registerAnimation: ChartRegisterAnimation,
-    inside = position !== null
+  update(
+    change: 'init' | 'pointer' | 'state' | 'size',
+    context: ChartContext<Data>,
+    registerAnimation: ChartRegisterAnimation
   ) {
-    if (position) {
-      const positionX = state.scale.x(
-        _.clamp(
-          Math.round(state.scale.x.inverse(position.x)),
-          Math.ceil(state.xyRange.x.start),
-          Math.floor(state.xyRange.x.end)
-        )
-      )
+    const {canvasContext: ctx, pointer, derivedState, dataTransition} = context
+    const dataX = (() => {
+      switch (change) {
+        case 'init':
+        case 'pointer': {
+          const {scale, plotArea} = derivedState.target
+          return Math.round(
+            _.clamp(
+              scale.x.inverse(pointer.x),
+              scale.x.inverse(plotArea.x),
+              scale.x.inverse(plotArea.right)
+            )
+          )
+        }
+        case 'state': {
+          assert(this._state)
+          const {scale, plotArea} = derivedState.target
+          return _.clamp(
+            this._state.transition.target.dataX,
+            Math.ceil(scale.x.inverse(plotArea.x)),
+            Math.floor(scale.x.inverse(plotArea.right))
+          )
+        }
 
-      const {boxInfo, boxY, boxW, boxXOffset, boxSide} = _boxInfo(
-        state,
-        positionX,
-        this.dataFn,
-        this.formatY,
-        this.formatX,
-        ctx
-      )
-      const target = {positionX, boxY, boxW, boxXOffset, boxSide}
-      const prev = this._state
-        ? chartDataTransitionCurrObj(this._state.transition, x => x)
-        : {positionX: position.x, boxY, boxW, boxXOffset, boxSide}
+        case 'size':
+          assert(this._state)
+          return this._state.transition.target.dataX
+        default:
+          noCase(change)
+      }
+    })()
 
-      for (const component of this._components) {
-        ctx.save()
-        component.setState(
-          ctx,
-          {
-            ...state,
-            pointerState: {x: target.positionX},
+    const targetBoxInfo = _boxInfo(
+      dataTransition.target,
+      derivedState.target,
+      dataX,
+      this.dataFn,
+      this.formatY,
+      this.formatX,
+      ctx
+    )
+
+    const jumpToEnd = change === 'init' || change === 'size'
+
+    this._animation?.kill()
+    const oldTransition = this._state?.transition.transition ?? 0
+    this._state = {
+      notAnimatedBoxInfo: targetBoxInfo.notAnimatedBoxInfo,
+      transition: jumpToEnd
+        ? {
+            prev: {dataX, ...targetBoxInfo.animatedBoxInfo},
+            target: {dataX, ...targetBoxInfo.animatedBoxInfo},
+            transition: 1,
+          }
+        : {
+            prev: chartDataTransitionCurrObj(
+              fGet(this._state).transition,
+              x => x
+            ),
+            target: {dataX, ...targetBoxInfo.animatedBoxInfo},
+            transition: 0,
           },
-          this._state?.transition.transition ?? 0,
-          registerAnimation
-        )
-        ctx.restore()
-      }
-      this._state = {
-        boxInfo,
-        transition: {target, prev, transition: 0},
-      }
+    }
 
-      this._animation?.kill()
+    if (!jumpToEnd) {
       this._animation = registerAnimation(
         gsap.to(this._state.transition, {
           transition: 1,
@@ -133,61 +148,46 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
         })
       )
     }
-  }
 
-  setState(
-    state: ChartFullState<Data>,
-    context: CanvasRenderingContext2D,
-    registerAnimation: ChartRegisterAnimation
-  ) {
-    if (!this._state) return
-    this.setPointerPosition(
-      {x: this._state.transition.target.positionX},
-      state,
-      context,
-      registerAnimation
-    )
-  }
-
-  draw(
-    chartContext: ChartContext<Data>,
-    registerAnimation: ChartRegisterAnimation
-  ) {
-    const {ctx, stateTransition, currState} = chartContext
-    const {scale, plotArea} = currState
-    if (!this._state) {
-      this.setPointerPosition(
-        {x: plotArea.x + plotArea.width * 0.25},
-        stateTransition.target,
+    for (const component of this._components) {
+      ctx.save()
+      component.setState(
         ctx,
-        registerAnimation,
-        false
+        dataTransition.target,
+        derivedState.target,
+        {dataX},
+        oldTransition,
+        registerAnimation
       )
+      ctx.restore()
     }
+  }
+
+  draw(context: ChartContext<Data>) {
+    const {canvasContext: ctx, dataTransition, derivedState} = context
+    const {scale, plotArea} = derivedState.curr
+
     assert(this._state)
 
-    const {
-      positionX: graphX,
-      boxSide,
-      boxY,
-      boxW,
-      boxXOffset,
-    } = chartDataTransitionCurrObj(this._state.transition, x => x)
-    ctx.restore()
+    const {dataX, boxSide, boxY, boxW, boxXOffset} = chartDataTransitionCurrObj(
+      this._state.transition,
+      x => x
+    )
+
     const pointerTransition = {
-      prev: {x: this._state.transition.prev.positionX},
-      target: {x: this._state.transition.target.positionX},
+      prev: {dataX: this._state.transition.prev.dataX},
+      target: {dataX: this._state.transition.target.dataX},
       transition: this._state.transition.transition,
     }
     this._components.forEach(x => {
       ctx.save()
-      x.draw({...chartContext, pointerTransition}, registerAnimation)
+      x.draw({...context, pointerTransition})
       ctx.restore()
     })
 
-    const dataX = scale.x.inverse(graphX)
-    const dataYs = chartDataTransitionCurrNumArr(stateTransition, x =>
-      this.dataFn(x.data).map(({line}) => line(dataX))
+    const graphX = scale.x(dataX)
+    const dataYs = chartDataTransitionCurrNumArr(dataTransition, x =>
+      this.dataFn(x).map(({line}) => line(dataX))
     )
     const graphYs = dataYs.map(y => scale.y(y))
 
@@ -217,7 +217,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
     // Draw the box.
     const boxPosition = {x: graphX, boxY, boxW, boxSide, boxXOffset}
     const textCenterGraphYs = _drawBox(
-      this._state.boxInfo,
+      this._state.notAnimatedBoxInfo,
       boxPosition,
       graphYs,
       ctx
@@ -242,17 +242,19 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
   }
 }
 
-type _BoxInfo = ReturnType<typeof _boxInfo>['boxInfo']
+type _NotAnimatedBoxInfo = ReturnType<typeof _boxInfo>['notAnimatedBoxInfo']
+type _AnimatedBoxInfo = ReturnType<typeof _boxInfo>['animatedBoxInfo']
 const _boxInfo = <Data>(
-  state: ChartFullState<Data>,
-  graphX: number,
+  data: Data,
+  derivedState: ChartStateDerived,
+  dataX: number,
   dataFn: _DataFn<Data>,
   formatY: (x: number) => string,
   formatX: (data: Data, x: number) => string,
   ctx: CanvasRenderingContext2D
 ) => {
-  const {plotArea, viewport, scale, data} = state
-  const dataX = Math.round(scale.x.inverse(graphX))
+  const {plotArea, viewport, scale} = derivedState
+  const graphX = Math.round(scale.x(dataX))
   const dataYs = dataFn(data).map(({line}) => line(dataX))
   const graphYs = dataYs.map(y => scale.y(y))
 
@@ -283,7 +285,7 @@ const _boxInfo = <Data>(
 
   const boxY = _.clamp(
     _.mean(graphYs) - boxH * 0.45,
-    plotArea.y,
+    viewport.y,
     plotArea.y + plotArea.height - boxH - 10
   )
   const boxW =
@@ -297,7 +299,7 @@ const _boxInfo = <Data>(
   // const boxRight = graphX + boxXOffset + boxW
   let boxXOffset =
     idealBoxXOffset *
-    (viewport.width < 200 ? 0.3 : viewport.width < 500 ? 0.5 : 1)
+    (viewport.width < 200 ? 0.3 : viewport.width < 400 ? 0.5 : 1)
   const boxPad = viewport.width > 500 ? 5 : -10
   const boxSide = graphX + boxXOffset + boxW + boxPad < plotArea.right ? 1 : -1
   boxXOffset = Math.min(
@@ -308,7 +310,7 @@ const _boxInfo = <Data>(
   )
 
   return {
-    boxInfo: {
+    notAnimatedBoxInfo: {
       boxH,
       yTexts,
       textH,
@@ -317,10 +319,12 @@ const _boxInfo = <Data>(
       xText,
       xTextHeight,
     },
-    boxY,
-    boxW,
-    boxXOffset,
-    boxSide,
+    animatedBoxInfo: {
+      boxY,
+      boxW,
+      boxXOffset,
+      boxSide,
+    },
   }
 }
 
@@ -333,7 +337,7 @@ const _drawBox = (
     yLabels,
     xText,
     xTextHeight,
-  }: _BoxInfo,
+  }: _NotAnimatedBoxInfo,
   {
     x: graphX,
     boxY,

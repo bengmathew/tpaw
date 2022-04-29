@@ -16,8 +16,8 @@ export const chartDrawDataLines = <Data>({
   }
 }): ChartComponent<Data> => ({
   draw: (context: ChartContext<Data>) => {
-    const {ctx, stateTransition, currState} = context
-    const {scale, plotArea, viewport} = currState
+    const {canvasContext: ctx, dataTransition, derivedState} = context
+    const {scale, plotArea, viewport} = derivedState.curr
 
     const dataXs = _.range(
       Math.floor(scale.x.inverse(plotArea.x)),
@@ -34,15 +34,22 @@ export const chartDrawDataLines = <Data>({
       plotArea.y + plotArea.height + Math.ceil(lineWidth)
     )
     ctx.clip()
+
     ctx.lineWidth = lineWidth
     ctx.strokeStyle = strokeStyle
     ctx.beginPath()
 
-    const {lines, isXInGroup} = dataFn(stateTransition.target.data)
+    const {lines, isXInGroup} = dataFn(dataTransition.target)
+    const transition = {
+      prev: dataFn(dataTransition.prev),
+      target: dataFn(dataTransition.target),
+      transition: dataTransition.transition,
+    }
+
     _.times(lines.length, i => {
       dataXs.forEach((dataX, j) => {
-        const dataY = chartDataTransitionCurrNum(stateTransition, x =>
-          dataFn(x.data).lines[i](dataX)
+        const dataY = chartDataTransitionCurrNum(transition, x =>
+          x.lines[i](dataX)
         )
         const graphX = scale.x(dataX)
         const graphY = scale.y(dataY)

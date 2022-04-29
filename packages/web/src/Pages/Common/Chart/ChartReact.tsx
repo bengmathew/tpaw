@@ -1,25 +1,22 @@
-import { localPoint } from '@visx/event'
-import _ from 'lodash'
+import {localPoint} from '@visx/event'
 import {gsap} from 'gsap'
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react'
-import Measure from 'react-measure'
-import { useAssertConst } from '../../../Utils/UseAssertConst'
-import { assert, fGet } from '../../../Utils/Utils'
-import { ChartAnimation, ChartPadding, ChartXYRange } from './Chart'
-import { ChartComponent } from './ChartComponent/ChartComponent'
-import { ChartReactSub } from './ChartReactSub'
-import { RectExt } from './ChartUtils/ChartUtils'
-
-export type ChartReactState<Data> = {
-  area: (bounds: {width: number; height: number}) => {
-    viewport: RectExt
-    padding: ChartPadding
-  }
-  data: Data
-  xyRange: ChartXYRange
-  alpha: number
-  animation: ChartAnimation | null
-}
+import _ from 'lodash'
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
+import {
+  applyRectSizingToHTMLElement,
+  RectExt,
+  Size,
+} from '../../../Utils/Geometry'
+import {useAssertConst} from '../../../Utils/UseAssertConst'
+import {fGet} from '../../../Utils/Utils'
+import {ChartComponent} from './ChartComponent/ChartComponent'
+import {ChartReactState, ChartReactSub} from './ChartReactSub'
 
 type Info<Data extends any[]> = {
   [K in keyof Data]: {
@@ -30,86 +27,90 @@ type Info<Data extends any[]> = {
   }
 }
 
+export type ChartRef = {setPosition: (position: RectExt) => void}
 export function ChartReact<Data extends any[]>({
   charts,
-  animationForBoundsChange,
-  className = '',
-  style,
+  startingPosition,
+  chartRef,
 }: {
   charts: Info<Data>
-  animationForBoundsChange: ChartAnimation | null
-  className?: string
-  style?: CSSProperties
+  startingPosition: RectExt
+  chartRef: (chart: ChartRef) => void
 }) {
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null)
-  const [bounds, setBounds] = useState<{width: number; height: number} | null>(
-    null
+
+  const divRef = useRef<HTMLDivElement | null>(null)
+  const localChartRef = useRef<{setSize: (size: Size) => void} | null>(null)
+  useLayoutEffect(
+    () => {
+      const div = fGet(divRef.current)
+      applyRectSizingToHTMLElement(startingPosition, div)
+      chartRef({
+        setPosition: position => {
+          applyRectSizingToHTMLElement(position, div)
+          localChartRef.current?.setSize(position)
+        },
+      })
+    },
+    // exclude: chartRef, canvas, startingSize
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   )
-
-  useEffect(() => {
-    if (!bounds || !canvas) return
-    canvas.style.width = `${bounds.width}px`
-    canvas.style.height = `${bounds.height}px`
-    const dpr = window.devicePixelRatio || 1
-    canvas.width = bounds.width * dpr
-    canvas.height = bounds.height * dpr
-    const ctx = fGet(canvas.getContext('2d'))
-    ctx.scale(dpr, dpr)
-  }, [bounds, canvas])
-
   return (
-    <div className={`${className}`} style={style}>
-      <Measure
-        bounds
-        onResize={({bounds}) => {
-          assert(bounds)
-          setBounds({width: bounds.width, height: bounds.height})
+    <div className="absolute overflow-hidde" ref={divRef}>
+      <canvas
+        className=""
+        style={{touchAction: 'none'}}
+        ref={x => {
+          if (!x || x === canvas) return
+          const dpr = window.devicePixelRatio || 1
+          const canvasSize = {
+            width: startingPosition.width * 1.25,
+            height: startingPosition.height * 1.25,
+          }
+          x.width = canvasSize.width * dpr
+          x.height = canvasSize.height * dpr
+          x.style.width = `${canvasSize.width}px`
+          x.style.height = `${canvasSize.height}px`
+          fGet(x.getContext('2d')).scale(dpr, dpr)
+          setCanvas(x)
         }}
-      >
-        {({measureRef}) => (
-          <div className="w-full h-full" ref={measureRef}>
-            {/* select-none because otherwise moving the chart pointer was
-          selecting text  on mobile. Seems to work only on Android though. */}
-            <div className=" select-none  absolute">
-              <canvas
-                style={{touchAction: 'none'}}
-                ref={x => {
-                  if (x && !canvas) setCanvas(x)
-                }}
-              />
-              {bounds && canvas && (
-                <_After
-                  charts={charts}
-                  animationForBoundsChange={animationForBoundsChange}
-                  bounds={bounds}
-                  canvas={canvas}
-                />
-              )}
-            </div>
-          </div>
-        )}
-      </Measure>
+      />
+      {canvas && (
+        <_After
+          charts={charts}
+          startingSize={{
+            width: startingPosition.width,
+            height: startingPosition.height,
+          }}
+          canvas={canvas}
+          chartRef={x => (localChartRef.current = x)}
+        />
+      )}
     </div>
   )
 }
 
 type _DrawTarget = {
   draw: () => void
-  pointerMoved: (position: {x: number; y: number} | null) => void
+  pointerMoved: (position: {x: number; y: number}) => void
+  setSize: (size: Size) => void
   order: number
 }
+
 export function _After<Data extends any[]>({
   charts,
-  animationForBoundsChange,
-  bounds,
+  startingSize,
   canvas,
+  chartRef,
 }: {
   charts: Info<Data>
-  animationForBoundsChange: ChartAnimation | null
-  bounds: {width: number; height: number}
+  startingSize: Size
   canvas: HTMLCanvasElement
+  chartRef: (chart: {setSize: (size: Size) => void}) => void
 }) {
   const [drawTargets] = useState(new Map<string, _DrawTarget>())
+
 
   const registerDrawTarget = useCallback(
     (key: string, value: _DrawTarget) => {
@@ -119,22 +120,6 @@ export function _After<Data extends any[]>({
     [drawTargets]
   )
   useAssertConst([drawTargets])
-
-  useEffect(() => {
-    const inHandler = (e: MouseEvent) =>
-      drawTargets.forEach(x => x.pointerMoved(fGet(localPoint(canvas, e))))
-    const outHandler = (e: MouseEvent) =>
-      drawTargets.forEach(x => x.pointerMoved(fGet(localPoint(canvas, e))))
-    canvas.addEventListener('pointermove', inHandler)
-    canvas.addEventListener('pointerenter', inHandler)
-    canvas.addEventListener('pointerleave', outHandler)
-    return () => {
-      canvas.removeEventListener('pointermove', inHandler)
-      canvas.removeEventListener('pointerenter', inHandler)
-      canvas.removeEventListener('pointerleave', outHandler)
-    }
-  }, [canvas, drawTargets])
-  useAssertConst([canvas, drawTargets])
 
   const onDraw = useCallback(() => {
     const ctx = fGet(canvas.getContext('2d'))
@@ -147,11 +132,63 @@ export function _After<Data extends any[]>({
   }, [canvas, drawTargets])
   useAssertConst([canvas, drawTargets])
 
+  useEffect(() => {
+    const handler = (e: MouseEvent) =>
+      drawTargets.forEach(x => {
+        x.pointerMoved(fGet(localPoint(canvas, e)))
+        onDraw()
+      })
+
+    canvas.addEventListener('pointermove', handler)
+    canvas.addEventListener('pointerenter', handler)
+    canvas.addEventListener('pointerleave', handler)
+    return () => {
+      canvas.removeEventListener('pointermove', handler)
+      canvas.removeEventListener('pointerenter', handler)
+      canvas.removeEventListener('pointerleave', handler)
+    }
+  }, [canvas, drawTargets, onDraw])
+  useAssertConst([canvas, drawTargets, onDraw])
+  useAssertConst([onDraw, drawTargets, canvas])
+
+
+  useLayoutEffect(() => {
+    chartRef({
+      setSize: size => {
+        const dpr = window.devicePixelRatio || 1
+        const pixelSize = (x: number) => Math.round(x * dpr)
+        if (
+          pixelSize(size.width) > canvas.width * 0.95 ||
+          pixelSize(size.height) > canvas.height * 0.95
+        ) {
+          const enlarged = {
+            width: Math.round(size.width * 1.25),
+            height: Math.round(size.height * 1.25),
+          }
+          canvas.width = pixelSize(enlarged.width)
+          canvas.height = pixelSize(enlarged.height)
+          canvas.style.width = `${enlarged.width}px`
+          canvas.style.height = `${enlarged.height}px`
+
+          const ctx = fGet(canvas.getContext('2d'))
+          ctx.scale(dpr, dpr)
+        }
+
+        drawTargets.forEach(x => x.setSize(size))
+        onDraw()
+      },
+    })
+    // exclude: chartRef
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onDraw, drawTargets, canvas])
+  useAssertConst([onDraw, drawTargets, canvas])
+
   const [activeAnimations] = useState<(gsap.core.Tween | gsap.core.Timeline)[]>(
     []
   )
 
-  const registerAnimation = useCallback(<T extends gsap.core.Tween | gsap.core.Timeline>(tween: T): T => {
+  const registerAnimation = useCallback(
+    <T extends gsap.core.Tween | gsap.core.Timeline>(tween: T): T => {
       tween.eventCallback('onStart', () => {
         activeAnimations.push(tween)
         if (activeAnimations.length === 1) {
@@ -169,8 +206,9 @@ export function _After<Data extends any[]>({
       // this obviates the need to handle "kill"
       tween.eventCallback('onInterrupt', handleDone)
       return tween
-    
-  }, [activeAnimations, onDraw])
+    },
+    [activeAnimations, onDraw]
+  )
   useAssertConst([activeAnimations, onDraw])
 
   return (
@@ -181,11 +219,10 @@ export function _After<Data extends any[]>({
           debugName={key}
           state={state}
           components={components}
-          animationForBoundsChange={animationForBoundsChange}
-          bounds={bounds}
+          startingSize={startingSize}
           canvas={canvas}
-          registerDrawTarget={({draw, pointerMoved}) =>
-            registerDrawTarget(key, {draw, pointerMoved, order})
+          registerDrawTarget={({draw, pointerMoved, setSize}) =>
+            registerDrawTarget(key, {draw, pointerMoved, setSize, order})
           }
           onDraw={onDraw}
           registerAnimation={registerAnimation}

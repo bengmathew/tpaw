@@ -2,7 +2,6 @@ import {faExclamation} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {gsap, Power1} from 'gsap'
 import React, {useEffect, useRef} from 'react'
-import {Transition} from 'react-transition-group'
 import {
   Person,
   ValueForYearRange,
@@ -11,6 +10,7 @@ import {
 import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
 import {formatCurrency} from '../../../Utils/FormatCurrency'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
+import {Padding, paddingCSS} from '../../../Utils/Geometry'
 import {trimAndNullify} from '../../../Utils/TrimAndNullify'
 import {fGet, noCase} from '../../../Utils/Utils'
 import {Footer} from '../../App/Footer'
@@ -20,173 +20,216 @@ import {ValueForYearRangeDisplay} from '../../Common/ValueForYearRangeDisplay'
 import {paramsInputValidate} from './Helpers/ParamInputValidate'
 import {paramsInputLabel} from './Helpers/ParamsInputLabel'
 import {ParamsInputType} from './Helpers/ParamsInputType'
-import {Reset} from './Reset'
-import {Share} from './Share'
 
 export const ParamsInputSummary = React.memo(
   ({
-    isOpen,
-    highlight,
+    layout,
+    state,
     setState,
-    allowSplit,
-    duration,
-    displacement,
+    cardPadding,
   }: {
-    isOpen: boolean
-    highlight: ParamsInputType | null
+    layout: 'mobile' | 'desktop' | 'laptop'
+    state: ParamsInputType | 'summary'
     setState: (state: ParamsInputType) => void
-    allowSplit: boolean
-    duration: number
-    displacement: number
+    cardPadding: Padding
   }) => {
     const {params} = useSimulation()
     const {asYFN, withdrawalStartYear} = extendTPAWParams(params)
-    const summaryRef = useRef<HTMLDivElement | null>(null)
     const isRetired = asYFN(withdrawalStartYear) <= 0
 
+    const labelStyle: React.CSSProperties = {
+      paddingLeft: `${cardPadding.left}px`,
+      paddingRight: `${cardPadding.right}px`,
+    }
+
     return (
-      <Transition
-        in={isOpen}
-        timeout={duration * 1000}
-        onEntering={() => {
-          gsap.fromTo(
-            summaryRef.current,
-            {opacity: 0, x: -displacement},
-            {opacity: 1, x: 0, duration}
-          )
-        }}
-        onExiting={() => {
-          gsap.to(summaryRef.current, {
-            opacity: 0,
-            x: -displacement,
-            duration,
-          })
-        }}
+      <div
+        className={` grid w-full`} // This is needed if we start in exited state.
+        style={{grid: '1fr auto/1fr'}}
       >
-        {tstate => (
+        <div className={`flex flex-col items-start mb-16`}>
           <div
-            className={`text-pageFGLight ${
-              allowSplit ? 'plan-pr plan-pl' : 'px-8'
-            } 
-            grid
-            absolute w-full h-full top-0  overflow-scroll 
-            ${tstate === 'exited' ? 'opacity-0' : ''}`} // This is needed if we start in exited state.
-            ref={summaryRef}
-            style={{grid: '1fr auto/1fr'}}
+            className={`flex flex-col gap-y-12 sm:gap-y-16 relative z-0 w-full`}
           >
-            <div className="flex flex-col items-start mb-16">
-              <div className="self-stretch flex justify-end  ">
-                <div className={`flex gap-x-4  py-2`}>
-                  <Reset />
-                  <Share />
-                </div>
-              </div>
-              <div className="flex flex-col gap-y-2 relative z-0">
-                <_Button type="age" {...{setState, highlight}} />
-                <div className="mt-2">
-                  <h2 className="font-semibold">Savings and Income</h2>
-                  <div className="flex flex-col gap-y-2 mt-4 ml-8">
-                    <_Button
-                      type="current-portfolio-value"
-                      {...{setState, highlight}}
-                    />
-                    {!isRetired && (
-                      <_Button
-                        type="future-savings"
-                        {...{setState, highlight}}
-                        warn={!paramsInputValidate(params, 'future-savings')}
-                      />
-                    )}
-                    <_Button
-                      type="income-during-retirement"
-                      {...{setState, highlight}}
-                      warn={
-                        !paramsInputValidate(params, 'income-during-retirement')
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <h2 className="font-semibold">Spending</h2>
-                  <div className="flex flex-col gap-y-2 mt-4 ml-8">
-                    <_Button
-                      type="extra-spending"
-                      {...{setState, highlight}}
-                      warn={!paramsInputValidate(params, 'extra-spending')}
-                    />
-                    <_Button
-                      type="spending-ceiling-and-floor"
-                      {...{setState, highlight}}
-                    />
-                    <_Button type="legacy" {...{setState, highlight}} />
-                  </div>
-                </div>
-
-                <div className="mt-2">
-                  <h2 className="font-semibold">
-                    Expected Returns and Inflation
-                  </h2>
-                  <div className="flex flex-col gap-y-2 mt-4 ml-8">
-                    <_Button
-                      type="expected-returns"
-                      {...{setState, highlight}}
-                    />
-                    <_Button type="inflation" {...{setState, highlight}} />
-                  </div>
-                </div>
-
+            <div className="">
+              <h2
+                className={`text-[18px] sm:text-2xl font-bold mb-4`}
+                style={labelStyle}
+              >
+                Age and Retirement
+              </h2>
+              <div className="flex flex-col gap-y-4">
                 <_Button
-                  type="risk-and-time-preference"
-                  {...{setState, highlight}}
+                  type="age"
+                  setState={setState}
+                  state={state}
+                  showHeading={false}
+                  padding={cardPadding}
+                />
+              </div>
+            </div>
+            <div className="">
+              <h2
+                className="text-[18px] sm:text-2xl font-bold mb-4"
+                style={labelStyle}
+              >
+                Savings and Income
+              </h2>
+              <div className="flex flex-col gap-y-4 ">
+                <_Button
+                  type="current-portfolio-value"
+                  setState={setState}
+                  state={state}
+                  showHeading
+                  padding={cardPadding}
+                />
+                {!isRetired && (
+                  <_Button
+                    type="future-savings"
+                    setState={setState}
+                    state={state}
+                    showHeading
+                    warn={!paramsInputValidate(params, 'future-savings')}
+                    padding={cardPadding}
+                  />
+                )}
+                <_Button
+                  type="income-during-retirement"
+                  setState={setState}
+                  state={state}
+                  showHeading
+                  warn={
+                    !paramsInputValidate(params, 'income-during-retirement')
+                  }
+                  padding={cardPadding}
+                />
+              </div>
+            </div>
+            <div className="">
+              <h2
+                className="text-[18px] sm:text-2xl font-bold mb-4"
+                style={labelStyle}
+              >
+                Spending
+              </h2>
+              <div className="flex flex-col gap-y-4">
+                <_Button
+                  type="extra-spending"
+                  setState={setState}
+                  state={state}
+                  showHeading
+                  warn={!paramsInputValidate(params, 'extra-spending')}
+                  padding={cardPadding}
+                />
+                <_Button
+                  type="spending-ceiling-and-floor"
+                  setState={setState}
+                  state={state}
+                  showHeading
+                  padding={cardPadding}
+                />
+                <_Button
+                  type="legacy"
+                  setState={setState}
+                  state={state}
+                  showHeading
+                  padding={cardPadding}
                 />
               </div>
             </div>
 
-            <Footer />
+            <div className="">
+              <h2
+                className="text-[18px] sm:text-2xl font-bold mb-4"
+                style={labelStyle}
+              >
+                Expected Returns and Inflation
+              </h2>
+              <div className="flex flex-col gap-y-4">
+                <_Button
+                  type="expected-returns"
+                  setState={setState}
+                  state={state}
+                  showHeading
+                  padding={cardPadding}
+                />
+                <_Button
+                  type="inflation"
+                  setState={setState}
+                  state={state}
+                  showHeading
+                  padding={cardPadding}
+                />
+              </div>
+            </div>
+
+            <div className="">
+              <h2
+                className="text-[18px] sm:text-2xl font-bold mb-4"
+                style={labelStyle}
+              >
+                Risk and Time Preference
+              </h2>
+              <div className="flex flex-col gap-y-4">
+                <_Button
+                  type="risk-and-time-preference"
+                  setState={setState}
+                  state={state}
+                  showHeading={false}
+                  padding={cardPadding}
+                />
+              </div>
+            </div>
           </div>
-        )}
-      </Transition>
+        </div>
+        {layout !== 'laptop' && <Footer />}
+      </div>
     )
   }
 )
 
 const _Button = React.memo(
   ({
+    padding,
     type,
     setState,
     warn = false,
-    highlight,
-    className = '',
+    state,
+    showHeading,
   }: {
+    padding: Padding
     type: ParamsInputType
-    highlight: ParamsInputType | null
+    state: ParamsInputType | 'summary'
     setState: (state: ParamsInputType) => void
     warn?: boolean
-    className?: string
+    showHeading: boolean
   }) => {
-    const {params} = useSimulation()
     const ref = useRef<HTMLButtonElement | null>(null)
+    const highlightColorDark = ChartUtils.color.gray[400]
+    const highlightColor =
+      state === type ? highlightColorDark : ChartUtils.color.gray[100]
     useEffect(() => {
-      if (highlight !== type) return
-      gsap.fromTo(
-        ref.current,
-        {backgroundColor: `${ChartUtils.color.gray[300]}FF`},
-        {
-          backgroundColor: `${ChartUtils.color.gray[300]}00`,
-          duration: 1,
-          ease: Power1.easeIn,
-        }
-      )
-    }, [highlight, type])
+      const tween = gsap.to(ref.current, {
+        borderColor: highlightColor,
+        duration: highlightColor === highlightColorDark ? 0.5 : 1.25,
+        ease: Power1.easeIn,
+      })
+      return () => {
+        tween.kill()
+      }
+    }, [highlightColor, highlightColorDark])
 
     return (
       <button
-        className={`${className} text-left p-1  rounded-md`}
+        className={` rounded-2xl text-left w-full bg-cardBG border-planBG border-2`}
         onClick={() => setState(type)}
         ref={ref}
+        style={{padding: paddingCSS(padding)}}
       >
         <div className=" flex items-center">
-          <h2 className="font-semibold  ">{paramsInputLabel(type)}</h2>
+          {showHeading && (
+            <h2 className="font-semibold mb-1 ">{paramsInputLabel(type)}</h2>
+          )}
           {warn && (
             <h2 className="h-[18px] w-[18px] flex items-center justify-center ml-2 text-[13px] font-bold rounded-full bg-errorBlockBG text-errorBlockFG">
               <FontAwesomeIcon icon={faExclamation} />
@@ -235,19 +278,36 @@ export const _SectionSummary = React.memo(
             </>
           )
         } else {
-          return <h2>{forPerson(params.people.person1)}</h2>
+          const {ages} = params.people.person1
+          return ages.type === 'retired' ? (
+            <>
+              <h2>Retired</h2>
+              <h2>Current: {ages.current}</h2>
+              <h2>Max: {ages.max}</h2>
+            </>
+          ) : (
+            <>
+              <h2>Current: {ages.current}</h2>
+              <h2>Retirement: {ages.retirement}</h2>
+              <h2>Max: {ages.max}</h2>
+            </>
+          )
         }
       }
       case 'risk-and-time-preference': {
         const format = formatPercentage(1)
         return (
-          <h2>
-            Stock Allocation:{' '}
-            {formatPercentage(0)(
-              params.targetAllocation.regularPortfolio.stocks
-            )}
-            , Spending Tilt: {format(params.scheduledWithdrawalGrowthRate)}
-          </h2>
+          <>
+            <h2>
+              Stock Allocation:{' '}
+              {formatPercentage(0)(
+                params.targetAllocation.regularPortfolio.stocks
+              )}
+            </h2>
+            <h2>
+              Spending Tilt: {format(params.scheduledWithdrawalGrowthRate)}
+            </h2>
+          </>
         )
       }
       case 'current-portfolio-value': {
@@ -346,10 +406,10 @@ export const _SectionSummary = React.memo(
       case 'expected-returns': {
         const format = formatPercentage(1)
         return (
-          <h2>
-            Stocks: {format(params.returns.expected.stocks)}, Bonds:{' '}
-            {format(params.returns.expected.bonds)}
-          </h2>
+          <>
+            <h2>Stocks: {format(params.returns.expected.stocks)}</h2>
+            <h2>Bonds: {format(params.returns.expected.bonds)}</h2>
+          </>
         )
       }
       case 'inflation': {

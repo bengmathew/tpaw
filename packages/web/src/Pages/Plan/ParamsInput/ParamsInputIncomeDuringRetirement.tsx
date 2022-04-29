@@ -23,7 +23,7 @@ export const ParamsInputIncomeDuringRetirement = React.memo(
             body={content.incomeDuringRetirement.intro.fields.body}
             p="p-base"
           />
-          <ByYearSchedule
+        <ByYearSchedule
             className=""
             heading={null}
             entries={params => params.retirementIncome}

@@ -2,9 +2,9 @@ import {default as React, useState} from 'react'
 import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
 import {Contentful} from '../../../Utils/Contentful'
 import {useSimulation} from '../../App/WithSimulation'
+import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
 import {usePlanContent} from '../Plan'
 import {ByYearSchedule} from './ByYearSchedule/ByYearSchedule'
-import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
 import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
 
 export const ParamsInputFutureSavings = React.memo(
@@ -38,12 +38,11 @@ export const ParamsInputFutureSavings = React.memo(
             }
             defaultYearRange={{
               type: 'startAndEnd',
-              start: {type: 'now'},
-              end: {
-                type: 'namedAge',
-                person: 'person1',
-                age: 'lastWorkingYear',
-              },
+              start: years.now,
+              end:
+                params.people.person1.ages.type === 'notRetired'
+                  ? years.person1.lastWorkingYear
+                  : years.person2.lastWorkingYear,
             }}
           />
         </div>

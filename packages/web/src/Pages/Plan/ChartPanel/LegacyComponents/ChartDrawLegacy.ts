@@ -1,8 +1,9 @@
 import {formatCurrency} from '../../../../Utils/FormatCurrency'
+import { rectExt } from '../../../../Utils/Geometry'
 import {ChartComponent} from '../../../Common/Chart/ChartComponent/ChartComponent'
 import {ChartContext} from '../../../Common/Chart/ChartContext'
 import {chartDataTransitionCurrNumArr} from '../../../Common/Chart/ChartUtils/ChartDataTransition'
-import {ChartUtils, rectExt} from '../../../Common/Chart/ChartUtils/ChartUtils'
+import {ChartUtils} from '../../../Common/Chart/ChartUtils/ChartUtils'
 import {TPAWChartLegacyData} from '../TPAWChartLegacyData'
 
 const pad = {vert: 6, horz: 10}
@@ -10,18 +11,23 @@ const _fontSize = 11
 const _lineLength = 10
 export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
   draw: (context: ChartContext<TPAWChartLegacyData>) => {
-    const {ctx, stateTransition, currState} = context
-    const {scale, plotArea, viewport} = currState
+    const {
+      canvasContext: ctx,
+      stateTransition,
+      dataTransition,
+      derivedState,
+    } = context
+    const {scale, plotArea, viewport} = derivedState.curr
     const graphX = plotArea.right - _lineLength
 
-    const majorDataYs = chartDataTransitionCurrNumArr(stateTransition, x =>
-      x.data.percentiles.filter(x => x.isHighlighted).map(x => x.data)
+    const majorDataYs = chartDataTransitionCurrNumArr(dataTransition, x =>
+      x.percentiles.filter(x => x.isHighlighted).map(x => x.data)
     )
-    const majorDataPercentiles = stateTransition.target.data.percentiles
+    const majorDataPercentiles = dataTransition.target.percentiles
       .filter(x => x.isHighlighted)
       .map(x => x.percentile)
-    const minorDataYs = chartDataTransitionCurrNumArr(stateTransition, x =>
-      x.data.percentiles.filter(x => !x.isHighlighted).map(x => x.data)
+    const minorDataYs = chartDataTransitionCurrNumArr(dataTransition, x =>
+      x.percentiles.filter(x => !x.isHighlighted).map(x => x.data)
     )
 
     // Draw background

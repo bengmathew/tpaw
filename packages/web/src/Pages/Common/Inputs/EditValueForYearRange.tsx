@@ -64,8 +64,7 @@ export const EditValueForYearRange = React.memo(
     const {increment, decrement} = smartDeltaFnForAmountInput
     return (
       <div className={`${className}`}>
-        {/* pt-3 and not mt-3 because sometimes that leads to an unwanted scroll in laptop. */}
-        <h2 className="text-lg font-bold pt-3 text-center">{title}</h2>
+        <h2 className="text-lg font-bold text-center">{title}</h2>
         <div className="mt-6">
           <div
             className="grid gap-y-6 gap-x-4 items-center"

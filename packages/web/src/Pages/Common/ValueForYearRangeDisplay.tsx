@@ -13,14 +13,17 @@ export const ValueForYearRangeDisplay = React.memo(
     range: {start: Year; end: Year} | null
   }) => {
     return (
-      <>
-        <span>{`${
-          trimAndNullify(entry.label) ?? '<no label>'
-        }: ${formatCurrency(entry.value)} per year. ${
+      <div>
+        <h2>{trimAndNullify(entry.label) ?? '<no label>'}</h2>
+        <h2>{`${formatCurrency(entry.value)} per year. ${
           entry.nominal ? 'Nominal dollars' : 'Real dollars'
-        }. `}</span>
-        <YearRangeDisplay value={entry.yearRange} range={range} lengthInBrackets={false} />
-      </>
+        }. `}</h2>
+        <YearRangeDisplay
+          value={entry.yearRange}
+          range={range}
+          lengthInBrackets={false}
+        />
+      </div>
     )
   }
 )

@@ -1,11 +1,11 @@
 import _ from 'lodash'
-import { ChartContext } from '../ChartContext'
+import {ChartContext} from '../ChartContext'
 import {
   chartDataTransitionCurrNum,
-  chartDataTransitionCurrObj
+  chartDataTransitionCurrObj,
 } from '../ChartUtils/ChartDataTransition'
-import { ChartUtils } from '../ChartUtils/ChartUtils'
-import { ChartComponent } from './ChartComponent'
+import {ChartUtils} from '../ChartUtils/ChartUtils'
+import {ChartComponent} from './ChartComponent'
 
 const pad = 5
 const maxPad = 30
@@ -18,8 +18,12 @@ export class ChartMinMaxYAxis<Data> implements ChartComponent<Data> {
   ) {}
 
   public draw(context: ChartContext<Data>) {
-    const {ctx, stateTransition, currState} = context
-    const {scale, plotArea} = currState
+    const {
+      canvasContext: ctx,
+      dataTransition,
+      derivedState,
+    } = context
+    const {scale, plotArea} = derivedState.curr
 
     ctx.fillStyle = this.fillStyle
     ctx.font = ChartUtils.getMonoFont(11)
@@ -28,7 +32,7 @@ export class ChartMinMaxYAxis<Data> implements ChartComponent<Data> {
       ctx.textAlign = textAlign
       const dataX = scale.x.inverse(graphX)
       const {exactDataY, placementGraphY, exactMeasureHeight} =
-        chartDataTransitionCurrObj(stateTransition, ({data, scale}) => {
+        chartDataTransitionCurrObj(dataTransition, data => {
           const exactDataY = this.minMaxForX(data, dataX)
           const exactMeasure = {
             max: ctx.measureText(this.format(exactDataY.max)),
@@ -117,16 +121,16 @@ export class ChartMinMaxYAxis<Data> implements ChartComponent<Data> {
     // The global max.
     ctx.textAlign = 'center'
 
-    const prevGlobalMaxDataX = this.globalMaxX(stateTransition.prev.data)
-    const targetGlobalMaxDataX = this.globalMaxX(stateTransition.target.data)
+    const prevGlobalMaxDataX = this.globalMaxX(dataTransition.prev)
+    const targetGlobalMaxDataX = this.globalMaxX(dataTransition.target)
 
     const prevGlobalMaxDataY = chartDataTransitionCurrNum(
-      stateTransition,
-      x => this.minMaxForX(x.data, prevGlobalMaxDataX).max
+      dataTransition,
+      x => this.minMaxForX(x, prevGlobalMaxDataX).max
     )
     const targetGlobalMaxDataY = chartDataTransitionCurrNum(
-      stateTransition,
-      x => this.minMaxForX(x.data, targetGlobalMaxDataX).max
+      dataTransition,
+      x => this.minMaxForX(x, targetGlobalMaxDataX).max
     )
 
     const [globalMaxDataY, globalMaxDataX] =

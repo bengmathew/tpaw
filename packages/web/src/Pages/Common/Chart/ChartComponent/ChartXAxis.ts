@@ -1,9 +1,10 @@
 import _ from 'lodash'
+import {Rect, rectExt, RectExt} from '../../../../Utils/Geometry'
 import {linearFnFomPoints} from '../../../../Utils/LinearFn'
 import {assert} from '../../../../Utils/Utils'
-import {ChartFullState} from '../Chart'
+import {ChartStateDerived} from '../Chart'
 import {chartDataTransitionCurrObj} from '../ChartUtils/ChartDataTransition'
-import {ChartUtils, Rect, RectExt, rectExt} from '../ChartUtils/ChartUtils'
+import {ChartUtils} from '../ChartUtils/ChartUtils'
 import {
   ChartPointerComponent,
   ChartPointerContext,
@@ -22,17 +23,20 @@ export class ChartXAxis<Data> implements ChartPointerComponent<Data> {
 
   setState(
     ctx: CanvasRenderingContext2D,
-    state: ChartFullState<Data> & {pointerState: ChartPointerState},
+    data: Data,
+    chartStateDerived: ChartStateDerived,
+    pointerState: ChartPointerState,
     pointerTransition: number
   ) {
+    const {scale, plotArea} = chartStateDerived
     const target = _labelBox(
       ctx,
-      state,
-      x => this.format(state.data, this.transform(state.data, x)),
-      Math.round(state.scale.x.inverse(state.pointerState.x)),
-      state.pointerState.x,
+      {plotArea},
+      x => this.format(data, this.transform(data, x)),
+      pointerState.dataX,
+      scale.x(pointerState.dataX),
       true,
-      x => this.transform(state.data, x)
+      x => this.transform(data, x)
     )
     const prev = this._stateTransition
       ? chartDataTransitionCurrObj(
@@ -46,11 +50,16 @@ export class ChartXAxis<Data> implements ChartPointerComponent<Data> {
 
   destroy() {}
   draw(context: ChartPointerContext<Data>) {
-    const {ctx, currState, pointerTransition, stateTransition} = context
-    const {scale, plotArea} = currState
-    const transform = (x: number) =>
-    this.transform(stateTransition.target.data, x)
-    const format = (x: number) => this.format(stateTransition.target.data, transform(x))
+    const {
+      canvasContext: ctx,
+      pointerTransition,
+      dataTransition,
+      derivedState,
+    } = context
+    const {scale, plotArea} = derivedState.curr
+    const transform = (x: number) => this.transform(dataTransition.target, x)
+    const format = (x: number) =>
+      this.format(dataTransition.target, transform(x))
 
     const pixelsPerTick = scale.x(1) - scale.x(0)
     assert(this._stateTransition)
@@ -91,11 +100,11 @@ export class ChartXAxis<Data> implements ChartPointerComponent<Data> {
     )
 
     const pointerGraphY = pointerBox.x + pointerBox.width / 2
-    const markBox = chartDataTransitionCurrObj(stateTransition, x => {
-      const markDataX = this.markFn(x.data)
+    const markBox = chartDataTransitionCurrObj(dataTransition, x => {
+      const markDataX = this.markFn(x)
       return _labelBox(
         ctx,
-        currState,
+        {plotArea},
         format,
         Math.round(markDataX),
         scale.x(markDataX),
@@ -185,16 +194,16 @@ class _Tick<Data> {
     forPointer: boolean,
     includeLine: boolean
   ) {
-    const {ctx, stateTransition, currState} = context
-    const {scale, plotArea} = currState
-    const transform = (x: number) =>
-    this.transform(stateTransition.target.data, x)
-    const format = (x: number) => this.format(stateTransition.target.data, transform(x))
+    const {canvasContext: ctx, dataTransition, derivedState} = context
+    const {scale, plotArea} = derivedState.curr
+    const transform = (x: number) => this.transform(dataTransition.target, x)
+    const format = (x: number) =>
+      this.format(dataTransition.target, transform(x))
     const label = format(this.dataX)
     const type = _tickType(transform, this.dataX)
     const tickInfo = _tickInfo(type)
     const graphY = plotArea.bottom
-    const targetScale = stateTransition.target.scale
+    const {scale: targetScale} = derivedState.target
     const pixelsPerTickAtTarget = targetScale.x(1) - targetScale.x(0)
     const graphX = scale.x(this.dataX)
     const labelGraphY = graphY + tickInfo.length + 2

@@ -1,8 +1,9 @@
 import React, {ReactElement, useEffect, useState} from 'react'
 import {createContext} from './CreateContext'
 
-const [Context, useWindowSize] =
-  createContext<{width: number; height: number}>('WindowSize')
+const [Context, useWindowSize] = createContext<{width: number; height: number}>(
+  'WindowSize'
+)
 
 export {useWindowSize}
 
@@ -13,7 +14,11 @@ export const WithWindowSize = React.memo(
     useEffect(() => {
       const handleResize = () => setValue(_get())
       window.addEventListener('resize', handleResize)
-      return () => window.removeEventListener('resize', handleResize)
+      window.addEventListener('orientationchange', handleResize)
+      return () => {
+        window.removeEventListener('resize', handleResize)
+        window.removeEventListener('orientationchange', handleResize)
+      }
     }, [])
 
     return <Context.Provider value={value}>{children}</Context.Provider>
