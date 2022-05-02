@@ -364,10 +364,10 @@ export const _SectionSummary = React.memo(
         ) : (
           <h2>
             {params.spendingCeiling && (
-              <span>Ceiling: {formatCurrency(params.spendingCeiling)}</span>
+              <h2>Ceiling: {formatCurrency(params.spendingCeiling)}</h2>
             )}
             {params.spendingFloor && (
-              <span>Floor: {formatCurrency(params.spendingFloor)}</span>
+              <h2>Floor: {formatCurrency(params.spendingFloor)}</h2>
             )}
           </h2>
         )

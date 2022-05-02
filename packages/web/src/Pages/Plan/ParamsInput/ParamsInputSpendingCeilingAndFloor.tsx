@@ -1,4 +1,3 @@
-// import {faCircleDot as faCircleDuotone} from '@fortawesome/pro-duotone-svg-icons'
 import {faMinus, faPlus} from '@fortawesome/pro-light-svg-icons'
 import {faCircle as faCircleRegular} from '@fortawesome/pro-regular-svg-icons'
 import {faCircle as faCircleSelected} from '@fortawesome/pro-solid-svg-icons'
@@ -6,9 +5,9 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {RadioGroup, Switch} from '@headlessui/react'
 import _ from 'lodash'
 import React, {useMemo, useState} from 'react'
+import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
 import {Contentful} from '../../../Utils/Contentful'
 import {fGet, noCase} from '../../../Utils/Utils'
-import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
 import {useSimulation} from '../../App/WithSimulation'
 import {AmountInput, useAmountInputState} from '../../Common/Inputs/AmountInput'
 import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
@@ -22,7 +21,9 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
     const {params, setParams, tpawResult, highlightPercentiles} =
       useSimulation()
 
-    const {asYFN, withdrawalStartYear} = extendTPAWParams(tpawResult.args.params)
+    const {asYFN, withdrawalStartYear} = extendTPAWParams(
+      tpawResult.args.params
+    )
     const withdrawalStartAsYFN = asYFN(withdrawalStartYear)
     const content = usePlanContent()
 
@@ -110,40 +111,40 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
 
     return (
       <ParamsInputBody {...props}>
-        <div className="">
-          <RadioGroup
-            value={`${type}`}
-            className="grid gap-y-4"
-            onChange={(type: _Type) => {
-              switch (type) {
-                case 'fixedSpending':
-                  handleFixedAmount(lastFixedEntry ?? defaultFloorAmount)
-                  break
-                case 'none': {
-                  const p = _.cloneDeep(params)
-                  p.spendingCeiling = null
-                  p.spendingFloor = null
-                  setParams(p)
-                  break
-                }
-                case 'separateCeilingAndFloor':
-                  const p = _.cloneDeep(params)
-                  p.spendingCeiling = hasCeiling ? lastCeilingEntry : null
-                  p.spendingFloor = hasFloor ? lastFloorEntry : null
-                  setParams(p)
-                  break
-                default:
-                  noCase(type)
+        <RadioGroup
+          value={`${type}`}
+          className=""
+          onChange={(type: _Type) => {
+            switch (type) {
+              case 'fixedSpending':
+                handleFixedAmount(lastFixedEntry ?? defaultFloorAmount)
+                break
+              case 'none': {
+                const p = _.cloneDeep(params)
+                p.spendingCeiling = null
+                p.spendingFloor = null
+                setParams(p)
+                break
               }
-              setType(type)
-            }}
-          >
-            <RadioGroup.Description>
-              <Contentful.RichText
-                body={content.spendingCeilingAndFloor.intro.fields.body}
-                p="mb-4 p-base"
-              />
-            </RadioGroup.Description>
+              case 'separateCeilingAndFloor':
+                const p = _.cloneDeep(params)
+                p.spendingCeiling = hasCeiling ? lastCeilingEntry : null
+                p.spendingFloor = hasFloor ? lastFloorEntry : null
+                setParams(p)
+                break
+              default:
+                noCase(type)
+            }
+            setType(type)
+          }}
+        >
+          <RadioGroup.Description>
+            <Contentful.RichText
+              body={content.spendingCeilingAndFloor.intro.fields.body}
+              p="mb-6 p-base"
+            />
+          </RadioGroup.Description>
+          <div className="grid gap-y-6">
             <RadioGroup.Option value="none" className=" outline-none">
               {({checked}) => (
                 <div className="">
@@ -176,7 +177,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
                   </RadioGroup.Label>
                   {checked && (
                     <div
-                      className="ml-8 grid gap-x-2 pt-2 items-center"
+                      className="ml-6 grid gap-x-1 pt-4 items-center"
                       style={{grid: '35px 50px/auto auto 1fr'}}
                     >
                       <Switch.Group>
@@ -201,14 +202,14 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
                       {params.spendingCeiling === null ? (
                         <div className=""></div>
                       ) : (
-                        <div className={`flex items-center gap-x-2 `}>
+                        <div className={`flex items-stretch `}>
                           <AmountInput
-                            className={`mx-2 w-[125px]`}
+                            className={`ml-2 w-[90px]`}
                             state={ceilingValueState}
                             onAccept={handleCeilingAmount}
                           />
                           <button
-                            className={`flex items-center px-2 `}
+                            className={`flex items-center pl-4 pr-2 `}
                             onClick={() =>
                               handleCeilingAmount(
                                 fGet(params.spendingCeiling) + 5000
@@ -257,14 +258,14 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
                       {params.spendingFloor === null ? (
                         <div className=""></div>
                       ) : (
-                        <div className={`flex items-center gap-x-2 `}>
+                        <div className={`flex items-stretch `}>
                           <AmountInput
-                            className={`mx-2 w-[125px]`}
+                            className={`ml-2 w-[90px]`}
                             state={floorValueState}
                             onAccept={handleFloorAmount}
                           />
                           <button
-                            className={`flex items-center px-2 `}
+                            className={`flex items-center  pl-4 pr-2  `}
                             onClick={() =>
                               handleFloorAmount(
                                 fGet(params.spendingFloor) + 5000
@@ -310,15 +311,15 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
                   </RadioGroup.Label>
                   {checked && (
                     <div
-                      className={` mt-4 col-span-2 mb-4 ml-6 flex items-center gap-x-2`}
+                      className={` mt-4 col-span-2 ml-6 flex items-stretch `}
                     >
                       <AmountInput
-                        className={`mr-4 `}
+                        className={`w-[100px]`}
                         state={fixedValueState}
                         onAccept={handleFixedAmount}
                       />
                       <button
-                        className={`flex items-center px-2 `}
+                        className={`flex items-center pl-4 pr-2 `}
                         onClick={() =>
                           handleFixedAmount(fGet(params.spendingFloor) + 5000)
                         }
@@ -340,8 +341,8 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
                 </div>
               )}
             </RadioGroup.Option>
-          </RadioGroup>
-        </div>
+          </div>
+        </RadioGroup>
       </ParamsInputBody>
     )
   }

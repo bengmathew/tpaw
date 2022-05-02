@@ -9,7 +9,6 @@ import {Config} from '../Config'
 import {AppError} from './AppError'
 import {AppPage} from './AppPage'
 import {Footer} from './Footer'
-import {Header} from './Header'
 
 type Value = {setGlobalError: (error: Error) => void}
 const [Context, useSetGlobalError] = createContext<Value>('GlobalErrorCallback')
@@ -47,6 +46,15 @@ export const _ErrorFallback = React.memo(({error}: {error: Error}) => {
               <FontAwesomeIcon className="text-[60px]" icon={faSpider} />
               <h2 className="text-xl ">{_message(error)}</h2>
             </div>
+            <h2 className="">
+              If this keeps happening try:{' '}
+              <button className="btn-dark btn-sm" onClick={() => {
+                window.localStorage.removeItem('params')
+                window.location.reload()
+              }}>
+                Reset All Inputs
+              </button>
+            </h2>
           </div>
         </div>
         <Footer />
