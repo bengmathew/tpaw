@@ -5,9 +5,9 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {RadioGroup, Switch} from '@headlessui/react'
 import _ from 'lodash'
 import React, {useMemo, useState} from 'react'
-import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
 import {Contentful} from '../../../Utils/Contentful'
 import {fGet, noCase} from '../../../Utils/Utils'
+import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
 import {useSimulation} from '../../App/WithSimulation'
 import {AmountInput, useAmountInputState} from '../../Common/Inputs/AmountInput'
 import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
@@ -21,9 +21,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
     const {params, setParams, tpawResult, highlightPercentiles} =
       useSimulation()
 
-    const {asYFN, withdrawalStartYear} = extendTPAWParams(
-      tpawResult.args.params
-    )
+    const {asYFN, withdrawalStartYear} = extendTPAWParams(tpawResult.args.params)
     const withdrawalStartAsYFN = asYFN(withdrawalStartYear)
     const content = usePlanContent()
 
@@ -111,40 +109,40 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
 
     return (
       <ParamsInputBody {...props}>
-        <RadioGroup
-          value={`${type}`}
-          className=""
-          onChange={(type: _Type) => {
-            switch (type) {
-              case 'fixedSpending':
-                handleFixedAmount(lastFixedEntry ?? defaultFloorAmount)
-                break
-              case 'none': {
-                const p = _.cloneDeep(params)
-                p.spendingCeiling = null
-                p.spendingFloor = null
-                setParams(p)
-                break
+        <div className="">
+          <RadioGroup
+            value={`${type}`}
+          className="grid gap-y-6"
+            onChange={(type: _Type) => {
+              switch (type) {
+                case 'fixedSpending':
+                  handleFixedAmount(lastFixedEntry ?? defaultFloorAmount)
+                  break
+                case 'none': {
+                  const p = _.cloneDeep(params)
+                  p.spendingCeiling = null
+                  p.spendingFloor = null
+                  setParams(p)
+                  break
+                }
+                case 'separateCeilingAndFloor':
+                  const p = _.cloneDeep(params)
+                  p.spendingCeiling = hasCeiling ? lastCeilingEntry : null
+                  p.spendingFloor = hasFloor ? lastFloorEntry : null
+                  setParams(p)
+                  break
+                default:
+                  noCase(type)
               }
-              case 'separateCeilingAndFloor':
-                const p = _.cloneDeep(params)
-                p.spendingCeiling = hasCeiling ? lastCeilingEntry : null
-                p.spendingFloor = hasFloor ? lastFloorEntry : null
-                setParams(p)
-                break
-              default:
-                noCase(type)
-            }
-            setType(type)
-          }}
-        >
-          <RadioGroup.Description>
-            <Contentful.RichText
-              body={content.spendingCeilingAndFloor.intro.fields.body}
-              p="mb-6 p-base"
-            />
-          </RadioGroup.Description>
-          <div className="grid gap-y-6">
+              setType(type)
+            }}
+          >
+            <RadioGroup.Description>
+              <Contentful.RichText
+                body={content.spendingCeilingAndFloor.intro.fields.body}
+                p="mb-4 p-base"
+              />
+            </RadioGroup.Description>
             <RadioGroup.Option value="none" className=" outline-none">
               {({checked}) => (
                 <div className="">
@@ -341,8 +339,8 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
                 </div>
               )}
             </RadioGroup.Option>
-          </div>
-        </RadioGroup>
+          </RadioGroup>
+        </div>
       </ParamsInputBody>
     )
   }
