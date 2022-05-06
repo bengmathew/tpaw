@@ -86,10 +86,11 @@ export const ParamsInput = React.memo(
           summary.style.display = transition === 1 ? 'none' : 'block'
           applyPaddingToHTMLElement(at0.padding, summary)
 
+          console.dir(at0.padding)
+
           // Detail.
           detail.style.opacity = `${transition}`
           detail.style.display = transition === 0 ? 'none' : 'grid'
-          detail.style.paddingTop = `${at1.padding.top}px`
           if (transition === 0) {
             setTransitionCount(x => x + 1)
           }
@@ -121,7 +122,7 @@ export const ParamsInput = React.memo(
             >
               <h2
                 className={`uppercase font-bold 
-                ${layout === 'mobile' ? 'invisible' : ''}`}
+                ${layout !== 'laptop' ? 'invisible' : 'invisible'}`}
               >
                 Input
               </h2>
@@ -142,37 +143,19 @@ export const ParamsInput = React.memo(
             className={`absolute top-0 left-0 h-full grid`}
             style={{
               width: `${sizingAt1.position.width}px`,
-              grid: layout === 'mobile' ? '1fr/1fr' : 'auto 1fr/1fr',
+              grid: '1fr/1fr',
             }}
             ref={detailRef}
           >
-            {layout !== 'mobile' && (
-              <h2
-                className="uppercase font-bold  bg-planBG sticky top-0 z-10"
-                style={{
-                  paddingLeft: `${
-                    sizingAt1.padding.left + sizingAt1.cardPadding.left
-                  }px`,
-                }}
-              >
-                Input
-              </h2>
-            )}
-            <div className="relative">
-              <_Body
-                key={transitionCount}
-                padding={{
-                  ...sizingAt1.padding,
-                  top: layout === 'mobile' ? 0 : sizingAt1.headingMarginBottom,
-                }}
-                cardPadding={sizingAt1.cardPadding}
-                layout={layout}
-                type={paramInputType}
-                onDone={() => setState('summary')}
-                chartType={chartType}
-                setChartType={setChartType}
-              />
-            </div>
+            <_Body
+              key={transitionCount}
+              sizing={sizingAt1}
+              layout={layout}
+              type={paramInputType}
+              onDone={() => setState('summary')}
+              chartType={chartType}
+              setChartType={setChartType}
+            />
           </div>
         </div>
       )
@@ -182,27 +165,25 @@ export const ParamsInput = React.memo(
 
 const _Body = React.memo(
   ({
-    cardPadding,
-    padding,
+    sizing,
     type,
     layout,
     onDone,
     chartType,
     setChartType,
   }: {
-    cardPadding: Padding
-    padding: Padding
+    sizing: {
+      padding: Padding
+      cardPadding: Padding
+      headingMarginBottom: number
+    }
     layout: 'desktop' | 'mobile' | 'laptop'
     type: ParamsInputType
     onDone: () => void
     chartType: ChartPanelType
     setChartType: (type: ChartPanelType) => void
   }) => {
-    const props: ParamsInputBodyProps = {
-      layout,
-      padding,
-      cardPadding,
-    }
+    const props: ParamsInputBodyProps = {layout, sizing}
 
     switch (type) {
       case 'age':

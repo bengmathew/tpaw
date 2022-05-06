@@ -10,7 +10,7 @@ export interface ChartComponent<Data> {
   draw: (ctx: ChartContext<Data>) => void
   destroy?: () => void
   update?: (
-    change: 'init' | 'pointer' | 'state' | 'size',
+    change: 'init' | 'pointer' | 'state' | 'sizing',
     ctx: ChartContext<Data>,
     registerAnimation: ChartRegisterAnimation
   ) => void

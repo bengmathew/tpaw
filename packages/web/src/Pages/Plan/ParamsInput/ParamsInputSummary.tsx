@@ -47,13 +47,17 @@ export const ParamsInputSummary = React.memo(
         className={` grid w-full`} // This is needed if we start in exited state.
         style={{grid: '1fr auto/1fr'}}
       >
-        <div className={`flex flex-col items-start mb-16`}>
+        <div
+          className={`flex flex-col items-start mb-16 ${
+            layout === 'desktop' ? 'max-w-[500px]' : ''
+          }`}
+        >
           <div
             className={`flex flex-col gap-y-12 sm:gap-y-16 relative z-0 w-full`}
           >
             <div className="">
               <h2
-                className={`text-[18px] sm:text-2xl font-bold mb-4`}
+                className={`text-[18px] sm:text-xl font-bold mb-4`}
                 style={labelStyle}
               >
                 Age and Retirement
@@ -70,7 +74,7 @@ export const ParamsInputSummary = React.memo(
             </div>
             <div className="">
               <h2
-                className="text-[18px] sm:text-2xl font-bold mb-4"
+                className="text-[18px] sm:text-xl font-bold mb-4"
                 style={labelStyle}
               >
                 Savings and Income
@@ -107,7 +111,7 @@ export const ParamsInputSummary = React.memo(
             </div>
             <div className="">
               <h2
-                className="text-[18px] sm:text-2xl font-bold mb-4"
+                className="text-[18px] sm:text-xl font-bold mb-4"
                 style={labelStyle}
               >
                 Spending
@@ -140,7 +144,7 @@ export const ParamsInputSummary = React.memo(
 
             <div className="">
               <h2
-                className="text-[18px] sm:text-2xl font-bold mb-4"
+                className="text-[18px] sm:text-xl font-bold mb-4"
                 style={labelStyle}
               >
                 Expected Returns and Inflation
@@ -165,7 +169,7 @@ export const ParamsInputSummary = React.memo(
 
             <div className="">
               <h2
-                className="text-[18px] sm:text-2xl font-bold mb-4"
+                className="text-[18px] sm:text-xl font-bold mb-4"
                 style={labelStyle}
               >
                 Risk and Time Preference
@@ -221,23 +225,28 @@ const _Button = React.memo(
 
     return (
       <button
-        className={` rounded-2xl text-left w-full bg-cardBG border-planBG border-2`}
+        className={` rounded-2xl text-left w-full   border-planBG border-[2px] overflow-hidden`}
         onClick={() => setState(type)}
         ref={ref}
-        style={{padding: paddingCSS(padding)}}
       >
-        <div className=" flex items-center">
-          {showHeading && (
-            <h2 className="font-semibold mb-1 ">{paramsInputLabel(type)}</h2>
-          )}
-          {warn && (
-            <h2 className="h-[18px] w-[18px] flex items-center justify-center ml-2 text-[13px] font-bold rounded-full bg-errorBlockBG text-errorBlockFG">
-              <FontAwesomeIcon icon={faExclamation} />
-            </h2>
-          )}
-        </div>
-        <div className="grid gap-y-1 text-sm text-gray-500">
-          <_SectionSummary type={type} />
+        <div className="border-[3px] bg-cardBG border-gray-00 rounded-2xl -m-[2px] p-[2px]">
+          <div className="" style={{padding: paddingCSS(padding)}}>
+            <div className=" flex items-center">
+              {showHeading && (
+                <h2 className="font-semibold mb-1 ">
+                  {paramsInputLabel(type)}
+                </h2>
+              )}
+              {warn && (
+                <h2 className="h-[18px] w-[18px] flex items-center justify-center ml-2 text-[13px] font-bold rounded-full bg-errorBlockBG text-errorBlockFG">
+                  <FontAwesomeIcon icon={faExclamation} />
+                </h2>
+              )}
+            </div>
+            <div className="grid gap-y-1 text-sm text-gray-600">
+              <_SectionSummary type={type} />
+            </div>
+          </div>
         </div>
       </button>
     )
@@ -362,14 +371,14 @@ export const _SectionSummary = React.memo(
             Fixed Spending: {formatCurrency(fGet(params.spendingCeiling))}
           </h2>
         ) : (
-          <h2>
+          <>
             {params.spendingCeiling && (
               <h2>Ceiling: {formatCurrency(params.spendingCeiling)}</h2>
             )}
             {params.spendingFloor && (
               <h2>Floor: {formatCurrency(params.spendingFloor)}</h2>
             )}
-          </h2>
+          </>
         )
       }
       case 'legacy': {

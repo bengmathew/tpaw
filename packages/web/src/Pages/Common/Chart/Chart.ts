@@ -1,28 +1,23 @@
+import localPoint from '@visx/event/lib/localPoint'
 import {gsap} from 'gsap'
 import _ from 'lodash'
-import {Padding, RectExt, rectExt, Size} from '../../../Utils/Geometry'
+import {Padding, rectExt, Size} from '../../../Utils/Geometry'
 import {linearFnFomPoints} from '../../../Utils/LinearFn'
 import {SimpleRange} from '../../../Utils/SimpleRange'
-import {fGet} from '../../../Utils/Utils'
+import {assert, fGet} from '../../../Utils/Utils'
 import {ChartComponent} from './ChartComponent/ChartComponent'
 import {ChartContext} from './ChartContext'
 import {
   ChartDataTransition,
-  chartDataTransitionCurrNum,
   chartDataTransitionCurrObj,
 } from './ChartUtils/ChartDataTransition'
 
 export type ChartXYRange = {x: SimpleRange; y: SimpleRange}
 export type ChartAnimation = {ease: gsap.EaseFunction; duration: number}
-
-export type ChartState = {
-  area: (size: Size) => {viewport: RectExt; padding: Padding}
-  xyRange: ChartXYRange
-  alpha: number
-}
+export type ChartState = {xyRange: ChartXYRange}
+export type ChartSizing = {size: Size; padding: Padding}
 
 export class Chart<Data> {
-  private _canvasContext: CanvasRenderingContext2D
   private _pointer: {x: number; y: number}
   private _dataTransition: ChartDataTransition<Data>
   private _dataAnimation: ReturnType<typeof gsap.to> | null = null
@@ -30,36 +25,43 @@ export class Chart<Data> {
   private _stateAnimation: ReturnType<typeof gsap.to> | null = null
   private _components: readonly ChartComponent<Data>[]
 
+  private _callbacks = {
+    draw: this.draw.bind(this),
+    registerAnimation: this._registerAnimation.bind(this),
+    onMouse: this._handleMouse.bind(this),
+  }
+  private _activeAnimations: (gsap.core.Tween | gsap.core.Timeline)[] = []
+
   constructor(
-    canvas: HTMLCanvasElement,
+    private _canvas: HTMLCanvasElement,
     data: Data,
-    state: ChartState,
+    xyRange: ChartXYRange,
     components: readonly ChartComponent<Data>[],
-    private debugName: string,
-    private _size: Size,
-    private _registerAnimation: <
-      T extends gsap.core.Tween | gsap.core.Timeline
-    >(
-      tween: T
-    ) => T
+    private _sizing: ChartSizing
   ) {
     this._components = components
-    this._canvasContext = fGet(canvas.getContext('2d'))
 
     this._dataTransition = {target: data, prev: data, transition: 1}
-    this._stateTransition = {target: state, prev: state, transition: 1}
+    this._stateTransition = {target: {xyRange}, prev: {xyRange}, transition: 1}
 
-    this._pointer = {x: this._size.width * 0.25, y: 0}
+    this._pointer = {x: this._sizing.size.width * 0.25, y: 0}
     const context = this._getContext()
     this._components.forEach(x =>
-      x.update?.('init', context, this._registerAnimation)
+      x.update?.('init', context, this._callbacks.registerAnimation)
     )
+    _canvas.addEventListener('pointermove', this._callbacks.onMouse)
+    _canvas.addEventListener('pointerenter', this._callbacks.onMouse)
+    _canvas.addEventListener('pointerleave', this._callbacks.onMouse)
   }
 
   destroy() {
     this._components.forEach(x => x.destroy?.())
     this._dataAnimation?.kill()
     this._stateAnimation?.kill()
+    assert(this._activeAnimations.length === 0)
+    this._canvas.removeEventListener('pointermove', this._callbacks.onMouse)
+    this._canvas.removeEventListener('pointerenter', this._callbacks.onMouse)
+    this._canvas.removeEventListener('pointerleave', this._callbacks.onMouse)
   }
 
   setComponents(components: readonly ChartComponent<Data>[]) {
@@ -67,19 +69,16 @@ export class Chart<Data> {
     this._components = components
     const context = this._getContext()
     this._components.forEach(x =>
-      x.update?.('init', context, this._registerAnimation)
+      x.update?.('init', context, this._callbacks.registerAnimation)
     )
+    this.draw()
   }
 
-  updatePointer(pointer: {x: number; y: number}) {
-    this._pointer = pointer
-    const context = this._getContext()
-    this._components.forEach(x =>
-      x.update?.('pointer', context, this._registerAnimation)
-    )
-  }
-
-  updateState(data: Data, state: ChartState, animation: ChartAnimation | null) {
+  setState(
+    data: Data,
+    xyRange: ChartXYRange,
+    animation: ChartAnimation | null
+  ) {
     if (this._dataTransition.target !== data) {
       // Cannot interpolate data, so accept that data update mid transition will
       // be jerky.
@@ -101,7 +100,7 @@ export class Chart<Data> {
     }
 
     this._stateTransition.prev = _interpolateState(this._stateTransition)
-    this._stateTransition.target = state
+    this._stateTransition.target = {xyRange}
     this._stateAnimation?.kill()
     if (animation) {
       this._stateAnimation = this._registerAnimation(
@@ -117,25 +116,26 @@ export class Chart<Data> {
 
     const context = this._getContext()
     this._components.forEach(x =>
-      x.update?.('state', context, this._registerAnimation)
+      x.update?.('state', context, this._callbacks.registerAnimation)
     )
+    this.draw()
   }
 
-  setSize(size: Size) {
-    if (_.isEqual(size, this._size)) {
-      return
-    }
-    this._size = size
+  setSizing(sizing: ChartSizing) {
+    if (_.isEqual(sizing, this._sizing)) return
+
+    this._sizing = sizing
     const context = this._getContext()
     this._components.forEach(x =>
-      x.update?.('size', context, this._registerAnimation)
+      x.update?.('sizing', context, this._callbacks.registerAnimation)
     )
+    this.draw()
   }
 
   draw() {
     const context = this._getContext()
     const {canvasContext} = context
-    canvasContext.globalAlpha = context.currState.alpha
+    canvasContext.clearRect(0, 0, this._canvas.width, this._canvas.height)
     this._components.forEach(component => {
       canvasContext.save()
       component.draw(context)
@@ -147,44 +147,62 @@ export class Chart<Data> {
     const currState = _interpolateState(this._stateTransition)
     return {
       pointer: this._pointer,
-      canvasContext: this._canvasContext,
+      canvasContext: fGet(this._canvas.getContext('2d')),
       dataTransition: this._dataTransition,
       stateTransition: this._stateTransition,
       currState,
       derivedState: {
-        prev: _chartDerivedState(this._size, this._stateTransition.prev),
-        target: _chartDerivedState(this._size, this._stateTransition.target),
-        curr: _chartDerivedState(this._size, currState),
+        prev: _chartDerivedState(this._sizing, this._stateTransition.prev),
+        target: _chartDerivedState(this._sizing, this._stateTransition.target),
+        curr: _chartDerivedState(this._sizing, currState),
       },
-      chartSize: this._size,
+      sizing: this._sizing,
     }
+  }
+
+  private _handleMouse(e: MouseEvent) {
+    this._pointer = fGet(localPoint(this._canvas, e))
+    const context = this._getContext()
+    this._components.forEach(x =>
+      x.update?.('pointer', context, this._callbacks.registerAnimation)
+    )
+    this.draw()
+  }
+
+  private _registerAnimation<T extends gsap.core.Tween | gsap.core.Timeline>(
+    tween: T
+  ): T {
+    tween.eventCallback('onStart', () => {
+      this._activeAnimations.push(tween)
+      if (this._activeAnimations.length === 1) {
+        gsap.ticker.add(this._callbacks.draw)
+      }
+    })
+    const handleDone = () => {
+      _.remove(this._activeAnimations, x => x === tween)
+      if (this._activeAnimations.length === 0) {
+        gsap.ticker.remove(this._callbacks.draw)
+      }
+    }
+    tween.eventCallback('onComplete', handleDone)
+    // As per https://greensock.com/forums/topic/22563-working-example-of-oninterrupt-callback/
+    // this obviates the need to handle "kill"
+    tween.eventCallback('onInterrupt', handleDone)
+    return tween
   }
 }
 
 const _interpolateState = (
   stateTransition: ChartDataTransition<ChartState>
-): ChartState => {
-  const {transition} = stateTransition
-  const xyRange = chartDataTransitionCurrObj(stateTransition, x => x.xyRange)
-  const alpha = chartDataTransitionCurrNum(stateTransition, x => x.alpha)
-  const prevArea = stateTransition.prev.area
-  const targetArea = stateTransition.target.area
-  const area = (size: Size) =>
-    chartDataTransitionCurrObj(
-      {transition, prev: prevArea(size), target: targetArea(size)},
-      x => x
-    )
-  return {
-    xyRange,
-    alpha,
-    area,
-  }
-}
+): ChartState => ({
+  xyRange: chartDataTransitionCurrObj(stateTransition, x => x.xyRange),
+})
 
 export type ChartStateDerived = ReturnType<typeof _chartDerivedState>
-const _chartDerivedState = (size: Size, state: ChartState) => {
-  const {xyRange, area} = state
-  const {viewport, padding} = area(size)
+const _chartDerivedState = (sizing: ChartSizing, state: ChartState) => {
+  const {xyRange} = state
+  const {size, padding} = sizing
+  const viewport = rectExt({x: 0, y: 0, ...size})
   const plotArea = rectExt({
     x: viewport.x + padding.left,
     y: viewport.y + padding.top,

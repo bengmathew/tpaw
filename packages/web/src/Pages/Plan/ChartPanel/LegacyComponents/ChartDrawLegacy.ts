@@ -1,22 +1,16 @@
 import {formatCurrency} from '../../../../Utils/FormatCurrency'
-import { rectExt } from '../../../../Utils/Geometry'
 import {ChartComponent} from '../../../Common/Chart/ChartComponent/ChartComponent'
 import {ChartContext} from '../../../Common/Chart/ChartContext'
 import {chartDataTransitionCurrNumArr} from '../../../Common/Chart/ChartUtils/ChartDataTransition'
 import {ChartUtils} from '../../../Common/Chart/ChartUtils/ChartUtils'
-import {TPAWChartLegacyData} from '../TPAWChartLegacyData'
+import {TPAWChartDataLegacy} from '../TPAWChart/TPAWChartDataLegacy'
 
 const pad = {vert: 6, horz: 10}
 const _fontSize = 11
-const _lineLength = 10
-export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
-  draw: (context: ChartContext<TPAWChartLegacyData>) => {
-    const {
-      canvasContext: ctx,
-      stateTransition,
-      dataTransition,
-      derivedState,
-    } = context
+const _lineLength = 8
+export const chartDrawLegacy = (): ChartComponent<TPAWChartDataLegacy> => ({
+  draw: (context: ChartContext<TPAWChartDataLegacy>) => {
+    const {canvasContext: ctx, dataTransition, derivedState} = context
     const {scale, plotArea, viewport} = derivedState.curr
     const graphX = plotArea.right - _lineLength
 
@@ -30,43 +24,6 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
       x.percentiles.filter(x => !x.isHighlighted).map(x => x.data)
     )
 
-    // Draw background
-    const backgroundRect2 = rectExt({
-      x: plotArea.x,
-      y: plotArea.y - 15,
-      right: plotArea.right,
-      bottom: plotArea.bottom + 10,
-    })
-
-    ctx.beginPath()
-    ChartUtils.roundRect(ctx, backgroundRect2, 5)
-    ctx.fillStyle = ChartUtils.color.orange[200]
-    ctx.fill()
-
-    const backgroundRect = rectExt({
-      x: plotArea.x + (plotArea.width - _lineLength),
-      y: plotArea.y - 15,
-      right: plotArea.right,
-      bottom: plotArea.bottom + 10,
-    })
-
-    ctx.beginPath()
-    ChartUtils.roundRect(ctx, backgroundRect, 5)
-    ctx.fillStyle = ChartUtils.color.orange[400]
-    ctx.fill()
-
-    ChartUtils.roundRect(
-      ctx,
-      rectExt({
-        x: viewport.x,
-        width: viewport.width,
-        y: backgroundRect.y,
-        bottom: viewport.bottom,
-      }),
-      5
-    )
-    ctx.clip()
-
     // Draw the minor lines.
     ctx.beginPath()
     minorDataYs.forEach(dataY => {
@@ -74,7 +31,7 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
       ctx.moveTo(graphX, graphY)
       ctx.lineTo(graphX + _lineLength, graphY)
     })
-    ctx.lineWidth = 0.5
+    ctx.lineWidth = 0.3
     ctx.strokeStyle = ChartUtils.color.gray[900]
     ctx.stroke()
 
@@ -85,23 +42,15 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
       ctx.moveTo(graphX, graphY)
       ctx.lineTo(graphX + _lineLength, graphY)
     })
-    ctx.lineWidth = 1.2
+    ctx.lineWidth = 2
     ctx.strokeStyle = ChartUtils.color.gray[500]
     ctx.stroke()
 
     //Draw the targets.
-    ctx.globalAlpha = ctx.globalAlpha * 0.7
+    ctx.globalAlpha =  0.7
     ctx.beginPath()
     majorDataYs.forEach(dataY =>
-      ctx.ellipse(
-        graphX + _lineLength / 2,
-        scale.y(dataY),
-        4,
-        4,
-        0,
-        0,
-        Math.PI * 4
-      )
+      ctx.ellipse(graphX, scale.y(dataY), 4, 4, 0, 0, Math.PI * 4)
     )
     ctx.fillStyle = ChartUtils.color.gray[800]
     ctx.fill()
@@ -162,11 +111,12 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
       ctx.beginPath()
       ctx.moveTo(graphX, graphY)
       const yLabelHandleY = yLabelGraphY - yLabelHeight / 2
+      const lineWidth = graphX - yLabelHandleX
       ChartUtils.roundedLine(
         ctx,
         [
-          {x: graphX + _lineLength / 2, y: graphY},
-          {x: yLabelHandleX + 10, y: yLabelHandleY},
+          {x: graphX, y: graphY},
+          {x: yLabelHandleX + lineWidth * 0.4, y: yLabelHandleY},
           {x: yLabelHandleX, y: yLabelHandleY},
         ],
         10
@@ -175,16 +125,5 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartLegacyData> => ({
       ctx.lineWidth = 1
       ctx.stroke()
     })
-
-    // Draw the label.
-    ctx.font = ChartUtils.getFont(15, 'bold')
-    ctx.fillStyle = ChartUtils.color.gray[700]
-    ctx.textBaseline = 'bottom'
-    ctx.textAlign = 'left'
-    ctx.fillText(
-      'Legacy',
-      plotArea.x + pad.horz,
-      yLabelGraphY - yLabelHeight - pad.vert
-    )
   },
 })

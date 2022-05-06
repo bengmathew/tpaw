@@ -11,22 +11,20 @@ const pad = 5
 const maxPad = 30
 export class ChartMinMaxYAxis<Data> implements ChartComponent<Data> {
   constructor(
-    public format: (x: number) => string,
+    public format: (data: Data, x: number) => string,
     public fillStyle: string,
     public globalMaxX: (data: Data) => number,
     public minMaxForX: (data: Data, x: number) => {min: number; max: number}
   ) {}
 
   public draw(context: ChartContext<Data>) {
-    const {
-      canvasContext: ctx,
-      dataTransition,
-      derivedState,
-    } = context
+    const {canvasContext: ctx, dataTransition, derivedState} = context
     const {scale, plotArea} = derivedState.curr
 
     ctx.fillStyle = this.fillStyle
     ctx.font = ChartUtils.getMonoFont(11)
+
+    const format = (x: number) => this.format(dataTransition.target, x)
 
     const drawAtX = (textAlign: 'right' | 'left', graphX: number) => {
       ctx.textAlign = textAlign
@@ -35,8 +33,8 @@ export class ChartMinMaxYAxis<Data> implements ChartComponent<Data> {
         chartDataTransitionCurrObj(dataTransition, data => {
           const exactDataY = this.minMaxForX(data, dataX)
           const exactMeasure = {
-            max: ctx.measureText(this.format(exactDataY.max)),
-            min: ctx.measureText(this.format(exactDataY.min)),
+            max: ctx.measureText(format(exactDataY.max)),
+            min: ctx.measureText(format(exactDataY.min)),
           }
           const testPoints = (labelWidth: number) => {
             const sign = textAlign === 'left' ? 1 : -1
@@ -75,8 +73,8 @@ export class ChartMinMaxYAxis<Data> implements ChartComponent<Data> {
         min: scale.y(exactDataY.min),
       }
       const exactDataYStr = {
-        max: this.format(exactDataY.max),
-        min: this.format(exactDataY.min),
+        max: format(exactDataY.max),
+        min: format(exactDataY.min),
       }
 
       const idealMinLabelGraphY = exactGraphY.min + exactMeasureHeight.min + pad
@@ -137,14 +135,14 @@ export class ChartMinMaxYAxis<Data> implements ChartComponent<Data> {
       prevGlobalMaxDataY > targetGlobalMaxDataY
         ? [prevGlobalMaxDataY, prevGlobalMaxDataX]
         : [targetGlobalMaxDataY, targetGlobalMaxDataX]
-    const globalMaxDataYText = this.format(globalMaxDataY)
+    const globalMaxDataYText = format(globalMaxDataY)
     const globalMaxGraphX = scale.x(globalMaxDataX)
     const globalMaxGraphY = scale.y(globalMaxDataY)
     if (
       globalMaxGraphY <
       Math.min(leftInfo.maxGraphY, rightInfo.maxGraphY) - 50
     ) {
-      const globalMaxYTextMeasure = ctx.measureText(this.format(1))
+      const globalMaxYTextMeasure = ctx.measureText(format(1))
       const globalMaxGraphXAdj = _.clamp(
         globalMaxGraphX,
         plotArea.x,

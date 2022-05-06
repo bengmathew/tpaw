@@ -2,15 +2,25 @@ import {faChevronRight} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {gsap} from 'gsap'
 import _ from 'lodash'
-import React, {useEffect, useImperativeHandle, useMemo, useState} from 'react'
+import React, {
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import ReactDOM from 'react-dom'
 import {Contentful} from '../../../Utils/Contentful'
-import {RectExt, rectExt} from '../../../Utils/Geometry'
+import {Padding, RectExt, rectExt} from '../../../Utils/Geometry'
 import {fGet, noCase} from '../../../Utils/Utils'
 import {useWindowSize} from '../../../Utils/WithWindowSize'
 import {useSimulation} from '../../App/WithSimulation'
 import {chartDrawDataLines} from '../../Common/Chart/ChartComponent/ChartDrawDataLines'
-import {ChartReact} from '../../Common/Chart/ChartReact'
+import {
+  ChartReact,
+  ChartReactState,
+  ChartReactStatefull,
+} from '../../Common/Chart/ChartReact'
 import {ChartUtils} from '../../Common/Chart/ChartUtils/ChartUtils'
 import {usePlanContent} from '../Plan'
 import {chartPanelLabel} from './ChartPanelLabel'
@@ -22,10 +32,13 @@ import {
   isChartPanelSpendingDiscretionaryType,
   isChartPanelSpendingEssentialType,
 } from './ChartPanelType'
-import {tpawChartData, TPAWChartData} from './TPAWChartData'
+import {
+  tpawChartDataMain,
+  TPAWChartDataMain,
+} from './TPAWChart/TPAWChartDataMain'
 
 const duration = 0.5
-const scale = .95
+const scale = 0.95
 const widthForFullSize = 700
 export type ChartPanelMenuStateful = {
   setButtonScale: (scale: number) => void
@@ -34,16 +47,21 @@ type Props = {
   className?: string
   type: ChartPanelType
   onSelect: (type: ChartPanelType) => void
+  layout: 'mobile' | 'desktop' | 'laptop'
+  showDescriptionPopUp: () => void
 }
 export const ChartPanelMenu = React.memo(
   React.forwardRef<ChartPanelMenuStateful, Props>(
-    ({className = '', type, onSelect}: Props, forwardRef) => {
+    (
+      {className = '', type, onSelect, layout, showDescriptionPopUp}: Props,
+      forwardRef
+    ) => {
       const windowSize = useWindowSize()
       const simulation = useSimulation()
       const {params} = simulation.tpawResult.args
 
       const [referenceElement, setReferenceElement] =
-        useState<HTMLButtonElement | null>(null)
+        useState<HTMLDivElement | null>(null)
 
       useImperativeHandle(
         forwardRef,
@@ -83,7 +101,7 @@ export const ChartPanelMenu = React.memo(
         fGet(popperElement).style.left =
           windowSize.width < widthForFullSize
             ? `0px`
-            : `${Math.min(position.left, windowSize.width - menuWidth-20)}px`
+            : `${Math.min(position.left, windowSize.width - menuWidth - 20)}px`
         const timeline = gsap.timeline()
         timeline.fromTo(popperElement, {scale: 0.95}, {scale: 1, duration}, 0)
       }
@@ -110,6 +128,8 @@ export const ChartPanelMenu = React.memo(
       return (
         <>
           <ChartPanelMenuButton
+            layout={layout}
+            showDescriptionPopUp={showDescriptionPopUp}
             className={className}
             type={type}
             onClick={handleShow}
@@ -207,8 +227,8 @@ const _Button = React.memo(
     const {label, subLabel} = chartPanelLabel(params, type, 'short')
     const isCurrent = _.isEqual(currType, type)
     const windowSize = useWindowSize()
-    const width = windowSize.width < 640 ? 100 : 125
-    const height = windowSize.width < 640 ? 40 : 45
+    const width = windowSize.width < 640 ? 120 : 145
+    const height = windowSize.width < 640 ? 50 : 55
     return (
       <button
         className={`${className} text-left px-4 py-2  grid  gap-x-4 items-center
@@ -247,16 +267,16 @@ const _Button = React.memo(
               ? 'bg-gray-300 border-gray-300 '
               : 'bg-gray-200 border-gray-300 '
           }`}
-          style={{
-            width: `${width + 20}px`,
-            height: `${height + 10}px`,
-          }}
+          style={{width: `${width}px`, height: `${height}px`}}
         >
           <_Chart
             data={chartData}
             isCurrent={isCurrent}
             drawKey={drawKey}
-            startingPosition={rectExt({x: 10, y: 5, width, height})}
+            startingSizing={{
+              position: rectExt({x: 0, y: 0, width, height}),
+              padding: {left: 10, right: 10, top: 5, bottom: 5},
+            }}
           />
         </div>
       </button>
@@ -303,7 +323,7 @@ function useAllChartData() {
   return useMemo(() => {
     const {params} = tpawResult.args
     const _data = (type: ChartPanelType) =>
-      tpawChartData(type, tpawResult, highlightPercentiles)
+      tpawChartDataMain(type, tpawResult, highlightPercentiles)
     const result = {
       spending: {
         total: _data('spending-total'),
@@ -329,36 +349,30 @@ function useAllChartData() {
   }, [tpawResult, highlightPercentiles])
 }
 
-const _processData = (data: TPAWChartData) => {
-  const xyRange = {
+const _processData = (
+  data: TPAWChartDataMain
+): ChartReactState<TPAWChartDataMain> => ({
+  data,
+  xyRange: {
     x: data.years.displayRange,
     y: {start: data.min.y, end: data.max.y},
-  }
-  const area = ({width, height}: {width: number; height: number}) => ({
-    viewport: rectExt({x: 0, y: 0, width, height}),
-    padding: {left: 0, top: 0, bottom: 0, right: 0},
-  })
-  return {
-    data,
-    xyRange,
-    area,
-    alpha: 1,
-    animation: null,
-  }
-}
+  },
+  animation: null,
+})
 
 const _Chart = React.memo(
   ({
     data,
     isCurrent,
     drawKey,
-    startingPosition,
+    startingSizing,
   }: {
-    data: TPAWChartData
+    data: TPAWChartDataMain
     isCurrent: boolean
     drawKey: number
-    startingPosition: RectExt
+    startingSizing: {position: RectExt; padding: Padding}
   }) => {
+    const ref = useRef<ChartReactStatefull | null>(null)
     const [state, setState] = useState(() => _processData(data))
 
     useEffect(() => {
@@ -367,29 +381,27 @@ const _Chart = React.memo(
 
     const components = useMemo(
       () => [
-        chartDrawDataLines<TPAWChartData>({
+        chartDrawDataLines<TPAWChartDataMain>({
           lineWidth: 0.5 * 0.8,
           strokeStyle: isCurrent
             ? ChartUtils.color.gray[400]
             : ChartUtils.color.gray[400],
-          dataFn: (data: TPAWChartData) => ({
+          dataFn: (data: TPAWChartDataMain) => ({
             lines: data.percentiles
               .filter(x => !x.isHighlighted)
               .map(x => x.data),
-            isXInGroup: data.isAgeInGroup,
           }),
         }),
 
-        chartDrawDataLines<TPAWChartData>({
+        chartDrawDataLines<TPAWChartDataMain>({
           lineWidth: 1.2 * 0.8,
           strokeStyle: isCurrent
             ? ChartUtils.color.gray[500]
             : ChartUtils.color.gray[500],
-          dataFn: (data: TPAWChartData) => ({
+          dataFn: (data: TPAWChartDataMain) => ({
             lines: data.percentiles
               .filter(x => x.isHighlighted)
               .map(x => x.data),
-            isXInGroup: data.isAgeInGroup,
           }),
         }),
       ],
@@ -399,10 +411,11 @@ const _Chart = React.memo(
 
     // return <></>
     return (
-      <ChartReact<[TPAWChartData]>
-        chartRef={() => {}}
-        charts={[{state, components, key: 'menu', order: 0}]}
-        startingPosition={startingPosition}
+      <ChartReact<TPAWChartDataMain>
+        ref={ref}
+        state={state}
+        starting={{sizing: startingSizing}}
+        components={components}
       />
     )
   }

@@ -8,10 +8,12 @@ export type ChartDataTransition<Data> = {
   transition: number
 }
 
-export const chartDataTransitionCurrObj = <
-  Obj extends Record<string, number | Record<string, number> | number[]>,
-  Data
->(
+// Thanks: https://stackoverflow.com/a/47842314
+type Indirect<X> = Record<string, number | number[] | X>
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface TransitionObject extends Indirect<TransitionObject> {}
+
+export const chartDataTransitionCurrObj = <Obj extends TransitionObject, Data>(
   dataTransition: ChartDataTransition<Data>,
   dataFn: (state: Data) => Obj
 ): {[P in keyof Obj]: Obj[P]} => {

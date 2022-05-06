@@ -103,23 +103,17 @@ const _LaptopAndDesktop = React.memo(
   React.forwardRef<GuidePanelStateful, Props>(
     ({type, sizing, transitionRef}: Props, forwardRef) => {
       const outerRef = useRef<HTMLDivElement | null>(null)
-      const innerRef = useRef<HTMLDivElement | null>(null)
+      // const innerRef = useRef<HTMLDivElement | null>(null)
       const headerRef = useRef<HTMLHeadingElement | null>(null)
       const setTransition = useCallback(
         (transition: number) => {
           const {position, padding, headingMarginBottom} = sizing(transition)
           // Outer.
           applyRectSizingToHTMLElement(position, fGet(outerRef.current))
-          fGet(outerRef.current).style.paddingTop = `${padding.top}px`
+          applyPaddingToHTMLElement(padding, fGet(outerRef.current))
           fGet(outerRef.current).style.opacity = `${transition}`
           fGet(outerRef.current).style.display =
             transition === 0 ? 'none' : 'block'
-
-          // Inner.
-          applyPaddingToHTMLElement(
-            {...padding, top: 0},
-            fGet(innerRef.current)
-          )
 
           // Heading.
           fGet(
@@ -136,17 +130,12 @@ const _LaptopAndDesktop = React.memo(
 
       const content = useContent(type)
       return (
-        <div className="absolute" ref={outerRef}>
-          <div className="overflow-scroll h-full" ref={innerRef}>
-            <h2
-              className="uppercase sticky top-0 bg-planBG   font-bold "
-              ref={headerRef}
-            >
-              Guide
-            </h2>
-            <div className={` `}>
-              <_RichText className="">{content.body.fields.body}</_RichText>
-            </div>
+        <div className="absolute overflow-scroll" ref={outerRef}>
+          <h2 className="uppercase font-bold " ref={headerRef}>
+            Guide
+          </h2>
+          <div className={` `}>
+            <_RichText className="">{content.body.fields.body}</_RichText>
           </div>
         </div>
       )

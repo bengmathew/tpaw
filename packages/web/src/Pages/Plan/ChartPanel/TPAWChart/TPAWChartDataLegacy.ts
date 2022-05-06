@@ -1,9 +1,9 @@
 import _ from 'lodash'
-import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
-import {fGet} from '../../../Utils/Utils'
-import {SimulationInfo} from '../../App/WithSimulation'
+import {extendTPAWParams} from '../../../../TPAWSimulator/TPAWParamsExt'
+import {fGet} from '../../../../Utils/Utils'
+import {SimulationInfo} from '../../../App/WithSimulation'
 
-export type TPAWChartLegacyData = {
+export type TPAWChartDataLegacy = {
   label: string
   percentiles: {
     data: number
@@ -13,10 +13,10 @@ export type TPAWChartLegacyData = {
   year: number
 }
 
-export function tpawChartLegacyData(
+export function tpawChartDataLegacy(
   tpawResult: SimulationInfo['tpawResult'],
   highlightPercentiles: SimulationInfo['highlightPercentiles']
-): TPAWChartLegacyData {
+): TPAWChartDataLegacy {
   const {legacyByPercentile, args} = tpawResult
   const {numYears} = extendTPAWParams(args.params)
   return {
@@ -30,9 +30,9 @@ export function tpawChartLegacyData(
   }
 }
 
-export const tpawChartLegacyDataYRange = ({
+export const tpawChartDataLegacyYRange = ({
   percentiles,
-}: TPAWChartLegacyData) => {
+}: TPAWChartDataLegacy) => {
   return {
     start: 0,
     end: Math.max(0.0001, fGet(_.last(percentiles)).data),

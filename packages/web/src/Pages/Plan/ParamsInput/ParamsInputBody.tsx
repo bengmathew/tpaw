@@ -22,13 +22,15 @@ export type ParamsInputBodyProps = Omit<
 export const ParamsInputBody = React.memo(
   ({
     layout,
-    padding,
-    cardPadding,
+    sizing,
     children: childrenIn,
   }: {
     layout: 'mobile' | 'laptop' | 'desktop'
-    padding: Padding
-    cardPadding: Padding
+    sizing: {
+      padding: Padding
+      cardPadding: Padding
+      headingMarginBottom: number
+    }
     children:
       | ReactElement
       | [
@@ -47,13 +49,9 @@ export const ParamsInputBody = React.memo(
     const child = {...children, content}
 
     return layout === 'mobile' ? (
-      <_Mobile padding={padding}>{child}</_Mobile>
+      <_Mobile padding={sizing.padding}>{child}</_Mobile>
     ) : (
-      <_LaptopAndDesktop
-        padding={padding}
-        cardPadding={cardPadding}
-        layout={layout}
-      >
+      <_LaptopAndDesktop sizing={sizing} layout={layout}>
         {child}
       </_LaptopAndDesktop>
     )
@@ -63,13 +61,15 @@ export const ParamsInputBody = React.memo(
 export const _LaptopAndDesktop = React.memo(
   ({
     layout,
-    padding,
-    cardPadding,
+    sizing: {padding, cardPadding, headingMarginBottom},
     children,
   }: {
     layout: 'laptop' | 'desktop'
-    padding: Padding
-    cardPadding: Padding
+    sizing: {
+      padding: Padding
+      cardPadding: Padding
+      headingMarginBottom: number
+    }
     children: {
       content: ReactElement
       error?: ReactElement
@@ -130,35 +130,43 @@ export const _LaptopAndDesktop = React.memo(
         {/* Scroll Container. Main and input needs separate scroll containers,
            so they don't interfere with each other's scroll. */}
         <div
-          className={`absolute inset-0  max-h-full overflow-y-scroll `}
+          className={`absolute inset-0  max-h-full overflow-y-scroll 
+          ${layout === 'desktop' ? 'grid' : ''}`}
+          style={{grid: '1fr auto/1fr'}}
           ref={mainScrollRef}
         >
           <div
-            className={`h-full ${layout !== 'laptop' ? 'grid' : ''}`}
-            style={{grid: '1fr auto/1fr'}}
+            className=""
+            // Padding should be inside scroll container to place scrollbar at
+            // edge and at main to get full height, but should not contain the
+            // footer.
+            style={{padding: paddingCSS(padding)}}
           >
-            <div
-              className="" // Padding should be inside scroll container to place scrollbar at
-              // edge and at main to get full height.
-              style={{padding: paddingCSS(padding)}}
+            <h2
+              className="uppercase font-bold top-0 z-10"
+              style={{
+                paddingBottom: `${headingMarginBottom}px`,
+                paddingLeft: `${cardPadding.left}px`,
+              }}
             >
-              <div
-                className="bg-cardBG rounded-2xl"
-                style={{padding: paddingCSS(cardPadding)}}
-              >
-                <div className="">{children.content}</div>
-              </div>
-              {children?.error && (
-                // Cannot set mb-3 and bottom-3 because it leads to scroll.
-                <div className=" sticky bottom-0 pt-4">
-                  <div className=" bg-red-100 rounded-lg p-2">
-                    {children?.error}
-                  </div>
-                </div>
-              )}
+              Input
+            </h2>
+            <div
+              className="bg-cardBG rounded-2xl border-gray-200 border"
+              style={{padding: paddingCSS(cardPadding)}}
+            >
+              <div className="">{children.content}</div>
             </div>
-            {layout !== 'laptop' && <Footer />}
+            {children?.error && (
+              // Cannot set mb-3 and bottom-3 because it leads to scroll.
+              <div className=" sticky bottom-0 pt-4">
+                <div className=" bg-red-100 rounded-lg p-2">
+                  {children?.error}
+                </div>
+              </div>
+            )}
           </div>
+          {layout !== 'laptop' && <Footer />}
         </div>
         {children?.input && (
           // Scroll container. Main and input needs separate scroll containers,
@@ -171,7 +179,7 @@ export const _LaptopAndDesktop = React.memo(
             style={{padding: paddingCSS(padding)}}
           >
             <div
-              className={`bg-cardBG rounded-2xl`}
+              className={`bg-cardBG rounded-2xl border-gray-200 border`}
               style={{padding: paddingCSS(cardPadding)}}
             >
               <div className="">
@@ -210,11 +218,11 @@ export const _Mobile = React.memo(
       if (!children.error) setShowError(false)
     }, [children.error])
     return (
-      <div
-        className="absolute inset-0  max-h-full"
-        style={{padding: paddingCSS(padding)}}
-      >
-        <div className="h-full grid  overflow-y-scroll" style={{grid: '1fr auto/1fr'}}>
+      <div className="absolute inset-0  max-h-full">
+        <div
+          className="h-full grid  overflow-y-scroll"
+          style={{grid: '1fr auto/1fr', padding: paddingCSS(padding)}}
+        >
           <div className="pb-16">{children.content}</div>
           <div className="-mb-[60px] pb-[60px]">
             <Footer />

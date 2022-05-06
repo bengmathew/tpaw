@@ -23,7 +23,7 @@ module.exports = {
       pageFGLight: colors.gray[600],
       boldFG: colors.indigo[800],
       alt: colors.blue[900],
-      darkGray: colors.gray[800],
+      darkGray: colors.gray[700],
 
       // Error and Success
       errorFG: colors.red[500],

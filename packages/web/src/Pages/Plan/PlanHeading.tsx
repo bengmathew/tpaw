@@ -44,17 +44,19 @@ export const PlanHeading = React.memo(
       useAssertConst([transitionRef])
 
       return (
-        <div className="absolute  items-center gap-x-4 z-10 bg-planBG bg-opacity-90" ref={outerRef}>
-          <button
-            className="flex items-center gap-x-2 text-sm sm:text-base btn-dark px-4 py-1.5"
-            onClick={onDone}
-          >
-            <FontAwesomeIcon className="" icon={faLeftLong} />
-            Done
-          </button>
-          <h2 className="text-xl sm:text-2xl font-bold text-center">
-            {paramsInputLabel(type)}
-          </h2>
+        <div className="absolute  z-10" ref={outerRef}>
+          <div className="flex w-full items-center gap-x-4  bg-planBG bg-opacity-80">
+            <button
+              className="flex items-center gap-x-2 text-sm sm:text-base btn-dark px-4 py-1.5"
+              onClick={onDone}
+            >
+              <FontAwesomeIcon className="" icon={faLeftLong} />
+              Done
+            </button>
+            <h2 className="text-xl sm:text-2xl font-bold text-start">
+              {paramsInputLabel(type)}
+            </h2>
+          </div>
         </div>
       )
     }

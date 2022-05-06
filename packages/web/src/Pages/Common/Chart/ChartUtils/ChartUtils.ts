@@ -206,7 +206,7 @@ export namespace ChartUtils {
       '900': '#78350f',
     },
     // theme2: '#f7dacd',
-    // theme2: '#9ed4cf',
+  // theme2: '#9ed4cf',
     theme1Light: '#14b8a6', // teal 500
     theme1: '#0d9488', // teal 600
     theme1Dark: '#0f766e', // teal 700

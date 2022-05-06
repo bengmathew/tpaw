@@ -12,7 +12,6 @@ export const chartDrawDataLines = <Data>({
   strokeStyle: string
   dataFn: (data: Data) => {
     lines: ((x: number) => number)[]
-    isXInGroup: (x: number) => boolean
   }
 }): ChartComponent<Data> => ({
   draw: (context: ChartContext<Data>) => {
@@ -39,7 +38,7 @@ export const chartDrawDataLines = <Data>({
     ctx.strokeStyle = strokeStyle
     ctx.beginPath()
 
-    const {lines, isXInGroup} = dataFn(dataTransition.target)
+    const {lines} = dataFn(dataTransition.target)
     const transition = {
       prev: dataFn(dataTransition.prev),
       target: dataFn(dataTransition.target),
@@ -53,9 +52,7 @@ export const chartDrawDataLines = <Data>({
         )
         const graphX = scale.x(dataX)
         const graphY = scale.y(dataY)
-        j === 0 || isXInGroup(dataX) !== isXInGroup(dataX - 1)
-          ? ctx.moveTo(graphX, graphY)
-          : ctx.lineTo(graphX, graphY)
+        j === 0 ? ctx.moveTo(graphX, graphY) : ctx.lineTo(graphX, graphY)
       })
     })
     ctx.stroke()

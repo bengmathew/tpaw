@@ -72,7 +72,11 @@ export const Plan = React.memo((planContent: PlanContent) => {
 
   const paramType = state === 'summary' ? prevState : state
 
-  const transitionRef = useRef({transition: state === 'summary' ? 0 : 1})
+  const transitionStart: 0 | 1 = state === 'summary' ? 0 : 1
+  const transitionRef = useRef({
+    transition: transitionStart,
+    target: transitionStart,
+  })
   const _sizing = useMemo(() => {
     switch (layout) {
       // ------------------------------------------
@@ -87,13 +91,13 @@ export const Plan = React.memo((planContent: PlanContent) => {
 
         // Guide
         const guide = (transition: number) => {
-          const y = topFn(1)
+          const y = 0
           const height = windowSize.height - y
           const width = windowSize.width * 0.28
           const x = linearFnFomPoints(0, -width + pad * 0.75, 1, 0)(transition)
           return {
             position: rectExt({width, x, height, y}),
-            padding: {left: pad, right: pad * 0.75, top: 0, bottom: pad},
+            padding: {left: pad, right: pad * 0.75, top: topFn(1), bottom: pad},
             headingMarginBottom,
           }
         }
@@ -103,22 +107,25 @@ export const Plan = React.memo((planContent: PlanContent) => {
           const horzCardPadding = linearFnFomPoints(0, 10, 1, 20)(transition)
           const vertCardPadding = linearFnFomPoints(0, 10, 1, 20)(transition)
           const totalTop = topFn(transition)
-          const y = linearFnFomPoints(0, 0, 1, totalTop)(transition)
-          const top = totalTop - y
+          // const y = linearFnFomPoints(0, 0, 1, totalTop)(transition)
+          const y = 0
           const height = windowSize.height - y
           const x = guide(transition).position.right
           const width = Math.max(
             windowSize.width * linearFnFomPoints(0, 0.37, 1, 0.3)(transition),
             350
           )
+          const padding = {
+            left: pad * 0.25,
+            right: pad * 0.75,
+            top: totalTop,
+            bottom: pad,
+          }
+
+          // console.dir(padding)
           return {
             position: rectExt({width, x, height, y}),
-            padding: {
-              left: pad * 0.25,
-              right: pad * 0.75,
-              top,
-              bottom: pad,
-            },
+            padding,
             cardPadding: {
               left: horzCardPadding,
               right: horzCardPadding,
@@ -146,7 +153,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
           const padTop = 15
           const positionFn = (transition: number) => {
             const y = topFn(transition) - padTop
-            const x = input(transition).position.right + pad * .25
+            const x = input(transition).position.right + pad * 0.25
             return {
               y,
               x,
@@ -172,16 +179,13 @@ export const Plan = React.memo((planContent: PlanContent) => {
 
           return {
             position: rectExt(position),
-            padding: {
-              left: 20,
-              right: 20,
-              top: 10,
-              bottom: linearFnFomPoints(0, 10, 1, 0)(transition),
-            },
-            // 18px is text-lg 24px is text-2xl.
-            menuButtonScale: linearFnFomPoints(0, 1, 1, 18 / 24)(transition),
-            cardPadding: {left: 10, right: 10, top: 10, bottom: 10},
+            padding: {left: 20, right: 20, top: 10, bottom: 10},
+            // 18px is text-lg 20px is text-xl.
+            menuButtonScale: linearFnFomPoints(0, 1, 1, 18 / 20)(transition),
+            cardPadding: {left: 15, right: 15, top: 10, bottom: 10},
             headingMarginBottom: 10,
+            legacyWidth: linearFnFomPoints(0, 120, 1, 100)(transition),
+            intraGap: linearFnFomPoints(0, 20, 1, 10)(transition),
           }
         }
 
@@ -200,8 +204,8 @@ export const Plan = React.memo((planContent: PlanContent) => {
           const inset = 0
           let height =
             windowSize.width < 800
-              ? linearFnFomPoints(400, 300, 800, 500)(windowSize.width)
-              : 500
+              ? linearFnFomPoints(400, 300, 800, 550)(windowSize.width)
+              : 550
 
           const padBottom = (transition: number) =>
             linearFnFomPoints(0, pad, 1, pad / 2)(transition)
@@ -224,14 +228,11 @@ export const Plan = React.memo((planContent: PlanContent) => {
               top: pad,
               bottom: padBottom(transition),
             },
-            cardPadding: {
-              left: 10,
-              right: 10,
-              top: 10,
-              bottom: 10,
-            },
+            cardPadding: {left: 15, right: 15, top: 10, bottom: 10},
             headingMarginBottom,
             menuButtonScale: 1,
+            legacyWidth: 120,
+            intraGap: pad,
           }
         }
 
@@ -248,17 +249,22 @@ export const Plan = React.memo((planContent: PlanContent) => {
 
         const input = (transition: number) => {
           const horzBodyPadding = linearFnFomPoints(0, 10, 1, 20)(transition)
-          const y = linearFnFomPoints(
-            0,
-            chart(0).position.bottom,
-            1,
-            heading(1).position.bottom
-          )(transition)
+          const y = chart(transition).position.bottom
+          const paddingTop =
+            navHeadingMarginBottom +
+            linearFnFomPoints(
+              0,
+              chart(0).position.bottom,
+              1,
+              heading(1).position.bottom
+            )(transition) -
+            y
+
           return {
             position: rectExt({
               width: linearFnFomPoints(
                 0,
-                550,
+                windowSize.width,
                 1,
                 windowSize.width * 0.5
               )(transition),
@@ -269,7 +275,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
             padding: {
               left: pad * 2,
               right: pad * 1.75,
-              top: navHeadingMarginBottom,
+              top: paddingTop,
               bottom: linearFnFomPoints(0, 0, 1, pad)(transition),
             },
             cardPadding: {
@@ -285,18 +291,18 @@ export const Plan = React.memo((planContent: PlanContent) => {
         const headingMarginBottom = 10
 
         const guide = (transition: number) => {
-          const inputPositionAt1 = input(1).position
+          const inputAt1 = input(1)
           return {
             position: rectExt({
-              width: windowSize.width - inputPositionAt1.right,
-              height: inputPositionAt1.height,
-              x: inputPositionAt1.right,
+              width: windowSize.width - inputAt1.position.right,
+              height: inputAt1.position.height,
+              x: inputAt1.position.right,
               y: input(transition).position.y,
             }),
             padding: {
               left: pad * 0.25,
               right: pad * 2,
-              top: navHeadingMarginBottom,
+              top: inputAt1.padding.top,
               bottom: pad,
             },
             cardPadding: {left: 0, right: 0, top: 0, bottom: 0},
@@ -317,35 +323,25 @@ export const Plan = React.memo((planContent: PlanContent) => {
         const chart = (transition: number) => {
           let height = linearFnFomPoints(375, 330, 415, 355)(windowSize.width)
 
-          const padBottom = (transition: number) =>
-            linearFnFomPoints(0, pad, 1, 0)(transition)
           height -= linearFnFomPoints(
             0,
             0,
             1,
-            (navHeadingH + navHeadingMarginBottom) / 2
+            (navHeadingH + navHeadingMarginBottom) * 0.25
           )(transition)
           return {
-            position: rectExt({
-              width: windowSize.width,
-              height: height,
-              x: 0,
-              y: 0,
-            }),
+            position: rectExt({width: windowSize.width, height, x: 0, y: 0}),
             padding: {
               left: pad,
               right: pad,
               top: headerHeight + 5,
-              bottom: padBottom(transition),
+              bottom: pad,
             },
-            cardPadding: {
-              left: 15,
-              right: 15,
-              top: 10,
-              bottom: 10,
-            },
+            cardPadding: {left: 15, right: 15, top: 10, bottom: 10},
             headingMarginBottom,
             menuButtonScale: 1,
+            legacyWidth: 100,
+            intraGap: pad,
           }
         }
 
@@ -361,13 +357,13 @@ export const Plan = React.memo((planContent: PlanContent) => {
         }
 
         const input = (transition: number) => {
-          const horzBodyPadding = linearFnFomPoints(0, 10, 1, 20)(transition)
           const y = linearFnFomPoints(
             0,
             chart(0).position.bottom,
             1,
             heading(1).position.bottom
           )(transition)
+          const horzPad = linearFnFomPoints(0, pad, 1, pad * 2)(transition)
           return {
             position: rectExt({
               width: windowSize.width,
@@ -376,17 +372,12 @@ export const Plan = React.memo((planContent: PlanContent) => {
               y,
             }),
             padding: {
-              left: linearFnFomPoints(0, pad, 1, pad * 2)(transition),
-              right: pad,
+              left: horzPad,
+              right: horzPad,
               top: navHeadingMarginBottom,
               bottom: 0,
             },
-            cardPadding: {
-              left: horzBodyPadding,
-              right: horzBodyPadding,
-              top: 10,
-              bottom: 10,
-            },
+            cardPadding: {left: 10, right: 10, top: 10, bottom: 10},
             headingMarginBottom: 10,
           }
         }
@@ -434,15 +425,17 @@ export const Plan = React.memo((planContent: PlanContent) => {
   )
 
   useEffect(() => {
+    const target = state === 'summary' ? 0 : 1
+    transitionRef.current.target = target
     const tween = gsap.to(transitionRef.current, {
-      transition: state === 'summary' ? 0 : 1,
+      transition: target,
       duration,
       onUpdate: function () {
         const {transition} = this.targets()[0] as {transition: number}
         fGet(headingRef.current).setTransition(transition)
         fGet(paramsRef.current).setTransition(transition)
         fGet(guideRef.current).setTransition(transition)
-        fGet(chartRef.current).setTransition(transition)
+        fGet(chartRef.current).setTransition(transition, target)
       },
     })
     return () => {

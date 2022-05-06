@@ -1,4 +1,5 @@
-import {faCaretDown, faChevronRight} from '@fortawesome/pro-solid-svg-icons'
+import { faInfo } from '@fortawesome/free-solid-svg-icons'
+import {faCaretDown, faChevronRight, faInfoCircle} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import React from 'react'
 import {useSimulation} from '../../App/WithSimulation'
@@ -6,44 +7,68 @@ import {chartPanelLabel} from './ChartPanelLabel'
 import {ChartPanelType} from './ChartPanelType'
 
 type Props = {
+  layout: 'mobile' | 'desktop' | 'laptop'
   className?: string
   onClick: () => void
   type: ChartPanelType
+  showDescriptionPopUp: () => void
   style?: React.CSSProperties
 }
 export const ChartPanelMenuButton = React.memo(
-  React.forwardRef<HTMLButtonElement, Props>(
-    ({className = '', onClick, type, style}: Props, ref) => {
+  React.forwardRef<HTMLDivElement, Props>(
+    (
+      {
+        className = '',
+        onClick,
+        type,
+        style,
+        layout,
+        showDescriptionPopUp,
+      }: Props,
+      ref
+    ) => {
       const simulation = useSimulation()
       const {params} = simulation.tpawResult.args
       const {label, subLabel} = chartPanelLabel(params, type, 'full')
       return (
-        <button
-          className={`${className}  flex items-start gap-x-2 text-lg sm:text-2xl  font-bold  text-left"`}
-          onClick={onClick}
+        <div
+          className="flex justify-between gap-x-4 items-start"
           ref={ref}
-          style={{...style, transformOrigin:'top left'}}
+          style={{...style, transformOrigin: 'top left'}}
         >
-          <div className="">
-            <h2 className="">
-              {label.map((x, i) => (
-                <React.Fragment key={i}>
-                  <span>{x}</span>
-                  {i !== label.length - 1 && (
-                    <FontAwesomeIcon
-                      className="mx-1.5 text-sm sm:text-base lighten-2"
-                      icon={faChevronRight}
-                    />
-                  )}
-                </React.Fragment>
-              ))}
-            </h2>
-            {subLabel && (
-              <h2 className="font-bold text-base sm:text-xl">{subLabel}</h2>
-            )}
-          </div>
-          <FontAwesomeIcon className="mt-1" icon={faCaretDown} />
-        </button>
+          <button
+            className={`${className}  flex items-start gap-x-2 text-lg sm:text-xl  font-bold text-left`}
+            onClick={onClick}
+          >
+            <div className="">
+              <h2 className="">
+                {label.map((x, i) => (
+                  <React.Fragment key={i}>
+                    <span>{x}</span>
+                    {i !== label.length - 1 && (
+                      <FontAwesomeIcon
+                        className="mx-1.5 text-sm sm:text-base lighten-2"
+                        icon={faChevronRight}
+                      />
+                    )}
+                  </React.Fragment>
+                ))}
+              </h2>
+              {subLabel && (
+                <h2 className="font-bold text-base sm:text-xl">{subLabel}</h2>
+              )}
+            </div>
+            <FontAwesomeIcon className="mt-1" icon={faCaretDown} />
+          </button>
+          {layout === 'mobile' && (
+            <button
+              className=" w-[20px] h-[20px] mt-1 bg-gray-400 rounded-full flex items-center justify-center text-xs shrink-0"
+              onClick={showDescriptionPopUp}
+            >
+              <FontAwesomeIcon icon={faInfo}/>
+            </button>
+          )}
+        </div>
       )
     }
   )
