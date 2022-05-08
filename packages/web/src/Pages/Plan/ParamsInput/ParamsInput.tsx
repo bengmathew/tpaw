@@ -86,8 +86,6 @@ export const ParamsInput = React.memo(
           summary.style.display = transition === 1 ? 'none' : 'block'
           applyPaddingToHTMLElement(at0.padding, summary)
 
-          console.dir(at0.padding)
-
           // Detail.
           detail.style.opacity = `${transition}`
           detail.style.display = transition === 0 ? 'none' : 'grid'
