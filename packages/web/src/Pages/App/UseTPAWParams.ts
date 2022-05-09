@@ -1,25 +1,22 @@
 import _ from 'lodash'
-import { useRouter } from 'next/dist/client/router'
-import { useEffect, useMemo, useState } from 'react'
-import { getDefaultParams } from '../../TPAWSimulator/DefaultParams'
+import {useRouter} from 'next/dist/client/router'
+import {useEffect, useState} from 'react'
+import {getDefaultParams} from '../../TPAWSimulator/DefaultParams'
 import {
   TPAWParams,
   tpawParamsValidator,
-  TPAWParamsWithoutHistorical
+  TPAWParamsWithoutHistorical,
 } from '../../TPAWSimulator/TPAWParams'
-import {
-  extendTPAWParams
-} from '../../TPAWSimulator/TPAWParamsExt'
-import { TPAWParamsV1WithoutHistorical } from '../../TPAWSimulator/TPAWParamsV1'
-import { tpawParamsV1Validator } from '../../TPAWSimulator/TPAWParamsV1Validator'
-import { TPAWParamsV2WithoutHistorical } from '../../TPAWSimulator/TPAWParamsV2'
-import { tpawParamsV2Validator } from '../../TPAWSimulator/TPAWParamsV2Validator'
-import { TPAWParamsV3WithoutHistorical } from '../../TPAWSimulator/TPAWParamsV3'
-import { tpawParamsV3Validator } from '../../TPAWSimulator/TPAWParamsV3Validator'
-import { V4Params } from '../../TPAWSimulator/TPAWParamsV4'
-import { V5Params } from '../../TPAWSimulator/TPAWParamsV5'
-import { Validator } from '../../Utils/Validator'
-import { AppError } from './AppError'
+import {TPAWParamsV1WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV1'
+import {tpawParamsV1Validator} from '../../TPAWSimulator/TPAWParamsV1Validator'
+import {TPAWParamsV2WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV2'
+import {tpawParamsV2Validator} from '../../TPAWSimulator/TPAWParamsV2Validator'
+import {TPAWParamsV3WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV3'
+import {tpawParamsV3Validator} from '../../TPAWSimulator/TPAWParamsV3Validator'
+import {V4Params} from '../../TPAWSimulator/TPAWParamsV4'
+import {V5Params} from '../../TPAWSimulator/TPAWParamsV5'
+import {Validator} from '../../Utils/Validator'
+import {AppError} from './AppError'
 
 type _History = {stack: TPAWParams[]; curr: number}
 const _undo = (history: _History) =>
@@ -225,7 +222,7 @@ const _v4ToV5 = (
     ...rest,
   })
 
-  return {
+  const result: V5Params.ParamsWithoutHistorical = {
     ...rest,
     v: 5,
     people: {
@@ -255,6 +252,9 @@ const _v4ToV5 = (
         withdrawals.fundedByRiskPortfolio.flatMap(valueForYearRange),
     },
   }
+
+  V5Params.validator(result)
+  return result
 }
 
 export const numericYear = (

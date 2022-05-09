@@ -15,7 +15,7 @@ import {
   ChartPointerXAxisAnimatedState,
 } from './ChartPointerXAxis'
 
-const duration = 1 
+const duration = 1
 
 type _DataFn<Data> = (
   data: Data
@@ -132,12 +132,11 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
     const targetArgs: ChartPointerComponentTargetArgs = {
       ctx,
       dataX,
-      dataYInfos: _.sortBy(
+      dataYInfos: _.reverse(
         this._dataFn(dataTransition.target).map(({line, label}) => ({
           dataY: line(dataX),
           label,
-        })),
-        x => -x.dataY
+        }))
       ),
       chartState: stateTransition.target,
       chartStateDerived: derivedState.target,
@@ -210,12 +209,11 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
     )
     const {dataX} = currTransition
     const labels = this._dataFn(dataTransition.target).map(x => x.label)
-    const dataYInfos = _.sortBy(
+    const dataYInfos = _.reverse(
       chartDataTransitionCurrNumArr(dataTransition, x =>
         this._dataFn(x).map(({line}) => line(dataX))
-      ).map((dataY, i) => ({dataY, label: labels[i]})),
-      x => -x.dataY
-    )
+      )
+    ).map((dataY, i) => ({dataY, label: labels[i]}))
 
     const drawArgs = <A>(animatedProps: A) => ({
       dataX,
