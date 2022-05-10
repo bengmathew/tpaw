@@ -3,7 +3,7 @@ import { fGet } from '../../../../Utils/Utils'
 
 export const paramsInputTypes = [
   'age',
-  'current-portfolio-value',
+  'current-portfolio-balance',
   'future-savings',
   'income-during-retirement',
   'extra-spending',

@@ -81,7 +81,7 @@ export const ParamsInputSummary = React.memo(
               </h2>
               <div className="flex flex-col gap-y-4 ">
                 <_Button
-                  type="current-portfolio-value"
+                  type="current-portfolio-balance"
                   setState={setState}
                   state={state}
                   showHeading
@@ -229,7 +229,7 @@ const _Button = React.memo(
         onClick={() => setState(type)}
         ref={ref}
       >
-        <div className="border-[3px] bg-cardBG border-gray-00 rounded-2xl -m-[2px] p-[2px]">
+        <div className="border-[3px] bg-cardBG  border-gray-00 rounded-2xl -m-[2px] p-[2px]">
           <div className="" style={{padding: paddingCSS(padding)}}>
             <div className=" flex items-center">
               {showHeading && (
@@ -319,7 +319,7 @@ export const _SectionSummary = React.memo(
           </>
         )
       }
-      case 'current-portfolio-value': {
+      case 'current-portfolio-balance': {
         return <h2>{formatCurrency(params.savingsAtStartOfStartYear)}</h2>
       }
       case 'future-savings':

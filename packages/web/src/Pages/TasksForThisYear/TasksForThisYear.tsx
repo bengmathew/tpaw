@@ -1,13 +1,16 @@
-import React, { ReactNode } from 'react'
-import { TPAWSimulationForYear } from '../../TPAWSimulator/RunTPAWSimulation'
-import { UseTPAWWorkerResult } from '../../TPAWSimulator/Worker/UseTPAWWorker'
-import { formatCurrency } from '../../Utils/FormatCurrency'
-import { formatPercentage } from '../../Utils/FormatPercentage'
-import { extendTPAWParams } from '../../TPAWSimulator/TPAWParamsExt'
-import { AppPage } from '../App/AppPage'
-import { Footer } from '../App/Footer'
+import {faLeftLong} from '@fortawesome/pro-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import Link from 'next/link'
+import React, {ReactNode} from 'react'
+import {TPAWSimulationForYear} from '../../TPAWSimulator/RunTPAWSimulation'
+import {extendTPAWParams} from '../../TPAWSimulator/TPAWParamsExt'
+import {UseTPAWWorkerResult} from '../../TPAWSimulator/Worker/UseTPAWWorker'
+import {formatCurrency} from '../../Utils/FormatCurrency'
+import {formatPercentage} from '../../Utils/FormatPercentage'
+import {AppPage} from '../App/AppPage'
+import {Footer} from '../App/Footer'
 // import { useTPAW } from '../Common/UseTPAW/UseTPAW'
-import { useSimulation } from '../App/WithSimulation'
+import {useSimulation} from '../App/WithSimulation'
 
 type _Props = {
   withdrawal: TPAWSimulationForYear['withdrawalAchieved'] & {
@@ -23,7 +26,7 @@ const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
     savingsPortfolioAllocation: allocation,
   } = tpawResult.firstYearOfSomeRun
   const {params} = tpawResult.args
-  const {asYFN, withdrawalStartYear} = extendTPAWParams(params)
+  const {asYFN, withdrawalStartYear} = extendTPAWParams(params.original)
 
   return {
     withdrawal: {
@@ -56,7 +59,15 @@ export const TasksForThisYear = React.memo(() => {
       <div className="flex flex-col items-center mb-20 mt-6">
         <div className="w-full max-w-[650px] px-2 z-0">
           <div className="">
-            <h1 className="font-bold text-4xl ">Tasks for This Year</h1>
+            <div className=" flex flex-row items-center gap-x-4 gap-y-">
+              <Link href="/plan">
+                <a className="flex items-center gap-x-2 text-sm sm:text-base btn-dark px-4 py-1.5">
+                  <FontAwesomeIcon className="" icon={faLeftLong} />
+                  Done
+                </a>
+              </Link>
+              <h1 className="font-bold text-3xl">Tasks for This Year</h1>
+            </div>
 
             {withdrawal.total !== 0 || withdrawalsStarted ? (
               <>

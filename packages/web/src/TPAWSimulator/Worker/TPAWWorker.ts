@@ -31,14 +31,16 @@ addEventListener('message', event => {
       {
         let start0 = performance.now()
         const {numRuns, params} = eventData.args
-        const simulationUsingExpectedReturns = runTPAWSimulation(
+        const resultsFromUsingExpectedReturns = runTPAWSimulation({
+          type: 'useExpectedReturns',
           params,
-          null
-        ).byYearFromNow
+        }).byYearFromNow
         let start = performance.now()
         const runs = _.range(numRuns).map((x, i) =>
-          runTPAWSimulation(params, {
-            simulationUsingExpectedReturns,
+          runTPAWSimulation({
+            type: 'useHistoricalReturns',
+            params,
+            resultsFromUsingExpectedReturns,
             randomIndexesIntoHistoricalReturnsByYear: year =>
               memoizedRandom(i, year),
           })

@@ -1,11 +1,12 @@
 import _ from 'lodash'
-import { assert, fGet, noCase } from '../../Utils/Utils'
-import { TPAWSimulationForYear } from '../RunTPAWSimulation'
-import { StatsTools } from '../StatsTools'
-import { TPAWParams } from '../TPAWParams'
+import {assert, fGet, noCase} from '../../Utils/Utils'
+import {TPAWSimulationForYear} from '../RunTPAWSimulation'
+import {StatsTools} from '../StatsTools'
+import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
 import {
+  TPAWWorkerArgs,
   TPAWWorkerResult,
-  TPAWWorkerRunSimulationResult
+  TPAWWorkerRunSimulationResult,
 } from './TPAWWorkerTypes'
 
 export type TPAWRunInWorkerByPercentileByYearsFromNow = {
@@ -17,6 +18,14 @@ export type TPAWRunInWorkerResult = {
     total: TPAWRunInWorkerByPercentileByYearsFromNow
     essential: TPAWRunInWorkerByPercentileByYearsFromNow
     extra: TPAWRunInWorkerByPercentileByYearsFromNow
+    // essential: {
+      //   total: TPAWRunInWorkerByPercentileByYearsFromNow
+    //   byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>
+    // }
+    // extra: {
+    //   total: TPAWRunInWorkerByPercentileByYearsFromNow
+    //   byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>
+    // }
     regular: TPAWRunInWorkerByPercentileByYearsFromNow
   }
   startingBalanceOfSavingsPortfolio: TPAWRunInWorkerByPercentileByYearsFromNow
@@ -92,10 +101,14 @@ export class TPAWRunInWorker {
   private _runSimulation(
     worker: Worker,
     numRuns: number,
-    params: TPAWParams
+    params: TPAWParamsProcessed
   ): Promise<TPAWWorkerRunSimulationResult> {
     const taskID = _.uniqueId()
-    worker.postMessage({taskID, type: 'runSimulation', args: {numRuns, params}})
+    const args: Extract<TPAWWorkerArgs, {type: 'runSimulation'}>['args'] = {
+      numRuns,
+      params,
+    }
+    worker.postMessage({taskID, type: 'runSimulation', args})
     return new Promise<TPAWWorkerRunSimulationResult>(resolve =>
       this._resolvers.runSimulation.set(taskID, resolve)
     )
@@ -106,7 +119,10 @@ export class TPAWRunInWorker {
   ): Promise<Float64Array[]> {
     const taskID = _.uniqueId()
     const transferables: Transferable[] = data.map(x => x.buffer)
-    worker.postMessage({taskID, type: 'sortRows', args: {data}}, transferables)
+    const args: Extract<TPAWWorkerArgs, {type: 'sortRows'}>['args'] = {
+      data,
+    }
+    worker.postMessage({taskID, type: 'sortRows', args}, transferables)
     return new Promise<Float64Array[]>(resolve =>
       this._resolvers.sortRows.set(taskID, resolve)
     )
@@ -115,7 +131,7 @@ export class TPAWRunInWorker {
   async runSimulations(
     status: {canceled: boolean},
     numRuns: number,
-    params: TPAWParams,
+    params: TPAWParamsProcessed,
     percentiles: number[]
   ): Promise<TPAWRunInWorkerResult | null> {
     const start0 = performance.now()
@@ -245,6 +261,16 @@ export class TPAWRunInWorker {
 
     if (status.canceled) return null
 
+    const withdrawlsEssentialById = new Map<
+      number,
+      TPAWRunInWorkerByPercentileByYearsFromNow
+    >()
+
+    const withdrawlsExtraById = new Map<
+      number,
+      TPAWRunInWorkerByPercentileByYearsFromNow
+    >()
+
     const perfPostByYearsFromNow = performance.now() - start
     start = performance.now()
     const legacyByPercentile = await _processForByPercentile(legacyByRun)
@@ -259,6 +285,8 @@ export class TPAWRunInWorker {
         total: withdrawalsTotal,
         essential: withdrawalsEssential,
         extra: withdrawalsExtra,
+        // essential: {total: withdrawalsEssential, byId: withdrawlsEssentialById},
+        // extra: {total: withdrawalsExtra, byId: withdrawlsExtraById},
         regular: withdrawalsRegular,
       },
       startingBalanceOfSavingsPortfolio,

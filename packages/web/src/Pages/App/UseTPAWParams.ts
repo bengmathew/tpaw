@@ -13,8 +13,8 @@ import {TPAWParamsV2WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV2'
 import {tpawParamsV2Validator} from '../../TPAWSimulator/TPAWParamsV2Validator'
 import {TPAWParamsV3WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV3'
 import {tpawParamsV3Validator} from '../../TPAWSimulator/TPAWParamsV3Validator'
-import {V4Params} from '../../TPAWSimulator/TPAWParamsV4'
-import {V5Params} from '../../TPAWSimulator/TPAWParamsV5'
+import {TPAWParamsV4} from '../../TPAWSimulator/TPAWParamsV4'
+import {TPAWParamsV5} from '../../TPAWSimulator/TPAWParamsV5'
 import {Validator} from '../../Utils/Validator'
 import {AppError} from './AppError'
 
@@ -89,7 +89,7 @@ function _parseExternalParams(str: string | string[] | undefined | null) {
       if (parsed.v === 5) {
         v5 = tpawParamsValidator(parsed)
       } else if (parsed.v === 4) {
-        v5 = _v4ToV5(V4Params.validator(parsed))
+        v5 = _v4ToV5(TPAWParamsV4.validator(parsed))
       } else if (parsed.v === 3) {
         v5 = _v4ToV5(_v3ToV4(tpawParamsV3Validator(parsed)))
       } else if (parsed.v === 2) {
@@ -141,8 +141,8 @@ const _v1ToV2 = (
   const savings: ValueForYearRange[] = []
   const retirementIncome: ValueForYearRange[] = []
   v1.savings.forEach(x => {
-    const start = numericYear(v1, x.yearRange.start)
-    const end = numericYear(v1, x.yearRange.end)
+    const start = _numericYear(v1, x.yearRange.start)
+    const end = _numericYear(v1, x.yearRange.end)
     if (start < v1.age.retirement && end >= v1.age.retirement) {
       savings.push({
         ...x,
@@ -176,12 +176,12 @@ const _v2ToV3 = (
 }
 const _v3ToV4 = (
   v3: TPAWParamsV3WithoutHistorical
-): V4Params.ParamsWithoutHistorical => {
+): TPAWParamsV4.ParamsWithoutHistorical => {
   const {retirementIncome, savings, withdrawals, ...rest} = _.cloneDeep(v3)
   const addId = (
     x: TPAWParamsV3WithoutHistorical['savings'][number],
     id: number
-  ): V4Params.ValueForYearRange => ({...x, id})
+  ): TPAWParamsV4.ValueForYearRange => ({...x, id})
   retirementIncome
   return {
     ...rest,
@@ -195,11 +195,11 @@ const _v3ToV4 = (
   }
 }
 const _v4ToV5 = (
-  v4: V4Params.ParamsWithoutHistorical
-): V5Params.ParamsWithoutHistorical => {
+  v4: TPAWParamsV4.ParamsWithoutHistorical
+): TPAWParamsV5.ParamsWithoutHistorical => {
   const {age, savings, retirementIncome, withdrawals, ...rest} = v4
 
-  const year = (year: V4Params.YearRangeEdge): V5Params.Year =>
+  const year = (year: TPAWParamsV4.YearRangeEdge): TPAWParamsV5.Year =>
     year === 'start'
       ? {type: 'now'}
       : typeof year === 'number'
@@ -213,7 +213,7 @@ const _v4ToV5 = (
   const valueForYearRange = ({
     yearRange,
     ...rest
-  }: V4Params.ValueForYearRange): V5Params.ValueForYearRange => ({
+  }: TPAWParamsV4.ValueForYearRange): TPAWParamsV5.ValueForYearRange => ({
     yearRange: {
       type: 'startAndEnd',
       start: year(yearRange.start),
@@ -222,7 +222,7 @@ const _v4ToV5 = (
     ...rest,
   })
 
-  const result: V5Params.ParamsWithoutHistorical = {
+  const result: TPAWParamsV5.ParamsWithoutHistorical = {
     ...rest,
     v: 5,
     people: {
@@ -253,13 +253,13 @@ const _v4ToV5 = (
     },
   }
 
-  V5Params.validator(result)
+  TPAWParamsV5.validator(result)
   return result
 }
 
-export const numericYear = (
+const _numericYear = (
   {age}: {age: {start: number; retirement: number; end: number}},
-  x: V4Params.YearRangeEdge
+  x: TPAWParamsV4.YearRangeEdge
 ) =>
   x === 'start'
     ? age.start

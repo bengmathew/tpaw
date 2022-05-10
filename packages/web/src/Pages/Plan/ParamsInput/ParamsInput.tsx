@@ -188,7 +188,7 @@ const _Body = React.memo(
         return <ParamsInputAge {...props} />
       case 'risk-and-time-preference':
         return <ParamsInputRiskAndTimePreference {...props} />
-      case 'current-portfolio-value':
+      case 'current-portfolio-balance':
         return <ParamsInputCurrentPortfolioValue {...props} />
       case 'future-savings':
         return <ParamsInputFutureSavings onBack={onDone} {...props} />

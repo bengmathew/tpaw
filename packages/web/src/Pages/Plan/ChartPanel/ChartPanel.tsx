@@ -363,7 +363,7 @@ export const ChartPanel = React.memo(
 
       return (
         <div
-          className={`absolute top-0  right-0 z-10 bg-gray-400 overflow-hidden
+          className={`absolute top-0  right-0 z-10 bg-chartBG overflow-hidden
           ${layout == 'laptop' ? 'rounded-2xl' : ''}`}
           ref={outerRef}
         >

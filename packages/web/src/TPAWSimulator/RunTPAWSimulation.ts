@@ -1,44 +1,45 @@
 import _ from 'lodash'
-import {assert, fGet} from '../Utils/Utils'
-import {TPAWParams} from './TPAWParams'
+import {assert, fGet, noCase} from '../Utils/Utils'
 import {extendTPAWParams} from './TPAWParamsExt'
-import {processTPAWParams, TPAWParamsProcessed} from './TPAWParamsProcessed'
+import {TPAWParamsProcessed} from './TPAWParamsProcessed'
 
 export type TPAWSimulationResult = ReturnType<typeof runTPAWSimulation>
 export function runTPAWSimulation(
-  paramsIn: TPAWParams,
-  realizedReturnsFromSimulation: {
-    simulationUsingExpectedReturns: TPAWSimulationForYear[]
-    randomIndexesIntoHistoricalReturnsByYear?: (year: number) => number
-  } | null
+  args:
+    | {
+        type: 'useExpectedReturns'
+        params: TPAWParamsProcessed
+      }
+    | {
+        type: 'useHistoricalReturns'
+        params: TPAWParamsProcessed
+        resultsFromUsingExpectedReturns: TPAWSimulationForYear[]
+        randomIndexesIntoHistoricalReturnsByYear?: (year: number) => number
+      }
 ) {
-  const {numYears} = extendTPAWParams(paramsIn)
-  const params = processTPAWParams(
-    paramsIn,
-    realizedReturnsFromSimulation
-      ? realizedReturnsFromSimulation.randomIndexesIntoHistoricalReturnsByYear
-      : undefined
-  )
-  if (realizedReturnsFromSimulation)
-    assert(
-      realizedReturnsFromSimulation.simulationUsingExpectedReturns.length ===
-        numYears
-    )
+  const {numYears} = extendTPAWParams(args.params.original)
+  if (args.type === 'useHistoricalReturns')
+    assert(args.resultsFromUsingExpectedReturns.length === numYears)
 
+  const {historicalAdjusted} = args.params.returns
   const byYearFromNow: TPAWSimulationForYear[] = []
 
   _.range(numYears).reduce((prev, yearIndex) => {
     const result = runASingleYear(
-      params,
+      args.params,
       yearIndex,
-      realizedReturnsFromSimulation
-        ? {
-            simulationUsingExpectedReturns:
-              realizedReturnsFromSimulation.simulationUsingExpectedReturns[
-                yearIndex
+      args.type === 'useExpectedReturns'
+        ? {type: 'useExpectedReturns'}
+        : {
+            type: 'useHistoricalReturns',
+            resultsFromUsingExpectedReturns:
+              args.resultsFromUsingExpectedReturns[yearIndex],
+            historicalReturn:
+              historicalAdjusted[
+                args.randomIndexesIntoHistoricalReturnsByYear?.(yearIndex) ??
+                  _.random(historicalAdjusted.length - 1)
               ],
-          }
-        : null,
+          },
       prev
     )
     byYearFromNow.push(result)
@@ -47,7 +48,7 @@ export function runTPAWSimulation(
 
   const lastYear = fGet(_.last(byYearFromNow))
   const endingBalanceOfSavingsPortfolio = lastYear.savingsPortfolioEndingBalance
-  const legacy = endingBalanceOfSavingsPortfolio + params.legacy.external
+  const legacy = endingBalanceOfSavingsPortfolio + args.params.legacy.external
   return {byYearFromNow, endingBalanceOfSavingsPortfolio, legacy}
 }
 
@@ -55,16 +56,20 @@ export type TPAWSimulationForYear = ReturnType<typeof runASingleYear>
 export function runASingleYear(
   params: TPAWParamsProcessed,
   yearIndex: number,
-  realizedReturnsFromSimulation: {
-    simulationUsingExpectedReturns: {
-      wealthAndSpending: {
-        wealth: number
-        presentValueOfExtraWithdrawals: number
-        presentValueOfDesiredLegacy: number
-        presentValueOfRegularWithdrawals: number
-      }
-    }
-  } | null,
+  args:
+    | {type: 'useExpectedReturns'}
+    | {
+        type: 'useHistoricalReturns'
+        historicalReturn: {stocks: number; bonds: number}
+        resultsFromUsingExpectedReturns: {
+          wealthAndSpending: {
+            wealth: number
+            presentValueOfExtraWithdrawals: number
+            presentValueOfDesiredLegacy: number
+            presentValueOfRegularWithdrawals: number
+          }
+        }
+      },
   prev: {
     savingsPortfolioEndingBalance: number
   } | null
@@ -77,11 +82,14 @@ export function runASingleYear(
     const _expected = (allocation: {stocks: number; bonds: number}) =>
       params.returns.expected.bonds * allocation.bonds +
       params.returns.expected.stocks * allocation.stocks
-    const _realized = realizedReturnsFromSimulation
-      ? (allocation: {stocks: number; bonds: number}) =>
-          params.returns.realized[yearIndex].bonds * allocation.bonds +
-          params.returns.realized[yearIndex].stocks * allocation.stocks
-      : _expected
+    const _realized =
+      args.type === 'useExpectedReturns'
+        ? _expected
+        : args.type === 'useHistoricalReturns'
+        ? (allocation: {stocks: number; bonds: number}) =>
+            args.historicalReturn.bonds * allocation.bonds +
+            args.historicalReturn.stocks * allocation.stocks
+        : noCase(args)
 
     return {
       expected: {
@@ -150,26 +158,26 @@ export function runASingleYear(
     )
 
     const scale = (() => {
-      if (!realizedReturnsFromSimulation) return {legacy: 0, extraWithdrawls: 0}
-      const {simulationUsingExpectedReturns} = realizedReturnsFromSimulation
+      if (args.type === 'useExpectedReturns')
+        return {legacy: 0, extraWithdrawls: 0}
 
       const elasticityOfWealthWRTStocks =
-        simulationUsingExpectedReturns.wealthAndSpending.wealth === 0
+        args.resultsFromUsingExpectedReturns.wealthAndSpending.wealth === 0
           ? (params.targetAllocation.legacyPortfolio.stocks +
               params.targetAllocation.regularPortfolio.stocks +
               params.targetAllocation.regularPortfolio.stocks) /
             3
-          : (simulationUsingExpectedReturns.wealthAndSpending
+          : (args.resultsFromUsingExpectedReturns.wealthAndSpending
               .presentValueOfDesiredLegacy /
-              simulationUsingExpectedReturns.wealthAndSpending.wealth) *
+              args.resultsFromUsingExpectedReturns.wealthAndSpending.wealth) *
               params.targetAllocation.legacyPortfolio.stocks +
-            (simulationUsingExpectedReturns.wealthAndSpending
+            (args.resultsFromUsingExpectedReturns.wealthAndSpending
               .presentValueOfExtraWithdrawals /
-              simulationUsingExpectedReturns.wealthAndSpending.wealth) *
+              args.resultsFromUsingExpectedReturns.wealthAndSpending.wealth) *
               params.targetAllocation.regularPortfolio.stocks +
-            (simulationUsingExpectedReturns.wealthAndSpending
+            (args.resultsFromUsingExpectedReturns.wealthAndSpending
               .presentValueOfRegularWithdrawals /
-              simulationUsingExpectedReturns.wealthAndSpending.wealth) *
+              args.resultsFromUsingExpectedReturns.wealthAndSpending.wealth) *
               params.targetAllocation.regularPortfolio.stocks
 
       const elasticityOfExtraWithdrawalGoalsWRTWealth =
@@ -185,9 +193,11 @@ export function runASingleYear(
             elasticityOfWealthWRTStocks
 
       const percentIncreaseInWealthOverScheduled =
-        simulationUsingExpectedReturns.wealthAndSpending.wealth === 0
+        args.resultsFromUsingExpectedReturns.wealthAndSpending.wealth === 0
           ? 0
-          : wealth / simulationUsingExpectedReturns.wealthAndSpending.wealth - 1
+          : wealth /
+              args.resultsFromUsingExpectedReturns.wealthAndSpending.wealth -
+            1
 
       const legacy = Math.max(
         percentIncreaseInWealthOverScheduled * elasticityOfLegacyGoalsWRTWealth,

@@ -29,7 +29,7 @@ export const ChartPanelMenuButton = React.memo(
     ) => {
       const simulation = useSimulation()
       const {params} = simulation.tpawResult.args
-      const {label, subLabel} = chartPanelLabel(params, type, 'full')
+      const {label, subLabel} = chartPanelLabel(params.original, type, 'full')
       return (
         <div
           className="flex justify-between gap-x-4 items-start"

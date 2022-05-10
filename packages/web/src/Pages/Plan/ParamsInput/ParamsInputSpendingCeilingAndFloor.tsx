@@ -22,7 +22,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
       useSimulation()
 
     const {asYFN, withdrawalStartYear} = extendTPAWParams(
-      tpawResult.args.params
+      tpawResult.args.params.original
     )
     const withdrawalStartAsYFN = asYFN(withdrawalStartYear)
     const content = usePlanContent()

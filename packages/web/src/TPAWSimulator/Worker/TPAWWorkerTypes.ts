@@ -1,11 +1,12 @@
 import {TPAWSimulationForYear} from '../RunTPAWSimulation'
 import {TPAWParams} from '../TPAWParams'
+import { TPAWParamsProcessed } from '../TPAWParamsProcessed'
 
 export type TPAWWorkerArgs =
   | {
       type: 'runSimulation'
       taskID: string
-      args: {params: TPAWParams; numRuns: number}
+      args: {params: TPAWParamsProcessed; numRuns: number}
     }
   | {type: 'sortRows'; taskID: string; args: {data: Float64Array[]}}
 

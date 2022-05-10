@@ -18,12 +18,15 @@ module.exports = {
     colors: {
       pageBG: 'white',
       planBG: colors.gray[100],
+      // planBG: '',
+      // chartBG: '#f7dacd',
+      chartBG:colors.gray[400],
       pageFG: colors.gray[800],
-      cardBG: 'rgba(255,255,255, .9)',
+      cardBG: 'rgba(255,255,255, .95)',
       pageFGLight: colors.gray[600],
       boldFG: colors.indigo[800],
       alt: colors.blue[900],
-      darkGray: colors.gray[700],
+      darkGray: colors.gray[800],
 
       // Error and Success
       errorFG: colors.red[500],

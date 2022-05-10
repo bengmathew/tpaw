@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react'
-import { runTPAWSimulation } from '../TPAWSimulator/RunTPAWSimulation'
-import { TPAWParams } from '../TPAWSimulator/TPAWParams'
-import { formatCurrency } from '../Utils/FormatCurrency'
-import { Config } from './Config'
+import React, {useEffect, useState} from 'react'
+import {runTPAWSimulation} from '../TPAWSimulator/RunTPAWSimulation'
+import {TPAWParams} from '../TPAWSimulator/TPAWParams'
+import {processTPAWParams} from '../TPAWSimulator/TPAWParamsProcessed'
+import {formatCurrency} from '../Utils/FormatCurrency'
+import {Config} from './Config'
 
 export const Test = React.memo(() => {
   if (Config.client.production) throw new Error()
@@ -10,14 +11,16 @@ export const Test = React.memo(() => {
   const [rows, setRows] = useState<string[][]>([])
 
   useEffect(() => {
-    const params = testParams
-    const simulationUsingExpectedReturns = runTPAWSimulation(
+    const params = processTPAWParams(testParams)
+    const resultsFromUsingExpectedReturns = runTPAWSimulation({
+      type: 'useExpectedReturns',
       params,
-      null
-    ).byYearFromNow
+    }).byYearFromNow
 
-    const result = runTPAWSimulation(params, {
-      simulationUsingExpectedReturns,
+    const result = runTPAWSimulation({
+      type: 'useHistoricalReturns',
+      params,
+      resultsFromUsingExpectedReturns,
       randomIndexesIntoHistoricalReturnsByYear,
     })
     const delta = result.byYearFromNow

@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import {Validator} from '../Utils/Validator'
 
-export namespace V5Params {
+export namespace TPAWParamsV5 {
   export const MAX_LABEL_LENGTH = 150
   export const MAX_AGE = 120
 
@@ -130,7 +130,7 @@ export namespace V5Params {
 
   // ----------- VALIDATOR  ---------//
 
-  const _ageRange = chain(number(), _geTest(0), _leTest(V5Params.MAX_AGE))
+  const _ageRange = chain(number(), _geTest(0), _leTest(TPAWParamsV5.MAX_AGE))
 
   const _ages = chain(
     union(
@@ -146,7 +146,7 @@ export namespace V5Params {
         max: _ageRange,
       })
     ),
-    (ages): V5Params.Person['ages'] => {
+    (ages): TPAWParamsV5.Person['ages'] => {
       const {current, max} = ages
       if (max < current + 1) {
         throw new Validator.Failed(
@@ -170,10 +170,10 @@ export namespace V5Params {
     }
   )
 
-  const _person: Validator<V5Params.Person> = object({
+  const _person: Validator<TPAWParamsV5.Person> = object({
     ages: _ages,
     displayName: union(
-      strBoundedTrimmed(V5Params.MAX_LABEL_LENGTH),
+      strBoundedTrimmed(TPAWParamsV5.MAX_LABEL_LENGTH),
       constant(null)
     ),
   })
@@ -212,14 +212,14 @@ export namespace V5Params {
 
   const _valueForYearRange = object({
     // Not trimmed because it won't allow space even temporarily.
-    label: union(strBounded(V5Params.MAX_LABEL_LENGTH), constant(null)),
+    label: union(strBounded(TPAWParamsV5.MAX_LABEL_LENGTH), constant(null)),
     yearRange: _yearRange,
     value: numGE(0),
     nominal: boolean(),
     id: numIntNonNeg(),
   })
 
-  export const validator: Validator<V5Params.ParamsWithoutHistorical> = chain(
+  export const validator: Validator<TPAWParamsV5.ParamsWithoutHistorical> = chain(
     object({
       v: constant(5),
       people: union(
@@ -282,7 +282,7 @@ export namespace V5Params {
         )
       }
 
-      const checkYear = (year: V5Params.Year, prefix: string) => {
+      const checkYear = (year: TPAWParamsV5.Year, prefix: string) => {
         if (year.type === 'namedAge' || year.type === 'numericAge') {
           let person: Person
           if (year.person === 'person1') {
@@ -305,7 +305,7 @@ export namespace V5Params {
 
       const checkYearRange =
         (desc: string) =>
-        ({yearRange, label}: V5Params.ValueForYearRange, i: number) => {
+        ({yearRange, label}: TPAWParamsV5.ValueForYearRange, i: number) => {
           if (
             yearRange.type === 'startAndEnd' ||
             yearRange.type === 'startAndNumYears'

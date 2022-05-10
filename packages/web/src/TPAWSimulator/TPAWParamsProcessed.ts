@@ -1,13 +1,13 @@
 import _ from 'lodash'
 import {nominalToReal} from '../Utils/NominalToReal'
-import {extendTPAWParams} from './TPAWParamsExt'
 import {historicalReturns} from './HistoricalReturns'
 import {TPAWParams, tpawParamsValidator, ValueForYearRange} from './TPAWParams'
+import {extendTPAWParams} from './TPAWParamsExt'
 
 export type TPAWParamsProcessed = ReturnType<typeof processTPAWParams>
 export function processTPAWParams(
   params: TPAWParams,
-  randomIndexesIntoHistoricalReturnsByYear?: (year: number) => number
+  // randomIndexesIntoHistoricalReturnsByYear?: (year: number) => number
 ) {
   const {numYears} = extendTPAWParams(params)
   tpawParamsValidator(params)
@@ -21,7 +21,7 @@ export function processTPAWParams(
     ...paramsWithoutInflation,
     returns: _processReturnsParams(
       params,
-      randomIndexesIntoHistoricalReturnsByYear
+      // randomIndexesIntoHistoricalReturnsByYear
     ),
     targetAllocation: {
       legacyPortfolio: _completeAllocation(
@@ -68,7 +68,7 @@ function _processByYearParams(params: TPAWParams) {
       const normYearRange = extendTPAWParams(params).asYFN(yearRange)
       const start = _.clamp(normYearRange.start, minYear, maxYear)
       const end = _.clamp(normYearRange.end, start, maxYear)
-      _.range(start, end + 1).forEach((yearsFromNow) => {
+      _.range(start, end + 1).forEach(yearsFromNow => {
         updater(
           byYear[yearsFromNow],
           nominalToReal({value, nominal}, params.inflation, yearsFromNow)
@@ -96,8 +96,8 @@ function _processByYearParams(params: TPAWParams) {
 
 function _processReturnsParams(
   params: TPAWParams,
-  randomIndexesIntoHistoricalReturnsByYear: (index: number) => number = () =>
-    _.random(historicalReturns.length - 1)
+  // randomIndexesIntoHistoricalReturnsByYear: (index: number) => number = () =>
+  //   _.random(historicalReturns.length - 1)
 ) {
   const {returns, people} = params
   const {numYears} = extendTPAWParams(params)
@@ -121,8 +121,10 @@ function _processReturnsParams(
     bonds: adjustFn(x.bonds, adjustment.bonds),
   }))
 
-  const realized = _.times(numYears, i =>
-    randomIndexesIntoHistoricalReturnsByYear(i)
-  ).map(i => historicalAdjusted[i])
-  return {...returns, historicalAdjusted, realized}
+  // const realized = _.times(
+  //   numYears,
+  //   yearsFromNow =>
+  //     historicalAdjusted[randomIndexesIntoHistoricalReturnsByYear(yearsFromNow)]
+  // )
+  return {...returns, historicalAdjusted}
 }

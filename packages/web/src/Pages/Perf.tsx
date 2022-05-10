@@ -1,9 +1,9 @@
 import _ from 'lodash'
-import React, { useEffect, useRef, useState } from 'react'
-import { TPAWParams } from '../TPAWSimulator/TPAWParams'
-import { TPAWRunInWorker } from '../TPAWSimulator/Worker/TPAWRunInWorker'
-import { fGet } from '../Utils/Utils'
-import { AppPage } from './App/AppPage'
+import React, {useEffect, useRef, useState} from 'react'
+import {processTPAWParams} from '../TPAWSimulator/TPAWParamsProcessed'
+import {TPAWRunInWorker} from '../TPAWSimulator/Worker/TPAWRunInWorker'
+import {fGet} from '../Utils/Utils'
+import {AppPage} from './App/AppPage'
 
 const numRuns = 500
 const highlightPercentiles = [5, 25, 50, 75, 95]
@@ -57,7 +57,7 @@ export const Perf = React.memo(() => {
   )
 })
 
-const params: TPAWParams = {
+const params = processTPAWParams({
   v: 5,
   people: {
     withPartner: false,
@@ -137,4 +137,4 @@ const params: TPAWParams = {
     total: 50000,
     external: [],
   },
-}
+})

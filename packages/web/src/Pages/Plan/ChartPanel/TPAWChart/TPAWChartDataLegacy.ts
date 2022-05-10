@@ -18,7 +18,7 @@ export function tpawChartDataLegacy(
   highlightPercentiles: SimulationInfo['highlightPercentiles']
 ): TPAWChartDataLegacy {
   const {legacyByPercentile, args} = tpawResult
-  const {numYears} = extendTPAWParams(args.params)
+  const {numYears} = extendTPAWParams(args.params.original)
   return {
     label: 'legacy',
     percentiles: legacyByPercentile.map(x => ({

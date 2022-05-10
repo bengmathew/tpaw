@@ -37,7 +37,7 @@ export function useChartPanelState() {
   const router = useRouter()
 
   const panelTypeInStr = useURLParam('view') ?? ''
-  const panelTypeIn = isChartPanelType(params, panelTypeInStr)
+  const panelTypeIn = isChartPanelType(params.original, panelTypeInStr)
     ? panelTypeInStr
     : 'spending-total'
 

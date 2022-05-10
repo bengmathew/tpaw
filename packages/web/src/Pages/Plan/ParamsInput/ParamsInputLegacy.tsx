@@ -2,9 +2,8 @@ import {faMinus, faPlus} from '@fortawesome/pro-light-svg-icons'
 import {faPen} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
-import React, {useMemo, useState} from 'react'
+import React, {useState} from 'react'
 import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
-import {processTPAWParams} from '../../../TPAWSimulator/TPAWParamsProcessed'
 import {Contentful} from '../../../Utils/Contentful'
 import {formatCurrency} from '../../../Utils/FormatCurrency'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
@@ -18,7 +17,7 @@ import {usePlanContent} from '../Plan'
 import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
 
 export const ParamsInputLegacy = React.memo((props: ParamsInputBodyProps) => {
-  const {params, setParams} = useSimulation()
+  const {params, paramsProcessed, setParams} = useSimulation()
   const content = usePlanContent()
   const valueState = useAmountInputState(params.legacy.total)
 
@@ -27,7 +26,6 @@ export const ParamsInputLegacy = React.memo((props: ParamsInputBodyProps) => {
     | {type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean}
   >({type: 'main'})
 
-  const paramsProcessed = useMemo(() => processTPAWParams(params), [params])
   const handleAmount = (amount: number) => {
     if (amount === params.legacy.total) return
     valueState.setAmountStr(`${amount}`)
@@ -64,9 +62,7 @@ export const ParamsInputLegacy = React.memo((props: ParamsInputBodyProps) => {
           </button>
         </div>
 
-        <h2 className="font-bold text-lg mt-10 mb-3">
-          Non-portfolio Sources 
-        </h2>
+        <h2 className="font-bold text-lg mt-10 mb-3">Non-portfolio Sources</h2>
         <Contentful.RichText
           body={content.legacy.introAssets.fields.body}
           p="p-base mb-4"
@@ -190,9 +186,7 @@ const _Entry = React.memo(
           <div className="flex items-stretch">
             <div className="flex flex-row items-center gap-x-2 mr-2">
               <h2 className="">{formatCurrency(entry.value)}</h2>
-              <h2 className="">
-                {entry.nominal ? 'nominal' : 'real'}
-              </h2>
+              <h2 className="">{entry.nominal ? 'nominal' : 'real'}</h2>
             </div>
           </div>
         </div>

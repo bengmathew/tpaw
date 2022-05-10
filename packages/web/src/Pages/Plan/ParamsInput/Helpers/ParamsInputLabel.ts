@@ -7,8 +7,8 @@ export const paramsInputLabel = (type: ParamsInputType) => {
       return 'Age and Retirement'
     case 'risk-and-time-preference':
       return 'Risk and Time Preference'
-    case 'current-portfolio-value':
-      return 'Current Portfolio Value'
+    case 'current-portfolio-balance':
+      return 'Current Portfolio Balance'
     case 'future-savings':
       return 'Future Savings'
     case 'income-during-retirement':

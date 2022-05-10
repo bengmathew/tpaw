@@ -169,7 +169,7 @@ function useContent(type: ParamsInputType) {
       return content.age
     case 'risk-and-time-preference':
       return content.riskAndTimePreference
-    case 'current-portfolio-value':
+    case 'current-portfolio-balance':
       return content.currentPortfolioValue
     case 'future-savings':
       return content.futureSavings

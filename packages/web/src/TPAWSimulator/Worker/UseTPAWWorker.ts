@@ -1,10 +1,12 @@
 import {useEffect, useRef, useState} from 'react'
 import {asyncEffect} from '../../Utils/AsyncEffect'
+import {nominalToReal} from '../../Utils/NominalToReal'
 import {fGet} from '../../Utils/Utils'
-import {TPAWParams} from '../TPAWParams'
+import {TPAWParams, ValueForYearRange} from '../TPAWParams'
+import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
 import {TPAWRunInWorker, TPAWRunInWorkerResult} from './TPAWRunInWorker'
 
-type _Args = {numRuns: number; params: TPAWParams; percentiles: number[]}
+type _Args = {numRuns: number; params: TPAWParamsProcessed; percentiles: number[]}
 export type UseTPAWWorkerResult = TPAWRunInWorkerResult & {args: _Args}
 
 type State =
@@ -13,7 +15,7 @@ type State =
   | {isRunning: false; resultInfo: UseTPAWWorkerResult}
 
 export function useTPAWWorker(
-  params: TPAWParams,
+  params: TPAWParamsProcessed,
   numRuns: number,
   percentiles: number[]
 ) {
