@@ -118,7 +118,7 @@ export const extendTPAWParams = (params: TPAWParams) => {
     ? maxYear(years.person1.lastWorkingYear, years.person2.lastWorkingYear)
     : years.person1.lastWorkingYear
 
-  const minRetiremet = params.people.withPartner
+  const minRetirement = params.people.withPartner
     ? minYear(years.person1.retirement, years.person2.retirement)
     : years.person1.retirement
 
@@ -132,7 +132,7 @@ export const extendTPAWParams = (params: TPAWParams) => {
     type === 'future-savings'
       ? {start: years.now, end: maxLastWorkingYear}
       : type === 'income-during-retirement'
-      ? {start: minRetiremet, end: maxMaxAge}
+      ? {start: minRetirement, end: maxMaxAge}
       : type === 'extra-spending'
       ? {start: years.now, end: maxMaxAge}
       : noCase(type)
@@ -346,7 +346,7 @@ export const extendTPAWParams = (params: TPAWParams) => {
     minYear,
     maxYear,
     maxLastWorkingYear,
-    minRetiremet,
+    minRetirement,
     maxMaxAge,
     validYearRange,
     years,

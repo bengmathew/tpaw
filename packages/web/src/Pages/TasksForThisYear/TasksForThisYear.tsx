@@ -4,16 +4,20 @@ import Link from 'next/link'
 import React, {ReactNode} from 'react'
 import {TPAWSimulationForYear} from '../../TPAWSimulator/RunTPAWSimulation'
 import {extendTPAWParams} from '../../TPAWSimulator/TPAWParamsExt'
+import {TPAWRunInWorkerByPercentileByYearsFromNow} from '../../TPAWSimulator/Worker/TPAWRunInWorker'
 import {UseTPAWWorkerResult} from '../../TPAWSimulator/Worker/UseTPAWWorker'
 import {formatCurrency} from '../../Utils/FormatCurrency'
 import {formatPercentage} from '../../Utils/FormatPercentage'
+import {fGet} from '../../Utils/Utils'
 import {AppPage} from '../App/AppPage'
 import {Footer} from '../App/Footer'
-// import { useTPAW } from '../Common/UseTPAW/UseTPAW'
 import {useSimulation} from '../App/WithSimulation'
+import {paramsInputLabel} from '../Plan/ParamsInput/Helpers/ParamsInputLabel'
 
 type _Props = {
   withdrawal: TPAWSimulationForYear['withdrawalAchieved'] & {
+    essentialByEntry: {id: number; label: string | null; amount: number}[]
+    extraByEntry: {id: number; label: string | null; amount: number}[]
     src: {fromSavings: number; fromIncome: number}
   }
   allocation: TPAWSimulationForYear['savingsPortfolioAllocation']
@@ -22,15 +26,32 @@ type _Props = {
 }
 const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
   const {
-    withdrawalAchieved: withdrawal,
     savingsPortfolioAllocation: allocation,
+    withdrawalAchieved: withdrawal,
   } = tpawResult.firstYearOfSomeRun
   const {params} = tpawResult.args
   const {asYFN, withdrawalStartYear} = extendTPAWParams(params.original)
 
+  const firstYearOfAnyPercentile = (
+    id: number,
+    {byId}: {byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>}
+  ) => fGet(byId.get(id)).byPercentileByYearsFromNow[0].data[0]
+
   return {
     withdrawal: {
       ...withdrawal,
+      essentialByEntry: params.withdrawals.fundedByBonds.map(({id, label}) => ({
+        id,
+        label,
+        amount: firstYearOfAnyPercentile(id, tpawResult.withdrawals.essential),
+      })),
+      extraByEntry: params.withdrawals.fundedByRiskPortfolio.map(
+        ({id, label}) => ({
+          id,
+          label,
+          amount: firstYearOfAnyPercentile(id, tpawResult.withdrawals.extra),
+        })
+      ),
       src: (() => {
         const fromSavings = Math.max(0, withdrawal.fromSavings)
         return {fromSavings, fromIncome: withdrawal.total - fromSavings}
@@ -167,33 +188,63 @@ const _HowMuchYouHave = React.memo(
 
 // -------- HOW MUCH TO SPEND --------
 const _HowMuchToSpend = React.memo(
-  ({withdrawal, className = ''}: _Props & {className?: string}) => (
-    <div className={className}>
-      <_Heading>How Much To Spend</_Heading>
-      <p className="p-base">
-        Out of your <_Value>{withdrawal.availableFunds}</_Value>, you plan to
-        spend <_Value className="">{withdrawal.total}</_Value> this year, broken
-        down as follows:
-      </p>
-      <div
-        className="grid justify-start gap-x-10 mt-2 p-base"
-        style={{grid: 'auto/auto auto'}}
-      >
-        <h2 className="">Extra - Essential</h2>
-        <h2 className="text-right">
-          <_Value>{withdrawal.essential}</_Value>
-        </h2>
-        <h2 className="">Extra - Discretionary</h2>
-        <h2 className="text-right">
-          <_Value>{withdrawal.extra}</_Value>
-        </h2>
-        <h2 className="">Regular</h2>
-        <h2 className="text-right">
-          <_Value>{withdrawal.regular}</_Value>
-        </h2>
+  ({withdrawal, className = ''}: _Props & {className?: string}) => {
+    const needsBreakdown =
+      withdrawal.essentialByEntry.length > 0 ||
+      withdrawal.extraByEntry.length > 0
+    return (
+      <div className={className}>
+        <_Heading>How Much To Spend</_Heading>
+        <p className="p-base">
+          Out of your <_Value>{withdrawal.availableFunds}</_Value>, you plan to
+          spend <_Value className="">{withdrawal.total}</_Value> this year
+          {needsBreakdown
+            ? `,
+          broken down as follows:`
+            : '.'}
+        </p>
+        {needsBreakdown && (
+          <div
+            className="grid justify-start gap-x-10 mt-2 p-base"
+            style={{grid: 'auto/auto auto'}}
+          >
+            <h2 className="">Regular</h2>
+            <h2 className="text-right">
+              <_Value>{withdrawal.regular}</_Value>
+            </h2>
+            {withdrawal.essentialByEntry.length > 0 && (
+              <>
+                <h2 className="">Extra - Essential</h2>
+                <h2></h2>
+                {withdrawal.essentialByEntry.map(({id, label, amount}) => (
+                  <React.Fragment key={id}>
+                    <h2 className="ml-8">{label ?? '<no label>'}</h2>
+                    <h2 className="text-right">
+                      <_Value>{amount}</_Value>
+                    </h2>
+                  </React.Fragment>
+                ))}
+              </>
+            )}
+            {withdrawal.extraByEntry.length > 0 && (
+              <>
+                <h2 className="">Extra - Discretionary</h2>
+                <h2></h2>
+                {withdrawal.extraByEntry.map(({id, label, amount}) => (
+                  <React.Fragment key={id}>
+                    <h2 className="ml-8">{label ?? '<no label>'}</h2>
+                    <h2 className="text-right">
+                      <_Value>{amount}</_Value>
+                    </h2>
+                  </React.Fragment>
+                ))}
+              </>
+            )}
+          </div>
+        )}
       </div>
-    </div>
-  )
+    )
+  }
 )
 
 // -------- HOW TO FUND THE SPENDING --------
@@ -291,7 +342,25 @@ const _AssetAllocation = React.memo(
             <_Value className="">{allocation.balance}</_Value>. Rebalance this
             portfolio to the following asset allocation:
           </p>
-          <_AllocationTable className="" {...props} />
+          <_AllocationTable className="mb-3" {...props} />
+          <p className="">
+            {`Note that this is the asset allocation on your `}
+            <span className="">savings</span>{' '}
+            {`portfolio and will typically 
+            be different from the asset alloction you entered in "${paramsInputLabel(
+              'risk-and-time-preference'
+            )}" which is the asset allocation on your `}
+            <span
+              className="
+            "
+            >
+              total
+            </span>{' '}
+            portfolio .{' '}
+            <Link href="learn/future-savings-and-retirement-income">
+              <a className="underline">Learn more.</a>
+            </Link>
+          </p>
         </div>
       </div>
     )

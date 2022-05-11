@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import {formatCurrency} from '../../../../Utils/FormatCurrency'
 import {ChartComponent} from '../../../Common/Chart/ChartComponent/ChartComponent'
 import {ChartContext} from '../../../Common/Chart/ChartContext'
@@ -65,7 +66,7 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartDataLegacy> => ({
         ? `${formatCurrency(y)}`
         : y < 1000000
         ? `${formatCurrency(Math.round(y / 1000))}K`
-        : `${formatCurrency(Math.round(y / 1000000), 1)}M`
+        : `${formatCurrency(_.round(y / 1000000, 1), 1)}M`
     )
     const yLabelWidth = Math.max(...yLabels.map(y => ctx.measureText(y).width))
     const percentileLabelWidth = Math.max(

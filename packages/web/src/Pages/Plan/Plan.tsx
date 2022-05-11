@@ -242,7 +242,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
               width: windowSize.width - pad * 2,
               height: navHeadingH,
               x: pad * 2 + linearFnFomPoints(0, 0, 1, 0)(transition),
-              y: chart(1).position.bottom,
+              y: chart(transition).position.bottom,
             }),
           }
         }
@@ -351,7 +351,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
               width: windowSize.width - pad * 2,
               height: navHeadingH,
               x: pad * 2,
-              y: chart(1).position.bottom + 10,
+              y: chart(transition).position.bottom + 10,
             }),
           }
         }

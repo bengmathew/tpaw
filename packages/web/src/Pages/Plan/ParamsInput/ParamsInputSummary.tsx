@@ -44,7 +44,7 @@ export const ParamsInputSummary = React.memo(
 
     return (
       <div
-        className={` grid w-full`} // This is needed if we start in exited state.
+        className={ ` grid w-full`} // This is needed if we start in exited state.
         style={{grid: '1fr auto/1fr'}}
       >
         <div
@@ -141,6 +141,24 @@ export const ParamsInputSummary = React.memo(
                 />
               </div>
             </div>
+            
+            <div className="">
+              <h2
+                className="text-[18px] sm:text-xl font-bold mb-4"
+                style={labelStyle}
+              >
+                Risk and Time Preference
+              </h2>
+              <div className="flex flex-col gap-y-4">
+                <_Button
+                  type="risk-and-time-preference"
+                  setState={setState}
+                  state={state}
+                  showHeading={false}
+                  padding={cardPadding}
+                />
+              </div>
+            </div>
 
             <div className="">
               <h2
@@ -167,23 +185,7 @@ export const ParamsInputSummary = React.memo(
               </div>
             </div>
 
-            <div className="">
-              <h2
-                className="text-[18px] sm:text-xl font-bold mb-4"
-                style={labelStyle}
-              >
-                Risk and Time Preference
-              </h2>
-              <div className="flex flex-col gap-y-4">
-                <_Button
-                  type="risk-and-time-preference"
-                  setState={setState}
-                  state={state}
-                  showHeading={false}
-                  padding={cardPadding}
-                />
-              </div>
-            </div>
+           
           </div>
         </div>
         {layout !== 'laptop' && <Footer />}

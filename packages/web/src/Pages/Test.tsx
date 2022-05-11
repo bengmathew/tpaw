@@ -1,6 +1,5 @@
 import React, {useEffect, useState} from 'react'
 import {runTPAWSimulation} from '../TPAWSimulator/RunTPAWSimulation'
-import {TPAWParams} from '../TPAWSimulator/TPAWParams'
 import {processTPAWParams} from '../TPAWSimulator/TPAWParamsProcessed'
 import {formatCurrency} from '../Utils/FormatCurrency'
 import {Config} from './Config'
@@ -11,7 +10,7 @@ export const Test = React.memo(() => {
   const [rows, setRows] = useState<string[][]>([])
 
   useEffect(() => {
-    const params = processTPAWParams(testParams)
+    const params = testParams
     const resultsFromUsingExpectedReturns = runTPAWSimulation({
       type: 'useExpectedReturns',
       params,
@@ -74,7 +73,7 @@ const excel = [
   101020.0051, 94153.9511, 87748.30235, 81002.60827, 79256.98725,
 ]
 
-const testParams: TPAWParams = {
+const testParams = processTPAWParams({
   v: 5,
   people: {
     withPartner: false,
@@ -145,8 +144,7 @@ const testParams: TPAWParams = {
     total: 0,
     external: [],
   },
-}
-
+})
 const randomIndexesIntoHistoricalReturnsByYear = (year: number) =>
   [
     103, 34, 47, 58, 62, 105, 115, 6, 101, 60, 111, 146, 62, 21, 73, 122, 87,

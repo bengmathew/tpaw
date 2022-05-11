@@ -1,10 +1,5 @@
 import _ from 'lodash'
-import {
-  TPAWParams,
-  ValueForYearRange,
-} from '../../../../TPAWSimulator/TPAWParams'
 import {extendTPAWParams} from '../../../../TPAWSimulator/TPAWParamsExt'
-import {processTPAWParams, TPAWParamsProcessed} from '../../../../TPAWSimulator/TPAWParamsProcessed'
 import {TPAWRunInWorkerByPercentileByYearsFromNow} from '../../../../TPAWSimulator/Worker/TPAWRunInWorker'
 import {UseTPAWWorkerResult} from '../../../../TPAWSimulator/Worker/UseTPAWWorker'
 import {formatCurrency} from '../../../../Utils/FormatCurrency'
@@ -13,7 +8,6 @@ import {
   linearFnFomPoints,
   linearFnFromPointAndSlope,
 } from '../../../../Utils/LinearFn'
-import {nominalToReal} from '../../../../Utils/NominalToReal'
 import {SimpleRange} from '../../../../Utils/SimpleRange'
 import {assert, fGet, noCase} from '../../../../Utils/Utils'
 import {SimulationInfo} from '../../../App/WithSimulation'
@@ -153,20 +147,11 @@ export const tpawChartDataMain = (
     default:
       if (isChartPanelSpendingEssentialType(type)) {
         const id = chartPanelSpendingEssentialTypeID(type)
-        const index = params.withdrawals.fundedByBonds.findIndex(
-          x => x.id === id
-        )
-        assert(index !== -1)
+        assert(params.withdrawals.fundedByBonds.find(x => x.id === id))
         return _data(
           type,
           tpawResult,
-          x =>
-            _separateExtraWithdrawal(
-              params.withdrawals.fundedByBonds[index],
-              params,
-              x.withdrawals.essential,
-              'essential'
-            ),
+          x => fGet(x.withdrawals.essential.byId.get(id)),
           x => formatCurrency(x),
           spendingYears,
           0,
@@ -176,20 +161,11 @@ export const tpawChartDataMain = (
       }
       if (isChartPanelSpendingDiscretionaryType(type)) {
         const id = chartPanelSpendingDiscretionaryTypeID(type)
-        const index = params.withdrawals.fundedByRiskPortfolio.findIndex(
-          x => x.id === id
-        )
-        assert(index !== -1)
+        assert(params.withdrawals.fundedByRiskPortfolio.find(x => x.id === id))
         return _data(
           type,
           tpawResult,
-          x =>
-            _separateExtraWithdrawal(
-              params.withdrawals.fundedByRiskPortfolio[index],
-              params.original,
-              x.withdrawals.extra,
-              'extra'
-            ),
+          x => fGet(x.withdrawals.extra.byId.get(id)),
           x => formatCurrency(x),
           spendingYears,
           0,
@@ -213,7 +189,6 @@ const _addYear = (
   ),
 })
 
-
 const _data = (
   label: string,
   tpawResult: UseTPAWWorkerResult,
@@ -228,8 +203,9 @@ const _data = (
 ): TPAWChartDataMain => {
   const {args} = tpawResult
   const {params} = args
-  const {asYFN, withdrawalStartYear, pickPerson, maxMaxAge} =
-    extendTPAWParams(params.original)
+  const {asYFN, withdrawalStartYear, pickPerson, maxMaxAge} = extendTPAWParams(
+    params.original
+  )
   const retirement = asYFN(withdrawalStartYear)
   const maxYear = asYFN(maxMaxAge)
   const xAxisPerson = params.people.withPartner
@@ -313,42 +289,4 @@ const _avgSlope = (ys: {data: number[]}[], i: number) => {
   const sum = _.sum(ys.map(x => x.data[iPlus1] - x.data[i]))
   const result = sum / ys.length
   return result
-}
-
-
-
-const _separateExtraWithdrawal = (
-  extraWithdrawal: ValueForYearRange,
-  params: TPAWParams,
-  x: TPAWRunInWorkerByPercentileByYearsFromNow,
-  type: 'extra' | 'essential'
-): TPAWRunInWorkerByPercentileByYearsFromNow => {
-  const processedParams = processTPAWParams(params)
-  const yearRange = extendTPAWParams(params).asYFN(extraWithdrawal.yearRange)
-
-  const byPercentileByYearsFromNow = x.byPercentileByYearsFromNow.map(
-    ({data, percentile}) => ({
-      data: data.map((value, yearFromNow) => {
-        if (yearFromNow < yearRange.start || yearFromNow > yearRange.end) {
-          return 0
-        }
-        const currYearParams = processedParams.byYear[yearFromNow].withdrawals
-        const withdrawalTargetForThisYear = nominalToReal(
-          extraWithdrawal,
-          params.inflation,
-          yearFromNow
-        )
-        if (withdrawalTargetForThisYear === 0) return 0
-        const ratio =
-          withdrawalTargetForThisYear /
-          (type === 'extra'
-            ? currYearParams.fundedByRiskPortfolio
-            : currYearParams.fundedByBonds)
-        assert(!isNaN(ratio)) // withdrawalTargetForThisYear ?>0 imples denominator is not 0.
-        return value * ratio
-      }),
-      percentile,
-    })
-  )
-  return {byPercentileByYearsFromNow}
 }

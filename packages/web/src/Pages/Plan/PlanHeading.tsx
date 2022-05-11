@@ -45,7 +45,7 @@ export const PlanHeading = React.memo(
 
       return (
         <div className="absolute  z-10" ref={outerRef}>
-          <div className="flex w-full items-center gap-x-4  bg-planBG bg-opacity-80">
+          <div className="flex  items-center gap-x-4  bg-planBG bg-opacity-90 rounded-br-xl">
             <button
               className="flex items-center gap-x-2 text-sm sm:text-base btn-dark px-4 py-1.5"
               onClick={onDone}
@@ -53,7 +53,7 @@ export const PlanHeading = React.memo(
               <FontAwesomeIcon className="" icon={faLeftLong} />
               Done
             </button>
-            <h2 className="text-xl sm:text-2xl font-bold text-start">
+            <h2 className="text-xl sm:text-2xl font-bold text-start pr-5">
               {paramsInputLabel(type)}
             </h2>
           </div>

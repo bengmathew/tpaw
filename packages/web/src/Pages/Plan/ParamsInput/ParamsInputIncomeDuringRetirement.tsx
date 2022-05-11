@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import React, {useState} from 'react'
 import {Contentful} from '../../../Utils/Contentful'
 import {useSimulation} from '../../App/WithSimulation'
@@ -23,7 +24,7 @@ export const ParamsInputIncomeDuringRetirement = React.memo(
             body={content.incomeDuringRetirement.intro.fields.body}
             p="p-base"
           />
-        <ByYearSchedule
+          <ByYearSchedule
             className=""
             heading={null}
             entries={params => params.retirementIncome}
@@ -63,7 +64,16 @@ export const ParamsInputIncomeDuringRetirement = React.memo(
                     index={state.index}
                     allowableRange={validYearRange('income-during-retirement')}
                     choices={{
-                      start: ['retirement', 'numericAge', 'forNumOfYears'],
+                      start: _.compact([
+                        'retirement',
+                        'numericAge',
+                        'forNumOfYears',
+                        params.people.person1.ages.type === 'retired' ||
+                        (params.people.withPartner &&
+                          params.people.person2.ages.type === 'retired')
+                          ? 'now'
+                          : undefined,
+                      ]),
                       end: ['maxAge', 'numericAge', 'forNumOfYears'],
                     }}
                   />

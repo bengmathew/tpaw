@@ -1,7 +1,10 @@
 import _ from 'lodash'
+import {nominalToReal} from '../../Utils/NominalToReal'
 import {assert, fGet, noCase} from '../../Utils/Utils'
 import {TPAWSimulationForYear} from '../RunTPAWSimulation'
 import {StatsTools} from '../StatsTools'
+import {ValueForYearRange} from '../TPAWParams'
+import {extendTPAWParams} from '../TPAWParamsExt'
 import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
 import {
   TPAWWorkerArgs,
@@ -16,16 +19,14 @@ export type TPAWRunInWorkerByPercentileByYearsFromNow = {
 export type TPAWRunInWorkerResult = {
   withdrawals: {
     total: TPAWRunInWorkerByPercentileByYearsFromNow
-    essential: TPAWRunInWorkerByPercentileByYearsFromNow
-    extra: TPAWRunInWorkerByPercentileByYearsFromNow
-    // essential: {
-      //   total: TPAWRunInWorkerByPercentileByYearsFromNow
-    //   byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>
-    // }
-    // extra: {
-    //   total: TPAWRunInWorkerByPercentileByYearsFromNow
-    //   byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>
-    // }
+    essential: {
+      total: TPAWRunInWorkerByPercentileByYearsFromNow
+      byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>
+    }
+    extra: {
+      total: TPAWRunInWorkerByPercentileByYearsFromNow
+      byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>
+    }
     regular: TPAWRunInWorkerByPercentileByYearsFromNow
   }
   startingBalanceOfSavingsPortfolio: TPAWRunInWorkerByPercentileByYearsFromNow
@@ -261,15 +262,18 @@ export class TPAWRunInWorker {
 
     if (status.canceled) return null
 
-    const withdrawlsEssentialById = new Map<
-      number,
-      TPAWRunInWorkerByPercentileByYearsFromNow
-    >()
-
-    const withdrawlsExtraById = new Map<
-      number,
-      TPAWRunInWorkerByPercentileByYearsFromNow
-    >()
+    const withdrawlsEssentialById = new Map(
+      params.withdrawals.fundedByBonds.map(x => [
+        x.id,
+        _separateExtraWithdrawal(x, params, withdrawalsEssential, 'essential'),
+      ])
+    )
+    const withdrawlsExtraById = new Map(
+      params.withdrawals.fundedByRiskPortfolio.map(x => [
+        x.id,
+        _separateExtraWithdrawal(x, params, withdrawalsExtra, 'extra'),
+      ])
+    )
 
     const perfPostByYearsFromNow = performance.now() - start
     start = performance.now()
@@ -283,10 +287,8 @@ export class TPAWRunInWorker {
     const result: TPAWRunInWorkerResult = {
       withdrawals: {
         total: withdrawalsTotal,
-        essential: withdrawalsEssential,
-        extra: withdrawalsExtra,
-        // essential: {total: withdrawalsEssential, byId: withdrawlsEssentialById},
-        // extra: {total: withdrawalsExtra, byId: withdrawlsExtraById},
+        essential: {total: withdrawalsEssential, byId: withdrawlsEssentialById},
+        extra: {total: withdrawalsExtra, byId: withdrawlsExtraById},
         regular: withdrawalsRegular,
       },
       startingBalanceOfSavingsPortfolio,
@@ -411,4 +413,41 @@ const _flattenTyped = (arr: Float64Array[]) => {
     offset += x.length
   })
   return result
+}
+
+const _separateExtraWithdrawal = (
+  extraWithdrawal: ValueForYearRange,
+  params: TPAWParamsProcessed,
+  x: TPAWRunInWorkerByPercentileByYearsFromNow,
+  type: 'extra' | 'essential'
+): TPAWRunInWorkerByPercentileByYearsFromNow => {
+  const yearRange = extendTPAWParams(params.original).asYFN(
+    extraWithdrawal.yearRange
+  )
+
+  const byPercentileByYearsFromNow = x.byPercentileByYearsFromNow.map(
+    ({data, percentile}) => ({
+      data: data.map((value, yearFromNow) => {
+        if (yearFromNow < yearRange.start || yearFromNow > yearRange.end) {
+          return 0
+        }
+        const currYearParams = params.byYear[yearFromNow].withdrawals
+        const withdrawalTargetForThisYear = nominalToReal(
+          extraWithdrawal,
+          params.original.inflation,
+          yearFromNow
+        )
+        if (withdrawalTargetForThisYear === 0) return 0
+        const ratio =
+          withdrawalTargetForThisYear /
+          (type === 'extra'
+            ? currYearParams.fundedByRiskPortfolio
+            : currYearParams.fundedByBonds)
+        assert(!isNaN(ratio)) // withdrawalTargetForThisYear ?>0 imples denominator is not 0.
+        return value * ratio
+      }),
+      percentile,
+    })
+  )
+  return {byPercentileByYearsFromNow}
 }
