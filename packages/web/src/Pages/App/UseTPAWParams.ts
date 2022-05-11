@@ -98,6 +98,27 @@ function _parseExternalParams(str: string | string[] | undefined | null) {
         v5 = _v4ToV5(_v3ToV4(_v2ToV3(_v1ToV2(tpawParamsV1Validator(parsed)))))
       }
       return _addHistorical(v5)
+      /*      let v6: TPAWParamsWithoutHistorical
+      if (parsed.v === 6) {
+        v6 = tpawParamsValidator(parsed)
+      } else if (parsed.v === 5) {
+        v6 = TPAWParamsV6.fromV5(TPAWParamsV5.validator(parsed))
+      } else if (parsed.v === 4) {
+        v6 = TPAWParamsV6.fromV5(_v4ToV5(TPAWParamsV4.validator(parsed)))
+      } else if (parsed.v === 3) {
+        v6 = TPAWParamsV6.fromV5(
+          _v4ToV5(_v3ToV4(tpawParamsV3Validator(parsed)))
+        )
+      } else if (parsed.v === 2) {
+        v6 = TPAWParamsV6.fromV5(
+          _v4ToV5(_v3ToV4(_v2ToV3(tpawParamsV2Validator(parsed))))
+        )
+      } else {
+        v6 = TPAWParamsV6.fromV5(
+          _v4ToV5(_v3ToV4(_v2ToV3(_v1ToV2(tpawParamsV1Validator(parsed)))))
+        )
+      }
+      return _addHistorical(v6)*/
     } catch (e) {
       if (e instanceof Validator.Failed) {
         throw new AppError(`Error in parameter: ${e.fullMessage}`)

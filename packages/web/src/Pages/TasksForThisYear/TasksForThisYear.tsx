@@ -344,19 +344,10 @@ const _AssetAllocation = React.memo(
           </p>
           <_AllocationTable className="mb-3" {...props} />
           <p className="">
-            {`Note that this is the asset allocation on your `}
-            <span className="">savings</span>{' '}
-            {`portfolio and will typically 
-            be different from the asset allocation you entered in "${paramsInputLabel(
+            {`Note that this is the asset allocation for your savings portfolio and will typically 
+            be different from the asset allocation for the total portfolio that you entered in "${paramsInputLabel(
               'risk-and-time-preference'
-            )}" which is the asset allocation on your `}
-            <span
-              className="
-            "
-            >
-              total
-            </span>{' '}
-            portfolio .{' '}
+            )}." `}
             <Link href="learn/future-savings-and-retirement-income">
               <a className="underline">Learn more.</a>
             </Link>

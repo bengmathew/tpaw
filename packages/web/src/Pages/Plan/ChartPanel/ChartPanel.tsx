@@ -1,4 +1,5 @@
-import {faArrowsUpDown, faClipboardList} from '@fortawesome/pro-light-svg-icons'
+import {faArrowsUpDown} from '@fortawesome/pro-light-svg-icons'
+import {faClipboardList} from '@fortawesome/pro-regular-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import gsap from 'gsap'
 import Link from 'next/link'
@@ -20,6 +21,7 @@ import {
   RectExt,
 } from '../../../Utils/Geometry'
 import {linearFnFomPoints} from '../../../Utils/LinearFn'
+import {SimpleRange} from '../../../Utils/SimpleRange'
 import {useAssertConst} from '../../../Utils/UseAssertConst'
 import {fGet} from '../../../Utils/Utils'
 import {ChartReactStatefull} from '../../Common/Chart/ChartReact'
@@ -56,13 +58,25 @@ export const ChartPanel = React.memo(
   React.forwardRef<ChartPanelStateful, Props>(
     (
       {
-        state: {handleChangeType, state, handleRescale, shouldShowLegacy},
+        state: {
+          handleChangeType,
+          state,
+          handleRescale,
+          shouldShowLegacy,
+          targetYRange,
+        },
         layout,
         sizing: sizingIn,
         transitionRef,
       }: Props,
       forwardRef
     ) => {
+      const rescaleWarningLevel = _maxRescaleWarningLevel(
+        _rescaleWarningLevel(state.main.xyRange.y, targetYRange.main),
+        shouldShowLegacy
+          ? _rescaleWarningLevel(state.legacy.xyRange.y, targetYRange.legacy)
+          : 0
+      )
       const [showDescriptionPopUp, setShowDescriptionPopUp] = useState(false)
       const outerRef = useRef<HTMLDivElement | null>(null)
       const headingRef = useRef<HTMLHeadingElement | null>(null)
@@ -128,11 +142,7 @@ export const ChartPanel = React.memo(
 
           const bodyY = padding.top + measures.heading + headingMarginBottom
           const bodyH =
-            position.height -
-            bodyY -
-            measures.tasks -
-            padding.bottom -
-            padding.bottom
+            position.height - bodyY - measures.tasks - padding.bottom
 
           const headingPaddingLeft = linearFnFomPoints(
             0,
@@ -205,13 +215,20 @@ export const ChartPanel = React.memo(
 
           const rescalePosition = {
             x: padding.left,
-            y: bodyPosition.bottom + 10,
-            height: 30,
+            y:
+              bodyPosition.bottom +
+              (position.height - bodyPosition.bottom - 25) / 2,
+            height: 25,
           }
 
           const tasksPosition = {
             right: padding.right,
-            y: bodyPosition.bottom + padding.bottom,
+            // y: bodyPosition.bottom ,
+
+            y:
+              bodyPosition.bottom +
+              (position.height - bodyPosition.bottom - measures.tasks) / 2,
+            // y: bodyPosition.bottom + ((padding.bottom-bodyPosition.bottom) - 30)/2 ,
           }
 
           const descriptionScale = linearFnFomPoints(
@@ -468,12 +485,26 @@ export const ChartPanel = React.memo(
             />
           </div>
           <button
-            className="absolute bg-cardBG border border-gray-400 rounded-full px-3 py-1 flex gap-x-2 items-center font-bol"
+            className={`absolute bg-cardBG px-3 py-1 flex gap-x-2 items-center rounded-full 
+            ${rescaleWarningLevel === 2 ? ' text-red-500 ' : ''}`}
+            style={{
+              visibility: rescaleWarningLevel === 0 ? 'hidden' : 'visible',
+              opacity: rescaleWarningLevel === 0 ? '0' : '1',
+              transform: rescaleWarningLevel === 0 ? 'scale(.8)' : 'scale(1)',
+              transitionProperty: 'transform, opacity, visibility',
+              transitionDuration:'300ms'
+            }}
             onClick={handleRescale}
             ref={rescaleRef}
           >
             <FontAwesomeIcon className="" icon={faArrowsUpDown} />
             Rescale
+            {rescaleWarningLevel === 2 && (
+              <>
+                <div className="absolute -right-[2px] -top-[0px] w-[10px] h-[10px] bg-red-500 rounded-full"></div>
+                <div className="absolute -right-[12px] -top-[10px] w-[30px] h-[30px] bg-red-500 rounded-full animate-ping "></div>
+              </>
+            )}
           </button>
           <Link href="/tasks-for-this-year">
             <a
@@ -522,3 +553,25 @@ const bodyContentWFn = (
   bodyWFn(sizing, legacyTransition) -
   sizing.cardPadding.left -
   sizing.cardPadding.right
+
+const _rescaleWarningLevel = (
+  curr: SimpleRange,
+  target: SimpleRange
+): 0 | 1 | 2 => {
+  const length = Math.abs(target.end - target.start)
+  const missing =
+    (Math.max(0, curr.start - target.start) +
+      Math.max(0, target.end - curr.end)) /
+    length
+  const excess =
+    (Math.max(0, target.start - curr.start) +
+      Math.max(0, curr.end - target.end)) /
+    length
+
+  if (missing > 0.5 || excess > 1.25) return 2
+  if (missing > 0.025 || excess > 0.05) return 1
+  return 0
+}
+
+const _maxRescaleWarningLevel = (w1: 0 | 1 | 2, w2: 0 | 1 | 2): 0 | 1 | 2 =>
+  Math.max(w1, w2) as 0 | 1 | 2

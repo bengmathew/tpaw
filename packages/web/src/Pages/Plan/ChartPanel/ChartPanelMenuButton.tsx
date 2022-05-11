@@ -62,7 +62,7 @@ export const ChartPanelMenuButton = React.memo(
           </button>
           {layout === 'mobile' && (
             <button
-              className=" w-[20px] h-[20px] mt-1 bg-gray-400 rounded-full flex items-center justify-center text-xs shrink-0"
+              className=" w-[22px] h-[22px] mt-1  text-black bg-gray-300 rounded-full flex items-center justify-center text-sm shrink-0 pb-0.5"
               onClick={showDescriptionPopUp}
             >
               <FontAwesomeIcon icon={faInfo}/>

@@ -122,7 +122,6 @@ export const Plan = React.memo((planContent: PlanContent) => {
             bottom: pad,
           }
 
-          // console.dir(padding)
           return {
             position: rectExt({width, x, height, y}),
             padding,

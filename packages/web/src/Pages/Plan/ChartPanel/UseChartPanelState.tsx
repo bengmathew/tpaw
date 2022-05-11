@@ -1,6 +1,6 @@
 import {Power1, Power4} from 'gsap'
 import {useRouter} from 'next/router'
-import {useCallback, useEffect, useState} from 'react'
+import {useCallback, useEffect, useMemo, useState} from 'react'
 import {useAssertConst} from '../../../Utils/UseAssertConst'
 import {useURLParam} from '../../../Utils/UseURLParam'
 import {assert} from '../../../Utils/Utils'
@@ -100,7 +100,7 @@ export function useChartPanelState() {
           data: data,
           xyRange: {
             x: data.years.displayRange,
-            y: tpawChartDataMainYRange(prev.main.data),
+            y: tpawChartDataMainYRange(data),
           },
           animation,
         },
@@ -196,7 +196,22 @@ export function useChartPanelState() {
       }))
     }
   }, [shouldShowLegacy])
-  return {state, handleChangeType, handleRescale, shouldShowLegacy}
+
+  const targetYRange = useMemo(
+    () => ({
+      main: tpawChartDataMainYRange(state.main.data),
+      legacy: tpawChartDataLegacyYRange(state.legacy.data),
+    }),
+    [state.legacy.data, state.main.data]
+  )
+
+  return {
+    state,
+    handleChangeType,
+    handleRescale,
+    shouldShowLegacy,
+    targetYRange,
+  }
 }
 
 const _shouldShowLegacy = (
