@@ -1,4 +1,6 @@
 import _ from 'lodash'
+import {blendReturns} from '../Utils/BlendReturns'
+import {getNetPresentValueArr} from '../Utils/GetNetPresentValue'
 import {nominalToReal} from '../Utils/NominalToReal'
 import {historicalReturns} from './HistoricalReturns'
 import {TPAWParams, tpawParamsValidator, ValueForYearRange} from './TPAWParams'
@@ -6,7 +8,7 @@ import {extendTPAWParams} from './TPAWParamsExt'
 
 export type TPAWParamsProcessed = ReturnType<typeof processTPAWParams>
 export function processTPAWParams(
-  params: TPAWParams,
+  params: TPAWParams
   // randomIndexesIntoHistoricalReturnsByYear?: (year: number) => number
 ) {
   const {numYears} = extendTPAWParams(params)
@@ -17,10 +19,13 @@ export function processTPAWParams(
     bonds: 1 - stocks,
   })
 
+  const byYear = _processByYearParams(params)
+  const expectedReturns = blendReturns(params.returns.expected)
+
   const result = {
     ...paramsWithoutInflation,
     returns: _processReturnsParams(
-      params,
+      params
       // randomIndexesIntoHistoricalReturnsByYear
     ),
     targetAllocation: {
@@ -31,7 +36,23 @@ export function processTPAWParams(
         params.targetAllocation.regularPortfolio
       ),
     },
-    byYear: _processByYearParams(params),
+    byYear,
+    netPresentValue: {
+      savings: getNetPresentValueArr(
+        expectedReturns({stocks: 0}),
+        byYear.map(x => x.savings)
+      ),
+      withdrawals: {
+        fundedByBonds: getNetPresentValueArr(
+          expectedReturns({stocks: 0}),
+          byYear.map(x => x.withdrawals.fundedByBonds)
+        ),
+        fundedByRiskPortfolio: getNetPresentValueArr(
+          expectedReturns(params.targetAllocation.regularPortfolio),
+          byYear.map(x => x.withdrawals.fundedByRiskPortfolio)
+        ),
+      },
+    },
     legacy: (() => {
       const {total} = params.legacy
       const external = _.sum(
@@ -95,7 +116,7 @@ function _processByYearParams(params: TPAWParams) {
 }
 
 function _processReturnsParams(
-  params: TPAWParams,
+  params: TPAWParams
   // randomIndexesIntoHistoricalReturnsByYear: (index: number) => number = () =>
   //   _.random(historicalReturns.length - 1)
 ) {

@@ -32,6 +32,7 @@ export type TPAWRunInWorkerResult = {
   startingBalanceOfSavingsPortfolio: TPAWRunInWorkerByPercentileByYearsFromNow
   savingsPortfolioStockAllocation: TPAWRunInWorkerByPercentileByYearsFromNow
   withdrawalFromSavingsRate: TPAWRunInWorkerByPercentileByYearsFromNow
+  withdrawalFromSavingsRateStrict: TPAWRunInWorkerByPercentileByYearsFromNow
   legacyByPercentile: {data: number; percentile: number}[]
   endingBalanceOfSavingsPortfolioByPercentile: {
     data: number
@@ -294,6 +295,10 @@ export class TPAWRunInWorker {
       startingBalanceOfSavingsPortfolio,
       savingsPortfolioStockAllocation,
       withdrawalFromSavingsRate,
+      withdrawalFromSavingsRateStrict: _mapByPercentileByYearsFromNow(
+        withdrawalFromSavingsRate,
+        x => Math.max(0, x)
+      ),
       firstYearOfSomeRun,
       legacyByPercentile,
       endingBalanceOfSavingsPortfolioByPercentile,
@@ -425,29 +430,34 @@ const _separateExtraWithdrawal = (
     extraWithdrawal.yearRange
   )
 
-  const byPercentileByYearsFromNow = x.byPercentileByYearsFromNow.map(
-    ({data, percentile}) => ({
-      data: data.map((value, yearFromNow) => {
-        if (yearFromNow < yearRange.start || yearFromNow > yearRange.end) {
-          return 0
-        }
-        const currYearParams = params.byYear[yearFromNow].withdrawals
-        const withdrawalTargetForThisYear = nominalToReal(
-          extraWithdrawal,
-          params.original.inflation,
-          yearFromNow
-        )
-        if (withdrawalTargetForThisYear === 0) return 0
-        const ratio =
-          withdrawalTargetForThisYear /
-          (type === 'extra'
-            ? currYearParams.fundedByRiskPortfolio
-            : currYearParams.fundedByBonds)
-        assert(!isNaN(ratio)) // withdrawalTargetForThisYear ?>0 imples denominator is not 0.
-        return value * ratio
-      }),
-      percentile,
-    })
-  )
+  return _mapByPercentileByYearsFromNow(x, (value, yearFromNow) => {
+    if (yearFromNow < yearRange.start || yearFromNow > yearRange.end) {
+      return 0
+    }
+    const currYearParams = params.byYear[yearFromNow].withdrawals
+    const withdrawalTargetForThisYear = nominalToReal(
+      extraWithdrawal,
+      params.original.inflation,
+      yearFromNow
+    )
+    if (withdrawalTargetForThisYear === 0) return 0
+    const ratio =
+      withdrawalTargetForThisYear /
+      (type === 'extra'
+        ? currYearParams.fundedByRiskPortfolio
+        : currYearParams.fundedByBonds)
+    assert(!isNaN(ratio)) // withdrawalTargetForThisYear ?>0 imples denominator is not 0.
+    return value * ratio
+  })
+}
+
+const _mapByPercentileByYearsFromNow = (
+  x: TPAWRunInWorkerByPercentileByYearsFromNow,
+  fn: (x: number, i: number) => number
+): TPAWRunInWorkerByPercentileByYearsFromNow => {
+  const byPercentileByYearsFromNow = x.byPercentileByYearsFromNow.map(x => ({
+    data: x.data.map(fn),
+    percentile: x.percentile,
+  }))
   return {byPercentileByYearsFromNow}
 }

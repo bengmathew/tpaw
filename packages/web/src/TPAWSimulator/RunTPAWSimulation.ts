@@ -1,4 +1,6 @@
 import _ from 'lodash'
+import {blendReturns} from '../Utils/BlendReturns'
+import {getNetPresentValue} from '../Utils/GetNetPresentValue'
 import {assert, fGet, noCase} from '../Utils/Utils'
 import {extendTPAWParams} from './TPAWParamsExt'
 import {TPAWParamsProcessed} from './TPAWParamsProcessed'
@@ -79,29 +81,25 @@ export function runASingleYear(
   )
   // ------ RETURNS -----
   const returns = (() => {
-    const _expected = (allocation: {stocks: number; bonds: number}) =>
-      params.returns.expected.bonds * allocation.bonds +
-      params.returns.expected.stocks * allocation.stocks
+    const _expected = blendReturns(params.returns.expected)
     const _realized =
       args.type === 'useExpectedReturns'
         ? _expected
         : args.type === 'useHistoricalReturns'
-        ? (allocation: {stocks: number; bonds: number}) =>
-            args.historicalReturn.bonds * allocation.bonds +
-            args.historicalReturn.stocks * allocation.stocks
+        ? blendReturns(args.historicalReturn)
         : noCase(args)
 
     return {
       expected: {
-        stocks: _expected({stocks: 1, bonds: 0}),
-        bonds: _expected({stocks: 0, bonds: 1}),
-        essentialExpenses: _expected({stocks: 0, bonds: 1}),
+        stocks: _expected({stocks: 1}),
+        bonds: _expected({stocks: 0}),
+        essentialExpenses: _expected({stocks: 0}),
         legacyPortfolio: _expected(params.targetAllocation.legacyPortfolio),
         regularPortfolio: _expected(params.targetAllocation.regularPortfolio),
       },
       realized: {
-        stocks: _realized({stocks: 1, bonds: 0}),
-        bonds: _realized({stocks: 0, bonds: 1}),
+        stocks: _realized({stocks: 1}),
+        bonds: _realized({stocks: 0}),
       },
     }
   })()
@@ -111,32 +109,22 @@ export function runASingleYear(
     const withOpt =
       (value: number, curr: number) =>
       (addCurrYear: 'addCurrYear' | 'skipCurrYear') =>
-        value + (addCurrYear === 'addCurrYear' ? curr : 0)
+        value + (addCurrYear === 'addCurrYear' ? 0 : -curr)
 
     const paramsForCurrYear = params.byYear[yearIndex]
-    const paramsForRemainingYears = params.byYear.slice(yearIndex + 1)
 
     const savings = withOpt(
-      getNetPresentValue(
-        returns.expected.bonds,
-        paramsForRemainingYears.map(x => x.savings)
-      ),
+      params.netPresentValue.savings[yearIndex],
       paramsForCurrYear.savings
     )
 
     const withdrawals = {
       fundedByBonds: withOpt(
-        getNetPresentValue(
-          returns.expected.bonds,
-          paramsForRemainingYears.map(x => x.withdrawals.fundedByBonds)
-        ),
+        params.netPresentValue.withdrawals.fundedByBonds[yearIndex],
         paramsForCurrYear.withdrawals.fundedByBonds
       ),
       fundedByRiskPortfolio: withOpt(
-        getNetPresentValue(
-          returns.expected.regularPortfolio,
-          paramsForRemainingYears.map(x => x.withdrawals.fundedByRiskPortfolio)
-        ),
+        params.netPresentValue.withdrawals.fundedByRiskPortfolio[yearIndex],
         paramsForCurrYear.withdrawals.fundedByRiskPortfolio
       ),
     }
@@ -378,18 +366,3 @@ export function runASingleYear(
     savingsPortfolioEndingBalance,
   }
 }
-
-// This is where most of the computational cost lies.
-export const getNetPresentValue = (
-  rate: number,
-  amounts: number[],
-  timesOnePlusRate?: 'timesOnePlusRate'
-) =>
-  // Significantly faster than Math.pow(), _.sum, and _.map.
-  amounts.reduce(
-    (p, amount) => {
-      const newRate = p.rate * (1 + rate)
-      return {rate: newRate, sum: p.sum + amount / newRate}
-    },
-    {rate: 1, sum: 0}
-  ).sum * (timesOnePlusRate ? 1 + rate : 1)

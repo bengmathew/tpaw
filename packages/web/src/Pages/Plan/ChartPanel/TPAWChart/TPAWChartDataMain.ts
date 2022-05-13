@@ -81,7 +81,8 @@ export const tpawChartDataMain = (
     ...params.withdrawals.fundedByBonds,
     ...params.withdrawals.fundedByRiskPortfolio,
   ].some(x => asYFN(x.yearRange).start < withdrawalStart)
-    ? ('allYears' as const)
+    ? ('allYears' as const
+    )
     : ('retirementYears' as const)
   switch (type) {
     case 'spending-total':
@@ -137,7 +138,7 @@ export const tpawChartDataMain = (
       return _data(
         type,
         tpawResult,
-        x => x.withdrawalFromSavingsRate,
+        x => x.withdrawalFromSavingsRateStrict,
         formatPercentage(1),
         'retirementYears',
         0,

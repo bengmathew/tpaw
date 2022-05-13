@@ -5,7 +5,7 @@ import {TPAWRunInWorker} from '../TPAWSimulator/Worker/TPAWRunInWorker'
 import {fGet} from '../Utils/Utils'
 import {AppPage} from './App/AppPage'
 
-const numRuns = 500
+const numRuns = 500 
 const highlightPercentiles = [5, 25, 50, 75, 95]
 const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
 
