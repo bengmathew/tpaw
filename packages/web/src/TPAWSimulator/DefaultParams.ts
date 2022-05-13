@@ -11,10 +11,10 @@ export function getDefaultParams() {
       },
     },
     returns: {
-      expected: {stocks: 0.035, bonds: -0.005},
-      historical: {adjust: {type: 'to', stocks: 0.035, bonds: -0.005}},
+      expected: {stocks: 0.037, bonds: 0.005},
+      historical: {adjust: {type: 'to', stocks: 0.037, bonds: 0.005}},
     },
-    inflation: 0.02,
+    inflation: 0.027,
     targetAllocation: {
       regularPortfolio: {stocks: 0.35},
       legacyPortfolio: {stocks: 0.7},
