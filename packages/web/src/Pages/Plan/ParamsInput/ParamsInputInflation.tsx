@@ -51,7 +51,6 @@ export const ParamsInputInflation = React.memo(
             onClick={() =>
               setParams(p => ({
                 ...p,
-                returns: getDefaultParams().returns,
                 inflation: getDefaultParams().inflation,
               }))
             }
