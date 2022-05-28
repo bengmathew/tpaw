@@ -1,3 +1,4 @@
+import {Power1} from 'gsap'
 import _ from 'lodash'
 import React, {useEffect, useMemo, useRef, useState} from 'react'
 import {rectExt} from '../../../../Utils/Geometry'
@@ -12,7 +13,6 @@ import {
 } from '../../../Common/Chart/ChartReact'
 import {ChartUtils} from '../../../Common/Chart/ChartUtils/ChartUtils'
 import {TPAWChartDataMain} from '../../ChartPanel/TPAWChart/TPAWChartDataMain'
-import {Power1} from 'gsap'
 
 export const AssetAllocationChart = React.memo(
   ({className = ''}: {className?: string}) => {
@@ -27,9 +27,8 @@ export const AssetAllocationChart = React.memo(
 
     const components = useMemo(
       () => [
-        
         chartDrawDataLines<TPAWChartDataMain>({
-          lineWidth: 0.2 ,
+          lineWidth: 0.2,
           strokeStyle: ChartUtils.color.gray[500],
           dataFn: (data: TPAWChartDataMain) => ({
             lines: data.percentiles
@@ -62,18 +61,23 @@ export const AssetAllocationChart = React.memo(
 
     const divRef = useRef<HTMLDivElement | null>(null)
     const ref = useRef<ChartReactStatefull | null>(null)
+    const [width, setWidth] = useState(50)
     useEffect(() => {
       const div = fGet(divRef.current)
-      const observer = new ResizeObserver(() => {
-        const sizing = _sizing(div.getBoundingClientRect().width)
-        div.style.height = `${sizing.position.height}px`
-        fGet(ref.current).setSizing(sizing)
-      })
+      const observer = new ResizeObserver(() =>
+        setWidth(div.getBoundingClientRect().width)
+      )
       observer.observe(div)
       return () => {
         observer.disconnect()
       }
     }, [])
+
+    useEffect(()=>{
+      const sizing = _sizing(width)
+      fGet(divRef.current).style.height = `${sizing.position.height}px`
+      fGet(ref.current).setSizing(sizing)
+    }, [width])
 
     return (
       <div
@@ -83,7 +87,7 @@ export const AssetAllocationChart = React.memo(
         <ChartReact<TPAWChartDataMain>
           ref={ref}
           state={state}
-          starting={{sizing: _sizing(50)}}
+          starting={{sizing: _sizing(width)}}
           components={components}
         />
       </div>

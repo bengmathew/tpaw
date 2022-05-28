@@ -516,7 +516,10 @@ export const ChartPanel = React.memo(
                   className="absolute -right-[12px] -top-[10px] w-[30px] h-[30px] bg-red-500 rounded-full  "
                   onAnimationEnd={() => setPingRescale(false)}
                   style={{animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) 4'}}
-                ></div>}
+                ></div>
+                }
+                {/* Forces tailwind to insert ping keyframes. */}
+                <div className='hidden animate-ping'/>
               </>
             )}
           </button>
