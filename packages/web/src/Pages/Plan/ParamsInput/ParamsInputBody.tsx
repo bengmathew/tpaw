@@ -14,9 +14,9 @@ import {ModalBase} from '../../Common/Modal/ModalBase'
 
 const duration = 500 / 1000
 
-export type ParamsInputBodyProps = Omit<
+export type ParamsInputBodyPassThruProps = Omit<
   React.ComponentProps<typeof ParamsInputBody>,
-  'children'
+  'children' | 'headingMarginLeft'
 >
 
 export const ParamsInputBody = React.memo(
@@ -24,6 +24,7 @@ export const ParamsInputBody = React.memo(
     layout,
     sizing,
     children: childrenIn,
+    headingMarginLeft,
   }: {
     layout: 'mobile' | 'laptop' | 'desktop'
     sizing: {
@@ -31,6 +32,7 @@ export const ParamsInputBody = React.memo(
       cardPadding: Padding
       headingMarginBottom: number
     }
+    headingMarginLeft: 'normal' | 'reduced'
     children:
       | ReactElement
       | [
@@ -51,7 +53,11 @@ export const ParamsInputBody = React.memo(
     return layout === 'mobile' ? (
       <_Mobile padding={sizing.padding}>{child}</_Mobile>
     ) : (
-      <_LaptopAndDesktop sizing={sizing} layout={layout}>
+      <_LaptopAndDesktop
+        sizing={sizing}
+        layout={layout}
+        headingMarginLeft={headingMarginLeft}
+      >
         {child}
       </_LaptopAndDesktop>
     )
@@ -63,6 +69,7 @@ export const _LaptopAndDesktop = React.memo(
     layout,
     sizing: {padding, cardPadding, headingMarginBottom},
     children,
+    headingMarginLeft,
   }: {
     layout: 'laptop' | 'desktop'
     sizing: {
@@ -70,6 +77,8 @@ export const _LaptopAndDesktop = React.memo(
       cardPadding: Padding
       headingMarginBottom: number
     }
+
+    headingMarginLeft: 'normal' | 'reduced'
     children: {
       content: ReactElement
       error?: ReactElement
@@ -143,18 +152,17 @@ export const _LaptopAndDesktop = React.memo(
             style={{padding: paddingCSS(padding)}}
           >
             <h2
-              className="uppercase font-bold top-0 z-10"
+              className="uppercase font-bold top-0 z-10 "
               style={{
                 paddingBottom: `${headingMarginBottom}px`,
-                paddingLeft: `${cardPadding.left}px`,
+                paddingLeft: `${
+                  cardPadding.left * (headingMarginLeft === 'normal' ? 1 : 0.5)
+                }px`,
               }}
             >
               Input
             </h2>
-            <div
-              className="bg-cardBG rounded-2xl border-gray-200 border"
-              style={{padding: paddingCSS(cardPadding)}}
-            >
+            <div className="">
               <div className="">{children.content}</div>
             </div>
             {children?.error && (

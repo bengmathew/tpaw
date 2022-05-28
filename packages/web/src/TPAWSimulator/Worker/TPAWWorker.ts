@@ -1,7 +1,10 @@
 import _ from 'lodash'
 import {noCase} from '../../Utils/Utils'
 import {historicalReturns} from '../HistoricalReturns'
-import {runTPAWSimulation} from '../RunTPAWSimulation'
+import {extendTPAWParams} from '../TPAWParamsExt'
+import {runSPAWSimulation} from './RunSPAWSimulation'
+import {runTPAWSimulation} from './RunTPAWSimulation'
+import {SimulationResult} from './SimulationResult'
 import {TPAWWorkerArgs, TPAWWorkerResult} from './TPAWWorkerTypes'
 
 const randomStore = new Map<number, Map<number, number>>()
@@ -31,20 +34,49 @@ addEventListener('message', event => {
       {
         let start0 = performance.now()
         const {numRuns, params} = eventData.args
-        const resultsFromUsingExpectedReturns = runTPAWSimulation({
-          type: 'useExpectedReturns',
-          params,
-        }).byYearFromNow
+        const paramsExt = extendTPAWParams(params.original)
+
+        let runs: SimulationResult[]
+
         let start = performance.now()
-        const runs = _.range(numRuns).map((x, i) =>
-          runTPAWSimulation({
-            type: 'useHistoricalReturns',
-            params,
-            resultsFromUsingExpectedReturns,
-            randomIndexesIntoHistoricalReturnsByYear: year =>
-              memoizedRandom(i, year),
-          })
-        )
+
+        switch (params.strategy) {
+          case 'TPAW': {
+            const resultsFromUsingExpectedReturns = runTPAWSimulation(
+              params,
+              paramsExt,
+              {type: 'useExpectedReturns'}
+            )
+            runs = _.range(numRuns).map((x, i) =>
+              runTPAWSimulation(params, paramsExt, {
+                type: 'useHistoricalReturns',
+                resultsFromUsingExpectedReturns,
+                randomIndexesIntoHistoricalReturnsByYear: year =>
+                  memoizedRandom(i, year),
+              })
+            )
+            break
+          }
+          case 'SPAW': {
+            const resultsFromUsingExpectedReturns = runSPAWSimulation(
+              params,
+              paramsExt,
+              {type: 'useExpectedReturns'}
+            )
+            runs = _.range(numRuns).map((x, i) =>
+              runSPAWSimulation(params, paramsExt, {
+                type: 'useHistoricalReturns',
+                resultsFromUsingExpectedReturns,
+                randomIndexesIntoHistoricalReturnsByYear: year =>
+                  memoizedRandom(i, year),
+              })
+            )
+            break
+            break
+          }
+          default:
+            noCase(params.strategy)
+        }
         const perfRuns = performance.now() - start
         start = performance.now()
 
@@ -53,16 +85,23 @@ addEventListener('message', event => {
           _.times(numYears, () => new Float64Array(numRuns))
         const result = {
           byYearsFromNowByRun: {
-            withdrawals: {
-              total: getArrays(),
-              essential: getArrays(),
-              extra: getArrays(),
-              regular: getArrays(),
+            savingsPortfolio: {
+              start: {
+                balance: getArrays(),
+              },
+              withdrawals: {
+                essential: getArrays(),
+                discretionary: getArrays(),
+                regular: getArrays(),
+                total: getArrays(),
+                fromSavingsPortfolioRate: getArrays(),
+              },
+              afterWithdrawals: {
+                allocation: {
+                  stocks: getArrays(),
+                },
+              },
             },
-            startingBalanceOfSavingsPortfolio: getArrays(),
-            endingBalanceOfSavingsPortfolio: getArrays(),
-            savingsPortfolioStockAllocation: getArrays(),
-            withdrawalFromSavingsRate: getArrays(),
           },
           firstYearOfSomeRun: runs[0].byYearFromNow[0],
           legacyByRun: new Float64Array(runs.map(x => x.legacy)),
@@ -77,18 +116,20 @@ addEventListener('message', event => {
         runs.forEach((run, r) =>
           run.byYearFromNow.forEach((year, y) => {
             const t = result.byYearsFromNowByRun
-            t.withdrawals.total[y][r] = year.withdrawalAchieved.total
-            t.withdrawals.essential[y][r] = year.withdrawalAchieved.essential
-            t.withdrawals.extra[y][r] = year.withdrawalAchieved.extra
-            t.withdrawals.regular[y][r] = year.withdrawalAchieved.regular
-            t.startingBalanceOfSavingsPortfolio[y][r] =
-              year.wealthAndSpending.startingBalanceOfSavingsPortfolio
-            t.endingBalanceOfSavingsPortfolio[y][r] =
-              year.savingsPortfolioEndingBalance
-            t.savingsPortfolioStockAllocation[y][r] =
-              year.savingsPortfolioAllocation.asPercentage.stocks ?? 0
-            t.withdrawalFromSavingsRate[y][r] =
-              year.withdrawalAchieved.fromSavingsRate
+            t.savingsPortfolio.start.balance[y][r] =
+              year.savingsPortfolio.start.balance
+            t.savingsPortfolio.withdrawals.essential[y][r] =
+              year.savingsPortfolio.withdrawals.essential
+            t.savingsPortfolio.withdrawals.discretionary[y][r] =
+              year.savingsPortfolio.withdrawals.discretionary
+            t.savingsPortfolio.withdrawals.regular[y][r] =
+              year.savingsPortfolio.withdrawals.regular
+            t.savingsPortfolio.withdrawals.total[y][r] =
+              year.savingsPortfolio.withdrawals.total
+            t.savingsPortfolio.withdrawals.fromSavingsPortfolioRate[y][r] =
+              year.savingsPortfolio.withdrawals.fromSavingsPortfolioRate
+            t.savingsPortfolio.afterWithdrawals.allocation.stocks[y][r] =
+              year.savingsPortfolio.afterWithdrawals.allocation.stocks
           })
         )
 
@@ -109,22 +150,25 @@ addEventListener('message', event => {
           },
         }
         ;(postMessage as any)(reply, [
-          ...result.byYearsFromNowByRun.withdrawals.total.map(x => x.buffer),
-          ...result.byYearsFromNowByRun.withdrawals.essential.map(
+          ...result.byYearsFromNowByRun.savingsPortfolio.start.balance.map(
             x => x.buffer
           ),
-          ...result.byYearsFromNowByRun.withdrawals.extra.map(x => x.buffer),
-          ...result.byYearsFromNowByRun.withdrawals.regular.map(x => x.buffer),
-          ...result.byYearsFromNowByRun.startingBalanceOfSavingsPortfolio.map(
+          ...result.byYearsFromNowByRun.savingsPortfolio.withdrawals.essential.map(
             x => x.buffer
           ),
-          ...result.byYearsFromNowByRun.endingBalanceOfSavingsPortfolio.map(
+          ...result.byYearsFromNowByRun.savingsPortfolio.withdrawals.discretionary.map(
             x => x.buffer
           ),
-          ...result.byYearsFromNowByRun.savingsPortfolioStockAllocation.map(
+          ...result.byYearsFromNowByRun.savingsPortfolio.withdrawals.regular.map(
             x => x.buffer
           ),
-          ...result.byYearsFromNowByRun.withdrawalFromSavingsRate.map(
+          ...result.byYearsFromNowByRun.savingsPortfolio.withdrawals.total.map(
+            x => x.buffer
+          ),
+          ...result.byYearsFromNowByRun.savingsPortfolio.withdrawals.fromSavingsPortfolioRate.map(
+            x => x.buffer
+          ),
+          ...result.byYearsFromNowByRun.savingsPortfolio.afterWithdrawals.allocation.stocks.map(
             x => x.buffer
           ),
           result.legacyByRun.buffer,

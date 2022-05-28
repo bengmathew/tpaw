@@ -26,16 +26,12 @@ import {usePlanContent} from '../Plan'
 import {chartPanelLabel} from './ChartPanelLabel'
 import {ChartPanelMenuButton} from './ChartPanelMenuButton'
 import {
-  chartPanelSpendingDiscretionaryTypeID,
-  chartPanelSpendingEssentialTypeID,
   ChartPanelType,
   isChartPanelSpendingDiscretionaryType,
   isChartPanelSpendingEssentialType,
 } from './ChartPanelType'
-import {
-  tpawChartDataMain,
-  TPAWChartDataMain,
-} from './TPAWChart/TPAWChartDataMain'
+import {TPAWChartDataMain} from './TPAWChart/TPAWChartDataMain'
+import {Power1} from 'gsap'
 
 const duration = 0.5
 const scale = 0.95
@@ -82,7 +78,6 @@ export const ChartPanelMenu = React.memo(
       const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(
         null
       )
-      const allChartData = useAllChartData()
       // Hack to force redraw on open. Seemed like the draws were not taking
       // effect when the canvas was not visible.
       const [drawKey, setDrawKey] = useState(0)
@@ -121,7 +116,6 @@ export const ChartPanelMenu = React.memo(
       const buttonProps = {
         currType: type,
         onSelect: (x: ChartPanelType) => handleHide(x),
-        allChartData,
         drawKey,
       }
 
@@ -167,15 +161,15 @@ export const ChartPanelMenu = React.memo(
                 }}
               >
                 <_Button type="spending-total" {...buttonProps} />
-                {(params.withdrawals.fundedByBonds.length > 0 ||
-                  params.withdrawals.fundedByRiskPortfolio.length > 0) && (
+                {(params.withdrawals.essential.length > 0 ||
+                  params.withdrawals.discretionary.length > 0) && (
                   <div className=" flex flex-col border- border-gray-400 ">
                     <_Button
                       className="pl-10"
                       type="spending-general"
                       {...buttonProps}
                     />
-                    {params.withdrawals.fundedByBonds.map(x => (
+                    {params.withdrawals.essential.map(x => (
                       <_Button
                         className="pl-10"
                         key={`essential-${x.id}`}
@@ -183,7 +177,7 @@ export const ChartPanelMenu = React.memo(
                         {...buttonProps}
                       />
                     ))}
-                    {params.withdrawals.fundedByRiskPortfolio.map(x => (
+                    {params.withdrawals.discretionary.map(x => (
                       <_Button
                         className="pl-10"
                         key={`discretionary-${x.id}`}
@@ -212,18 +206,18 @@ const _Button = React.memo(
     currType,
     onSelect,
     type,
-    allChartData,
     drawKey,
   }: {
     className?: string
     currType: ChartPanelType
     onSelect: (type: ChartPanelType) => void
     type: ChartPanelType
-    allChartData: _AllChartData
     drawKey: number
   }) => {
-    const {params} = useSimulation().tpawResult.args
-    const [description, chartData] = useInfo(type, allChartData)
+    const {tpawResult} = useSimulation()
+    const {params} = tpawResult.args
+    const chartData = fGet(tpawResult.chartMainData.get(type))
+    const [description] = useInfo(type)
     const {label, subLabel} = chartPanelLabel(params.original, type, 'short')
     const isCurrent = _.isEqual(currType, type)
     const windowSize = useWindowSize()
@@ -284,69 +278,29 @@ const _Button = React.memo(
   }
 )
 
-const useInfo = (panelType: ChartPanelType, allData: _AllChartData) => {
+const useInfo = (panelType: ChartPanelType) => {
   const content = usePlanContent().chart
   switch (panelType) {
     case 'spending-total':
-      return [content.spending.total.menu, allData.spending.total] as const
+      return [content.spending.total.menu] as const
     case 'spending-general': {
-      return [content.spending.regular.menu, allData.spending.regular] as const
+      return [content.spending.regular.menu] as const
     }
     case 'portfolio':
-      return [content.portfolio.menu, allData.portfolio] as const
+      return [content.portfolio.menu] as const
     case 'glide-path':
-      return [content.glidePath.menu, allData.glidePath] as const
+      return [content.glidePath.menu] as const
     case 'withdrawal-rate':
-      return [content.withdrawalRate.menu, allData.withdrawalRate] as const
+      return [content.withdrawalRate.menu] as const
     default:
       if (isChartPanelSpendingEssentialType(panelType)) {
-        const id = chartPanelSpendingEssentialTypeID(panelType)
-        return [
-          content.spending.essential.menu,
-          fGet(allData.spending.essential.get(id)),
-        ] as const
+        return [content.spending.essential.menu] as const
       }
       if (isChartPanelSpendingDiscretionaryType(panelType)) {
-        const id = chartPanelSpendingDiscretionaryTypeID(panelType)
-        return [
-          content.spending.discretionary.menu,
-          fGet(allData.spending.discretionary.get(id)),
-        ] as const
+        return [content.spending.discretionary.menu] as const
       }
       noCase(panelType)
   }
-}
-
-type _AllChartData = ReturnType<typeof useAllChartData>
-function useAllChartData() {
-  const {tpawResult, highlightPercentiles} = useSimulation()
-  return useMemo(() => {
-    const {params} = tpawResult.args
-    const _data = (type: ChartPanelType) =>
-      tpawChartDataMain(type, tpawResult, highlightPercentiles)
-    const result = {
-      spending: {
-        total: _data('spending-total'),
-        regular: _data('spending-general'),
-        essential: new Map(
-          params.withdrawals.fundedByBonds.map(x => [
-            x.id,
-            _data(`spending-essential-${x.id}`),
-          ])
-        ),
-        discretionary: new Map(
-          params.withdrawals.fundedByRiskPortfolio.map(x => [
-            x.id,
-            _data(`spending-discretionary-${x.id}`),
-          ])
-        ),
-      },
-      portfolio: _data('portfolio'),
-      glidePath: _data('glide-path'),
-      withdrawalRate: _data('withdrawal-rate'),
-    }
-    return result
-  }, [tpawResult, highlightPercentiles])
 }
 
 const _processData = (
@@ -355,7 +309,7 @@ const _processData = (
   data,
   xyRange: {
     x: data.years.displayRange,
-    y: {start: data.min.y, end: data.max.y},
+    y: data.yDisplayRange,
   },
   animation: null,
 })
@@ -372,7 +326,6 @@ const _Chart = React.memo(
     drawKey: number
     startingSizing: {position: RectExt; padding: Padding}
   }) => {
-    const ref = useRef<ChartReactStatefull | null>(null)
     const [state, setState] = useState(() => _processData(data))
 
     useEffect(() => {
@@ -405,14 +358,11 @@ const _Chart = React.memo(
           }),
         }),
       ],
-      // eslint-disable-next-line react-hooks/exhaustive-deps
       [isCurrent]
     )
 
-    // return <></>
     return (
       <ChartReact<TPAWChartDataMain>
-        ref={ref}
         state={state}
         starting={{sizing: startingSizing}}
         components={components}

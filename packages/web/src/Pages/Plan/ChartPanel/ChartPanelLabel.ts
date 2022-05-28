@@ -32,7 +32,7 @@ export const chartPanelLabel = (
     default:
       if (isChartPanelSpendingEssentialType(panelType)) {
         const id = chartPanelSpendingEssentialTypeID(panelType)
-        const index = params.withdrawals.fundedByBonds.findIndex(
+        const index = params.withdrawals.essential.findIndex(
           x => x.id === id
         )
         assert(index !== -1)
@@ -42,14 +42,14 @@ export const chartPanelLabel = (
           'Essential',
         ])
         const subLabel = `${
-          trimAndNullify(params.withdrawals.fundedByBonds[index].label) ??
+          trimAndNullify(params.withdrawals.essential[index].label) ??
           '<No label>'
         }`
         return {label, subLabel}
       }
       if (isChartPanelSpendingDiscretionaryType(panelType)) {
         const id = chartPanelSpendingDiscretionaryTypeID(panelType)
-        const index = params.withdrawals.fundedByRiskPortfolio.findIndex(
+        const index = params.withdrawals.discretionary.findIndex(
           x => x.id === id
         )
         assert(index !== -1)
@@ -59,7 +59,7 @@ export const chartPanelLabel = (
           `Discretionary`,
         ])
         const subLabel = `${
-          params.withdrawals.fundedByRiskPortfolio[index].label ?? '<No label>'
+          params.withdrawals.discretionary[index].label ?? '<No label>'
         }`
         return {label, subLabel}
       }

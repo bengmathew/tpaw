@@ -5,7 +5,7 @@ import {TPAWRunInWorker} from '../TPAWSimulator/Worker/TPAWRunInWorker'
 import {fGet} from '../Utils/Utils'
 import {AppPage} from './App/AppPage'
 
-const numRuns = 500 
+const numRuns = 500
 const highlightPercentiles = [5, 25, 50, 75, 95]
 const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
 
@@ -58,7 +58,8 @@ export const Perf = React.memo(() => {
 })
 
 const params = processTPAWParams({
-  v: 5,
+  v: 6,
+  strategy: 'SPAW',
   people: {
     withPartner: false,
     person1: {
@@ -72,7 +73,15 @@ const params = processTPAWParams({
   },
   inflation: 0.02,
   targetAllocation: {
-    regularPortfolio: {stocks: 0.3},
+    regularPortfolio: {
+      forTPAW: {stocks: 0.35},
+      forSPAW: {
+        start: {stocks: 0.5},
+        intermediate: [],
+        end: {stocks: 0.5},
+      },
+    },
+
     legacyPortfolio: {stocks: 0.7},
   },
   scheduledWithdrawalGrowthRate: 0.02,
@@ -104,7 +113,8 @@ const params = processTPAWParams({
     },
   ],
   withdrawals: {
-    fundedByBonds: [
+    lmp:0,
+    essential: [
       {
         label: null,
         yearRange: {
@@ -117,7 +127,7 @@ const params = processTPAWParams({
         id: 0,
       },
     ],
-    fundedByRiskPortfolio: [
+    discretionary: [
       {
         label: null,
         yearRange: {

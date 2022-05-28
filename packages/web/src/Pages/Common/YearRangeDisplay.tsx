@@ -1,5 +1,6 @@
 import React from 'react'
 import {Year, YearRange} from '../../TPAWSimulator/TPAWParams'
+import { SimpleRange } from '../../Utils/SimpleRange'
 import {noCase} from '../../Utils/Utils'
 import {useSimulation} from '../App/WithSimulation'
 
@@ -10,7 +11,7 @@ export const YearRangeDisplay = React.memo(
     lengthInBrackets,
   }: {
     value: YearRange
-    range: {start: Year; end: Year} | null
+    range: SimpleRange | null
     lengthInBrackets: boolean
   }) => {
     const {yearRangeToStr, yearRangeBoundsCheck} = useSimulation().paramsExt

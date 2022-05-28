@@ -1,15 +1,16 @@
 import _ from 'lodash'
 import React from 'react'
-import { getDefaultParams } from '../../../TPAWSimulator/DefaultParams'
-import { Contentful } from '../../../Utils/Contentful'
-import { preciseRange } from '../../../Utils/PreciseRange'
-import { useSimulation } from '../../App/WithSimulation'
-import { SliderInput } from '../../Common/Inputs/SliderInput/SliderInput'
-import { usePlanContent } from '../Plan'
-import { ParamsInputBody, ParamsInputBodyProps } from './ParamsInputBody'
+import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
+import {Contentful} from '../../../Utils/Contentful'
+import { paddingCSS } from '../../../Utils/Geometry'
+import {preciseRange} from '../../../Utils/PreciseRange'
+import {useSimulation} from '../../App/WithSimulation'
+import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
+import {usePlanContent} from '../Plan'
+import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 export const ParamsInputExpectedReturns = React.memo(
-  (props: ParamsInputBodyProps) => {
+  (props: ParamsInputBodyPassThruProps) => {
     const {params, setParams} = useSimulation()
     const content = usePlanContent()
 
@@ -28,14 +29,17 @@ export const ParamsInputExpectedReturns = React.memo(
       })),
     }
     return (
-      <ParamsInputBody {...props}>
-        <div className="">
+      <ParamsInputBody {...props} headingMarginLeft="normal">
+        <div
+          className="params-card"
+          style={{padding: paddingCSS(props.sizing.cardPadding)}}
+        >
           <div
             className="grid my-2 items-center"
             style={{grid: 'auto / auto 1fr'}}
           >
             <Contentful.RichText
-              body={content.expectedReturns.intro.fields.body}
+              body={content['expected-returns'].intro.fields.body}
               p="col-span-2 mb-2 p-base"
             />
 

@@ -1,14 +1,15 @@
 import _ from 'lodash'
 import React, {useState} from 'react'
 import {Contentful} from '../../../Utils/Contentful'
+import {paddingCSS} from '../../../Utils/Geometry'
 import {useSimulation} from '../../App/WithSimulation'
 import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
 import {usePlanContent} from '../Plan'
-import {ByYearSchedule} from './ByYearSchedule/ByYearSchedule'
-import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
+import {ByYearSchedule} from './Helpers/ByYearSchedule'
+import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 export const ParamsInputIncomeDuringRetirement = React.memo(
-  (props: ParamsInputBodyProps) => {
+  (props: ParamsInputBodyPassThruProps) => {
     const {params, paramsExt} = useSimulation()
     const {validYearRange, years} = paramsExt
     const content = usePlanContent()
@@ -18,10 +19,13 @@ export const ParamsInputIncomeDuringRetirement = React.memo(
     >({type: 'main'})
 
     return (
-      <ParamsInputBody {...props}>
-        <div className="">
+      <ParamsInputBody {...props} headingMarginLeft="normal">
+        <div
+          className="params-card"
+          style={{padding: paddingCSS(props.sizing.cardPadding)}}
+        >
           <Contentful.RichText
-            body={content.incomeDuringRetirement.intro.fields.body}
+            body={content['income-during-retirement'].intro.fields.body}
             p="p-base"
           />
           <ByYearSchedule

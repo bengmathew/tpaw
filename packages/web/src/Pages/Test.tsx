@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react'
-import {runTPAWSimulation} from '../TPAWSimulator/RunTPAWSimulation'
+import {extendTPAWParams} from '../TPAWSimulator/TPAWParamsExt'
 import {processTPAWParams} from '../TPAWSimulator/TPAWParamsProcessed'
+import {runSPAWSimulation} from '../TPAWSimulator/Worker/RunSPAWSimulation'
 import {formatCurrency} from '../Utils/FormatCurrency'
 import {Config} from './Config'
 
@@ -11,19 +12,26 @@ export const Test = React.memo(() => {
 
   useEffect(() => {
     const params = testParams
-    const resultsFromUsingExpectedReturns = runTPAWSimulation({
-      type: 'useExpectedReturns',
-      params,
-    }).byYearFromNow
 
-    const result = runTPAWSimulation({
-      type: 'useHistoricalReturns',
+    const prec = params.preCalculations.forSPAW
+    const paramsExt = extendTPAWParams(params.original)
+
+    const resultsFromUsingExpectedReturns = runSPAWSimulation(
       params,
+      paramsExt,
+      {
+        type: 'useExpectedReturns',
+      }
+    )
+
+    const result = runSPAWSimulation(params, paramsExt, {
+      type: 'useHistoricalReturns',
       resultsFromUsingExpectedReturns,
       randomIndexesIntoHistoricalReturnsByYear,
     })
+
     const delta = result.byYearFromNow
-      .map(x => x.withdrawalAchieved.total)
+      .map((x, i) => x.savingsPortfolio.end.balance)
       .map((x, i) => [
         `${i + params.people.person1.ages.current}`,
         `${x - excel[i]}`,
@@ -31,7 +39,15 @@ export const Test = React.memo(() => {
         `${x}`,
       ])
     setRows(delta)
-    console.dir(result.byYearFromNow[30])
+    console.dir(result.byYearFromNow[56])
+    console.dir(prec.netPresentValue.savings.withCurrentYear[30])
+    console.dir(prec.netPresentValue.withdrawals.essential.withCurrentYear[30])
+    console.dir(
+      prec.netPresentValue.withdrawals.discretionary.withCurrentYear[30]
+    )
+    console.dir(prec.netPresentValue.legacy.withCurrentYear[30])
+    console.dir(prec.cumulative1PlusGOver1PlusR[30])
+    console.dir(prec.netPresentValue.withdrawals.discretionary.withCurrentYear)
   }, [])
 
   return (
@@ -62,19 +78,27 @@ export const Test = React.memo(() => {
 })
 
 const excel = [
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 33996.97948, 36515.23335, 40819.66427, 39047.23173, 43282.84372,
-  38642.9173, 38319.86888, 41266.22232, 40328.67974, 41360.64665, 42276.505,
-  43892.50694, 47211.72622, 46141.98058, 47080.35786, 47697.01953, 50255.33648,
-  50230.94697, 56982.40524, 60566.23041, 57757.97577, 55540.16595, 53381.92747,
-  53425.15133, 59193.47445, 63332.54282, 65104.49289, 71132.33506, 71657.30804,
-  74150.14793, 76264.39493, 84537.21839, 77955.49397, 85801.11707, 80446.64488,
-  84921.79502, 94142.43829, 97608.06911, 101613.1702, 91215.93683, 94060.64039,
-  101020.0051, 94153.9511, 87748.30235, 81002.60827, 79256.98725,
+  79932.81452, 109786.50362, 151083.14282, 182999.86374, 254436.66079,
+  287089.15811, 264753.62134, 313417.46376, 290242.63902, 296457.81508,
+  322005.14813, 363055.94322, 449284.25017, 453628.78432, 492249.07174,
+  540627.5658, 525150.53761, 565216.65494, 633168.69608, 644941.28896,
+  538153.84735, 590038.30534, 652965.59417, 716753.35105, 674484.42086,
+  731099.54262, 726328.10785, 680518.80749, 714136.79734, 792399.23765,
+  816995.59796, 773042.08999, 794794.62078, 749692.14887, 708583.02223,
+  693702.98424, 601503.32117, 629470.06741, 624482.816, 584184.66816,
+  505828.91573, 489838.94401, 456156.51348, 436340.03455, 414109.70815,
+  356417.05778, 418717.38705, 410662.99794, 412600.34624, 483136.69768,
+  453735.76029, 386230.26406, 339914.06321, 330871.57418, 291778.89355,
+  330797.10973, 271687.29244, 272395.50196, 244478.55945, 173964.65771,
+  156318.33971, 158093.38202, 154265.15769, 170628.00249, 183055.40027,
+  169884.25679, 169316.21456, 164006.03266, 151612.7949, 132114.56017,
+  145988.86312, 118718.6334, 88718.04282, 72872.73962, 59038.7291, 40834.66815,
 ]
 
 const testParams = processTPAWParams({
-  v: 5,
+  v: 6,
+
+  strategy: 'SPAW',
   people: {
     withPartner: false,
     person1: {
@@ -88,10 +112,17 @@ const testParams = processTPAWParams({
   },
   inflation: 0.02,
   targetAllocation: {
-    regularPortfolio: {stocks: 0.3},
+    regularPortfolio: {
+      forTPAW: {stocks: 0.3},
+      forSPAW: {
+        start: {stocks: 0.6},
+        intermediate: [],
+        end: {stocks: 0.6},
+      },
+    },
     legacyPortfolio: {stocks: 0.7},
   },
-  scheduledWithdrawalGrowthRate: 0.02,
+  scheduledWithdrawalGrowthRate: 0.0,
   savingsAtStartOfStartYear: 50000,
   savings: [
     {
@@ -120,36 +151,57 @@ const testParams = processTPAWParams({
     },
   ],
   withdrawals: {
-    fundedByBonds: [
+    lmp: 0,
+    essential: [
       // {
-      //   label: null,
-      //   yearRange: {start: 76, end: 76},
-      //   value: 100000,
-      //   nominal: false,
-      // },
-    ],
-    fundedByRiskPortfolio: [
-      // {
-      //   label: null,
-      //   yearRange: {start: 58, end: 58},
-      //   value: 100000,
-      //   nominal: false,
       //   id: 1,
+      //   label: null,
+      //   yearRange: {
+      //     type: 'startAndNumYears',
+      //     start: {type: 'numericAge', person: 'person1', age: 44},
+      //     numYears: 1,
+      //   },
+      //   value: 30000,
+      //   nominal: false,
       // },
+      {
+        id: 2,
+        label: null,
+        yearRange: {
+          type: 'startAndNumYears',
+          start: {type: 'numericAge', person: 'person1', age: 75},
+          numYears: 1,
+        },
+        value: 20000,
+        nominal: false,
+      },
+    ],
+    discretionary: [
+      {
+        id: 1,
+        label: null,
+        yearRange: {
+          type: 'startAndNumYears',
+          start: {type: 'numericAge', person: 'person1', age: 81},
+          numYears: 1,
+        },
+        value: 30000,
+        nominal: false,
+      },
     ],
   },
   spendingCeiling: null,
   spendingFloor: null,
   legacy: {
-    total: 0,
+    total: 50000,
     external: [],
   },
 })
 const randomIndexesIntoHistoricalReturnsByYear = (year: number) =>
   [
-    103, 34, 47, 58, 62, 105, 115, 6, 101, 60, 111, 146, 62, 21, 73, 122, 87,
-    48, 52, 31, 136, 122, 129, 60, 9, 124, 56, 35, 108, 102, 28, 8, 20, 115, 71,
-    137, 54, 120, 16, 114, 74, 149, 120, 114, 97, 79, 98, 112, 4, 49, 64, 49,
-    89, 8, 34, 82, 75, 69, 74, 101, 121, 107, 127, 46, 68, 57, 91, 23, 67, 40,
-    28, 37, 37, 107, 43, 38,
+    19, 24, 30, 101, 125, 114, 29, 126, 111, 43, 23, 24, 88, 92, 26, 142, 145,
+    114, 73, 134, 103, 113, 74, 94, 20, 142, 39, 11, 122, 80, 68, 23, 55, 23,
+    97, 82, 36, 45, 91, 14, 43, 74, 90, 74, 27, 131, 125, 40, 9, 125, 114, 6,
+    109, 136, 145, 51, 43, 19, 92, 76, 39, 144, 146, 51, 38, 72, 35, 150, 16,
+    135, 65, 39, 60, 136, 19, 141,
   ].map(x => x - 1)[year]

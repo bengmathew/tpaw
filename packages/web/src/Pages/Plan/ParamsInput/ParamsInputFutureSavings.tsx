@@ -1,14 +1,15 @@
 import {default as React, useState} from 'react'
 import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
 import {Contentful} from '../../../Utils/Contentful'
+import { paddingCSS } from '../../../Utils/Geometry'
 import {useSimulation} from '../../App/WithSimulation'
 import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
 import {usePlanContent} from '../Plan'
-import {ByYearSchedule} from './ByYearSchedule/ByYearSchedule'
-import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
+import {ByYearSchedule} from './Helpers/ByYearSchedule'
+import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 export const ParamsInputFutureSavings = React.memo(
-  ({onBack, ...props}: {onBack: () => void} & ParamsInputBodyProps) => {
+  ({onBack, ...props}: {onBack: () => void} & ParamsInputBodyPassThruProps) => {
     const {params} = useSimulation()
     const {validYearRange, years} = extendTPAWParams(params)
     const content = usePlanContent()
@@ -19,10 +20,13 @@ export const ParamsInputFutureSavings = React.memo(
     >({type: 'main'})
 
     return (
-      <ParamsInputBody {...props}>
-        <div className="">
+      <ParamsInputBody {...props} headingMarginLeft="normal">
+        <div
+          className="params-card"
+          style={{padding: paddingCSS(props.sizing.cardPadding)}}
+        >
           <Contentful.RichText
-            body={content.futureSavings.intro.fields.body}
+            body={content['future-savings'].intro.fields.body}
             p="p-base"
           />
           <ByYearSchedule

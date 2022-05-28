@@ -1,10 +1,9 @@
 import _ from 'lodash'
 import {useRouter} from 'next/dist/client/router'
-import {useEffect, useState} from 'react'
+import {useCallback, useEffect, useState} from 'react'
 import {getDefaultParams} from '../../TPAWSimulator/DefaultParams'
 import {
   TPAWParams,
-  tpawParamsValidator,
   TPAWParamsWithoutHistorical,
 } from '../../TPAWSimulator/TPAWParams'
 import {TPAWParamsV1WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV1'
@@ -15,6 +14,9 @@ import {TPAWParamsV3WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV3'
 import {tpawParamsV3Validator} from '../../TPAWSimulator/TPAWParamsV3Validator'
 import {TPAWParamsV4} from '../../TPAWSimulator/TPAWParamsV4'
 import {TPAWParamsV5} from '../../TPAWSimulator/TPAWParamsV5'
+import {TPAWParamsV6} from '../../TPAWSimulator/TPAWParamsV6'
+import {useAssertConst} from '../../Utils/UseAssertConst'
+import {fGet} from '../../Utils/Utils'
 import {Validator} from '../../Utils/Validator'
 import {AppError} from './AppError'
 
@@ -35,14 +37,34 @@ const _new = ({stack, curr}: _History, params: TPAWParams) => ({
 
 export function useTPAWParams() {
   const router = useRouter()
-  const [history, setHistory] = useState(() => ({
-    stack: [
-      _parseExternalParams(router.query['params']) ??
-        _parseExternalParams(window.localStorage.getItem('params')) ??
-        getDefaultParams(),
-    ],
-    curr: 0,
-  }))
+  const [abHistory, setABHistory] = useState(() => {
+    const a = {
+      stack: [
+        _parseExternalParams(router.query['params']) ??
+          _parseExternalParams(window.localStorage.getItem('params')) ??
+          getDefaultParams(),
+      ],
+      curr: 0,
+    }
+    return {space: 'a' as 'a' | 'b', a, b: _.cloneDeep(a)}
+  })
+  const setParamSpace = useCallback(
+    (space: 'a' | 'b') => setABHistory(x => ({...x, space})),
+    []
+  )
+
+  const history = abHistory[abHistory.space]
+  const setHistory = useCallback(
+    (history: _History | ((x: _History) => _History)) => {
+      setABHistory(abHistory => {
+        const clone = _.cloneDeep(abHistory)
+        clone[clone.space] =
+          typeof history === 'function' ? history(clone[clone.space]) : history
+        return clone
+      })
+    },
+    []
+  )
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -52,7 +74,8 @@ export function useTPAWParams() {
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [])
+  }, [setHistory])
+  useAssertConst([setHistory])
 
   const value = _curr(history)
   useEffect(() => {
@@ -65,6 +88,8 @@ export function useTPAWParams() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
   return {
+    paramSpace: abHistory.space,
+    setParamSpace,
     params: value,
     setParams: (params: TPAWParams | ((params: TPAWParams) => TPAWParams)) => {
       setHistory(history =>
@@ -85,40 +110,30 @@ function _parseExternalParams(str: string | string[] | undefined | null) {
   try {
     const parsed = JSON.parse(str)
     try {
-      let v5: TPAWParamsWithoutHistorical
-      if (parsed.v === 5) {
-        v5 = tpawParamsValidator(parsed)
-      } else if (parsed.v === 4) {
-        v5 = _v4ToV5(TPAWParamsV4.validator(parsed))
-      } else if (parsed.v === 3) {
-        v5 = _v4ToV5(_v3ToV4(tpawParamsV3Validator(parsed)))
-      } else if (parsed.v === 2) {
-        v5 = _v4ToV5(_v3ToV4(_v2ToV3(tpawParamsV2Validator(parsed))))
-      } else {
-        v5 = _v4ToV5(_v3ToV4(_v2ToV3(_v1ToV2(tpawParamsV1Validator(parsed)))))
-      }
-      return _addHistorical(v5)
-      /*      let v6: TPAWParamsWithoutHistorical
-      if (parsed.v === 6) {
-        v6 = tpawParamsValidator(parsed)
-      } else if (parsed.v === 5) {
-        v6 = TPAWParamsV6.fromV5(TPAWParamsV5.validator(parsed))
-      } else if (parsed.v === 4) {
-        v6 = TPAWParamsV6.fromV5(_v4ToV5(TPAWParamsV4.validator(parsed)))
-      } else if (parsed.v === 3) {
-        v6 = TPAWParamsV6.fromV5(
-          _v4ToV5(_v3ToV4(tpawParamsV3Validator(parsed)))
-        )
-      } else if (parsed.v === 2) {
-        v6 = TPAWParamsV6.fromV5(
-          _v4ToV5(_v3ToV4(_v2ToV3(tpawParamsV2Validator(parsed))))
-        )
-      } else {
-        v6 = TPAWParamsV6.fromV5(
-          _v4ToV5(_v3ToV4(_v2ToV3(_v1ToV2(tpawParamsV1Validator(parsed)))))
-        )
-      }
-      return _addHistorical(v6)*/
+      const v1 = !parsed.v ? tpawParamsV1Validator(parsed) : null
+      const v2 =
+        parsed.v === 2 ? tpawParamsV2Validator(parsed) : v1 ? _v1ToV2(v1) : null
+
+      const v3 =
+        parsed.v === 3 ? tpawParamsV3Validator(parsed) : v2 ? _v2ToV3(v2) : null
+      const v4 =
+        parsed.v === 4
+          ? TPAWParamsV4.validator(parsed)
+          : v3
+          ? _v3ToV4(v3)
+          : null
+      const v5 =
+        parsed.v === 5
+          ? TPAWParamsV5.validator(parsed)
+          : v4
+          ? _v4ToV5(v4)
+          : null
+      const v6 =
+        parsed.v === 6
+          ? TPAWParamsV6.validator(parsed)
+          : TPAWParamsV6.fromV5(fGet(v5))
+
+      return _addHistorical(v6)
     } catch (e) {
       if (e instanceof Validator.Failed) {
         throw new AppError(`Error in parameter: ${e.fullMessage}`)

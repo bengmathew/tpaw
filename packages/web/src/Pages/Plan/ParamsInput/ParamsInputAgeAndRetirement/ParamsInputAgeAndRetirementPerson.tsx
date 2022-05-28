@@ -1,4 +1,3 @@
-import { faGameConsoleHandheld } from '@fortawesome/pro-light-svg-icons'
 import {faTrash} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {Switch} from '@headlessui/react'
@@ -15,22 +14,23 @@ import {
   extendTPAWParams,
   TPAWParamsExt,
 } from '../../../../TPAWSimulator/TPAWParamsExt'
-import {assert} from '../../../../Utils/Utils'
+import {assert, noCase} from '../../../../Utils/Utils'
 import {useSimulation} from '../../../App/WithSimulation'
 import {CheckBox} from '../../../Common/Inputs/CheckBox'
 import {NumberInput} from '../../../Common/Inputs/NumberInput'
 import {ConfirmAlert} from '../../../Common/Modal/ConfirmAlert'
 import {ValueForYearRangeDisplay} from '../../../Common/ValueForYearRangeDisplay'
-import {mapAllValueForYearsRangesInParams} from '../Helpers/MapAllValueForYearRangesInParams'
-import {paramsInputValidateYearRange} from '../Helpers/ParamInputValidate'
+import {analyzeYearsInParams} from '../Helpers/AnalyzeYearsInParams'
 
-export const ParamsInputAgePerson = React.memo(
+export const ParamsInputAgeAndRetirementPerson = React.memo(
   ({
     type,
     className = '',
+    style,
   }: {
     type: 'person1' | 'person2'
     className?: string
+    style?: React.CSSProperties
   }) => {
     const {params, paramsExt, setParams} = useSimulation()
     const setPersonInParams = (params: TPAWParams, person: Person) => {
@@ -60,7 +60,15 @@ export const ParamsInputAgePerson = React.memo(
             setParams(params => {
               const clone = _.cloneDeep(params)
               const {person1} = clone.people
+              // Validation won't trigger if strategy is not SPAW and the
+              // glide path actually has a ref to person2. So remove those
+              // entires here.
+              clone.targetAllocation.regularPortfolio.forSPAW.intermediate =
+                clone.targetAllocation.regularPortfolio.forSPAW.intermediate.filter(
+                  ({year}) => year.type === 'now' || year.person === 'person1'
+                )
               clone.people = {withPartner: false, person1}
+
               return _setXAxisDisplay(clone)
             })
           }
@@ -102,7 +110,7 @@ export const ParamsInputAgePerson = React.memo(
       ReactNode[]
     >([])
     return (
-      <div className={`${className} `}>
+      <div className={`${className} `} style={style}>
         <div className="flex justify-between">
           <h2 className="font-bold text-lg">
             {type === 'person1' ? 'You' : 'Your Partner'}
@@ -267,9 +275,8 @@ export const ParamsInputAgePerson = React.memo(
               setRetirementRemovalWarning([])
               setParams(params => {
                 const clone = _.cloneDeep(params)
-                mapAllValueForYearsRangesInParams(
-                  clone,
-                  paramsInputValidateYearRange,
+                analyzeYearsInParams(
+                  extendTPAWParams(clone),
                   (year: Year): Year => {
                     if (
                       year.type === 'namedAge' &&
@@ -303,20 +310,29 @@ export const ParamsInputAgePerson = React.memo(
 )
 
 const _person2RequiredMessage = (params: TPAWParamsExt) => {
-  const fromRanges = mapAllValueForYearsRangesInParams(
-    params.params,
-    paramsInputValidateYearRange
-  ).filter(x => x.usesPerson2)
+  const analysis = analyzeYearsInParams(params)
+  const fromRanges = analysis.valueForYearRange.filter(x => x.usesPerson2)
 
-  if (fromRanges.length === 0) return []
+  const fromGlidePath = analysis.glidePath.filter(x => x.usesPerson2)
+
+  if (fromRanges.length === 0 || fromGlidePath.length === 0) return []
   const result = [
-    `The following years are specified in terms of your partner's age:`,
+    `The following are specified in terms of your partner's age:`,
   ] as ReactNode[]
   result.push(
-    <ol className="list-decimal list-outside ml-10">
+    <ol className=" list-disc list-outside ml-10">
       {fromRanges.map((x, i) => (
-        <li key={i} className="list-item">
+        <li key={`range-${i}`} className="list-item">
           <ValueForYearRangeDisplay entry={x.entry} range={null} />
+        </li>
+      ))}
+      {fromGlidePath.map((x, i) => (
+        <li key={`glidePath-${i}`} className="list-item">
+          Asset allocation for the{' '}
+          {x.location === 'assetAllocationForSPAW'
+            ? 'savings portfolio approach'
+            : noCase(x.location)}{' '}
+          in the {`"${x.sectionLabel}"`} section.
         </li>
       ))}
     </ol>,
@@ -361,26 +377,36 @@ const _retirementReferenceWarning = (
   paramsExt: TPAWParamsExt,
   person: 'person1' | 'person2'
 ) => {
-  const fromRanges = mapAllValueForYearsRangesInParams(
-    paramsExt.params,
-    paramsInputValidateYearRange
-  ).filter(x => x.useRetirement(person))
+  const analysis = analyzeYearsInParams(paramsExt)
+  const fromRanges = analysis.valueForYearRange.filter(x =>
+    x.useRetirement(person)
+  )
+  const fromGlidePath = analysis.glidePath.filter(x => x.usesRetirement(person))
 
-  if (fromRanges.length === 0) return []
+  if (fromRanges.length === 0 && fromGlidePath.length === 0) return []
 
   const result = [
-    `The following years are specified in terms of ${
+    `The following are specified in terms of ${
       person === 'person1' ? 'your' : "your partner's"
     } retirement age:`,
   ] as ReactNode[]
   result.push(
-    <ol className="list-decimal list-outside ml-10">
+    <ul className="list-disc list-outside ml-10">
       {fromRanges.map((x, i) => (
-        <li key={i} className="list-item">
+        <li key={`ranges-${i}`} className="list-item">
           <ValueForYearRangeDisplay entry={x.entry} range={null} />
         </li>
       ))}
-    </ol>,
+      {fromGlidePath.map((x, i) => (
+        <li key={`glidePath-${i}`} className="list-item">
+          Asset allocation for the{' '}
+          {x.location === 'assetAllocationForSPAW'
+            ? 'savings portfolio approach'
+            : noCase(x.location)}{' '}
+          in the {`"${x.sectionLabel}"`} section.
+        </li>
+      ))}
+    </ul>,
     `Would your like to convert these references to ${
       person === 'person1' ? 'your' : "your partner's"
     } retirement to "now"?`

@@ -3,7 +3,7 @@ import {ParamsInputType} from './ParamsInputType'
 
 export const paramsInputLabel = (type: ParamsInputType) => {
   switch (type) {
-    case 'age':
+    case 'age-and-retirement':
       return 'Age and Retirement'
     case 'risk-and-time-preference':
       return 'Risk and Time Preference'
@@ -23,6 +23,8 @@ export const paramsInputLabel = (type: ParamsInputType) => {
       return 'Expected Returns'
     case 'inflation':
       return 'Inflation'
+    case 'strategy':
+      return 'Strategy'
     default:
       noCase(type)
   }

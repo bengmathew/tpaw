@@ -1,11 +1,11 @@
 import _ from 'lodash'
 import {nominalToReal} from '../../Utils/NominalToReal'
 import {assert, fGet, noCase} from '../../Utils/Utils'
-import {TPAWSimulationForYear} from '../RunTPAWSimulation'
 import {StatsTools} from '../StatsTools'
 import {ValueForYearRange} from '../TPAWParams'
 import {extendTPAWParams} from '../TPAWParamsExt'
 import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
+import {SavingsPortfolioThroughAYear} from './SavingsPortfolioThroughAYear'
 import {
   TPAWWorkerArgs,
   TPAWWorkerResult,
@@ -17,28 +17,35 @@ export type TPAWRunInWorkerByPercentileByYearsFromNow = {
 }
 
 export type TPAWRunInWorkerResult = {
-  withdrawals: {
-    total: TPAWRunInWorkerByPercentileByYearsFromNow
-    essential: {
-      total: TPAWRunInWorkerByPercentileByYearsFromNow
-      byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>
+  savingsPortfolio: {
+    start: {
+      balance: TPAWRunInWorkerByPercentileByYearsFromNow
     }
-    extra: {
+    withdrawals: {
+      essential: {
+        total: TPAWRunInWorkerByPercentileByYearsFromNow
+        byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>
+      }
+      discretionary: {
+        total: TPAWRunInWorkerByPercentileByYearsFromNow
+        byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>
+      }
+      regular: TPAWRunInWorkerByPercentileByYearsFromNow
       total: TPAWRunInWorkerByPercentileByYearsFromNow
-      byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>
+      fromSavingsPortfolioRate: TPAWRunInWorkerByPercentileByYearsFromNow
     }
-    regular: TPAWRunInWorkerByPercentileByYearsFromNow
+    afterWithdrawals: {
+      allocation: {
+        stocks: TPAWRunInWorkerByPercentileByYearsFromNow
+      }
+    }
   }
-  startingBalanceOfSavingsPortfolio: TPAWRunInWorkerByPercentileByYearsFromNow
-  savingsPortfolioStockAllocation: TPAWRunInWorkerByPercentileByYearsFromNow
-  withdrawalFromSavingsRate: TPAWRunInWorkerByPercentileByYearsFromNow
-  withdrawalFromSavingsRateStrict: TPAWRunInWorkerByPercentileByYearsFromNow
   legacyByPercentile: {data: number; percentile: number}[]
   endingBalanceOfSavingsPortfolioByPercentile: {
     data: number
     percentile: number
   }[]
-  firstYearOfSomeRun: TPAWSimulationForYear
+  firstYearOfSomeRun: {savingsPortfolio: SavingsPortfolioThroughAYear.End}
   perf: [
     ['workerRuns', number],
     ['mergeRunsByWorker', number],
@@ -244,35 +251,40 @@ export class TPAWRunInWorker {
     }
 
     const [
-      withdrawalsTotal,
-      withdrawalsEssential,
-      withdrawalsExtra,
-      withdrawalsRegular,
       startingBalanceOfSavingsPortfolio,
-      savingsPortfolioStockAllocation,
+      withdrawalsEssential,
+      withdrawalsDiscretionary,
+      withdrawalsRegular,
+      withdrawalsTotal,
       withdrawalFromSavingsRate,
+      savingsPortfolioStockAllocation,
     ] = await _processForByPercentileByYearsFromNow([
-      byYearsFromNowByRun.withdrawals.total,
-      byYearsFromNowByRun.withdrawals.essential,
-      byYearsFromNowByRun.withdrawals.extra,
-      byYearsFromNowByRun.withdrawals.regular,
-      byYearsFromNowByRun.startingBalanceOfSavingsPortfolio,
-      byYearsFromNowByRun.savingsPortfolioStockAllocation,
-      byYearsFromNowByRun.withdrawalFromSavingsRate,
+      byYearsFromNowByRun.savingsPortfolio.start.balance,
+      byYearsFromNowByRun.savingsPortfolio.withdrawals.essential,
+      byYearsFromNowByRun.savingsPortfolio.withdrawals.discretionary,
+      byYearsFromNowByRun.savingsPortfolio.withdrawals.regular,
+      byYearsFromNowByRun.savingsPortfolio.withdrawals.total,
+      byYearsFromNowByRun.savingsPortfolio.withdrawals.fromSavingsPortfolioRate,
+      byYearsFromNowByRun.savingsPortfolio.afterWithdrawals.allocation.stocks,
     ])
 
     if (status.canceled) return null
 
     const withdrawlsEssentialById = new Map(
-      params.withdrawals.fundedByBonds.map(x => [
+      params.withdrawals.essential.map(x => [
         x.id,
         _separateExtraWithdrawal(x, params, withdrawalsEssential, 'essential'),
       ])
     )
-    const withdrawlsExtraById = new Map(
-      params.withdrawals.fundedByRiskPortfolio.map(x => [
+    const withdrawlsDiscretionaryById = new Map(
+      params.withdrawals.discretionary.map(x => [
         x.id,
-        _separateExtraWithdrawal(x, params, withdrawalsExtra, 'extra'),
+        _separateExtraWithdrawal(
+          x,
+          params,
+          withdrawalsDiscretionary,
+          'discretionary'
+        ),
       ])
     )
 
@@ -286,19 +298,33 @@ export class TPAWRunInWorker {
 
     const perfPostByPercentile = performance.now() - start
     const result: TPAWRunInWorkerResult = {
-      withdrawals: {
-        total: withdrawalsTotal,
-        essential: {total: withdrawalsEssential, byId: withdrawlsEssentialById},
-        extra: {total: withdrawalsExtra, byId: withdrawlsExtraById},
-        regular: withdrawalsRegular,
+      savingsPortfolio: {
+        start: {
+          balance: startingBalanceOfSavingsPortfolio,
+        },
+        withdrawals: {
+          essential: {
+            total: withdrawalsEssential,
+            byId: withdrawlsEssentialById,
+          },
+          discretionary: {
+            total: withdrawalsDiscretionary,
+            byId: withdrawlsDiscretionaryById,
+          },
+          regular: withdrawalsRegular,
+          total: withdrawalsTotal,
+          fromSavingsPortfolioRate: _mapByPercentileByYearsFromNow(
+            withdrawalFromSavingsRate,
+            x => Math.max(0, x)
+          ),
+        },
+        afterWithdrawals: {
+          allocation: {
+            stocks: savingsPortfolioStockAllocation,
+          },
+        },
       },
-      startingBalanceOfSavingsPortfolio,
-      savingsPortfolioStockAllocation,
-      withdrawalFromSavingsRate,
-      withdrawalFromSavingsRateStrict: _mapByPercentileByYearsFromNow(
-        withdrawalFromSavingsRate,
-        x => Math.max(0, x)
-      ),
+
       firstYearOfSomeRun,
       legacyByPercentile,
       endingBalanceOfSavingsPortfolioByPercentile,
@@ -349,33 +375,56 @@ const _mergeRunsByWorker = (
   runsByWorker: TPAWWorkerRunSimulationResult[]
 ): TPAWWorkerRunSimulationResult => {
   const byYearsFromNowByRun = {
-    withdrawals: {
-      total: _mergeNumberByWorkerByYearsFromNowByRun(
-        runsByWorker.map(x => x.byYearsFromNowByRun.withdrawals.total)
-      ),
-      essential: _mergeNumberByWorkerByYearsFromNowByRun(
-        runsByWorker.map(x => x.byYearsFromNowByRun.withdrawals.essential)
-      ),
-      extra: _mergeNumberByWorkerByYearsFromNowByRun(
-        runsByWorker.map(x => x.byYearsFromNowByRun.withdrawals.extra)
-      ),
-      regular: _mergeNumberByWorkerByYearsFromNowByRun(
-        runsByWorker.map(x => x.byYearsFromNowByRun.withdrawals.regular)
-      ),
+    savingsPortfolio: {
+      start: {
+        balance: _mergeNumberByWorkerByYearsFromNowByRun(
+          runsByWorker.map(
+            x => x.byYearsFromNowByRun.savingsPortfolio.start.balance
+          )
+        ),
+      },
+      withdrawals: {
+        essential: _mergeNumberByWorkerByYearsFromNowByRun(
+          runsByWorker.map(
+            x => x.byYearsFromNowByRun.savingsPortfolio.withdrawals.essential
+          )
+        ),
+        discretionary: _mergeNumberByWorkerByYearsFromNowByRun(
+          runsByWorker.map(
+            x =>
+              x.byYearsFromNowByRun.savingsPortfolio.withdrawals.discretionary
+          )
+        ),
+        regular: _mergeNumberByWorkerByYearsFromNowByRun(
+          runsByWorker.map(
+            x => x.byYearsFromNowByRun.savingsPortfolio.withdrawals.regular
+          )
+        ),
+        total: _mergeNumberByWorkerByYearsFromNowByRun(
+          runsByWorker.map(
+            x => x.byYearsFromNowByRun.savingsPortfolio.withdrawals.total
+          )
+        ),
+        fromSavingsPortfolioRate: _mergeNumberByWorkerByYearsFromNowByRun(
+          runsByWorker.map(
+            x =>
+              x.byYearsFromNowByRun.savingsPortfolio.withdrawals
+                .fromSavingsPortfolioRate
+          )
+        ),
+      },
+      afterWithdrawals: {
+        allocation: {
+          stocks: _mergeNumberByWorkerByYearsFromNowByRun(
+            runsByWorker.map(
+              x =>
+                x.byYearsFromNowByRun.savingsPortfolio.afterWithdrawals
+                  .allocation.stocks
+            )
+          ),
+        },
+      },
     },
-    startingBalanceOfSavingsPortfolio: _mergeNumberByWorkerByYearsFromNowByRun(
-      runsByWorker.map(
-        x => x.byYearsFromNowByRun.startingBalanceOfSavingsPortfolio
-      )
-    ),
-    savingsPortfolioStockAllocation: _mergeNumberByWorkerByYearsFromNowByRun(
-      runsByWorker.map(
-        x => x.byYearsFromNowByRun.savingsPortfolioStockAllocation
-      )
-    ),
-    withdrawalFromSavingsRate: _mergeNumberByWorkerByYearsFromNowByRun(
-      runsByWorker.map(x => x.byYearsFromNowByRun.withdrawalFromSavingsRate)
-    ),
   }
 
   const firstYearOfSomeRun = runsByWorker[0].firstYearOfSomeRun
@@ -421,13 +470,13 @@ const _flattenTyped = (arr: Float64Array[]) => {
 }
 
 const _separateExtraWithdrawal = (
-  extraWithdrawal: ValueForYearRange,
+  discretionaryWithdrawal: ValueForYearRange,
   params: TPAWParamsProcessed,
   x: TPAWRunInWorkerByPercentileByYearsFromNow,
-  type: 'extra' | 'essential'
+  type: 'discretionary' | 'essential'
 ): TPAWRunInWorkerByPercentileByYearsFromNow => {
   const yearRange = extendTPAWParams(params.original).asYFN(
-    extraWithdrawal.yearRange
+    discretionaryWithdrawal.yearRange
   )
 
   return _mapByPercentileByYearsFromNow(x, (value, yearFromNow) => {
@@ -436,16 +485,16 @@ const _separateExtraWithdrawal = (
     }
     const currYearParams = params.byYear[yearFromNow].withdrawals
     const withdrawalTargetForThisYear = nominalToReal(
-      extraWithdrawal,
+      discretionaryWithdrawal,
       params.original.inflation,
       yearFromNow
     )
     if (withdrawalTargetForThisYear === 0) return 0
     const ratio =
       withdrawalTargetForThisYear /
-      (type === 'extra'
-        ? currYearParams.fundedByRiskPortfolio
-        : currYearParams.fundedByBonds)
+      (type === 'discretionary'
+        ? currYearParams.discretionary
+        : currYearParams.essential)
     assert(!isNaN(ratio)) // withdrawalTargetForThisYear ?>0 imples denominator is not 0.
     return value * ratio
   })

@@ -1,38 +1,21 @@
 import _ from 'lodash'
 import {pluralize} from '../Utils/Pluralize'
+import {SimpleRange} from '../Utils/SimpleRange'
 import {assert, noCase} from '../Utils/Utils'
-import {TPAWParams, Year, YearRange} from './TPAWParams'
+import {
+  GlidePath,
+  TPAWParams,
+  TPAWParamsWithoutHistorical,
+  Year,
+  YearRange,
+} from './TPAWParams'
 
 export type TPAWParamsExt = ReturnType<typeof extendTPAWParams>
 export const extendTPAWParams = (params: TPAWParams) => {
   const {years, yearRangeEdge} = extendTPAWParams
 
-  const pickPerson = (person: 'person1' | 'person2') => {
-    if (person === 'person1') return params.people.person1
-    assert(params.people.withPartner)
-    return params.people.person2
-  }
-
-  const asYearsFromNow_Year = (year: Year): number => {
-    if (year.type === 'now') return 0
-    const person = pickPerson(year.person)
-    const {age: ageIn} = year
-    const age = (() => {
-      const effectiveRetirement =
-        person.ages.type === 'retired'
-          ? person.ages.current
-          : person.ages.retirement
-      if (ageIn === 'lastWorkingYear') {
-        return effectiveRetirement - 1
-      }
-      if (ageIn === 'retirement') {
-        return effectiveRetirement
-      }
-      if (ageIn === 'max') return person.ages.max
-      return ageIn
-    })()
-    return age - person.ages.current
-  }
+  const pickPerson = (person: 'person1' | 'person2') =>
+    _pickPerson(params, person)
 
   const asYearsFromNow_YearRange = (
     yearRange: YearRange
@@ -61,7 +44,7 @@ export const extendTPAWParams = (params: TPAWParams) => {
       case 'namedAge':
       case 'numericAge':
       case 'now':
-        return asYearsFromNow_Year(x)
+        return asYearsFromNow_Year(params, x)
       default:
         return asYearsFromNow_YearRange(x)
     }
@@ -76,12 +59,24 @@ export const extendTPAWParams = (params: TPAWParams) => {
     if (!y) return x
     return asYFN(x) <= asYFN(y) ? x : y
   }
-  const yearRangeBoundsCheck = (
-    x: YearRange,
-    bounds: {start: Year; end: Year}
-  ) => {
+
+  const maxLastWorkingYear = params.people.withPartner
+    ? maxYear(years.person1.lastWorkingYear, years.person2.lastWorkingYear)
+    : years.person1.lastWorkingYear
+
+  const minRetirement = params.people.withPartner
+    ? minYear(years.person1.retirement, years.person2.retirement)
+    : years.person1.retirement
+
+  const maxMaxAge = params.people.withPartner
+    ? maxYear(years.person1.max, years.person2.max)
+    : years.person1.max
+  const numYears = asYFN(maxMaxAge) + 1
+
+
+  const yearRangeBoundsCheck = (x: YearRange, bounds: SimpleRange) => {
     const inRange = (edge: 'start' | 'end') =>
-      _.inRange(asYFN(x)[edge], asYFN(bounds).start, asYFN(bounds).end + 1)
+      _.inRange(asYFN(x)[edge], bounds.start, bounds.end + 1)
     const start = inRange('start') ? ('ok' as const) : ('outOfBounds' as const)
     const end = inRange('end')
       ? asYFN(x).end < asYFN(x).start
@@ -114,27 +109,39 @@ export const extendTPAWParams = (params: TPAWParams) => {
     return {start, end, errorMsgs}
   }
 
-  const maxLastWorkingYear = params.people.withPartner
-    ? maxYear(years.person1.lastWorkingYear, years.person2.lastWorkingYear)
-    : years.person1.lastWorkingYear
+  const glidePathIntermediateValidated = (
+    intermediateIn: GlidePath['intermediate']
+  ) => {
+    const withoutIssues = _.sortBy(
+      intermediateIn.map(x => ({...x, yearAsYFN: asYFN(x.year)})),
+      x => x.yearAsYFN
+    )
 
-  const minRetirement = params.people.withPartner
-    ? minYear(years.person1.retirement, years.person2.retirement)
-    : years.person1.retirement
+    const intermediate = withoutIssues.map((x, i) => ({
+      ...x,
+      issue:
+        x.yearAsYFN <= 0
+          ? ('before' as const)
+          : x.yearAsYFN >= numYears - 1
+          ? ('after' as const)
+          : i !== 0 && withoutIssues[i - 1].yearAsYFN === x.yearAsYFN
+          ? ('duplicate' as const)
+          : ('none' as const),
+    }))
 
-  const maxMaxAge = params.people.withPartner
-    ? maxYear(years.person1.max, years.person2.max)
-    : years.person1.max
+    return intermediate
+  }
+
 
   const validYearRange = (
     type: 'future-savings' | 'income-during-retirement' | 'extra-spending'
   ) =>
     type === 'future-savings'
-      ? {start: years.now, end: maxLastWorkingYear}
+      ? asYFN({start: years.now, end: maxLastWorkingYear})
       : type === 'income-during-retirement'
-      ? {start: minRetirement, end: maxMaxAge}
+      ? asYFN({start: minRetirement, end: maxMaxAge})
       : type === 'extra-spending'
-      ? {start: years.now, end: maxMaxAge}
+      ? asYFN({start: years.now, end: maxMaxAge})
       : noCase(type)
 
   const yearRangeLength = (yearRange: YearRange) =>
@@ -192,6 +199,34 @@ export const extendTPAWParams = (params: TPAWParams) => {
   const yourOrYourPartners = (person: 'person1' | 'person2') =>
     person === 'person1' ? 'your' : "your partner's"
 
+  const yearToStr = (year: Year) => {
+    const withPrefix = ({person}: {person: 'person1' | 'person2'}, x: string) =>
+      params.people.withPartner ? `${yourOrYourPartners(person)} ${x}` : x
+    switch (year.type) {
+      case 'now':
+        return 'now'
+      case 'numericAge':
+        return withPrefix(year, `age ${year.age}`)
+      case 'namedAge': {
+        switch (year.age) {
+          case 'lastWorkingYear':
+            return withPrefix(year, 'last working year')
+          case 'retirement':
+            return withPrefix(year, 'retirement')
+          case 'max':
+            return withPrefix(year, 'max age')
+          default:
+            noCase(year)
+        }
+      }
+      default:
+        noCase(year)
+    }
+  }
+
+  // ----------------------
+  // YEAR RANGE  TO STRING
+  // -----------------
   const yearRangeToStr = (
     value: YearRange,
     {
@@ -339,7 +374,7 @@ export const extendTPAWParams = (params: TPAWParams) => {
   }
 
   return {
-    numYears: asYFN(maxMaxAge) + 1,
+    numYears,
     pickPerson,
     asYearsFromNow,
     asYFN,
@@ -349,11 +384,13 @@ export const extendTPAWParams = (params: TPAWParams) => {
     minRetirement,
     maxMaxAge,
     validYearRange,
+    glidePathIntermediateValidated,
     years,
     yearRangeLength,
     yearRangeClamp,
     yearRangeEdge,
     yearRangeToStr,
+    yearToStr,
     yearRangeBoundsCheck,
     withdrawalStartYear,
     yourOrYourPartners,
@@ -385,3 +422,36 @@ extendTPAWParams.years = (() => {
     person2: person('person2'),
   }
 })()
+
+const _pickPerson = (
+  params: TPAWParamsWithoutHistorical,
+  person: 'person1' | 'person2'
+) => {
+  if (person === 'person1') return params.people.person1
+  assert(params.people.withPartner)
+  return params.people.person2
+}
+
+export const asYearsFromNow_Year = (
+  params: TPAWParamsWithoutHistorical,
+  year: Year
+): number => {
+  if (year.type === 'now') return 0
+  const person = _pickPerson(params, year.person)
+  const {age: ageIn} = year
+  const age = (() => {
+    const effectiveRetirement =
+      person.ages.type === 'retired'
+        ? person.ages.current
+        : person.ages.retirement
+    if (ageIn === 'lastWorkingYear') {
+      return effectiveRetirement - 1
+    }
+    if (ageIn === 'retirement') {
+      return effectiveRetirement
+    }
+    if (ageIn === 'max') return person.ages.max
+    return ageIn
+  })()
+  return age - person.ages.current
+}

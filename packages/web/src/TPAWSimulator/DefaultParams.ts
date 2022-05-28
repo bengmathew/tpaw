@@ -1,8 +1,9 @@
-import { TPAWParams } from './TPAWParams'
+import {TPAWParams} from './TPAWParams'
 
 export function getDefaultParams() {
   const params: TPAWParams = {
-    v: 5,
+    v: 6,
+    strategy: 'TPAW',
     people: {
       withPartner: false,
       person1: {
@@ -11,12 +12,20 @@ export function getDefaultParams() {
       },
     },
     returns: {
-      expected: {stocks: 0.037, bonds: 0.005},
-      historical: {adjust: {type: 'to', stocks: 0.037, bonds: 0.005}},
+      expected: {stocks: 0.037, bonds: 0.004},
+      historical: {adjust: {type: 'to', stocks: 0.037, bonds: 0.004}},
     },
-    inflation: 0.027,
+    inflation: 0.026,
     targetAllocation: {
-      regularPortfolio: {stocks: 0.35},
+      regularPortfolio: {
+        forTPAW: {stocks: 0.35},
+        forSPAW: {
+          start: {stocks: 0.5},
+          intermediate: [],
+          end: {stocks: 0.5},
+        },
+
+      },
       legacyPortfolio: {stocks: 0.7},
     },
     scheduledWithdrawalGrowthRate: 0.005,
@@ -24,8 +33,9 @@ export function getDefaultParams() {
     savings: [],
     retirementIncome: [],
     withdrawals: {
-      fundedByBonds: [],
-      fundedByRiskPortfolio: [],
+      lmp:0,
+      essential: [],
+      discretionary: [],
     },
     spendingCeiling: null,
     spendingFloor: null,

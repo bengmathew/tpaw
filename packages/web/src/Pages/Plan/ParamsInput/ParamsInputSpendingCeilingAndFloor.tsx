@@ -7,17 +7,18 @@ import _ from 'lodash'
 import React, {useMemo, useState} from 'react'
 import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
 import {Contentful} from '../../../Utils/Contentful'
+import {paddingCSS, paddingCSSStyleHorz} from '../../../Utils/Geometry'
 import {fGet, noCase} from '../../../Utils/Utils'
 import {useSimulation} from '../../App/WithSimulation'
 import {AmountInput, useAmountInputState} from '../../Common/Inputs/AmountInput'
 import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
 import {usePlanContent} from '../Plan'
-import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
+import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 type _Type = 'none' | 'fixedSpending' | 'separateCeilingAndFloor'
 
 export const ParamsInputSpendingCeilingAndFloor = React.memo(
-  (props: ParamsInputBodyProps) => {
+  (props: ParamsInputBodyPassThruProps) => {
     const {params, setParams, tpawResult, highlightPercentiles} =
       useSimulation()
 
@@ -37,10 +38,16 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
 
     const {minWithdrawal, maxWithdrawal} = useMemo(() => {
       const last = fGet(
-        _.last(tpawResult.withdrawals.total.byPercentileByYearsFromNow)
+        _.last(
+          tpawResult.savingsPortfolio.withdrawals.total
+            .byPercentileByYearsFromNow
+        )
       ).data
       const first = fGet(
-        _.first(tpawResult.withdrawals.total.byPercentileByYearsFromNow)
+        _.first(
+          tpawResult.savingsPortfolio.withdrawals.total
+            .byPercentileByYearsFromNow
+        )
       ).data
       const maxWithdrawal = Math.max(...last.slice(withdrawalStartAsYFN))
       const minWithdrawal = Math.min(...first.slice(withdrawalStartAsYFN))
@@ -90,7 +97,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
     )
     const [lastFloorEntry, setLastFloorEntry] = useState(params.spendingFloor)
     const firstWithdrawalOfFirstHighlightPercentile =
-      tpawResult.withdrawals.total.byPercentileByYearsFromNow[
+      tpawResult.savingsPortfolio.withdrawals.total.byPercentileByYearsFromNow[
         tpawResult.args.percentiles.indexOf(highlightPercentiles[0])
       ].data[withdrawalStartAsYFN]
 
@@ -110,7 +117,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
     }
 
     return (
-      <ParamsInputBody {...props}>
+      <ParamsInputBody {...props} headingMarginLeft="reduced">
         <RadioGroup
           value={`${type}`}
           className=""
@@ -138,14 +145,25 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
             setType(type)
           }}
         >
-          <RadioGroup.Description>
-            <Contentful.RichText
-              body={content.spendingCeilingAndFloor.intro.fields.body}
-              p="mb-6 p-base"
-            />
+          <RadioGroup.Description className="">
+            <div
+              className=""
+              style={{
+                ...paddingCSSStyleHorz(props.sizing.cardPadding, {scale: 0.5}),
+              }}
+            >
+              <Contentful.RichText
+                body={content['spending-ceiling-and-floor'].intro.fields.body}
+                p=" p-base"
+              />
+            </div>
           </RadioGroup.Description>
-          <div className="grid gap-y-6">
-            <RadioGroup.Option value="none" className=" outline-none">
+          <div className="grid gap-y-6 mt-8">
+            <RadioGroup.Option
+              value="none"
+              className="params-card outline-none"
+              style={{padding: paddingCSS(props.sizing.cardPadding)}}
+            >
               {({checked}) => (
                 <div className="">
                   <RadioGroup.Label
@@ -162,7 +180,8 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
             </RadioGroup.Option>
             <RadioGroup.Option
               value="separateCeilingAndFloor"
-              className=" outline-none"
+              className="params-card outline-none"
+              style={{padding: paddingCSS(props.sizing.cardPadding)}}
             >
               {({checked}) => (
                 <div className="">
@@ -205,6 +224,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
                         <div className={`flex items-stretch `}>
                           <AmountInput
                             className={`ml-2 w-[90px]`}
+                            type="currency"
                             state={ceilingValueState}
                             onAccept={handleCeilingAmount}
                           />
@@ -261,6 +281,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
                         <div className={`flex items-stretch `}>
                           <AmountInput
                             className={`ml-2 w-[90px]`}
+                            type="currency"
                             state={floorValueState}
                             onAccept={handleFloorAmount}
                           />
@@ -297,7 +318,11 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
                 </div>
               )}
             </RadioGroup.Option>
-            <RadioGroup.Option value="fixedSpending" className=" outline-none">
+            <RadioGroup.Option
+              value="fixedSpending"
+              className="params-card  outline-none"
+              style={{padding: paddingCSS(props.sizing.cardPadding)}}
+            >
               {({checked}) => (
                 <div className="">
                   <RadioGroup.Label
@@ -315,6 +340,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
                     >
                       <AmountInput
                         className={`w-[100px]`}
+                        type="currency"
                         state={fixedValueState}
                         onAccept={handleFixedAmount}
                       />

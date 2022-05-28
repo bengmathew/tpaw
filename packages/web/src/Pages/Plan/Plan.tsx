@@ -39,7 +39,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
   const chartRef = useRef<ChartPanelStateful | null>(null)
   const aspectRatio = windowSize.width / windowSize.height
   const layout =
-    aspectRatio > 1.1
+    aspectRatio > 1.2
       ? 'laptop'
       : windowSize.width <= 700
       ? 'mobile'
@@ -65,7 +65,8 @@ export const Plan = React.memo((planContent: PlanContent) => {
     void router.push(url)
   }
 
-  const [prevState, setPrevState] = useState<ParamsInputType>('age')
+  const [prevState, setPrevState] =
+    useState<ParamsInputType>('age-and-retirement')
   useEffect(() => {
     if (state !== 'summary') setPrevState(state)
   }, [state])
@@ -104,8 +105,8 @@ export const Plan = React.memo((planContent: PlanContent) => {
 
         // Input
         const input = (transition: number) => {
-          const horzCardPadding = linearFnFomPoints(0, 10, 1, 20)(transition)
-          const vertCardPadding = linearFnFomPoints(0, 10, 1, 20)(transition)
+          const horzCardPadding = linearFnFomPoints(0, 15, 1, 15)(transition)
+          const vertCardPadding = linearFnFomPoints(0, 15, 1, 15)(transition)
           const totalTop = topFn(transition)
           // const y = linearFnFomPoints(0, 0, 1, totalTop)(transition)
           const y = 0
@@ -247,7 +248,6 @@ export const Plan = React.memo((planContent: PlanContent) => {
         }
 
         const input = (transition: number) => {
-          const horzBodyPadding = linearFnFomPoints(0, 10, 1, 20)(transition)
           const y = chart(transition).position.bottom
           const paddingTop =
             navHeadingMarginBottom +
@@ -277,12 +277,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
               top: paddingTop,
               bottom: linearFnFomPoints(0, 0, 1, pad)(transition),
             },
-            cardPadding: {
-              left: horzBodyPadding,
-              right: horzBodyPadding,
-              top: 10,
-              bottom: 10,
-            },
+            cardPadding: {left: 15, right: 15, top: 15, bottom: 15},
             headingMarginBottom,
           }
         }
@@ -362,7 +357,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
             1,
             heading(1).position.bottom
           )(transition)
-          const horzPad = linearFnFomPoints(0, pad, 1, pad * 2)(transition)
+          const horzPad = linearFnFomPoints(0, pad, 1, pad)(transition)
           return {
             position: rectExt({
               width: windowSize.width,
@@ -506,30 +501,36 @@ export const Plan = React.memo((planContent: PlanContent) => {
 })
 
 type _FetchedInline = Awaited<ReturnType<typeof Contentful.fetchInline>>
-type _IntroAndBody = {
-  intro: _FetchedInline
-  body: _FetchedInline
-}
+type _Body = {body: _FetchedInline}
+type _IntroAndBody = _Body & {intro: _FetchedInline}
 type _IntroAndBodyAndMenu = _IntroAndBody & {menu: _FetchedInline}
+
 export type PlanContent = {
-  riskAndTimePreference: _IntroAndBody
-  age: {
+  'age-and-retirement': {
     introRetired: _FetchedInline
     introNotRetired: _FetchedInline
     body: _FetchedInline
   }
-  currentPortfolioValue: _IntroAndBody
-  incomeDuringRetirement: _IntroAndBody
-  futureSavings: _IntroAndBody
-  extraSpending: _IntroAndBody
-  spendingCeilingAndFloor: _IntroAndBody
+  'current-portfolio-balance': _IntroAndBody
+  'income-during-retirement': _IntroAndBody
+  'future-savings': _IntroAndBody
+  'extra-spending': _IntroAndBody
+  'spending-ceiling-and-floor': _IntroAndBody
   legacy: {
     introAmount: _FetchedInline
     introAssets: _FetchedInline
     body: _FetchedInline
   }
-  expectedReturns: _IntroAndBody
+  'risk-and-time-preference': _IntroAndBody & {
+    stockAllocationIntro: _FetchedInline
+    spendingTiltIntro: _FetchedInline
+  }
+  'expected-returns': _IntroAndBody
   inflation: _IntroAndBody
+  strategy: _IntroAndBody & {
+    tpawIntro: _FetchedInline
+    spawIntro: _FetchedInline
+  }
   chart: {
     spending: {
       total: _IntroAndBodyAndMenu
@@ -545,37 +546,40 @@ export type PlanContent = {
 const [PlanContentContext, usePlanContent] =
   createContext<PlanContent>('PlanContent')
 export {usePlanContent}
-
 export const planGetStaticProps: GetStaticProps<
   PlanContent
 > = async context => ({
   props: {
-    age: {
+    'age-and-retirement': {
       introRetired: await Contentful.fetchInline('1dZPTbtQfLz3cyDrMGrAQB'),
       introNotRetired: await Contentful.fetchInline('43EyTxBVHWOPcA6rgBpsnG'),
       body: await Contentful.fetchInline('5EtkcdtSIg0rS8AETEsgnm'),
     },
-    currentPortfolioValue: {
+    'current-portfolio-balance': {
       intro: await Contentful.fetchInline('3iLyyrQAhHnzuc4IdftWT3'),
       body: await Contentful.fetchInline('5RE7wTwvtTAsF1sWpKrFW2'),
     },
-    riskAndTimePreference: {
+    'risk-and-time-preference': {
       intro: await Contentful.fetchInline('4UHaDSQWXjNW75yTAwK1IX'),
       body: await Contentful.fetchInline('3ofgPmJFLgtJpjl26E7jpB'),
+      stockAllocationIntro: await Contentful.fetchInline(
+        'xWXcgVScUfdK1PaTNQeKz'
+      ),
+      spendingTiltIntro: await Contentful.fetchInline('4UwuCPjuTz3SbwUcZIrLEG'),
     },
-    incomeDuringRetirement: {
+    'income-during-retirement': {
       intro: await Contentful.fetchInline('3OqUTPDVRGzgQcVkJV7Lew'),
       body: await Contentful.fetchInline('1MHvhL8ImdOL9FxE5qxK6F'),
     },
-    futureSavings: {
+    'future-savings': {
       intro: await Contentful.fetchInline('2rPr5mMTcScftXhletDeb4'),
       body: await Contentful.fetchInline('5aJN2Z4tZ7zQ6Tw69VelRt'),
     },
-    extraSpending: {
+    'extra-spending': {
       intro: await Contentful.fetchInline('01kv7sKzniBagrcIwX86tJ'),
       body: await Contentful.fetchInline('5zDvtk4dDOonIkoIyOeQH8'),
     },
-    spendingCeilingAndFloor: {
+    'spending-ceiling-and-floor': {
       intro: await Contentful.fetchInline('19Llaw2GVZhEfBTfGzE7Ns'),
       body: await Contentful.fetchInline('6hEbQkY7ctTpMpGV6fBBu2'),
     },
@@ -584,13 +588,19 @@ export const planGetStaticProps: GetStaticProps<
       introAssets: await Contentful.fetchInline('5glA8ryQcNh7SHP9ZlkZ2y'),
       body: await Contentful.fetchInline('5nCHpNy6ReAEtBQTvDTwBf'),
     },
-    expectedReturns: {
+    'expected-returns': {
       intro: await Contentful.fetchInline('2NxIclWQoxuk0TMVH0GjhR'),
       body: await Contentful.fetchInline('2GxHf6q4kfRrz6AnFLniFh'),
     },
     inflation: {
       intro: await Contentful.fetchInline('76BgIpwX9yZetMGungnfwC'),
       body: await Contentful.fetchInline('6LqbR3PBA1uDe9xU2V1hk9'),
+    },
+    strategy: {
+      intro: await Contentful.fetchInline('52f9yaDqUCBBg3mkqGdZPc'),
+      tpawIntro: await Contentful.fetchInline('4qYue9K3cSpEkSrAhIn7AV'),
+      spawIntro: await Contentful.fetchInline('5W26KpQeXY9nC3FgKioesF'),
+      body: await Contentful.fetchInline('5F0tZKpZ2SPvljHIGkPYmy'),
     },
     chart: {
       spending: {

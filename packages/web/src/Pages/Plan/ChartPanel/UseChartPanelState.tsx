@@ -3,7 +3,7 @@ import {useRouter} from 'next/router'
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import {useAssertConst} from '../../../Utils/UseAssertConst'
 import {useURLParam} from '../../../Utils/UseURLParam'
-import {assert} from '../../../Utils/Utils'
+import {assert, fGet} from '../../../Utils/Utils'
 import {SimulationInfo, useSimulation} from '../../App/WithSimulation'
 import {ChartAnimation} from '../../Common/Chart/Chart'
 import {ChartReactState} from '../../Common/Chart/ChartReact'
@@ -15,8 +15,6 @@ import {
 } from './TPAWChart/TPAWChartDataLegacy'
 import {
   TPAWChartDataMain,
-  tpawChartDataMain,
-  tpawChartDataMainYRange,
   tpawChartDataScaled,
 } from './TPAWChart/TPAWChartDataMain'
 
@@ -43,14 +41,14 @@ export function useChartPanelState() {
 
   const [state, setState] = useState<_State>(() => {
     const type = panelTypeIn
-    const data = tpawChartDataMain(type, tpawResult, highlightPercentiles)
+    const data = fGet(tpawResult.chartMainData.get(type))
     const animation = null
     const legacyData = tpawChartDataLegacy(tpawResult, highlightPercentiles)
     return {
       type,
       main: {
         data,
-        xyRange: {x: data.years.displayRange, y: tpawChartDataMainYRange(data)},
+        xyRange: {x: data.years.displayRange, y: data.yDisplayRange},
         animation,
       },
       legacy: {
@@ -68,7 +66,7 @@ export function useChartPanelState() {
     setState(prev => {
       const type = prev.type
       const legacyData = tpawChartDataLegacy(tpawResult, highlightPercentiles)
-      const data = tpawChartDataMain(type, tpawResult, highlightPercentiles)
+      const data = fGet(tpawResult.chartMainData.get(type))
       const animation = normalAnimation
       return {
         type,
@@ -100,7 +98,7 @@ export function useChartPanelState() {
           data: data,
           xyRange: {
             x: data.years.displayRange,
-            y: tpawChartDataMainYRange(data),
+            y: data.yDisplayRange,
           },
           animation,
         },
@@ -128,9 +126,7 @@ export function useChartPanelState() {
     const animation = null
 
     setState(prev => {
-      const yRange = tpawChartDataMainYRange(
-        tpawChartDataMain(type, tpawResult, highlightPercentiles)
-      )
+      const yRange = fGet(tpawResult.chartMainData.get(type)).yDisplayRange
       const data = tpawChartDataScaled(prev.main.data, yRange)
       const xyRange = {x: data.years.displayRange, y: yRange}
 
@@ -156,11 +152,7 @@ export function useChartPanelState() {
     setState(prev => {
       assert(prev.type === state.type)
       const animation = morphAnimation
-      const data = tpawChartDataMain(
-        prev.type,
-        tpawResult,
-        highlightPercentiles
-      )
+      const data = fGet(tpawResult.chartMainData.get(prev.type))
       return {
         type: prev.type,
         main: {
@@ -199,7 +191,7 @@ export function useChartPanelState() {
 
   const targetYRange = useMemo(
     () => ({
-      main: tpawChartDataMainYRange(state.main.data),
+      main: state.main.data.yDisplayRange,
       legacy: tpawChartDataLegacyYRange(state.legacy.data),
     }),
     [state.legacy.data, state.main.data]

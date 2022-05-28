@@ -34,23 +34,18 @@ export type TPAWChartDataMain = {
     max: number
     display: (yearsFromNow: number) => number
   }
+  yDisplayRange: SimpleRange
   yFormat: (x: number) => string
 }
-
-export const tpawChartDataMainYRange = ({min, max}: TPAWChartDataMain) => ({
-  start: Math.min(0, min.y),
-  end: Math.max(0.0001, max.y),
-})
 
 export const tpawChartDataScaled = (
   curr: TPAWChartDataMain,
   targetYRange: SimpleRange
 ): TPAWChartDataMain => {
-  const currYRange = tpawChartDataMainYRange(curr)
   const scaleY = linearFnFomPoints(
-    currYRange.start,
+    curr.yDisplayRange.start,
     targetYRange.start,
-    currYRange.end,
+    curr.yDisplayRange.end,
     targetYRange.end
   )
   return {
@@ -62,6 +57,10 @@ export const tpawChartDataScaled = (
     })),
     min: {x: curr.min.x, y: scaleY(curr.min.y)},
     max: {x: curr.max.x, y: scaleY(curr.max.y)},
+    yDisplayRange: {
+      start: scaleY(curr.yDisplayRange.start),
+      end: scaleY(curr.yDisplayRange.end),
+    },
     years: curr.years,
     yFormat: curr.yFormat,
   }
@@ -69,7 +68,7 @@ export const tpawChartDataScaled = (
 
 export const tpawChartDataMain = (
   type: ChartPanelType,
-  tpawResult: SimulationInfo['tpawResult'],
+  tpawResult: UseTPAWWorkerResult,
   highlightPercentiles: SimulationInfo['highlightPercentiles']
 ): TPAWChartDataMain => {
   const {params} = tpawResult.args
@@ -78,34 +77,35 @@ export const tpawChartDataMain = (
   const hasLegacy = legacy.total !== 0 || spendingCeiling !== null
   const withdrawalStart = asYFN(withdrawalStartYear)
   const spendingYears = [
-    ...params.withdrawals.fundedByBonds,
-    ...params.withdrawals.fundedByRiskPortfolio,
+    ...params.withdrawals.essential,
+    ...params.withdrawals.discretionary,
   ].some(x => asYFN(x.yearRange).start < withdrawalStart)
-    ? ('allYears' as const
-    )
+    ? ('allYears' as const)
     : ('retirementYears' as const)
   switch (type) {
     case 'spending-total':
       return _data(
         type,
         tpawResult,
-        x => x.withdrawals.total,
+        x => x.savingsPortfolio.withdrawals.total,
         x => formatCurrency(x),
         spendingYears,
         0,
         [],
-        highlightPercentiles
+        highlightPercentiles,
+        'auto'
       )
     case 'spending-general':
       return _data(
         type,
         tpawResult,
-        x => x.withdrawals.regular,
+        x => x.savingsPortfolio.withdrawals.regular,
         x => formatCurrency(x),
         spendingYears,
         0,
         [],
-        highlightPercentiles
+        highlightPercentiles,
+        'auto'
       )
 
     case 'portfolio':
@@ -114,64 +114,69 @@ export const tpawChartDataMain = (
         tpawResult,
         x =>
           _addYear(
-            x.startingBalanceOfSavingsPortfolio,
+            x.savingsPortfolio.start.balance,
             x.endingBalanceOfSavingsPortfolioByPercentile
           ),
         x => formatCurrency(x),
         'allYears',
         1,
         [],
-        highlightPercentiles
+        highlightPercentiles,
+        'auto'
       )
     case 'glide-path':
       return _data(
         type,
         tpawResult,
-        x => x.savingsPortfolioStockAllocation,
+        x => x.savingsPortfolio.afterWithdrawals.allocation.stocks,
         formatPercentage(0),
         'allYears',
         hasLegacy ? 0 : -1,
         [],
-        highlightPercentiles
+        highlightPercentiles,
+        {start:0, end:1}
       )
     case 'withdrawal-rate':
       return _data(
         type,
         tpawResult,
-        x => x.withdrawalFromSavingsRateStrict,
+        x => x.savingsPortfolio.withdrawals.fromSavingsPortfolioRate,
         formatPercentage(1),
         'retirementYears',
         0,
         [],
-        highlightPercentiles
+        highlightPercentiles,
+        'auto'
       )
     default:
       if (isChartPanelSpendingEssentialType(type)) {
         const id = chartPanelSpendingEssentialTypeID(type)
-        assert(params.withdrawals.fundedByBonds.find(x => x.id === id))
+        assert(params.withdrawals.essential.find(x => x.id === id))
         return _data(
           type,
           tpawResult,
-          x => fGet(x.withdrawals.essential.byId.get(id)),
+          x => fGet(x.savingsPortfolio.withdrawals.essential.byId.get(id)),
           x => formatCurrency(x),
           spendingYears,
           0,
           [],
-          highlightPercentiles
+          highlightPercentiles,
+          'auto'
         )
       }
       if (isChartPanelSpendingDiscretionaryType(type)) {
         const id = chartPanelSpendingDiscretionaryTypeID(type)
-        assert(params.withdrawals.fundedByRiskPortfolio.find(x => x.id === id))
+        assert(params.withdrawals.discretionary.find(x => x.id === id))
         return _data(
           type,
           tpawResult,
-          x => fGet(x.withdrawals.extra.byId.get(id)),
+          x => fGet(x.savingsPortfolio.withdrawals.discretionary.byId.get(id)),
           x => formatCurrency(x),
           spendingYears,
           0,
           [],
-          highlightPercentiles
+          highlightPercentiles,
+          'auto'
         )
       }
       noCase(type)
@@ -200,7 +205,8 @@ const _data = (
   yearRange: 'retirementYears' | 'allYears',
   yearEndDelta: number,
   ageGroups: SimpleRange[],
-  highlightPercentiles: number[]
+  highlightPercentiles: number[],
+  yDisplayRangeIn: 'auto' | SimpleRange
 ): TPAWChartDataMain => {
   const {args} = tpawResult
   const {params} = args
@@ -236,8 +242,11 @@ const _data = (
 
   const max = {x: last.indexOf(maxY), y: maxY}
   const min = {x: first.indexOf(minY), y: minY}
-
-  return {label, years, percentiles, min, max, yFormat}
+  const yDisplayRange =
+    yDisplayRangeIn === 'auto'
+      ? {start: Math.min(0, min.y), end: Math.max(0.0001, max.y)}
+      : yDisplayRangeIn
+  return {label, years, percentiles, min, max, yFormat, yDisplayRange}
 }
 
 const _addPercentileInfo = <T>(

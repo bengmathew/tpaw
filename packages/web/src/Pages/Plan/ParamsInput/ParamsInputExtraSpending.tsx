@@ -1,6 +1,7 @@
 import React, {useState} from 'react'
 import {YearRange} from '../../../TPAWSimulator/TPAWParams'
 import {Contentful} from '../../../Utils/Contentful'
+import {paddingCSS} from '../../../Utils/Geometry'
 import {useSimulation} from '../../App/WithSimulation'
 import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
 import {
@@ -11,8 +12,9 @@ import {
   isChartPanelSpendingEssentialType,
 } from '../ChartPanel/ChartPanelType'
 import {usePlanContent} from '../Plan'
-import {ByYearSchedule} from './ByYearSchedule/ByYearSchedule'
-import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
+import {ByYearSchedule} from './Helpers/ByYearSchedule'
+import {paramsInputLabel} from './Helpers/ParamsInputLabel'
+import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 export const ParamsInputExtraSpending = React.memo(
   ({
@@ -22,7 +24,7 @@ export const ParamsInputExtraSpending = React.memo(
   }: {
     chartType: ChartPanelType
     setChartType: (type: ChartPanelType) => void
-  } & ParamsInputBodyProps) => {
+  } & ParamsInputBodyPassThruProps) => {
     const {paramsExt, params} = useSimulation()
     const {years, validYearRange, maxMaxAge, asYFN} = paramsExt
     const content = usePlanContent()
@@ -51,16 +53,19 @@ export const ParamsInputExtraSpending = React.memo(
     }
 
     return (
-      <ParamsInputBody {...props}>
-        <div className="">
+      <ParamsInputBody {...props} headingMarginLeft="normal">
+        <div
+          className="params-card"
+          style={{padding: paddingCSS(props.sizing.cardPadding)}}
+        >
           <Contentful.RichText
-            body={content.extraSpending.intro.fields.body}
-            p="mb-6 p-base"
+            body={content['extra-spending'].intro.fields.body}
+            p="p-base"
           />
           <ByYearSchedule
-            className="mb-6"
+            className="mt-6 mb-6"
             heading={'Essential'}
-            entries={params => params.withdrawals.fundedByBonds}
+            entries={params => params.withdrawals.essential}
             hideEntry={
               state.type === 'edit' && state.isEssential && state.hideInMain
                 ? state.index
@@ -81,7 +86,7 @@ export const ParamsInputExtraSpending = React.memo(
           <ByYearSchedule
             className=""
             heading={'Discretionary'}
-            entries={params => params.withdrawals.fundedByRiskPortfolio}
+            entries={params => params.withdrawals.discretionary}
             hideEntry={
               state.type === 'edit' && !state.isEssential && state.hideInMain
                 ? state.index
@@ -140,8 +145,8 @@ export const ParamsInputExtraSpending = React.memo(
                     }}
                     entries={params =>
                       state.isEssential
-                        ? params.withdrawals.fundedByBonds
-                        : params.withdrawals.fundedByRiskPortfolio
+                        ? params.withdrawals.essential
+                        : params.withdrawals.discretionary
                     }
                     index={state.index}
                     allowableRange={allowableRange}

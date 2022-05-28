@@ -46,7 +46,7 @@ export const ChartReact = React.forwardRef(
 
     useLayoutEffect(() => {
       if (!canvas) return
-      applySizingToHTML(starting.sizing.position, fGet(divRef.current), canvas)
+      applySizingToHTML(starting.sizing.position, fGet(divRef.current), canvas, 'init')
       // ignore startingSizing.
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [canvas])
@@ -56,7 +56,7 @@ export const ChartReact = React.forwardRef(
       () => ({
         setSizing: sizing => {
           if (!canvas) return
-          applySizingToHTML(sizing.position, fGet(divRef.current), canvas)
+          applySizingToHTML(sizing.position, fGet(divRef.current), canvas, 'update')
           localChartRef.current?.setSizing(sizing)
         },
       }),
@@ -83,14 +83,15 @@ export const ChartReact = React.forwardRef(
 const applySizingToHTML = (
   position: RectExt,
   div: HTMLDivElement,
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
+  type:'init'|'update'
 ) => {
   const size = {width: position.width, height: position.height}
   applyRectSizingToHTMLElement(position, div)
   const dpr = window.devicePixelRatio || 1
 
   const pixelSize = (x: number) => Math.round(x * dpr)
-  if (
+  if (type === 'init' ||
     pixelSize(size.width) > canvas.width * 0.95 ||
     pixelSize(size.height) > canvas.height * 0.95
   ) {

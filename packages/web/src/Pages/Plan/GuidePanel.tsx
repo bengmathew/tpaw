@@ -14,7 +14,7 @@ import {
   RectExt,
 } from '../../Utils/Geometry'
 import {useAssertConst} from '../../Utils/UseAssertConst'
-import {fGet, noCase} from '../../Utils/Utils'
+import {fGet} from '../../Utils/Utils'
 import {ModalBase} from '../Common/Modal/ModalBase'
 import {ParamsInputType} from './ParamsInput/Helpers/ParamsInputType'
 import {usePlanContent} from './Plan'
@@ -73,7 +73,7 @@ const _Mobile = React.memo(
       }, [setTransition, transitionRef])
       useAssertConst([transitionRef])
 
-      const content = useContent(type)
+      const content = usePlanContent()[type]
       return (
         <>
           <button
@@ -128,7 +128,7 @@ const _LaptopAndDesktop = React.memo(
       }, [setTransition, transitionRef])
       useAssertConst([transitionRef])
 
-      const content = useContent(type)
+      const content = usePlanContent()[type]
       return (
         <div className="absolute overflow-scroll" ref={outerRef}>
           <h2 className="uppercase font-bold " ref={headerRef}>
@@ -161,31 +161,3 @@ const _RichText = React.memo(
     )
   }
 )
-
-function useContent(type: ParamsInputType) {
-  const content = usePlanContent()
-  switch (type) {
-    case 'age':
-      return content.age
-    case 'risk-and-time-preference':
-      return content.riskAndTimePreference
-    case 'current-portfolio-balance':
-      return content.currentPortfolioValue
-    case 'future-savings':
-      return content.futureSavings
-    case 'income-during-retirement':
-      return content.incomeDuringRetirement
-    case 'extra-spending':
-      return content.extraSpending
-    case 'spending-ceiling-and-floor':
-      return content.spendingCeilingAndFloor
-    case 'legacy':
-      return content.legacy
-    case 'expected-returns':
-      return content.expectedReturns
-    case 'inflation':
-      return content.inflation
-    default:
-      noCase(type)
-  }
-}

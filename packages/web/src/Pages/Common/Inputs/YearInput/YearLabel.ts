@@ -1,22 +1,29 @@
-import {TPAWParams, YearRange} from '../../../../TPAWSimulator/TPAWParams'
-import {assert, noCase} from '../../../../Utils/Utils'
-import {extendTPAWParams} from '../../../../TPAWSimulator/TPAWParamsExt'
+import {TPAWParams, Year} from '../../../../TPAWSimulator/TPAWParams'
+import {noCase} from '../../../../Utils/Utils'
+import {YearInputProps} from './YearInput'
 
-export function yearRangeEdgeLabel(
-  range: YearRange,
-  edge: 'start' | 'end',
+export function yearLabel(
+  value: Year | {numYears: number},
+  location: YearInputProps['location'],
   type: 'includeNumber' | 'numberIsBlank',
   {people}: TPAWParams
 ) {
-  const value = extendTPAWParams.yearRangeEdge(range, edge)
-  if (!value) {
-    assert('numYears' in range)
+  if ('numYears' in value) {
     return type === 'includeNumber'
-      ? `for ${range.numYears} years`
+      ? `for ${value.numYears} years`
       : 'for number of years'
   }
   const result = [] as string[]
-  result.push(edge === 'start' ? 'from' : 'until')
+
+
+  location === 'rangeStart'
+    ? result.push('from')
+    : location === 'rangeEnd'
+    ? result.push('until')
+    : location === 'standalone'
+    ? ''
+    : noCase(location)
+
   switch (value.type) {
     case 'now':
       result.push('now')
@@ -49,5 +56,5 @@ export function yearRangeEdgeLabel(
     default:
       noCase(value)
   }
-  return result.join(' ')
+  return result.join(' ').trim()
 }

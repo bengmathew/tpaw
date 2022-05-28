@@ -19,8 +19,9 @@ import {CheckBox} from './CheckBox'
 import {
   YearRangeInput,
   YearRangeInputProps,
-} from './YearRangeInput/YearRangeInput'
+} from './YearRangeInput'
 import {smartDeltaFnForAmountInput} from './SmartDeltaFnForAmountInput'
+import { SimpleRange } from '../../../Utils/SimpleRange'
 
 export const EditValueForYearRange = React.memo(
   ({
@@ -43,7 +44,7 @@ export const EditValueForYearRange = React.memo(
     transitionOut: (onDone: () => void) => void
     entries: (params: TPAWParams) => ValueForYearRange[]
     index: number
-    allowableRange: {start: Year; end: Year}
+    allowableRange: SimpleRange
     choices: YearRangeInputProps['choices']
   }) => {
     const {params, setParams} = useSimulation()
@@ -96,6 +97,7 @@ export const EditValueForYearRange = React.memo(
               <div className="grid" style={{grid: 'auto / 1fr auto auto'}}>
                 <AmountInput
                   className="w-[100%]"
+                  type="currency"
                   state={amountState}
                   onAccept={value => setEntry(entry => (entry.value = value))}
                 />

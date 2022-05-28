@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { fGet } from '../../../../Utils/Utils'
 
 export const paramsInputTypes = [
-  'age',
+  'age-and-retirement',
   'current-portfolio-balance',
   'future-savings',
   'income-during-retirement',
@@ -12,6 +12,7 @@ export const paramsInputTypes = [
   'expected-returns',
   'inflation',
   'risk-and-time-preference',
+  'strategy'
 ] as const
 export type ParamsInputType = typeof paramsInputTypes[number]
 

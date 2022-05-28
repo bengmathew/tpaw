@@ -1,14 +1,14 @@
-import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
-import { faTrash } from '@fortawesome/pro-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Switch } from '@headlessui/react'
+import {faMinus, faPlus} from '@fortawesome/pro-regular-svg-icons'
+import {faTrash} from '@fortawesome/pro-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import {Switch} from '@headlessui/react'
 import _ from 'lodash'
 import React from 'react'
-import { LabeledAmount, TPAWParams } from '../../../TPAWSimulator/TPAWParams'
-import { useSimulation } from '../../App/WithSimulation'
-import { AmountInput, useAmountInputState } from './AmountInput'
-import { CheckBox } from './CheckBox'
-import { smartDeltaFnForAmountInput } from './SmartDeltaFnForAmountInput'
+import {LabeledAmount, TPAWParams} from '../../../TPAWSimulator/TPAWParams'
+import {useSimulation} from '../../App/WithSimulation'
+import {AmountInput, useAmountInputState} from './AmountInput'
+import {CheckBox} from './CheckBox'
+import {smartDeltaFnForAmountInput} from './SmartDeltaFnForAmountInput'
 
 export const EditLabeledAmount = React.memo(
   ({
@@ -79,6 +79,7 @@ export const EditLabeledAmount = React.memo(
               <div className="grid" style={{grid: 'auto / 1fr auto auto'}}>
                 <AmountInput
                   className="w-[100%]"
+                  type="currency"
                   state={amountState}
                   onAccept={value => setEntry(entry => (entry.value = value))}
                 />
@@ -109,7 +110,7 @@ export const EditLabeledAmount = React.memo(
                     }
                   />
                   <Switch.Label className=" text-sm">
-                  real dollars (adjusted for inflation)
+                    real dollars (adjusted for inflation)
                   </Switch.Label>
                 </Switch.Group>
               </div>

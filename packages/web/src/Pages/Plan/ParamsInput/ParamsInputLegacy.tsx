@@ -7,6 +7,7 @@ import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
 import {Contentful} from '../../../Utils/Contentful'
 import {formatCurrency} from '../../../Utils/FormatCurrency'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
+import {paddingCSS} from '../../../Utils/Geometry'
 import {preciseRange} from '../../../Utils/PreciseRange'
 import {smartDeltaFn} from '../../../Utils/SmartDeltaFn'
 import {useSimulation} from '../../App/WithSimulation'
@@ -14,9 +15,9 @@ import {AmountInput, useAmountInputState} from '../../Common/Inputs/AmountInput'
 import {EditLabeledAmount} from '../../Common/Inputs/EditLabeldAmount'
 import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
 import {usePlanContent} from '../Plan'
-import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
+import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
-export const ParamsInputLegacy = React.memo((props: ParamsInputBodyProps) => {
+export const ParamsInputLegacy = React.memo((props: ParamsInputBodyPassThruProps) => {
   const {params, paramsProcessed, setParams} = useSimulation()
   const content = usePlanContent()
   const valueState = useAmountInputState(params.legacy.total)
@@ -35,85 +36,98 @@ export const ParamsInputLegacy = React.memo((props: ParamsInputBodyProps) => {
   }
 
   return (
-    <ParamsInputBody {...props}>
+    <ParamsInputBody {...props} headingMarginLeft="normal">
       <div className="">
-        <h2 className="font-bold text-lg mb-3">Total Legacy Target</h2>
-        <Contentful.RichText
-          body={content.legacy.introAmount.fields.body}
-          p="p-base"
-        />
-        <div className={`flex items-center gap-x-2 mt-2`}>
-          <AmountInput
-            className="mt-2"
-            state={valueState}
-            onAccept={handleAmount}
+        <div
+          className="params-card"
+          style={{padding: paddingCSS(props.sizing.cardPadding)}}
+        >
+          <h2 className="font-bold text-lg mb-3">Total Legacy Target</h2>
+          <Contentful.RichText
+            body={content.legacy.introAmount.fields.body}
+            p="p-base"
           />
-          <button
-            className={`flex items-center px-2 `}
-            onClick={() => handleAmount(increment(params.legacy.total))}
-          >
-            <FontAwesomeIcon className="text-base" icon={faPlus} />
-          </button>
-          <button
-            className={`flex items-center px-2 `}
-            onClick={() => handleAmount(decrement(params.legacy.total))}
-          >
-            <FontAwesomeIcon className="text-base" icon={faMinus} />
-          </button>
+          <div className={`flex items-center gap-x-2 mt-2`}>
+            <AmountInput
+              className="mt-2"
+              type="currency"
+              state={valueState}
+              onAccept={handleAmount}
+            />
+            <button
+              className={`flex items-center px-2 `}
+              onClick={() => handleAmount(increment(params.legacy.total))}
+            >
+              <FontAwesomeIcon className="text-base" icon={faPlus} />
+            </button>
+            <button
+              className={`flex items-center px-2 `}
+              onClick={() => handleAmount(decrement(params.legacy.total))}
+            >
+              <FontAwesomeIcon className="text-base" icon={faMinus} />
+            </button>
+          </div>
         </div>
-
-        <h2 className="font-bold text-lg mt-10 mb-3">Non-portfolio Sources</h2>
-        <Contentful.RichText
-          body={content.legacy.introAssets.fields.body}
-          p="p-base mb-4"
-        />
-        <div className="flex justify-start gap-x-4 items-center  my-2 ">
-          <button
-            className="flex items-center justify-center gap-x-2 py-1 pr-2  "
-            onClick={() => {
-              const index = params.legacy.external.length
-              setParams(params => {
-                const clone = _.cloneDeep(params)
-                clone.legacy.external.push({
-                  label: null,
-                  value: 0,
-                  nominal: false,
+        <div
+          className="params-card  mt-10"
+          style={{padding: paddingCSS(props.sizing.cardPadding)}}
+        >
+          <h2 className="font-bold text-lg mb-3">Non-portfolio Sources</h2>
+          <Contentful.RichText
+            body={content.legacy.introAssets.fields.body}
+            p="p-base mb-4"
+          />
+          <div className="flex justify-start gap-x-4 items-center  my-2 ">
+            <button
+              className="flex items-center justify-center gap-x-2 py-1 pr-2  "
+              onClick={() => {
+                const index = params.legacy.external.length
+                setParams(params => {
+                  const clone = _.cloneDeep(params)
+                  clone.legacy.external.push({
+                    label: null,
+                    value: 0,
+                    nominal: false,
+                  })
+                  return clone
                 })
-                return clone
-              })
-              setState({type: 'edit', isAdd: true, hideInMain: true, index})
-            }}
-          >
-            <FontAwesomeIcon className="text-2xl" icon={faPlus} />
-          </button>
-        </div>
-        <div className="flex flex-col gap-y-6 mt-4 ">
-          {params.legacy.external.map(
-            (entry, index) =>
-              !(
-                state.type === 'edit' &&
-                state.hideInMain &&
-                state.index === index
-              ) && (
-                <_Entry
-                  key={index}
-                  className=""
-                  entry={entry}
-                  onEdit={() => {
-                    setState({
-                      type: 'edit',
-                      isAdd: false,
-                      hideInMain: false,
-                      index,
-                    })
-                  }}
-                />
-              )
-          )}
+                setState({type: 'edit', isAdd: true, hideInMain: true, index})
+              }}
+            >
+              <FontAwesomeIcon className="text-2xl" icon={faPlus} />
+            </button>
+          </div>
+          <div className="flex flex-col gap-y-6 mt-4 ">
+            {params.legacy.external.map(
+              (entry, index) =>
+                !(
+                  state.type === 'edit' &&
+                  state.hideInMain &&
+                  state.index === index
+                ) && (
+                  <_Entry
+                    key={index}
+                    className=""
+                    entry={entry}
+                    onEdit={() => {
+                      setState({
+                        type: 'edit',
+                        isAdd: false,
+                        hideInMain: false,
+                        index,
+                      })
+                    }}
+                  />
+                )
+            )}
+          </div>
         </div>
 
-        <div className="mt-8">
-          <h2 className="font-bold text-lg mt-10 mb-3">
+        <div
+          className="mt-8 params-card"
+          style={{padding: paddingCSS(props.sizing.cardPadding)}}
+        >
+          <h2 className="font-bold text-lg mb-3">
             Remainder Funded by Portfolio
           </h2>
           <h2 className="">
@@ -121,30 +135,36 @@ export const ParamsInputLegacy = React.memo((props: ParamsInputBodyProps) => {
             <span className="">real</span>
           </h2>
         </div>
-
-        <h2 className="font-bold text-lg mt-10">Stock Allocation for Legacy</h2>
-        <SliderInput
-          className=""
-          height={60}
-          pointers={[
-            {
-              value: params.targetAllocation.legacyPortfolio.stocks,
-              type: 'normal',
-            },
-          ]}
-          onChange={([value]) =>
-            setParams(params => {
-              const p = _.cloneDeep(params)
-              p.targetAllocation.legacyPortfolio.stocks = value
-              return p
-            })
-          }
-          formatValue={formatPercentage(0)}
-          domain={preciseRange(0, 1, 0.01, 2).map((value, i) => ({
-            value: value,
-            tick: i % 10 === 0 ? 'large' : i % 2 === 0 ? 'small' : 'none',
-          }))}
-        />
+        <div
+          className="params-card mt-8"
+          style={{padding: paddingCSS(props.sizing.cardPadding)}}
+        >
+          <h2 className="font-bold text-lg ">
+            Stock Allocation for Legacy
+          </h2>
+          <SliderInput
+            className=""
+            height={60}
+            pointers={[
+              {
+                value: params.targetAllocation.legacyPortfolio.stocks,
+                type: 'normal',
+              },
+            ]}
+            onChange={([value]) =>
+              setParams(params => {
+                const p = _.cloneDeep(params)
+                p.targetAllocation.legacyPortfolio.stocks = value
+                return p
+              })
+            }
+            formatValue={formatPercentage(0)}
+            domain={preciseRange(0, 1, 0.01, 2).map((value, i) => ({
+              value: value,
+              tick: i % 10 === 0 ? 'large' : i % 2 === 0 ? 'small' : 'none',
+            }))}
+          />
+        </div>
       </div>
       {{
         input:

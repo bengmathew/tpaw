@@ -1,14 +1,20 @@
-import {faCircle} from '@fortawesome/pro-light-svg-icons'
-import {faCircle as faCircleSolid} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {RadioGroup} from '@headlessui/react'
+import { faCircle } from '@fortawesome/pro-light-svg-icons'
+import { faCircle as faCircleSolid } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { RadioGroup } from '@headlessui/react'
 import _ from 'lodash'
 import React from 'react'
-import {assert} from '../../../../Utils/Utils'
-import {useSimulation} from '../../../App/WithSimulation'
+import { assert } from '../../../../Utils/Utils'
+import { useSimulation } from '../../../App/WithSimulation'
 
-export const ParamsInputAgeWithdrawalStart = React.memo(
-  ({className = ''}: {className?: string}) => {
+export const ParamsInputAgeAndRetirementWithdrawalStart = React.memo(
+  ({
+    className = '',
+    style,
+  }: {
+    className?: string
+    style?: React.CSSProperties
+  }) => {
     const {params, setParams} = useSimulation()
     const {people} = params
     if (
@@ -19,7 +25,7 @@ export const ParamsInputAgeWithdrawalStart = React.memo(
       return <></>
 
     return (
-      <div className={`${className}`}>
+      <div className={`${className}`} style={style}>
         <RadioGroup<'div', 'person1' | 'person2'>
           value={people.withdrawalStart}
           onChange={(x: 'person1' | 'person2') =>
@@ -67,7 +73,8 @@ export const ParamsInputAgeWithdrawalStart = React.memo(
             </RadioGroup.Option>
           </div>
           <h2 className="mt-2">
-            This will be considered the start of your retirement phase as a couple.
+            This will be considered the start of your retirement phase as a
+            couple.
           </h2>
         </RadioGroup>
       </div>

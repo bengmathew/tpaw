@@ -24,7 +24,9 @@ import {linearFnFomPoints} from '../../../Utils/LinearFn'
 import {SimpleRange} from '../../../Utils/SimpleRange'
 import {useAssertConst} from '../../../Utils/UseAssertConst'
 import {fGet} from '../../../Utils/Utils'
+import {useSimulation} from '../../App/WithSimulation'
 import {ChartReactStatefull} from '../../Common/Chart/ChartReact'
+import {Config} from '../../Config'
 import {ChartPanelDescription} from './ChartPanelDescription'
 import {ChartPanelMenu, ChartPanelMenuStateful} from './ChartPanelMenu'
 import {ChartPanelMenuButton} from './ChartPanelMenuButton'
@@ -71,12 +73,15 @@ export const ChartPanel = React.memo(
       }: Props,
       forwardRef
     ) => {
+      const {paramSpace, setParamSpace} = useSimulation()
       const rescaleWarningLevel = _maxRescaleWarningLevel(
         _rescaleWarningLevel(state.main.xyRange.y, targetYRange.main),
         shouldShowLegacy
           ? _rescaleWarningLevel(state.legacy.xyRange.y, targetYRange.legacy)
           : 0
       )
+      const [pingRescale, setPingRescale] = useState(false)
+      useEffect(() => setPingRescale(true), [rescaleWarningLevel])
       const [showDescriptionPopUp, setShowDescriptionPopUp] = useState(false)
       const outerRef = useRef<HTMLDivElement | null>(null)
       const headingRef = useRef<HTMLHeadingElement | null>(null)
@@ -388,8 +393,13 @@ export const ChartPanel = React.memo(
             <h2
               className={`absolute uppercase font-bold text-white `}
               ref={headingRef}
+              onClick={
+                Config.client.production
+                  ? undefined
+                  : () => setParamSpace(paramSpace === 'a' ? 'b' : 'a')
+              }
             >
-              Results
+              Results {paramSpace === 'a' ? '' : '(B)'}
             </h2>
           )}
           <div
@@ -492,7 +502,7 @@ export const ChartPanel = React.memo(
               opacity: rescaleWarningLevel === 0 ? '0' : '1',
               transform: rescaleWarningLevel === 0 ? 'scale(.8)' : 'scale(1)',
               transitionProperty: 'transform, opacity, visibility',
-              transitionDuration:'300ms'
+              transitionDuration: '300ms',
             }}
             onClick={handleRescale}
             ref={rescaleRef}
@@ -502,7 +512,11 @@ export const ChartPanel = React.memo(
             {rescaleWarningLevel === 2 && (
               <>
                 <div className="absolute -right-[2px] -top-[0px] w-[10px] h-[10px] bg-red-500 rounded-full"></div>
-                <div className="absolute -right-[12px] -top-[10px] w-[30px] h-[30px] bg-red-500 rounded-full animate-ping "></div>
+                {pingRescale && <div
+                  className="absolute -right-[12px] -top-[10px] w-[30px] h-[30px] bg-red-500 rounded-full  "
+                  onAnimationEnd={() => setPingRescale(false)}
+                  style={{animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) 4'}}
+                ></div>}
               </>
             )}
           </button>

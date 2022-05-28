@@ -6,18 +6,19 @@ import React from 'react'
 import {
   TPAWParams,
   ValueForYearRange,
-  Year,
   YearRange,
 } from '../../../../TPAWSimulator/TPAWParams'
 import {formatCurrency} from '../../../../Utils/FormatCurrency'
+import {SimpleRange} from '../../../../Utils/SimpleRange'
 import {trimAndNullify} from '../../../../Utils/TrimAndNullify'
 import {useSimulation} from '../../../App/WithSimulation'
-import { smartDeltaFnForAmountInput } from '../../../Common/Inputs/SmartDeltaFnForAmountInput'
+import {smartDeltaFnForAmountInput} from '../../../Common/Inputs/SmartDeltaFnForAmountInput'
 import {YearRangeDisplay} from '../../../Common/YearRangeDisplay'
 
 export const ByYearSchedule = React.memo(
   ({
     className = '',
+    style,
     entries,
     hideEntry,
     allowableYearRange,
@@ -26,10 +27,11 @@ export const ByYearSchedule = React.memo(
     onEdit,
   }: {
     className?: string
+    style?: React.CSSProperties
     entries: (params: TPAWParams) => ValueForYearRange[]
     hideEntry: number | null
     defaultYearRange: YearRange
-    allowableYearRange: {start: Year; end: Year}
+    allowableYearRange: SimpleRange
     heading: string | null
     onEdit: (index: number, isAdd: boolean) => void
   }) => {
@@ -50,7 +52,7 @@ export const ByYearSchedule = React.memo(
       onEdit(index, true)
     }
     return (
-      <div className={`${className}`}>
+      <div className={`${className}`} style={style}>
         {heading ? (
           <div className="flex justify-between gap-x-4 items-center h-[40px]">
             <h2 className={'font-bold text-lg'}>{heading}</h2>
@@ -104,7 +106,7 @@ const _ByYearScheduleEntry = React.memo(
     onChangeAmount,
   }: {
     className?: string
-    allowableYearRange: {start: Year; end: Year}
+    allowableYearRange: SimpleRange
     entry: ValueForYearRange
     onEdit: () => void
     onChangeAmount: (amount: number) => void
@@ -127,9 +129,7 @@ const _ByYearScheduleEntry = React.memo(
                   >
                     {valueStr}
                   </h2>
-                  <h2 className="">
-                    {entry.nominal ? 'nominal' : 'real '}
-                  </h2>
+                  <h2 className="">{entry.nominal ? 'nominal' : 'real '}</h2>
                 </div>
                 <button
                   className="flex items-center px-2"

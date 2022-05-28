@@ -47,12 +47,12 @@ export const isChartPanelType = (
   if (!_checkType(type)) return false
   if (isChartPanelSpendingEssentialType(type)) {
     const id = chartPanelSpendingEssentialTypeID(type)
-    return params.withdrawals.fundedByBonds.find(x => x.id === id) !== undefined
+    return params.withdrawals.essential.find(x => x.id === id) !== undefined
   }
   if (isChartPanelSpendingDiscretionaryType(type)) {
     const id = chartPanelSpendingDiscretionaryTypeID(type)
     return (
-      params.withdrawals.fundedByRiskPortfolio.find(x => x.id === id) !==
+      params.withdrawals.discretionary.find(x => x.id === id) !==
       undefined
     )
   }

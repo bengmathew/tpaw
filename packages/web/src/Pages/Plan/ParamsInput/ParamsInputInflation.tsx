@@ -1,14 +1,15 @@
 import React from 'react'
-import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
-import {Contentful} from '../../../Utils/Contentful'
-import {preciseRange} from '../../../Utils/PreciseRange'
-import {useSimulation} from '../../App/WithSimulation'
-import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
-import {usePlanContent} from '../Plan'
-import {ParamsInputBody, ParamsInputBodyProps} from './ParamsInputBody'
+import { getDefaultParams } from '../../../TPAWSimulator/DefaultParams'
+import { Contentful } from '../../../Utils/Contentful'
+import { paddingCSS } from '../../../Utils/Geometry'
+import { preciseRange } from '../../../Utils/PreciseRange'
+import { useSimulation } from '../../App/WithSimulation'
+import { SliderInput } from '../../Common/Inputs/SliderInput/SliderInput'
+import { usePlanContent } from '../Plan'
+import { ParamsInputBody, ParamsInputBodyPassThruProps } from './ParamsInputBody'
 
 export const ParamsInputInflation = React.memo(
-  (props: ParamsInputBodyProps) => {
+  (props: ParamsInputBodyPassThruProps) => {
     const {params, setParams} = useSimulation()
     const content = usePlanContent()
     const sliderProps = {
@@ -26,17 +27,19 @@ export const ParamsInputInflation = React.memo(
       })),
     }
     return (
-      <ParamsInputBody {...props}>
-        <div className="">
+      <ParamsInputBody {...props} headingMarginLeft="normal">
+        <div
+          className="params-card"
+          style={{padding: paddingCSS(props.sizing.cardPadding)}}
+        >
+          <Contentful.RichText
+            body={content.inflation.intro.fields.body}
+            p="col-span-2 mb-2 p-base"
+          />
           <div
-            className="grid my-2 items-center"
+            className="grid mt-4 items-center"
             style={{grid: 'auto / auto 1fr'}}
           >
-            <Contentful.RichText
-              body={content.inflation.intro.fields.body}
-              p="col-span-2 mb-2 p-base"
-            />
-
             <h2 className="">Inflation</h2>
             <SliderInput
               {...sliderProps}

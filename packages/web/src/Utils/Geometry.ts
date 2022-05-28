@@ -6,12 +6,15 @@ export type Rect = {
 }
 export type RectExt = Rect & {right: number; bottom: number}
 
-export type Padding = {
-  left: number
-  right: number
+export type PaddingVert = {
   top: number
   bottom: number
 }
+export type PaddingHorz = {
+  left: number
+  right: number
+}
+export type Padding = PaddingVert & PaddingHorz
 
 export const rectExt = (
   rect:
@@ -62,5 +65,27 @@ export const applyPaddingToHTMLElement = (
 
 export const paddingCSS = ({top, left, right, bottom}: Padding) =>
   `${top}px ${right}px ${bottom}px ${left}px`
+
+export const paddingCSSStyleVert = (
+  {top, bottom}: PaddingVert,
+  {scale = 1}: {scale?: number} = {}
+) => ({
+  paddingTop: `${top * scale}px`,
+  paddingBottom: `${bottom * scale}px`,
+})
+export const paddingCSSStyleHorz = (
+  {left, right}: PaddingHorz,
+  {scale = 1}: {scale?: number} = {}
+) => ({
+  paddingLeft: `${left * scale}px`,
+  paddingRight: `${right * scale}px`,
+})
+export const paddingCSSStyle = (
+  padding: Padding,
+  {scale}: {scale?: number} = {}
+) => ({
+  ...paddingCSSStyleHorz(padding, {scale}),
+  ...paddingCSSStyleVert(padding, {scale}),
+})
 
 export type Size = {width: number; height: number}

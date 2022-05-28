@@ -16,9 +16,10 @@ import {useAssertConst} from '../../../Utils/UseAssertConst'
 import {fGet, noCase} from '../../../Utils/Utils'
 import {ChartPanelType} from '../ChartPanel/ChartPanelType'
 import {ParamsInputType} from './Helpers/ParamsInputType'
-import {ParamsInputAge} from './ParamsInputAge/ParamsInputAge'
-import {ParamsInputBodyProps} from './ParamsInputBody'
-import {ParamsInputCurrentPortfolioValue} from './ParamsInputCurrentPortfolioValue'
+import {ParamsInputAgeAndRetirement} from './ParamsInputAgeAndRetirement/ParamsInputAgeAndRetirement'
+import {ParamsInputStrategy} from './ParamsInputStrategy'
+import {ParamsInputBodyPassThruProps} from './ParamsInputBody'
+import {ParamsInputCurrentPortfolioBalance} from './ParamsInputCurrentPortfolioBalance'
 import {ParamsInputExpectedReturns} from './ParamsInputExpectedReturns'
 import {ParamsInputExtraSpending} from './ParamsInputExtraSpending'
 import {ParamsInputFutureSavings} from './ParamsInputFutureSavings'
@@ -181,15 +182,15 @@ const _Body = React.memo(
     chartType: ChartPanelType
     setChartType: (type: ChartPanelType) => void
   }) => {
-    const props: ParamsInputBodyProps = {layout, sizing}
+    const props: ParamsInputBodyPassThruProps = {layout, sizing}
 
     switch (type) {
-      case 'age':
-        return <ParamsInputAge {...props} />
+      case 'age-and-retirement':
+        return <ParamsInputAgeAndRetirement {...props} />
       case 'risk-and-time-preference':
         return <ParamsInputRiskAndTimePreference {...props} />
       case 'current-portfolio-balance':
-        return <ParamsInputCurrentPortfolioValue {...props} />
+        return <ParamsInputCurrentPortfolioBalance {...props} />
       case 'future-savings':
         return <ParamsInputFutureSavings onBack={onDone} {...props} />
       case 'income-during-retirement':
@@ -210,6 +211,8 @@ const _Body = React.memo(
         return <ParamsInputExpectedReturns {...props} />
       case 'inflation':
         return <ParamsInputInflation {...props} />
+      case 'strategy':
+        return <ParamsInputStrategy {...props} />
       default:
         noCase(type)
     }
