@@ -107,7 +107,7 @@ addEventListener('message', async event => {
         let start = performance.now()
         const {data} = eventData.args
 
-        const wasm = await import('simulator')
+        const wasm = await import('@tpaw/simulator')
         const sorted = IS_JS
           ? data.map(row => row.sort())
           : data.map(row => wasm.sort(row))
