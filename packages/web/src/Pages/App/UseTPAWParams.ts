@@ -2,10 +2,7 @@ import _ from 'lodash'
 import {useRouter} from 'next/dist/client/router'
 import {useCallback, useEffect, useState} from 'react'
 import {getDefaultParams} from '../../TPAWSimulator/DefaultParams'
-import {
-  TPAWParams,
-  TPAWParamsWithoutHistorical,
-} from '../../TPAWSimulator/TPAWParams'
+import {TPAWParams} from '../../TPAWSimulator/TPAWParams'
 import {TPAWParamsV1WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV1'
 import {tpawParamsV1Validator} from '../../TPAWSimulator/TPAWParamsV1Validator'
 import {TPAWParamsV2WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV2'
@@ -15,6 +12,7 @@ import {tpawParamsV3Validator} from '../../TPAWSimulator/TPAWParamsV3Validator'
 import {TPAWParamsV4} from '../../TPAWSimulator/TPAWParamsV4'
 import {TPAWParamsV5} from '../../TPAWSimulator/TPAWParamsV5'
 import {TPAWParamsV6} from '../../TPAWSimulator/TPAWParamsV6'
+import {TPAWParamsV7} from '../../TPAWSimulator/TPAWParamsV7'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {fGet} from '../../Utils/Utils'
 import {Validator} from '../../Utils/Validator'
@@ -102,8 +100,7 @@ export function useTPAWParams() {
   }
 }
 
-export const tpawParamsForURL = (params: TPAWParams) =>
-  JSON.stringify(_removeHistorical(params))
+export const tpawParamsForURL = (params: TPAWParams) => JSON.stringify(params)
 
 function _parseExternalParams(str: string | string[] | undefined | null) {
   if (typeof str !== 'string') return null
@@ -128,12 +125,20 @@ function _parseExternalParams(str: string | string[] | undefined | null) {
           : v4
           ? _v4ToV5(v4)
           : null
+
       const v6 =
         parsed.v === 6
           ? TPAWParamsV6.validator(parsed)
-          : TPAWParamsV6.fromV5(fGet(v5))
+          : v5
+          ? TPAWParamsV6.fromV5(v5)
+          : null
 
-      return _addHistorical(v6)
+      const v7 =
+        parsed.v === 7
+          ? TPAWParamsV7.validator(parsed)
+          : TPAWParamsV7.fromV6(fGet(v6))
+
+      return v7
     } catch (e) {
       if (e instanceof Validator.Failed) {
         throw new AppError(`Error in parameter: ${e.fullMessage}`)
@@ -149,26 +154,6 @@ function _parseExternalParams(str: string | string[] | undefined | null) {
     }
   }
 }
-
-const _removeHistorical = (params: TPAWParams): TPAWParamsWithoutHistorical => {
-  const p: any = _.cloneDeep(params)
-  delete p.returns.historical
-  return p
-}
-
-const _addHistorical = (params: TPAWParamsWithoutHistorical): TPAWParams => ({
-  ...params,
-  returns: {
-    ...params.returns,
-    historical: {
-      adjust: {
-        type: 'to',
-        stocks: params.returns.expected.stocks,
-        bonds: params.returns.expected.bonds,
-      },
-    },
-  },
-})
 
 const _v1ToV2 = (
   v1: TPAWParamsV1WithoutHistorical

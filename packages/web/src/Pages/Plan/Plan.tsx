@@ -524,6 +524,7 @@ export type PlanContent = {
   'risk-and-time-preference': _IntroAndBody & {
     stockAllocationIntro: _FetchedInline
     spendingTiltIntro: _FetchedInline
+    lmpIntro:_FetchedInline
   }
   'expected-returns': _IntroAndBody
   inflation: _IntroAndBody
@@ -531,6 +532,7 @@ export type PlanContent = {
     tpawIntro: _FetchedInline
     spawIntro: _FetchedInline
   }
+  dev: Record<string, never>
   chart: {
     spending: {
       total: _IntroAndBodyAndMenu
@@ -559,14 +561,6 @@ export const planGetStaticProps: GetStaticProps<
       intro: await Contentful.fetchInline('3iLyyrQAhHnzuc4IdftWT3'),
       body: await Contentful.fetchInline('5RE7wTwvtTAsF1sWpKrFW2'),
     },
-    'risk-and-time-preference': {
-      intro: await Contentful.fetchInline('4UHaDSQWXjNW75yTAwK1IX'),
-      body: await Contentful.fetchInline('3ofgPmJFLgtJpjl26E7jpB'),
-      stockAllocationIntro: await Contentful.fetchInline(
-        'xWXcgVScUfdK1PaTNQeKz'
-      ),
-      spendingTiltIntro: await Contentful.fetchInline('4UwuCPjuTz3SbwUcZIrLEG'),
-    },
     'income-during-retirement': {
       intro: await Contentful.fetchInline('3OqUTPDVRGzgQcVkJV7Lew'),
       body: await Contentful.fetchInline('1MHvhL8ImdOL9FxE5qxK6F'),
@@ -588,6 +582,22 @@ export const planGetStaticProps: GetStaticProps<
       introAssets: await Contentful.fetchInline('5glA8ryQcNh7SHP9ZlkZ2y'),
       body: await Contentful.fetchInline('5nCHpNy6ReAEtBQTvDTwBf'),
     },
+
+    'risk-and-time-preference': {
+      intro: await Contentful.fetchInline('4UHaDSQWXjNW75yTAwK1IX'),
+      body: await Contentful.fetchInline('3ofgPmJFLgtJpjl26E7jpB'),
+      stockAllocationIntro: await Contentful.fetchInline(
+        'xWXcgVScUfdK1PaTNQeKz'
+      ),
+      spendingTiltIntro: await Contentful.fetchInline('4UwuCPjuTz3SbwUcZIrLEG'),
+      lmpIntro:await Contentful.fetchInline('5FiPQS04F4uFngEMJium3B'),
+    },
+    strategy: {
+      intro: await Contentful.fetchInline('52f9yaDqUCBBg3mkqGdZPc'),
+      tpawIntro: await Contentful.fetchInline('4qYue9K3cSpEkSrAhIn7AV'),
+      spawIntro: await Contentful.fetchInline('5W26KpQeXY9nC3FgKioesF'),
+      body: await Contentful.fetchInline('5F0tZKpZ2SPvljHIGkPYmy'),
+    },
     'expected-returns': {
       intro: await Contentful.fetchInline('2NxIclWQoxuk0TMVH0GjhR'),
       body: await Contentful.fetchInline('2GxHf6q4kfRrz6AnFLniFh'),
@@ -596,12 +606,7 @@ export const planGetStaticProps: GetStaticProps<
       intro: await Contentful.fetchInline('76BgIpwX9yZetMGungnfwC'),
       body: await Contentful.fetchInline('6LqbR3PBA1uDe9xU2V1hk9'),
     },
-    strategy: {
-      intro: await Contentful.fetchInline('52f9yaDqUCBBg3mkqGdZPc'),
-      tpawIntro: await Contentful.fetchInline('4qYue9K3cSpEkSrAhIn7AV'),
-      spawIntro: await Contentful.fetchInline('5W26KpQeXY9nC3FgKioesF'),
-      body: await Contentful.fetchInline('5F0tZKpZ2SPvljHIGkPYmy'),
-    },
+    dev: {},
     chart: {
       spending: {
         total: {

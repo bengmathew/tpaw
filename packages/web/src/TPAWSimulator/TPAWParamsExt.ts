@@ -2,20 +2,38 @@ import _ from 'lodash'
 import {pluralize} from '../Utils/Pluralize'
 import {SimpleRange} from '../Utils/SimpleRange'
 import {assert, noCase} from '../Utils/Utils'
-import {
-  GlidePath,
-  TPAWParams,
-  TPAWParamsWithoutHistorical,
-  Year,
-  YearRange,
-} from './TPAWParams'
+import {GlidePath, Person, TPAWParams, Year, YearRange} from './TPAWParams'
 
 export type TPAWParamsExt = ReturnType<typeof extendTPAWParams>
 export const extendTPAWParams = (params: TPAWParams) => {
   const {years, yearRangeEdge} = extendTPAWParams
 
-  const pickPerson = (person: 'person1' | 'person2') =>
-    _pickPerson(params, person)
+  const pickPerson = (person: 'person1' | 'person2') => {
+    if (person === 'person1') return params.people.person1
+    assert(params.people.withPartner)
+    return params.people.person2
+  }
+
+  const asYearsFromNow_Year = (year: Year): number => {
+    if (year.type === 'now') return 0
+    const person = pickPerson(year.person)
+    const {age: ageIn} = year
+    const age = (() => {
+      const effectiveRetirement =
+        person.ages.type === 'retired'
+          ? person.ages.current
+          : person.ages.retirement
+      if (ageIn === 'lastWorkingYear') {
+        return effectiveRetirement - 1
+      }
+      if (ageIn === 'retirement') {
+        return effectiveRetirement
+      }
+      if (ageIn === 'max') return person.ages.max
+      return ageIn
+    })()
+    return age - person.ages.current
+  }
 
   const asYearsFromNow_YearRange = (
     yearRange: YearRange
@@ -44,7 +62,7 @@ export const extendTPAWParams = (params: TPAWParams) => {
       case 'namedAge':
       case 'numericAge':
       case 'now':
-        return asYearsFromNow_Year(params, x)
+        return asYearsFromNow_Year(x)
       default:
         return asYearsFromNow_YearRange(x)
     }
@@ -71,8 +89,7 @@ export const extendTPAWParams = (params: TPAWParams) => {
   const maxMaxAge = params.people.withPartner
     ? maxYear(years.person1.max, years.person2.max)
     : years.person1.max
-  const numYears = asYFN(maxMaxAge) + 1
-
+  const numYears = getNumYears(params)
 
   const yearRangeBoundsCheck = (x: YearRange, bounds: SimpleRange) => {
     const inRange = (edge: 'start' | 'end') =>
@@ -131,7 +148,6 @@ export const extendTPAWParams = (params: TPAWParams) => {
 
     return intermediate
   }
-
 
   const validYearRange = (
     type: 'future-savings' | 'income-during-retirement' | 'extra-spending'
@@ -423,35 +439,23 @@ extendTPAWParams.years = (() => {
   }
 })()
 
-const _pickPerson = (
-  params: TPAWParamsWithoutHistorical,
-  person: 'person1' | 'person2'
-) => {
-  if (person === 'person1') return params.people.person1
-  assert(params.people.withPartner)
-  return params.people.person2
+export const getNumYears = (params: TPAWParams) => {
+  const forPerson = (person: Person) =>
+    person.ages.max - person.ages.current + 1
+  return Math.max(
+    forPerson(params.people.person1),
+    params.people.withPartner ? forPerson(params.people.person2) : 0
+  )
 }
 
-export const asYearsFromNow_Year = (
-  params: TPAWParamsWithoutHistorical,
-  year: Year
-): number => {
-  if (year.type === 'now') return 0
-  const person = _pickPerson(params, year.person)
-  const {age: ageIn} = year
-  const age = (() => {
-    const effectiveRetirement =
-      person.ages.type === 'retired'
-        ? person.ages.current
-        : person.ages.retirement
-    if (ageIn === 'lastWorkingYear') {
-      return effectiveRetirement - 1
-    }
-    if (ageIn === 'retirement') {
-      return effectiveRetirement
-    }
-    if (ageIn === 'max') return person.ages.max
-    return ageIn
+export const getWithdrawalStartAsYFN = (params: TPAWParams) => {
+  const person = params.people.withPartner
+    ? params.people.withdrawalStart
+    : 'person1'
+  const {ages} = (() => {
+    if (person === 'person1') return params.people.person1
+    assert(params.people.withPartner)
+    return params.people.person2
   })()
-  return age - person.ages.current
+  return ages.type === 'retired' ? 0: ages.retirement - ages.current
 }

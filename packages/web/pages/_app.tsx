@@ -1,11 +1,12 @@
 import type {AppProps} from 'next/app'
 import {useRouter} from 'next/dist/client/router'
 import React, {useEffect, useState} from 'react'
+import {ToastContainer} from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import {GlobalErrorBoundary} from '../src/Pages/App/GlobalErrorBoundary'
+import {WithChartMainData} from '../src/Pages/App/WithChartMainData'
 import {WithSimulation} from '../src/Pages/App/WithSimulation'
 import '../styles/globals.css'
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
 /**
  * String.prototype.replaceAll() polyfill
@@ -44,10 +45,12 @@ function MyApp({Component, pageProps}: AppProps) {
   return (
     <GlobalErrorBoundary>
       <WithSimulation>
-        <Component {...pageProps} />
+        <WithChartMainData>
+          <Component {...pageProps} />
+        </WithChartMainData>
       </WithSimulation>
 
-      <ToastContainer  />
+      <ToastContainer />
     </GlobalErrorBoundary>
   )
 }

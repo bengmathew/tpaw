@@ -19,6 +19,7 @@ import {Footer} from '../../App/Footer'
 import {useSimulation} from '../../App/WithSimulation'
 import {ChartUtils} from '../../Common/Chart/ChartUtils/ChartUtils'
 import {ValueForYearRangeDisplay} from '../../Common/ValueForYearRangeDisplay'
+import {Config} from '../../Config'
 import {analyzeYearsInParams} from './Helpers/AnalyzeYearsInParams'
 import {paramsInputLabel} from './Helpers/ParamsInputLabel'
 import {ParamsInputType} from './Helpers/ParamsInputType'
@@ -126,14 +127,14 @@ export const ParamsInputSummary = React.memo(
                   padding={cardPadding}
                 />
                 <_Button
-                  type="spending-ceiling-and-floor"
+                  type="legacy"
                   setState={setState}
                   state={state}
                   showHeading
                   padding={cardPadding}
                 />
                 <_Button
-                  type="legacy"
+                  type="spending-ceiling-and-floor"
                   setState={setState}
                   state={state}
                   showHeading
@@ -203,6 +204,26 @@ export const ParamsInputSummary = React.memo(
                 />
               </div>
             </div>
+
+            {!Config.client.production && (
+              <div className="">
+                <h2
+                  className="text-[18px] sm:text-xl font-bold mb-4"
+                  style={labelStyle}
+                >
+                  Dev
+                </h2>
+                <div className="flex flex-col gap-y-4">
+                  <_Button
+                    type="dev"
+                    setState={setState}
+                    state={state}
+                    showHeading={false}
+                    padding={cardPadding}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
         {layout !== 'laptop' && <Footer />}
@@ -360,8 +381,9 @@ export const _SectionSummary = React.memo(
         const {essential, discretionary} = params.withdrawals
         return (
           <>
-            {essential.length === 0 &&
-              discretionary.length === 0 && <h2>None</h2>}
+            {essential.length === 0 && discretionary.length === 0 && (
+              <h2>None</h2>
+            )}
             {essential.length > 0 && (
               <>
                 <h2 className="mt-1 font-medium ">Essential</h2>
@@ -472,6 +494,32 @@ export const _SectionSummary = React.memo(
             noCase(params.strategy)
         }
       }
+      case 'dev':
+        if (
+          params.returns.historical.type === 'default' &&
+          !params.display.alwaysShowAllYears
+        )
+          return <h2>None</h2>
+        return (
+          <div>
+            {params.returns.historical.type === 'default' && (
+              <h2>Real Historical Returns</h2>
+            )}
+            {params.returns.historical.type === 'fixed' && (
+              <>
+                <h2>Fixed Historical Returns</h2>
+                <h2 className="ml-4">
+                  Stocks:{' '}
+                  {formatPercentage(1)(params.returns.historical.stocks)}
+                </h2>
+                <h2 className="ml-4">
+                  Bonds: {formatPercentage(1)(params.returns.historical.bonds)}
+                </h2>
+              </>
+            )}
+            {params.display.alwaysShowAllYears && <h2>Show all years</h2>}
+          </div>
+        )
       default:
         noCase(type)
     }

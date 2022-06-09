@@ -166,9 +166,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
             >
               {({checked}) => (
                 <div className="">
-                  <RadioGroup.Label
-                    className={`col-span-2 cursor-pointer ${checked ? '' : ''}`}
-                  >
+                  <RadioGroup.Label className={`cursor-pointer `}>
                     <FontAwesomeIcon
                       className="mr-2"
                       icon={checked ? faCircleSelected : faCircleRegular}
@@ -185,9 +183,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
             >
               {({checked}) => (
                 <div className="">
-                  <RadioGroup.Label
-                    className={`col-span-2 cursor-pointer ${checked ? '' : ''}`}
-                  >
+                  <RadioGroup.Label className={`cursor-pointer `}>
                     <FontAwesomeIcon
                       className="mr-2"
                       icon={checked ? faCircleSelected : faCircleRegular}
@@ -326,7 +322,7 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
               {({checked}) => (
                 <div className="">
                   <RadioGroup.Label
-                    className={`col-span-2 cursor-pointer ${checked ? '' : ''}`}
+                    className={` cursor-pointer `}
                   >
                     <FontAwesomeIcon
                       className="mr-2"

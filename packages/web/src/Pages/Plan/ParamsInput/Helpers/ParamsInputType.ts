@@ -9,10 +9,11 @@ export const paramsInputTypes = [
   'extra-spending',
   'spending-ceiling-and-floor',
   'legacy',
+  'risk-and-time-preference',
+  'strategy',
   'expected-returns',
   'inflation',
-  'risk-and-time-preference',
-  'strategy'
+  'dev'
 ] as const
 export type ParamsInputType = typeof paramsInputTypes[number]
 

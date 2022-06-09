@@ -2,25 +2,16 @@ import {faChevronRight} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {gsap} from 'gsap'
 import _ from 'lodash'
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import React, {useEffect, useImperativeHandle, useMemo, useState} from 'react'
 import ReactDOM from 'react-dom'
 import {Contentful} from '../../../Utils/Contentful'
 import {Padding, RectExt, rectExt} from '../../../Utils/Geometry'
 import {fGet, noCase} from '../../../Utils/Utils'
 import {useWindowSize} from '../../../Utils/WithWindowSize'
+import {useChartMainData} from '../../App/WithChartMainData'
 import {useSimulation} from '../../App/WithSimulation'
 import {chartDrawDataLines} from '../../Common/Chart/ChartComponent/ChartDrawDataLines'
-import {
-  ChartReact,
-  ChartReactState,
-  ChartReactStatefull,
-} from '../../Common/Chart/ChartReact'
+import {ChartReact, ChartReactState} from '../../Common/Chart/ChartReact'
 import {ChartUtils} from '../../Common/Chart/ChartUtils/ChartUtils'
 import {usePlanContent} from '../Plan'
 import {chartPanelLabel} from './ChartPanelLabel'
@@ -31,7 +22,6 @@ import {
   isChartPanelSpendingEssentialType,
 } from './ChartPanelType'
 import {TPAWChartDataMain} from './TPAWChart/TPAWChartDataMain'
-import {Power1} from 'gsap'
 
 const duration = 0.5
 const scale = 0.95
@@ -216,7 +206,7 @@ const _Button = React.memo(
   }) => {
     const {tpawResult} = useSimulation()
     const {params} = tpawResult.args
-    const chartData = fGet(tpawResult.chartMainData.get(type))
+    const chartData = fGet(useChartMainData().get(type))
     const [description] = useInfo(type)
     const {label, subLabel} = chartPanelLabel(params.original, type, 'short')
     const isCurrent = _.isEqual(currType, type)

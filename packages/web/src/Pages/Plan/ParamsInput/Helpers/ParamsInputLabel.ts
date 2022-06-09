@@ -5,8 +5,6 @@ export const paramsInputLabel = (type: ParamsInputType) => {
   switch (type) {
     case 'age-and-retirement':
       return 'Age and Retirement'
-    case 'risk-and-time-preference':
-      return 'Risk and Time Preference'
     case 'current-portfolio-balance':
       return 'Current Portfolio Balance'
     case 'future-savings':
@@ -19,12 +17,16 @@ export const paramsInputLabel = (type: ParamsInputType) => {
       return 'Spending Ceiling and Floor'
     case 'legacy':
       return 'Legacy'
-    case 'expected-returns':
-      return 'Expected Returns'
+    case 'risk-and-time-preference':
+      return 'Risk and Time Preference'
     case 'inflation':
       return 'Inflation'
     case 'strategy':
       return 'Strategy'
+    case 'expected-returns':
+      return 'Expected Returns'
+    case 'dev':
+      return 'Dev'
     default:
       noCase(type)
   }

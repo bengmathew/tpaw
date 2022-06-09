@@ -1,32 +1,29 @@
 import _ from 'lodash'
 import {AccountForWithdrawal} from '../../Utils/AccountForWithdrawal'
 import {assert} from '../../Utils/Utils'
-import {TPAWParamsExt} from '../TPAWParamsExt'
+import {getNumYears, getWithdrawalStartAsYFN, TPAWParamsExt} from '../TPAWParamsExt'
 import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
 import {SavingsPortfolioThroughAYear} from './SavingsPortfolioThroughAYear'
 import {simulationResult, SimulationResult} from './SimulationResult'
 
 type _SingleYearResult = {
   savingsPortfolio: SavingsPortfolioThroughAYear.End
-  wealthLessEssentialExpenses: number
+  wealthLessEssentialAndLMPExpenses: number
 }
 
 export type SPAWSimulationResult = SimulationResult<_SingleYearResult>
 
 export function runSPAWSimulation(
   params: TPAWParamsProcessed,
-  paramsExt: TPAWParamsExt,
   args:
-    | {
-        type: 'useExpectedReturns'
-      }
+    | {type: 'useExpectedReturns'}
     | {
         type: 'useHistoricalReturns'
         resultsFromUsingExpectedReturns: SPAWSimulationResult
         randomIndexesIntoHistoricalReturnsByYear?: (year: number) => number
       }
 ): SPAWSimulationResult {
-  const {numYears} = paramsExt
+  const numYears = getNumYears(params.original)
   if (args.type === 'useHistoricalReturns')
     assert(
       args.resultsFromUsingExpectedReturns.byYearFromNow.length === numYears
@@ -38,7 +35,6 @@ export function runSPAWSimulation(
   _.range(numYears).reduce((prev, yearIndex) => {
     const result = runASingleYear(
       params,
-      paramsExt,
       yearIndex,
       args.type === 'useExpectedReturns'
         ? {type: 'useExpectedReturns'}
@@ -66,7 +62,6 @@ export function runSPAWSimulation(
 // ---------------------------
 export function runASingleYear(
   params: TPAWParamsProcessed,
-  paramsExt: TPAWParamsExt,
   yearIndex: number,
   args:
     | {type: 'useExpectedReturns'}
@@ -77,8 +72,9 @@ export function runASingleYear(
       },
   prev: _SingleYearResult | null
 ): _SingleYearResult {
-  const {asYFN, withdrawalStartYear} = paramsExt
-  const withdrawalStarted = yearIndex >= asYFN(withdrawalStartYear)
+  
+  const withdrawalStartAsYFN = getWithdrawalStartAsYFN(params.original)
+  const withdrawalStarted = yearIndex >= withdrawalStartAsYFN
   const {netPresentValue, cumulative1PlusGOver1PlusR} =
     params.preCalculations.forSPAW
 
@@ -91,61 +87,70 @@ export function runASingleYear(
     },
   }
 
-  const wealthLessEssentialExpenses =
+  const wealthLessEssentialAndLMPExpenses =
     savingsPortfolioAtStart.start.balance +
     netPresentValue.savings.withCurrentYear[yearIndex] -
-    netPresentValue.withdrawals.essential.withCurrentYear[yearIndex]
+    netPresentValue.withdrawals.essential.withCurrentYear[yearIndex] -
+    netPresentValue.withdrawals.lmp.withCurrentYear[yearIndex]
 
   // ---- SCALE ----
   const scale = (() => {
     if (args.type === 'useExpectedReturns') return {discretionaryAndLegacy: 1}
 
     const discretionaryAndLegacy =
-      wealthLessEssentialExpenses /
-      args.resultsFromUsingExpectedReturns.wealthLessEssentialExpenses
+      wealthLessEssentialAndLMPExpenses /
+      args.resultsFromUsingExpectedReturns.wealthLessEssentialAndLMPExpenses
     return {discretionaryAndLegacy}
   })()
 
   // ---- TARGET WITHDRAWALS ----
   const withdrawalTarget = (() => {
+    const lmp = !withdrawalStarted ? 0 : params.withdrawals.lmp
     const essential = params.byYear[yearIndex].withdrawals.essential
     let discretionary =
       params.byYear[yearIndex].withdrawals.discretionary *
       scale.discretionaryAndLegacy
 
-    let regular = (() => {
-      if (!withdrawalStarted) return 0
-      return Math.max(
-        (savingsPortfolioAtStart.start.balance +
-          netPresentValue.savings.withCurrentYear[yearIndex] -
-          netPresentValue.withdrawals.essential.withCurrentYear[yearIndex] -
-          netPresentValue.withdrawals.discretionary.withCurrentYear[yearIndex] *
-            scale.discretionaryAndLegacy -
-          netPresentValue.legacy.withCurrentYear[yearIndex] *
-            scale.discretionaryAndLegacy) /
-          cumulative1PlusGOver1PlusR[yearIndex],
-        0
-      )
-    })()
+    let regularWithLMP =
+      lmp +
+      (() => {
+        if (!withdrawalStarted) return 0
+        return Math.max(
+          (savingsPortfolioAtStart.start.balance +
+            netPresentValue.savings.withCurrentYear[yearIndex] -
+            netPresentValue.withdrawals.lmp.withCurrentYear[yearIndex] -
+            netPresentValue.withdrawals.essential.withCurrentYear[yearIndex] -
+            netPresentValue.withdrawals.discretionary.withCurrentYear[
+              yearIndex
+            ] *
+              scale.discretionaryAndLegacy -
+            netPresentValue.legacy.withCurrentYear[yearIndex] *
+              scale.discretionaryAndLegacy) /
+            cumulative1PlusGOver1PlusR[yearIndex],
+          0
+        )
+      })()
 
     if (params.spendingCeiling !== null) {
       discretionary = Math.min(
         discretionary,
         params.byYear[yearIndex].withdrawals.discretionary
       )
-      regular = Math.min(regular, params.spendingCeiling)
+      regularWithLMP = Math.min(regularWithLMP, params.spendingCeiling)
     }
     if (params.spendingFloor !== null) {
       discretionary = Math.max(
         discretionary,
         params.byYear[yearIndex].withdrawals.discretionary
       )
-      regular = withdrawalStarted
-        ? Math.max(regular, params.spendingFloor)
-        : regular
+      regularWithLMP = withdrawalStarted
+        ? Math.max(regularWithLMP, params.spendingFloor)
+        : regularWithLMP
     }
 
-    return {essential, discretionary, regular}
+    const regularWithoutLMP = regularWithLMP - lmp
+    assert(regularWithoutLMP >= 0)
+    return {lmp, essential, discretionary, regularWithoutLMP}
   })()
 
   // ---- APPLY CONTRIBUTIONS ----
@@ -160,9 +165,10 @@ export function runASingleYear(
     const account = new AccountForWithdrawal(
       savingsPortfolioAfterContributions.afterContributions.balance
     )
+    const lmp = account.withdraw(withdrawalTarget.lmp)
     const essential = account.withdraw(withdrawalTarget.essential)
     const discretionary = account.withdraw(withdrawalTarget.discretionary)
-    const regular = account.withdraw(withdrawalTarget.regular)
+    const regular = lmp + account.withdraw(withdrawalTarget.regularWithoutLMP)
     return {discretionary, essential, regular}
   })()
 
@@ -173,11 +179,13 @@ export function runASingleYear(
       savingsPortfolioAfterContributions
     )
 
-  // ---- APPLY ASSET ALLOCATION --------
-
+  // ---- CALCULATE ALLOCATION --------
   const allocation = {
     stocks: params.targetAllocation.regularPortfolio.forSPAW[yearIndex],
   }
+
+  // ---- APPLY ALLOCATION --------
+
   const savingsPortfolioAtEnd = SavingsPortfolioThroughAYear.applyAllocation(
     allocation,
     args.type === 'useExpectedReturns'
@@ -188,6 +196,6 @@ export function runASingleYear(
 
   return {
     savingsPortfolio: savingsPortfolioAtEnd,
-    wealthLessEssentialExpenses,
+    wealthLessEssentialAndLMPExpenses,
   }
 }

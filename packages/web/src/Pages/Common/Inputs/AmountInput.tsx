@@ -47,10 +47,12 @@ export const AmountInput = React.memo(
 )
 
 const _format = (type: 'currency' | 'percent', x: string) =>
-  `${type === 'currency' ? '$' : ''}${_.chunk(x.split('').reverse(), 3)
-    .reverse()
-    .map(x => x.reverse().join(''))
-    .join(',')}`
+  type === 'percent'
+    ? x
+    : `$${_.chunk(x.split('').reverse(), 3)
+        .reverse()
+        .map(x => x.reverse().join(''))
+        .join(',')}`
 
 const _clean = (x: string) => x.trim().replaceAll(/[^\d]/g, '')
 

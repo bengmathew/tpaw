@@ -3,7 +3,7 @@ import _ from 'lodash'
 import React, {useEffect, useMemo, useRef, useState} from 'react'
 import {rectExt} from '../../../../Utils/Geometry'
 import {fGet} from '../../../../Utils/Utils'
-import {useSimulation} from '../../../App/WithSimulation'
+import {useChartMainData} from '../../../App/WithChartMainData'
 import {chartDrawDataLines} from '../../../Common/Chart/ChartComponent/ChartDrawDataLines'
 import {ChartMinMaxYAxis} from '../../../Common/Chart/ChartComponent/ChartMinMaxYAxis'
 import {
@@ -16,9 +16,7 @@ import {TPAWChartDataMain} from '../../ChartPanel/TPAWChart/TPAWChartDataMain'
 
 export const AssetAllocationChart = React.memo(
   ({className = ''}: {className?: string}) => {
-    const data = fGet(
-      useSimulation().tpawResult.chartMainData.get('glide-path')
-    )
+    const data = fGet(useChartMainData().get('glide-path'))
     const [state, setState] = useState(() => _processData(data))
 
     useEffect(() => {

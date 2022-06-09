@@ -76,10 +76,12 @@ export const tpawChartDataMain = (
   const {legacy, spendingCeiling, withdrawals} = params
   const hasLegacy = legacy.total !== 0 || spendingCeiling !== null
   const withdrawalStart = asYFN(withdrawalStartYear)
-  const spendingYears = [
-    ...params.withdrawals.essential,
-    ...params.withdrawals.discretionary,
-  ].some(x => asYFN(x.yearRange).start < withdrawalStart)
+  const spendingYears = params.display.alwaysShowAllYears
+    ? 'allYears'
+    : [
+        ...params.withdrawals.essential,
+        ...params.withdrawals.discretionary,
+      ].some(x => asYFN(x.yearRange).start < withdrawalStart)
     ? ('allYears' as const)
     : ('retirementYears' as const)
   switch (type) {
@@ -134,7 +136,7 @@ export const tpawChartDataMain = (
         hasLegacy ? 0 : -1,
         [],
         highlightPercentiles,
-        {start:0, end:1}
+        {start: 0, end: 1}
       )
     case 'withdrawal-rate':
       return _data(
@@ -142,7 +144,7 @@ export const tpawChartDataMain = (
         tpawResult,
         x => x.savingsPortfolio.withdrawals.fromSavingsPortfolioRate,
         formatPercentage(1),
-        'retirementYears',
+        params.display.alwaysShowAllYears ? 'allYears' : 'retirementYears',
         0,
         [],
         highlightPercentiles,

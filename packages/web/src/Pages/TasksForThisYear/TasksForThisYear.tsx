@@ -3,7 +3,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import React, {ReactNode} from 'react'
 import {extendTPAWParams} from '../../TPAWSimulator/TPAWParamsExt'
-import {SavingsPortfolioThroughAYear} from '../../TPAWSimulator/Worker/SavingsPortfolioThroughAYear'
+import {FirstYearSavingsPortfolioDetail} from '../../TPAWSimulator/Worker/FirstYearSavingsPortfolioDetail'
 import {TPAWRunInWorkerByPercentileByYearsFromNow} from '../../TPAWSimulator/Worker/TPAWRunInWorker'
 import {UseTPAWWorkerResult} from '../../TPAWSimulator/Worker/UseTPAWWorker'
 import {formatCurrency} from '../../Utils/FormatCurrency'
@@ -14,17 +14,16 @@ import {Footer} from '../App/Footer'
 import {useSimulation} from '../App/WithSimulation'
 import {paramsInputLabel} from '../Plan/ParamsInput/Helpers/ParamsInputLabel'
 
-type _Props = {
-  savingsPortfolio: Omit<SavingsPortfolioThroughAYear.End, 'withdrawals'> & {
-    withdrawals: SavingsPortfolioThroughAYear.End['withdrawals'] & {
-      essentialByEntry: {id: number; label: string | null; amount: number}[]
-      discretionaryByEntry: {id: number; label: string | null; amount: number}[]
-    }
+type _Props = Omit<FirstYearSavingsPortfolioDetail, 'withdrawals'> & {
+  withdrawals: FirstYearSavingsPortfolioDetail['withdrawals'] & {
+    essentialByEntry: {id: number; label: string | null; amount: number}[]
+    discretionaryByEntry: {id: number; label: string | null; amount: number}[]
   }
   withdrawalsStarted: boolean
 }
+
 const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
-  const {savingsPortfolio} = tpawResult.firstYearOfSomeRun
+  const original = tpawResult.firstYearOfSomeRun
   const {params} = tpawResult.args
 
   const {asYFN, withdrawalStartYear} = extendTPAWParams(params.original)
@@ -35,31 +34,27 @@ const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
   ) => fGet(byId.get(id)).byPercentileByYearsFromNow[0].data[0]
 
   return {
-    savingsPortfolio: {
-      ...savingsPortfolio,
-      withdrawals: {
-        ...savingsPortfolio.withdrawals,
-        essentialByEntry: params.withdrawals.essential.map(
-          ({id, label}) => ({
-            id,
-            label,
-            amount: firstYearOfAnyPercentile(
-              id,
-              tpawResult.savingsPortfolio.withdrawals.essential
-            ),
-          })
+    ...original,
+    withdrawals: {
+      ...original.withdrawals,
+      essentialByEntry: params.withdrawals.essential.map(({id, label}) => ({
+        id,
+        label,
+        amount: firstYearOfAnyPercentile(
+          id,
+          tpawResult.savingsPortfolio.withdrawals.essential
         ),
-        discretionaryByEntry: params.withdrawals.discretionary.map(
-          ({id, label}) => ({
+      })),
+      discretionaryByEntry: params.withdrawals.discretionary.map(
+        ({id, label}) => ({
+          id,
+          label,
+          amount: firstYearOfAnyPercentile(
             id,
-            label,
-            amount: firstYearOfAnyPercentile(
-              id,
-              tpawResult.savingsPortfolio.withdrawals.discretionary
-            ),
-          })
-        ),
-      },
+            tpawResult.savingsPortfolio.withdrawals.discretionary
+          ),
+        })
+      ),
     },
     withdrawalsStarted: asYFN(withdrawalStartYear) <= 0,
   }
@@ -68,8 +63,7 @@ const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
 export const TasksForThisYear = React.memo(() => {
   const {tpawResult} = useSimulation()
   const props = _getProps(tpawResult)
-  const {savingsPortfolio, withdrawalsStarted} = props
-  const {withdrawals} = savingsPortfolio
+  const {withdrawals, withdrawalsStarted} = props
 
   return (
     <AppPage
@@ -113,8 +107,7 @@ export const TasksForThisYear = React.memo(() => {
 // -------- SUMMARY --------
 const _Summary = React.memo(
   ({className, ...props}: _Props & {className: string}) => {
-    const {savingsPortfolio} = props
-    const {contributionToOrWithdrawalFromSavingsPortfolio} = savingsPortfolio
+    const {contributionToOrWithdrawalFromSavingsPortfolio} = props
     const withdrawalText =
       contributionToOrWithdrawalFromSavingsPortfolio.type === 'withdrawal'
         ? `Withdraw ${formatCurrency(
@@ -131,9 +124,8 @@ const _Summary = React.memo(
         <div className="mt-2 p-base">
           <p className="mb-2">
             {withdrawalText} your portfolio and rebalance your remaining
-            portfolio of{' '}
-            <_Value>{savingsPortfolio.afterWithdrawals.balance}</_Value> to the
-            following asset allocation:
+            portfolio of <_Value>{props.afterWithdrawals.balance}</_Value> to
+            the following asset allocation:
           </p>
           <_AllocationTable className="" {...props} />
         </div>
@@ -145,9 +137,11 @@ const _Summary = React.memo(
 //  -------- DETAILS --------
 const _Details = React.memo(
   ({className, ...props}: _Props & {className: string}) => {
-    const {savingsPortfolio, withdrawalsStarted} = props
-    const {withdrawals, contributionToOrWithdrawalFromSavingsPortfolio} =
-      savingsPortfolio
+    const {
+      withdrawals,
+      contributionToOrWithdrawalFromSavingsPortfolio,
+      withdrawalsStarted,
+    } = props
     return (
       <div className={className}>
         {(withdrawals.total !== 0 || withdrawalsStarted) && (
@@ -172,16 +166,16 @@ const _Details = React.memo(
 const _HowMuchYouHave = React.memo(
   ({
     withdrawalsStarted,
-    savingsPortfolio,
+    contributions,
     className = '',
+    ...props
   }: _Props & {className?: string}) => {
-    const {contributions} = savingsPortfolio
     return (
       <div className={className}>
         <_Heading>How Much You Have</_Heading>
         <p className="mb-4 p-base">
-          Your current portfolio is{' '}
-          <_Value>{savingsPortfolio.start.balance}</_Value> and you{' '}
+          Your current portfolio is <_Value>{props.start.balance}</_Value> and
+          you{' '}
           {!withdrawalsStarted ? (
             <span>
               plan to contribute and additional{' '}
@@ -193,10 +187,8 @@ const _HowMuchYouHave = React.memo(
             </span>
           )}{' '}
           this year. This gives you a total of{' '}
-          <_Value className="">
-            {savingsPortfolio.afterContributions.balance}
-          </_Value>{' '}
-          to split between spending for this year and saving for the future.
+          <_Value className="">{props.afterContributions.balance}</_Value> to
+          split between spending for this year and saving for the future.
         </p>
       </div>
     )
@@ -205,8 +197,7 @@ const _HowMuchYouHave = React.memo(
 
 // -------- HOW MUCH TO SPEND --------
 const _HowMuchToSpend = React.memo(
-  ({savingsPortfolio, className = ''}: _Props & {className?: string}) => {
-    const {withdrawals} = savingsPortfolio
+  ({withdrawals, className = '', ...props}: _Props & {className?: string}) => {
     const needsBreakdown =
       withdrawals.essentialByEntry.length > 0 ||
       withdrawals.discretionaryByEntry.length > 0
@@ -214,9 +205,8 @@ const _HowMuchToSpend = React.memo(
       <div className={className}>
         <_Heading>How Much To Spend</_Heading>
         <p className="p-base">
-          Out of your <_Value>{savingsPortfolio.start.balance}</_Value>, you
-          plan to spend <_Value className="">{withdrawals.total}</_Value> this
-          year
+          Out of your <_Value>{props.start.balance}</_Value>, you plan to spend{' '}
+          <_Value className="">{withdrawals.total}</_Value> this year
           {needsBreakdown
             ? `,
           broken down as follows:`
@@ -269,11 +259,10 @@ const _HowMuchToSpend = React.memo(
 // -------- HOW TO FUND THE SPENDING --------
 const _HowToFundTheSpending = React.memo(
   ({
-    savingsPortfolio,
+    withdrawals,
     withdrawalsStarted,
     className = '',
   }: _Props & {className?: string}) => {
-    const {withdrawals} = savingsPortfolio
     return (
       <div className={className}>
         <_Heading>How To Fund The Spending</_Heading>
@@ -304,15 +293,11 @@ const _HowToFundTheSpending = React.memo(
 // -------- CONTRIBUTION --------
 const _Contribution = React.memo(
   ({
-    savingsPortfolio,
+    contributions,
+    contributionToOrWithdrawalFromSavingsPortfolio,
     withdrawalsStarted,
     className = '',
   }: _Props & {className?: string}) => {
-    const {
-      withdrawals,
-      contributions,
-      contributionToOrWithdrawalFromSavingsPortfolio,
-    } = savingsPortfolio
     return (
       <div className={className}>
         <_Heading>How Much To Contribute To Your Portfolio</_Heading>
@@ -349,17 +334,19 @@ const _Contribution = React.memo(
 
 // -------- ASSET ALLOCATION --------
 const _AssetAllocation = React.memo(
-  ({className = '', ...props}: _Props & {className?: string}) => {
-    const {savingsPortfolio} = props
-    const {withdrawals, contributionToOrWithdrawalFromSavingsPortfolio} =
-      savingsPortfolio
+  ({
+    className = '',
+    
+    ...props
+  }: _Props & {className?: string}) => {
+    const {contributionToOrWithdrawalFromSavingsPortfolio,} = props
     return (
       <div className={className}>
         <_Heading>What Asset Allocation To Use</_Heading>
         <div className="mb-3 p-base">
           <p className="mb-3">
             You started with a portfolio of{' '}
-            <_Value>{savingsPortfolio.start.balance}</_Value> and{' '}
+            <_Value>{props.start.balance}</_Value> and{' '}
             {contributionToOrWithdrawalFromSavingsPortfolio.type ===
             'withdrawal' ? (
               <span>
@@ -385,7 +372,7 @@ const _AssetAllocation = React.memo(
               : 'contribution'}{' '}
             is{' '}
             <_Value className="">
-              {savingsPortfolio.afterWithdrawals.balance}
+              {props.afterWithdrawals.balance}
             </_Value>
             . Rebalance this portfolio to the following asset allocation:
           </p>
@@ -406,10 +393,10 @@ const _AssetAllocation = React.memo(
 )
 
 const _AllocationTable = React.memo(
-  ({className = '', savingsPortfolio}: _Props & {className?: string}) => {
-    const {allocation} = savingsPortfolio.afterWithdrawals
-    const stocks = savingsPortfolio.afterWithdrawals.balance * allocation.stocks
-    const bonds = savingsPortfolio.afterWithdrawals.balance - stocks
+  ({className = '', ...props}: _Props & {className?: string}) => {
+    const {allocation} = props.afterWithdrawals
+    const stocks = props.afterWithdrawals.balance * allocation.stocks
+    const bonds = props.afterWithdrawals.balance - stocks
     return (
       <div
         className={`${className} grid justify-start gap-x-16`}

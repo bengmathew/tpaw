@@ -2,7 +2,7 @@ import {TPAWParams} from './TPAWParams'
 
 export function getDefaultParams() {
   const params: TPAWParams = {
-    v: 6,
+    v: 7,
     strategy: 'TPAW',
     people: {
       withPartner: false,
@@ -13,7 +13,7 @@ export function getDefaultParams() {
     },
     returns: {
       expected: {stocks: 0.037, bonds: 0.004},
-      historical: {adjust: {type: 'to', stocks: 0.037, bonds: 0.004}},
+      historical: {type: 'default', adjust: {type: 'toExpected'}},
     },
     inflation: 0.026,
     targetAllocation: {
@@ -24,7 +24,6 @@ export function getDefaultParams() {
           intermediate: [],
           end: {stocks: 0.5},
         },
-
       },
       legacyPortfolio: {stocks: 0.7},
     },
@@ -33,7 +32,7 @@ export function getDefaultParams() {
     savings: [],
     retirementIncome: [],
     withdrawals: {
-      lmp:0,
+      lmp: 0,
       essential: [],
       discretionary: [],
     },
@@ -43,6 +42,9 @@ export function getDefaultParams() {
       total: 0,
       external: [],
     },
+    display:{
+      alwaysShowAllYears:false
+    }
   }
 
   return params

@@ -1,5 +1,4 @@
 import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
-import {SavingsPortfolioThroughAYear} from './SavingsPortfolioThroughAYear'
 
 export type TPAWWorkerArgs =
   | {
@@ -29,20 +28,29 @@ export type TPAWWorkerResult =
             }
           }
         }
-        firstYearOfSomeRun: {savingsPortfolio: SavingsPortfolioThroughAYear.End}
-        legacyByRun: Float64Array
-        endingBalanceOfSavingsPortfolioByRun: Float64Array
+        byRun: {
+          endingBalanceOfSavingsPortfolio: Float64Array
+        }
         perf: [
           ['runs', number],
-          ['selectAndPivotPre', number],
-          ['selectAndPivot', number],
+          ['post', number],
+          ['rest', number],
           ['total', number]
         ]
       }
     }
-  | {type: 'sortRows'; taskID: string; result: Float64Array[]}
+  | {
+      type: 'sortRows'
+      taskID: string
+      result: {data: Float64Array[]; perf: number}
+    }
 
 export type TPAWWorkerRunSimulationResult = Extract<
   TPAWWorkerResult,
   {type: 'runSimulation'}
+>['result']
+
+export type TPAWWorkerSortResult = Extract<
+  TPAWWorkerResult,
+  {type: 'sortRows'}
 >['result']

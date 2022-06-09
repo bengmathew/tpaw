@@ -13,7 +13,6 @@ import {
 } from '../ChartPanel/ChartPanelType'
 import {usePlanContent} from '../Plan'
 import {ByYearSchedule} from './Helpers/ByYearSchedule'
-import {paramsInputLabel} from './Helpers/ParamsInputLabel'
 import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 export const ParamsInputExtraSpending = React.memo(

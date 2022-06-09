@@ -4,6 +4,7 @@ import {useCallback, useEffect, useMemo, useState} from 'react'
 import {useAssertConst} from '../../../Utils/UseAssertConst'
 import {useURLParam} from '../../../Utils/UseURLParam'
 import {assert, fGet} from '../../../Utils/Utils'
+import {useChartMainData} from '../../App/WithChartMainData'
 import {SimulationInfo, useSimulation} from '../../App/WithSimulation'
 import {ChartAnimation} from '../../Common/Chart/Chart'
 import {ChartReactState} from '../../Common/Chart/ChartReact'
@@ -30,6 +31,7 @@ const normalAnimation: ChartAnimation = {ease: Power1.easeOut, duration: 0.5}
 export type ChartPanelState = ReturnType<typeof useChartPanelState>
 export function useChartPanelState() {
   const {tpawResult, highlightPercentiles} = useSimulation()
+  const chartMainData = useChartMainData()
   const {params} = tpawResult.args
 
   const router = useRouter()
@@ -41,7 +43,7 @@ export function useChartPanelState() {
 
   const [state, setState] = useState<_State>(() => {
     const type = panelTypeIn
-    const data = fGet(tpawResult.chartMainData.get(type))
+    const data = fGet(chartMainData.get(type))
     const animation = null
     const legacyData = tpawChartDataLegacy(tpawResult, highlightPercentiles)
     return {
@@ -66,7 +68,7 @@ export function useChartPanelState() {
     setState(prev => {
       const type = prev.type
       const legacyData = tpawChartDataLegacy(tpawResult, highlightPercentiles)
-      const data = fGet(tpawResult.chartMainData.get(type))
+      const data = fGet(chartMainData.get(type))
       const animation = normalAnimation
       return {
         type,
@@ -85,7 +87,7 @@ export function useChartPanelState() {
         },
       }
     })
-  }, [tpawResult, highlightPercentiles])
+  }, [tpawResult, highlightPercentiles, chartMainData])
   useAssertConst([highlightPercentiles])
 
   const handleRescale = useCallback(() => {
@@ -126,7 +128,7 @@ export function useChartPanelState() {
     const animation = null
 
     setState(prev => {
-      const yRange = fGet(tpawResult.chartMainData.get(type)).yDisplayRange
+      const yRange = fGet(chartMainData.get(type)).yDisplayRange
       const data = tpawChartDataScaled(prev.main.data, yRange)
       const xyRange = {x: data.years.displayRange, y: yRange}
 
@@ -152,7 +154,7 @@ export function useChartPanelState() {
     setState(prev => {
       assert(prev.type === state.type)
       const animation = morphAnimation
-      const data = fGet(tpawResult.chartMainData.get(prev.type))
+      const data = fGet(chartMainData.get(prev.type))
       return {
         type: prev.type,
         main: {

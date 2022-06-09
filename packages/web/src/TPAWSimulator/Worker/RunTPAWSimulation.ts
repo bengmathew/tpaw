@@ -1,7 +1,8 @@
 import _ from 'lodash'
+import {AccountForWithdrawal} from '../../Utils/AccountForWithdrawal'
 import {blendReturns} from '../../Utils/BlendReturns'
 import {assert} from '../../Utils/Utils'
-import {TPAWParamsExt} from '../TPAWParamsExt'
+import {getNumYears, getWithdrawalStartAsYFN, TPAWParamsExt} from '../TPAWParamsExt'
 import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
 import {SavingsPortfolioThroughAYear} from './SavingsPortfolioThroughAYear'
 import {simulationResult, SimulationResult} from './SimulationResult'
@@ -12,7 +13,6 @@ type _SingleYearResult = {
   presentValueOfSpending: {
     withdrawals: {
       regular: number
-      essential: number
       discretionary: number
     }
     legacy: number
@@ -22,18 +22,15 @@ export type TPAWSimulationResult = SimulationResult<_SingleYearResult>
 
 export function runTPAWSimulation(
   params: TPAWParamsProcessed,
-  paramsExt: TPAWParamsExt,
   args:
-    | {
-        type: 'useExpectedReturns'
-      }
+    | {type: 'useExpectedReturns'}
     | {
         type: 'useHistoricalReturns'
         resultsFromUsingExpectedReturns: TPAWSimulationResult
         randomIndexesIntoHistoricalReturnsByYear?: (year: number) => number
       }
 ): TPAWSimulationResult {
-  const {numYears} = paramsExt
+  const numYears = getNumYears(params.original)
   if (args.type === 'useHistoricalReturns')
     assert(
       args.resultsFromUsingExpectedReturns.byYearFromNow.length === numYears
@@ -45,7 +42,6 @@ export function runTPAWSimulation(
   _.range(numYears).reduce((prev, yearIndex) => {
     const result = runASingleYear(
       params,
-      paramsExt,
       yearIndex,
       args.type === 'useExpectedReturns'
         ? {type: 'useExpectedReturns'}
@@ -74,7 +70,6 @@ export function runTPAWSimulation(
 
 export function runASingleYear(
   params: TPAWParamsProcessed,
-  paramsExt: TPAWParamsExt,
   yearIndex: number,
   args:
     | {type: 'useExpectedReturns'}
@@ -87,9 +82,9 @@ export function runASingleYear(
 ): _SingleYearResult {
   const {netPresentValue} = params.preCalculations.forTPAW
 
-  const {asYFN, numYears, withdrawalStartYear} = paramsExt
-
-  const withdrawalStarted = yearIndex >= asYFN(withdrawalStartYear)
+  const numYears = getNumYears(params.original)
+  const withdrawalStartAsYFN = getWithdrawalStartAsYFN(params.original)
+  const withdrawalStarted = yearIndex >= withdrawalStartAsYFN
 
   // ---- START SAVINGS PORTFOLIO ----
   const savingsPortfolioAtStart: SavingsPortfolioThroughAYear.Start = {
@@ -170,69 +165,64 @@ export function runASingleYear(
 
   // ---- PRESENT VALUE OF SPENDING ----
   const presentValueOfSpending = (() => {
-    const essentialWithdrawals = Math.min(
-      netPresentValue.withdrawals.essential.withCurrentYear[yearIndex],
-      wealth
+    const account = new AccountForWithdrawal(wealth)
+    account.withdraw(netPresentValue.withdrawals.lmp.withCurrentYear[yearIndex])
+    account.withdraw(
+      netPresentValue.withdrawals.essential.withCurrentYear[yearIndex]
     )
-
-    const discretionaryWithdrawals = Math.min(
+    const discretionary = account.withdraw(
       netPresentValue.withdrawals.discretionary.withCurrentYear[yearIndex] *
-        (1 + scale.extraWithdrawls),
-      wealth - essentialWithdrawals
+        (1 + scale.extraWithdrawls)
     )
-    const legacy = Math.min(
+    const legacy = account.withdraw(
       (params.legacy.target * (1 + scale.legacy)) /
-        Math.pow(1 + expectedReturns.legacyPortfolio, numYears - yearIndex),
-      wealth - essentialWithdrawals - discretionaryWithdrawals
+        Math.pow(1 + expectedReturns.legacyPortfolio, numYears - yearIndex)
     )
-    const regular =
-      wealth - essentialWithdrawals - legacy - discretionaryWithdrawals
+    const regular = account.balance
 
-    return {
-      withdrawals: {
-        regular,
-        essential: essentialWithdrawals,
-        discretionary: discretionaryWithdrawals,
-      },
-      legacy,
-    }
+    return {withdrawals: {regular, discretionary}, legacy}
   })()
 
   // ---- WITHDRAWAL TARGET ----
   const withdrawalTarget = (() => {
+    const lmp = !withdrawalStarted ? 0 : params.withdrawals.lmp
     const essential = params.byYear[yearIndex].withdrawals.essential
     let discretionary =
       params.byYear[yearIndex].withdrawals.discretionary *
       (1 + scale.extraWithdrawls)
 
-    let regular = (() => {
-      if (!withdrawalStarted) return 0
+    let regularWithLMP =
+      lmp +
+      (() => {
+        if (!withdrawalStarted) return 0
 
-      const P = presentValueOfSpending.withdrawals.regular
-      const r = expectedReturns.regularPortfolio
-      const g = params.scheduledWithdrawalGrowthRate
-      const n = numYears - yearIndex
-      if (Math.abs(r - g) < 0.0000000001) return P / n
-      return (P * (r - g)) / ((1 - Math.pow((1 + g) / (1 + r), n)) * (1 + r))
-    })()
+        const P = presentValueOfSpending.withdrawals.regular
+        const r = expectedReturns.regularPortfolio
+        const g = params.scheduledWithdrawalGrowthRate
+        const n = numYears - yearIndex
+        if (Math.abs(r - g) < 0.0000000001) return P / n
+        return (P * (r - g)) / ((1 - Math.pow((1 + g) / (1 + r), n)) * (1 + r))
+      })()
 
     if (params.spendingCeiling !== null) {
       discretionary = Math.min(
         discretionary,
         params.byYear[yearIndex].withdrawals.discretionary
       )
-      regular = Math.min(regular, params.spendingCeiling)
+      regularWithLMP = Math.min(regularWithLMP, params.spendingCeiling)
     }
     if (params.spendingFloor !== null) {
       discretionary = Math.max(
         discretionary,
         params.byYear[yearIndex].withdrawals.discretionary
       )
-      regular = withdrawalStarted
-        ? Math.max(regular, params.spendingFloor)
-        : regular
+      regularWithLMP = withdrawalStarted
+        ? Math.max(regularWithLMP, params.spendingFloor)
+        : regularWithLMP
     }
-    return {essential, discretionary, regular}
+    const regularWithoutLMP = regularWithLMP - lmp
+    assert(regularWithoutLMP >= 0)
+    return {lmp, essential, discretionary, regularWithoutLMP}
   })()
 
   // ---- APPLY CONTRIBUTIONS ----
@@ -244,23 +234,13 @@ export function runASingleYear(
 
   // ---- WITHDRAWAL ACHIEVED ----
   const withdrawals = (() => {
-    const essential = Math.min(
-      withdrawalTarget.essential,
+    const account = new AccountForWithdrawal(
       savingsPortfolioAfterContributions.afterContributions.balance
     )
-    const discretionary = Math.min(
-      withdrawalTarget.discretionary,
-      savingsPortfolioAfterContributions.afterContributions.balance - essential
-    )
-    const regular =
-      yearIndex < asYFN(withdrawalStartYear)
-        ? 0
-        : Math.min(
-            withdrawalTarget.regular,
-            savingsPortfolioAfterContributions.afterContributions.balance -
-              essential -
-              discretionary
-          )
+    const lmp = account.withdraw(withdrawalTarget.lmp)
+    const essential = account.withdraw(withdrawalTarget.essential)
+    const discretionary = account.withdraw(withdrawalTarget.discretionary)
+    const regular = lmp + account.withdraw(withdrawalTarget.regularWithoutLMP)
     return {discretionary, essential, regular}
   })()
 
@@ -273,34 +253,28 @@ export function runASingleYear(
 
   // ---- CALCULATE ALLOCATION ----
   const {allocation} = (() => {
-    const presentValueOfFutureSavings =
-      netPresentValue.savings.withoutCurrentYear[yearIndex]
-    const wealth =
+    const account = new AccountForWithdrawal(
       savingsPortfolioAfterWithdrawals.afterWithdrawals.balance +
-      presentValueOfFutureSavings
-    const presentValueOfEssentialWithdrawals = Math.min(
-      netPresentValue.withdrawals.essential.withoutCurrentYear[yearIndex],
-      wealth
+        netPresentValue.savings.withoutCurrentYear[yearIndex]
     )
-    const presentValueOfDiscretionaryWithdrawals = Math.min(
-      netPresentValue.withdrawals.discretionary.withoutCurrentYear[yearIndex] *
-        (1 + scale.extraWithdrawls),
-      wealth - presentValueOfEssentialWithdrawals
-    )
-    const presentValueOfDesiredLegacy = Math.min(
-      (params.legacy.target * (1 + scale.legacy)) /
-        Math.pow(1 + expectedReturns.legacyPortfolio, numYears - yearIndex),
-      wealth -
-        presentValueOfEssentialWithdrawals -
-        presentValueOfDiscretionaryWithdrawals
-    )
-    const presentValueOfRegularWithdrawals =
-      wealth -
-      presentValueOfEssentialWithdrawals -
-      presentValueOfDesiredLegacy -
-      presentValueOfDiscretionaryWithdrawals
 
-    const balance = savingsPortfolioAfterWithdrawals.afterWithdrawals.balance
+    account.withdraw(
+      netPresentValue.withdrawals.lmp.withoutCurrentYear[yearIndex]
+    )
+    account.withdraw(
+      netPresentValue.withdrawals.essential.withoutCurrentYear[yearIndex]
+    )
+
+    const presentValueOfDiscretionaryWithdrawals = account.withdraw(
+      netPresentValue.withdrawals.discretionary.withoutCurrentYear[yearIndex] *
+        (1 + scale.extraWithdrawls)
+    )
+    const presentValueOfDesiredLegacy = account.withdraw(
+      (params.legacy.target * (1 + scale.legacy)) /
+        Math.pow(1 + expectedReturns.legacyPortfolio, numYears - yearIndex)
+    )
+    const presentValueOfRegularWithdrawals = account.balance
+
     const stocksTarget =
       presentValueOfDesiredLegacy *
         params.targetAllocation.legacyPortfolio.stocks +
@@ -309,8 +283,17 @@ export function runASingleYear(
       presentValueOfRegularWithdrawals *
         params.targetAllocation.regularPortfolio.forTPAW.stocks
 
-    const stocksAchieved = Math.min(balance, stocksTarget)
-    const allocation = {stocks: balance > 0 ? stocksAchieved / balance : 0}
+    const stocksAchieved = Math.min(
+      savingsPortfolioAfterWithdrawals.afterWithdrawals.balance,
+      stocksTarget
+    )
+    const allocation = {
+      stocks:
+        savingsPortfolioAfterWithdrawals.afterWithdrawals.balance > 0
+          ? stocksAchieved /
+            savingsPortfolioAfterWithdrawals.afterWithdrawals.balance
+          : 0,
+    }
     return {allocation}
   })()
 

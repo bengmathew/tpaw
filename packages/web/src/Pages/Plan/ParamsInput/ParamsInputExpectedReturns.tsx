@@ -2,7 +2,7 @@ import _ from 'lodash'
 import React from 'react'
 import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
 import {Contentful} from '../../../Utils/Contentful'
-import { paddingCSS } from '../../../Utils/Geometry'
+import {paddingCSS} from '../../../Utils/Geometry'
 import {preciseRange} from '../../../Utils/PreciseRange'
 import {useSimulation} from '../../App/WithSimulation'
 import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
@@ -53,10 +53,6 @@ export const ParamsInputExpectedReturns = React.memo(
                 setParams(params => {
                   const p = _.cloneDeep(params)
                   p.returns.expected.stocks = stocks
-                  p.returns.historical.adjust = {
-                    type: 'to',
-                    ...p.returns.expected,
-                  }
                   return p
                 })
               }}
@@ -71,10 +67,6 @@ export const ParamsInputExpectedReturns = React.memo(
                 setParams(params => {
                   const p = _.cloneDeep(params)
                   p.returns.expected.bonds = bonds
-                  p.returns.historical.adjust = {
-                    type: 'to',
-                    ...p.returns.expected,
-                  }
                   return p
                 })
               }}

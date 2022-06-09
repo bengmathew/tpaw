@@ -40,7 +40,8 @@
     "react-popper": "^2.2.5",
     "react-spring": "^9.3.0",
     "react-toastify": "^8.2.0",
-    "react-transition-group": "^4.4.2"
+    "react-transition-group": "^4.4.2",
+    "simulator":"^0.1.0"
   },
   "devDependencies": {
     "@types/cookie": "^0.4.1",

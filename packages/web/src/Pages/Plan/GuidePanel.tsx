@@ -134,9 +134,11 @@ const _LaptopAndDesktop = React.memo(
           <h2 className="uppercase font-bold " ref={headerRef}>
             Guide
           </h2>
-          <div className={` `}>
-            <_RichText className="">{content.body.fields.body}</_RichText>
-          </div>
+          {content.body && (
+            <div className={` `}>
+              <_RichText className="">{content.body.fields.body}</_RichText>
+            </div>
+          )}
         </div>
       )
     }

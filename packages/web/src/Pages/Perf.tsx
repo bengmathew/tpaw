@@ -1,11 +1,11 @@
 import _ from 'lodash'
-import React, {useEffect, useRef, useState} from 'react'
-import {processTPAWParams} from '../TPAWSimulator/TPAWParamsProcessed'
-import {TPAWRunInWorker} from '../TPAWSimulator/Worker/TPAWRunInWorker'
-import {fGet} from '../Utils/Utils'
-import {AppPage} from './App/AppPage'
+import React, { useEffect, useRef, useState } from 'react'
+import { processTPAWParams } from '../TPAWSimulator/TPAWParamsProcessed'
+import { TPAWRunInWorker } from '../TPAWSimulator/Worker/TPAWRunInWorker'
+import { fGet } from '../Utils/Utils'
+import { AppPage } from './App/AppPage'
 
-const numRuns = 500
+const numRuns = 500 
 const highlightPercentiles = [5, 25, 50, 75, 95]
 const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
 
@@ -30,27 +30,48 @@ export const Perf = React.memo(() => {
               params,
               percentiles
             )
+
+            const toLine = ([label, amount]: [string, number]) =>
+              `${label}: ${amount.toFixed(2).padStart(8, ' ')}`
+            const {
+              main,
+              sortAndPickPercentilesYearly,
+              slowestSimulationWorker,
+            } = fGet(result).perf
             const lines = [
-              `numCores: ${navigator.hardwareConcurrency || 4}`,
-              ...fGet(result).perf.map(x => JSON.stringify(x)),
-              '*',
-              ...fGet(result).perfByYearsFromNow.map(x => JSON.stringify(x)),
-              '*',
-              ...fGet(result).perfByWorker.map(x => JSON.stringify(x)),
+              '------------------------------------',
+              'NET',
+              '------------------------------------',
+              ...main.map(toLine),
+              '------------------------------------',
+              'SORT AND PICK PERCENTILES FOR YEARLY ',
+              '------------------------------------',
+              ...sortAndPickPercentilesYearly.map(toLine),
+              '------------------------------------',
+              'SLOWEST SIMULATION WORKER',
+              '------------------------------------',
+              ...slowestSimulationWorker.map(toLine),
             ]
-            console.dir('---------------')
-            lines.forEach(x => console.dir(x))
             setResult(lines)
           }}
         >
           Test Performance
         </button>
-        <div>
-          {result.map((line, i) => (
-            <h2 key={i} className="">
-              {line}
-            </h2>
-          ))}
+        <div className="grid" style={{grid: 'auto / auto'}}>
+          {result.map((line, i) => {
+            const cols = line.split(':')
+            return cols.map((col, r) => (
+              <h2
+                key={`${i}-${r}`}
+                className={` font-mono
+                ${cols.length === 1 ? ' col-span-2' : ''}
+                ${r === 1 ? ' text-right' : 'font-mono'}
+                `}
+              >
+                {col}
+              </h2>
+            ))
+          })}
         </div>
       </div>
     </AppPage>
@@ -58,8 +79,8 @@ export const Perf = React.memo(() => {
 })
 
 const params = processTPAWParams({
-  v: 6,
-  strategy: 'SPAW',
+  v: 7,
+  strategy: 'TPAW',
   people: {
     withPartner: false,
     person1: {
@@ -69,7 +90,7 @@ const params = processTPAWParams({
   },
   returns: {
     expected: {stocks: 0.035, bonds: 0.01},
-    historical: {adjust: {type: 'by', stocks: 0.048, bonds: 0.03}},
+    historical: {type: 'default', adjust: {type: 'toExpected'}},
   },
   inflation: 0.02,
   targetAllocation: {
@@ -113,7 +134,7 @@ const params = processTPAWParams({
     },
   ],
   withdrawals: {
-    lmp:0,
+    lmp: 0,
     essential: [
       {
         label: null,
@@ -146,5 +167,8 @@ const params = processTPAWParams({
   legacy: {
     total: 50000,
     external: [],
+  },
+  display: {
+    alwaysShowAllYears: false,
   },
 })

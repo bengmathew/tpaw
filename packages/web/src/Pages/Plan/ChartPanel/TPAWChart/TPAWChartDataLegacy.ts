@@ -17,12 +17,12 @@ export function tpawChartDataLegacy(
   tpawResult: SimulationInfo['tpawResult'],
   highlightPercentiles: SimulationInfo['highlightPercentiles']
 ): TPAWChartDataLegacy {
-  const {legacyByPercentile, args} = tpawResult
+  const {endingBalanceOfSavingsPortfolioByPercentile, args} = tpawResult
   const {numYears} = extendTPAWParams(args.params.original)
   return {
     label: 'legacy',
-    percentiles: legacyByPercentile.map(x => ({
-      data: x.data,
+    percentiles: endingBalanceOfSavingsPortfolioByPercentile.map(x => ({
+      data: x.data + args.params.legacy.external,
       percentile: x.percentile,
       isHighlighted: highlightPercentiles.includes(x.percentile),
     })),
