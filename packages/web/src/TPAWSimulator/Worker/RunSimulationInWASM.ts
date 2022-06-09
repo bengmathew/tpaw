@@ -9,7 +9,7 @@ export async function runSimulationInWASM(
 ) {
   let start0 = performance.now()
   const numYears = getNumYears(params.original)
-  const wasm = await import('simulator')
+  const wasm = await import('@tpaw/simulator')
 
   let start = performance.now()
   let runs = wasm.run(
