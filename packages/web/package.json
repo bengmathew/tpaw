@@ -41,7 +41,7 @@
     "react-spring": "^9.3.0",
     "react-toastify": "^8.2.0",
     "react-transition-group": "^4.4.2",
-    "@tpaw/simulator":"^0.1.0"
+    "@tpaw/simulator":"latest"
   },
   "devDependencies": {
     "@types/cookie": "^0.4.1",
