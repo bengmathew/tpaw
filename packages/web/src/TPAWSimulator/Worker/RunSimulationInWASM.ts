@@ -1,15 +1,17 @@
 import _ from 'lodash'
 import {getNumYears, getWithdrawalStartAsYFN} from '../TPAWParamsExt'
 import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
+import {getWASM} from './GetWASM'
+import {TPAWWorkerRunSimulationResult} from './TPAWWorkerTypes'
 
 export async function runSimulationInWASM(
   params: TPAWParamsProcessed,
   numRuns: number,
   test?: {truth: number[]; indexIntoHistoricalReturns: number[]}
-) {
+): Promise<TPAWWorkerRunSimulationResult> {
   let start0 = performance.now()
   const numYears = getNumYears(params.original)
-  const wasm = await import('@tpaw/simulator')
+  const wasm = await getWASM()
 
   let start = performance.now()
   let runs = wasm.run(
@@ -25,7 +27,7 @@ export async function runSimulationInWASM(
     params.targetAllocation.regularPortfolio.forTPAW.stocks,
     Float64Array.from(params.targetAllocation.regularPortfolio.forSPAW),
     params.targetAllocation.legacyPortfolio.stocks,
-    params.withdrawals.lmp,
+    Float64Array.from(params.byYear.map(x => x.withdrawals.lmp)),
     Float64Array.from(params.byYear.map(x => x.savings)),
     Float64Array.from(params.byYear.map(x => x.withdrawals.essential)),
     Float64Array.from(params.byYear.map(x => x.withdrawals.discretionary)),
@@ -51,7 +53,7 @@ export async function runSimulationInWASM(
 
   start = performance.now()
 
-  const result = {
+  const result: Omit<TPAWWorkerRunSimulationResult, 'perf'> = {
     byYearsFromNowByRun: {
       savingsPortfolio: {
         start: {
@@ -67,6 +69,9 @@ export async function runSimulationInWASM(
           fromSavingsPortfolioRate: splitArray(
             runs.by_yfn_by_run_withdrawals_from_savings_portfolio_rate()
           ),
+        },
+        excessWithdrawals: {
+          regular: splitArray(runs.by_yfn_by_run_excess_withdrawals_regular()),
         },
         afterWithdrawals: {
           allocation: {
@@ -87,7 +92,12 @@ export async function runSimulationInWASM(
   const perfTotal = performance.now() - start0
   const perfRest = perfTotal - perfRuns - perfPost
   return {
-    result,
-    perf: {runs: perfRuns, post: perfPost, rest: perfRest, total: perfTotal},
+    ...result,
+    perf: [
+      ['runs', perfRuns],
+      ['post', perfPost],
+      ['rest', perfRest],
+      ['total', perfTotal],
+    ],
   }
 }

@@ -30,7 +30,6 @@ export const Test = React.memo(() => {
     void (async () => {
       const params = testParams
 
-      const prec = params.preCalculations.forSPAW
       const paramsExt = extendTPAWParams(params.original)
       console.dir(historicalReturns)
       console.dir(params.returns.historicalAdjusted)
@@ -39,7 +38,7 @@ export const Test = React.memo(() => {
           truth: excel,
           indexIntoHistoricalReturns,
         })
-      ).result
+      )
 
       // const resultsFromUsingExpectedReturns = runSPAWSimulation(params, {
       //   type: 'useExpectedReturns',

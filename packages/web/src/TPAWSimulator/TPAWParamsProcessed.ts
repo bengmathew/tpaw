@@ -1,5 +1,4 @@
 import _ from 'lodash'
-import {blendReturns} from '../Utils/BlendReturns'
 import {linearFnFomPoints} from '../Utils/LinearFn'
 import {nominalToReal} from '../Utils/NominalToReal'
 import {assert, noCase} from '../Utils/Utils'
@@ -51,7 +50,6 @@ export function processTPAWParams(params: TPAWParams) {
   }
 
   const byYear = _processByYearParams(params)
-  const expectedReturns = blendReturns(params.returns.expected)
 
   const targetAllocation = {
     ...params.targetAllocation,
@@ -84,58 +82,6 @@ export function processTPAWParams(params: TPAWParams) {
     returns: _processReturnsParams(params),
     targetAllocation,
     byYear,
-
-    preCalculations: {
-      forTPAW: {
-        netPresentValue: {
-          savings: _getNetPresentValueArr(
-            expectedReturns({stocks: 0}),
-            byYear.map(x => x.savings)
-          ),
-          withdrawals: {
-            lmp: _getNetPresentValueArr(
-              expectedReturns({stocks: 0}),
-              byYear.map((x, i) =>
-                i < asYFN(withdrawalStartYear) ? 0 : params.withdrawals.lmp
-              )
-            ),
-            essential: _getNetPresentValueArr(
-              expectedReturns({stocks: 0}),
-              byYear.map(x => x.withdrawals.essential)
-            ),
-            discretionary: _getNetPresentValueArr(
-              expectedReturns(params.targetAllocation.regularPortfolio.forTPAW),
-              byYear.map(x => x.withdrawals.discretionary)
-            ),
-          },
-        },
-      },
-      forSPAW: (() => {
-        const rate = targetAllocation.regularPortfolio.forSPAW.map(stocks =>
-          expectedReturns({stocks})
-        )
-        const _npv = _.curry(_getNetPresentValueArr)(rate)
-        return {
-          netPresentValue: {
-            savings: _npv(byYear.map(x => x.savings)),
-            withdrawals: {
-              lmp: _npv(byYear.map(x => params.withdrawals.lmp)),
-              essential: _npv(byYear.map(x => x.withdrawals.essential)),
-              discretionary: _npv(byYear.map(x => x.withdrawals.discretionary)),
-            },
-            legacy: _npv(
-              _.times(numYears, i =>
-                i === numYears - 1 ? legacy.target / (1 + rate[i]) : 0
-              )
-            ),
-          },
-          cumulative1PlusGOver1PlusR: _cumulative1PlusGOver1PlusR(
-            rate,
-            params.scheduledWithdrawalGrowthRate
-          ),
-        }
-      })(),
-    },
     legacy,
     original: params,
   }
@@ -148,9 +94,13 @@ function _processByYearParams(params: TPAWParams) {
   const withdrawalStart = asYFN(withdrawalStartYear)
   const lastWorkingYear = withdrawalStart > 0 ? withdrawalStart - 1 : 0
   const endYear = numYears - 1
-  const byYear = _.times(numYears, () => ({
+  const byYear = _.times(numYears, year => ({
     savings: 0,
-    withdrawals: {essential: 0, discretionary: 0},
+    withdrawals: {
+      essential: 0,
+      discretionary: 0,
+      lmp: year < withdrawalStart ? 0 : params.withdrawals.lmp,
+    },
   }))
 
   const exec = (
@@ -196,31 +146,52 @@ function _processReturnsParams(params: TPAWParams) {
   const historicalAdjusted = (() => {
     switch (returns.historical.type) {
       case 'default': {
-        const adjustFn = (rate: number, adjustment: number) =>
-          Math.exp(Math.log(1 + rate) - adjustment) - 1
+        const adjustment = returns.historical.adjust
+        const adjust = (type: 'stocks' | 'bonds') => {
+          const n = historicalReturns.length
+          const historical = historicalReturns.map(x => x[type])
+          const historicalExpected = _.sum(historical) / n
 
-        const actualReturns = {
-          stocks: _.sumBy(historicalReturns, x => x.stocks) / n,
-          bonds: _.sumBy(historicalReturns, x => x.bonds) / n,
+          const targetExpected =
+            adjustment.type === 'to'
+              ? adjustment[type]
+              : adjustment.type === 'toExpected'
+              ? params.returns.expected[type]
+              : adjustment.type === 'by'
+              ? historicalExpected - adjustment[type]
+              : noCase(adjustment)
+
+
+          const historicalLog = historical.map(x => Math.log(1 + x))
+          const historicalLogExpected = _.sum(historicalLog) / n
+          const historicalLogVariance =
+            _.sumBy(historicalLog, x =>
+              Math.pow(x - historicalLogExpected, 2)
+            ) /
+            (n - 1)
+
+          const targetLogExpected =
+            Math.log(1 + targetExpected) -
+            historicalLogVariance / 2
+
+          const adjustmentLogExpected =
+            historicalLogExpected - targetLogExpected
+
+          const adjustedLog = historicalLog.map(
+            log => log - adjustmentLogExpected
+          )
+          const adjusted = adjustedLog.map(x => Math.exp(x) - 1)
+
+          return adjusted
         }
-        const adjustment =
-          returns.historical.adjust.type === 'by'
-            ? returns.historical.adjust
-            : returns.historical.adjust.type === 'to'
-            ? {
-                stocks: actualReturns.stocks - returns.historical.adjust.stocks,
-                bonds: actualReturns.bonds - returns.historical.adjust.bonds,
-              }
-            : returns.historical.adjust.type === 'toExpected'
-            ? {
-                stocks: actualReturns.stocks - returns.expected.stocks,
-                bonds: actualReturns.bonds - returns.expected.bonds,
-              }
-            : noCase(returns.historical.adjust)
-        return historicalReturns.map(x => ({
-          stocks: adjustFn(x.stocks, adjustment.stocks),
-          bonds: adjustFn(x.bonds, adjustment.bonds),
-        }))
+
+        const stocks = adjust('stocks')
+
+        const bonds = adjust('bonds')
+
+        const result = stocks.map((stocks, i) => ({stocks, bonds: bonds[i]}))
+
+        return result
       }
       case 'fixed': {
         const {stocks, bonds} = returns.historical
@@ -232,26 +203,4 @@ function _processReturnsParams(params: TPAWParams) {
   })()
 
   return {...returns, historicalAdjusted}
-}
-
-const _getNetPresentValueArr = (rate: number | number[], amounts: number[]) => {
-  const n = amounts.length
-  const r = typeof rate === 'number' ? _.times(n, () => rate) : rate
-  assert(r.length === n)
-  const result = _.times(n)
-  for (let i = n - 1; i >= 0; i--) {
-    result[i] = amounts[i] + (i === n - 1 ? 0 : result[i + 1] / (1 + r[i]))
-  }
-  const withCurrentYear = result
-  const withoutCurrentYear = result.map((x, i) => x - amounts[i])
-  return {withCurrentYear, withoutCurrentYear}
-}
-
-const _cumulative1PlusGOver1PlusR = (r: number[], g: number) => {
-  const n = r.length
-  const result = _.times(n)
-  for (let i = n - 1; i >= 0; i--) {
-    result[i] = 1 + (i === n - 1 ? 0 : (result[i + 1] * (1 + g)) / (1 + r[i]))
-  }
-  return result
 }

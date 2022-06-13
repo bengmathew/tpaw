@@ -12,6 +12,7 @@ import {
 import {mergeWorkerRuns} from './MergeWorkerRuns'
 import {
   TPAWWorkerArgs,
+  TPAWWorkerCalculateOneOverCVResult,
   TPAWWorkerResult,
   TPAWWorkerRunSimulationResult,
   TPAWWorkerSortResult,
@@ -40,6 +41,11 @@ export type TPAWRunInWorkerResult = {
       regular: TPAWRunInWorkerByPercentileByYearsFromNow
       total: TPAWRunInWorkerByPercentileByYearsFromNow
       fromSavingsPortfolioRate: TPAWRunInWorkerByPercentileByYearsFromNow
+    }
+    sharpeRatio: {
+      withdrawals: {
+        regular: Float64Array
+      }
     }
     afterWithdrawals: {
       allocation: {
@@ -87,7 +93,11 @@ export class TPAWRunInWorker {
       string,
       (value: TPAWWorkerRunSimulationResult) => void
     >(),
-    sortRows: new Map<string, (value: TPAWWorkerSortResult) => void>(),
+    sort: new Map<string, (value: TPAWWorkerSortResult) => void>(),
+    calculateOneOverCV: new Map<
+      string,
+      (value: TPAWWorkerCalculateOneOverCVResult) => void
+    >(),
   }
   constructor() {
     const numWorkers = MULTI_THREADED ? navigator.hardwareConcurrency || 4 : 1
@@ -107,9 +117,17 @@ export class TPAWRunInWorker {
               resolve(data.result)
               break
             }
-            case 'sortRows': {
-              const resolve = fGet(this._resolvers.sortRows.get(taskID))
-              this._resolvers.sortRows.delete(taskID)
+            case 'sort': {
+              const resolve = fGet(this._resolvers.sort.get(taskID))
+              this._resolvers.sort.delete(taskID)
+              resolve(data.result)
+              break
+            }
+            case 'calculateOneOverCV': {
+              const resolve = fGet(
+                this._resolvers.calculateOneOverCV.get(taskID)
+              )
+              this._resolvers.calculateOneOverCV.delete(taskID)
               resolve(data.result)
               break
             }
@@ -126,27 +144,47 @@ export class TPAWRunInWorker {
     params: TPAWParamsProcessed
   ): Promise<TPAWWorkerRunSimulationResult> {
     const taskID = _.uniqueId()
-    const args: Extract<TPAWWorkerArgs, {type: 'runSimulation'}>['args'] = {
-      numRuns,
-      params,
+    const message: Extract<TPAWWorkerArgs, {type: 'runSimulation'}> = {
+      taskID,
+      type: 'runSimulation',
+      args: {numRuns, params},
     }
-    worker.postMessage({taskID, type: 'runSimulation', args})
+    worker.postMessage(message)
     return new Promise<TPAWWorkerRunSimulationResult>(resolve =>
       this._resolvers.runSimulation.set(taskID, resolve)
     )
   }
-  private _sortRows(
+  private _sort(
     worker: Worker,
     data: Float64Array[]
   ): Promise<TPAWWorkerSortResult> {
     const taskID = _.uniqueId()
     const transferables: Transferable[] = data.map(x => x.buffer)
-    const args: Extract<TPAWWorkerArgs, {type: 'sortRows'}>['args'] = {
-      data,
+    const message: Extract<TPAWWorkerArgs, {type: 'sort'}> = {
+      taskID,
+      type: 'sort',
+      args: {data},
     }
-    worker.postMessage({taskID, type: 'sortRows', args}, transferables)
+    worker.postMessage(message, transferables)
     return new Promise<TPAWWorkerSortResult>(resolve =>
-      this._resolvers.sortRows.set(taskID, resolve)
+      this._resolvers.sort.set(taskID, resolve)
+    )
+  }
+
+  private _calculateOneOverCV(
+    worker: Worker,
+    data: Float64Array[]
+  ): Promise<TPAWWorkerCalculateOneOverCVResult> {
+    const taskID = _.uniqueId()
+    const transferables: Transferable[] = data.map(x => x.buffer)
+    const message: Extract<TPAWWorkerArgs, {type: 'calculateOneOverCV'}> = {
+      taskID,
+      type: 'calculateOneOverCV',
+      args: {data},
+    }
+    worker.postMessage(message, transferables)
+    return new Promise<TPAWWorkerCalculateOneOverCVResult>(resolve =>
+      this._resolvers.calculateOneOverCV.set(taskID, resolve)
     )
   }
 
@@ -217,6 +255,12 @@ export class TPAWRunInWorker {
     const perfSortAndPickPercentiles = performance.now() - start
     start = performance.now()
 
+    const {data: sharpeRatioWithdrawalsRegular} =
+      await this._calculateOneOverCV(
+        this._workers[0],
+        byYearsFromNowByRun.savingsPortfolio.excessWithdrawals.regular
+      )
+
     const firstYearOfSomeRun = firstYearSavingsPortfolioDetail(
       runsByWorker[0].byYearsFromNowByRun.savingsPortfolio,
       params
@@ -270,6 +314,9 @@ export class TPAWRunInWorker {
             x => Math.max(0, x)
           ),
         },
+
+        sharpeRatio: {withdrawals: {regular: sharpeRatioWithdrawalsRegular}},
+
         afterWithdrawals: {
           allocation: {
             stocks: savingsPortfolioStockAllocation,
@@ -300,7 +347,7 @@ export class TPAWRunInWorker {
           ['rest', perfSortAndPickPercentilesYearly.rest],
           ['total', perfSortAndPickPercentilesYearly.total],
         ],
-        slowestSimulationWorker:perfSlowestSimulationWorker,
+        slowestSimulationWorker: perfSlowestSimulationWorker,
       },
     }
     return status.canceled ? null : result
@@ -336,7 +383,7 @@ export class TPAWRunInWorker {
           numberByYearsFromNowByRun.length,
           this._workers.length
         )
-        return this._sortRows(
+        return this._sort(
           worker,
           numberByYearsFromNowByRun.slice(start, start + length)
         )

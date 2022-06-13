@@ -6,7 +6,8 @@ export type TPAWWorkerArgs =
       taskID: string
       args: {params: TPAWParamsProcessed; numRuns: number}
     }
-  | {type: 'sortRows'; taskID: string; args: {data: Float64Array[]}}
+  | {type: 'sort'; taskID: string; args: {data: Float64Array[]}}
+  | {type: 'calculateOneOverCV'; taskID: string; args: {data: Float64Array[]}}
 
 export type TPAWWorkerResult =
   | {
@@ -22,6 +23,9 @@ export type TPAWWorkerResult =
               regular: Float64Array[]
               total: Float64Array[]
               fromSavingsPortfolioRate: Float64Array[]
+            }
+            excessWithdrawals: {
+              regular: Float64Array[]
             }
             afterWithdrawals: {
               allocation: {stocks: Float64Array[]}
@@ -40,9 +44,14 @@ export type TPAWWorkerResult =
       }
     }
   | {
-      type: 'sortRows'
+      type: 'sort'
       taskID: string
       result: {data: Float64Array[]; perf: number}
+    }
+  | {
+      type: 'calculateOneOverCV'
+      taskID: string
+      result: {data: Float64Array; perf: number}
     }
 
 export type TPAWWorkerRunSimulationResult = Extract<
@@ -52,5 +61,10 @@ export type TPAWWorkerRunSimulationResult = Extract<
 
 export type TPAWWorkerSortResult = Extract<
   TPAWWorkerResult,
-  {type: 'sortRows'}
+  {type: 'sort'}
+>['result']
+
+export type TPAWWorkerCalculateOneOverCVResult = Extract<
+  TPAWWorkerResult,
+  {type: 'calculateOneOverCV'}
 >['result']

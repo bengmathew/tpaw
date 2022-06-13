@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import React, {ReactNode, useMemo} from 'react'
+import React, {Dispatch, ReactNode, useMemo, useState} from 'react'
 import {TPAWParams} from '../../TPAWSimulator/TPAWParams'
 import {
   extendTPAWParams,
@@ -14,20 +14,32 @@ import {
   UseTPAWWorkerResult,
 } from '../../TPAWSimulator/Worker/UseTPAWWorker'
 import {createContext} from '../../Utils/CreateContext'
+import {fGet, noCase} from '../../Utils/Utils'
 import {useTPAWParams} from './UseTPAWParams'
 
-export type SimulationInfo = {
-  paramSpace: 'a' | 'b'
-  setParamSpace: (space: 'a' | 'b') => void
+export type SimulationInfoPerParam = {
   params: TPAWParams
   paramsProcessed: TPAWParamsProcessed
   paramsExt: TPAWParamsExt
-  setParams: (params: TPAWParams | ((params: TPAWParams) => TPAWParams)) => void
-  tpawResult: UseTPAWWorkerResult
+  tpawResult: UseTPAWWorkerResult | null
   numRuns: number
   percentiles: number[]
   highlightPercentiles: number[]
 }
+
+export type SimulationInfo = {
+  paramSpace: 'a' | 'b'
+  setParamSpace: (space: 'a' | 'b') => void
+  setByStrategy: Dispatch<boolean>
+  setParams: (params: TPAWParams | ((params: TPAWParams) => TPAWParams)) => void
+  byStrategy: {
+    tpaw: SimulationInfoPerParam
+    spaw: SimulationInfoPerParam
+  } | null
+} & Omit<SimulationInfoPerParam, 'tpawResult'> & {
+    tpawResult: UseTPAWWorkerResult
+  }
+
 const [Context, useSimulation] = createContext<SimulationInfo>('Simulation')
 
 const numRuns = 500
@@ -38,28 +50,40 @@ export {useSimulation}
 
 export const WithSimulation = ({children}: {children: ReactNode}) => {
   const {paramSpace, setParamSpace, params, setParams} = useTPAWParams()
-  const paramsProcessed = useMemo(() => processTPAWParams(params), [params])
-  const {resultInfo: tpawResult} = useTPAWWorker(
-    paramsProcessed,
-    numRuns,
-    percentiles
+  const [byStrategy, setByStrategy] = useState(false)
+  const forBaseParams = fGet(useForParams(params))
+  const altStrategy: TPAWParams['strategy'] =
+    params.strategy === 'TPAW'
+      ? 'SPAW'
+      : params.strategy === 'SPAW'
+      ? 'TPAW'
+      : noCase(params.strategy)
+  const forAltParams = useForParams(
+    byStrategy ? {...params, strategy: altStrategy} : null
   )
+
   const value = useMemo(
     () => ({
       paramSpace,
       setParamSpace,
-      params,
-      paramsProcessed: processTPAWParams(params),
-      paramsExt: extendTPAWParams(params),
       setParams,
-      numRuns,
-      percentiles,
-      highlightPercentiles,
-      // Note, tpawResult will lag params. To get the exact params for the
-      // result, use the params object inside tpawResult.
-      tpawResult: tpawResult ?? null,
+      ...forBaseParams,
+      byStrategy: forAltParams
+        ? {
+            tpaw: altStrategy === 'TPAW' ? forAltParams : forBaseParams,
+            spaw: altStrategy === 'SPAW' ? forAltParams : forBaseParams,
+          }
+        : null,
+      setByStrategy,
     }),
-    [paramSpace, params, setParamSpace, setParams, tpawResult]
+    [
+      altStrategy,
+      forAltParams,
+      forBaseParams,
+      paramSpace,
+      setParamSpace,
+      setParams,
+    ]
   )
   if (!_hasValue(value)) return <></>
   return <Context.Provider value={value}>{children}</Context.Provider>
@@ -68,3 +92,30 @@ export const WithSimulation = ({children}: {children: ReactNode}) => {
 const _hasValue = (x: {
   tpawResult: UseTPAWWorkerResult | null
 }): x is {tpawResult: UseTPAWWorkerResult} => x.tpawResult !== null
+
+function useForParams(
+  params: TPAWParams | null
+): SimulationInfoPerParam | null {
+  const paramsProcessed = useMemo(
+    () => (params ? processTPAWParams(params) : null),
+    [params]
+  )
+  const tpawResult = useTPAWWorker(paramsProcessed, numRuns, percentiles)
+  return useMemo(
+    () =>
+      params
+        ? {
+            params,
+            paramsProcessed: fGet(paramsProcessed),
+            paramsExt: extendTPAWParams(params),
+            numRuns,
+            percentiles,
+            highlightPercentiles,
+            // Note, tpawResult will lag params. To get the exact params for the
+            // result, use the params object inside tpawResult.
+            tpawResult,
+          }
+        : null,
+    [params, paramsProcessed, tpawResult]
+  )
+}
