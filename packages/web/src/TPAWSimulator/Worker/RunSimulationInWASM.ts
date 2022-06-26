@@ -1,4 +1,6 @@
 import _ from 'lodash'
+import {SimpleRange} from '../../Utils/SimpleRange'
+import {noCase} from '../../Utils/Utils'
 import {getNumYears, getWithdrawalStartAsYFN} from '../TPAWParamsExt'
 import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
 import {getWASM} from './GetWASM'
@@ -6,7 +8,7 @@ import {TPAWWorkerRunSimulationResult} from './TPAWWorkerTypes'
 
 export async function runSimulationInWASM(
   params: TPAWParamsProcessed,
-  numRuns: number,
+  runsSpec: SimpleRange,
   test?: {truth: number[]; indexIntoHistoricalReturns: number[]}
 ): Promise<TPAWWorkerRunSimulationResult> {
   let start0 = performance.now()
@@ -16,7 +18,8 @@ export async function runSimulationInWASM(
   let start = performance.now()
   let runs = wasm.run(
     params.strategy,
-    numRuns,
+    runsSpec.start,
+    runsSpec.end,
     numYears,
     getWithdrawalStartAsYFN(params.original),
     params.returns.expected.stocks,
@@ -36,6 +39,11 @@ export async function runSimulationInWASM(
     params.scheduledWithdrawalGrowthRate,
     params.spendingCeiling ?? undefined,
     params.spendingFloor ?? undefined,
+    params.sampling === 'monteCarlo'
+      ? true
+      : params.sampling === 'historical'
+      ? false
+      : noCase(params.sampling),
     test?.truth ? Float64Array.from(test.truth) : undefined,
     test?.indexIntoHistoricalReturns
       ? Uint32Array.from(test.indexIntoHistoricalReturns)
@@ -43,6 +51,7 @@ export async function runSimulationInWASM(
   )
   const perfRuns = performance.now() - start
 
+  const numRuns = runsSpec.end - runsSpec.start
   const yearIndexes = _.range(0, numYears)
   const splitArray = (x: Float64Array) => {
     const copy = x.slice()

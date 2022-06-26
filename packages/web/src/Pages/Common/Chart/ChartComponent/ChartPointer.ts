@@ -1,13 +1,14 @@
 import {gsap} from 'gsap'
 import _ from 'lodash'
-import {assert, noCase} from '../../../../Utils/Utils'
+import {assert, fGet, noCase} from '../../../../Utils/Utils'
 import {ChartState, ChartStateDerived} from '../Chart'
 import {ChartContext} from '../ChartContext'
 import {
   ChartDataTransition,
-  chartDataTransitionCurrNumArr,
   chartDataTransitionCurrObj,
+  chartDataTransitionTransform,
 } from '../ChartUtils/ChartDataTransition'
+import {zeroOneInterpolate} from '../ChartUtils/ZeroOneInterpolate'
 import {ChartComponent, ChartRegisterAnimation} from './ChartComponent'
 import {chartPointerBox, ChartPointerBoxAnimatedState} from './ChartPointerBox'
 import {
@@ -19,7 +20,7 @@ const duration = 1
 
 type _DataFn<Data> = (
   data: Data
-) => {line: (x: number) => number; label: string}[]
+) => ({line: (x: number) => number; label: string} | null)[]
 
 export type ChartPointerState = {dataX: number}
 export type ChartPointerContext<Data> = ChartContext<Data> & {
@@ -132,11 +133,17 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
     const targetArgs: ChartPointerComponentTargetArgs = {
       ctx,
       dataX,
-      dataYInfos: _.reverse(
-        this._dataFn(dataTransition.target).map(({line, label}) => ({
-          dataY: line(dataX),
-          label,
-        }))
+      dataYInfos: _.compact(
+        _.reverse(
+          this._dataFn(dataTransition.target).map(x =>
+            x === null
+              ? null
+              : {
+                  dataY: x.line(dataX),
+                  label: x.label,
+                }
+          )
+        )
       ),
       chartState: stateTransition.target,
       chartStateDerived: derivedState.target,
@@ -208,12 +215,25 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
       x => x
     )
     const {dataX} = currTransition
-    const labels = this._dataFn(dataTransition.target).map(x => x.label)
-    const dataYInfos = _.reverse(
-      chartDataTransitionCurrNumArr(dataTransition, x =>
-        this._dataFn(x).map(({line}) => line(dataX))
+    const lineTransition = chartDataTransitionTransform(dataTransition, x =>
+      this._dataFn(x).map(x => x?.line(dataX) ?? null)
+    )
+    const labels = this._dataFn(dataTransition.target).map(
+      x => x?.label ?? null
+    )
+
+    const dataYInfos = _.compact(
+      _.reverse(
+        lineTransition.target.map((target, i) => {
+          const prev = lineTransition.prev[i]
+          if (target === null) return null
+          if (prev === null) return target
+          return zeroOneInterpolate(prev, target, lineTransition)
+        })
+      ).map((dataY, i) =>
+        dataY === null ? null : {dataY, label: fGet(labels[i])}
       )
-    ).map((dataY, i) => ({dataY, label: labels[i]}))
+    )
 
     const drawArgs = <A>(animatedProps: A) => ({
       dataX,

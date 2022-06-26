@@ -38,7 +38,7 @@ export const ParamsInputRiskAndTimePreference = React.memo(
               p="mb-2 p-base"
             />
           </div>
-          <_StockAllocation className="mt-10" props={props} />
+          <_StockAllocationCard className="mt-10" props={props} />
           <_SpendingTilt className="mt-10" props={props} />
           {!Config.client.production && (
             <_LMP className="mt-10" props={props} />
@@ -49,7 +49,7 @@ export const ParamsInputRiskAndTimePreference = React.memo(
   }
 )
 
-const _StockAllocation = React.memo(
+const _StockAllocationCard = React.memo(
   ({
     className = '',
     props,
@@ -80,11 +80,10 @@ const _StockAllocation = React.memo(
             )}" section. This means that the stock allocation you set here is ignored.`}
           </div>
         )}
-        {/* <AssetAllocationChart className="" /> */}
         <SliderInput
           className={`-mx-3 mt-2
               ${
-                params.strategy !== 'TPAW'
+                params.strategy === 'SPAW'
                   ? 'lighten-2 pointer-events-none'
                   : ''
               }`}

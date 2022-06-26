@@ -1,11 +1,12 @@
 import _ from 'lodash'
 import React, { useEffect, useRef, useState } from 'react'
+import { extendTPAWParams } from '../TPAWSimulator/TPAWParamsExt'
 import { processTPAWParams } from '../TPAWSimulator/TPAWParamsProcessed'
 import { TPAWRunInWorker } from '../TPAWSimulator/Worker/TPAWRunInWorker'
 import { fGet } from '../Utils/Utils'
 import { AppPage } from './App/AppPage'
 
-const numRuns = 500 
+const numRuns = 50000 
 const highlightPercentiles = [5, 25, 50, 75, 95]
 const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
 
@@ -78,8 +79,8 @@ export const Perf = React.memo(() => {
   )
 })
 
-const params = processTPAWParams({
-  v: 7,
+const params = processTPAWParams(extendTPAWParams( {
+  v: 8,
   strategy: 'TPAW',
   people: {
     withPartner: false,
@@ -168,7 +169,8 @@ const params = processTPAWParams({
     total: 50000,
     external: [],
   },
+  sampling:'monteCarlo',
   display: {
     alwaysShowAllYears: false,
   },
-})
+}))

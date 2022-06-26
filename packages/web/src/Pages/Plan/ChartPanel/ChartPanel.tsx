@@ -1,9 +1,10 @@
 import {faArrowsUpDown} from '@fortawesome/pro-light-svg-icons'
 import {faClipboardList} from '@fortawesome/pro-regular-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import gsap from 'gsap'
+import gsap, {Power1, Power4} from 'gsap'
 import Link from 'next/link'
 import React, {
+  Dispatch,
   useCallback,
   useEffect,
   useImperativeHandle,
@@ -24,15 +25,25 @@ import {linearFnFomPoints} from '../../../Utils/LinearFn'
 import {SimpleRange} from '../../../Utils/SimpleRange'
 import {useAssertConst} from '../../../Utils/UseAssertConst'
 import {fGet} from '../../../Utils/Utils'
-import {useSimulation} from '../../App/WithSimulation'
+import {useChartData} from '../../App/WithChartData'
+import {SimulationInfo, useSimulation} from '../../App/WithSimulation'
+import {ChartAnimation} from '../../Common/Chart/Chart'
 import {ChartReactStatefull} from '../../Common/Chart/ChartReact'
 import {Config} from '../../Config'
 import {ChartPanelDescription} from './ChartPanelDescription'
 import {ChartPanelMenu, ChartPanelMenuStateful} from './ChartPanelMenu'
 import {ChartPanelMenuButton} from './ChartPanelMenuButton'
+import {ChartPanelType} from './ChartPanelType'
+import {TPAWChartDataLegacy} from './TPAWChart/TPAWChartDataLegacy'
+import {
+  TPAWChartDataMain,
+  tpawChartDataScaled,
+} from './TPAWChart/TPAWChartDataMain'
 import {TPAWChartLegacy} from './TPAWChart/TPAWChartLegacy'
 import {TPAWChartMain} from './TPAWChart/TPAWChartMain'
-import {ChartPanelState} from './UseChartPanelState'
+
+const morphAnimation: ChartAnimation = {ease: Power4.easeOut, duration: 1.5}
+const normalAnimation: ChartAnimation = {ease: Power1.easeOut, duration: 0.5}
 
 export type ChartPanelStateful = {
   setTransition: (transition: number, target: 0 | 1) => void
@@ -53,31 +64,96 @@ type Props = {
     transition: number
     target: 0 | 1
   }>
-  state: ChartPanelState
+  type: ChartPanelType | 'sharpe-ratio'
+  setType: Dispatch<ChartPanelType | 'sharpe-ratio'>
 }
 
 export const ChartPanel = React.memo(
   React.forwardRef<ChartPanelStateful, Props>(
     (
-      {
-        state: {
-          handleChangeType,
-          state,
-          handleRescale,
-          shouldShowLegacy,
-          targetYRange,
-        },
-        layout,
-        sizing: sizingIn,
-        transitionRef,
-      }: Props,
+      {type, setType, layout, sizing: sizingIn, transitionRef}: Props,
       forwardRef
     ) => {
-      const {paramSpace, setParamSpace} = useSimulation()
+      const {paramSpace, setParamSpace, tpawResult} = useSimulation()
+      const shouldShowLegacy = _shouldShowLegacy(tpawResult)
+      const allChartData = useChartData()
+      const chartMainData =
+        type === 'sharpe-ratio'
+          ? fGet(allChartData.sharpeRatio)
+          : fGet(allChartData.byYearsFromNowPercentiles.get(type))
+      const chartLegacyData = allChartData.legacy
+
+      const mainChartRef =
+        useRef<ChartReactStatefull<TPAWChartDataMain> | null>(null)
+
+      const [yRange, setYRange] = useState({
+        main: chartMainData.yDisplayRange,
+        legacy: chartLegacyData.xyDisplayRange.y,
+      })
+      useEffect(() => {
+        const mainChart = mainChartRef.current
+        if (!mainChart) return
+        const data = chartMainData
+        const prevState = mainChart.getState()
+        if (type === prevState.data.type) {
+          mainChart.setState(
+            data,
+            {x: data.years.displayRange, y: prevState.xyRange.y},
+            normalAnimation
+          )
+        } else {
+          mainChart.setState(
+            tpawChartDataScaled(prevState.data, data.yDisplayRange),
+            {x: prevState.xyRange.x, y: data.yDisplayRange},
+            null
+          )
+          mainChart.setState(
+            data,
+            {x: data.years.displayRange, y: data.yDisplayRange},
+            morphAnimation
+          )
+        }
+        setYRange(({legacy}) => ({
+          main: mainChart.getState().xyRange.y,
+          legacy,
+        }))
+      }, [chartMainData, type])
+
+      useEffect(() => {
+        const legacyChart = legacyChartRef.current
+        if (!legacyChart) return
+        const data = chartLegacyData
+        const prevState = legacyChart.getState()
+        legacyChart.setState(data, prevState.xyRange, normalAnimation)
+      }, [chartLegacyData])
+
+      const handleRescale = () => {
+        const mainChart = mainChartRef.current
+        const legacyChart = legacyChartRef.current
+        if (!mainChart || !legacyChart) return
+        mainChart.setState(
+          chartMainData,
+          {x: chartMainData.years.displayRange, y: chartMainData.yDisplayRange},
+          normalAnimation
+        )
+        legacyChart.setState(
+          chartLegacyData,
+          chartLegacyData.xyDisplayRange,
+          normalAnimation
+        )
+        setYRange({
+          main: mainChart.getState().xyRange.y,
+          legacy: legacyChart.getState().xyRange.y,
+        })
+      }
+
       const rescaleWarningLevel = _maxRescaleWarningLevel(
-        _rescaleWarningLevel(state.main.xyRange.y, targetYRange.main),
+        _rescaleWarningLevel(yRange.main, chartMainData.yDisplayRange),
         shouldShowLegacy
-          ? _rescaleWarningLevel(state.legacy.xyRange.y, targetYRange.legacy)
+          ? _rescaleWarningLevel(
+              yRange.legacy,
+              chartLegacyData.xyDisplayRange.y
+            )
           : 0
       )
       const [pingRescale, setPingRescale] = useState(false)
@@ -92,10 +168,10 @@ export const ChartPanel = React.memo(
       const menuAt1DivRef = useRef<HTMLDivElement | null>(null)
       const descriptionRef = useRef<HTMLDivElement | null>(null)
       const descriptionAt0Ref = useRef<HTMLDivElement | null>(null)
-      const mainChartRef = useRef<ChartReactStatefull | null>(null)
       const legacyBodyRef = useRef<HTMLDivElement | null>(null)
       const legacyHeadingRef = useRef<HTMLHeadingElement | null>(null)
-      const legacyChartRef = useRef<ChartReactStatefull | null>(null)
+      const legacyChartRef =
+        useRef<ChartReactStatefull<TPAWChartDataLegacy> | null>(null)
       const tasksRef = useRef<HTMLAnchorElement | null>(null)
       const rescaleRef = useRef<HTMLButtonElement | null>(null)
       const legacyTransitionRef = useRef({transition: shouldShowLegacy ? 1 : 0})
@@ -321,8 +397,7 @@ export const ChartPanel = React.memo(
           fGet(
             descriptionRef.current
           ).style.transform = `scale(${descriptionScale})`
-
-          fGet(mainChartRef.current).setSizing(chartSizing)
+          mainChartRef.current?.setSizing(chartSizing)
 
           applyRectSizingToHTMLElement(
             legacyBodyPosition,
@@ -336,7 +411,7 @@ export const ChartPanel = React.memo(
           fGet(
             legacyHeadingRef.current
           ).style.transform = `scale(${menuButtonScale})`
-          fGet(legacyChartRef.current).setSizing(legacySizing)
+          legacyChartRef.current?.setSizing(legacySizing)
 
           applyPositionToHTMLElement(rescalePosition, fGet(rescaleRef.current))
           fGet(rescaleRef.current).style.height = `${rescalePosition.height}px`
@@ -408,8 +483,8 @@ export const ChartPanel = React.memo(
           >
             <div className="absolute" ref={menuDivRef}>
               <ChartPanelMenu
-                type={state.type}
-                onSelect={handleChangeType}
+                type={type}
+                onSelect={setType}
                 layout={layout}
                 ref={menuRef}
                 showDescriptionPopUp={() => setShowDescriptionPopUp(true)}
@@ -417,7 +492,7 @@ export const ChartPanel = React.memo(
             </div>
             <div className="absolute invisible" ref={menuAt0DivRef}>
               <ChartPanelMenuButton
-                type={state.type}
+                type={type}
                 onClick={() => {}}
                 showDescriptionPopUp={() => {}}
                 layout={layout}
@@ -432,7 +507,7 @@ export const ChartPanel = React.memo(
             </div>
             <div className="absolute invisible" ref={menuAt1DivRef}>
               <ChartPanelMenuButton
-                type={state.type}
+                type={type}
                 layout={layout}
                 onClick={() => {}}
                 showDescriptionPopUp={() => {}}
@@ -451,7 +526,7 @@ export const ChartPanel = React.memo(
               style={{transformOrigin: 'top left'}}
             >
               <ChartPanelDescription
-                type={state.type}
+                type={type}
                 showDescriptionPopUp={showDescriptionPopUp}
                 setShowDescriptionPopUp={setShowDescriptionPopUp}
               />
@@ -466,14 +541,20 @@ export const ChartPanel = React.memo(
               }}
             >
               <ChartPanelDescription
-                type={state.type}
+                type={type}
                 showDescriptionPopUp={false}
                 setShowDescriptionPopUp={() => {}}
               />
             </div>
             <TPAWChartMain
-              state={state.main}
-              starting={{sizing: startingSizing.chartSizing}}
+              starting={{
+                data: chartMainData,
+                xyRange: {
+                  x: chartMainData.years.displayRange,
+                  y: chartMainData.yDisplayRange,
+                },
+                sizing: startingSizing.chartSizing,
+              }}
               ref={mainChartRef}
             />
           </div>
@@ -489,8 +570,11 @@ export const ChartPanel = React.memo(
               Legacy
             </h2>
             <TPAWChartLegacy
-              state={state.legacy}
-              starting={{sizing: startingSizing.legacySizing}}
+              starting={{
+                data: chartLegacyData,
+                xyRange: chartLegacyData.xyDisplayRange,
+                sizing: startingSizing.legacySizing,
+              }}
               ref={legacyChartRef}
             />
           </div>
@@ -512,14 +596,15 @@ export const ChartPanel = React.memo(
             {rescaleWarningLevel === 2 && (
               <>
                 <div className="absolute -right-[2px] -top-[0px] w-[10px] h-[10px] bg-red-500 rounded-full"></div>
-                {pingRescale && <div
-                  className="absolute -right-[12px] -top-[10px] w-[30px] h-[30px] bg-red-500 rounded-full  "
-                  onAnimationEnd={() => setPingRescale(false)}
-                  style={{animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) 4'}}
-                ></div>
-                }
+                {pingRescale && (
+                  <div
+                    className="absolute -right-[12px] -top-[10px] w-[30px] h-[30px] bg-red-500 rounded-full  "
+                    onAnimationEnd={() => setPingRescale(false)}
+                    style={{animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) 4'}}
+                  ></div>
+                )}
                 {/* Forces tailwind to insert ping keyframes. */}
-                <div className='hidden animate-ping'/>
+                <div className="hidden animate-ping" />
               </>
             )}
           </button>
@@ -592,3 +677,6 @@ const _rescaleWarningLevel = (
 
 const _maxRescaleWarningLevel = (w1: 0 | 1 | 2, w2: 0 | 1 | 2): 0 | 1 | 2 =>
   Math.max(w1, w2) as 0 | 1 | 2
+
+const _shouldShowLegacy = ({args}: SimulationInfo['tpawResult']) =>
+  args.params.legacy.total > 0 || args.params.spendingCeiling !== null

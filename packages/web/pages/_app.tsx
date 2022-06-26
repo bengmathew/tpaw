@@ -4,7 +4,7 @@ import React, {useEffect, useState} from 'react'
 import {ToastContainer} from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import {GlobalErrorBoundary} from '../src/Pages/App/GlobalErrorBoundary'
-import {WithChartMainData} from '../src/Pages/App/WithChartMainData'
+import {WithChartData} from '../src/Pages/App/WithChartData'
 import {WithSimulation} from '../src/Pages/App/WithSimulation'
 import '../styles/globals.css'
 
@@ -45,9 +45,9 @@ function MyApp({Component, pageProps}: AppProps) {
   return (
     <GlobalErrorBoundary>
       <WithSimulation>
-        <WithChartMainData>
+        <WithChartData>
           <Component {...pageProps} />
-        </WithChartMainData>
+        </WithChartData>
       </WithSimulation>
 
       <ToastContainer />

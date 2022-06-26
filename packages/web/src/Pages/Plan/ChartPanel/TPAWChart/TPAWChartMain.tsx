@@ -1,14 +1,13 @@
 import _ from 'lodash'
-import React, {useMemo} from 'react'
-import {fGet} from '../../../../Utils/Utils'
+import React, {useCallback, useMemo} from 'react'
+import {fGet, noCase} from '../../../../Utils/Utils'
+import {ChartXYRange} from '../../../Common/Chart/Chart'
 import {chartDrawDataLines} from '../../../Common/Chart/ChartComponent/ChartDrawDataLines'
 import {ChartMinMaxYAxis} from '../../../Common/Chart/ChartComponent/ChartMinMaxYAxis'
 import {ChartPointer} from '../../../Common/Chart/ChartComponent/ChartPointer'
-// import {ChartPointerXAxis} from '../../../Common/Chart/ChartComponent/ChartPointerXAxis'
 import {
   ChartReact,
   ChartReactSizing,
-  ChartReactState,
   ChartReactStatefull,
 } from '../../../Common/Chart/ChartReact'
 import {ChartUtils} from '../../../Common/Chart/ChartUtils/ChartUtils'
@@ -18,49 +17,115 @@ export const TPAWChartMain = React.memo(
   React.forwardRef(
     (
       {
-        state,
         starting,
       }: {
-        state: ChartReactState<TPAWChartDataMain>
-        starting: {sizing: ChartReactSizing}
+        starting: {
+          data: TPAWChartDataMain
+          xyRange: ChartXYRange
+          sizing: ChartReactSizing
+        }
       },
-      ref: React.ForwardedRef<ChartReactStatefull>
+      ref: React.ForwardedRef<ChartReactStatefull<TPAWChartDataMain>>
     ) => {
-      const components = useMemo(() => {
+      const components = useCallback(() => {
         const minorLine = chartDrawDataLines<TPAWChartDataMain>({
           lineWidth: 0.5,
           strokeStyle: ChartUtils.color.gray[400],
-          dataFn: (data: TPAWChartDataMain) => ({
-            lines: data.percentiles
-              .filter(x => !x.isHighlighted)
-              .map(x => x.data),
-          }),
+          dataFn: (data: TPAWChartDataMain) =>
+            data.series.type === 'percentiles'
+              ? {
+                  lines: data.series.percentiles
+                    .filter(x => !x.isHighlighted)
+                    .map(x => x.data),
+                }
+              : data.series.type === 'labeledLines'
+              ? {
+                  lines: _.times(
+                    data.series.percentiles.length -
+                      data.series.highlightedPercentiles.length
+                  ).map(() => null),
+                }
+              : noCase(data.series),
         })
         const majorLine = chartDrawDataLines<TPAWChartDataMain>({
           lineWidth: 1.2,
           strokeStyle: ChartUtils.color.gray[500],
-          dataFn: (data: TPAWChartDataMain) => ({
-            lines: data.percentiles
-              .filter(x => x.isHighlighted)
-              .map(x => x.data),
-          }),
+          dataFn: (data: TPAWChartDataMain) =>
+            data.series.type === 'percentiles'
+              ? {
+                  lines: data.series.percentiles
+                    .filter(x => x.isHighlighted)
+                    .map(x => x.data),
+                }
+              : {
+                  lines: [
+                    data.series.lines[0].data,
+                    ..._.times(
+                      data.series.highlightedPercentiles.length - 2
+                    ).map(() => null),
+                    data.series.lines[1].data,
+                  ],
+                },
         })
 
         const minMaxYAxis = new ChartMinMaxYAxis<TPAWChartDataMain>(
           (data, x) => data.yFormat(x),
           ChartUtils.color.gray[800],
           data => data.max.x,
-          (data, x) => ({
-            min: data.percentiles[0].data(x),
-            max: fGet(_.last(data.percentiles)).data(x),
-          })
+          (data, x) => {
+            switch (data.series.type) {
+              case 'percentiles':
+                return {
+                  min: data.series.percentiles[0].data(x),
+                  max: fGet(_.last(data.series.percentiles)).data(x),
+                }
+              case 'labeledLines':
+                const ys = data.series.lines.map(({data}) => data(x))
+                return {
+                  min: Math.min(...ys),
+                  max: Math.max(...ys),
+                }
+              default:
+                noCase(data.series)
+            }
+          }
         )
 
         const pointer = new ChartPointer<TPAWChartDataMain>(
-          data =>
-            data.percentiles
-              .filter(x => x.isHighlighted)
-              .map(x => ({line: x.data, label: `${x.percentile}`})),
+          data => {
+            switch (data.series.type) {
+              case 'percentiles':
+                return data.series.percentiles
+                  .filter(x => x.isHighlighted)
+                  .map(x => ({line: x.data, label: `${x.percentile}`}))
+              case 'labeledLines': {
+                const spaw = {
+                  line: data.series.lines[1].data,
+                  label: data.series.lines[1].label,
+                }
+                const tpaw = {
+                  line: data.series.lines[0].data,
+                  label: data.series.lines[0].label,
+                }
+                const tpawIsFirst =
+                  tpaw.line(data.years.displayRange.start) >=
+                  spaw.line(data.years.displayRange.start)
+
+                const [first, second] = tpawIsFirst
+                  ? [tpaw, spaw]
+                  : [spaw, tpaw]
+                return [
+                  second,
+                  ..._.times(data.series.highlightedPercentiles.length - 2).map(
+                    () => null
+                  ),
+                  first,
+                ]
+              }
+              default:
+                noCase(data.series)
+            }
+          },
           (data, x) => data.years.display(x),
           (data: TPAWChartDataMain, x: number, type) =>
             x === data.years.max + 1
@@ -71,17 +136,14 @@ export const TPAWChartMain = React.memo(
           (data, x) => data.yFormat(x),
           data => data.years.retirement
         )
-        const byName = {minorLine, majorLine, minMaxYAxis, pointer}
-        const arr = [minorLine, majorLine, minMaxYAxis, pointer]
-        return {byName, arr}
+        return [minorLine, majorLine, minMaxYAxis, pointer]
       }, [])
 
       return (
         <ChartReact<TPAWChartDataMain>
           ref={ref}
-          state={state}
           starting={starting}
-          components={components.arr}
+          components={components}
         />
       )
     }

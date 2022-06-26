@@ -19,7 +19,7 @@ import {ParamsInputType} from './Helpers/ParamsInputType'
 import {ParamsInputAgeAndRetirement} from './ParamsInputAgeAndRetirement/ParamsInputAgeAndRetirement'
 import {ParamsInputBodyPassThruProps} from './ParamsInputBody'
 import {ParamsInputCurrentPortfolioBalance} from './ParamsInputCurrentPortfolioBalance'
-import { ParamsInputDev } from './ParamsInputDev'
+import {ParamsInputDev} from './ParamsInputDev'
 import {ParamsInputExpectedReturns} from './ParamsInputExpectedReturns'
 import {ParamsInputExtraSpending} from './ParamsInputExtraSpending'
 import {ParamsInputFutureSavings} from './ParamsInputFutureSavings'
@@ -47,8 +47,8 @@ type Props = {
   state: ParamsInputType | 'summary'
   paramInputType: ParamsInputType
   setState: (state: 'summary' | ParamsInputType) => void
-  chartType: ChartPanelType
-  setChartType: (type: ChartPanelType) => void
+  chartType: ChartPanelType | 'sharpe-ratio'
+  setChartType: (type: ChartPanelType | 'sharpe-ratio') => void
 }
 
 export type ParamsInputStateful = {
@@ -180,8 +180,8 @@ const _Body = React.memo(
     layout: 'desktop' | 'mobile' | 'laptop'
     type: ParamsInputType
     onDone: () => void
-    chartType: ChartPanelType
-    setChartType: (type: ChartPanelType) => void
+    chartType: ChartPanelType | 'sharpe-ratio'
+    setChartType: (type: ChartPanelType | 'sharpe-ratio') => void
   }) => {
     const props: ParamsInputBodyPassThruProps = {layout, sizing}
 
@@ -209,7 +209,13 @@ const _Body = React.memo(
       case 'risk-and-time-preference':
         return <ParamsInputRiskAndTimePreference {...props} />
       case 'strategy':
-        return <ParamsInputStrategy {...props} />
+        return (
+          <ParamsInputStrategy
+            chartType={chartType}
+            setChartType={setChartType}
+            {...props}
+          />
+        )
       case 'expected-returns':
         return <ParamsInputExpectedReturns {...props} />
       case 'inflation':

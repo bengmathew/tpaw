@@ -13,7 +13,7 @@ export type ChartPanelType =
   | 'withdrawal-rate'
 
 export const isChartPanelSpendingEssentialType = (
-  x: ChartPanelType
+  x: ChartPanelType | 'sharpe-ratio'
 ): x is `spending-essential-${number}` => x.startsWith('spending-essential-')
 
 export const chartPanelSpendingEssentialTypeID = (
@@ -21,7 +21,7 @@ export const chartPanelSpendingEssentialTypeID = (
 ) => parseInt(x.substring('spending-essential-'.length))
 
 export const isChartPanelSpendingDiscretionaryType = (
-  x: ChartPanelType
+  x: ChartPanelType | 'sharpe-ratio'
 ): x is `spending-discretionary-${number}` =>
   x.startsWith('spending-discretionary-')
 
@@ -51,10 +51,7 @@ export const isChartPanelType = (
   }
   if (isChartPanelSpendingDiscretionaryType(type)) {
     const id = chartPanelSpendingDiscretionaryTypeID(type)
-    return (
-      params.withdrawals.discretionary.find(x => x.id === id) !==
-      undefined
-    )
+    return params.withdrawals.discretionary.find(x => x.id === id) !== undefined
   }
   return true
 }

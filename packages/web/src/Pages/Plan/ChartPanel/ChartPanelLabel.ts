@@ -12,7 +12,7 @@ import {
 
 export const chartPanelLabel = (
   params: TPAWParams,
-  panelType: ChartPanelType,
+  panelType: ChartPanelType | 'sharpe-ratio',
   type: 'full' | 'short'
 ) => {
   switch (panelType) {
@@ -29,12 +29,12 @@ export const chartPanelLabel = (
       return {label: ['Asset Allocation'], subLabel: null}
     case 'withdrawal-rate':
       return {label: ['Withdrawal Rate'], subLabel: null}
+    case 'sharpe-ratio':
+      return {label: ['Sharpe Ratio'], subLabel: null}
     default:
       if (isChartPanelSpendingEssentialType(panelType)) {
         const id = chartPanelSpendingEssentialTypeID(panelType)
-        const index = params.withdrawals.essential.findIndex(
-          x => x.id === id
-        )
+        const index = params.withdrawals.essential.findIndex(x => x.id === id)
         assert(index !== -1)
         const label = _.compact([
           type === 'full' ? 'Spending' : undefined,

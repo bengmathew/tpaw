@@ -1,7 +1,7 @@
-import {noCase} from '../../Utils/Utils'
-import {getWASM} from './GetWASM'
-import {runSimulationInWASM} from './RunSimulationInWASM'
-import {TPAWWorkerArgs, TPAWWorkerResult} from './TPAWWorkerTypes'
+import { noCase } from '../../Utils/Utils'
+import { getWASM } from './GetWASM'
+import { runSimulationInWASM } from './RunSimulationInWASM'
+import { TPAWWorkerArgs, TPAWWorkerResult } from './TPAWWorkerTypes'
 
 addEventListener('message', async event => {
   const eventData: TPAWWorkerArgs = event.data
@@ -11,7 +11,7 @@ addEventListener('message', async event => {
       {
         const result = await runSimulationInWASM(
           eventData.args.params,
-          eventData.args.numRuns
+          eventData.args.runs
         )
         const reply: TPAWWorkerResult = {type: 'runSimulation', taskID, result}
         ;(postMessage as any)(reply, [
@@ -60,7 +60,7 @@ addEventListener('message', async event => {
 
       const wasm = await getWASM()
       const oneOverCV = Float64Array.from(
-        data.map(row => wasm.one_over_cv(row))
+        data.map((row, n) => wasm.one_over_cv(row, n))
       )
 
       const perf = performance.now() - start
@@ -69,8 +69,14 @@ addEventListener('message', async event => {
         taskID,
         result: {data: oneOverCV, perf},
       }
-      oneOverCV
       ;(postMessage as any)(reply), [oneOverCV.buffer]
+      break
+    }
+    case 'clearMemoizedRandom': {
+      const wasm = await getWASM()
+      wasm.clear_memoized_random()
+      const reply: TPAWWorkerResult = {type: 'clearMemoizedRandom', taskID}
+      ;(postMessage as any)(reply)
       break
     }
     default:

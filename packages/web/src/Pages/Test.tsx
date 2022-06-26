@@ -34,7 +34,7 @@ export const Test = React.memo(() => {
       console.dir(historicalReturns)
       console.dir(params.returns.historicalAdjusted)
       const wasm = (
-        await runSimulationInWASM(params, 1, {
+        await runSimulationInWASM(params, {start:0, end:1}, {
           truth: excel,
           indexIntoHistoricalReturns,
         })
@@ -130,8 +130,8 @@ const excelSimulated = [
 ]
 const excel = excelSimulated
 
-const testParams = processTPAWParams({
-  v: 7,
+const testParams = processTPAWParams(extendTPAWParams({
+  v: 8,
   strategy: 'TPAW',
   people: {
     withPartner: false,
@@ -234,10 +234,11 @@ const testParams = processTPAWParams({
     total: 200000,
     external: [],
   },
+  sampling:'monteCarlo',
   display: {
     alwaysShowAllYears: false,
   },
-})
+}))
 const indexIntoHistoricalReturns = [
   92, 91, 85, 144, 52, 118, 143, 88, 68, 55, 52, 16, 50, 31, 44, 32, 18, 149, 8,
   3, 52, 6, 113, 112, 43, 118, 28, 60, 103, 56, 113, 92, 115, 145, 16, 58, 14,

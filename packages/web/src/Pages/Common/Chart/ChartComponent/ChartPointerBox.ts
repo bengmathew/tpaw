@@ -1,3 +1,4 @@
+import { faGameConsoleHandheld } from '@fortawesome/pro-solid-svg-icons'
 import _ from 'lodash'
 import {RectExt, rectExt} from '../../../../Utils/Geometry'
 import {linearFnFomPoints} from '../../../../Utils/LinearFn'
@@ -173,6 +174,7 @@ export const chartPointerBox = <Data>(
       const graphYOnBox =
         box.y + labelGraphYs[i] + textInfos.lines[i].label.height / 2
       ctx.beginPath()
+
       const line = [
         {x: graphX, y: graphY},
         {x: graphX + (boxXTarget - graphX) * 0.6, y: graphYOnBox},

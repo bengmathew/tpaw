@@ -21,46 +21,69 @@ export type ChartReactState<Data> = {
   animation: ChartAnimation | null
 }
 
-export type ChartReactStatefull = {
+export type ChartReactStatefull<Data> = {
   setSizing: (sizing: ChartReactSizing) => void
+  setState: (
+    data: Data,
+    xyRange: ChartXYRange,
+    animation: ChartAnimation | null
+  ) => void
+  getState: () => {data: Data; xyRange: ChartXYRange}
 }
 export const ChartReact = React.forwardRef(
   <Data,>(
     {
-      state,
       starting,
       components,
     }: {
-      state: ChartReactState<Data>
       starting: {
+        data: Data
+        xyRange: ChartXYRange
         sizing: ChartReactSizing
       }
-      components: readonly ChartComponent<Data>[]
+      components: ()=> readonly ChartComponent<Data>[]
     },
-    forwardedRef: React.ForwardedRef<ChartReactStatefull>
+    forwardedRef: React.ForwardedRef<ChartReactStatefull<Data>>
   ) => {
-    const divRef = useRef<HTMLDivElement | null>(null)
+    const divRef = useRef<HTMLDivElement>(null)
     const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null)
-
-    const localChartRef = useRef<ChartReactStatefull | null>(null)
+    const [chart, setChart] = useState<ChartReactStatefull<Data> | null>(null)
 
     useLayoutEffect(() => {
       if (!canvas) return
-      applySizingToHTML(starting.sizing.position, fGet(divRef.current), canvas, 'init')
+      applySizingToHTML(
+        starting.sizing.position,
+        fGet(divRef.current),
+        canvas,
+        'init'
+      )
       // ignore startingSizing.
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [canvas])
 
     useImperativeHandle(
       forwardedRef,
-      () => ({
-        setSizing: sizing => {
-          if (!canvas) return
-          applySizingToHTML(sizing.position, fGet(divRef.current), canvas, 'update')
-          localChartRef.current?.setSizing(sizing)
-        },
-      }),
-      [canvas]
+      () => {
+        if (!canvas || !chart)
+          return null as unknown as ChartReactStatefull<Data>
+        return {
+          setSizing: sizing => {
+            if (!canvas) return
+            applySizingToHTML(
+              sizing.position,
+              fGet(divRef.current),
+              canvas,
+              'update'
+            )
+            chart.setSizing(sizing)
+          },
+          setState: (data, xyRange, animation) => {
+            chart.setState(data, xyRange, animation)
+          },
+          getState: () => chart.getState(),
+        }
+      },
+      [canvas, chart]
     )
 
     return (
@@ -68,11 +91,10 @@ export const ChartReact = React.forwardRef(
         <canvas className="" style={{touchAction: 'none'}} ref={setCanvas} />
         {canvas && (
           <_AfterCanvas
-            state={state}
             starting={starting}
             components={components}
             canvas={canvas}
-            ref={localChartRef}
+            ref={setChart}
           />
         )}
       </div>
@@ -84,14 +106,15 @@ const applySizingToHTML = (
   position: RectExt,
   div: HTMLDivElement,
   canvas: HTMLCanvasElement,
-  type:'init'|'update'
+  type: 'init' | 'update'
 ) => {
   const size = {width: position.width, height: position.height}
   applyRectSizingToHTMLElement(position, div)
   const dpr = window.devicePixelRatio || 1
 
   const pixelSize = (x: number) => Math.round(x * dpr)
-  if (type === 'init' ||
+  if (
+    type === 'init' ||
     pixelSize(size.width) > canvas.width * 0.95 ||
     pixelSize(size.height) > canvas.height * 0.95
   ) {
@@ -112,26 +135,26 @@ const applySizingToHTML = (
 const _AfterCanvas = React.forwardRef(
   <Data,>(
     {
-      state,
       starting,
       components,
       canvas,
     }: {
-      state: ChartReactState<Data>
       starting: {
+        data: Data
+        xyRange: ChartXYRange
         sizing: ChartReactSizing
       }
-      components: readonly ChartComponent<Data>[]
+      components: ()=>readonly ChartComponent<Data>[]
       canvas: HTMLCanvasElement
     },
-    ref: React.ForwardedRef<ChartReactStatefull>
+    ref: React.ForwardedRef<ChartReactStatefull<Data>>
   ) => {
     const [chart, setChart] = useState<Chart<Data> | null>(null)
     useLayoutEffect(() => {
       const chart = new Chart(
         canvas,
-        state.data,
-        state.xyRange,
+        starting.data,
+        starting.xyRange,
         [], // Will be set in useEffect
         _sizingTransform(starting.sizing)
       )
@@ -142,20 +165,21 @@ const _AfterCanvas = React.forwardRef(
 
     useImperativeHandle(
       ref,
-      () => ({
-        setSizing: sizing => fGet(chart).setSizing(_sizingTransform(sizing)),
-      }),
+      () => {
+        if (!chart) return null as unknown as ChartReactStatefull<Data>
+        return {
+          setSizing: sizing => chart.setSizing(_sizingTransform(sizing)),
+          setState: (data, xyRange, animation) =>
+            chart.setState(data, xyRange, animation),
+          getState: () => chart.getState(),
+        }
+      },
       [chart]
     )
 
     useEffect(() => {
       if (!chart) return
-      chart.setState(state.data, state.xyRange, state.animation)
-    }, [state, chart])
-
-    useEffect(() => {
-      if (!chart) return
-      chart.setComponents(components)
+      chart.setComponents(components())
     }, [components, chart])
 
     return <></>

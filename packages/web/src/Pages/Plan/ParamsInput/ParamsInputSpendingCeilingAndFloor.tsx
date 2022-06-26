@@ -2,7 +2,7 @@ import {faMinus, faPlus} from '@fortawesome/pro-light-svg-icons'
 import {faCircle as faCircleRegular} from '@fortawesome/pro-regular-svg-icons'
 import {faCircle as faCircleSelected} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {RadioGroup, Switch} from '@headlessui/react'
+import {Switch} from '@headlessui/react'
 import _ from 'lodash'
 import React, {useMemo, useState} from 'react'
 import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
@@ -116,36 +116,34 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
       setParams(p)
     }
 
+    const handleType = (type: _Type) => {
+      switch (type) {
+        case 'fixedSpending':
+          handleFixedAmount(lastFixedEntry ?? defaultFloorAmount)
+          break
+        case 'none': {
+          const p = _.cloneDeep(params)
+          p.spendingCeiling = null
+          p.spendingFloor = null
+          setParams(p)
+          break
+        }
+        case 'separateCeilingAndFloor':
+          const p = _.cloneDeep(params)
+          p.spendingCeiling = hasCeiling ? lastCeilingEntry : null
+          p.spendingFloor = hasFloor ? lastFloorEntry : null
+          setParams(p)
+          break
+        default:
+          noCase(type)
+      }
+      setType(type)
+    }
+
     return (
       <ParamsInputBody {...props} headingMarginLeft="reduced">
-        <RadioGroup
-          value={`${type}`}
-          className=""
-          onChange={(type: _Type) => {
-            switch (type) {
-              case 'fixedSpending':
-                handleFixedAmount(lastFixedEntry ?? defaultFloorAmount)
-                break
-              case 'none': {
-                const p = _.cloneDeep(params)
-                p.spendingCeiling = null
-                p.spendingFloor = null
-                setParams(p)
-                break
-              }
-              case 'separateCeilingAndFloor':
-                const p = _.cloneDeep(params)
-                p.spendingCeiling = hasCeiling ? lastCeilingEntry : null
-                p.spendingFloor = hasFloor ? lastFloorEntry : null
-                setParams(p)
-                break
-              default:
-                noCase(type)
-            }
-            setType(type)
-          }}
-        >
-          <RadioGroup.Description className="">
+        <div className="">
+          <div className="">
             <div
               className=""
               style={{
@@ -157,214 +155,213 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
                 p=" p-base"
               />
             </div>
-          </RadioGroup.Description>
+          </div>
           <div className="grid gap-y-6 mt-8">
-            <RadioGroup.Option
-              value="none"
+            <div
+              className="params-card outline-none "
+              style={{padding: paddingCSS(props.sizing.cardPadding)}}
+            >
+              <div className="">
+                <button className={`w-full text-left`} onClick={() => handleType('none')}>
+                  <FontAwesomeIcon
+                    className="mr-2"
+                    icon={type === 'none' ? faCircleSelected : faCircleRegular}
+                  />{' '}
+                  No ceiling or floor
+                </button>
+              </div>
+            </div>
+            <div
               className="params-card outline-none"
               style={{padding: paddingCSS(props.sizing.cardPadding)}}
             >
-              {({checked}) => (
-                <div className="">
-                  <RadioGroup.Label className={`cursor-pointer `}>
-                    <FontAwesomeIcon
-                      className="mr-2"
-                      icon={checked ? faCircleSelected : faCircleRegular}
-                    />{' '}
-                    No ceiling or floor
-                  </RadioGroup.Label>
-                </div>
-              )}
-            </RadioGroup.Option>
-            <RadioGroup.Option
-              value="separateCeilingAndFloor"
-              className="params-card outline-none"
-              style={{padding: paddingCSS(props.sizing.cardPadding)}}
-            >
-              {({checked}) => (
-                <div className="">
-                  <RadioGroup.Label className={`cursor-pointer `}>
-                    <FontAwesomeIcon
-                      className="mr-2"
-                      icon={checked ? faCircleSelected : faCircleRegular}
-                    />{' '}
-                    Separate ceiling and floor
-                  </RadioGroup.Label>
-                  {checked && (
-                    <div
-                      className="ml-6 grid gap-x-1 pt-4 items-center"
-                      style={{grid: '35px 50px/auto auto 1fr'}}
-                    >
-                      <Switch.Group>
-                        <Switch.Label className="">Ceiling</Switch.Label>
-                        <ToggleSwitch
-                          className=""
-                          enabled={params.spendingCeiling !== null}
-                          setEnabled={enabled => {
-                            setHasCeiling(enabled)
-                            if (!enabled) {
-                              const p = _.cloneDeep(params)
-                              p.spendingCeiling = null
-                              setParams(p)
-                            } else {
-                              handleCeilingAmount(
-                                lastCeilingEntry ?? defaultCeilingAmount
-                              )
-                            }
-                          }}
+              <div className="">
+                <button
+                  className={`w-full text-left`}
+                  onClick={() => handleType('separateCeilingAndFloor')}
+                >
+                  <FontAwesomeIcon
+                    className="mr-2"
+                    icon={
+                      type === 'separateCeilingAndFloor'
+                        ? faCircleSelected
+                        : faCircleRegular
+                    }
+                  />{' '}
+                  Separate ceiling and floor
+                </button>
+                {type === 'separateCeilingAndFloor' && (
+                  <div
+                    className="ml-6 grid gap-x-1 pt-4 items-center"
+                    style={{grid: '35px 50px/auto auto 1fr'}}
+                  >
+                    <Switch.Group>
+                      <Switch.Label className="">Ceiling</Switch.Label>
+                      <ToggleSwitch
+                        className=""
+                        enabled={params.spendingCeiling !== null}
+                        setEnabled={enabled => {
+                          setHasCeiling(enabled)
+                          if (!enabled) {
+                            const p = _.cloneDeep(params)
+                            p.spendingCeiling = null
+                            setParams(p)
+                          } else {
+                            handleCeilingAmount(
+                              lastCeilingEntry ?? defaultCeilingAmount
+                            )
+                          }
+                        }}
+                      />
+                    </Switch.Group>
+                    {params.spendingCeiling === null ? (
+                      <div className=""></div>
+                    ) : (
+                      <div className={`flex items-stretch `}>
+                        <AmountInput
+                          className={`ml-2 w-[90px]`}
+                          type="currency"
+                          state={ceilingValueState}
+                          onAccept={handleCeilingAmount}
                         />
-                      </Switch.Group>
-                      {params.spendingCeiling === null ? (
-                        <div className=""></div>
-                      ) : (
-                        <div className={`flex items-stretch `}>
-                          <AmountInput
-                            className={`ml-2 w-[90px]`}
-                            type="currency"
-                            state={ceilingValueState}
-                            onAccept={handleCeilingAmount}
+                        <button
+                          className={`flex items-center pl-4 pr-2 `}
+                          onClick={() =>
+                            handleCeilingAmount(
+                              fGet(params.spendingCeiling) + 5000
+                            )
+                          }
+                        >
+                          <FontAwesomeIcon
+                            className="text-base"
+                            icon={faPlus}
                           />
-                          <button
-                            className={`flex items-center pl-4 pr-2 `}
-                            onClick={() =>
-                              handleCeilingAmount(
-                                fGet(params.spendingCeiling) + 5000
-                              )
-                            }
-                          >
-                            <FontAwesomeIcon
-                              className="text-base"
-                              icon={faPlus}
-                            />
-                          </button>
-                          <button
-                            className={`flex items-center px-2 `}
-                            onClick={() =>
-                              handleCeilingAmount(
-                                Math.max(0, fGet(params.spendingCeiling) - 5000)
-                              )
-                            }
-                          >
-                            <FontAwesomeIcon
-                              className="text-base"
-                              icon={faMinus}
-                            />
-                          </button>
-                        </div>
-                      )}
-                      <Switch.Group>
-                        <Switch.Label className="">Floor</Switch.Label>
-                        <ToggleSwitch
-                          className=""
-                          enabled={params.spendingFloor !== null}
-                          setEnabled={enabled => {
-                            setHasFloor(enabled)
-                            if (!enabled) {
-                              const p = _.cloneDeep(params)
-                              p.spendingFloor = null
-                              setParams(p)
-                            } else {
-                              handleFloorAmount(
-                                lastFloorEntry ?? defaultFloorAmount
-                              )
-                            }
-                          }}
+                        </button>
+                        <button
+                          className={`flex items-center px-2 `}
+                          onClick={() =>
+                            handleCeilingAmount(
+                              Math.max(0, fGet(params.spendingCeiling) - 5000)
+                            )
+                          }
+                        >
+                          <FontAwesomeIcon
+                            className="text-base"
+                            icon={faMinus}
+                          />
+                        </button>
+                      </div>
+                    )}
+                    <Switch.Group>
+                      <Switch.Label className="">Floor</Switch.Label>
+                      <ToggleSwitch
+                        className=""
+                        enabled={params.spendingFloor !== null}
+                        setEnabled={enabled => {
+                          setHasFloor(enabled)
+                          if (!enabled) {
+                            const p = _.cloneDeep(params)
+                            p.spendingFloor = null
+                            setParams(p)
+                          } else {
+                            handleFloorAmount(
+                              lastFloorEntry ?? defaultFloorAmount
+                            )
+                          }
+                        }}
+                      />
+                    </Switch.Group>{' '}
+                    {params.spendingFloor === null ? (
+                      <div className=""></div>
+                    ) : (
+                      <div className={`flex items-stretch `}>
+                        <AmountInput
+                          className={`ml-2 w-[90px]`}
+                          type="currency"
+                          state={floorValueState}
+                          onAccept={handleFloorAmount}
                         />
-                      </Switch.Group>{' '}
-                      {params.spendingFloor === null ? (
-                        <div className=""></div>
-                      ) : (
-                        <div className={`flex items-stretch `}>
-                          <AmountInput
-                            className={`ml-2 w-[90px]`}
-                            type="currency"
-                            state={floorValueState}
-                            onAccept={handleFloorAmount}
+                        <button
+                          className={`flex items-center  pl-4 pr-2  `}
+                          onClick={() =>
+                            handleFloorAmount(fGet(params.spendingFloor) + 5000)
+                          }
+                        >
+                          <FontAwesomeIcon
+                            className="text-base"
+                            icon={faPlus}
                           />
-                          <button
-                            className={`flex items-center  pl-4 pr-2  `}
-                            onClick={() =>
-                              handleFloorAmount(
-                                fGet(params.spendingFloor) + 5000
-                              )
-                            }
-                          >
-                            <FontAwesomeIcon
-                              className="text-base"
-                              icon={faPlus}
-                            />
-                          </button>
-                          <button
-                            className={`flex items-center px-2 `}
-                            onClick={() =>
-                              handleFloorAmount(
-                                Math.max(0, fGet(params.spendingFloor) - 5000)
-                              )
-                            }
-                          >
-                            <FontAwesomeIcon
-                              className="text-base"
-                              icon={faMinus}
-                            />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </RadioGroup.Option>
-            <RadioGroup.Option
-              value="fixedSpending"
+                        </button>
+                        <button
+                          className={`flex items-center px-2 `}
+                          onClick={() =>
+                            handleFloorAmount(
+                              Math.max(0, fGet(params.spendingFloor) - 5000)
+                            )
+                          }
+                        >
+                          <FontAwesomeIcon
+                            className="text-base"
+                            icon={faMinus}
+                          />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div
               className="params-card  outline-none"
               style={{padding: paddingCSS(props.sizing.cardPadding)}}
             >
-              {({checked}) => (
-                <div className="">
-                  <RadioGroup.Label
-                    className={` cursor-pointer `}
-                  >
-                    <FontAwesomeIcon
-                      className="mr-2"
-                      icon={checked ? faCircleSelected : faCircleRegular}
-                    />{' '}
-                    Fixed spending <span className="">(ceiling = floor)</span>
-                  </RadioGroup.Label>
-                  {checked && (
-                    <div
-                      className={` mt-4 col-span-2 ml-6 flex items-stretch `}
+              <div className="">
+                <button
+                  className={`w-full text-left`}
+                  onClick={() => handleType('fixedSpending')}
+                >
+                  <FontAwesomeIcon
+                    className="mr-2"
+                    icon={
+                      type === 'fixedSpending'
+                        ? faCircleSelected
+                        : faCircleRegular
+                    }
+                  />{' '}
+                  Fixed spending <span className="">(ceiling = floor)</span>
+                </button>
+                {type === 'fixedSpending' && (
+                  <div className={` mt-4 col-span-2 ml-6 flex items-stretch `}>
+                    <AmountInput
+                      className={`w-[100px]`}
+                      type="currency"
+                      state={fixedValueState}
+                      onAccept={handleFixedAmount}
+                    />
+                    <button
+                      className={`flex items-center pl-4 pr-2 `}
+                      onClick={() =>
+                        handleFixedAmount(fGet(params.spendingFloor) + 5000)
+                      }
                     >
-                      <AmountInput
-                        className={`w-[100px]`}
-                        type="currency"
-                        state={fixedValueState}
-                        onAccept={handleFixedAmount}
-                      />
-                      <button
-                        className={`flex items-center pl-4 pr-2 `}
-                        onClick={() =>
-                          handleFixedAmount(fGet(params.spendingFloor) + 5000)
-                        }
-                      >
-                        <FontAwesomeIcon className="text-base" icon={faPlus} />
-                      </button>
-                      <button
-                        className={`flex items-center px-2 `}
-                        onClick={() =>
-                          handleFixedAmount(
-                            Math.max(0, fGet(params.spendingFloor) - 5000)
-                          )
-                        }
-                      >
-                        <FontAwesomeIcon className="text-base" icon={faMinus} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </RadioGroup.Option>
+                      <FontAwesomeIcon className="text-base" icon={faPlus} />
+                    </button>
+                    <button
+                      className={`flex items-center px-2 `}
+                      onClick={() =>
+                        handleFixedAmount(
+                          Math.max(0, fGet(params.spendingFloor) - 5000)
+                        )
+                      }
+                    >
+                      <FontAwesomeIcon className="text-base" icon={faMinus} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </RadioGroup>
+        </div>
       </ParamsInputBody>
     )
   }

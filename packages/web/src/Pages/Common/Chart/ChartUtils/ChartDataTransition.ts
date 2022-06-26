@@ -8,6 +8,15 @@ export type ChartDataTransition<Data> = {
   transition: number
 }
 
+export const chartDataTransitionTransform = <T, U>(
+  x: ChartDataTransition<T>,
+  transform: (x: T) => U
+): ChartDataTransition<U> => ({
+  prev: transform(x.prev),
+  target: transform(x.target),
+  transition: x.transition,
+})
+
 // Thanks: https://stackoverflow.com/a/47842314
 type Indirect<X> = Record<string, number | number[] | X>
 // eslint-disable-next-line @typescript-eslint/no-empty-interface

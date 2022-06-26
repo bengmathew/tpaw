@@ -1,6 +1,8 @@
 import _ from 'lodash'
 import {nominalToReal} from '../../Utils/NominalToReal'
+import {SimpleRange} from '../../Utils/SimpleRange'
 import {assert, fGet, noCase} from '../../Utils/Utils'
+import { historicalReturns } from '../HistoricalReturns'
 import {StatsTools} from '../StatsTools'
 import {ValueForYearRange} from '../TPAWParams'
 import {extendTPAWParams} from '../TPAWParamsExt'
@@ -98,6 +100,7 @@ export class TPAWRunInWorker {
       string,
       (value: TPAWWorkerCalculateOneOverCVResult) => void
     >(),
+    clearMemoizedRandom: new Map<string, () => void>(),
   }
   constructor() {
     const numWorkers = MULTI_THREADED ? navigator.hardwareConcurrency || 4 : 1
@@ -131,6 +134,14 @@ export class TPAWRunInWorker {
               resolve(data.result)
               break
             }
+            case 'clearMemoizedRandom': {
+              const resolve = fGet(
+                this._resolvers.clearMemoizedRandom.get(taskID)
+              )
+              this._resolvers.clearMemoizedRandom.delete(taskID)
+              resolve()
+              break
+            }
             default:
               noCase(data)
           }
@@ -140,14 +151,14 @@ export class TPAWRunInWorker {
 
   private _runSimulation(
     worker: Worker,
-    numRuns: number,
+    runs: SimpleRange,
     params: TPAWParamsProcessed
   ): Promise<TPAWWorkerRunSimulationResult> {
     const taskID = _.uniqueId()
     const message: Extract<TPAWWorkerArgs, {type: 'runSimulation'}> = {
       taskID,
       type: 'runSimulation',
-      args: {numRuns, params},
+      args: {runs, params},
     }
     worker.postMessage(message)
     return new Promise<TPAWWorkerRunSimulationResult>(resolve =>
@@ -188,6 +199,24 @@ export class TPAWRunInWorker {
     )
   }
 
+  private _clearMemoizedRandom(worker: Worker): Promise<void> {
+    const taskID = _.uniqueId()
+    const message: Extract<TPAWWorkerArgs, {type: 'clearMemoizedRandom'}> = {
+      type: 'clearMemoizedRandom',
+      taskID,
+    }
+    worker.postMessage(message)
+    return new Promise<void>(resolve =>
+      this._resolvers.clearMemoizedRandom.set(taskID, resolve)
+    )
+  }
+
+  async clearMemoizedRandom(): Promise<void> {
+    await Promise.all(
+      this._workers.map(worker => this._clearMemoizedRandom(worker))
+    )
+  }
+
   async runSimulations(
     status: {canceled: boolean},
     numRuns: number,
@@ -196,15 +225,26 @@ export class TPAWRunInWorker {
   ): Promise<TPAWRunInWorkerResult | null> {
     const start0 = performance.now()
     let start = performance.now()
+    numRuns =(()=>{
+      switch(params.sampling){
+        case 'monteCarlo': return numRuns
+        case 'historical': {
+          const {numYears} = extendTPAWParams(params.original)
+          return historicalReturns.length - numYears + 1;
+        }
+        default:noCase(params.sampling)
+      }
+    })()
     const runsByWorker = await Promise.all(
       this._workers.map((worker, i) =>
         this._runSimulation(
           worker,
-          _loadBalance(i, numRuns, this._workers.length).length,
+          _loadBalance(i, numRuns, this._workers.length),
           params
         )
       )
     )
+
     const perfSimulation = performance.now() - start
     start = performance.now()
 
@@ -293,6 +333,7 @@ export class TPAWRunInWorker {
       perfMergeSimulation -
       perfSortAndPickPercentiles -
       perfPost
+
     const result: TPAWRunInWorkerResult = {
       savingsPortfolio: {
         start: {
@@ -451,7 +492,8 @@ const _loadBalance = (worker: number, numJobs: number, numWorkers: number) => {
   const minJobsPerWorker = Math.floor(numJobs / numWorkers)
   const start = worker * minJobsPerWorker + Math.min(remainder, worker)
   const length = minJobsPerWorker + (worker < remainder ? 1 : 0)
-  return {start, length}
+  const end = start + length
+  return {start, end, length}
 }
 
 const _separateExtraWithdrawal = (

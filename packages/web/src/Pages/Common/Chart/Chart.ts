@@ -74,6 +74,13 @@ export class Chart<Data> {
     this.draw()
   }
 
+  getState() {
+    return {
+      data: this._dataTransition.target,
+      xyRange: this._stateTransition.target.xyRange,
+    }
+  }
+
   setState(
     data: Data,
     xyRange: ChartXYRange,

@@ -3,11 +3,13 @@ import _ from 'lodash'
 import {GetStaticProps} from 'next'
 import Head from 'next/head'
 import {useRouter} from 'next/router'
-import React, {useEffect, useMemo, useRef, useState} from 'react'
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {Contentful} from '../../Utils/Contentful'
 import {createContext} from '../../Utils/CreateContext'
 import {rectExt} from '../../Utils/Geometry'
 import {linearFnFomPoints} from '../../Utils/LinearFn'
+import {useAssertConst} from '../../Utils/UseAssertConst'
+import {useURLUpdater} from '../../Utils/UseRouterPush'
 import {useURLParam} from '../../Utils/UseURLParam'
 import {fGet, noCase} from '../../Utils/Utils'
 import {useWindowSize} from '../../Utils/WithWindowSize'
@@ -17,7 +19,8 @@ import {headerHeight} from '../App/Header'
 import {useSimulation} from '../App/WithSimulation'
 import {ChartPanel, ChartPanelStateful} from './ChartPanel/ChartPanel'
 import {chartPanelLabel} from './ChartPanel/ChartPanelLabel'
-import {useChartPanelState} from './ChartPanel/UseChartPanelState'
+import {ChartPanelType, isChartPanelType} from './ChartPanel/ChartPanelType'
+import { useChartPanelTypeState } from './ChartPanel/UseChartPanelTypeState'
 import {GuidePanel, GuidePanelStateful} from './GuidePanel'
 import {paramsInputLabel} from './ParamsInput/Helpers/ParamsInputLabel'
 import {
@@ -53,7 +56,9 @@ export const Plan = React.memo((planContent: PlanContent) => {
   const router = useRouter()
   const [highlight, setHighlight] = useState<ParamsInputType | null>(null)
   const setState = (newState: _State) => {
-    setStateLocal(newState)
+    setStateLocal(prev => {
+      return newState
+    })
     const url = new URL(window.location.href)
     if (newState === 'summary') {
       if (state !== 'summary') setHighlight(state)
@@ -405,18 +410,15 @@ export const Plan = React.memo((planContent: PlanContent) => {
     }
   }, [layout, windowSize])
 
-  const chartPanelState = useChartPanelState()
+  const  [chartPanelType, setChartPanelType] = useChartPanelTypeState()
+  
   // This indirection for dev ergonomics because in dev update is very slow
   // when saving state directly in URL.
   useEffect(() => {
     setState(stateIn)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateIn])
-  const chartLabel = chartPanelLabel(
-    simulation.params,
-    chartPanelState.state.type,
-    'full'
-  )
+  const chartLabel = chartPanelLabel(simulation.params, chartPanelType, 'full')
 
   useEffect(() => {
     const target = state === 'summary' ? 0 : 1
@@ -442,7 +444,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
       <Head>
         <title>
           Plan
-          {chartPanelState.state.type === 'spending-total'
+          {chartPanelType === 'spending-total'
             ? ''
             : ` - View:${_.compact([
                 ...chartLabel.label,
@@ -466,7 +468,9 @@ export const Plan = React.memo((planContent: PlanContent) => {
         />
         <ChartPanel
           layout={layout}
-          state={chartPanelState}
+          // state={chartPanelState}
+          type={chartPanelType}
+          setType={setChartPanelType}
           sizing={_sizing.chart}
           ref={chartRef}
           transitionRef={transitionRef}
@@ -478,8 +482,8 @@ export const Plan = React.memo((planContent: PlanContent) => {
           paramInputType={paramType}
           state={state}
           setState={setState}
-          chartType={chartPanelState.state.type}
-          setChartType={chartPanelState.handleChangeType}
+          chartType={chartPanelType}
+          setChartType={setChartPanelType}
           ref={paramsRef}
         />
         <GuidePanel
@@ -502,8 +506,10 @@ export const Plan = React.memo((planContent: PlanContent) => {
 
 type _FetchedInline = Awaited<ReturnType<typeof Contentful.fetchInline>>
 type _Body = {body: _FetchedInline}
-type _IntroAndBody = _Body & {intro: _FetchedInline}
-type _IntroAndBodyAndMenu = _IntroAndBody & {menu: _FetchedInline}
+type _Intro = {intro: _FetchedInline}
+type _Menu = {menu: _FetchedInline}
+type _IntroAndBody = _Body & _Intro
+type _IntroAndBodyAndMenu = _IntroAndBody & _Menu
 
 export type PlanContent = {
   'age-and-retirement': {
@@ -524,13 +530,14 @@ export type PlanContent = {
   'risk-and-time-preference': _IntroAndBody & {
     stockAllocationIntro: _FetchedInline
     spendingTiltIntro: _FetchedInline
-    lmpIntro:_FetchedInline
+    lmpIntro: _FetchedInline
   }
   'expected-returns': _IntroAndBody
   inflation: _IntroAndBody
   strategy: _IntroAndBody & {
     tpawIntro: _FetchedInline
     spawIntro: _FetchedInline
+    sharpeRatioIntro: _FetchedInline
   }
   dev: Record<string, never>
   chart: {
@@ -543,6 +550,7 @@ export type PlanContent = {
     portfolio: _IntroAndBodyAndMenu
     glidePath: _IntroAndBodyAndMenu
     withdrawalRate: _IntroAndBodyAndMenu
+    sharpeRatio: _IntroAndBody
   }
 }
 const [PlanContentContext, usePlanContent] =
@@ -590,12 +598,13 @@ export const planGetStaticProps: GetStaticProps<
         'xWXcgVScUfdK1PaTNQeKz'
       ),
       spendingTiltIntro: await Contentful.fetchInline('4UwuCPjuTz3SbwUcZIrLEG'),
-      lmpIntro:await Contentful.fetchInline('5FiPQS04F4uFngEMJium3B'),
+      lmpIntro: await Contentful.fetchInline('5FiPQS04F4uFngEMJium3B'),
     },
     strategy: {
       intro: await Contentful.fetchInline('52f9yaDqUCBBg3mkqGdZPc'),
       tpawIntro: await Contentful.fetchInline('4qYue9K3cSpEkSrAhIn7AV'),
       spawIntro: await Contentful.fetchInline('5W26KpQeXY9nC3FgKioesF'),
+      sharpeRatioIntro: await Contentful.fetchInline('7wNIfORQHqumvZG6wWcmqG'),
       body: await Contentful.fetchInline('5F0tZKpZ2SPvljHIGkPYmy'),
     },
     'expected-returns': {
@@ -644,6 +653,14 @@ export const planGetStaticProps: GetStaticProps<
         intro: await Contentful.fetchInline('7nDVZLSFxZcdHWmuSqzo6o'),
         body: await Contentful.fetchInline('79KDyYdPfxwl7BceHPECCe'),
         menu: await Contentful.fetchInline('42bT4OaF5u9GXukOHXHnWz'),
+      },
+
+      // This is never show because it is displayed only on detail screen,
+      // but it is here to keep the code simple and uniform. Resusing content
+      // from above.
+      sharpeRatio: {
+        intro: await Contentful.fetchInline('7nDVZLSFxZcdHWmuSqzo6o'),
+        body: await Contentful.fetchInline('79KDyYdPfxwl7BceHPECCe'),
       },
     },
   },

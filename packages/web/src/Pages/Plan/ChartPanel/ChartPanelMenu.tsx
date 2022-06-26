@@ -1,27 +1,38 @@
-import {faChevronRight} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {gsap} from 'gsap'
+import { faChevronRight } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { gsap } from 'gsap'
 import _ from 'lodash'
-import React, {useEffect, useImperativeHandle, useMemo, useState} from 'react'
+import React, {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import ReactDOM from 'react-dom'
-import {Contentful} from '../../../Utils/Contentful'
-import {Padding, RectExt, rectExt} from '../../../Utils/Geometry'
-import {fGet, noCase} from '../../../Utils/Utils'
-import {useWindowSize} from '../../../Utils/WithWindowSize'
-import {useChartMainData} from '../../App/WithChartMainData'
-import {useSimulation} from '../../App/WithSimulation'
-import {chartDrawDataLines} from '../../Common/Chart/ChartComponent/ChartDrawDataLines'
-import {ChartReact, ChartReactState} from '../../Common/Chart/ChartReact'
-import {ChartUtils} from '../../Common/Chart/ChartUtils/ChartUtils'
-import {usePlanContent} from '../Plan'
-import {chartPanelLabel} from './ChartPanelLabel'
-import {ChartPanelMenuButton} from './ChartPanelMenuButton'
+import { Contentful } from '../../../Utils/Contentful'
+import { Padding, rectExt, RectExt } from '../../../Utils/Geometry'
+import { assert, fGet, noCase } from '../../../Utils/Utils'
+import { useWindowSize } from '../../../Utils/WithWindowSize'
+import { useChartData } from '../../App/WithChartData'
+import { useSimulation } from '../../App/WithSimulation'
+import { chartDrawDataLines } from '../../Common/Chart/ChartComponent/ChartDrawDataLines'
+import {
+  ChartReact,
+  ChartReactState,
+  ChartReactStatefull
+} from '../../Common/Chart/ChartReact'
+import { ChartUtils } from '../../Common/Chart/ChartUtils/ChartUtils'
+import { usePlanContent } from '../Plan'
+import { chartPanelLabel } from './ChartPanelLabel'
+import { ChartPanelMenuButton } from './ChartPanelMenuButton'
 import {
   ChartPanelType,
   isChartPanelSpendingDiscretionaryType,
-  isChartPanelSpendingEssentialType,
+  isChartPanelSpendingEssentialType
 } from './ChartPanelType'
-import {TPAWChartDataMain} from './TPAWChart/TPAWChartDataMain'
+import { TPAWChartDataMain } from './TPAWChart/TPAWChartDataMain'
 
 const duration = 0.5
 const scale = 0.95
@@ -31,7 +42,7 @@ export type ChartPanelMenuStateful = {
 }
 type Props = {
   className?: string
-  type: ChartPanelType
+  type: ChartPanelType | 'sharpe-ratio'
   onSelect: (type: ChartPanelType) => void
   layout: 'mobile' | 'desktop' | 'laptop'
   showDescriptionPopUp: () => void
@@ -199,14 +210,14 @@ const _Button = React.memo(
     drawKey,
   }: {
     className?: string
-    currType: ChartPanelType
+    currType: ChartPanelType | 'sharpe-ratio'
     onSelect: (type: ChartPanelType) => void
     type: ChartPanelType
     drawKey: number
   }) => {
     const {tpawResult} = useSimulation()
     const {params} = tpawResult.args
-    const chartData = fGet(useChartMainData().get(type))
+    const chartData = fGet(useChartData().byYearsFromNowPercentiles.get(type))
     const [description] = useInfo(type)
     const {label, subLabel} = chartPanelLabel(params.original, type, 'short')
     const isCurrent = _.isEqual(currType, type)
@@ -293,17 +304,6 @@ const useInfo = (panelType: ChartPanelType) => {
   }
 }
 
-const _processData = (
-  data: TPAWChartDataMain
-): ChartReactState<TPAWChartDataMain> => ({
-  data,
-  xyRange: {
-    x: data.years.displayRange,
-    y: data.yDisplayRange,
-  },
-  animation: null,
-})
-
 const _Chart = React.memo(
   ({
     data,
@@ -316,24 +316,30 @@ const _Chart = React.memo(
     drawKey: number
     startingSizing: {position: RectExt; padding: Padding}
   }) => {
-    const [state, setState] = useState(() => _processData(data))
-
+    const ref = useRef<ChartReactStatefull<TPAWChartDataMain>>(null)
     useEffect(() => {
-      setState(_processData(data))
+      if(!ref.current) return
+      ref.current.setState(data, {
+        x: data.years.displayRange,
+        y: data.yDisplayRange,
+      }, null)
     }, [data, drawKey])
 
-    const components = useMemo(
+    const components = useCallback(
       () => [
         chartDrawDataLines<TPAWChartDataMain>({
           lineWidth: 0.5 * 0.8,
           strokeStyle: isCurrent
             ? ChartUtils.color.gray[400]
             : ChartUtils.color.gray[400],
-          dataFn: (data: TPAWChartDataMain) => ({
-            lines: data.percentiles
-              .filter(x => !x.isHighlighted)
-              .map(x => x.data),
-          }),
+          dataFn: (data: TPAWChartDataMain) => {
+            assert(data.series.type === 'percentiles')
+            return {
+              lines: data.series.percentiles
+                .filter(x => !x.isHighlighted)
+                .map(x => x.data),
+            }
+          },
         }),
 
         chartDrawDataLines<TPAWChartDataMain>({
@@ -341,11 +347,14 @@ const _Chart = React.memo(
           strokeStyle: isCurrent
             ? ChartUtils.color.gray[500]
             : ChartUtils.color.gray[500],
-          dataFn: (data: TPAWChartDataMain) => ({
-            lines: data.percentiles
-              .filter(x => x.isHighlighted)
-              .map(x => x.data),
-          }),
+          dataFn: (data: TPAWChartDataMain) => {
+            assert(data.series.type === 'percentiles')
+            return {
+              lines: data.series.percentiles
+                .filter(x => x.isHighlighted)
+                .map(x => x.data),
+            }
+          },
         }),
       ],
       [isCurrent]
@@ -353,8 +362,15 @@ const _Chart = React.memo(
 
     return (
       <ChartReact<TPAWChartDataMain>
-        state={state}
-        starting={{sizing: startingSizing}}
+        ref={ref}
+        starting={{
+          data,
+          xyRange: {
+            x: data.years.displayRange,
+            y: data.yDisplayRange,
+          },
+          sizing: startingSizing,
+        }}
         components={components}
       />
     )

@@ -1,5 +1,8 @@
 import _ from 'lodash'
-import {extendTPAWParams} from '../../../../TPAWSimulator/TPAWParamsExt'
+import {
+  extendTPAWParams,
+  TPAWParamsExt,
+} from '../../../../TPAWSimulator/TPAWParamsExt'
 import {TPAWRunInWorkerByPercentileByYearsFromNow} from '../../../../TPAWSimulator/Worker/TPAWRunInWorker'
 import {UseTPAWWorkerResult} from '../../../../TPAWSimulator/Worker/UseTPAWWorker'
 import {formatCurrency} from '../../../../Utils/FormatCurrency'
@@ -21,11 +24,25 @@ import {
 
 export type TPAWChartDataMain = {
   label: string
-  percentiles: {
-    data: (x: number) => number
-    percentile: number
-    isHighlighted: boolean
-  }[]
+  type: ChartPanelType | 'sharpe-ratio'
+  series:
+    | {
+        type: 'percentiles'
+        percentiles: {
+          data: (x: number) => number
+          percentile: number
+          isHighlighted: boolean
+        }[]
+      }
+    | {
+        type: 'labeledLines'
+        percentiles: readonly number[]
+        highlightedPercentiles: readonly number[]
+        lines: {
+          data: (x: number) => number
+          label: string
+        }[]
+      }
   min: {x: number; y: number}
   max: {x: number; y: number}
   years: {
@@ -48,13 +65,37 @@ export const tpawChartDataScaled = (
     curr.yDisplayRange.end,
     targetYRange.end
   )
+  const series: TPAWChartDataMain['series'] = (() => {
+    switch (curr.series.type) {
+      case 'percentiles':
+        return {
+          type: curr.series.type,
+          percentiles: curr.series.percentiles.map(
+            ({data, percentile, isHighlighted}) => ({
+              data: (x: number) => scaleY(data(x)),
+              percentile,
+              isHighlighted,
+            })
+          ),
+        }
+      case 'labeledLines':
+        return {
+          type: curr.series.type,
+          percentiles: curr.series.percentiles,
+          highlightedPercentiles: curr.series.highlightedPercentiles,
+          lines: curr.series.lines.map(({data, label}) => ({
+            data: (x: number) => scaleY(data(x)),
+            label,
+          })),
+        }
+      default:
+        noCase(curr.series)
+    }
+  })()
   return {
     label: `${curr.label} scaled.`,
-    percentiles: curr.percentiles.map(({data, percentile, isHighlighted}) => ({
-      data: x => scaleY(data(x)),
-      percentile,
-      isHighlighted,
-    })),
+    type: curr.type,
+    series,
     min: {x: curr.min.x, y: scaleY(curr.min.y)},
     max: {x: curr.max.x, y: scaleY(curr.max.y)},
     yDisplayRange: {
@@ -66,17 +107,13 @@ export const tpawChartDataScaled = (
   }
 }
 
-export const tpawChartDataMain = (
-  type: ChartPanelType,
-  tpawResult: UseTPAWWorkerResult,
-  highlightPercentiles: SimulationInfo['highlightPercentiles']
-): TPAWChartDataMain => {
-  const {params} = tpawResult.args
-  const {asYFN, withdrawalStartYear} = extendTPAWParams(params.original)
-  const {legacy, spendingCeiling, withdrawals} = params
-  const hasLegacy = legacy.total !== 0 || spendingCeiling !== null
+const _spendingYears = ({
+  params,
+  asYFN,
+  withdrawalStartYear,
+}: TPAWParamsExt) => {
   const withdrawalStart = asYFN(withdrawalStartYear)
-  const spendingYears = params.display.alwaysShowAllYears
+  return params.display.alwaysShowAllYears
     ? 'allYears'
     : [
         ...params.withdrawals.essential,
@@ -84,34 +121,43 @@ export const tpawChartDataMain = (
       ].some(x => asYFN(x.yearRange).start < withdrawalStart)
     ? ('allYears' as const)
     : ('retirementYears' as const)
+}
+export const tpawChartDataMainPercentiles = (
+  type: ChartPanelType,
+  tpawResult: UseTPAWWorkerResult,
+  highlightPercentiles: SimulationInfo['highlightPercentiles']
+): TPAWChartDataMain => {
+  const {params} = tpawResult.args
+  const paramsExt = extendTPAWParams(params.original)
+  const {legacy, spendingCeiling} = params
+  const hasLegacy = legacy.total !== 0 || spendingCeiling !== null
+  const spendingYears = _spendingYears(paramsExt)
   switch (type) {
     case 'spending-total':
-      return _data(
+      return _dataPercentiles(
         type,
         tpawResult,
         x => x.savingsPortfolio.withdrawals.total,
         x => formatCurrency(x),
         spendingYears,
         0,
-        [],
         highlightPercentiles,
         'auto'
       )
     case 'spending-general':
-      return _data(
+      return _dataPercentiles(
         type,
         tpawResult,
         x => x.savingsPortfolio.withdrawals.regular,
         x => formatCurrency(x),
         spendingYears,
         0,
-        [],
         highlightPercentiles,
         'auto'
       )
 
     case 'portfolio':
-      return _data(
+      return _dataPercentiles(
         type,
         tpawResult,
         x =>
@@ -122,31 +168,28 @@ export const tpawChartDataMain = (
         x => formatCurrency(x),
         'allYears',
         1,
-        [],
         highlightPercentiles,
         'auto'
       )
     case 'glide-path':
-      return _data(
+      return _dataPercentiles(
         type,
         tpawResult,
         x => x.savingsPortfolio.afterWithdrawals.allocation.stocks,
         formatPercentage(0),
         'allYears',
         hasLegacy ? 0 : -1,
-        [],
         highlightPercentiles,
         {start: 0, end: 1}
       )
     case 'withdrawal-rate':
-      return _data(
+      return _dataPercentiles(
         type,
         tpawResult,
         x => x.savingsPortfolio.withdrawals.fromSavingsPortfolioRate,
         formatPercentage(1),
         params.display.alwaysShowAllYears ? 'allYears' : 'retirementYears',
         0,
-        [],
         highlightPercentiles,
         'auto'
       )
@@ -154,14 +197,13 @@ export const tpawChartDataMain = (
       if (isChartPanelSpendingEssentialType(type)) {
         const id = chartPanelSpendingEssentialTypeID(type)
         assert(params.withdrawals.essential.find(x => x.id === id))
-        return _data(
+        return _dataPercentiles(
           type,
           tpawResult,
           x => fGet(x.savingsPortfolio.withdrawals.essential.byId.get(id)),
           x => formatCurrency(x),
           spendingYears,
           0,
-          [],
           highlightPercentiles,
           'auto'
         )
@@ -169,14 +211,13 @@ export const tpawChartDataMain = (
       if (isChartPanelSpendingDiscretionaryType(type)) {
         const id = chartPanelSpendingDiscretionaryTypeID(type)
         assert(params.withdrawals.discretionary.find(x => x.id === id))
-        return _data(
+        return _dataPercentiles(
           type,
           tpawResult,
           x => fGet(x.savingsPortfolio.withdrawals.discretionary.byId.get(id)),
           x => formatCurrency(x),
           spendingYears,
           0,
-          [],
           highlightPercentiles,
           'auto'
         )
@@ -186,7 +227,9 @@ export const tpawChartDataMain = (
 }
 
 const _addYear = (
-  {byPercentileByYearsFromNow}: ReturnType<Parameters<typeof _data>[2]>,
+  {
+    byPercentileByYearsFromNow,
+  }: ReturnType<Parameters<typeof _dataPercentiles>[2]>,
   numberByPercentile: {data: number; percentile: number}[]
 ) => ({
   byPercentileByYearsFromNow: byPercentileByYearsFromNow.map(
@@ -197,8 +240,91 @@ const _addYear = (
   ),
 })
 
-const _data = (
+export const tpawChartDataMainSharpeRatio = (
   label: string,
+  tpawResult: {tpaw: UseTPAWWorkerResult; spaw: UseTPAWWorkerResult},
+  percentiles: readonly number[],
+  highlightedPercentiles: readonly number[]
+): TPAWChartDataMain => {
+  const {args} = tpawResult.tpaw
+  const {params} = args
+  const {asYFN, withdrawalStartYear, pickPerson, maxMaxAge} = extendTPAWParams(
+    params.original
+  )
+  const retirement = asYFN(withdrawalStartYear)
+  const maxYear = asYFN(maxMaxAge)
+  const xAxisPerson = params.people.withPartner
+    ? pickPerson(params.people.xAxis)
+    : params.people.person1
+  const years: TPAWChartDataMain['years'] = {
+    displayRange: {
+      start: retirement > 0 ? retirement : 1,
+      // start:retirement,
+      end: maxYear,
+    },
+    retirement,
+    max: maxYear,
+    display: yearsFromNow => yearsFromNow + xAxisPerson.ages.current,
+  }
+
+  const tpawData = Array.from(
+    tpawResult.tpaw.savingsPortfolio.sharpeRatio.withdrawals.regular
+  )
+  const spawData = Array.from(
+    tpawResult.spaw.savingsPortfolio.sharpeRatio.withdrawals.regular
+  )
+  const [tpawInterpolated, spawInterpolated] = _interpolate(
+    [{data: tpawData}, {data: spawData}],
+    years.displayRange
+  )
+  const series: TPAWChartDataMain['series'] = {
+    type: 'labeledLines',
+    percentiles,
+    highlightedPercentiles,
+    lines: [
+      {label: 'TPAW', data: tpawInterpolated},
+      {label: 'SPAW', data: spawInterpolated},
+    ],
+  }
+
+  // const last = fGet(_.last(byPercentileByYearsFromNow)).data
+  // const first = fGet(_.first(byPercentileByYearsFromNow)).data
+  const maxMin = (data: number[]) => {
+    const maxY = Math.max(...data)
+    const minY = Math.min(...data)
+    return {
+      max: {y: maxY, x: data.indexOf(maxY)},
+      min: {y: minY, x: data.indexOf(minY)},
+    }
+  }
+
+  const blendMaxMin = (
+    a: ReturnType<typeof maxMin>,
+    b: ReturnType<typeof maxMin>
+  ) => ({
+    max: a.max.y > b.max.y ? a.max : b.max,
+    min: a.min.y < b.min.y ? a.min : b.min,
+  })
+
+  const {max, min} = blendMaxMin(maxMin(tpawData), maxMin(spawData))
+  const yDisplayRange = {
+    start: Math.min(0, min.y),
+    end: Math.max(0.0001, max.y),
+  }
+  return {
+    type: 'sharpe-ratio',
+    label,
+    years,
+    series,
+    min,
+    max,
+    yFormat: x => x.toFixed(2),
+    yDisplayRange,
+  }
+}
+
+const _dataPercentiles = (
+  type: ChartPanelType,
   tpawResult: UseTPAWWorkerResult,
   dataFn: (
     tpawResult: UseTPAWWorkerResult
@@ -206,7 +332,6 @@ const _data = (
   yFormat: (x: number) => string,
   yearRange: 'retirementYears' | 'allYears',
   yearEndDelta: number,
-  ageGroups: SimpleRange[],
   highlightPercentiles: number[],
   yDisplayRangeIn: 'auto' | SimpleRange
 ): TPAWChartDataMain => {
@@ -236,6 +361,7 @@ const _data = (
     args.percentiles,
     highlightPercentiles
   )
+  const series = {type: 'percentiles' as const, percentiles}
 
   const last = fGet(_.last(byPercentileByYearsFromNow)).data
   const first = fGet(_.first(byPercentileByYearsFromNow)).data
@@ -248,7 +374,7 @@ const _data = (
     yDisplayRangeIn === 'auto'
       ? {start: Math.min(0, min.y), end: Math.max(0.0001, max.y)}
       : yDisplayRangeIn
-  return {label, years, percentiles, min, max, yFormat, yDisplayRange}
+  return {type, label: type, years, series, min, max, yFormat, yDisplayRange}
 }
 
 const _addPercentileInfo = <T>(

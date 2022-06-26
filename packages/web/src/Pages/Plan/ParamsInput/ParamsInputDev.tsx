@@ -4,6 +4,7 @@ import {faCircle as faCircleSelected} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import React, {useEffect, useState} from 'react'
+import {clearMemoizedRandom} from '../../../TPAWSimulator/Worker/UseTPAWWorker'
 import {paddingCSS} from '../../../Utils/Geometry'
 import {assert} from '../../../Utils/Utils'
 import {useSimulation} from '../../App/WithSimulation'
@@ -83,21 +84,47 @@ export const ParamsInputDev = React.memo(
             </div>
           </div>
           <div
-            className="params-card mt-10 flex justify-between items-center"
+            className="params-card mt-10"
             style={{padding: paddingCSS(props.sizing.cardPadding)}}
           >
-            <h2 className="font-bold text-lg"> Show All Years</h2>
-            <ToggleSwitch
-              className=""
-              enabled={params.display.alwaysShowAllYears}
-              setEnabled={x =>
-                setParams(p => {
-                  const clone = _.cloneDeep(p)
-                  clone.display.alwaysShowAllYears = x
-                  return clone
-                })
-              }
-            />
+            <h2 className="font-bold text-lg"> Misc</h2>
+            <div className=" flex justify-start gap-x-4 items-center mt-4">
+              <h2 className=""> Show All Years</h2>
+              <ToggleSwitch
+                className=""
+                enabled={params.display.alwaysShowAllYears}
+                setEnabled={x =>
+                  setParams(p => {
+                    const clone = _.cloneDeep(p)
+                    clone.display.alwaysShowAllYears = x
+                    return clone
+                  })
+                }
+              />
+            </div>
+            <div className=" flex justify-start gap-x-4 items-center mt-4">
+              <h2 className=""> Use Historical </h2>
+              <ToggleSwitch
+                className=""
+                enabled={params.sampling === 'historical'}
+                setEnabled={x =>
+                  setParams(p => {
+                    const clone = _.cloneDeep(p)
+                    clone.sampling = x? 'historical':'monteCarlo'
+                    return clone
+                  })
+                }
+              />
+            </div>
+            <button
+              className="btn-sm  btn-outline mt-4"
+              onClick={async () => {
+                await clearMemoizedRandom()
+                setParams(x=>_.cloneDeep(x))
+              }}
+            >
+              Reset random draws
+            </button>
           </div>
         </div>
       </ParamsInputBody>

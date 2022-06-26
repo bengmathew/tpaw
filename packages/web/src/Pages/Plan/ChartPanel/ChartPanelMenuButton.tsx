@@ -10,7 +10,7 @@ type Props = {
   layout: 'mobile' | 'desktop' | 'laptop'
   className?: string
   onClick: () => void
-  type: ChartPanelType
+  type: ChartPanelType | 'sharpe-ratio'
   showDescriptionPopUp: () => void
   style?: React.CSSProperties
 }

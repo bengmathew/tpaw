@@ -11,7 +11,9 @@ const _fontSize = 11
 const _lineLength = 8
 export const chartDrawLegacy = (): ChartComponent<TPAWChartDataLegacy> => ({
   draw: (context: ChartContext<TPAWChartDataLegacy>) => {
+
     const {canvasContext: ctx, dataTransition, derivedState} = context
+
     const {scale, plotArea, viewport} = derivedState.curr
     const graphX = plotArea.right - _lineLength
 
@@ -39,7 +41,7 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartDataLegacy> => ({
     // Draw the major lines.
     ctx.beginPath()
     majorDataYs.forEach(dataY => {
-      const graphY = scale.y(dataY)
+      const graphY = scale.y(dataY) 
       ctx.moveTo(graphX, graphY)
       ctx.lineTo(graphX + _lineLength, graphY)
     })

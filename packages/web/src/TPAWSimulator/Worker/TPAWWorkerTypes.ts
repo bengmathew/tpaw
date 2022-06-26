@@ -1,13 +1,15 @@
+import {SimpleRange} from '../../Utils/SimpleRange'
 import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
 
 export type TPAWWorkerArgs =
   | {
       type: 'runSimulation'
       taskID: string
-      args: {params: TPAWParamsProcessed; numRuns: number}
+      args: {params: TPAWParamsProcessed; runs: SimpleRange}
     }
   | {type: 'sort'; taskID: string; args: {data: Float64Array[]}}
   | {type: 'calculateOneOverCV'; taskID: string; args: {data: Float64Array[]}}
+  | {type: 'clearMemoizedRandom'; taskID: string}
 
 export type TPAWWorkerResult =
   | {
@@ -52,6 +54,10 @@ export type TPAWWorkerResult =
       type: 'calculateOneOverCV'
       taskID: string
       result: {data: Float64Array; perf: number}
+    }
+  | {
+      type: 'clearMemoizedRandom'
+      taskID: string
     }
 
 export type TPAWWorkerRunSimulationResult = Extract<

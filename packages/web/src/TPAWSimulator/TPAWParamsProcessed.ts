@@ -9,11 +9,11 @@ import {
   tpawParamsValidator,
   ValueForYearRange,
 } from './TPAWParams'
-import {extendTPAWParams} from './TPAWParamsExt'
+import {extendTPAWParams, TPAWParamsExt} from './TPAWParamsExt'
 
 export type TPAWParamsProcessed = ReturnType<typeof processTPAWParams>
-export function processTPAWParams(params: TPAWParams) {
-  const {numYears, asYFN, withdrawalStartYear} = extendTPAWParams(params)
+export function processTPAWParams(paramsExt: TPAWParamsExt) {
+  const {numYears, asYFN, params} = paramsExt
   tpawParamsValidator(params)
   const {inflation, ...paramsWithoutInflation} = params
   const _normalizeGlidePath = (glidePath: GlidePath) => {
@@ -49,7 +49,7 @@ export function processTPAWParams(params: TPAWParams) {
     return result
   }
 
-  const byYear = _processByYearParams(params)
+  const byYear = _processByYearParams(paramsExt)
 
   const targetAllocation = {
     ...params.targetAllocation,
@@ -88,9 +88,9 @@ export function processTPAWParams(params: TPAWParams) {
   return result
 }
 
-function _processByYearParams(params: TPAWParams) {
-  const {people, savings, retirementIncome, withdrawals} = params
-  const {asYFN, withdrawalStartYear, numYears} = extendTPAWParams(params)
+function _processByYearParams(paramsExt: TPAWParamsExt) {
+  const {asYFN, withdrawalStartYear, numYears, params} = paramsExt
+  const {savings, retirementIncome, withdrawals} = params
   const withdrawalStart = asYFN(withdrawalStartYear)
   const lastWorkingYear = withdrawalStart > 0 ? withdrawalStart - 1 : 0
   const endYear = numYears - 1
@@ -150,29 +150,43 @@ function _processReturnsParams(params: TPAWParams) {
         const adjust = (type: 'stocks' | 'bonds') => {
           const n = historicalReturns.length
           const historical = historicalReturns.map(x => x[type])
-          const historicalExpected = _.sum(historical) / n
+          const historicalExpected = _.mean(historical)
 
+          // const targetExpected =
+          //   adjustment.type === 'to'
+          //     ? adjustment[type]
+          //     : adjustment.type === 'toExpected'
+          //     ? params.returns.expected[type]
+          //     : adjustment.type === 'by'
+          //     ? historicalExpected - adjustment[type]
+          //     : noCase(adjustment)
           const targetExpected =
-            adjustment.type === 'to'
-              ? adjustment[type]
-              : adjustment.type === 'toExpected'
-              ? params.returns.expected[type]
-              : adjustment.type === 'by'
-              ? historicalExpected - adjustment[type]
-              : noCase(adjustment)
-
+            params.sampling === 'monteCarlo'
+              ? adjustment.type === 'to'
+                ? adjustment[type]
+                : adjustment.type === 'toExpected'
+                ? params.returns.expected[type]
+                : adjustment.type === 'by'
+                ? historicalExpected - adjustment[type]
+                : noCase(adjustment)
+              : params.sampling === 'historical'
+              ? historicalExpected
+              : noCase(params.sampling)
 
           const historicalLog = historical.map(x => Math.log(1 + x))
-          const historicalLogExpected = _.sum(historicalLog) / n
+          const historicalLogExpected = _.mean(historicalLog)
           const historicalLogVariance =
             _.sumBy(historicalLog, x =>
               Math.pow(x - historicalLogExpected, 2)
             ) /
             (n - 1)
 
+          // Empirically determined to be more accurate.
+          const delta = {stocks: 0.0006162, bonds: 0.0000005}
           const targetLogExpected =
             Math.log(1 + targetExpected) -
-            historicalLogVariance / 2
+            historicalLogVariance / 2 +
+            delta[type]
 
           const adjustmentLogExpected =
             historicalLogExpected - targetLogExpected
@@ -181,17 +195,20 @@ function _processReturnsParams(params: TPAWParams) {
             log => log - adjustmentLogExpected
           )
           const adjusted = adjustedLog.map(x => Math.exp(x) - 1)
-
+          // console.dir('-------------')
+          // console.dir(type)
+          // console.dir(`historicalLogVariance/2: ${historicalLogVariance / 2}`)
+          // console.dir(`additionalDelta: ${delta[type]}`)
+          // console.dir(`total: ${historicalLogVariance / 2 + delta[type]}`)
+          // console.dir(`targetExpected: ${targetExpected}`)
+          // console.dir(`adjustedExpected: ${_.mean(adjusted)}`)
+          // console.dir(`diff: ${Math.abs(targetExpected - _.mean(adjusted))}`)
           return adjusted
         }
 
         const stocks = adjust('stocks')
-
         const bonds = adjust('bonds')
-
-        const result = stocks.map((stocks, i) => ({stocks, bonds: bonds[i]}))
-
-        return result
+        return stocks.map((stocks, i) => ({stocks, bonds: bonds[i]}))
       }
       case 'fixed': {
         const {stocks, bonds} = returns.historical

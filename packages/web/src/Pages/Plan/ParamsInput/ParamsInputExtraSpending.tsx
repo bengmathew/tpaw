@@ -21,8 +21,8 @@ export const ParamsInputExtraSpending = React.memo(
     setChartType,
     ...props
   }: {
-    chartType: ChartPanelType
-    setChartType: (type: ChartPanelType) => void
+    chartType: ChartPanelType | 'sharpe-ratio'
+    setChartType: (type: ChartPanelType|'sharpe-ratio') => void
   } & ParamsInputBodyPassThruProps) => {
     const {paramsExt, params} = useSimulation()
     const {years, validYearRange, maxMaxAge, asYFN} = paramsExt

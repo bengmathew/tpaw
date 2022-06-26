@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import React, {Dispatch, ReactNode, useMemo, useState} from 'react'
+import {ReactNode, useMemo, useState} from 'react'
 import {TPAWParams} from '../../TPAWSimulator/TPAWParams'
 import {
   extendTPAWParams,
@@ -14,7 +14,7 @@ import {
   UseTPAWWorkerResult,
 } from '../../TPAWSimulator/Worker/UseTPAWWorker'
 import {createContext} from '../../Utils/CreateContext'
-import {fGet, noCase} from '../../Utils/Utils'
+import {fGet} from '../../Utils/Utils'
 import {useTPAWParams} from './UseTPAWParams'
 
 export type SimulationInfoPerParam = {
@@ -30,9 +30,9 @@ export type SimulationInfoPerParam = {
 export type SimulationInfo = {
   paramSpace: 'a' | 'b'
   setParamSpace: (space: 'a' | 'b') => void
-  setByStrategy: Dispatch<boolean>
+  setCompareSharpeRatio: (x: boolean) => void
   setParams: (params: TPAWParams | ((params: TPAWParams) => TPAWParams)) => void
-  byStrategy: {
+  forSharpeRatioComparison: {
     tpaw: SimulationInfoPerParam
     spaw: SimulationInfoPerParam
   } | null
@@ -44,47 +44,62 @@ const [Context, useSimulation] = createContext<SimulationInfo>('Simulation')
 
 const numRuns = 500
 const highlightPercentiles = [5, 25, 50, 75, 95]
+// const highlightPercentiles = [10, 90]
 const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
 
 export {useSimulation}
 
 export const WithSimulation = ({children}: {children: ReactNode}) => {
   const {paramSpace, setParamSpace, params, setParams} = useTPAWParams()
-  const [byStrategy, setByStrategy] = useState(false)
-  const forBaseParams = fGet(useForParams(params))
-  const altStrategy: TPAWParams['strategy'] =
-    params.strategy === 'TPAW'
-      ? 'SPAW'
-      : params.strategy === 'SPAW'
-      ? 'TPAW'
-      : noCase(params.strategy)
-  const forAltParams = useForParams(
-    byStrategy ? {...params, strategy: altStrategy} : null
+  const [compareSharpeRatio, setCompareSharpeRatio] = useState(false)
+
+  const paramsForSharpeRatioComparison: {
+    tpaw: TPAWParams
+    spaw: TPAWParams
+  } | null = useMemo(() => {
+    if (!compareSharpeRatio) return null
+    const clone = _.cloneDeep(params)
+    clone.legacy = {external: [], total: 0}
+    clone.withdrawals = {
+      essential: [],
+      discretionary: [],
+      lmp: clone.withdrawals.lmp,
+    }
+    clone.spendingCeiling = null
+    clone.spendingFloor = null
+    return {
+      tpaw: {...clone, strategy: 'TPAW'},
+      spaw: {...clone, strategy: 'SPAW'},
+    }
+  }, [compareSharpeRatio, params])
+
+  const forTPAWSharpeRatio = useForParams(
+    paramsForSharpeRatioComparison?.tpaw ?? null
+  )
+  const forSPAWSharpeRatio = useForParams(
+    paramsForSharpeRatioComparison?.spaw ?? null
   )
 
-  const value = useMemo(
-    () => ({
-      paramSpace,
-      setParamSpace,
-      setParams,
-      ...forBaseParams,
-      byStrategy: forAltParams
-        ? {
-            tpaw: altStrategy === 'TPAW' ? forAltParams : forBaseParams,
-            spaw: altStrategy === 'SPAW' ? forAltParams : forBaseParams,
-          }
+  const forSharpeRatioComparison = useMemo(
+    () =>
+      compareSharpeRatio
+        ? {tpaw: fGet(forTPAWSharpeRatio), spaw: fGet(forSPAWSharpeRatio)}
         : null,
-      setByStrategy,
-    }),
-    [
-      altStrategy,
-      forAltParams,
-      forBaseParams,
+    [forSPAWSharpeRatio, forTPAWSharpeRatio, compareSharpeRatio]
+  )
+
+  const forBase = fGet(useForParams(params))
+
+  const value = useMemo(() => {
+    return {
       paramSpace,
       setParamSpace,
       setParams,
-    ]
-  )
+      ...forBase,
+      forSharpeRatioComparison,
+      setCompareSharpeRatio,
+    }
+  }, [forBase, forSharpeRatioComparison, paramSpace, setParamSpace, setParams])
   if (!_hasValue(value)) return <></>
   return <Context.Provider value={value}>{children}</Context.Provider>
 }
@@ -97,7 +112,7 @@ function useForParams(
   params: TPAWParams | null
 ): SimulationInfoPerParam | null {
   const paramsProcessed = useMemo(
-    () => (params ? processTPAWParams(params) : null),
+    () => (params ? processTPAWParams(extendTPAWParams(params)) : null),
     [params]
   )
   const tpawResult = useTPAWWorker(paramsProcessed, numRuns, percentiles)

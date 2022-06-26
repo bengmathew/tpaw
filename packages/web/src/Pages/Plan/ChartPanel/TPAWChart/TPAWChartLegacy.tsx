@@ -1,8 +1,8 @@
-import React, {useMemo} from 'react'
+import React, { useCallback } from 'react'
+import {ChartXYRange} from '../../../Common/Chart/Chart'
 import {
   ChartReact,
   ChartReactSizing,
-  ChartReactState,
   ChartReactStatefull,
 } from '../../../Common/Chart/ChartReact'
 import {chartDrawLegacy} from '../LegacyComponents/ChartDrawLegacy'
@@ -12,28 +12,22 @@ export const TPAWChartLegacy = React.memo(
   React.forwardRef(
     (
       {
-        state,
         starting,
       }: {
-        state: ChartReactState<TPAWChartDataLegacy>
-        starting: {sizing: ChartReactSizing}
-      },
-      ref: React.ForwardedRef<ChartReactStatefull>
-    ) => {
-      const components = useMemo(() => {
-        const legacy = chartDrawLegacy()
-        return {
-          arr: [legacy],
-          byName: {legacy},
+        starting: {
+          data: TPAWChartDataLegacy
+          xyRange: ChartXYRange
+          sizing: ChartReactSizing
         }
-      }, [])
-
+      },
+      ref: React.ForwardedRef<ChartReactStatefull<TPAWChartDataLegacy>>
+    ) => {
+      const components = useCallback(()=>[chartDrawLegacy()], [])
       return (
         <ChartReact<TPAWChartDataLegacy>
           ref={ref}
-          state={state}
           starting={starting}
-          components={components.arr}
+          components={components}
         />
       )
     }

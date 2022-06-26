@@ -20,12 +20,13 @@ export const ChartPanelDescription = React.memo(
     ref,
   }: {
     className?: string
-    type: ChartPanelType
+    type: ChartPanelType | 'sharpe-ratio'
     showDescriptionPopUp: boolean
     setShowDescriptionPopUp: Dispatch<boolean>
     ref?: (x: HTMLElement | null) => void
   }) => {
-    const content = useContent(type)
+
+    const content = useContent(type) 
     return (
       <div
         className={`${className} text-lg sm:text-lg font-font2`}
@@ -75,7 +76,7 @@ export const ChartPanelDescription = React.memo(
   }
 )
 
-function useContent(type: ChartPanelType) {
+function useContent(type: ChartPanelType|'sharpe-ratio') {
   const content = usePlanContent().chart
   switch (type) {
     case 'spending-total':
@@ -88,6 +89,8 @@ function useContent(type: ChartPanelType) {
       return content.glidePath
     case 'withdrawal-rate':
       return content.withdrawalRate
+    case 'sharpe-ratio':
+      return content.sharpeRatio
     default:
       if (isChartPanelSpendingEssentialType(type))
         return content.spending.essential

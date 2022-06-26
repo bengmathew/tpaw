@@ -1,64 +1,23 @@
 import {Power1} from 'gsap'
 import _ from 'lodash'
-import React, {useEffect, useMemo, useRef, useState} from 'react'
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {rectExt} from '../../../../Utils/Geometry'
-import {fGet} from '../../../../Utils/Utils'
-import {useChartMainData} from '../../../App/WithChartMainData'
+import {assert, fGet} from '../../../../Utils/Utils'
+import {useChartData} from '../../../App/WithChartData'
 import {chartDrawDataLines} from '../../../Common/Chart/ChartComponent/ChartDrawDataLines'
 import {ChartMinMaxYAxis} from '../../../Common/Chart/ChartComponent/ChartMinMaxYAxis'
-import {
-  ChartReact,
-  ChartReactState,
-  ChartReactStatefull,
-} from '../../../Common/Chart/ChartReact'
+import {ChartReact, ChartReactStatefull} from '../../../Common/Chart/ChartReact'
 import {ChartUtils} from '../../../Common/Chart/ChartUtils/ChartUtils'
 import {TPAWChartDataMain} from '../../ChartPanel/TPAWChart/TPAWChartDataMain'
 
 export const AssetAllocationChart = React.memo(
   ({className = ''}: {className?: string}) => {
-    const data = fGet(useChartMainData().get('glide-path'))
-    const [state, setState] = useState(() => _processData(data))
-
-    useEffect(() => {
-      setState(_processData(data))
-    }, [data])
-
-    const components = useMemo(
-      () => [
-        chartDrawDataLines<TPAWChartDataMain>({
-          lineWidth: 0.2,
-          strokeStyle: ChartUtils.color.gray[500],
-          dataFn: (data: TPAWChartDataMain) => ({
-            lines: data.percentiles
-              .filter(x => !x.isHighlighted)
-              .map(x => x.data),
-          }),
-        }),
-
-        chartDrawDataLines<TPAWChartDataMain>({
-          lineWidth: 1.2,
-          strokeStyle: ChartUtils.color.gray[500],
-          dataFn: (data: TPAWChartDataMain) => ({
-            lines: data.percentiles
-              .filter(x => x.isHighlighted)
-              .map(x => x.data),
-          }),
-        }),
-        new ChartMinMaxYAxis<TPAWChartDataMain>(
-          (data, x) => data.yFormat(x),
-          ChartUtils.color.gray[800],
-          data => data.max.x,
-          (data, x) => ({
-            min: data.percentiles[0].data(x),
-            max: fGet(_.last(data.percentiles)).data(x),
-          })
-        ),
-      ],
-      []
+    const data = fGet(
+      useChartData().byYearsFromNowPercentiles.get('glide-path')
     )
 
     const divRef = useRef<HTMLDivElement | null>(null)
-    const ref = useRef<ChartReactStatefull | null>(null)
+    const ref = useRef<ChartReactStatefull<TPAWChartDataMain> | null>(null)
     const [width, setWidth] = useState(50)
     useEffect(() => {
       const div = fGet(divRef.current)
@@ -71,12 +30,64 @@ export const AssetAllocationChart = React.memo(
       }
     }, [])
 
-    useEffect(()=>{
+    useEffect(() => {
       const sizing = _sizing(width)
+      if (!ref.current) return
       fGet(divRef.current).style.height = `${sizing.position.height}px`
-      fGet(ref.current).setSizing(sizing)
+      ref.current.setSizing(sizing)
     }, [width])
 
+    useEffect(() => {
+      const xyRange = {x: data.years.displayRange, y: data.yDisplayRange}
+      if (!ref.current) return
+      ref.current.setState(data, xyRange, {
+        ease: Power1.easeOut,
+        duration: 0.5,
+      })
+    }, [data])
+
+    const components = useCallback(
+      () => [
+        chartDrawDataLines<TPAWChartDataMain>({
+          lineWidth: 0.2,
+          strokeStyle: ChartUtils.color.gray[500],
+          dataFn: (data: TPAWChartDataMain) => {
+            assert(data.series.type === 'percentiles')
+            return {
+              lines: data.series.percentiles
+                .filter(x => !x.isHighlighted)
+                .map(x => x.data),
+            }
+          },
+        }),
+
+        chartDrawDataLines<TPAWChartDataMain>({
+          lineWidth: 1.2,
+          strokeStyle: ChartUtils.color.gray[500],
+          dataFn: (data: TPAWChartDataMain) => {
+            assert(data.series.type === 'percentiles')
+            return {
+              lines: data.series.percentiles
+                .filter(x => x.isHighlighted)
+                .map(x => x.data),
+            }
+          },
+        }),
+        new ChartMinMaxYAxis<TPAWChartDataMain>(
+          (data, x) => data.yFormat(x),
+          ChartUtils.color.gray[800],
+          data => data.max.x,
+          (data, x) => {
+            assert(data.series.type === 'percentiles')
+            return {
+              min: data.series.percentiles[0].data(x),
+              max: fGet(_.last(data.series.percentiles)).data(x),
+            }
+          }
+        ),
+      ],
+      []
+    )
     return (
       <div
         className={`${className} relative w-full border border-gray-200 bg-gray-50 rounded-md `}
@@ -84,25 +95,17 @@ export const AssetAllocationChart = React.memo(
       >
         <ChartReact<TPAWChartDataMain>
           ref={ref}
-          state={state}
-          starting={{sizing: _sizing(width)}}
+          starting={{
+            data,
+            xyRange: {x: data.years.displayRange, y: data.yDisplayRange},
+            sizing: _sizing(width),
+          }}
           components={components}
         />
       </div>
     )
   }
 )
-
-const _processData = (
-  data: TPAWChartDataMain
-): ChartReactState<TPAWChartDataMain> => ({
-  data,
-  xyRange: {
-    x: data.years.displayRange,
-    y: data.yDisplayRange,
-  },
-  animation: {ease: Power1.easeOut, duration: 0.5},
-})
 
 const _sizing = (width: number) => ({
   position: rectExt({width, height: width * 0.4, x: 0, y: 0}),

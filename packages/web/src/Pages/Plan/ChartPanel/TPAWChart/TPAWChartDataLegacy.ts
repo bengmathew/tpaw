@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import {extendTPAWParams} from '../../../../TPAWSimulator/TPAWParamsExt'
+import {SimpleRange} from '../../../../Utils/SimpleRange'
 import {fGet} from '../../../../Utils/Utils'
 import {SimulationInfo} from '../../../App/WithSimulation'
 
@@ -11,6 +12,7 @@ export type TPAWChartDataLegacy = {
     isHighlighted: boolean
   }[]
   year: number
+  xyDisplayRange: {x: SimpleRange; y: SimpleRange}
 }
 
 export function tpawChartDataLegacy(
@@ -19,22 +21,21 @@ export function tpawChartDataLegacy(
 ): TPAWChartDataLegacy {
   const {endingBalanceOfSavingsPortfolioByPercentile, args} = tpawResult
   const {numYears} = extendTPAWParams(args.params.original)
+  const percentiles = endingBalanceOfSavingsPortfolioByPercentile.map(x => ({
+    data: x.data + args.params.legacy.external,
+    percentile: x.percentile,
+    isHighlighted: highlightPercentiles.includes(x.percentile),
+  }))
   return {
     label: 'legacy',
-    percentiles: endingBalanceOfSavingsPortfolioByPercentile.map(x => ({
-      data: x.data + args.params.legacy.external,
-      percentile: x.percentile,
-      isHighlighted: highlightPercentiles.includes(x.percentile),
-    })),
+    percentiles,
     year: numYears,
-  }
-}
-
-export const tpawChartDataLegacyYRange = ({
-  percentiles,
-}: TPAWChartDataLegacy) => {
-  return {
-    start: 0,
-    end: Math.max(0.0001, fGet(_.last(percentiles)).data),
+    xyDisplayRange: {
+      x: {start: 0, end: 1},
+      y: {
+        start: 0,
+        end: Math.max(0.0001, fGet(_.last(percentiles)).data),
+      },
+    },
   }
 }

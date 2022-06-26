@@ -13,6 +13,7 @@ import {TPAWParamsV4} from '../../TPAWSimulator/TPAWParamsV4'
 import {TPAWParamsV5} from '../../TPAWSimulator/TPAWParamsV5'
 import {TPAWParamsV6} from '../../TPAWSimulator/TPAWParamsV6'
 import {TPAWParamsV7} from '../../TPAWSimulator/TPAWParamsV7'
+import {TPAWParamsV8} from '../../TPAWSimulator/TPAWParamsV8'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {fGet} from '../../Utils/Utils'
 import {Validator} from '../../Utils/Validator'
@@ -102,7 +103,9 @@ export function useTPAWParams() {
 
 export const tpawParamsForURL = (params: TPAWParams) => JSON.stringify(params)
 
-function _parseExternalParams(str: string | string[] | undefined | null) {
+function _parseExternalParams(
+  str: string | string[] | undefined | null
+): TPAWParams | null {
   if (typeof str !== 'string') return null
   try {
     const parsed = JSON.parse(str)
@@ -136,9 +139,16 @@ function _parseExternalParams(str: string | string[] | undefined | null) {
       const v7 =
         parsed.v === 7
           ? TPAWParamsV7.validator(parsed)
-          : TPAWParamsV7.fromV6(fGet(v6))
+          : v6
+          ? TPAWParamsV7.fromV6(v6)
+          : null
 
-      return v7
+      const v8 =
+        parsed.v === 8
+          ? TPAWParamsV8.validator(parsed)
+          : TPAWParamsV8.fromV7(fGet(v7))
+
+      return v8
     } catch (e) {
       if (e instanceof Validator.Failed) {
         throw new AppError(`Error in parameter: ${e.fullMessage}`)
