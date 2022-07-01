@@ -75,7 +75,7 @@ export const ChartPanel = React.memo(
       forwardRef
     ) => {
       const {paramSpace, setParamSpace, tpawResult} = useSimulation()
-      const shouldShowLegacy = _shouldShowLegacy(tpawResult)
+      const shouldShowLegacy = _shouldShowLegacy(tpawResult, type)
       const allChartData = useChartData()
       const chartMainData =
         type === 'sharpe-ratio'
@@ -678,5 +678,10 @@ const _rescaleWarningLevel = (
 const _maxRescaleWarningLevel = (w1: 0 | 1 | 2, w2: 0 | 1 | 2): 0 | 1 | 2 =>
   Math.max(w1, w2) as 0 | 1 | 2
 
-const _shouldShowLegacy = ({args}: SimulationInfo['tpawResult']) =>
-  args.params.legacy.total > 0 || args.params.spendingCeiling !== null
+const _shouldShowLegacy = (
+  {args}: SimulationInfo['tpawResult'],
+  type: ChartPanelType | 'sharpe-ratio'
+) =>
+  type === 'sharpe-ratio'
+    ? false
+    : args.params.legacy.total > 0 || args.params.spendingCeiling !== null

@@ -1,6 +1,6 @@
 import {Power1} from 'gsap'
 import _ from 'lodash'
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 import {rectExt} from '../../../../Utils/Geometry'
 import {assert, fGet} from '../../../../Utils/Utils'
 import {useChartData} from '../../../App/WithChartData'
@@ -17,7 +17,7 @@ export const AssetAllocationChart = React.memo(
     )
 
     const divRef = useRef<HTMLDivElement | null>(null)
-    const ref = useRef<ChartReactStatefull<TPAWChartDataMain> | null>(null)
+    const [ref, setRef] = useState<ChartReactStatefull<TPAWChartDataMain> | null>(null)
     const [width, setWidth] = useState(50)
     useEffect(() => {
       const div = fGet(divRef.current)
@@ -31,70 +31,28 @@ export const AssetAllocationChart = React.memo(
     }, [])
 
     useEffect(() => {
+      if (!ref) return
       const sizing = _sizing(width)
-      if (!ref.current) return
       fGet(divRef.current).style.height = `${sizing.position.height}px`
-      ref.current.setSizing(sizing)
-    }, [width])
+      ref.setSizing(sizing)
+    }, [ref, width])
 
     useEffect(() => {
       const xyRange = {x: data.years.displayRange, y: data.yDisplayRange}
-      if (!ref.current) return
-      ref.current.setState(data, xyRange, {
+      if (!ref) return
+      ref.setState(data, xyRange, {
         ease: Power1.easeOut,
         duration: 0.5,
       })
-    }, [data])
+    }, [data, ref])
 
-    const components = useCallback(
-      () => [
-        chartDrawDataLines<TPAWChartDataMain>({
-          lineWidth: 0.2,
-          strokeStyle: ChartUtils.color.gray[500],
-          dataFn: (data: TPAWChartDataMain) => {
-            assert(data.series.type === 'percentiles')
-            return {
-              lines: data.series.percentiles
-                .filter(x => !x.isHighlighted)
-                .map(x => x.data),
-            }
-          },
-        }),
-
-        chartDrawDataLines<TPAWChartDataMain>({
-          lineWidth: 1.2,
-          strokeStyle: ChartUtils.color.gray[500],
-          dataFn: (data: TPAWChartDataMain) => {
-            assert(data.series.type === 'percentiles')
-            return {
-              lines: data.series.percentiles
-                .filter(x => x.isHighlighted)
-                .map(x => x.data),
-            }
-          },
-        }),
-        new ChartMinMaxYAxis<TPAWChartDataMain>(
-          (data, x) => data.yFormat(x),
-          ChartUtils.color.gray[800],
-          data => data.max.x,
-          (data, x) => {
-            assert(data.series.type === 'percentiles')
-            return {
-              min: data.series.percentiles[0].data(x),
-              max: fGet(_.last(data.series.percentiles)).data(x),
-            }
-          }
-        ),
-      ],
-      []
-    )
     return (
       <div
         className={`${className} relative w-full border border-gray-200 bg-gray-50 rounded-md `}
         ref={divRef}
       >
         <ChartReact<TPAWChartDataMain>
-          ref={ref}
+          ref={setRef}
           starting={{
             data,
             xyRange: {x: data.years.displayRange, y: data.yDisplayRange},
@@ -111,3 +69,43 @@ const _sizing = (width: number) => ({
   position: rectExt({width, height: width * 0.4, x: 0, y: 0}),
   padding: {left: 4, right: 4, top: 20, bottom: 20},
 })
+
+const components = () => [
+  chartDrawDataLines<TPAWChartDataMain>({
+    lineWidth: 0.2,
+    strokeStyle: ChartUtils.color.gray[500],
+    dataFn: (data: TPAWChartDataMain) => {
+      assert(data.series.type === 'percentiles')
+      return {
+        lines: data.series.percentiles
+          .filter(x => !x.isHighlighted)
+          .map(x => x.data),
+      }
+    },
+  }),
+
+  chartDrawDataLines<TPAWChartDataMain>({
+    lineWidth: 1.2,
+    strokeStyle: ChartUtils.color.gray[500],
+    dataFn: (data: TPAWChartDataMain) => {
+      assert(data.series.type === 'percentiles')
+      return {
+        lines: data.series.percentiles
+          .filter(x => x.isHighlighted)
+          .map(x => x.data),
+      }
+    },
+  }),
+  new ChartMinMaxYAxis<TPAWChartDataMain>(
+    (data, x) => data.yFormat(x),
+    ChartUtils.color.gray[800],
+    data => data.max.x,
+    (data, x) => {
+      assert(data.series.type === 'percentiles')
+      return {
+        min: data.series.percentiles[0].data(x),
+        max: fGet(_.last(data.series.percentiles)).data(x),
+      }
+    }
+  ),
+]

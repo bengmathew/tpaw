@@ -1,7 +1,6 @@
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::{ sync::Mutex};
-
+use std::sync::Mutex;
 
 use wasm_bindgen::prelude::*;
 
@@ -38,10 +37,17 @@ lazy_static! {
     static ref RANDOM_STORE: Mutex<Vec<Vec<usize>>> = Mutex::new(Vec::new());
 }
 
+pub fn clear_memoized_random_store(){
+    let mut store = RANDOM_STORE.lock().unwrap();
+    store.clear()
+}
+
 use rand::distributions::{Distribution, Uniform};
 
+
+
 pub fn memoized_random(
-    num_runs: i32,
+    num_runs: usize,
     num_years: usize,
     max_value: usize,
     run_index: usize,
@@ -49,7 +55,7 @@ pub fn memoized_random(
     let mut rng = rand::thread_rng();
     let uniform = Uniform::from(0..max_value);
     let mut store = RANDOM_STORE.lock().unwrap();
-    if store.len() < num_runs as usize {
+    if store.len() < num_runs {
         store.clear();
         let mut tail = (0..num_runs)
             .map(|_| uniform.sample_iter(&mut rng).take(num_years).collect())
@@ -65,4 +71,28 @@ pub fn memoized_random(
 
     let result = &store[run_index];
     unsafe { std::mem::transmute(result) }
+}
+
+
+#[wasm_bindgen]
+#[derive(Copy, Clone, Serialize, Deserialize)]
+pub struct Stats {
+    pub mean:f64,
+    pub variance:f64,
+    pub standard_deviation:f64,
+    pub n:usize
+}
+pub fn stats(data:Box<[f64]>) ->Stats {
+    let n = data.len();
+    let mean = data.iter().sum::<f64>() / n as f64;
+    let variance = data
+        .iter()
+        .map(|value| {
+            let diff = mean - value;
+            diff.powi(2)
+        })
+        .sum::<f64>()
+        / (n - 1) as f64;
+    let standard_deviation = variance.sqrt();
+    return  Stats{mean, variance, standard_deviation, n}
 }

@@ -73,7 +73,7 @@ fn get_actual_withdrawals(
         let year_index = context.year_index;
         let mut discretionary = target.discretionary;
 
-        let withdrawal_started = (year_index as i32) >= (params.withdrawal_start_year);
+        let withdrawal_started = year_index >= params.withdrawal_start_year;
         let mut regular_with_lmp = target.lmp + target.regular_without_lmp;
 
         if let Some(spending_ceiling) = params.spending_ceiling {

@@ -8,7 +8,6 @@ mod utils;
 use std::cmp::Ordering;
 
 use params::*;
-use pre_calculations::*;
 use utils::*;
 use wasm_bindgen::prelude::*;
 use web_sys::console;
@@ -26,7 +25,12 @@ pub struct RunResult {
     by_yfn_by_run_withdrawals_total: Vec<f64>,
     by_yfn_by_run_withdrawals_from_savings_portfolio_rate: Vec<f64>,
     by_yfn_by_run_after_withdrawals_allocation_stocks: Vec<f64>,
+    by_yfn_by_run_excess_withdrawals_regular: Vec<f64>,
     by_run_ending_balance: Vec<f64>,
+
+    // Test
+    // by_yfn_by_run_returns_stocks: Vec<f64>,
+    // by_yfn_by_run_returns_bonds: Vec<f64>,
 }
 
 #[wasm_bindgen]
@@ -52,33 +56,21 @@ impl RunResult {
     pub fn by_yfn_by_run_after_withdrawals_allocation_stocks(&self) -> js_sys::Float64Array {
         to_js_arr(&self.by_yfn_by_run_after_withdrawals_allocation_stocks)
     }
+    pub fn by_yfn_by_run_excess_withdrawals_regular(&self) -> js_sys::Float64Array {
+        to_js_arr(&self.by_yfn_by_run_excess_withdrawals_regular)
+    }
     pub fn by_run_ending_balance(&self) -> js_sys::Float64Array {
         to_js_arr(&self.by_run_ending_balance)
     }
 }
 
-fn cmp_f64(a: &f64, b: &f64) -> Ordering {
-    if a < b {
-        return Ordering::Less;
-    } else if a > b {
-        return Ordering::Greater;
-    }
-    return Ordering::Equal;
-}
-
-#[wasm_bindgen]
-pub fn sort(data: Box<[f64]>) -> Box<[f64]> {
-    let mut result: Vec<f64> = Vec::from(data);
-    result.sort_unstable_by(cmp_f64);
-    return result.into_boxed_slice();
-}
-
 #[wasm_bindgen]
 pub fn run(
     strategy: ParamsStrategy,
-    num_runs: i32,
-    num_years: i32,
-    withdrawal_start_year: i32,
+    start_run: usize,
+    end_run: usize,
+    num_years: usize,
+    withdrawal_start_year: usize,
     expected_returns_stocks: f64,
     expected_returns_bonds: f64,
     historical_returns_stocks: Box<[f64]>,
@@ -87,7 +79,7 @@ pub fn run(
     target_allocation_regular_portfolio_tpaw: f64,
     target_allocation_regular_portfolio_spaw: Box<[f64]>,
     target_allocation_legacy_portfolio: f64,
-    lmp: f64,
+    lmp: Box<[f64]>,
     by_year_savings: Box<[f64]>,
     by_year_withdrawals_essential: Box<[f64]>,
     by_year_withdrawals_discretionary: Box<[f64]>,
@@ -96,6 +88,7 @@ pub fn run(
     spending_tilt: f64,
     spending_ceiling: Option<f64>,
     spending_floor: Option<f64>,
+    monte_carlo_sampling:bool,
     test_truth: Option<Box<[f64]>>,
     test_index_into_historical_returns: Option<Box<[usize]>>,
 ) -> RunResult {
@@ -105,7 +98,8 @@ pub fn run(
     };
     let params = Params {
         strategy,
-        num_runs,
+        start_run,
+        end_run,
         num_years,
         withdrawal_start_year,
         current_savings,
@@ -134,6 +128,7 @@ pub fn run(
         spending_tilt,
         spending_ceiling,
         spending_floor,
+        monte_carlo_sampling,
         test: if let Some(truth) = test_truth {
             Some(ParamsTest {
                 truth,
@@ -143,8 +138,7 @@ pub fn run(
             None
         },
     };
-
-    let pre_calculations = pre_calculations(&params);
+    let num_runs = end_run - start_run;
 
     let create_vec = || vec![0.0; (num_runs * num_years) as usize];
     let mut result = RunResult {
@@ -155,13 +149,62 @@ pub fn run(
         by_yfn_by_run_withdrawals_total: create_vec(),
         by_yfn_by_run_withdrawals_from_savings_portfolio_rate: create_vec(),
         by_yfn_by_run_after_withdrawals_allocation_stocks: create_vec(),
+        by_yfn_by_run_excess_withdrawals_regular: create_vec(),
         by_run_ending_balance: vec![0.0; (num_runs) as usize],
+        // Test
+        // by_yfn_by_run_returns_stocks: create_vec(),
+        // by_yfn_by_run_returns_bonds: create_vec(),
     };
 
     match strategy {
-        params::ParamsStrategy::TPAW => run_tpaw::run(&params, &pre_calculations, &mut result),
-        params::ParamsStrategy::SPAW => run_spaw::run(&params, &pre_calculations, &mut result),
-        _=> panic!()
+        params::ParamsStrategy::TPAW => run_tpaw::run(&params, &mut result),
+        params::ParamsStrategy::SPAW => run_spaw::run(&params, &mut result),
+        _ => panic!(),
     };
+    // console::log_1(
+    //     &JsValue::from_serde(&stats(
+    //         (result.by_yfn_by_run_returns_stocks.clone()).into_boxed_slice(),
+    //     ))
+    //     .unwrap(),
+    // );
     return result;
+}
+
+fn cmp_f64(a: &f64, b: &f64) -> Ordering {
+    if a < b {
+        return Ordering::Less;
+    } else if a > b {
+        return Ordering::Greater;
+    }
+    return Ordering::Equal;
+}
+
+#[wasm_bindgen]
+pub fn sort(data: Box<[f64]>) -> Box<[f64]> {
+    let mut result: Vec<f64> = Vec::from(data);
+    result.sort_unstable_by(cmp_f64);
+    return result.into_boxed_slice();
+}
+
+#[wasm_bindgen]
+pub fn one_over_cv(data: Box<[f64]>, n: i32) -> f64 {
+    if n == 0 {
+        return 0.0;
+    }
+    let Stats {
+        mean,
+        standard_deviation,
+        ..
+    } = stats(data);
+    let result = mean / standard_deviation ;
+    return if result.is_nan() { 0.0 } else { result };
+}
+
+pub fn test_log() {
+    console::log_1(&"hello".to_string().into());
+}
+
+#[wasm_bindgen]
+pub fn clear_memoized_random(){
+    utils::clear_memoized_random_store();
 }

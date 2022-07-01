@@ -11,7 +11,6 @@ import {useChartData} from '../../App/WithChartData'
 import {useSimulation} from '../../App/WithSimulation'
 import {GlidePathInput} from '../../Common/Inputs/GlidePathInput'
 import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
-import {Config} from '../../Config'
 import {ChartPanelType} from '../ChartPanel/ChartPanelType'
 import {usePlanContent} from '../Plan'
 import {AssetAllocationChart} from './Helpers/AssetAllocationChart'
@@ -126,9 +125,7 @@ export const ParamsInputStrategy = React.memo((props: Props) => {
           </div>
         </div>
 
-        {!Config.client.production && (
-          <_ComparisonCard className="mt-8 params-card " props={props} />
-        )}
+        <_ComparisonCard className="mt-8 params-card " props={props} />
       </div>
     </ParamsInputBody>
   )
@@ -142,9 +139,11 @@ const _ComparisonCard = React.memo(
     const content = usePlanContent()['strategy']
     const chartData = useChartData().sharpeRatio
 
-    // Remember the last non sharpe ration chart type.
+    // Remember the last non sharpe ratio chart type.
     const [lastNonShapeRatioChartType, setLastNonSharpeRatioChartType] =
       useState(chartType === 'sharpe-ratio' ? null : chartType)
+
+    console.log(lastNonShapeRatioChartType)
 
     useEffect(() => {
       if (chartType !== 'sharpe-ratio')
@@ -185,8 +184,8 @@ const _ComparisonCard = React.memo(
     // Cleanup.
     const cleanupRef = useRef<() => void>()
     cleanupRef.current = () => {
-      if (chartType === 'sharpe-ratio') {
-        setChartType(fGet(lastNonShapeRatioChartType))
+      if (chartType === 'sharpe-ratio' && lastNonShapeRatioChartType) {
+        setChartType(lastNonShapeRatioChartType)
       }
       setCompareSharpeRatio(false)
     }
@@ -197,7 +196,7 @@ const _ComparisonCard = React.memo(
         className={`${className}`}
         style={{padding: paddingCSS(props.sizing.cardPadding)}}
       >
-        <h2 className="font-bold text-lg">Compare Strategies</h2>
+        <h2 className="font-bold text-lg">Compare reward/risk ratio</h2>
 
         <div className="mt-2">
           <Contentful.RichText
@@ -210,7 +209,7 @@ const _ComparisonCard = React.memo(
             className={``}
             onClick={() => setShowShapeRatio(!showSharpeRatio)}
           >
-            Show Sharpe Ratio
+            Show reward/risk ratio
           </button>
           <ToggleSwitch
             enabled={showSharpeRatio}

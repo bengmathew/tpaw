@@ -37,14 +37,14 @@ pub struct PreCalculations {
     pub tpaw: PreCalculationsForTPAW,
 }
 
-pub fn pre_calculations(params: &Params) -> PreCalculations {
+pub fn do_pre_calculations(params: &Params) -> PreCalculations {
     PreCalculations {
         spaw: pre_calculations_for_spaw(params),
         tpaw: pre_calculations_for_tpaw(params),
     }
 }
 fn pre_calculations_for_tpaw(params: &Params) -> PreCalculationsForTPAW {
-    let num_years = params.num_years as usize;
+    let num_years = params.num_years;
     let expected_returns = blend_returns(&params.expected_returns);
 
     let bonds_rate = vec![expected_returns(0.0); num_years];
@@ -52,7 +52,7 @@ fn pre_calculations_for_tpaw(params: &Params) -> PreCalculationsForTPAW {
         vec![expected_returns(params.target_allocation.regular_portfolio.tpaw); num_years];
 
     let savings = get_net_present_value(&bonds_rate, &params.by_year.savings);
-    let lmp = get_net_present_value(&bonds_rate, &vec![params.lmp; num_years]);
+    let lmp = get_net_present_value(&bonds_rate, &params.lmp);
     let essential = get_net_present_value(&bonds_rate, &params.by_year.withdrawals_essential);
     let discretionary =
         get_net_present_value(&regular_rate, &params.by_year.withdrawals_discretionary);
@@ -80,7 +80,7 @@ fn pre_calculations_for_spaw(params: &Params) -> PreCalculationsForSPAW {
         .collect();
     let n = rate.len();
     let savings = get_net_present_value(&rate, &params.by_year.savings);
-    let lmp = get_net_present_value(&rate, &vec![params.lmp; n]);
+    let lmp = get_net_present_value(&rate, &params.lmp);
     let essential = get_net_present_value(&rate, &params.by_year.withdrawals_essential);
     let discretionary = get_net_present_value(&rate, &params.by_year.withdrawals_discretionary);
     let mut legacy_amount_by_year = vec![0.0; n];

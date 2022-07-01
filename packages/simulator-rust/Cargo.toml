@@ -1,6 +1,6 @@
 [package]
 name = "simulator"
-version = "0.1.0"
+version = "2.1.0"
 authors = ["Jacob Mathew <jacobgmathew@gmail.com>"]
 edition = "2018"
 
@@ -22,5 +22,4 @@ features = [
 ]
 
 [profile.release]
-# Tell `rustc` to optimize for small code size.
 opt-level = 3
