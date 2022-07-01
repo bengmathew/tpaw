@@ -30,7 +30,7 @@ export const chartPanelLabel = (
     case 'withdrawal-rate':
       return {label: ['Withdrawal Rate'], subLabel: null}
     case 'sharpe-ratio':
-      return {label: ['Sharpe Ratio'], subLabel: null}
+      return {label: ['Reward/Risk Ratio'], subLabel: null}
     default:
       if (isChartPanelSpendingEssentialType(panelType)) {
         const id = chartPanelSpendingEssentialTypeID(panelType)
