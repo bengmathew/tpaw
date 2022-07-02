@@ -1,4 +1,3 @@
-import { faGameConsoleHandheld } from '@fortawesome/pro-solid-svg-icons'
 import _ from 'lodash'
 import {RectExt, rectExt} from '../../../../Utils/Geometry'
 import {linearFnFomPoints} from '../../../../Utils/LinearFn'
@@ -20,11 +19,11 @@ export type ChartPointerBoxAnimatedState = {
   box: RectExt
   boxXTarget: number
 }
-export const chartPointerBox = <Data>(
-  target: ChartPointerComponentTargetArgs
+export const chartPointerBox = (
+  target: ChartPointerComponentTargetArgs,
 ) => {
   const {animated, notAnimated} = (() => {
-    const {ctx, dataX, dataYInfos, chartStateDerived, formatX, formatY} = target
+    const {ctx, dataX, dataYInfos, chartStateDerived, formatX, formatY, showTh} = target
     const {plotArea, viewport, scale} = chartStateDerived
     const graphX = scale.x(dataX)
     const graphYs = dataYInfos.map(y => scale.y(y.dataY))
@@ -36,7 +35,7 @@ export const chartPointerBox = <Data>(
         label: _measureText(ctx, text, 11),
         dataY: _measureText(ctx, formatY(dataY), 11),
       })),
-      th: _measureText(ctx, 'th', 7),
+      th: showTh ? _measureText(ctx, 'th', 7) : null,
     }
     const headerPosition = {x: pad.horz.edge, y: pad.vert.top}
 
@@ -63,11 +62,11 @@ export const chartPointerBox = <Data>(
         : linearFnFomPoints(200, 0.5, 500, 1)(viewport.width))
     const boxW = Math.max(
       labelRight +
-        textInfos.th.width +
+        (textInfos.th?.width ?? 0) +
         horzBetweenPad +
         dataYsMaxWidth +
         pad.horz.edge,
-        pad.horz.edge * 2 + textInfos.header.width
+      pad.horz.edge * 2 + textInfos.header.width
     )
 
     const boxY = _.clamp(
@@ -133,11 +132,12 @@ export const chartPointerBox = <Data>(
       ctx.textAlign = 'right'
       ctx.fillText(label.text, box.x + labelRight, y)
 
-      // Draw the th.
-      ctx.font = textInfos.th.font
-      ctx.textAlign = 'left'
-      ctx.fillText(textInfos.th.text, box.x + labelRight, y - 2)
-
+      // Draw the th.]
+      if (textInfos.th) {
+        ctx.font = textInfos.th.font
+        ctx.textAlign = 'left'
+        ctx.fillText(textInfos.th.text, box.x + labelRight, y - 2)
+      }
       // Draw the dataY.
       ctx.font = dataY.font
       ctx.textAlign = 'right'

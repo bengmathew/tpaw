@@ -1,20 +1,20 @@
-import {faCircle as faCircleRegular} from '@fortawesome/pro-regular-svg-icons'
-import {faCircle as faCircleSelected} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
+import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
-import React, {useEffect, useRef, useState} from 'react'
-import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
-import {Contentful} from '../../../Utils/Contentful'
-import {paddingCSS, paddingCSSStyleHorz} from '../../../Utils/Geometry'
-import {fGet} from '../../../Utils/Utils'
-import {useChartData} from '../../App/WithChartData'
-import {useSimulation} from '../../App/WithSimulation'
-import {GlidePathInput} from '../../Common/Inputs/GlidePathInput'
-import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
-import {ChartPanelType} from '../ChartPanel/ChartPanelType'
-import {usePlanContent} from '../Plan'
-import {AssetAllocationChart} from './Helpers/AssetAllocationChart'
-import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
+import React, { useEffect, useRef, useState } from 'react'
+import { TPAWParams } from '../../../TPAWSimulator/TPAWParams'
+import { Contentful } from '../../../Utils/Contentful'
+import { paddingCSS, paddingCSSStyleHorz } from '../../../Utils/Geometry'
+import { fGet } from '../../../Utils/Utils'
+import { useChartData } from '../../App/WithChartData'
+import { useSimulation } from '../../App/WithSimulation'
+import { GlidePathInput } from '../../Common/Inputs/GlidePathInput'
+import { ToggleSwitch } from '../../Common/Inputs/ToggleSwitch'
+import { ChartPanelType } from '../ChartPanel/ChartPanelType'
+import { usePlanContent } from '../Plan'
+import { AssetAllocationChart } from './Helpers/AssetAllocationChart'
+import { ParamsInputBody, ParamsInputBodyPassThruProps } from './ParamsInputBody'
 
 type Props = ParamsInputBodyPassThruProps & {
   chartType: ChartPanelType | 'sharpe-ratio'
@@ -63,8 +63,12 @@ export const ParamsInputStrategy = React.memo((props: Props) => {
                         : faCircleRegular
                     }
                   />{' '}
-                  Total portfolio approach
-                </h2>
+                  TPAW – <span className="">Total Portfolio Allocation and Withdrawal</span>
+              </h2>
+              {/* <h2 className=" mt-2 font-semibold ">
+                
+              </h2> */}
+
                 <div className="mt-2">
                   <Contentful.RichText
                     body={content.tpawIntro.fields.body}
@@ -92,8 +96,11 @@ export const ParamsInputStrategy = React.memo((props: Props) => {
                       : faCircleRegular
                   }
                 />{' '}
-                Savings portfolio approach
+                SPAW – <span className="">Savings Portfolio Allocation and Withdrawal</span>
               </h2>
+              {/* <h2 className=" font-semibold mt-2 ">
+                Savings Portfolio Allocation and Withdrawal
+              </h2> */}
               <div className="mt-2">
                 <Contentful.RichText
                   body={content.spawIntro.fields.body}

@@ -39,6 +39,7 @@ export type ChartPointerComponentTargetArgs = {
   formatY: (y: number) => string
   formatX: (x: number, type: 'long' | 'short') => string
   markDataX: number
+  showTh:boolean
 }
 
 export type ChartPointerComponentDrawArg<AnimatedProps> = {
@@ -80,7 +81,8 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
     private _displayX: (data: Data, x: number) => number,
     private _formatX: (data: Data, x: number, type: 'long' | 'short') => string,
     private _formatY: (data: Data, x: number) => string,
-    private _markFn: (data: Data) => number
+    private _markFn: (data: Data) => number,
+    private _showTh: (data: Data) => boolean
   ) {}
 
   destroy() {
@@ -151,6 +153,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
       formatY: y => this._formatY(dataTransition.target, y),
       formatX: (x, type) => this._formatX(dataTransition.target, x, type),
       markDataX: Math.round(this._markFn(dataTransition.target)),
+      showTh:this._showTh(dataTransition.target)
     }
     ctx.save()
     const boxInfo = chartPointerBox(targetArgs)
