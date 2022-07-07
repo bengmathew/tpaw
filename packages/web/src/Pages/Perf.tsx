@@ -80,7 +80,7 @@ export const Perf = React.memo(() => {
 })
 
 const params = processTPAWParams(extendTPAWParams( {
-  v: 8,
+  v: 9,
   strategy: 'TPAW',
   people: {
     withPartner: false,
@@ -97,7 +97,7 @@ const params = processTPAWParams(extendTPAWParams( {
   targetAllocation: {
     regularPortfolio: {
       forTPAW: {stocks: 0.35},
-      forSPAW: {
+      forSPAWAndSWR: {
         start: {stocks: 0.5},
         intermediate: [],
         end: {stocks: 0.5},
@@ -106,6 +106,7 @@ const params = processTPAWParams(extendTPAWParams( {
 
     legacyPortfolio: {stocks: 0.7},
   },
+  swrWithdrawal:{type: 'asPercent', percent: 0.04},
   scheduledWithdrawalGrowthRate: 0.02,
   savingsAtStartOfStartYear: 50000,
   savings: [

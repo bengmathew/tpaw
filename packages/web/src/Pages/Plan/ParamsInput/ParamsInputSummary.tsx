@@ -205,6 +205,24 @@ export const ParamsInputSummary = React.memo(
               </div>
             </div>
 
+            <div className="">
+              <h2
+                className="text-[18px] sm:text-xl font-bold mb-4"
+                style={labelStyle}
+              >
+                Simulation
+              </h2>
+              <div className="flex flex-col gap-y-4">
+                <_Button
+                  type="simulation"
+                  setState={setState}
+                  state={state}
+                  showHeading={false}
+                  padding={cardPadding}
+                />
+              </div>
+            </div>
+
             {!Config.client.production && (
               <div className="">
                 <h2
@@ -470,29 +488,51 @@ export const _SectionSummary = React.memo(
       case 'strategy': {
         switch (params.strategy) {
           case 'TPAW':
-            return (
-              <h2 className="flex items-center">Total portfolio approach</h2>
-            )
+            return <h2 className="flex items-center">TPAW</h2>
           case 'SPAW':
             return (
               <>
                 <h2 className="flex items-center">
-                  Savings portfolio approach with the following stock
-                  allocation:
+                  SPAW with the following stock allocation:
                 </h2>
                 <div className="">
                   {/* <h2 className="">Stock Allocation:</h2> */}
                   <_GlidePath
                     className=""
-                    glidePath={params.targetAllocation.regularPortfolio.forSPAW}
+                    glidePath={params.targetAllocation.regularPortfolio.forSPAWAndSWR}
                   />
                 </div>
               </>
             )
-
+          case 'SWR':
+            return (
+              <>
+                <h2 className="flex items-center">
+                  SWR with the following stock allocation:
+                </h2>
+                <div className="">
+                  {/* <h2 className="">Stock Allocation:</h2> */}
+                  <_GlidePath
+                    className=""
+                    glidePath={params.targetAllocation.regularPortfolio.forSPAWAndSWR}
+                  />
+                </div>
+              </>
+            )
           default:
             noCase(params.strategy)
         }
+      }
+      case 'simulation': {
+        return (
+          <>
+            <h2>
+              {params.sampling === 'monteCarlo'
+                ? 'Monte Carlo sequence'
+                : 'Historical sequence'}
+            </h2>
+          </>
+        )
       }
       case 'dev':
         if (

@@ -684,4 +684,6 @@ const _shouldShowLegacy = (
 ) =>
   type === 'sharpe-ratio'
     ? false
+    : args.params.strategy === 'SWR'
+    ? true
     : args.params.legacy.total > 0 || args.params.spendingCeiling !== null

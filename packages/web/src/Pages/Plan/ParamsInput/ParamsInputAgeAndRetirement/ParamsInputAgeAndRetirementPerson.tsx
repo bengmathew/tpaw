@@ -60,11 +60,11 @@ export const ParamsInputAgeAndRetirementPerson = React.memo(
             setParams(params => {
               const clone = _.cloneDeep(params)
               const {person1} = clone.people
-              // Validation won't trigger if strategy is not SPAW and the
+              // Validation won't trigger if strategy is not SPAW or SWR and the
               // glide path actually has a ref to person2. So remove those
               // entires here.
-              clone.targetAllocation.regularPortfolio.forSPAW.intermediate =
-                clone.targetAllocation.regularPortfolio.forSPAW.intermediate.filter(
+              clone.targetAllocation.regularPortfolio.forSPAWAndSWR.intermediate =
+                clone.targetAllocation.regularPortfolio.forSPAWAndSWR.intermediate.filter(
                   ({year}) => year.type === 'now' || year.person === 'person1'
                 )
               clone.people = {withPartner: false, person1}

@@ -1,20 +1,21 @@
-import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
-import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {faCircle as faCircleRegular} from '@fortawesome/pro-regular-svg-icons'
+import {faCircle as faCircleSelected} from '@fortawesome/pro-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
-import React, { useEffect, useRef, useState } from 'react'
-import { TPAWParams } from '../../../TPAWSimulator/TPAWParams'
-import { Contentful } from '../../../Utils/Contentful'
-import { paddingCSS, paddingCSSStyleHorz } from '../../../Utils/Geometry'
-import { fGet } from '../../../Utils/Utils'
-import { useChartData } from '../../App/WithChartData'
-import { useSimulation } from '../../App/WithSimulation'
-import { GlidePathInput } from '../../Common/Inputs/GlidePathInput'
-import { ToggleSwitch } from '../../Common/Inputs/ToggleSwitch'
-import { ChartPanelType } from '../ChartPanel/ChartPanelType'
-import { usePlanContent } from '../Plan'
-import { AssetAllocationChart } from './Helpers/AssetAllocationChart'
-import { ParamsInputBody, ParamsInputBodyPassThruProps } from './ParamsInputBody'
+import React, {useEffect, useRef, useState} from 'react'
+import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
+import {Contentful} from '../../../Utils/Contentful'
+import {paddingCSS, paddingCSSStyleHorz} from '../../../Utils/Geometry'
+import {fGet} from '../../../Utils/Utils'
+import {useChartData} from '../../App/WithChartData'
+import {useSimulation} from '../../App/WithSimulation'
+import {GlidePathInput} from '../../Common/Inputs/GlidePathInput'
+import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
+import {Config} from '../../Config'
+import {ChartPanelType} from '../ChartPanel/ChartPanelType'
+import {usePlanContent} from '../Plan'
+import {AssetAllocationChart} from './Helpers/AssetAllocationChart'
+import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 type Props = ParamsInputBodyPassThruProps & {
   chartType: ChartPanelType | 'sharpe-ratio'
@@ -63,9 +64,12 @@ export const ParamsInputStrategy = React.memo((props: Props) => {
                         : faCircleRegular
                     }
                   />{' '}
-                  TPAW – <span className="">Total Portfolio Allocation and Withdrawal</span>
-              </h2>
-              {/* <h2 className=" mt-2 font-semibold ">
+                  TPAW –{' '}
+                  <span className="">
+                    Total Portfolio Allocation and Withdrawal
+                  </span>
+                </h2>
+                {/* <h2 className=" mt-2 font-semibold ">
                 
               </h2> */}
 
@@ -96,7 +100,10 @@ export const ParamsInputStrategy = React.memo((props: Props) => {
                       : faCircleRegular
                   }
                 />{' '}
-                SPAW – <span className="">Savings Portfolio Allocation and Withdrawal</span>
+                SPAW –{' '}
+                <span className="">
+                  Savings Portfolio Allocation and Withdrawal
+                </span>
               </h2>
               {/* <h2 className=" font-semibold mt-2 ">
                 Savings Portfolio Allocation and Withdrawal
@@ -116,11 +123,11 @@ export const ParamsInputStrategy = React.memo((props: Props) => {
 
                 <GlidePathInput
                   className="mt-4 border border-gray-300 p-2 rounded-lg"
-                  value={params.targetAllocation.regularPortfolio.forSPAW}
+                  value={params.targetAllocation.regularPortfolio.forSPAWAndSWR}
                   onChange={x =>
                     setParams(p => {
                       const clone = _.cloneDeep(p)
-                      clone.targetAllocation.regularPortfolio.forSPAW = x
+                      clone.targetAllocation.regularPortfolio.forSPAWAndSWR = x
                       return clone
                     })
                   }
@@ -131,6 +138,60 @@ export const ParamsInputStrategy = React.memo((props: Props) => {
             )}
           </div>
         </div>
+
+        {!Config.client.production && (
+          <div
+            className="params-card outline-none mt-8"
+            style={{padding: paddingCSS(props.sizing.cardPadding)}}
+          >
+            <button
+              className={`text-left  `}
+              onClick={() => handleStrategy('SWR')}
+            >
+              <h2 className=" font-bold text-lg">
+                <FontAwesomeIcon
+                  className="mr-2"
+                  icon={
+                    params.strategy === 'SWR'
+                      ? faCircleSelected
+                      : faCircleRegular
+                  }
+                />{' '}
+                SWR – <span className="">Safe Withdrawal Rate</span>
+              </h2>
+              {/* <h2 className=" font-semibold mt-2 ">
+    Savings Portfolio Allocation and Withdrawal
+  </h2> */}
+              <div className="mt-2">
+                <Contentful.RichText
+                  body={content.spawIntro.fields.body}
+                  p="p-base"
+                />
+              </div>
+            </button>
+            {params.strategy === 'SPAW' && (
+              <div className="mt-8">
+                <h2 className="font-bold text-l">
+                  Asset Allocation on the Savings Portfolio
+                </h2>
+
+                <GlidePathInput
+                  className="mt-4 border border-gray-300 p-2 rounded-lg"
+                  value={params.targetAllocation.regularPortfolio.forSPAWAndSWR}
+                  onChange={x =>
+                    setParams(p => {
+                      const clone = _.cloneDeep(p)
+                      clone.targetAllocation.regularPortfolio.forSPAWAndSWR = x
+                      return clone
+                    })
+                  }
+                />
+                <h2 className="mt-6">Graph of this asset allocation:</h2>
+                <AssetAllocationChart className="mt-4 " />
+              </div>
+            )}
+          </div>
+        )}
 
         <_ComparisonCard className="mt-8 params-card " props={props} />
       </div>

@@ -2,13 +2,14 @@ import {faMinus, faPlus} from '@fortawesome/pro-light-svg-icons'
 import {faCircle as faCircleRegular} from '@fortawesome/pro-regular-svg-icons'
 import {faCircle as faCircleSelected} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import { RadioGroup } from '@headlessui/react'
 import _ from 'lodash'
 import React, {useEffect, useState} from 'react'
 import {clearMemoizedRandom} from '../../../TPAWSimulator/Worker/UseTPAWWorker'
 import {paddingCSS} from '../../../Utils/Geometry'
-import {assert} from '../../../Utils/Utils'
+import {assert, assertFalse} from '../../../Utils/Utils'
 import {useSimulation} from '../../App/WithSimulation'
-import {useAmountInputState} from '../../Common/Inputs/AmountInput'
+import {AmountInput, useAmountInputState} from '../../Common/Inputs/AmountInput'
 import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
 import {usePlanContent} from '../Plan'
 import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
@@ -18,7 +19,6 @@ export const ParamsInputDev = React.memo(
     const {params, setParams} = useSimulation()
     const content = usePlanContent()
 
-    const valueState = useAmountInputState(params.savingsAtStartOfStartYear)
     return (
       <ParamsInputBody {...props} headingMarginLeft="normal">
         <div className="">
@@ -83,49 +83,9 @@ export const ParamsInputDev = React.memo(
               )}
             </div>
           </div>
-          <div
-            className="params-card mt-10"
-            style={{padding: paddingCSS(props.sizing.cardPadding)}}
-          >
-            <h2 className="font-bold text-lg"> Misc</h2>
-            <div className=" flex justify-start gap-x-4 items-center mt-4">
-              <h2 className=""> Show All Years</h2>
-              <ToggleSwitch
-                className=""
-                enabled={params.display.alwaysShowAllYears}
-                setEnabled={x =>
-                  setParams(p => {
-                    const clone = _.cloneDeep(p)
-                    clone.display.alwaysShowAllYears = x
-                    return clone
-                  })
-                }
-              />
-            </div>
-            <div className=" flex justify-start gap-x-4 items-center mt-4">
-              <h2 className=""> Use Historical </h2>
-              <ToggleSwitch
-                className=""
-                enabled={params.sampling === 'historical'}
-                setEnabled={x =>
-                  setParams(p => {
-                    const clone = _.cloneDeep(p)
-                    clone.sampling = x? 'historical':'monteCarlo'
-                    return clone
-                  })
-                }
-              />
-            </div>
-            <button
-              className="btn-sm  btn-outline mt-4"
-              onClick={async () => {
-                await clearMemoizedRandom()
-                setParams(x=>_.cloneDeep(x))
-              }}
-            >
-              Reset random draws
-            </button>
-          </div>
+
+          <_AdjustCard className="mt-10" props={props} />
+          <_Misc className="mt-10" props={props} />
         </div>
       </ParamsInputBody>
     )
@@ -224,3 +184,129 @@ const _StocksAndBonds = React.memo(({className = ''}: {className?: string}) => {
 })
 
 const _delta = 0.1
+
+const _Misc = React.memo(
+  ({
+    className = '',
+    props,
+  }: {
+    className?: string
+    props: ParamsInputBodyPassThruProps
+  }) => {
+    const {params, setParams, numRuns, setNumRuns} = useSimulation()
+    const amountState = useAmountInputState(numRuns)
+    return (
+      <div
+        className={`${className} params-card`}
+        style={{padding: paddingCSS(props.sizing.cardPadding)}}
+      >
+        <h2 className="font-bold text-lg"> Misc</h2>
+        <div className=" flex justify-start gap-x-4 items-center mt-4">
+          <h2 className=""> Show All Years</h2>
+          <ToggleSwitch
+            className=""
+            enabled={params.display.alwaysShowAllYears}
+            setEnabled={x =>
+              setParams(p => {
+                const clone = _.cloneDeep(p)
+                clone.display.alwaysShowAllYears = x
+                return clone
+              })
+            }
+          />
+        </div>
+
+        <div className="mt-2 flex gap-x-4 items-center">
+          <h2 className="">Number of simulations</h2>
+          <AmountInput
+            state={amountState}
+            onAccept={setNumRuns}
+            type={'percent'}
+          />
+        </div>
+
+        <button
+          className="btn-sm  btn-outline mt-4"
+          onClick={async () => {
+            await clearMemoizedRandom()
+            setParams(x => _.cloneDeep(x))
+          }}
+        >
+          Reset random draws
+        </button>
+      </div>
+    )
+  }
+)
+
+
+const _AdjustCard = React.memo(
+  ({
+    className = '',
+    props,
+  }: {
+    className?: string
+    props: ParamsInputBodyPassThruProps
+  }) => {
+    const {params, setParams} = useSimulation()
+    const content = usePlanContent().simulation
+    const type = (() => {
+      const {historical} = params.returns
+      if (historical.type === 'fixed') return 'toExpected' as const
+      if (historical.adjust.type === 'to' || historical.adjust.type == 'by') {
+        assertFalse()
+      }
+      return historical.adjust.type
+    })()
+    return (
+      <div
+        className={`${className} params-card`}
+        style={{padding: paddingCSS(props.sizing.cardPadding)}}
+      >
+        <h2 className="font-bold text-lg">Adjust Historical Returns</h2>
+        <RadioGroup<'div', 'none' | 'toExpected'>
+          value={type}
+          onChange={(type: 'none' | 'toExpected') =>
+            setParams(params => {
+              const clone = _.cloneDeep(params)
+              if (clone.returns.historical.type === 'fixed') {
+                return clone
+              }
+              clone.returns.historical.adjust = {type}
+              return clone
+            })
+          }
+        >
+          <div className="mt-2">
+            <RadioGroup.Option<'div', 'none' | 'toExpected'>
+              value={'toExpected'}
+              className="flex items-center gap-x-2 py-1.5 cursor-pointer"
+            >
+              {({checked}) => (
+                <>
+                  <FontAwesomeIcon icon={checked ? faCircleSelected : faCircleRegular} />
+                  <RadioGroup.Description as="h2" className={`py-1`}>
+                    Adjust to expected returns
+                  </RadioGroup.Description>
+                </>
+              )}
+            </RadioGroup.Option>
+            <RadioGroup.Option<'div', 'none' | 'toExpected'>
+              value={'none'}
+              className="flex items-center gap-x-2 py-1.5 cursor-pointer"
+            >
+              {({checked}) => (
+                <>
+                  <FontAwesomeIcon icon={checked ? faCircleSelected : faCircleRegular} />
+                  <RadioGroup.Description as="h2" className={``}>
+                    Do not adjust 
+                  </RadioGroup.Description>
+                </>
+              )}
+            </RadioGroup.Option>
+          </div>
+        </RadioGroup>
+      </div>
+    )
+  }
+)

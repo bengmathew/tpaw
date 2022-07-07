@@ -532,12 +532,18 @@ export type PlanContent = {
     spendingTiltIntro: _FetchedInline
     lmpIntro: _FetchedInline
   }
-  'expected-returns': _IntroAndBody
-  inflation: _IntroAndBody
   strategy: _IntroAndBody & {
     tpawIntro: _FetchedInline
     spawIntro: _FetchedInline
     sharpeRatioIntro: _FetchedInline
+  }
+  'expected-returns': _IntroAndBody
+  inflation: _IntroAndBody
+  simulation: {
+    body:_FetchedInline
+    introSampling:_FetchedInline
+    introSamplingMonteCarlo:_FetchedInline
+    introSamplingHistorical:_FetchedInline
   }
   dev: Record<string, never>
   chart: {
@@ -614,6 +620,12 @@ export const planGetStaticProps: GetStaticProps<
     inflation: {
       intro: await Contentful.fetchInline('76BgIpwX9yZetMGungnfwC'),
       body: await Contentful.fetchInline('6LqbR3PBA1uDe9xU2V1hk9'),
+    },
+    simulation: {
+      body: await Contentful.fetchInline('5alyO5geIHnQsw8ZMpbyf5'),
+      introSampling: await Contentful.fetchInline('6EwnBJaN5FYISgyPdSQe7U'),
+      introSamplingMonteCarlo: await Contentful.fetchInline('4ysOynT6PPgYFnY1BaLuy5'),
+      introSamplingHistorical: await Contentful.fetchInline('19JANDD3uLnVdh52HBMj6U'),
     },
     dev: {},
     chart: {

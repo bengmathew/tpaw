@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import {ReactNode, useMemo, useState} from 'react'
+import {Dispatch, ReactNode, useMemo, useState} from 'react'
 import {TPAWParams} from '../../TPAWSimulator/TPAWParams'
 import {
   extendTPAWParams,
@@ -31,6 +31,7 @@ export type SimulationInfo = {
   paramSpace: 'a' | 'b'
   setParamSpace: (space: 'a' | 'b') => void
   setCompareSharpeRatio: (x: boolean) => void
+  setNumRuns: Dispatch<number>
   setParams: (params: TPAWParams | ((params: TPAWParams) => TPAWParams)) => void
   forSharpeRatioComparison: {
     tpaw: SimulationInfoPerParam
@@ -42,7 +43,6 @@ export type SimulationInfo = {
 
 const [Context, useSimulation] = createContext<SimulationInfo>('Simulation')
 
-const numRuns = 500
 const highlightPercentiles = [5, 25, 50, 75, 95]
 // const highlightPercentiles = [10, 90]
 const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
@@ -50,6 +50,7 @@ const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
 export {useSimulation}
 
 export const WithSimulation = ({children}: {children: ReactNode}) => {
+  const [numRuns, setNumRuns] = useState(500)
   const {paramSpace, setParamSpace, params, setParams} = useTPAWParams()
   const [compareSharpeRatio, setCompareSharpeRatio] = useState(false)
 
@@ -74,10 +75,12 @@ export const WithSimulation = ({children}: {children: ReactNode}) => {
   }, [compareSharpeRatio, params])
 
   const forTPAWSharpeRatio = useForParams(
-    paramsForSharpeRatioComparison?.tpaw ?? null
+    paramsForSharpeRatioComparison?.tpaw ?? null,
+    numRuns
   )
   const forSPAWSharpeRatio = useForParams(
-    paramsForSharpeRatioComparison?.spaw ?? null
+    paramsForSharpeRatioComparison?.spaw ?? null,
+    numRuns
   )
 
   const forSharpeRatioComparison = useMemo(
@@ -88,12 +91,13 @@ export const WithSimulation = ({children}: {children: ReactNode}) => {
     [forSPAWSharpeRatio, forTPAWSharpeRatio, compareSharpeRatio]
   )
 
-  const forBase = fGet(useForParams(params))
+  const forBase = fGet(useForParams(params, numRuns))
 
   const value = useMemo(() => {
     return {
       paramSpace,
       setParamSpace,
+      setNumRuns,
       setParams,
       ...forBase,
       forSharpeRatioComparison,
@@ -109,7 +113,8 @@ const _hasValue = (x: {
 }): x is {tpawResult: UseTPAWWorkerResult} => x.tpawResult !== null
 
 function useForParams(
-  params: TPAWParams | null
+  params: TPAWParams | null,
+  numRuns: number
 ): SimulationInfoPerParam | null {
   const paramsProcessed = useMemo(
     () => (params ? processTPAWParams(extendTPAWParams(params)) : null),
@@ -131,6 +136,6 @@ function useForParams(
             tpawResult,
           }
         : null,
-    [params, paramsProcessed, tpawResult]
+    [numRuns, params, paramsProcessed, tpawResult]
   )
 }

@@ -36,7 +36,7 @@ export function analyzeYearsInParams(
   ]
 
   const spawGlidePath = _analyzeGlidePath(
-    targetAllocation.regularPortfolio.forSPAW,
+    targetAllocation.regularPortfolio.forSPAWAndSWR,
     'strategy',
     'assetAllocationForSPAW',
     paramsExt,

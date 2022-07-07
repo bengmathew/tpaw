@@ -28,8 +28,14 @@ export async function runSimulationInWASM(
     Float64Array.from(params.returns.historicalAdjusted.map(x => x.bonds)),
     params.savingsAtStartOfStartYear,
     params.targetAllocation.regularPortfolio.forTPAW.stocks,
-    Float64Array.from(params.targetAllocation.regularPortfolio.forSPAW),
+    Float64Array.from(params.targetAllocation.regularPortfolio.forSPAWAndSWR),
     params.targetAllocation.legacyPortfolio.stocks,
+    params.swrWithdrawal.type,
+    params.swrWithdrawal.type === 'asAmount'
+      ? params.swrWithdrawal.amount
+      : params.swrWithdrawal.type === 'asPercent'
+      ? params.swrWithdrawal.percent
+      : noCase(params.swrWithdrawal),
     Float64Array.from(params.byYear.map(x => x.withdrawals.lmp)),
     Float64Array.from(params.byYear.map(x => x.savings)),
     Float64Array.from(params.byYear.map(x => x.withdrawals.essential)),

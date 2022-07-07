@@ -13,6 +13,7 @@ export const paramsInputTypes = [
   'strategy',
   'expected-returns',
   'inflation',
+  'simulation',
   'dev'
 ] as const
 export type ParamsInputType = typeof paramsInputTypes[number]

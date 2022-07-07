@@ -27,6 +27,7 @@ import {ParamsInputIncomeDuringRetirement} from './ParamsInputIncomeDuringRetire
 import {ParamsInputInflation} from './ParamsInputInflation'
 import {ParamsInputLegacy} from './ParamsInputLegacy'
 import {ParamsInputRiskAndTimePreference} from './ParamsInputRiskAndTimePreference'
+import { ParamsInputSimulation } from './ParamsInputSimulation'
 import {ParamsInputSpendingCeilingAndFloor} from './ParamsInputSpendingCeilingAndFloor'
 import {ParamsInputStrategy} from './ParamsInputStrategy'
 import {ParamsInputSummary} from './ParamsInputSummary'
@@ -220,6 +221,8 @@ const _Body = React.memo(
         return <ParamsInputExpectedReturns {...props} />
       case 'inflation':
         return <ParamsInputInflation {...props} />
+      case 'simulation':
+        return <ParamsInputSimulation {...props} />
       case 'dev':
         return <ParamsInputDev {...props} />
       default:

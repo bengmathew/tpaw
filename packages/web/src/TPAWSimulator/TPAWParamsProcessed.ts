@@ -55,8 +55,8 @@ export function processTPAWParams(paramsExt: TPAWParamsExt) {
     ...params.targetAllocation,
     regularPortfolio: {
       ...params.targetAllocation.regularPortfolio,
-      forSPAW: _normalizeGlidePath(
-        params.targetAllocation.regularPortfolio.forSPAW
+      forSPAWAndSWR: _normalizeGlidePath(
+        params.targetAllocation.regularPortfolio.forSPAWAndSWR
       ),
     },
   }
@@ -152,26 +152,16 @@ function _processReturnsParams(params: TPAWParams) {
           const historical = historicalReturns.map(x => x[type])
           const historicalExpected = _.mean(historical)
 
-          // const targetExpected =
-          //   adjustment.type === 'to'
-          //     ? adjustment[type]
-          //     : adjustment.type === 'toExpected'
-          //     ? params.returns.expected[type]
-          //     : adjustment.type === 'by'
-          //     ? historicalExpected - adjustment[type]
-          //     : noCase(adjustment)
           const targetExpected =
-            params.sampling === 'monteCarlo'
-              ? adjustment.type === 'to'
-                ? adjustment[type]
-                : adjustment.type === 'toExpected'
-                ? params.returns.expected[type]
-                : adjustment.type === 'by'
-                ? historicalExpected - adjustment[type]
-                : noCase(adjustment)
-              : params.sampling === 'historical'
+            adjustment.type === 'to'
+              ? adjustment[type]
+              : adjustment.type === 'toExpected'
+              ? params.returns.expected[type]
+              : adjustment.type === 'none'
               ? historicalExpected
-              : noCase(params.sampling)
+              : adjustment.type === 'by'
+              ? historicalExpected - adjustment[type]
+              : noCase(adjustment)
 
           const historicalLog = historical.map(x => Math.log(1 + x))
           const historicalLogExpected = _.mean(historicalLog)

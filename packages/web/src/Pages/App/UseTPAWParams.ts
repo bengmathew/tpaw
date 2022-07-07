@@ -14,6 +14,7 @@ import {TPAWParamsV5} from '../../TPAWSimulator/TPAWParamsV5'
 import {TPAWParamsV6} from '../../TPAWSimulator/TPAWParamsV6'
 import {TPAWParamsV7} from '../../TPAWSimulator/TPAWParamsV7'
 import {TPAWParamsV8} from '../../TPAWSimulator/TPAWParamsV8'
+import { TPAWParamsV9 } from '../../TPAWSimulator/TPAWParamsV9'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {fGet} from '../../Utils/Utils'
 import {Validator} from '../../Utils/Validator'
@@ -146,9 +147,16 @@ function _parseExternalParams(
       const v8 =
         parsed.v === 8
           ? TPAWParamsV8.validator(parsed)
-          : TPAWParamsV8.fromV7(fGet(v7))
+          : v7
+          ? TPAWParamsV8.fromV7(v7)
+          : null
 
-      return v8
+      const v9 =
+        parsed.v === 9
+          ? TPAWParamsV9.validator(parsed)
+          : TPAWParamsV9.fromV8(fGet(v8))
+
+      return v9
     } catch (e) {
       if (e instanceof Validator.Failed) {
         throw new AppError(`Error in parameter: ${e.fullMessage}`)

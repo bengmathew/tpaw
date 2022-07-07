@@ -4,6 +4,7 @@ import React, {Dispatch} from 'react'
 import ReactDOM from 'react-dom'
 import {Contentful} from '../../../Utils/Contentful'
 import {noCase} from '../../../Utils/Utils'
+import {useSimulation} from '../../App/WithSimulation'
 import {usePlanContent} from '../Plan'
 import {
   ChartPanelType,
@@ -25,16 +26,17 @@ export const ChartPanelDescription = React.memo(
     setShowDescriptionPopUp: Dispatch<boolean>
     ref?: (x: HTMLElement | null) => void
   }) => {
+    const {numRuns} = useSimulation().tpawResult
+    const content = useContent(type)
 
-    const content = useContent(type) 
     return (
-      <div
-        className={`${className} text-lg sm:text-lg font-font2`}
-        ref={ref}
-      >
+      <div className={`${className} text-lg sm:text-lg font-font2`} ref={ref}>
         <div className="hidden sm:block">
           <Contentful.RichText
-            body={content.intro.fields.body}
+            body={Contentful.replaceVariables(
+              {numRuns: `${numRuns}`},
+              content.intro.fields.body
+            )}
             p="text-base inline lighten"
           />{' '}
           <button
@@ -66,7 +68,10 @@ export const ChartPanelDescription = React.memo(
               leaveTo="scale-95 opacity-0"
               style={{boxShadow: '0px 0px 10px 5px rgba(0,0,0,0.28)'}}
             >
-              <_RichText className="">{content.body.fields.body}</_RichText>
+              <_RichText className="">{Contentful.replaceVariables(
+              {numRuns: `${numRuns}`},
+              content.body.fields.body
+            )}</_RichText>
             </Transition.Child>
           </Transition>,
           window.document.body
@@ -76,7 +81,7 @@ export const ChartPanelDescription = React.memo(
   }
 )
 
-function useContent(type: ChartPanelType|'sharpe-ratio') {
+function useContent(type: ChartPanelType | 'sharpe-ratio') {
   const content = usePlanContent().chart
   switch (type) {
     case 'spending-total':

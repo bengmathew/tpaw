@@ -131,7 +131,7 @@ const excelSimulated = [
 const excel = excelSimulated
 
 const testParams = processTPAWParams(extendTPAWParams({
-  v: 8,
+  v: 9,
   strategy: 'TPAW',
   people: {
     withPartner: false,
@@ -152,7 +152,7 @@ const testParams = processTPAWParams(extendTPAWParams({
   targetAllocation: {
     regularPortfolio: {
       forTPAW: {stocks: 0.3},
-      forSPAW: {
+      forSPAWAndSWR: {
         start: {stocks: 0.6},
         intermediate: [],
         end: {stocks: 0.6},
@@ -160,6 +160,7 @@ const testParams = processTPAWParams(extendTPAWParams({
     },
     legacyPortfolio: {stocks: 0.7},
   },
+  swrWithdrawal:{type: 'asPercent', percent: 0.04},
   scheduledWithdrawalGrowthRate: 0.01,
   savingsAtStartOfStartYear: 50000,
   savings: [

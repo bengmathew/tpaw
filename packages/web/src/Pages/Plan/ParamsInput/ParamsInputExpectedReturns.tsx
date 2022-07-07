@@ -2,6 +2,7 @@ import _ from 'lodash'
 import React from 'react'
 import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
 import {Contentful} from '../../../Utils/Contentful'
+import {formatPercentage} from '../../../Utils/FormatPercentage'
 import {paddingCSS} from '../../../Utils/Geometry'
 import {preciseRange} from '../../../Utils/PreciseRange'
 import {useSimulation} from '../../App/WithSimulation'
@@ -9,6 +10,19 @@ import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
 import {usePlanContent} from '../Plan'
 import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
+const suggested = getDefaultParams().returns.expected
+const PRESETS = {
+  suggested: {...suggested},
+  oneOverCAPE: {
+    stocks: 0.033,
+    bonds: suggested.bonds,
+  },
+  regressionPrediction: {
+    stocks: 0.054,
+    bonds: suggested.bonds,
+  },
+  historical: {stocks: 0.085, bonds: 0.031},
+}
 export const ParamsInputExpectedReturns = React.memo(
   (props: ParamsInputBodyPassThruProps) => {
     const {params, setParams} = useSimulation()
@@ -27,6 +41,14 @@ export const ParamsInputExpectedReturns = React.memo(
             ? ('small' as const)
             : ('none' as const),
       })),
+    }
+
+    const handleChange = (expected: {stocks: number; bonds: number}) => {
+      setParams(params => {
+        const clone = _.cloneDeep(params)
+        clone.returns.expected = expected
+        return clone
+      })
     }
     return (
       <ParamsInputBody {...props} headingMarginLeft="normal">
@@ -49,13 +71,9 @@ export const ParamsInputExpectedReturns = React.memo(
               pointers={[
                 {value: params.returns.expected.stocks, type: 'normal'},
               ]}
-              onChange={([stocks]) => {
-                setParams(params => {
-                  const p = _.cloneDeep(params)
-                  p.returns.expected.stocks = stocks
-                  return p
-                })
-              }}
+              onChange={([stocks]) =>
+                handleChange({stocks, bonds: params.returns.expected.bonds})
+              }
             />
             <h2 className="whitespace-nowrap">Bonds</h2>
             <SliderInput
@@ -63,26 +81,68 @@ export const ParamsInputExpectedReturns = React.memo(
               pointers={[
                 {value: params.returns.expected.bonds, type: 'normal'},
               ]}
-              onChange={([bonds]) => {
-                setParams(params => {
-                  const p = _.cloneDeep(params)
-                  p.returns.expected.bonds = bonds
-                  return p
-                })
-              }}
+              onChange={([bonds]) =>
+                handleChange({stocks: params.returns.expected.stocks, bonds})
+              }
             />
           </div>
-          <button
-            className="mt-4 underline"
-            onClick={() =>
-              setParams(p => ({
-                ...p,
-                returns: getDefaultParams().returns,
-              }))
-            }
+          <h2 className="font-bold mt-8 ">Presets</h2>
+          <div
+            className=" grid gap-x-4 gap-y-2"
+            style={{grid: 'auto/1fr auto auto'}}
           >
-            Reset to Default
-          </button>
+            <h2 className=""></h2>
+            <h2 className="">Stocks</h2>
+            <h2 className="">Bonds</h2>
+            <button
+              className="text-left underline py-1"
+              onClick={() => handleChange({...PRESETS.suggested})}
+            >
+              Suggested
+            </button>
+            <h2 className="text-right ">
+              {formatPercentage(1)(PRESETS.suggested.stocks)}
+            </h2>
+            <h2 className="text-right">
+              {formatPercentage(1)(PRESETS.suggested.bonds)}
+            </h2>
+            <button
+              className="text-left underline py-1"
+              onClick={() => handleChange({...PRESETS.oneOverCAPE})}
+            >
+              1/CAPE for stocks
+            </button>
+            <h2 className="text-right ">
+              {formatPercentage(1)(PRESETS.oneOverCAPE.stocks)}
+            </h2>
+            <h2 className="text-right">
+              {formatPercentage(1)(PRESETS.oneOverCAPE.bonds)}
+            </h2>
+            <button
+              className="text-left underline py-1"
+              onClick={() => handleChange({...PRESETS.regressionPrediction})}
+            >
+              Regression average for stocks
+            </button>
+            <h2 className="text-right ">
+              {formatPercentage(1)(PRESETS.regressionPrediction.stocks)}
+            </h2>
+            <h2 className="text-right">
+              {formatPercentage(1)(PRESETS.regressionPrediction.bonds)}
+            </h2>
+            <button
+              className="text-left underline py-1"
+              onClick={() => handleChange({...PRESETS.historical})}
+            >
+              Historical average
+            </button>
+            <h2 className="text-right ">
+              {formatPercentage(1)(PRESETS.historical.stocks)}
+            </h2>
+            <h2 className="text-right">
+              {formatPercentage(1)(PRESETS.historical.bonds)}
+            </h2>
+          </div>
         </div>
       </ParamsInputBody>
     )

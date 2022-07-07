@@ -25,6 +25,8 @@ export const paramsInputLabel = (type: ParamsInputType) => {
       return 'Strategy'
     case 'expected-returns':
       return 'Expected Returns'
+    case 'simulation':
+      return 'Simulation'
     case 'dev':
       return 'Dev'
     default:

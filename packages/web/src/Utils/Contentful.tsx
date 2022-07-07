@@ -1,16 +1,17 @@
-import { documentToReactComponents } from '@contentful/rich-text-react-renderer'
+import {documentToReactComponents} from '@contentful/rich-text-react-renderer'
 import {
   Block,
   BLOCKS,
   Document,
   Inline,
-  INLINES
+  INLINES,
 } from '@contentful/rich-text-types'
 import * as contentful from 'contentful'
+import _ from 'lodash'
 import Link from 'next/link'
 import React from 'react'
-import { Config } from '../Pages/Config'
-import { assert, fGet } from './Utils'
+import {Config} from '../Pages/Config'
+import {assert, assertFalse, fGet} from './Utils'
 
 export namespace Contentful {
   export type InlineEntry = {
@@ -122,6 +123,35 @@ export namespace Contentful {
     ).data.knowledgeBaseArticleCollection
     assert(total === items.length)
     return items.map(x => x.slug)
+  }
+
+  // THIS IS A HACK.
+  export const replaceVariables = (
+    variables: Record<string, string>,
+    node: Document
+  ): Document => {
+    const nodeAny = node as any
+    if ('content' in nodeAny) {
+      return {
+        ...node,
+        content: nodeAny.content.map((x: any) =>
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          replaceVariables(variables, x)
+        ),
+      }
+    } else if ('value' in nodeAny) {
+      const keys = _.keys(variables)
+      const replace = (x: string) =>
+        keys.reduce((a, c) => a.replace(`{{${c}}}`, variables[c]), x)
+      const result: any = {
+        ...node,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        value: replace(nodeAny.value),
+      }
+      return result
+    } else {
+      assertFalse()
+    }
   }
 
   export const RichText = React.memo(
