@@ -79,6 +79,7 @@ export const YearInputPick = React.memo(
         referenceElement={referenceElement}
         onClose={onClose}
         darkBG={false}
+        align="left"
       >
         {onHide => {
           const setValue = (x: Year | {numYears: number}) => {

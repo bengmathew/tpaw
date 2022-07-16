@@ -55,17 +55,19 @@ export const WithChartData = ({children}: {children: ReactNode}) => {
     ])
     _add('portfolio')
     _add('glide-path')
-    _add('withdrawal-rate')
+    _add('withdrawal')
 
     const sharpeRatio =
       forSharpeRatioComparison &&
       forSharpeRatioComparison.tpaw.tpawResult &&
-      forSharpeRatioComparison.spaw.tpawResult
+      forSharpeRatioComparison.spaw.tpawResult &&
+      forSharpeRatioComparison.swr.tpawResult
         ? tpawChartDataMainSharpeRatio(
             'sharpe-ratio',
             {
               tpaw: forSharpeRatioComparison.tpaw.tpawResult,
               spaw: forSharpeRatioComparison.spaw.tpawResult,
+              swr: forSharpeRatioComparison.swr.tpawResult,
             },
             percentileList,
             highlightPercentiles

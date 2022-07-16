@@ -11,7 +11,6 @@ const _fontSize = 11
 const _lineLength = 8
 export const chartDrawLegacy = (): ChartComponent<TPAWChartDataLegacy> => ({
   draw: (context: ChartContext<TPAWChartDataLegacy>) => {
-
     const {canvasContext: ctx, dataTransition, derivedState} = context
 
     const {scale, plotArea, viewport} = derivedState.curr
@@ -41,7 +40,7 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartDataLegacy> => ({
     // Draw the major lines.
     ctx.beginPath()
     majorDataYs.forEach(dataY => {
-      const graphY = scale.y(dataY) 
+      const graphY = scale.y(dataY)
       ctx.moveTo(graphX, graphY)
       ctx.lineTo(graphX + _lineLength, graphY)
     })
@@ -50,7 +49,7 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartDataLegacy> => ({
     ctx.stroke()
 
     //Draw the targets.
-    ctx.globalAlpha =  0.7
+    ctx.globalAlpha = 0.7
     ctx.beginPath()
     majorDataYs.forEach(dataY =>
       ctx.ellipse(graphX, scale.y(dataY), 4, 4, 0, 0, Math.PI * 4)
@@ -89,7 +88,9 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartDataLegacy> => ({
     const yLabelHandleX = labelGraphX + yLabelWidth
 
     majorDataYs.forEach((dataY, i) => {
-      const graphY = scale.y(dataY)
+      // Lower bound because very low graphY values were not displaying on the
+      // graph.
+      let graphY = Math.max(scale.y(dataY), -1000)
       yLabelGraphY -= yLabelHeight + pad.vert
 
       ctx.fillStyle = ChartUtils.color.gray[900]
@@ -115,6 +116,7 @@ export const chartDrawLegacy = (): ChartComponent<TPAWChartDataLegacy> => ({
       ctx.moveTo(graphX, graphY)
       const yLabelHandleY = yLabelGraphY - yLabelHeight / 2
       const lineWidth = graphX - yLabelHandleX
+
       ChartUtils.roundedLine(
         ctx,
         [

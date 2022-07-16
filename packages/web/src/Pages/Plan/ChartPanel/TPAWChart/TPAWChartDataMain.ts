@@ -53,6 +53,7 @@ export type TPAWChartDataMain = {
   }
   yDisplayRange: SimpleRange
   yFormat: (x: number) => string
+  successRate: number
 }
 
 export const tpawChartDataScaled = (
@@ -104,6 +105,7 @@ export const tpawChartDataScaled = (
     },
     years: curr.years,
     yFormat: curr.yFormat,
+    successRate: curr.successRate,
   }
 }
 
@@ -182,7 +184,7 @@ export const tpawChartDataMainPercentiles = (
         highlightPercentiles,
         {start: 0, end: 1}
       )
-    case 'withdrawal-rate':
+    case 'withdrawal':
       return _dataPercentiles(
         type,
         tpawResult,
@@ -242,7 +244,11 @@ const _addYear = (
 
 export const tpawChartDataMainSharpeRatio = (
   label: string,
-  tpawResult: {tpaw: UseTPAWWorkerResult; spaw: UseTPAWWorkerResult},
+  tpawResult: {
+    tpaw: UseTPAWWorkerResult
+    spaw: UseTPAWWorkerResult
+    swr: UseTPAWWorkerResult
+  },
   percentiles: readonly number[],
   highlightedPercentiles: readonly number[]
 ): TPAWChartDataMain => {
@@ -273,8 +279,11 @@ export const tpawChartDataMainSharpeRatio = (
   const spawData = Array.from(
     tpawResult.spaw.savingsPortfolio.sharpeRatio.withdrawals.regular
   )
-  const [tpawInterpolated, spawInterpolated] = _interpolate(
-    [{data: tpawData}, {data: spawData}],
+  const swrData = Array.from(
+    tpawResult.swr.savingsPortfolio.sharpeRatio.withdrawals.regular
+  )
+  const [tpawInterpolated, spawInterpolated, swrInterpolated] = _interpolate(
+    [{data: tpawData}, {data: spawData}, {data: swrData}],
     years.displayRange
   )
   const series: TPAWChartDataMain['series'] = {
@@ -284,6 +293,7 @@ export const tpawChartDataMainSharpeRatio = (
     lines: [
       {label: 'TPAW', data: tpawInterpolated},
       {label: 'SPAW', data: spawInterpolated},
+      {label: 'SWR', data: swrInterpolated},
     ],
   }
 
@@ -298,15 +308,16 @@ export const tpawChartDataMainSharpeRatio = (
     }
   }
 
-  const blendMaxMin = (
-    a: ReturnType<typeof maxMin>,
-    b: ReturnType<typeof maxMin>
-  ) => ({
-    max: a.max.y > b.max.y ? a.max : b.max,
-    min: a.min.y < b.min.y ? a.min : b.min,
+  const blendMaxMin = (x: ReturnType<typeof maxMin>[]) => ({
+    max: fGet(_.maxBy(x, x => x.max.y)).max,
+    min: fGet(_.minBy(x, x => x.min.y)).min,
   })
 
-  const {max, min} = blendMaxMin(maxMin(tpawData), maxMin(spawData))
+  const {max, min} = blendMaxMin([
+    maxMin(tpawData),
+    maxMin(spawData),
+    maxMin(swrData),
+  ])
   const yDisplayRange = {
     start: Math.min(0, min.y),
     end: Math.max(0.0001, max.y),
@@ -320,6 +331,7 @@ export const tpawChartDataMainSharpeRatio = (
     max,
     yFormat: x => x.toFixed(2),
     yDisplayRange,
+    successRate: 0,
   }
 }
 
@@ -374,7 +386,19 @@ const _dataPercentiles = (
     yDisplayRangeIn === 'auto'
       ? {start: Math.min(0, min.y), end: Math.max(0.0001, max.y)}
       : yDisplayRangeIn
-  return {type, label: type, years, series, min, max, yFormat, yDisplayRange}
+
+  const successRate = 1 - tpawResult.percentageOfRunsWithInsufficientFunds
+  return {
+    type,
+    label: type,
+    years,
+    series,
+    min,
+    max,
+    yFormat,
+    yDisplayRange,
+    successRate,
+  }
 }
 
 const _addPercentileInfo = <T>(

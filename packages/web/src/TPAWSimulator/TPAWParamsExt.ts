@@ -90,6 +90,7 @@ export const extendTPAWParams = (params: TPAWParams) => {
     ? maxYear(years.person1.max, years.person2.max)
     : years.person1.max
   const numYears = getNumYears(params)
+  
 
   const yearRangeBoundsCheck = (x: YearRange, bounds: SimpleRange) => {
     const inRange = (edge: 'start' | 'end') =>
@@ -211,6 +212,9 @@ export const extendTPAWParams = (params: TPAWParams) => {
     const {ages} = pickPerson(person)
     return ages.type === 'retired' ? years.now : years.person(person).retirement
   })()
+
+  const numRetirementYears = numYears- asYFN(withdrawalStartYear)
+  const withdrawalsStarted = asYFN(withdrawalStartYear) === 0
 
   const yourOrYourPartners = (person: 'person1' | 'person2') =>
     person === 'person1' ? 'your' : "your partner's"
@@ -409,6 +413,8 @@ export const extendTPAWParams = (params: TPAWParams) => {
     yearToStr,
     yearRangeBoundsCheck,
     withdrawalStartYear,
+    withdrawalsStarted,
+    numRetirementYears,
     yourOrYourPartners,
     params,
   }

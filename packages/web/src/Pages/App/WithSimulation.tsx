@@ -36,6 +36,7 @@ export type SimulationInfo = {
   forSharpeRatioComparison: {
     tpaw: SimulationInfoPerParam
     spaw: SimulationInfoPerParam
+    swr: SimulationInfoPerParam
   } | null
 } & Omit<SimulationInfoPerParam, 'tpawResult'> & {
     tpawResult: UseTPAWWorkerResult
@@ -57,6 +58,7 @@ export const WithSimulation = ({children}: {children: ReactNode}) => {
   const paramsForSharpeRatioComparison: {
     tpaw: TPAWParams
     spaw: TPAWParams
+    swr: TPAWParams
   } | null = useMemo(() => {
     if (!compareSharpeRatio) return null
     const clone = _.cloneDeep(params)
@@ -66,11 +68,13 @@ export const WithSimulation = ({children}: {children: ReactNode}) => {
       discretionary: [],
       lmp: clone.withdrawals.lmp,
     }
+    clone.scheduledWithdrawalGrowthRate = 0
     clone.spendingCeiling = null
     clone.spendingFloor = null
     return {
       tpaw: {...clone, strategy: 'TPAW'},
       spaw: {...clone, strategy: 'SPAW'},
+      swr: {...clone, strategy: 'SWR'},
     }
   }, [compareSharpeRatio, params])
 
@@ -82,13 +86,26 @@ export const WithSimulation = ({children}: {children: ReactNode}) => {
     paramsForSharpeRatioComparison?.spaw ?? null,
     numRuns
   )
+  const forSWRSharpeRatio = useForParams(
+    paramsForSharpeRatioComparison?.swr ?? null,
+    numRuns
+  )
 
   const forSharpeRatioComparison = useMemo(
     () =>
       compareSharpeRatio
-        ? {tpaw: fGet(forTPAWSharpeRatio), spaw: fGet(forSPAWSharpeRatio)}
+        ? {
+            tpaw: fGet(forTPAWSharpeRatio),
+            spaw: fGet(forSPAWSharpeRatio),
+            swr: fGet(forSWRSharpeRatio),
+          }
         : null,
-    [forSPAWSharpeRatio, forTPAWSharpeRatio, compareSharpeRatio]
+    [
+      forSPAWSharpeRatio,
+      forTPAWSharpeRatio,
+      forSWRSharpeRatio,
+      compareSharpeRatio,
+    ]
   )
 
   const forBase = fGet(useForParams(params, numRuns))

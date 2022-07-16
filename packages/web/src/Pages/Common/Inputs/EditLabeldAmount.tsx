@@ -6,7 +6,7 @@ import _ from 'lodash'
 import React from 'react'
 import {LabeledAmount, TPAWParams} from '../../../TPAWSimulator/TPAWParams'
 import {useSimulation} from '../../App/WithSimulation'
-import {AmountInput, useAmountInputState} from './AmountInput'
+import {AmountInput} from './AmountInput'
 import {CheckBox} from './CheckBox'
 import {smartDeltaFnForAmountInput} from './SmartDeltaFnForAmountInput'
 
@@ -41,7 +41,6 @@ export const EditLabeledAmount = React.memo(
     const entry = entries(params)[index]
 
     const {label, value} = entry
-    const amountState = useAmountInputState(value)
 
     const {increment, decrement} = smartDeltaFnForAmountInput
     return (
@@ -78,10 +77,11 @@ export const EditLabeledAmount = React.memo(
             >
               <div className="grid" style={{grid: 'auto / 1fr auto auto'}}>
                 <AmountInput
-                  className="w-[100%]"
-                  type="currency"
-                  state={amountState}
-                  onAccept={value => setEntry(entry => (entry.value = value))}
+                  className="w-[100%] text-input"
+                  prefix="$"
+                  value={value}
+                  onChange={value => setEntry(entry => (entry.value = value))}
+                  decimals={0}
                 />
                 <button
                   className="pl-6 pr-3"

@@ -1,12 +1,12 @@
 import _ from 'lodash'
-import React, { useEffect, useRef, useState } from 'react'
-import { extendTPAWParams } from '../TPAWSimulator/TPAWParamsExt'
-import { processTPAWParams } from '../TPAWSimulator/TPAWParamsProcessed'
-import { TPAWRunInWorker } from '../TPAWSimulator/Worker/TPAWRunInWorker'
-import { fGet } from '../Utils/Utils'
-import { AppPage } from './App/AppPage'
+import React, {useEffect, useRef, useState} from 'react'
+import {extendTPAWParams} from '../TPAWSimulator/TPAWParamsExt'
+import {processTPAWParams} from '../TPAWSimulator/TPAWParamsProcessed'
+import {TPAWRunInWorker} from '../TPAWSimulator/Worker/TPAWRunInWorker'
+import {fGet} from '../Utils/Utils'
+import {AppPage} from './App/AppPage'
 
-const numRuns = 50000 
+const numRuns = 50000
 const highlightPercentiles = [5, 25, 50, 75, 95]
 const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
 
@@ -20,7 +20,11 @@ export const Perf = React.memo(() => {
   const [result, setResult] = useState([''])
 
   return (
-    <AppPage title="Performance - TPAW Planner" curr="other">
+    <AppPage
+      className="min-h-screen"
+      title="Performance - TPAW Planner"
+      curr="other"
+    >
       <div className="h-screen flex flex-col justify-center items-center">
         <button
           className="rounded-full text-xl px-6 py-2 border-2 border-gray-700"
@@ -79,99 +83,101 @@ export const Perf = React.memo(() => {
   )
 })
 
-const params = processTPAWParams(extendTPAWParams( {
-  v: 9,
-  strategy: 'TPAW',
-  people: {
-    withPartner: false,
-    person1: {
-      displayName: null,
-      ages: {type: 'notRetired', current: 25, retirement: 55, max: 100},
-    },
-  },
-  returns: {
-    expected: {stocks: 0.035, bonds: 0.01},
-    historical: {type: 'default', adjust: {type: 'toExpected'}},
-  },
-  inflation: 0.02,
-  targetAllocation: {
-    regularPortfolio: {
-      forTPAW: {stocks: 0.35},
-      forSPAWAndSWR: {
-        start: {stocks: 0.5},
-        intermediate: [],
-        end: {stocks: 0.5},
+const params = processTPAWParams(
+  extendTPAWParams({
+    v: 9,
+    strategy: 'TPAW',
+    people: {
+      withPartner: false,
+      person1: {
+        displayName: null,
+        ages: {type: 'notRetired', current: 25, retirement: 55, max: 100},
       },
     },
+    returns: {
+      expected: {stocks: 0.035, bonds: 0.01},
+      historical: {type: 'default', adjust: {type: 'toExpected'}},
+    },
+    inflation: 0.02,
+    targetAllocation: {
+      regularPortfolio: {
+        forTPAW: {stocks: 0.35},
+        forSPAWAndSWR: {
+          start: {stocks: 0.5},
+          intermediate: [],
+          end: {stocks: 0.5},
+        },
+      },
 
-    legacyPortfolio: {stocks: 0.7},
-  },
-  swrWithdrawal:{type: 'asPercent', percent: 0.04},
-  scheduledWithdrawalGrowthRate: 0.02,
-  savingsAtStartOfStartYear: 50000,
-  savings: [
-    {
-      label: 'Savings',
-      yearRange: {
-        type: 'startAndEnd',
-        start: {type: 'now'},
-        end: {type: 'namedAge', person: 'person1', age: 'lastWorkingYear'},
-      },
-      value: 10000,
-      nominal: false,
-      id: 0,
+      legacyPortfolio: {stocks: 0.7},
     },
-  ],
-  retirementIncome: [
-    {
-      label: 'Social Security',
-      yearRange: {
-        type: 'startAndEnd',
-        start: {type: 'numericAge', person: 'person1', age: 70},
-        end: {type: 'namedAge', person: 'person1', age: 'max'},
-      },
-      value: 20000,
-      nominal: false,
-      id: 0,
-    },
-  ],
-  withdrawals: {
-    lmp: 0,
-    essential: [
+    swrWithdrawal: {type: 'asPercent', percent: 0.04},
+    scheduledWithdrawalGrowthRate: 0.02,
+    savingsAtStartOfStartYear: 50000,
+    savings: [
       {
-        label: null,
+        label: 'Savings',
         yearRange: {
           type: 'startAndEnd',
-          start: {type: 'numericAge', person: 'person1', age: 76},
-          end: {type: 'numericAge', person: 'person1', age: 76},
+          start: {type: 'now'},
+          end: {type: 'namedAge', person: 'person1', age: 'lastWorkingYear'},
         },
-        value: 100000,
+        value: 10000,
         nominal: false,
         id: 0,
       },
     ],
-    discretionary: [
+    retirementIncome: [
       {
-        label: null,
+        label: 'Social Security',
         yearRange: {
           type: 'startAndEnd',
-          start: {type: 'numericAge', person: 'person1', age: 58},
-          end: {type: 'numericAge', person: 'person1', age: 58},
+          start: {type: 'numericAge', person: 'person1', age: 70},
+          end: {type: 'namedAge', person: 'person1', age: 'max'},
         },
-        value: 100000,
+        value: 20000,
         nominal: false,
-        id: 1,
+        id: 0,
       },
     ],
-  },
-  spendingCeiling: null,
-  spendingFloor: null,
-  legacy: {
-    total: 50000,
-    external: [],
-  },
-  sampling:'monteCarlo',
-  display: {
-    alwaysShowAllYears: false,
-  },
-}))
+    withdrawals: {
+      lmp: 0,
+      essential: [
+        {
+          label: null,
+          yearRange: {
+            type: 'startAndEnd',
+            start: {type: 'numericAge', person: 'person1', age: 76},
+            end: {type: 'numericAge', person: 'person1', age: 76},
+          },
+          value: 100000,
+          nominal: false,
+          id: 0,
+        },
+      ],
+      discretionary: [
+        {
+          label: null,
+          yearRange: {
+            type: 'startAndEnd',
+            start: {type: 'numericAge', person: 'person1', age: 58},
+            end: {type: 'numericAge', person: 'person1', age: 58},
+          },
+          value: 100000,
+          nominal: false,
+          id: 1,
+        },
+      ],
+    },
+    spendingCeiling: null,
+    spendingFloor: null,
+    legacy: {
+      total: 50000,
+      external: [],
+    },
+    sampling: 'monteCarlo',
+    display: {
+      alwaysShowAllYears: false,
+    },
+  })
+)

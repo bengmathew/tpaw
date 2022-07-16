@@ -15,6 +15,7 @@ import {
 } from '../../Utils/Geometry'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {fGet} from '../../Utils/Utils'
+import {useSimulation} from '../App/WithSimulation'
 import {ModalBase} from '../Common/Modal/ModalBase'
 import {ParamsInputType} from './ParamsInput/Helpers/ParamsInputType'
 import {usePlanContent} from './Plan'
@@ -49,6 +50,7 @@ export const GuidePanel = React.memo(
 const _Mobile = React.memo(
   React.forwardRef<GuidePanelStateful, Props>(
     ({type, sizing, transitionRef}: Props, forwardRef) => {
+      const {params} = useSimulation()
       const [show, setShow] = useState(false)
       const outerRef = useRef<HTMLButtonElement | null>(null)
       const [inner, setInner] = useState<HTMLDivElement | null>(null)
@@ -88,7 +90,9 @@ const _Mobile = React.memo(
             <ModalBase onClose={() => setShow(false)}>
               {transitionOut => (
                 <div className="" ref={setInner}>
-                  <_RichText className="">{content.body.fields.body}</_RichText>
+                  <_RichText className="">
+                    {content.body[params.strategy]}
+                  </_RichText>
                 </div>
               )}
             </ModalBase>
@@ -102,6 +106,8 @@ const _Mobile = React.memo(
 const _LaptopAndDesktop = React.memo(
   React.forwardRef<GuidePanelStateful, Props>(
     ({type, sizing, transitionRef}: Props, forwardRef) => {
+
+      const {params} = useSimulation()
       const outerRef = useRef<HTMLDivElement | null>(null)
       // const innerRef = useRef<HTMLDivElement | null>(null)
       const headerRef = useRef<HTMLHeadingElement | null>(null)
@@ -136,7 +142,9 @@ const _LaptopAndDesktop = React.memo(
           </h2>
           {content.body && (
             <div className={` `}>
-              <_RichText className="">{content.body.fields.body}</_RichText>
+              <_RichText className="">
+                {content.body[params.strategy]}
+              </_RichText>
             </div>
           )}
         </div>

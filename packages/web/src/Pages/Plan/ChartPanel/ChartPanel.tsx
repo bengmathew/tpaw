@@ -76,6 +76,7 @@ export const ChartPanel = React.memo(
     ) => {
       const {paramSpace, setParamSpace, tpawResult} = useSimulation()
       const shouldShowLegacy = _shouldShowLegacy(tpawResult, type)
+      const shouldShowSuccessRate = tpawResult.args.params.strategy === 'SWR' && type !== 'sharpe-ratio'
       const allChartData = useChartData()
       const chartMainData =
         type === 'sharpe-ratio'
@@ -175,6 +176,9 @@ export const ChartPanel = React.memo(
       const tasksRef = useRef<HTMLAnchorElement | null>(null)
       const rescaleRef = useRef<HTMLButtonElement | null>(null)
       const legacyTransitionRef = useRef({transition: shouldShowLegacy ? 1 : 0})
+      const successRateTransitionRef = useRef({
+        transition: shouldShowSuccessRate ? 1 : 0,
+      })
 
       const [measures, setMeasures] = useState({
         heading: 0,
@@ -207,7 +211,12 @@ export const ChartPanel = React.memo(
       }, [])
 
       const sizing = useCallback(
-        (transition: number, target: 0 | 1, legacyTransition: number) => {
+        (
+          transition: number,
+          target: 0 | 1,
+          legacyTransition: number,
+          successRateTransition: number
+        ) => {
           const orig = sizingIn(transition)
           const origAt0 = sizingIn(0)
           const origAt1 = sizingIn(1)
@@ -290,7 +299,7 @@ export const ChartPanel = React.memo(
             left: cardPadding.left,
             right: cardPadding.right,
             top: layout === 'mobile' ? 20 : 30,
-            bottom: 35,
+            bottom: linearFnFomPoints(0, 35, 1, 60)(successRateTransition),
           }
           const chartSizing = {position: chartPosition, padding: chartPadding}
 
@@ -342,18 +351,24 @@ export const ChartPanel = React.memo(
         sizing(
           transitionRef.current.transition,
           transitionRef.current.target,
-          legacyTransitionRef.current.transition
+          legacyTransitionRef.current.transition,
+          successRateTransitionRef.current.transition
         )
       )
-      const sizingAt01 = useMemo(() => sizing(0, 0, 1), [sizing])
-      const sizingAt00 = useMemo(() => sizing(0, 0, 0), [sizing])
-      const sizingAt11 = useMemo(() => sizing(1, 1, 1), [sizing])
-      const sizingAt10 = useMemo(() => sizing(1, 1, 0), [sizing])
+      const sizingAt01 = useMemo(() => sizing(0, 0, 1, 0), [sizing])
+      const sizingAt00 = useMemo(() => sizing(0, 0, 0, 0), [sizing])
+      const sizingAt11 = useMemo(() => sizing(1, 1, 1, 0), [sizing])
+      const sizingAt10 = useMemo(() => sizing(1, 1, 0, 0), [sizing])
       const sizingAt0AtTargetLegacy = shouldShowLegacy ? sizingAt01 : sizingAt00
       const sizingAt1AtTargetLegacy = shouldShowLegacy ? sizingAt11 : sizingAt10
 
       const setTransition = useCallback(
-        (transition: number, target: 0 | 1, legacyTransition: number) => {
+        (
+          transition: number,
+          target: 0 | 1,
+          legacyTransition: number,
+          successRateTransition: number
+        ) => {
           const {
             position,
             padding,
@@ -370,7 +385,12 @@ export const ChartPanel = React.memo(
             headingPaddingLeft,
             menuPosition,
             descriptionPosition,
-          } = sizing(transition, target, legacyTransition)
+          } = sizing(
+            transition,
+            target,
+            legacyTransition,
+            successRateTransition
+          )
 
           applyRectSizingToHTMLElement(position, fGet(outerRef.current))
           applyPaddingToHTMLElement(padding, fGet(outerRef.current))
@@ -432,7 +452,8 @@ export const ChartPanel = React.memo(
             setTransition(
               transitionRef.current.transition,
               transitionRef.current.target,
-              legacyTransitionRef.current.transition
+              legacyTransitionRef.current.transition,
+              successRateTransitionRef.current.transition
             ),
         })
         return () => {
@@ -440,12 +461,33 @@ export const ChartPanel = React.memo(
         }
       }, [shouldShowLegacy, setTransition, transitionRef])
       useAssertConst([transitionRef])
+      useEffect(() => {
+        const tween = gsap.to(successRateTransitionRef.current, {
+          transition: shouldShowSuccessRate ? 1 : 0,
+          onUpdate: () =>
+            setTransition(
+              transitionRef.current.transition,
+              transitionRef.current.target,
+              legacyTransitionRef.current.transition,
+              successRateTransitionRef.current.transition
+            ),
+        })
+        return () => {
+          tween.kill()
+        }
+      }, [shouldShowSuccessRate, setTransition, transitionRef])
+      useAssertConst([transitionRef])
 
       useImperativeHandle(
         forwardRef,
         () => ({
           setTransition: (t, x) =>
-            setTransition(t, x, legacyTransitionRef.current.transition),
+            setTransition(
+              t,
+              x,
+              legacyTransitionRef.current.transition,
+              successRateTransitionRef.current.transition
+            ),
         }),
         [setTransition]
       )
@@ -453,7 +495,8 @@ export const ChartPanel = React.memo(
         setTransition(
           transitionRef.current.transition,
           transitionRef.current.target,
-          legacyTransitionRef.current.transition
+          legacyTransitionRef.current.transition,
+          successRateTransitionRef.current.transition
         )
       }, [setTransition, transitionRef])
       useAssertConst([transitionRef])

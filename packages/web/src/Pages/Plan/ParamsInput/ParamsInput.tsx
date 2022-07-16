@@ -1,3 +1,5 @@
+import {faCaretDown, faColon} from '@fortawesome/pro-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import React, {
   useCallback,
   useImperativeHandle,
@@ -9,12 +11,15 @@ import {
   applyPaddingToHTMLElement,
   applyRectSizingToHTMLElement,
   Padding,
+  paddingCSSStyleHorz,
   RectExt,
 } from '../../../Utils/Geometry'
 import {linearFnFomPoints} from '../../../Utils/LinearFn'
 import {useAssertConst} from '../../../Utils/UseAssertConst'
 import {fGet, noCase} from '../../../Utils/Utils'
+import {useSimulation} from '../../App/WithSimulation'
 import {ChartPanelType} from '../ChartPanel/ChartPanelType'
+import {strategyName} from './Helpers/ParamsInputStrategyConditionCard'
 import {ParamsInputType} from './Helpers/ParamsInputType'
 import {ParamsInputAgeAndRetirement} from './ParamsInputAgeAndRetirement/ParamsInputAgeAndRetirement'
 import {ParamsInputBodyPassThruProps} from './ParamsInputBody'
@@ -26,11 +31,14 @@ import {ParamsInputFutureSavings} from './ParamsInputFutureSavings'
 import {ParamsInputIncomeDuringRetirement} from './ParamsInputIncomeDuringRetirement'
 import {ParamsInputInflation} from './ParamsInputInflation'
 import {ParamsInputLegacy} from './ParamsInputLegacy'
-import {ParamsInputRiskAndTimePreference} from './ParamsInputRiskAndTimePreference'
-import { ParamsInputSimulation } from './ParamsInputSimulation'
+import {ParamsInputLMP} from './ParamsInputLMP'
+import {ParamsInputSimulation} from './ParamsInputSimulation'
 import {ParamsInputSpendingCeilingAndFloor} from './ParamsInputSpendingCeilingAndFloor'
-import {ParamsInputStrategy} from './ParamsInputStrategy'
-import {ParamsInputSummary} from './ParamsInputSummary'
+import {ParamsInputSpendingTilt} from './ParamsInputSpendingTilt'
+import {ParamsInputStockAllocation} from './ParamsInputStockAllocation'
+import {ParamsInputCompareStrategies} from './ParamsInputCompareStrategies'
+import {ParamsInputSummary} from './ParamsInputSummary/ParamsInputSummary'
+import { ParamsInputWithdrawalRate } from './ParamsInputWithdrawal'
 import {Reset} from './Reset'
 import {Share} from './Share'
 
@@ -70,6 +78,7 @@ export const ParamsInput = React.memo(
       }: Props,
       forwardRef
     ) => {
+      const {params} = useSimulation()
       const outerRef = useRef<HTMLDivElement | null>(null)
       const summaryRef = useRef<HTMLDivElement | null>(null)
       const detailRef = useRef<HTMLDivElement | null>(null)
@@ -114,25 +123,6 @@ export const ParamsInput = React.memo(
             style={{width: `${sizingAt0.position.width}px`}}
             ref={summaryRef}
           >
-            <div
-              className="flex justify-between items-center"
-              style={{
-                marginBottom: `${sizingAt0.headingMarginBottom}px`,
-                paddingLeft: `${sizingAt0.cardPadding.left}px`,
-              }}
-            >
-              <h2
-                className={`uppercase font-bold 
-                ${layout !== 'laptop' ? 'invisible' : 'invisible'}`}
-              >
-                Input
-              </h2>
-              <div className={`flex gap-x-4 `}>
-                <Reset />
-                <Share />
-              </div>
-            </div>
-
             <ParamsInputSummary
               layout={layout}
               state={state}
@@ -203,15 +193,21 @@ const _Body = React.memo(
             {...props}
           />
         )
-      case 'spending-ceiling-and-floor':
-        return <ParamsInputSpendingCeilingAndFloor {...props} />
       case 'legacy':
         return <ParamsInputLegacy {...props} />
-      case 'risk-and-time-preference':
-        return <ParamsInputRiskAndTimePreference {...props} />
-      case 'strategy':
+      case 'stock-allocation':
+        return <ParamsInputStockAllocation {...props} />
+      case 'spending-tilt':
+        return <ParamsInputSpendingTilt {...props} />
+      case 'spending-ceiling-and-floor':
+        return <ParamsInputSpendingCeilingAndFloor {...props} />
+      case 'lmp':
+        return <ParamsInputLMP {...props} />
+      case 'withdrawal':
+        return <ParamsInputWithdrawalRate {...props} />
+      case 'compare-strategies':
         return (
-          <ParamsInputStrategy
+          <ParamsInputCompareStrategies
             chartType={chartType}
             setChartType={setChartType}
             {...props}

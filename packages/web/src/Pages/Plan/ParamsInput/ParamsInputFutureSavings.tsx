@@ -26,7 +26,7 @@ export const ParamsInputFutureSavings = React.memo(
           style={{padding: paddingCSS(props.sizing.cardPadding)}}
         >
           <Contentful.RichText
-            body={content['future-savings'].intro.fields.body}
+            body={content['future-savings'].intro[params.strategy]}
             p="p-base"
           />
           <ByYearSchedule

@@ -2,6 +2,7 @@ import {faLeftLong} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import React, {ReactNode} from 'react'
+import {TPAWParams} from '../../TPAWSimulator/TPAWParams'
 import {extendTPAWParams} from '../../TPAWSimulator/TPAWParamsExt'
 import {FirstYearSavingsPortfolioDetail} from '../../TPAWSimulator/Worker/FirstYearSavingsPortfolioDetail'
 import {TPAWRunInWorkerByPercentileByYearsFromNow} from '../../TPAWSimulator/Worker/TPAWRunInWorker'
@@ -20,13 +21,14 @@ type _Props = Omit<FirstYearSavingsPortfolioDetail, 'withdrawals'> & {
     discretionaryByEntry: {id: number; label: string | null; amount: number}[]
   }
   withdrawalsStarted: boolean
+  strategy: TPAWParams['strategy']
 }
 
 const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
   const original = tpawResult.firstYearOfSomeRun
   const {params} = tpawResult.args
 
-  const {asYFN, withdrawalStartYear} = extendTPAWParams(params.original)
+  const {withdrawalsStarted} = extendTPAWParams(params.original)
 
   const firstYearOfAnyPercentile = (
     id: number,
@@ -56,7 +58,8 @@ const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
         })
       ),
     },
-    withdrawalsStarted: asYFN(withdrawalStartYear) <= 0,
+    withdrawalsStarted,
+    strategy: params.strategy,
   }
 }
 
@@ -67,7 +70,7 @@ export const TasksForThisYear = React.memo(() => {
 
   return (
     <AppPage
-      className="grid pt-header"
+      className="grid pt-header min-h-screen"
       title="Tasks for This Year - TPAW Planner"
       style={{grid: '1fr auto/auto'}}
       curr="plan"
@@ -201,6 +204,7 @@ const _HowMuchToSpend = React.memo(
     const needsBreakdown =
       withdrawals.essentialByEntry.length > 0 ||
       withdrawals.discretionaryByEntry.length > 0
+    const mergeBreakdown = props.strategy === 'SWR'
     return (
       <div className={className}>
         <_Heading>How Much To Spend</_Heading>
@@ -221,9 +225,9 @@ const _HowMuchToSpend = React.memo(
             <h2 className="text-right">
               <_Value>{withdrawals.regular}</_Value>
             </h2>
-            {withdrawals.essentialByEntry.length > 0 && (
+            {mergeBreakdown ? (
               <>
-                <h2 className="">Extra - Essential</h2>
+                <h2 className="">Extra</h2>
                 <h2></h2>
                 {withdrawals.essentialByEntry.map(({id, label, amount}) => (
                   <React.Fragment key={id}>
@@ -233,12 +237,6 @@ const _HowMuchToSpend = React.memo(
                     </h2>
                   </React.Fragment>
                 ))}
-              </>
-            )}
-            {withdrawals.discretionaryByEntry.length > 0 && (
-              <>
-                <h2 className="">Extra - Discretionary</h2>
-                <h2></h2>
                 {withdrawals.discretionaryByEntry.map(({id, label, amount}) => (
                   <React.Fragment key={id}>
                     <h2 className="ml-8">{label ?? '<no label>'}</h2>
@@ -247,6 +245,39 @@ const _HowMuchToSpend = React.memo(
                     </h2>
                   </React.Fragment>
                 ))}
+              </>
+            ) : (
+              <>
+                {withdrawals.essentialByEntry.length > 0 && (
+                  <>
+                    <h2 className="">Extra - Essential</h2>
+                    <h2></h2>
+                    {withdrawals.essentialByEntry.map(({id, label, amount}) => (
+                      <React.Fragment key={id}>
+                        <h2 className="ml-8">{label ?? '<no label>'}</h2>
+                        <h2 className="text-right">
+                          <_Value>{amount}</_Value>
+                        </h2>
+                      </React.Fragment>
+                    ))}
+                  </>
+                )}
+                {withdrawals.discretionaryByEntry.length > 0 && (
+                  <>
+                    <h2 className="">Extra - Discretionary</h2>
+                    <h2></h2>
+                    {withdrawals.discretionaryByEntry.map(
+                      ({id, label, amount}) => (
+                        <React.Fragment key={id}>
+                          <h2 className="ml-8">{label ?? '<no label>'}</h2>
+                          <h2 className="text-right">
+                            <_Value>{amount}</_Value>
+                          </h2>
+                        </React.Fragment>
+                      )
+                    )}
+                  </>
+                )}
               </>
             )}
           </div>
@@ -336,10 +367,10 @@ const _Contribution = React.memo(
 const _AssetAllocation = React.memo(
   ({
     className = '',
-    
+
     ...props
   }: _Props & {className?: string}) => {
-    const {contributionToOrWithdrawalFromSavingsPortfolio,} = props
+    const {contributionToOrWithdrawalFromSavingsPortfolio} = props
     return (
       <div className={className}>
         <_Heading>What Asset Allocation To Use</_Heading>
@@ -370,22 +401,20 @@ const _AssetAllocation = React.memo(
             'withdrawal'
               ? 'withdrawal'
               : 'contribution'}{' '}
-            is{' '}
-            <_Value className="">
-              {props.afterWithdrawals.balance}
-            </_Value>
-            . Rebalance this portfolio to the following asset allocation:
+            is <_Value className="">{props.afterWithdrawals.balance}</_Value>.
+            Rebalance this portfolio to the following asset allocation:
           </p>
-          <_AllocationTable className="mb-3" {...props} />
-          <p className="">
-            {`Note that this is the asset allocation for your savings portfolio and will typically 
-            be different from the asset allocation for the total portfolio that you entered in "${paramsInputLabel(
-              'risk-and-time-preference'
-            )}." `}
+          <_AllocationTable className="" {...props} />
+          {props.strategy === 'TPAW' && <p className="mt-3">
+            <span className="bg-gray-300 px-2 rounded-lg ">Note</span>{' '}
+            {`This is the asset allocation for your savings portfolio and will typically 
+            be different from the asset allocation for the total portfolio that you entered in the "${paramsInputLabel(
+              'stock-allocation'
+            )} section." `}
             <Link href="learn/future-savings-and-retirement-income">
               <a className="underline">Learn more.</a>
             </Link>
-          </p>
+          </p>}
         </div>
       </div>
     )

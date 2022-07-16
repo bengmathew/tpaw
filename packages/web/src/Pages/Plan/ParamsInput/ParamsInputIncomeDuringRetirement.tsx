@@ -25,7 +25,7 @@ export const ParamsInputIncomeDuringRetirement = React.memo(
           style={{padding: paddingCSS(props.sizing.cardPadding)}}
         >
           <Contentful.RichText
-            body={content['income-during-retirement'].intro.fields.body}
+            body={content['income-during-retirement'].intro[params.strategy]}
             p="p-base"
           />
           <ByYearSchedule

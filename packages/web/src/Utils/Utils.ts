@@ -16,7 +16,7 @@ export function fGet<T>(x: T | null | undefined): T {
 
 
 export function noCase(x: never): never {
-  throw new Error("Didn't expect to get here")
+  throw new Error(`Didn't expect to get here: ${x as any}`)
 }
 
 export function nundef<T>(x: T | undefined): T {

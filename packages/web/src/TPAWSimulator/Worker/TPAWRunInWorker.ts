@@ -1,23 +1,23 @@
 import _ from 'lodash'
-import { nominalToReal } from '../../Utils/NominalToReal'
-import { SimpleRange } from '../../Utils/SimpleRange'
-import { assert, fGet, noCase } from '../../Utils/Utils'
-import { historicalReturns } from '../HistoricalReturns'
-import { StatsTools } from '../StatsTools'
-import { ValueForYearRange } from '../TPAWParams'
-import { extendTPAWParams } from '../TPAWParamsExt'
-import { TPAWParamsProcessed } from '../TPAWParamsProcessed'
+import {nominalToReal} from '../../Utils/NominalToReal'
+import {SimpleRange} from '../../Utils/SimpleRange'
+import {assert, fGet, noCase} from '../../Utils/Utils'
+import {historicalReturns} from '../HistoricalReturns'
+import {StatsTools} from '../StatsTools'
+import {ValueForYearRange} from '../TPAWParams'
+import {extendTPAWParams} from '../TPAWParamsExt'
+import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
 import {
   FirstYearSavingsPortfolioDetail,
-  firstYearSavingsPortfolioDetail
+  firstYearSavingsPortfolioDetail,
 } from './FirstYearSavingsPortfolioDetail'
-import { mergeWorkerRuns } from './MergeWorkerRuns'
+import {mergeWorkerRuns} from './MergeWorkerRuns'
 import {
   TPAWWorkerArgs,
   TPAWWorkerCalculateOneOverCVResult,
   TPAWWorkerResult,
   TPAWWorkerRunSimulationResult,
-  TPAWWorkerSortResult
+  TPAWWorkerSortResult,
 } from './TPAWWorkerTypes'
 
 export type TPAWRunInWorkerByPercentileByYearsFromNow = {
@@ -27,7 +27,8 @@ export type TPAWRunInWorkerByPercentileByYearsFromNow = {
 const MULTI_THREADED = true
 
 export type TPAWRunInWorkerResult = {
-  numRuns:number
+  numRuns: number
+  percentageOfRunsWithInsufficientFunds: number
   savingsPortfolio: {
     start: {
       balance: TPAWRunInWorkerByPercentileByYearsFromNow
@@ -226,14 +227,16 @@ export class TPAWRunInWorker {
   ): Promise<TPAWRunInWorkerResult | null> {
     const start0 = performance.now()
     let start = performance.now()
-    numRuns =(()=>{
-      switch(params.sampling){
-        case 'monteCarlo': return numRuns
+    numRuns = (() => {
+      switch (params.sampling) {
+        case 'monteCarlo':
+          return numRuns
         case 'historical': {
           const {numYears} = extendTPAWParams(params.original)
-          return historicalReturns.length - numYears + 1;
+          return historicalReturns.length - numYears + 1
         }
-        default:noCase(params.sampling)
+        default:
+          noCase(params.sampling)
       }
     })()
     const runsByWorker = await Promise.all(
@@ -255,7 +258,6 @@ export class TPAWRunInWorker {
       byRun,
       perf: perfSlowestSimulationWorker,
     } = mergeWorkerRuns(runsByWorker)
-
 
     const perfMergeSimulation = performance.now() - start
     start = performance.now()
@@ -302,6 +304,7 @@ export class TPAWRunInWorker {
         this._workers[0],
         byYearsFromNowByRun.savingsPortfolio.excessWithdrawals.regular
       )
+    console.dir(sharpeRatioWithdrawalsRegular)
 
     const firstYearOfSomeRun = firstYearSavingsPortfolioDetail(
       runsByWorker[0].byYearsFromNowByRun.savingsPortfolio,
@@ -325,6 +328,9 @@ export class TPAWRunInWorker {
       ])
     )
 
+    const percentageOfRunsWithInsufficientFunds =
+      byRun.numInsufficientFundYears.filter(x => x > 0).length / numRuns
+
     const perfPost = performance.now() - start
     start = performance.now()
 
@@ -338,6 +344,7 @@ export class TPAWRunInWorker {
 
     const result: TPAWRunInWorkerResult = {
       numRuns,
+      percentageOfRunsWithInsufficientFunds,
       savingsPortfolio: {
         start: {
           balance: startingBalanceOfSavingsPortfolio,

@@ -35,6 +35,7 @@ export type TPAWWorkerResult =
           }
         }
         byRun: {
+          numInsufficientFundYears:Int32Array
           endingBalanceOfSavingsPortfolio: Float64Array
         }
         perf: [

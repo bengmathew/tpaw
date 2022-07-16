@@ -19,7 +19,7 @@ a {
   box-sizing: border-box;
 }
 
- /* From https://stackoverflow.com/a/3516243 */
+/* From https://stackoverflow.com/a/3516243 */
 * {
   -webkit-tap-highlight-color: transparent;
 }
@@ -30,105 +30,104 @@ a {
 
 @layer utilities {
   .text-shadow {
-    text-shadow: 0 2px 4px rgba(0,0,0,0.10);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   .text-shadow-md {
-    text-shadow: 0 4px 8px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
   }
 
   .text-shadow-lg {
-    text-shadow: 0 15px 30px rgba(0,0,0,0.11), 0 5px 15px rgba(0,0,0,0.08);
+    text-shadow: 0 15px 30px rgba(0, 0, 0, 0.11), 0 5px 15px rgba(0, 0, 0, 0.08);
   }
 
   .text-shadow-none {
     text-shadow: none;
   }
 
+  .p-base {
+    @apply font-font2 text-lg text-gray-600;
+  }
 
-    .p-base {
-      @apply font-font2 text-lg text-gray-600
-    }
+  .page {
+    @apply font-font1  text-pageFG;
+  }
+  .mt-header {
+    @apply mt-[47px];
+  }
 
-    .page {
-      @apply font-font1 min-h-screen text-pageFG ;
-    }
-    .mt-header {
-      @apply mt-[47px]
-    }
-    
-    .pt-header {
-      @apply pt-[47px]
-    }
+  .pt-header {
+    @apply pt-[47px];
+  }
 
-    .bg-inherit {
-      background-color: inherit;
-    }
-    .lighten {
-      @apply opacity-70;
-    }
+  .bg-inherit {
+    background-color: inherit;
+  }
+  .lighten {
+    @apply opacity-70;
+  }
 
-    .lighten-2 {
-      @apply opacity-50;
-    }
+  .lighten-2 {
+    @apply opacity-50;
+  }
 
-    .btn-sm {
-      @apply py-0.5 px-4;
-    }
+  .btn-sm {
+    @apply py-0.5 px-4;
+  }
 
-    .btn-md {
-      @apply py-1 px-4 text-lg;
-    }
+  .btn-md {
+    @apply py-1 px-4 text-lg;
+  }
 
-    .btn-lg {
-      @apply py-2 px-6 text-lg;
-    }
+  .btn-lg {
+    @apply py-2 px-6 text-lg;
+  }
 
-    .btn-none {
-      @apply rounded-full;
-    }
+  .btn-none {
+    @apply rounded-full;
+  }
 
-    .btn-outline {
-      @apply rounded-full;
-      box-shadow: inset 0px 0px 1px 1px rgba(0, 0, 0, 1);
-    }
-    
+  .btn-outline {
+    @apply rounded-full;
+    box-shadow: inset 0px 0px 1px 1px rgba(0, 0, 0, 1);
+  }
 
+  .btn-light {
+    @apply rounded-full  bg-gray-100;
+  }
 
-    .btn-light {
-      @apply rounded-full  bg-gray-100;
-    }
+  .btn-dark {
+    @apply rounded-full text-white  bg-darkGray;
+  }
 
-    .btn-dark {
-      @apply rounded-full text-white  bg-darkGray;
-    }
- 
-    .btn-dark-warnFG {
-      @apply rounded-full text-errorFG  bg-buttonDarkBG;
-    }
+  .btn-dark-warnFG {
+    @apply rounded-full text-errorFG  bg-buttonDarkBG;
+  }
 
-    .btn-dark-warnBG {
-      @apply rounded-full bg-errorBlockBG  text-errorBlockFG;
-    }
+  .btn-dark-warnBG {
+    @apply rounded-full bg-errorBlockBG  text-errorBlockFG;
+  }
 
-    .modal-base {
-      @apply font-font1 text-gray-800  fixed z-50 inset-0 overflow-y-auto flex items-center justify-center;
-    }
+  .modal-base {
+    @apply font-font1 text-gray-800  fixed z-50 inset-0 overflow-y-auto flex items-center justify-center;
+  }
 
-    .plan-pr {
-      @apply pr-3 sm:pr-4 md:pr-16 
-    }
-    .plan-pl {
-      @apply pl-3 sm:pl-4 md:pl-16
-    }
+  .plan-pr {
+    @apply pr-3 sm:pr-4 md:pr-16;
+  }
+  .plan-pl {
+    @apply pl-3 sm:pl-4 md:pl-16;
+  }
 
-    .plan-ml {
-      @apply ml-3 sm:ml-4 md:ml-16
-    }
+  .plan-ml {
+    @apply ml-3 sm:ml-4 md:ml-16;
+  }
 
-    .params-card {
-      @apply bg-cardBG rounded-2xl border-gray-200 border
-    }
+  .params-card {
+    @apply bg-cardBG rounded-2xl border-gray-200 border;
+  }
 
-  
+  .text-input {
+    @apply bg-gray-200 rounded-lg py-1.5 px-2;
+  }
 }

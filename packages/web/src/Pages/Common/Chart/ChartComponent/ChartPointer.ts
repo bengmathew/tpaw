@@ -39,7 +39,7 @@ export type ChartPointerComponentTargetArgs = {
   formatY: (y: number) => string
   formatX: (x: number, type: 'long' | 'short') => string
   markDataX: number
-  showTh:boolean
+  showTh: boolean
 }
 
 export type ChartPointerComponentDrawArg<AnimatedProps> = {
@@ -153,7 +153,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
       formatY: y => this._formatY(dataTransition.target, y),
       formatX: (x, type) => this._formatX(dataTransition.target, x, type),
       markDataX: Math.round(this._markFn(dataTransition.target)),
-      showTh:this._showTh(dataTransition.target)
+      showTh: this._showTh(dataTransition.target),
     }
     ctx.save()
     const boxInfo = chartPointerBox(targetArgs)
@@ -227,14 +227,20 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
 
     const dataYInfos = _.compact(
       _.reverse(
-        lineTransition.target.map((target, i) => {
-          const prev = lineTransition.prev[i]
-          if (target === null) return null
-          if (prev === null) return target
-          return zeroOneInterpolate(prev, target, lineTransition)
-        })
-      ).map((dataY, i) =>
-        dataY === null ? null : {dataY, label: fGet(labels[i])}
+        lineTransition.target
+          .map((target, i) => {
+            const prev = lineTransition.prev[i]
+            if (target === null) return null
+            if (prev === null) return target
+            const result = zeroOneInterpolate(prev, target, lineTransition)
+            // if (isNaN(result)) {
+            //   console.dir({prev, target, lineTransition})
+            // }
+            return result
+          })
+          .map((dataY, i) =>
+            dataY === null ? null : {dataY, label: fGet(labels[i])}
+          )
       )
     )
 

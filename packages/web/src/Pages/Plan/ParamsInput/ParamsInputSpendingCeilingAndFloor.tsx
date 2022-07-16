@@ -7,10 +7,10 @@ import _ from 'lodash'
 import React, {useMemo, useState} from 'react'
 import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
 import {Contentful} from '../../../Utils/Contentful'
-import {paddingCSS, paddingCSSStyleHorz} from '../../../Utils/Geometry'
+import {paddingCSSStyle} from '../../../Utils/Geometry'
 import {fGet, noCase} from '../../../Utils/Utils'
 import {useSimulation} from '../../App/WithSimulation'
-import {AmountInput, useAmountInputState} from '../../Common/Inputs/AmountInput'
+import {AmountInput} from '../../Common/Inputs/AmountInput'
 import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
 import {usePlanContent} from '../Plan'
 import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
@@ -19,8 +19,7 @@ type _Type = 'none' | 'fixedSpending' | 'separateCeilingAndFloor'
 
 export const ParamsInputSpendingCeilingAndFloor = React.memo(
   (props: ParamsInputBodyPassThruProps) => {
-    const {params, setParams, tpawResult, highlightPercentiles} =
-      useSimulation()
+    const {params, tpawResult, highlightPercentiles} = useSimulation()
 
     const {asYFN, withdrawalStartYear} = extendTPAWParams(
       tpawResult.args.params.original
@@ -35,6 +34,105 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
         ? 'fixedSpending'
         : 'separateCeilingAndFloor'
     )
+
+    const firstWithdrawalOfFirstHighlightPercentile =
+      tpawResult.savingsPortfolio.withdrawals.total.byPercentileByYearsFromNow[
+        tpawResult.args.percentiles.indexOf(highlightPercentiles[0])
+      ].data[withdrawalStartAsYFN]
+
+    const defaultFloorAmount = _roundUp(
+      firstWithdrawalOfFirstHighlightPercentile,
+      10000
+    )
+
+    return (
+      <ParamsInputBody {...props} headingMarginLeft="reduced">
+        <div
+          className={`params-card`}
+          style={{...paddingCSSStyle(props.sizing.cardPadding)}}
+        >
+          <div className="">
+            <Contentful.RichText
+              body={
+                content['spending-ceiling-and-floor'].intro[params.strategy]
+              }
+              p=" p-base"
+            />
+          </div>
+          <_NoCeilingOrFloor className="mt-6" type={type} setType={setType} />
+
+          <_SeparateCeilingAndFloor
+            className="mt-6"
+            type={type}
+            setType={setType}
+            defaultFloorAmount={defaultFloorAmount}
+          />
+          <_FixedSpending
+            className="mt-6"
+            type={type}
+            setType={setType}
+            defaultFloorAmount={defaultFloorAmount}
+          />
+        </div>
+      </ParamsInputBody>
+    )
+  }
+)
+
+const _NoCeilingOrFloor = React.memo(
+  ({
+    className = '',
+    type,
+    setType,
+  }: {
+    className?: string
+    type: _Type
+    setType: (type: _Type) => void
+  }) => {
+    const {setParams} = useSimulation()
+    return (
+      <div className={`${className}`}>
+        <button
+          className={`w-full text-left`}
+          onClick={() => {
+            setParams(params => {
+              const clone = _.cloneDeep(params)
+              clone.spendingCeiling = null
+              clone.spendingFloor = null
+              return clone
+            })
+            setType('none')
+          }}
+        >
+          <FontAwesomeIcon
+            className="mr-2"
+            icon={type === 'none' ? faCircleSelected : faCircleRegular}
+          />{' '}
+          No ceiling or floor
+        </button>
+      </div>
+    )
+  }
+)
+
+const _SeparateCeilingAndFloor = React.memo(
+  ({
+    className = '',
+    type,
+    setType,
+    defaultFloorAmount,
+  }: {
+    className?: string
+    type: _Type
+    setType: (type: _Type) => void
+    defaultFloorAmount: number
+  }) => {
+    const {params, setParams, tpawResult} = useSimulation()
+
+    const {asYFN, withdrawalStartYear} = extendTPAWParams(
+      tpawResult.args.params.original
+    )
+    const withdrawalStartAsYFN = asYFN(withdrawalStartYear)
 
     const {minWithdrawal, maxWithdrawal} = useMemo(() => {
       const last = fGet(
@@ -54,21 +152,10 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
       return {minWithdrawal, maxWithdrawal}
     }, [tpawResult, withdrawalStartAsYFN])
 
-    const [lastFixedEntry, setLastFixedEntry] = useState(
-      params.spendingCeiling === params.spendingFloor
-        ? params.spendingCeiling
-        : null
+    const defaultCeilingAmount = _roundUp(
+      minWithdrawal + (maxWithdrawal - minWithdrawal) / 2,
+      10000
     )
-
-    const fixedValueState = useAmountInputState(lastFixedEntry)
-    const handleFixedAmount = (amount: number) => {
-      setLastFixedEntry(amount)
-      fixedValueState.setAmountStr(`${amount}`)
-      const p = _.cloneDeep(params)
-      p.spendingCeiling = amount
-      p.spendingFloor = amount
-      setParams(p)
-    }
 
     const [hasCeiling, setHasCeiling] = useState(
       type === 'fixedSpending' ? false : params.spendingCeiling !== null
@@ -76,17 +163,11 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
     const [lastCeilingEntry, setLastCeilingEntry] = useState(
       params.spendingCeiling
     )
-    const defaultCeilingAmount = _roundUp(
-      minWithdrawal + (maxWithdrawal - minWithdrawal) / 2,
-      10000
-    )
 
-    const ceilingValueState = useAmountInputState(params.spendingCeiling)
     const handleCeilingAmount = (amount: number) => {
       if (amount === params.spendingCeiling) return
       amount = Math.max(params.spendingFloor ?? 0, amount)
       setLastCeilingEntry(amount)
-      ceilingValueState.setAmountStr(`${amount}`)
       const p = _.cloneDeep(params)
       p.spendingCeiling = amount
       setParams(p)
@@ -96,273 +177,222 @@ export const ParamsInputSpendingCeilingAndFloor = React.memo(
       type === 'fixedSpending' ? false : params.spendingFloor !== null
     )
     const [lastFloorEntry, setLastFloorEntry] = useState(params.spendingFloor)
-    const firstWithdrawalOfFirstHighlightPercentile =
-      tpawResult.savingsPortfolio.withdrawals.total.byPercentileByYearsFromNow[
-        tpawResult.args.percentiles.indexOf(highlightPercentiles[0])
-      ].data[withdrawalStartAsYFN]
 
-    const defaultFloorAmount = _roundUp(
-      firstWithdrawalOfFirstHighlightPercentile,
-      10000
-    )
-    const floorValueState = useAmountInputState(params.spendingFloor)
     const handleFloorAmount = (amount: number) => {
       if (amount === params.spendingFloor) return
       amount = Math.min(params.spendingCeiling ?? Number.MAX_VALUE, amount)
       setLastFloorEntry(amount)
-      floorValueState.setAmountStr(`${amount}`)
       const p = _.cloneDeep(params)
       p.spendingFloor = amount
       setParams(p)
     }
 
-    const handleType = (type: _Type) => {
-      switch (type) {
-        case 'fixedSpending':
-          handleFixedAmount(lastFixedEntry ?? defaultFloorAmount)
-          break
-        case 'none': {
-          const p = _.cloneDeep(params)
-          p.spendingCeiling = null
-          p.spendingFloor = null
-          setParams(p)
-          break
-        }
-        case 'separateCeilingAndFloor':
-          const p = _.cloneDeep(params)
-          p.spendingCeiling = hasCeiling ? lastCeilingEntry : null
-          p.spendingFloor = hasFloor ? lastFloorEntry : null
-          setParams(p)
-          break
-        default:
-          noCase(type)
-      }
-      setType(type)
-    }
-
     return (
-      <ParamsInputBody {...props} headingMarginLeft="reduced">
-        <div className="">
-          <div className="">
-            <div
-              className=""
-              style={{
-                ...paddingCSSStyleHorz(props.sizing.cardPadding, {scale: 0.5}),
-              }}
-            >
-              <Contentful.RichText
-                body={content['spending-ceiling-and-floor'].intro.fields.body}
-                p=" p-base"
+      <div className={`${className}`}>
+        <button
+          className={`w-full text-left`}
+          onClick={() => {
+            setParams(params => {
+              const clone = _.cloneDeep(params)
+              clone.spendingCeiling = hasCeiling ? lastCeilingEntry : null
+              clone.spendingFloor = hasFloor ? lastFloorEntry : null
+              return clone
+            })
+
+            setType('separateCeilingAndFloor')
+          }}
+        >
+          <FontAwesomeIcon
+            className="mr-2"
+            icon={
+              type === 'separateCeilingAndFloor'
+                ? faCircleSelected
+                : faCircleRegular
+            }
+          />{' '}
+          Separate ceiling and floor
+        </button>
+        {type === 'separateCeilingAndFloor' && (
+          <div
+            className="ml-6 grid gap-x-1 pt-4 items-center"
+            style={{grid: '35px 50px/auto auto 1fr'}}
+          >
+            <Switch.Group>
+              <Switch.Label className="">Ceiling</Switch.Label>
+              <ToggleSwitch
+                className=""
+                enabled={params.spendingCeiling !== null}
+                setEnabled={enabled => {
+                  setHasCeiling(enabled)
+                  if (!enabled) {
+                    const p = _.cloneDeep(params)
+                    p.spendingCeiling = null
+                    setParams(p)
+                  } else {
+                    handleCeilingAmount(
+                      lastCeilingEntry ?? defaultCeilingAmount
+                    )
+                  }
+                }}
               />
-            </div>
-          </div>
-          <div className="grid gap-y-6 mt-8">
-            <div
-              className="params-card outline-none "
-              style={{padding: paddingCSS(props.sizing.cardPadding)}}
-            >
-              <div className="">
-                <button className={`w-full text-left`} onClick={() => handleType('none')}>
-                  <FontAwesomeIcon
-                    className="mr-2"
-                    icon={type === 'none' ? faCircleSelected : faCircleRegular}
-                  />{' '}
-                  No ceiling or floor
-                </button>
-              </div>
-            </div>
-            <div
-              className="params-card outline-none"
-              style={{padding: paddingCSS(props.sizing.cardPadding)}}
-            >
-              <div className="">
+            </Switch.Group>
+            {params.spendingCeiling === null ? (
+              <div className=""></div>
+            ) : (
+              <div className={`flex items-stretch `}>
+                <AmountInput
+                  className={`ml-2 w-[90px] text-input`}
+                  prefix="$"
+                  value={params.spendingCeiling}
+                  onChange={handleCeilingAmount}
+                  decimals={0}
+                />
                 <button
-                  className={`w-full text-left`}
-                  onClick={() => handleType('separateCeilingAndFloor')}
+                  className={`flex items-center pl-4 pr-2 `}
+                  onClick={() =>
+                    handleCeilingAmount(fGet(params.spendingCeiling) + 5000)
+                  }
                 >
-                  <FontAwesomeIcon
-                    className="mr-2"
-                    icon={
-                      type === 'separateCeilingAndFloor'
-                        ? faCircleSelected
-                        : faCircleRegular
-                    }
-                  />{' '}
-                  Separate ceiling and floor
+                  <FontAwesomeIcon className="text-base" icon={faPlus} />
                 </button>
-                {type === 'separateCeilingAndFloor' && (
-                  <div
-                    className="ml-6 grid gap-x-1 pt-4 items-center"
-                    style={{grid: '35px 50px/auto auto 1fr'}}
-                  >
-                    <Switch.Group>
-                      <Switch.Label className="">Ceiling</Switch.Label>
-                      <ToggleSwitch
-                        className=""
-                        enabled={params.spendingCeiling !== null}
-                        setEnabled={enabled => {
-                          setHasCeiling(enabled)
-                          if (!enabled) {
-                            const p = _.cloneDeep(params)
-                            p.spendingCeiling = null
-                            setParams(p)
-                          } else {
-                            handleCeilingAmount(
-                              lastCeilingEntry ?? defaultCeilingAmount
-                            )
-                          }
-                        }}
-                      />
-                    </Switch.Group>
-                    {params.spendingCeiling === null ? (
-                      <div className=""></div>
-                    ) : (
-                      <div className={`flex items-stretch `}>
-                        <AmountInput
-                          className={`ml-2 w-[90px]`}
-                          type="currency"
-                          state={ceilingValueState}
-                          onAccept={handleCeilingAmount}
-                        />
-                        <button
-                          className={`flex items-center pl-4 pr-2 `}
-                          onClick={() =>
-                            handleCeilingAmount(
-                              fGet(params.spendingCeiling) + 5000
-                            )
-                          }
-                        >
-                          <FontAwesomeIcon
-                            className="text-base"
-                            icon={faPlus}
-                          />
-                        </button>
-                        <button
-                          className={`flex items-center px-2 `}
-                          onClick={() =>
-                            handleCeilingAmount(
-                              Math.max(0, fGet(params.spendingCeiling) - 5000)
-                            )
-                          }
-                        >
-                          <FontAwesomeIcon
-                            className="text-base"
-                            icon={faMinus}
-                          />
-                        </button>
-                      </div>
-                    )}
-                    <Switch.Group>
-                      <Switch.Label className="">Floor</Switch.Label>
-                      <ToggleSwitch
-                        className=""
-                        enabled={params.spendingFloor !== null}
-                        setEnabled={enabled => {
-                          setHasFloor(enabled)
-                          if (!enabled) {
-                            const p = _.cloneDeep(params)
-                            p.spendingFloor = null
-                            setParams(p)
-                          } else {
-                            handleFloorAmount(
-                              lastFloorEntry ?? defaultFloorAmount
-                            )
-                          }
-                        }}
-                      />
-                    </Switch.Group>{' '}
-                    {params.spendingFloor === null ? (
-                      <div className=""></div>
-                    ) : (
-                      <div className={`flex items-stretch `}>
-                        <AmountInput
-                          className={`ml-2 w-[90px]`}
-                          type="currency"
-                          state={floorValueState}
-                          onAccept={handleFloorAmount}
-                        />
-                        <button
-                          className={`flex items-center  pl-4 pr-2  `}
-                          onClick={() =>
-                            handleFloorAmount(fGet(params.spendingFloor) + 5000)
-                          }
-                        >
-                          <FontAwesomeIcon
-                            className="text-base"
-                            icon={faPlus}
-                          />
-                        </button>
-                        <button
-                          className={`flex items-center px-2 `}
-                          onClick={() =>
-                            handleFloorAmount(
-                              Math.max(0, fGet(params.spendingFloor) - 5000)
-                            )
-                          }
-                        >
-                          <FontAwesomeIcon
-                            className="text-base"
-                            icon={faMinus}
-                          />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div
-              className="params-card  outline-none"
-              style={{padding: paddingCSS(props.sizing.cardPadding)}}
-            >
-              <div className="">
                 <button
-                  className={`w-full text-left`}
-                  onClick={() => handleType('fixedSpending')}
+                  className={`flex items-center px-2 `}
+                  onClick={() =>
+                    handleCeilingAmount(
+                      Math.max(0, fGet(params.spendingCeiling) - 5000)
+                    )
+                  }
                 >
-                  <FontAwesomeIcon
-                    className="mr-2"
-                    icon={
-                      type === 'fixedSpending'
-                        ? faCircleSelected
-                        : faCircleRegular
-                    }
-                  />{' '}
-                  Fixed spending <span className="">(ceiling = floor)</span>
+                  <FontAwesomeIcon className="text-base" icon={faMinus} />
                 </button>
-                {type === 'fixedSpending' && (
-                  <div className={` mt-4 col-span-2 ml-6 flex items-stretch `}>
-                    <AmountInput
-                      className={`w-[100px]`}
-                      type="currency"
-                      state={fixedValueState}
-                      onAccept={handleFixedAmount}
-                    />
-                    <button
-                      className={`flex items-center pl-4 pr-2 `}
-                      onClick={() =>
-                        handleFixedAmount(fGet(params.spendingFloor) + 5000)
-                      }
-                    >
-                      <FontAwesomeIcon className="text-base" icon={faPlus} />
-                    </button>
-                    <button
-                      className={`flex items-center px-2 `}
-                      onClick={() =>
-                        handleFixedAmount(
-                          Math.max(0, fGet(params.spendingFloor) - 5000)
-                        )
-                      }
-                    >
-                      <FontAwesomeIcon className="text-base" icon={faMinus} />
-                    </button>
-                  </div>
-                )}
               </div>
-            </div>
+            )}
+            <Switch.Group>
+              <Switch.Label className="">Floor</Switch.Label>
+              <ToggleSwitch
+                className=""
+                enabled={params.spendingFloor !== null}
+                setEnabled={enabled => {
+                  setHasFloor(enabled)
+                  if (!enabled) {
+                    const p = _.cloneDeep(params)
+                    p.spendingFloor = null
+                    setParams(p)
+                  } else {
+                    handleFloorAmount(lastFloorEntry ?? defaultFloorAmount)
+                  }
+                }}
+              />
+            </Switch.Group>{' '}
+            {params.spendingFloor === null ? (
+              <div className=""></div>
+            ) : (
+              <div className={`flex items-stretch `}>
+                <AmountInput
+                  className={`ml-2 w-[90px] text-input`}
+                  prefix="$"
+                  value={params.spendingFloor}
+                  onChange={handleFloorAmount}
+                  decimals={0}
+                />
+                <button
+                  className={`flex items-center  pl-4 pr-2  `}
+                  onClick={() =>
+                    handleFloorAmount(fGet(params.spendingFloor) + 5000)
+                  }
+                >
+                  <FontAwesomeIcon className="text-base" icon={faPlus} />
+                </button>
+                <button
+                  className={`flex items-center px-2 `}
+                  onClick={() =>
+                    handleFloorAmount(
+                      Math.max(0, fGet(params.spendingFloor) - 5000)
+                    )
+                  }
+                >
+                  <FontAwesomeIcon className="text-base" icon={faMinus} />
+                </button>
+              </div>
+            )}
           </div>
-        </div>
-      </ParamsInputBody>
+        )}
+      </div>
+    )
+  }
+)
+
+const _FixedSpending = React.memo(
+  ({
+    className = '',
+    type,
+    setType,
+    defaultFloorAmount,
+  }: {
+    className?: string
+    type: _Type
+    setType: (type: _Type) => void
+    defaultFloorAmount: number
+  }) => {
+    const {params, setParams} = useSimulation()
+    const [value, setValue] = useState(
+      params.spendingCeiling === params.spendingFloor
+        ? params.spendingCeiling ?? defaultFloorAmount
+        : defaultFloorAmount
+    )
+
+    const handleFixedAmount = (amount: number) => {
+      setValue(amount)
+      const p = _.cloneDeep(params)
+      p.spendingCeiling = amount
+      p.spendingFloor = amount
+      setParams(p)
+    }
+    return (
+      <div className={`${className}`}>
+        <button
+          className={`w-full text-left`}
+          onClick={() => {
+            handleFixedAmount(value ?? defaultFloorAmount)
+            setType('fixedSpending')
+          }}
+        >
+          <FontAwesomeIcon
+            className="mr-2"
+            icon={type === 'fixedSpending' ? faCircleSelected : faCircleRegular}
+          />{' '}
+          Fixed spending <span className="">(ceiling = floor)</span>
+        </button>
+        {type === 'fixedSpending' && (
+          <div className={` mt-4 col-span-2 ml-6 flex items-stretch `}>
+            <AmountInput
+              className={`w-[100px] text-input`}
+              prefix="$"
+              value={value}
+              onChange={handleFixedAmount}
+              decimals={0}
+            />
+            <button
+              className={`flex items-center pl-4 pr-2 `}
+              onClick={() =>
+                handleFixedAmount(fGet(params.spendingFloor) + 5000)
+              }
+            >
+              <FontAwesomeIcon className="text-base" icon={faPlus} />
+            </button>
+            <button
+              className={`flex items-center px-2 `}
+              onClick={() =>
+                handleFixedAmount(
+                  Math.max(0, fGet(params.spendingFloor) - 5000)
+                )
+              }
+            >
+              <FontAwesomeIcon className="text-base" icon={faMinus} />
+            </button>
+          </div>
+        )}
+      </div>
     )
   }
 )

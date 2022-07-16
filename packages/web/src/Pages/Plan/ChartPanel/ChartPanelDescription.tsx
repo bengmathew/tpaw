@@ -26,7 +26,8 @@ export const ChartPanelDescription = React.memo(
     setShowDescriptionPopUp: Dispatch<boolean>
     ref?: (x: HTMLElement | null) => void
   }) => {
-    const {numRuns} = useSimulation().tpawResult
+    const {tpawResult, params} = useSimulation()
+    const {numRuns} = tpawResult
     const content = useContent(type)
 
     return (
@@ -35,7 +36,7 @@ export const ChartPanelDescription = React.memo(
           <Contentful.RichText
             body={Contentful.replaceVariables(
               {numRuns: `${numRuns}`},
-              content.intro.fields.body
+              content.intro[params.strategy]
             )}
             p="text-base inline lighten"
           />{' '}
@@ -68,10 +69,12 @@ export const ChartPanelDescription = React.memo(
               leaveTo="scale-95 opacity-0"
               style={{boxShadow: '0px 0px 10px 5px rgba(0,0,0,0.28)'}}
             >
-              <_RichText className="">{Contentful.replaceVariables(
-              {numRuns: `${numRuns}`},
-              content.body.fields.body
-            )}</_RichText>
+              <_RichText className="">
+                {Contentful.replaceVariables(
+                  {numRuns: `${numRuns}`},
+                  content.body[params.strategy]
+                )}
+              </_RichText>
             </Transition.Child>
           </Transition>,
           window.document.body
@@ -92,7 +95,7 @@ function useContent(type: ChartPanelType | 'sharpe-ratio') {
       return content.portfolio
     case 'glide-path':
       return content.glidePath
-    case 'withdrawal-rate':
+    case 'withdrawal':
       return content.withdrawalRate
     case 'sharpe-ratio':
       return content.sharpeRatio

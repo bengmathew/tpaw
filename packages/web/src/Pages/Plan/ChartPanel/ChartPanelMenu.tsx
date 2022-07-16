@@ -148,7 +148,7 @@ export const ChartPanelMenu = React.memo(
                 }}
               />
               <div
-                className={`flex absolute flex-col  rounded-xl  bg-pageBG  max-h-[calc(100vh-50px)] overflow-scroll`}
+                className={`flex absolute flex-col  rounded-xl  bg-pageBG  max-h-[calc(100vh-150px)] overflow-scroll`}
                 ref={setPopperElement}
                 style={{
                   opacity: 0,
@@ -190,7 +190,7 @@ export const ChartPanelMenu = React.memo(
                 )}
                 <_Button type={'portfolio'} {...buttonProps} />
                 <_Button type={'glide-path'} {...buttonProps} />
-                <_Button type={'withdrawal-rate'} {...buttonProps} />
+                <_Button type={'withdrawal'} {...buttonProps} />
               </div>
             </div>,
             window.document.body
@@ -251,7 +251,7 @@ const _Button = React.memo(
             </h2>
           )}
           <Contentful.RichText
-            body={description.fields.body}
+            body={description[params.strategy]}
             p={`${isCurrent ? '' : 'lighten-2'} text-sm -mt-1`}
           />
         </div>
@@ -291,7 +291,7 @@ const useInfo = (panelType: ChartPanelType) => {
       return [content.portfolio.menu] as const
     case 'glide-path':
       return [content.glidePath.menu] as const
-    case 'withdrawal-rate':
+    case 'withdrawal':
       return [content.withdrawalRate.menu] as const
     default:
       if (isChartPanelSpendingEssentialType(panelType)) {

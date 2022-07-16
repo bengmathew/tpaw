@@ -1,12 +1,13 @@
+import _ from 'lodash'
 import React from 'react'
-import { getDefaultParams } from '../../../TPAWSimulator/DefaultParams'
-import { Contentful } from '../../../Utils/Contentful'
-import { paddingCSS } from '../../../Utils/Geometry'
-import { preciseRange } from '../../../Utils/PreciseRange'
-import { useSimulation } from '../../App/WithSimulation'
-import { SliderInput } from '../../Common/Inputs/SliderInput/SliderInput'
-import { usePlanContent } from '../Plan'
-import { ParamsInputBody, ParamsInputBodyPassThruProps } from './ParamsInputBody'
+import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
+import {Contentful} from '../../../Utils/Contentful'
+import {paddingCSS} from '../../../Utils/Geometry'
+import {preciseRange} from '../../../Utils/PreciseRange'
+import {useSimulation} from '../../App/WithSimulation'
+import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
+import {usePlanContent} from '../Plan'
+import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 export const ParamsInputInflation = React.memo(
   (props: ParamsInputBodyPassThruProps) => {
@@ -26,6 +27,14 @@ export const ParamsInputInflation = React.memo(
             : ('none' as const),
       })),
     }
+
+    const handleChange = (inflation: number) => {
+      setParams(params => {
+        const clone = _.cloneDeep(params)
+        clone.inflation = inflation
+        return clone
+      })
+    }
     return (
       <ParamsInputBody {...props} headingMarginLeft="normal">
         <div
@@ -33,7 +42,7 @@ export const ParamsInputInflation = React.memo(
           style={{padding: paddingCSS(props.sizing.cardPadding)}}
         >
           <Contentful.RichText
-            body={content.inflation.intro.fields.body}
+            body={content.inflation.intro[params.strategy]}
             p="col-span-2 mb-2 p-base"
           />
           <div
@@ -44,19 +53,12 @@ export const ParamsInputInflation = React.memo(
             <SliderInput
               {...sliderProps}
               pointers={[{value: params.inflation, type: 'normal'}]}
-              onChange={([inflation]) =>
-                setParams(params => ({...params, inflation}))
-              }
+              onChange={([inflation]) => handleChange(inflation)}
             />
           </div>
           <button
             className="mt-4 underline"
-            onClick={() =>
-              setParams(p => ({
-                ...p,
-                inflation: getDefaultParams().inflation,
-              }))
-            }
+            onClick={() => handleChange(getDefaultParams().inflation)}
           >
             Reset to Default
           </button>

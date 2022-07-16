@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react'
-import {historicalReturns} from '../TPAWSimulator/HistoricalReturns'
 import {extendTPAWParams} from '../TPAWSimulator/TPAWParamsExt'
 import {processTPAWParams} from '../TPAWSimulator/TPAWParamsProcessed'
 import {runSimulationInWASM} from '../TPAWSimulator/Worker/RunSimulationInWASM'
@@ -31,14 +30,18 @@ export const Test = React.memo(() => {
       const params = testParams
 
       const paramsExt = extendTPAWParams(params.original)
-      console.dir(historicalReturns)
-      console.dir(params.returns.historicalAdjusted)
-      const wasm = (
-        await runSimulationInWASM(params, {start:0, end:1}, {
+      console.dir(
+        params.returns.historicalAdjusted[indexIntoHistoricalReturns[0]]
+      )
+      const wasm = await runSimulationInWASM(
+        params,
+        {start: 0, end: 1},
+        {
           truth: excel,
           indexIntoHistoricalReturns,
-        })
+        }
       )
+
 
       // const resultsFromUsingExpectedReturns = runSPAWSimulation(params, {
       //   type: 'useExpectedReturns',
@@ -114,138 +117,145 @@ const excelExpected = [
   317812.6049, 280143.3221, 240884.5312, 200000,
 ]
 const excelSimulated = [
-  68724.32659, 105682.0022, 160005.1932, 200281.7845, 278918.9695, 326463.9137,
-  414238.3968, 579581.5432, 674932.5005, 782909.2687, 945286.7643, 1008131.011,
-  939678.4308, 1020347.811, 976670.4534, 928311.3948, 998828.1304, 1160115.328,
-  1412466.932, 1476493.733, 1687382.179, 1577910.38, 1651912.555, 2135427.424,
-  2078536.241, 2151957.821, 2386837.044, 2311433.747, 1958239.626, 2122864.198,
-  2103483.881, 1981400.844, 2248939.078, 2037583.765, 2013781.796, 2294081.567,
-  2312850.817, 2207038.215, 2712734.261, 2633469.884, 2553077.342, 2564161.146,
-  2214668.225, 1922032.373, 1898432.507, 1922079.482, 1869128.335, 1943408.246,
-  1758733.976, 1783210.686, 1765693.032, 1818383.535, 2026309.328, 2037823.993,
-  2019349.727, 2016983.111, 2076256.063, 1874269.41, 1804255.006, 1431024.57,
-  1325942.849, 1247789.444, 1343013.889, 1382954.837, 1348927.325, 1301731.354,
-  1090871.744, 1021647.358, 999231.689, 895481.6112, 735210.8837, 650657.9804,
-  718623.795, 764171.1646, 683857.1311, 570585.245,
+  80826.97796, 111450.7688, 128710.2261, 181618.7529, 196509.0923, 209725.4292,
+  264998.5477, 306921.5479, 392044.3718, 449445.8166, 505333.5046, 585852.6074,
+  665385.605, 738597.3514, 738343.8678, 794261.6523, 915964.5253, 830302.678,
+  889945.0783, 997001.2347, 971995.6785, 746100.0964, 791001.7732, 781875.1888,
+  839556.1262, 833243.5477, 978260.5649, 1132653.558, 1096430.762, 1223224.476,
+  1072413.05, 948746.4815, 1071852.366, 1166508.863, 919156.7256, 849925.4989,
+  944096.9056, 843158.6578, 793345.3152, 850360.7893, 880793.7249, 945021.1688,
+  1012425.632, 943653.408, 947951.1577, 1011562.904, 1003526.163, 1073463.508,
+  1124349.167, 1088928.887, 1023210.547, 1194674.99, 1233196.32, 1226249.942,
+  1218875.675, 1107796.926, 1279375.009, 1405765.332, 1436231.845, 1549459.38,
+  1272700.964, 1300740.939, 1346808.965, 1470046.418, 1557230.085, 1559326.442,
+  1674631.674, 1589873.519, 1513458.722, 1873756.62, 2002270.715, 1878676.543,
+  1772191.772, 2070246.799, 2314786.92, 2128909.063,
 ]
 const excel = excelSimulated
 
-const testParams = processTPAWParams(extendTPAWParams({
-  v: 9,
-  strategy: 'TPAW',
-  people: {
-    withPartner: false,
-    person1: {
-      displayName: null,
-      ages: {type: 'notRetired', current: 25, retirement: 55, max: 100},
-    },
-  },
-  returns: {
-    expected: {stocks: 0.035, bonds: 0.01},
-    // historical: {type: 'default', adjust: {type: 'toExpected'}},
-    historical: {
-      type: 'default',
-      adjust: {type: 'by', stocks: 0.048, bonds: 0.03},
-    },
-  },
-  inflation: 0.02,
-  targetAllocation: {
-    regularPortfolio: {
-      forTPAW: {stocks: 0.3},
-      forSPAWAndSWR: {
-        start: {stocks: 0.6},
-        intermediate: [],
-        end: {stocks: 0.6},
+const testParams = processTPAWParams(
+  extendTPAWParams({
+    v: 9,
+    strategy: 'SWR',
+    people: {
+      withPartner: false,
+      person1: {
+        displayName: null,
+        ages: {type: 'notRetired', current: 25, retirement: 55, max: 100},
       },
     },
-    legacyPortfolio: {stocks: 0.7},
-  },
-  swrWithdrawal:{type: 'asPercent', percent: 0.04},
-  scheduledWithdrawalGrowthRate: 0.01,
-  savingsAtStartOfStartYear: 50000,
-  savings: [
-    {
-      label: 'Savings',
-      yearRange: {
-        type: 'startAndEnd',
-        start: {type: 'now'},
-        end: {type: 'numericAge', person: 'person1', age: 54},
+    returns: {
+      expected: {stocks: 0.035, bonds: 0.01},
+      // historical: {type: 'default', adjust: {type: 'toExpected'}},
+      historical: {
+        type: 'default',
+        // adjust: {
+        //   type: 'to',
+        //   stocks: 0.0345171123978209,
+        //   bonds: 0.000467623297467001,
+        // },
+        adjust: {type: 'none'},
       },
-      value: 25000,
-      nominal: false,
-      id: 0,
     },
-  ],
-  retirementIncome: [
-    {
-      label: 'Social Security',
-      yearRange: {
-        type: 'startAndEnd',
-        start: {type: 'numericAge', person: 'person1', age: 70},
-        end: {type: 'namedAge', person: 'person1', age: 'max'},
-      },
-      value: 30000,
-      nominal: false,
-      id: 0,
-    },
-  ],
-  withdrawals: {
-    lmp: 0,
-    essential: [
-      // {
-      //   id: 1,
-      //   label: null,
-      //   yearRange: {
-      //     type: 'startAndNumYears',
-      //     start: {type: 'numericAge', person: 'person1', age: 44},
-      //     numYears: 1,
-      //   },
-      //   value: 30000,
-      //   nominal: false,
-      // },
-      {
-        id: 2,
-        label: null,
-        yearRange: {
-          type: 'startAndNumYears',
-          start: {type: 'numericAge', person: 'person1', age: 76},
-          numYears: 1,
+    inflation: 0.02,
+    targetAllocation: {
+      regularPortfolio: {
+        forTPAW: {stocks: 0.3},
+        forSPAWAndSWR: {
+          start: {stocks: 0.6},
+          intermediate: [],
+          end: {stocks: 0.6},
         },
-        value: 10000,
+      },
+      legacyPortfolio: {stocks: 0.7},
+    },
+    swrWithdrawal: {type: 'asPercent', percent: 0.06},
+    scheduledWithdrawalGrowthRate: 0.01,
+    savingsAtStartOfStartYear: 50000,
+    savings: [
+      {
+        label: 'Savings',
+        yearRange: {
+          type: 'startAndEnd',
+          start: {type: 'now'},
+          end: {type: 'numericAge', person: 'person1', age: 54},
+        },
+        value: 25000,
         nominal: false,
+        id: 0,
       },
     ],
-    discretionary: [
+    retirementIncome: [
       {
-        id: 1,
-        label: null,
+        label: 'Social Security',
         yearRange: {
-          type: 'startAndNumYears',
-          start: {type: 'numericAge', person: 'person1', age: 81},
-          numYears: 1,
+          type: 'startAndEnd',
+          start: {type: 'numericAge', person: 'person1', age: 70},
+          end: {type: 'namedAge', person: 'person1', age: 'max'},
         },
-        value: 20000,
+        value: 30000,
         nominal: false,
+        id: 0,
       },
     ],
-  },
-  spendingCeiling: null,
-  spendingFloor: null,
-  legacy: {
-    total: 200000,
-    external: [],
-  },
-  sampling:'monteCarlo',
-  display: {
-    alwaysShowAllYears: false,
-  },
-}))
+    withdrawals: {
+      lmp: 0,
+      essential: [
+        // {
+        //   id: 1,
+        //   label: null,
+        //   yearRange: {
+        //     type: 'startAndNumYears',
+        //     start: {type: 'numericAge', person: 'person1', age: 44},
+        //     numYears: 1,
+        //   },
+        //   value: 30000,
+        //   nominal: false,
+        // },
+        // {
+        //   id: 2,
+        //   label: null,
+        //   yearRange: {
+        //     type: 'startAndNumYears',
+        //     start: {type: 'numericAge', person: 'person1', age: 75},
+        //     numYears: 1,
+        //   },
+        //   value: 20000,
+        //   nominal: false,
+        // },
+      ],
+      discretionary: [
+        // {
+        //   id: 1,
+        //   label: null,
+        //   yearRange: {
+        //     type: 'startAndNumYears',
+        //     start: {type: 'numericAge', person: 'person1', age: 77},
+        //     numYears: 1,
+        //   },
+        //   value: 30000,
+        //   nominal: false,
+        // },
+      ],
+    },
+    spendingCeiling: null,
+    spendingFloor: null,
+    legacy: {
+      total: 200000,
+      external: [],
+    },
+    sampling: 'monteCarlo',
+    display: {
+      alwaysShowAllYears: false,
+    },
+  })
+)
 const indexIntoHistoricalReturns = [
-  92, 91, 85, 144, 52, 118, 143, 88, 68, 55, 52, 16, 50, 31, 44, 32, 18, 149, 8,
-  3, 52, 6, 113, 112, 43, 118, 28, 60, 103, 56, 113, 92, 115, 145, 16, 58, 14,
-  137, 112, 136, 2, 14, 46, 48, 90, 94, 9, 79, 148, 140, 118, 79, 57, 73, 3, 23,
-  5, 39, 78, 67, 98, 83, 75, 5, 80, 142, 117, 78, 126, 110, 131, 135, 58, 116,
-  101, 135,
+  102, 95, 11, 105, 124, 20, 144, 78, 28, 102, 40, 140, 142, 114, 36, 69, 80,
+  37, 69, 24, 124, 47, 98, 87, 69, 109, 119, 144, 64, 81, 131, 96, 75, 30, 71,
+  86, 38, 59, 83, 28, 5, 85, 133, 86, 142, 73, 110, 80, 18, 108, 120, 115, 26,
+  83, 135, 46, 21, 55, 141, 143, 138, 3, 26, 126, 18, 89, 140, 42, 120, 125,
+  123, 49, 32, 52, 139, 117,
 ].map(x => x - 1)
 const randomIndexesIntoHistoricalReturnsByYear = (year: number) =>
   indexIntoHistoricalReturns[year]

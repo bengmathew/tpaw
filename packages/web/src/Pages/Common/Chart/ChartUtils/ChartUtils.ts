@@ -4,11 +4,11 @@ import {fGet} from '../../../../Utils/Utils'
 export namespace ChartUtils {
   export const getFont = (
     size: number,
-    style: 'bold' | '800' | '900' | '' = ''
+    style: 'bold' | '600' | '800' | '900' | '' = ''
   ) => `${style} ${size}px Montserrat, sans-serif`
   export const getMonoFont = (
     size: number,
-    style: 'bold' | '800' | '900' | '' = ''
+    style: 'bold' | '600' | '800' | '900' | '' = ''
   ) => `${style} ${size}px Roboto Mono, monospace`
   export const color = {
     gray: {
@@ -251,7 +251,7 @@ export namespace ChartUtils {
 
   export function roundedLine(
     ctx: CanvasRenderingContext2D,
-    points: _Point[],
+    points: readonly _Point[],
     radius: number
   ) {
     // const [last, ...corners] = _roundedPolygonCorners(points, radius)
@@ -273,7 +273,7 @@ export namespace ChartUtils {
     ctx.lineTo(last.ctrl.x, last.ctrl.y)
   }
 
-  function _roundedPolygonCorners(points: _Point[], radius: number) {
+  function _roundedPolygonCorners(points: readonly _Point[], radius: number) {
     const distance = (p1: _Point, p2: _Point) =>
       Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
 

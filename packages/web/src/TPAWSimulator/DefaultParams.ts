@@ -12,10 +12,10 @@ export function getDefaultParams() {
       },
     },
     returns: {
-      expected: {stocks: 0.042, bonds: 0.008},
+      expected: {stocks: 0.043, bonds: 0.007},
       historical: {type: 'default', adjust: {type: 'toExpected'}},
     },
-    inflation: 0.023,
+    inflation: 0.024,
     targetAllocation: {
       regularPortfolio: {
         forTPAW: {stocks: 0.35},
@@ -50,4 +50,9 @@ export function getDefaultParams() {
   }
 
   return params
+}
+
+
+export const defaultSWRWithdrawalRate = (retirementLength :number)=>{
+  return .7125 * Math.pow(retirementLength, -.859)
 }

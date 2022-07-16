@@ -13,16 +13,22 @@ export const paramsInputLabel = (type: ParamsInputType) => {
       return 'Income During Retirement'
     case 'extra-spending':
       return 'Extra Spending'
-    case 'spending-ceiling-and-floor':
-      return 'Spending Ceiling and Floor'
     case 'legacy':
       return 'Legacy'
-    case 'risk-and-time-preference':
-      return 'Risk and Time Preference'
+    case 'stock-allocation':
+      return 'Stock Allocation'
+    case 'spending-ceiling-and-floor':
+      return 'Spending Ceiling and Floor'
+    case 'spending-tilt':
+      return 'Spending Tilt'
+    case 'lmp':
+      return 'LMP'
+    case 'withdrawal':
+      return 'Withdrawal'
     case 'inflation':
       return 'Inflation'
-    case 'strategy':
-      return 'Strategy'
+    case 'compare-strategies':
+      return 'Compare Strategies'
     case 'expected-returns':
       return 'Expected Returns'
     case 'simulation':

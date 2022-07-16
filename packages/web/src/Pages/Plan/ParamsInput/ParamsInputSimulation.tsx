@@ -4,9 +4,9 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {RadioGroup} from '@headlessui/react'
 import _ from 'lodash'
 import React from 'react'
+import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
 import {Contentful} from '../../../Utils/Contentful'
 import {paddingCSS} from '../../../Utils/Geometry'
-import {assertFalse} from '../../../Utils/Utils'
 import {useSimulation} from '../../App/WithSimulation'
 import {usePlanContent} from '../Plan'
 import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
@@ -34,6 +34,12 @@ const _SamplingCard = React.memo(
   }) => {
     const {params, setParams} = useSimulation()
     const content = usePlanContent().simulation
+    const handleChange = (x: 'monteCarlo' | 'historical') =>
+      setParams(params => {
+        const clone = _.cloneDeep(params)
+        clone.sampling = x
+        return clone
+      })
     return (
       <div
         className={`${className} params-card`}
@@ -41,19 +47,13 @@ const _SamplingCard = React.memo(
       >
         <div className="mt-2">
           <Contentful.RichText
-            body={content.introSampling.fields.body}
+            body={content.introSampling[params.strategy]}
             p="col-span-2 mb-2 p-base"
           />
         </div>
         <RadioGroup<'div', 'monteCarlo' | 'historical'>
           value={params.sampling}
-          onChange={(x: 'monteCarlo' | 'historical') =>
-            setParams(params => {
-              const clone = _.cloneDeep(params)
-              clone.sampling = x
-              return clone
-            })
-          }
+          onChange={handleChange}
         >
           <div className="mt-4">
             <RadioGroup.Option<'div', 'monteCarlo' | 'historical'>
@@ -72,7 +72,7 @@ const _SamplingCard = React.memo(
                     </RadioGroup.Description>
                   </div>
                   <Contentful.RichText
-                    body={content.introSamplingMonteCarlo.fields.body}
+                    body={content.introSamplingMonteCarlo[params.strategy]}
                     p="col-span-2 ml-6 p-base"
                   />
                 </>
@@ -88,15 +88,12 @@ const _SamplingCard = React.memo(
                     <FontAwesomeIcon
                       icon={checked ? faCircleSolid : faCircle}
                     />
-                    <RadioGroup.Description
-                      as="h2"
-                      className={`font-medium `}
-                    >
+                    <RadioGroup.Description as="h2" className={`font-medium `}>
                       Historical sequence
                     </RadioGroup.Description>
                   </div>
                   <Contentful.RichText
-                    body={content.introSamplingHistorical.fields.body}
+                    body={content.introSamplingHistorical[params.strategy]}
                     p="col-span-2 ml-6 p-base"
                   />
                 </>
@@ -104,6 +101,12 @@ const _SamplingCard = React.memo(
             </RadioGroup.Option>
           </div>
         </RadioGroup>
+        <button
+          className="mt-6 underline"
+          onClick={() => handleChange(getDefaultParams().sampling)}
+        >
+          Reset to Default
+        </button>
       </div>
     )
   }

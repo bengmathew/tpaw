@@ -3,13 +3,11 @@ import _ from 'lodash'
 import {GetStaticProps} from 'next'
 import Head from 'next/head'
 import {useRouter} from 'next/router'
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import React, {useEffect, useMemo, useRef, useState} from 'react'
 import {Contentful} from '../../Utils/Contentful'
 import {createContext} from '../../Utils/CreateContext'
 import {rectExt} from '../../Utils/Geometry'
 import {linearFnFomPoints} from '../../Utils/LinearFn'
-import {useAssertConst} from '../../Utils/UseAssertConst'
-import {useURLUpdater} from '../../Utils/UseRouterPush'
 import {useURLParam} from '../../Utils/UseURLParam'
 import {fGet, noCase} from '../../Utils/Utils'
 import {useWindowSize} from '../../Utils/WithWindowSize'
@@ -19,8 +17,7 @@ import {headerHeight} from '../App/Header'
 import {useSimulation} from '../App/WithSimulation'
 import {ChartPanel, ChartPanelStateful} from './ChartPanel/ChartPanel'
 import {chartPanelLabel} from './ChartPanel/ChartPanelLabel'
-import {ChartPanelType, isChartPanelType} from './ChartPanel/ChartPanelType'
-import { useChartPanelTypeState } from './ChartPanel/UseChartPanelTypeState'
+import {useChartPanelTypeState} from './ChartPanel/UseChartPanelTypeState'
 import {GuidePanel, GuidePanelStateful} from './GuidePanel'
 import {paramsInputLabel} from './ParamsInput/Helpers/ParamsInputLabel'
 import {
@@ -34,7 +31,15 @@ const duration = 300 / 1000
 
 type _State = 'summary' | ParamsInputType
 export const Plan = React.memo((planContent: PlanContent) => {
-  const windowSize = useWindowSize()
+  const windowSizeIn = useWindowSize()
+  // Hack to handle soft keyboard on Android.
+  const windowSize = useMemo(() => {
+    const {width, height} = windowSizeIn
+    return {
+      width,
+      height: width < 600 ? Math.max(height, 700) : height,
+    }
+  }, [windowSizeIn])
 
   const headingRef = useRef<PlanHeadingStateful | null>(null)
   const paramsRef = useRef<ParamsInputStateful | null>(null)
@@ -54,17 +59,12 @@ export const Plan = React.memo((planContent: PlanContent) => {
   const [state, setStateLocal] = useState<_State>(stateIn)
 
   const router = useRouter()
-  const [highlight, setHighlight] = useState<ParamsInputType | null>(null)
   const setState = (newState: _State) => {
-    setStateLocal(prev => {
-      return newState
-    })
+    setStateLocal(newState)
     const url = new URL(window.location.href)
     if (newState === 'summary') {
-      if (state !== 'summary') setHighlight(state)
       url.searchParams.delete('input')
     } else {
-      setHighlight(null)
       url.searchParams.set('input', newState)
     }
     void router.push(url)
@@ -410,8 +410,8 @@ export const Plan = React.memo((planContent: PlanContent) => {
     }
   }, [layout, windowSize])
 
-  const  [chartPanelType, setChartPanelType] = useChartPanelTypeState()
-  
+  const [chartPanelType, setChartPanelType] = useChartPanelTypeState()
+
   // This indirection for dev ergonomics because in dev update is very slow
   // when saving state directly in URL.
   useEffect(() => {
@@ -456,6 +456,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
       </Head>
       <AppPage
         className="h-screen  bg-planBG overflow-hidden"
+        style={{minHeight: `${windowSize.height}px`}}
         title="TPAW Planner"
         curr="plan"
       >
@@ -527,12 +528,11 @@ export type PlanContent = {
     introAssets: _FetchedInline
     body: _FetchedInline
   }
-  'risk-and-time-preference': _IntroAndBody & {
-    stockAllocationIntro: _FetchedInline
-    spendingTiltIntro: _FetchedInline
-    lmpIntro: _FetchedInline
-  }
-  strategy: _IntroAndBody & {
+  'stock-allocation': _IntroAndBody
+  'spending-tilt': _IntroAndBody
+  lmp: _IntroAndBody
+  'withdrawal': _IntroAndBody
+  'compare-strategies': _IntroAndBody & {
     tpawIntro: _FetchedInline
     spawIntro: _FetchedInline
     sharpeRatioIntro: _FetchedInline
@@ -540,10 +540,10 @@ export type PlanContent = {
   'expected-returns': _IntroAndBody
   inflation: _IntroAndBody
   simulation: {
-    body:_FetchedInline
-    introSampling:_FetchedInline
-    introSamplingMonteCarlo:_FetchedInline
-    introSamplingHistorical:_FetchedInline
+    body: _FetchedInline
+    introSampling: _FetchedInline
+    introSamplingMonteCarlo: _FetchedInline
+    introSamplingHistorical: _FetchedInline
   }
   dev: Record<string, never>
   chart: {
@@ -597,16 +597,23 @@ export const planGetStaticProps: GetStaticProps<
       body: await Contentful.fetchInline('5nCHpNy6ReAEtBQTvDTwBf'),
     },
 
-    'risk-and-time-preference': {
-      intro: await Contentful.fetchInline('4UHaDSQWXjNW75yTAwK1IX'),
+    'stock-allocation': {
       body: await Contentful.fetchInline('3ofgPmJFLgtJpjl26E7jpB'),
-      stockAllocationIntro: await Contentful.fetchInline(
-        'xWXcgVScUfdK1PaTNQeKz'
-      ),
-      spendingTiltIntro: await Contentful.fetchInline('4UwuCPjuTz3SbwUcZIrLEG'),
-      lmpIntro: await Contentful.fetchInline('5FiPQS04F4uFngEMJium3B'),
+      intro: await Contentful.fetchInline('xWXcgVScUfdK1PaTNQeKz'),
     },
-    strategy: {
+    'spending-tilt': {
+      body: await Contentful.fetchInline('6Dv02w4fUuFQUjyWxnR7Vq'),
+      intro: await Contentful.fetchInline('4UwuCPjuTz3SbwUcZIrLEG'),
+    },
+    lmp: {
+      body: await Contentful.fetchInline('3ofgPmJFLgtJpjl26E7jpB'),
+      intro: await Contentful.fetchInline('5FiPQS04F4uFngEMJium3B'),
+    },
+    'withdrawal': {
+      body: await Contentful.fetchInline('7eGRhX0KpxK2wKCzDTHLOs'),
+      intro: await Contentful.fetchInline('3H8rgiVzmnyD6H3ZUjvgp8'),
+    },
+    'compare-strategies': {
       intro: await Contentful.fetchInline('52f9yaDqUCBBg3mkqGdZPc'),
       tpawIntro: await Contentful.fetchInline('4qYue9K3cSpEkSrAhIn7AV'),
       spawIntro: await Contentful.fetchInline('5W26KpQeXY9nC3FgKioesF'),
@@ -624,8 +631,12 @@ export const planGetStaticProps: GetStaticProps<
     simulation: {
       body: await Contentful.fetchInline('5alyO5geIHnQsw8ZMpbyf5'),
       introSampling: await Contentful.fetchInline('6EwnBJaN5FYISgyPdSQe7U'),
-      introSamplingMonteCarlo: await Contentful.fetchInline('4ysOynT6PPgYFnY1BaLuy5'),
-      introSamplingHistorical: await Contentful.fetchInline('19JANDD3uLnVdh52HBMj6U'),
+      introSamplingMonteCarlo: await Contentful.fetchInline(
+        '4ysOynT6PPgYFnY1BaLuy5'
+      ),
+      introSamplingHistorical: await Contentful.fetchInline(
+        '19JANDD3uLnVdh52HBMj6U'
+      ),
     },
     dev: {},
     chart: {

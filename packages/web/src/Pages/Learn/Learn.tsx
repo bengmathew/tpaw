@@ -37,7 +37,7 @@ export const Learn = React.memo(
     const {content} = props
     return (
       <AppPage
-        className=""
+        className="min-h-screen"
         title={`${content.fields.publicTitle} - Knowledge Base - TPAW Planner`}
         curr="learn"
       >

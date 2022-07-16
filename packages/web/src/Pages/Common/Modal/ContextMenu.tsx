@@ -16,8 +16,10 @@ export const ContextMenu = React.memo(
     onClose,
     children,
     darkBG = true,
+    align,
   }: {
     referenceElement: HTMLElement
+    align: 'left' | 'right'
     onClose: () => void
     children: (onHide: () => void) => ReactElement
     darkBG?: boolean
@@ -30,10 +32,17 @@ export const ContextMenu = React.memo(
         const menu = fGet(menuRef.current)
         const referenceBounds = referenceElement.getBoundingClientRect()
         const menuBounds = menu.getBoundingClientRect()
-        menu.style.left = `${Math.min(
-          referenceBounds.left,
-          windowSize.width - menuBounds.width
-        )}px`
+        if (align === 'left') {
+          menu.style.left = `${Math.min(
+            referenceBounds.left,
+            windowSize.width - menuBounds.width
+          )}px`
+        } else {
+          menu.style.left = `${Math.max(
+            referenceBounds.right - menuBounds.width,
+            0
+          )}px`
+        }
         const windowBottom = windowSize.height - 25
         const menuTop = Math.floor(
           Math.min(referenceBounds.top, windowBottom - menuBounds.height)
@@ -44,7 +53,7 @@ export const ContextMenu = React.memo(
         }
         menu.style.top = `${menuTop}px`
       },
-      [referenceElement, windowSize]
+      [align, referenceElement, windowSize]
     )
 
     useLayoutEffect(() => {

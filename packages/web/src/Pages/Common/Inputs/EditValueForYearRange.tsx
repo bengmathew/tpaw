@@ -4,24 +4,13 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {Switch} from '@headlessui/react'
 import _ from 'lodash'
 import React from 'react'
-import {
-  TPAWParams,
-  ValueForYearRange,
-  Year,
-} from '../../../TPAWSimulator/TPAWParams'
-import {extendTPAWParams} from '../../../TPAWSimulator/TPAWParamsExt'
+import {TPAWParams, ValueForYearRange} from '../../../TPAWSimulator/TPAWParams'
+import {SimpleRange} from '../../../Utils/SimpleRange'
 import {useSimulation} from '../../App/WithSimulation'
-import {
-  AmountInput,
-  useAmountInputState,
-} from './AmountInput'
+import {AmountInput} from './AmountInput'
 import {CheckBox} from './CheckBox'
-import {
-  YearRangeInput,
-  YearRangeInputProps,
-} from './YearRangeInput'
 import {smartDeltaFnForAmountInput} from './SmartDeltaFnForAmountInput'
-import { SimpleRange } from '../../../Utils/SimpleRange'
+import {YearRangeInput, YearRangeInputProps} from './YearRangeInput'
 
 export const EditValueForYearRange = React.memo(
   ({
@@ -60,7 +49,6 @@ export const EditValueForYearRange = React.memo(
     const entry = entries(params)[index]
 
     const {label, value} = entry
-    const amountState = useAmountInputState(value)
 
     const {increment, decrement} = smartDeltaFnForAmountInput
     return (
@@ -80,7 +68,7 @@ export const EditValueForYearRange = React.memo(
               onChange={e => {
                 setEntry(entry => {
                   const trimmed = e.target.value.trim()
-                  // Cannot set it to trimmed value because we cannot have 
+                  // Cannot set it to trimmed value because we cannot have
                   entry.label = trimmed.length === 0 ? null : e.target.value
                 })
               }}
@@ -96,13 +84,14 @@ export const EditValueForYearRange = React.memo(
             >
               <div className="grid" style={{grid: 'auto / 1fr auto auto'}}>
                 <AmountInput
-                  className="w-[100%]"
-                  type="currency"
-                  state={amountState}
-                  onAccept={value => setEntry(entry => (entry.value = value))}
+                  className="w-[100%] text-input"
+                  prefix="$"
+                  value={value}
+                  onChange={value => setEntry(entry => (entry.value = value))}
+                  decimals={0}
                 />
                 <button
-                  className="pl-6 pr-3"
+                  className="ml-3 px-3"
                   onClick={() =>
                     setEntry(entry => (entry.value = increment(entry.value)))
                   }
@@ -128,7 +117,7 @@ export const EditValueForYearRange = React.memo(
                     }
                   />
                   <Switch.Label className=" text-sm">
-                  real dollars (adjusted for inflation)
+                    real dollars (adjusted for inflation)
                   </Switch.Label>
                 </Switch.Group>
               </div>

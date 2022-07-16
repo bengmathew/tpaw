@@ -10,7 +10,7 @@ export type ChartPanelType =
   | `spending-discretionary-${number}`
   | 'portfolio'
   | 'glide-path'
-  | 'withdrawal-rate'
+  | 'withdrawal'
 
 export const isChartPanelSpendingEssentialType = (
   x: ChartPanelType | 'sharpe-ratio'
@@ -38,7 +38,7 @@ const _checkType = (x: string): x is ChartPanelType =>
     _isDigits(x.substring('spending-discretionary-'.length))) ||
   x === 'portfolio' ||
   x === 'glide-path' ||
-  x === 'withdrawal-rate'
+  x === 'withdrawal'
 
 export const isChartPanelType = (
   params: TPAWParams,

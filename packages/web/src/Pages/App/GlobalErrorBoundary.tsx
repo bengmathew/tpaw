@@ -38,7 +38,7 @@ export const _ErrorFallback = React.memo(({error}: {error: Error}) => {
   }, [error, router])
 
   return (
-    <AppPage title={'Error - TPAW Planner'} curr={'other'}>
+    <AppPage className="min-h-screen" title={'Error - TPAW Planner'} curr={'other'}>
       <div className="grid h-screen" style={{grid: '1fr auto/auto'}}>
         <div className="flex flex-col items-center mb-10">
           <div className="flex h-full flex-col justify-center items-center p-4">

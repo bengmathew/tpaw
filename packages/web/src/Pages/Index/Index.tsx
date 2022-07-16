@@ -28,9 +28,7 @@ export const Index = React.memo(
         <div className="flex justify-end sticky top-0 ">
           <div className="flex items-center gap-x-6 pt-4 pb-2 pl-6 bg-pageBG  rounded-bl-2xl bg-opacity-100 ">
             <Link href="/learn">
-              <a className=" block text-lg  font-bold">
-                Learn
-              </a>
+              <a className=" block text-lg  font-bold">Learn</a>
             </Link>
             <Link href="/plan">
               <a className="btn-dark btn-lg ">
@@ -38,7 +36,6 @@ export const Index = React.memo(
                 <FontAwesomeIcon className="ml-2" icon={faLongArrowAltRight} />{' '}
               </a>
             </Link>
-            
           </div>
         </div>
         <div className="  pt-10 ">
@@ -55,7 +52,7 @@ export const Index = React.memo(
 
         <div className="flex flex-col justify-start items-start mt-8 mb-20">
           <div className="  max-w-[700px]">
-            {documentToReactComponents(detail.fields.body, {
+            {documentToReactComponents(detail.TPAW, {
               renderNode: {
                 [BLOCKS.HEADING_2]: (node, children) => (
                   <div className={`flex items-top mt-10`}>
@@ -74,8 +71,7 @@ export const Index = React.memo(
           </div>
         </div>
 
-
-        <Footer  />
+        <Footer />
       </div>
     )
   }

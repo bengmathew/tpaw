@@ -1,5 +1,9 @@
 import {faPlus} from '@fortawesome/pro-light-svg-icons'
-import {faTurnDownLeft} from '@fortawesome/pro-regular-svg-icons'
+import {
+  faMinus,
+  faPlus as faPlusRegular,
+  faTurnDownLeft,
+} from '@fortawesome/pro-regular-svg-icons'
 import {faTrash} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
@@ -8,7 +12,7 @@ import {GlidePath} from '../../../TPAWSimulator/TPAWParams'
 import {TPAWParamsExt} from '../../../TPAWSimulator/TPAWParamsExt'
 import {assert, noCase} from '../../../Utils/Utils'
 import {useSimulation} from '../../App/WithSimulation'
-import {AmountInput, useAmountInputState} from './AmountInput'
+import {AmountInput} from './AmountInput'
 import {YearInput} from './YearInput/YearInput'
 
 export const GlidePathInput = React.memo(
@@ -261,19 +265,28 @@ const _Percent = React.memo(
     value: number
     onChange: (x: number) => void
   }) => {
-    const amountInputState = useAmountInputState(Math.round(value * 100))
     return (
-      <div className={`${className} flex justify-end`}>
+      <div className={`${className} flex justify-end items-stretch`}>
         <AmountInput
-          className="w-[45px] text-right"
-          type="percent"
-          state={amountInputState}
-          onAccept={stocks => {
-            const clamped = _.clamp(stocks, 0, 100)
-            amountInputState.setAmountStr(`${clamped}`)
-            onChange(clamped / 100)
+          className="w-[45px] text-right text-input"
+          value={Math.round(value * 100)}
+          onChange={stocks => {
+            onChange(_.clamp(stocks / 100, 0, 1))
           }}
+          decimals={0}
         />
+        <button
+          className={`flex items-center ml-2 px-2 `}
+          onClick={() => onChange(_.clamp(value + 0.01, 0, 1))}
+        >
+          <FontAwesomeIcon className="text-base" icon={faPlusRegular} />
+        </button>
+        <button
+          className={`flex items-center px-2 `}
+          onClick={() => onChange(_.clamp(value - 0.01, 0, 1))}
+        >
+          <FontAwesomeIcon className="text-base" icon={faMinus} />
+        </button>
       </div>
     )
   }

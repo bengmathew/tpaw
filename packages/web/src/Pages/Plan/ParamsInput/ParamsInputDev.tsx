@@ -2,14 +2,14 @@ import {faMinus, faPlus} from '@fortawesome/pro-light-svg-icons'
 import {faCircle as faCircleRegular} from '@fortawesome/pro-regular-svg-icons'
 import {faCircle as faCircleSelected} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import { RadioGroup } from '@headlessui/react'
+import {RadioGroup} from '@headlessui/react'
 import _ from 'lodash'
 import React, {useEffect, useState} from 'react'
 import {clearMemoizedRandom} from '../../../TPAWSimulator/Worker/UseTPAWWorker'
 import {paddingCSS} from '../../../Utils/Geometry'
 import {assert, assertFalse} from '../../../Utils/Utils'
 import {useSimulation} from '../../App/WithSimulation'
-import {AmountInput, useAmountInputState} from '../../Common/Inputs/AmountInput'
+import {AmountInput} from '../../Common/Inputs/AmountInput'
 import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
 import {usePlanContent} from '../Plan'
 import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
@@ -194,7 +194,6 @@ const _Misc = React.memo(
     props: ParamsInputBodyPassThruProps
   }) => {
     const {params, setParams, numRuns, setNumRuns} = useSimulation()
-    const amountState = useAmountInputState(numRuns)
     return (
       <div
         className={`${className} params-card`}
@@ -219,9 +218,10 @@ const _Misc = React.memo(
         <div className="mt-2 flex gap-x-4 items-center">
           <h2 className="">Number of simulations</h2>
           <AmountInput
-            state={amountState}
-            onAccept={setNumRuns}
-            type={'percent'}
+            className="text-input"
+            value={numRuns}
+            onChange={setNumRuns}
+            decimals={0}
           />
         </div>
 
@@ -238,7 +238,6 @@ const _Misc = React.memo(
     )
   }
 )
-
 
 const _AdjustCard = React.memo(
   ({
@@ -284,7 +283,9 @@ const _AdjustCard = React.memo(
             >
               {({checked}) => (
                 <>
-                  <FontAwesomeIcon icon={checked ? faCircleSelected : faCircleRegular} />
+                  <FontAwesomeIcon
+                    icon={checked ? faCircleSelected : faCircleRegular}
+                  />
                   <RadioGroup.Description as="h2" className={`py-1`}>
                     Adjust to expected returns
                   </RadioGroup.Description>
@@ -297,9 +298,11 @@ const _AdjustCard = React.memo(
             >
               {({checked}) => (
                 <>
-                  <FontAwesomeIcon icon={checked ? faCircleSelected : faCircleRegular} />
+                  <FontAwesomeIcon
+                    icon={checked ? faCircleSelected : faCircleRegular}
+                  />
                   <RadioGroup.Description as="h2" className={``}>
-                    Do not adjust 
+                    Do not adjust
                   </RadioGroup.Description>
                 </>
               )}

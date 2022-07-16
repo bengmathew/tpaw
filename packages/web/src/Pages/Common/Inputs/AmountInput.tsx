@@ -1,46 +1,55 @@
 import _ from 'lodash'
 import React, {useEffect, useState} from 'react'
-
-export type AmountInputState = ReturnType<typeof useAmountInputState>
-export function useAmountInputState(value: number | null) {
-  const [amountStr, setAmountStr] = useState(value !== null ? `${value}` : '')
-  useEffect(() => setAmountStr(value !== null ? `${value}` : ''), [value])
-  const amount = _parse(amountStr)
-  return {
-    amount,
-    amountStr,
-    setAmountStr,
-  }
-}
+import NumberFormat from 'react-number-format'
 
 export const AmountInput = React.memo(
   ({
     className = '',
-    state: {amount, amountStr, setAmountStr},
-    onAccept = () => {},
+    value,
+    onChange,
     disabled = false,
-    type,
+    prefix,
+    suffix,
+    decimals,
   }: {
     className?: string
-    state: AmountInputState
-    onAccept?: (value: number) => void
+    value: number
+    onChange: (value: number) => void
     disabled?: boolean
-    type: 'currency' | 'percent'
+    prefix?: string
+    suffix?: string
+    decimals: number
   }) => {
-    const symbol = type === 'currency' ? '$' : '%'
+    const [internalValue, setInternalValue] = useState(value)
+    useEffect(() => setInternalValue(value), [value])
+
+    const outputValue = internalValue === null ? 0 : internalValue
+
     return (
-      <input
-        className={` ${className} bg-gray-200 rounded-lg py-1.5 px-2 `}
-        disabled={disabled}
-        type="text"
-        pattern="[0-9]"
-        inputMode="numeric"
-        value={amountStr === null ? symbol : _format(type, amountStr)}
-        onKeyDown={e => {
-          if (e.key === 'Enter') onAccept(amount)
+      <NumberFormat
+        className={` ${className} `}
+        thousandSeparator={true}
+        prefix={prefix}
+        suffix={suffix}
+        value={internalValue}
+        decimalScale={decimals}
+        fixedDecimalScale
+        onValueChange={x => {
+          setInternalValue(x.floatValue ?? 0)
         }}
-        onBlur={() => onAccept(amount)}
-        onChange={e => setAmountStr(_clean(e.target.value))}
+        onBlur={() => onChange(outputValue)}
+        onFocus={(e: React.FocusEvent<HTMLInputElement>) =>
+          e.target.setSelectionRange(0, e.target.value.length)
+        }
+        onClick={(e: React.MouseEvent<HTMLInputElement>) =>
+          (e.target as HTMLInputElement).setSelectionRange(
+            0,
+            (e.target as HTMLInputElement).value.length
+          )
+        }
+        onKeyDown={(e: React.KeyboardEvent) => {
+          if (e.key === 'Enter') onChange(outputValue)
+        }}
       />
     )
   }

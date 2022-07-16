@@ -14,11 +14,11 @@ const suggested = getDefaultParams().returns.expected
 const PRESETS = {
   suggested: {...suggested},
   oneOverCAPE: {
-    stocks: 0.033,
+    stocks: 0.035,
     bonds: suggested.bonds,
   },
   regressionPrediction: {
-    stocks: 0.054,
+    stocks: 0.055,
     bonds: suggested.bonds,
   },
   historical: {stocks: 0.085, bonds: 0.031},
@@ -61,7 +61,7 @@ export const ParamsInputExpectedReturns = React.memo(
             style={{grid: 'auto / auto 1fr'}}
           >
             <Contentful.RichText
-              body={content['expected-returns'].intro.fields.body}
+              body={content['expected-returns'].intro[params.strategy]}
               p="col-span-2 mb-2 p-base"
             />
 

@@ -37,7 +37,7 @@ export function analyzeYearsInParams(
 
   const spawGlidePath = _analyzeGlidePath(
     targetAllocation.regularPortfolio.forSPAWAndSWR,
-    'strategy',
+    'compare-strategies',
     'assetAllocationForSPAW',
     paramsExt,
     yearUpdater
@@ -52,7 +52,7 @@ export function analyzeYearsInParams(
 
 const _analyzeGlidePath = (
   glidePath: GlidePath,
-  section: 'strategy',
+  section: 'compare-strategies',
   location: 'assetAllocationForSPAW',
   paramsExt: TPAWParamsExt,
   yearUpdater?: (year: Year) => Year

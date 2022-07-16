@@ -1,3 +1,4 @@
+import { RunResult } from '@tpaw/simulator'
 import _ from 'lodash'
 import {SimpleRange} from '../../Utils/SimpleRange'
 import {noCase} from '../../Utils/Utils'
@@ -98,7 +99,10 @@ export async function runSimulationInWASM(
       },
     },
     byRun: {
-      endingBalanceOfSavingsPortfolio: runs.by_run_ending_balance().slice(),
+      numInsufficientFundYears: runs
+        .by_run_num_insufficient_fund_years()
+        .slice(),
+      endingBalanceOfSavingsPortfolio: runs.by_run_ending_balancee().slice(),
     },
   }
   runs.free()

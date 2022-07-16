@@ -88,6 +88,9 @@ export const mergeWorkerRuns = (
   }
 
   const byRun = {
+    numInsufficientFundYears: _flattenTypedI32(
+      runsByWorker.map(s => s.byRun.numInsufficientFundYears)
+    ),
     endingBalanceOfSavingsPortfolio: _flattenTyped(
       runsByWorker.map(s => s.byRun.endingBalanceOfSavingsPortfolio)
     ),
@@ -104,6 +107,15 @@ export const mergeWorkerRuns = (
 const _flattenTyped = (arr: Float64Array[]) => {
   let offset = 0
   const result = new Float64Array(_.sumBy(arr, x => x.length))
+  arr.forEach(x => {
+    result.set(x, offset)
+    offset += x.length
+  })
+  return result
+}
+const _flattenTypedI32 = (arr: Int32Array[]) => {
+  let offset = 0
+  const result = new Int32Array(_.sumBy(arr, x => x.length))
   arr.forEach(x => {
     result.set(x, offset)
     offset += x.length

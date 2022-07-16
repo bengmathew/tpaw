@@ -1,19 +1,19 @@
-import React, {useState} from 'react'
-import {YearRange} from '../../../TPAWSimulator/TPAWParams'
-import {Contentful} from '../../../Utils/Contentful'
-import {paddingCSS} from '../../../Utils/Geometry'
-import {useSimulation} from '../../App/WithSimulation'
-import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
+import React, { useState } from 'react'
+import { YearRange } from '../../../TPAWSimulator/TPAWParams'
+import { Contentful } from '../../../Utils/Contentful'
+import { paddingCSS, paddingCSSStyleHorz } from '../../../Utils/Geometry'
+import { useSimulation } from '../../App/WithSimulation'
+import { EditValueForYearRange } from '../../Common/Inputs/EditValueForYearRange'
 import {
   chartPanelSpendingDiscretionaryTypeID,
   chartPanelSpendingEssentialTypeID,
   ChartPanelType,
   isChartPanelSpendingDiscretionaryType,
-  isChartPanelSpendingEssentialType,
+  isChartPanelSpendingEssentialType
 } from '../ChartPanel/ChartPanelType'
-import {usePlanContent} from '../Plan'
-import {ByYearSchedule} from './Helpers/ByYearSchedule'
-import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
+import { usePlanContent } from '../Plan'
+import { ByYearSchedule } from './Helpers/ByYearSchedule'
+import { ParamsInputBody, ParamsInputBodyPassThruProps } from './ParamsInputBody'
 
 export const ParamsInputExtraSpending = React.memo(
   ({
@@ -22,7 +22,7 @@ export const ParamsInputExtraSpending = React.memo(
     ...props
   }: {
     chartType: ChartPanelType | 'sharpe-ratio'
-    setChartType: (type: ChartPanelType|'sharpe-ratio') => void
+    setChartType: (type: ChartPanelType | 'sharpe-ratio') => void
   } & ParamsInputBodyPassThruProps) => {
     const {paramsExt, params} = useSimulation()
     const {years, validYearRange, maxMaxAge, asYFN} = paramsExt
@@ -51,58 +51,88 @@ export const ParamsInputExtraSpending = React.memo(
       ),
     }
 
+    const showDiscretionary =
+      params.strategy !== 'SWR' || params.withdrawals.discretionary.length > 0
+
     return (
-      <ParamsInputBody {...props} headingMarginLeft="normal">
-        <div
-          className="params-card"
-          style={{padding: paddingCSS(props.sizing.cardPadding)}}
-        >
-          <Contentful.RichText
-            body={content['extra-spending'].intro.fields.body}
-            p="p-base"
-          />
-          <ByYearSchedule
-            className="mt-6 mb-6"
-            heading={'Essential'}
-            entries={params => params.withdrawals.essential}
-            hideEntry={
-              state.type === 'edit' && state.isEssential && state.hideInMain
-                ? state.index
-                : null
-            }
-            allowableYearRange={allowableRange}
-            onEdit={(index, isAdd) =>
-              setState({
-                type: 'edit',
-                isEssential: true,
-                isAdd,
-                index,
-                hideInMain: isAdd,
-              })
-            }
-            defaultYearRange={defaultRange}
-          />
-          <ByYearSchedule
+      <ParamsInputBody {...props} headingMarginLeft="reduced">
+        <div className="">
+          <div
             className=""
-            heading={'Discretionary'}
-            entries={params => params.withdrawals.discretionary}
-            hideEntry={
-              state.type === 'edit' && !state.isEssential && state.hideInMain
-                ? state.index
-                : null
-            }
-            allowableYearRange={allowableRange}
-            onEdit={(index, isAdd) =>
-              setState({
-                type: 'edit',
-                isEssential: false,
-                isAdd,
-                index,
-                hideInMain: isAdd,
-              })
-            }
-            defaultYearRange={defaultRange}
-          />
+            style={{
+              ...paddingCSSStyleHorz(props.sizing.cardPadding, {scale: 0.5}),
+            }}
+          >
+            <Contentful.RichText
+              body={content['extra-spending'].intro[params.strategy]}
+              p="p-base"
+            />
+            {showDiscretionary && params.strategy === 'SWR' && (
+              <div className="p-base mt-2">
+                <span className="bg-gray-300 px-2 rounded-lg ">Note</span> You have selected the SWR strategy. This strategy treats essential and discretionary expenses the same.
+              </div>
+            )}
+          </div>
+          <div
+            className="params-card mt-8"
+            style={{padding: paddingCSS(props.sizing.cardPadding)}}
+          >
+            {showDiscretionary && (
+              <h2 className="font-bold text-lg mb-2">Essential</h2>
+            )}
+            <ByYearSchedule
+              className=""
+              heading={null}
+              entries={params => params.withdrawals.essential}
+              hideEntry={
+                state.type === 'edit' && state.isEssential && state.hideInMain
+                  ? state.index
+                  : null
+              }
+              allowableYearRange={allowableRange}
+              onEdit={(index, isAdd) =>
+                setState({
+                  type: 'edit',
+                  isEssential: true,
+                  isAdd,
+                  index,
+                  hideInMain: isAdd,
+                })
+              }
+              defaultYearRange={defaultRange}
+            />
+          </div>
+          {showDiscretionary && (
+            <div
+              className="params-card mt-8"
+              style={{padding: paddingCSS(props.sizing.cardPadding)}}
+            >
+              <h2 className="font-bold text-lg mb-2">Discretionary</h2>
+              <ByYearSchedule
+                className=""
+                heading={null}
+                entries={params => params.withdrawals.discretionary}
+                hideEntry={
+                  state.type === 'edit' &&
+                  !state.isEssential &&
+                  state.hideInMain
+                    ? state.index
+                    : null
+                }
+                allowableYearRange={allowableRange}
+                onEdit={(index, isAdd) =>
+                  setState({
+                    type: 'edit',
+                    isEssential: false,
+                    isAdd,
+                    index,
+                    hideInMain: isAdd,
+                  })
+                }
+                defaultYearRange={defaultRange}
+              />
+            </div>
+          )}
         </div>
         {{
           input:

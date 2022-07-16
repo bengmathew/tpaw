@@ -16,7 +16,9 @@ import {assert, assertFalse, fGet} from './Utils'
 export namespace Contentful {
   export type InlineEntry = {
     title: string
-    body: Document
+    tpawBody: Document
+    spawBody?: Document
+    swrBody?: Document
   }
   export type StandaloneEntry = {
     title: string
@@ -44,7 +46,11 @@ export namespace Contentful {
       content_type: 'inline',
       'sys.id': id,
     })
-    return fGet(items[0])
+    const item = fGet(items[0])
+    const TPAW = item.fields.tpawBody
+    const SPAW = item.fields.spawBody ?? TPAW
+    const SWR = item.fields.swrBody ?? TPAW
+    return {TPAW, SPAW, SWR}
   }
 
   export type FetchedStandalone = Awaited<

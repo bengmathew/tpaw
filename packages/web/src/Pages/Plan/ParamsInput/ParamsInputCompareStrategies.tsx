@@ -3,32 +3,39 @@ import {faCircle as faCircleSelected} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import React, {useEffect, useRef, useState} from 'react'
+import {defaultSWRWithdrawalRate} from '../../../TPAWSimulator/DefaultParams'
 import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
 import {Contentful} from '../../../Utils/Contentful'
 import {paddingCSS, paddingCSSStyleHorz} from '../../../Utils/Geometry'
 import {fGet} from '../../../Utils/Utils'
 import {useChartData} from '../../App/WithChartData'
 import {useSimulation} from '../../App/WithSimulation'
-import {GlidePathInput} from '../../Common/Inputs/GlidePathInput'
 import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
 import {Config} from '../../Config'
 import {ChartPanelType} from '../ChartPanel/ChartPanelType'
 import {usePlanContent} from '../Plan'
-import {AssetAllocationChart} from './Helpers/AssetAllocationChart'
 import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 type Props = ParamsInputBodyPassThruProps & {
   chartType: ChartPanelType | 'sharpe-ratio'
   setChartType: (type: ChartPanelType | 'sharpe-ratio') => void
 }
-export const ParamsInputStrategy = React.memo((props: Props) => {
-  const {params, setParams} = useSimulation()
-  const content = usePlanContent()['strategy']
+export const ParamsInputCompareStrategies = React.memo((props: Props) => {
+  const {params, setParams, paramsExt} = useSimulation()
+
+  const content = usePlanContent()['compare-strategies']
 
   const handleStrategy = (strategy: TPAWParams['strategy']) => {
-    setParams(p => {
-      const clone = _.cloneDeep(p)
+    setParams(params => {
+      if (params.strategy === strategy) return params
+      const clone = _.cloneDeep(params)
       clone.strategy = strategy
+      if (strategy === 'SWR') {
+        clone.swrWithdrawal = {
+          type: 'asPercent',
+          percent: defaultSWRWithdrawalRate(paramsExt.numRetirementYears),
+        }
+      }
       return clone
     })
   }
@@ -42,7 +49,10 @@ export const ParamsInputStrategy = React.memo((props: Props) => {
             ...paddingCSSStyleHorz(props.sizing.cardPadding, {scale: 0.5}),
           }}
         >
-          <Contentful.RichText body={content.intro.fields.body} p="p-base" />
+          <Contentful.RichText
+            body={content.intro[params.strategy]}
+            p="p-base"
+          />
         </div>
 
         <div className="mt-8">
@@ -75,7 +85,7 @@ export const ParamsInputStrategy = React.memo((props: Props) => {
 
                 <div className="mt-2">
                   <Contentful.RichText
-                    body={content.tpawIntro.fields.body}
+                    body={content.tpawIntro[params.strategy]}
                     p="p-base"
                   />
                 </div>
@@ -110,32 +120,11 @@ export const ParamsInputStrategy = React.memo((props: Props) => {
               </h2> */}
               <div className="mt-2">
                 <Contentful.RichText
-                  body={content.spawIntro.fields.body}
+                  body={content.spawIntro[params.strategy]}
                   p="p-base"
                 />
               </div>
             </button>
-            {params.strategy === 'SPAW' && (
-              <div className="mt-8">
-                <h2 className="font-bold text-l">
-                  Asset Allocation on the Savings Portfolio
-                </h2>
-
-                <GlidePathInput
-                  className="mt-4 border border-gray-300 p-2 rounded-lg"
-                  value={params.targetAllocation.regularPortfolio.forSPAWAndSWR}
-                  onChange={x =>
-                    setParams(p => {
-                      const clone = _.cloneDeep(p)
-                      clone.targetAllocation.regularPortfolio.forSPAWAndSWR = x
-                      return clone
-                    })
-                  }
-                />
-                <h2 className="mt-6">Graph of this asset allocation:</h2>
-                <AssetAllocationChart className="mt-4 " />
-              </div>
-            )}
           </div>
         </div>
 
@@ -164,32 +153,11 @@ export const ParamsInputStrategy = React.memo((props: Props) => {
   </h2> */}
               <div className="mt-2">
                 <Contentful.RichText
-                  body={content.spawIntro.fields.body}
+                  body={content.spawIntro[params.strategy]}
                   p="p-base"
                 />
               </div>
             </button>
-            {params.strategy === 'SPAW' && (
-              <div className="mt-8">
-                <h2 className="font-bold text-l">
-                  Asset Allocation on the Savings Portfolio
-                </h2>
-
-                <GlidePathInput
-                  className="mt-4 border border-gray-300 p-2 rounded-lg"
-                  value={params.targetAllocation.regularPortfolio.forSPAWAndSWR}
-                  onChange={x =>
-                    setParams(p => {
-                      const clone = _.cloneDeep(p)
-                      clone.targetAllocation.regularPortfolio.forSPAWAndSWR = x
-                      return clone
-                    })
-                  }
-                />
-                <h2 className="mt-6">Graph of this asset allocation:</h2>
-                <AssetAllocationChart className="mt-4 " />
-              </div>
-            )}
           </div>
         )}
 
@@ -202,16 +170,14 @@ export const ParamsInputStrategy = React.memo((props: Props) => {
 const _ComparisonCard = React.memo(
   ({className = '', props}: {className?: string; props: Props}) => {
     const {chartType, setChartType} = props
-    const {setCompareSharpeRatio} = useSimulation()
+    const {setCompareSharpeRatio, params} = useSimulation()
 
-    const content = usePlanContent()['strategy']
+    const content = usePlanContent()['compare-strategies']
     const chartData = useChartData().sharpeRatio
 
     // Remember the last non sharpe ratio chart type.
     const [lastNonShapeRatioChartType, setLastNonSharpeRatioChartType] =
       useState(chartType === 'sharpe-ratio' ? null : chartType)
-
-    console.log(lastNonShapeRatioChartType)
 
     useEffect(() => {
       if (chartType !== 'sharpe-ratio')
@@ -268,7 +234,7 @@ const _ComparisonCard = React.memo(
 
         <div className="mt-2">
           <Contentful.RichText
-            body={content.sharpeRatioIntro.fields.body}
+            body={content.sharpeRatioIntro[params.strategy]}
             p="p-base"
           />
         </div>

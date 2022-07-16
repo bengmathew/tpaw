@@ -66,7 +66,7 @@ export const ByYearSchedule = React.memo(
         ) : (
           <div className="flex justify-start gap-x-4 items-center  ">
             <button
-              className="flex items-center justify-center gap-x-2  mt-4  py-2 "
+              className="flex items-center justify-center gap-x-2   py-2 "
               onClick={handleAdd}
             >
               <FontAwesomeIcon className="text-2xl" icon={faPlus} />

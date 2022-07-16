@@ -27,40 +27,47 @@ export const chartPanelLabel = (
       return {label: ['Portfolio'], subLabel: null}
     case 'glide-path':
       return {label: ['Asset Allocation'], subLabel: null}
-    case 'withdrawal-rate':
+    case 'withdrawal':
       return {label: ['Withdrawal Rate'], subLabel: null}
     case 'sharpe-ratio':
       return {label: ['Reward/Risk Ratio'], subLabel: null}
     default:
+      const {essential, discretionary} = params.withdrawals
+      const showLabel = params.strategy !== 'SWR'
       if (isChartPanelSpendingEssentialType(panelType)) {
         const id = chartPanelSpendingEssentialTypeID(panelType)
-        const index = params.withdrawals.essential.findIndex(x => x.id === id)
+        const index = essential.findIndex(x => x.id === id)
         assert(index !== -1)
+
+        const spendingLabel = `${
+          trimAndNullify(essential[index].label) ?? '<No label>'
+        }`
+
         const label = _.compact([
           type === 'full' ? 'Spending' : undefined,
-          'Extra',
-          'Essential',
+          ...(showLabel
+            ? ['Extra', showLabel ? 'Essential' : undefined]
+            : [spendingLabel]),
         ])
-        const subLabel = `${
-          trimAndNullify(params.withdrawals.essential[index].label) ??
-          '<No label>'
-        }`
+        const subLabel = showLabel ? spendingLabel : null
         return {label, subLabel}
       }
       if (isChartPanelSpendingDiscretionaryType(panelType)) {
         const id = chartPanelSpendingDiscretionaryTypeID(panelType)
-        const index = params.withdrawals.discretionary.findIndex(
-          x => x.id === id
-        )
+        const index = discretionary.findIndex(x => x.id === id)
         assert(index !== -1)
+        
+        const spendingLabel = `${
+          trimAndNullify(discretionary[index].label) ?? '<No label>'
+        }`
+
         const label = _.compact([
           type === 'full' ? 'Spending' : undefined,
-          `Extra`,
-          `Discretionary`,
+          ...(showLabel
+            ? ['Extra', showLabel ? 'Discretionary' : undefined]
+            : [spendingLabel]),
         ])
-        const subLabel = `${
-          params.withdrawals.discretionary[index].label ?? '<No label>'
-        }`
+        const subLabel = showLabel ? spendingLabel : null
         return {label, subLabel}
       }
       noCase(panelType)
