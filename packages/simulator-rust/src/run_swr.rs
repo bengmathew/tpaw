@@ -164,7 +164,7 @@ fn run_for_single_year_using_fixed_returns(
 
     let target_withdrawals = calculate_target_withdrawals(
         context,
-        &savings_portfolio_after_contributions,
+        balance_starting,
         &None,
         &pre_withdrawal,
         pass_forward,
@@ -224,7 +224,7 @@ fn run_for_single_year_using_historical_returns(
 
     let target_withdrawals = calculate_target_withdrawals(
         context,
-        &savings_portfolio_after_contributions,
+        balance_starting,
         &Some(pre_withdrawal_from_using_expected_returns),
         &pre_withdrawal,
         pass_forward,
@@ -334,7 +334,7 @@ fn calculate_pre_withdrawal(
 #[inline(always)]
 fn calculate_target_withdrawals(
     context: &SingleYearContext,
-    savings_portfolio_after_contributions: &portfolio_over_year::AfterContributions,
+    savings_portfolio_starting_balance: f64,
     _pre_withdrawal_from_using_expected_returns: &Option<&SingleYearPreWithdrawal>,
     _pre_withdrawal: &SingleYearPreWithdrawal,
     pass_forward: &SingleYearPassForward,
@@ -347,7 +347,7 @@ fn calculate_target_withdrawals(
         Ordering::Less => 0.0,
         Ordering::Equal => match params.swr_withdrawal {
             ParamsSWRWithdrawal::AsPercent { percent } => {
-                savings_portfolio_after_contributions.balance * percent
+                savings_portfolio_starting_balance * percent
             }
             ParamsSWRWithdrawal::AsAmount { amount } => amount,
         },

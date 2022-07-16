@@ -164,7 +164,7 @@ fn run_for_single_year_using_fixed_returns(
 
     let target_withdrawals = calculate_target_withdrawals(
         context,
-        &savings_portfolio_after_contributions,
+        balance_starting,
         &None,
         &pre_withdrawal,
         pass_forward,
@@ -224,7 +224,7 @@ fn run_for_single_year_using_historical_returns(
 
     let target_withdrawals = calculate_target_withdrawals(
         context,
-        &savings_portfolio_after_contributions,
+        balance_starting,
         &Some(pre_withdrawal_from_using_expected_returns),
         &pre_withdrawal,
         pass_forward,
@@ -290,14 +290,14 @@ fn run_for_single_year_using_historical_returns(
     //         .into(),
     //     );
     //     if year_index == 0 {
-    //         web_sys::console::log_1(
-    //             &wasm_bindgen::JsValue::from_serde(&(
-    //                 &savings_portfolio_after_contributions,
-    //                 &savings_portfolio_after_withdrawals,
-    //                 &savings_portfolio_at_end,
-    //             ))
-    //             .unwrap(),
-    //         );
+    // web_sys::console::log_1(
+    //     &wasm_bindgen::JsValue::from_serde(&(
+    //         &savings_portfolio_after_contributions,
+    //         &savings_portfolio_after_withdrawals,
+    //         &savings_portfolio_at_end,
+    //     ))
+    //     .unwrap(),
+    // );
     //     }
     // }
 
@@ -470,7 +470,7 @@ fn calculate_pre_withdrawal(
 #[inline(always)]
 fn calculate_target_withdrawals(
     context: &SingleYearContext,
-    _savings_portfolio_after_contributions: &portfolio_over_year::AfterContributions,
+    _savings_portfolio_starting_balance: f64,
     _pre_withdrawal_from_using_expected_returns: &Option<&SingleYearPreWithdrawal>,
     pre_withdrawal: &SingleYearPreWithdrawal,
     _pass_forward: &SingleYearPassForward,

@@ -40,6 +40,7 @@ pub struct End {
     pub balance: f64,
 }
 
+#[derive(Copy, Clone)]
 pub struct TargetWithdrawals {
     pub lmp: f64,
     pub essential: f64,
@@ -69,8 +70,10 @@ fn get_actual_withdrawals(
     context: &SingleYearContext,
     after_contributions: &AfterContributions,
 ) -> ActualWithdrawals {
-    // ---- Apply ceiling and floor ----
-    let target = {
+    // ---- Apply ceiling and floor, but not for SWR ----
+    let target = if matches!(context.params.strategy, ParamsStrategy::SWR) {
+        *target
+    } else {
         let params = context.params;
         let year_index = context.year_index;
         let mut discretionary = target.discretionary;
@@ -94,7 +97,7 @@ fn get_actual_withdrawals(
             if withdrawal_started {
                 regular_with_lmp = f64::max(regular_with_lmp, spending_floor);
             };
-        }
+        };
         let regular_without_lmp = regular_with_lmp - target.lmp;
 
         // assert!(regular_without_lmp >= 0.0);
