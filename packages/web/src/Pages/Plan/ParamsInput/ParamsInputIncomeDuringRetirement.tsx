@@ -29,7 +29,7 @@ export const ParamsInputIncomeDuringRetirement = React.memo(
             p="p-base"
           />
           <ByYearSchedule
-            className=""
+            className="mt-2"
             heading={null}
             entries={params => params.retirementIncome}
             hideEntry={
