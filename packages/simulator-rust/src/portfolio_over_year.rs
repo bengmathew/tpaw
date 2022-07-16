@@ -31,6 +31,7 @@ pub struct AfterWithdrawals {
     pub contributions: f64,
     pub withdrawals: Withdrawals,
     pub balance: f64,
+    pub insufficient_funds: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -50,6 +51,7 @@ pub struct ActualWithdrawals {
     pub essential: f64,
     pub discretionary: f64,
     pub regular: f64,
+    pub insufficient_funds: bool,
 }
 
 #[inline(always)]
@@ -105,14 +107,14 @@ fn get_actual_withdrawals(
     };
 
     // Apply balance constraints.
-    let mut account = AccountForWithdrawal {
-        balance: after_contributions.balance,
-    };
+    let mut account = AccountForWithdrawal::new(after_contributions.balance);
     let lmp = account.withdraw(target.lmp);
+
     ActualWithdrawals {
         essential: account.withdraw(target.essential),
         discretionary: account.withdraw(target.discretionary),
         regular: lmp + account.withdraw(target.regular_without_lmp),
+        insufficient_funds: account.insufficient_funds,
     }
 }
 
@@ -128,6 +130,7 @@ pub fn apply_target_withdrawals(
         essential,
         discretionary,
         regular,
+        insufficient_funds,
     } = withdrawals;
     let balance_starting = balance_starting;
     let contributions = after_contributions.contributions;
@@ -155,6 +158,7 @@ pub fn apply_target_withdrawals(
             from_savings_portfolio_rate,
         },
         balance,
+        insufficient_funds,
     }
 }
 
@@ -167,8 +171,10 @@ pub fn apply_allocation(
     // Don't use blend_returns here. It is extremely slow.
     let rate = return_rate.bonds * (1.0 - stock_allocation) + return_rate.stocks * stock_allocation;
     let balance = after_withdrawals.balance * (1.0 + rate);
-    End {
+    // web_sys::console::log_1(&wasm_bindgen::JsValue::from_serde(&(rate)).unwrap());
+
+    return End {
         stock_allocation,
         balance,
-    }
+    };
 }

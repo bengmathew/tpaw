@@ -2,6 +2,7 @@ mod params;
 mod portfolio_over_year;
 mod pre_calculations;
 mod run_spaw;
+mod run_swr;
 mod run_tpaw;
 mod utils;
 
@@ -15,6 +16,9 @@ use web_sys::console;
 fn to_js_arr(x: &Vec<f64>) -> js_sys::Float64Array {
     unsafe { js_sys::Float64Array::view(&x[..]) }
 }
+fn to_js_arr_i32(x: &Vec<i32>) -> js_sys::Int32Array {
+    unsafe { js_sys::Int32Array::view(&x[..]) }
+}
 
 #[wasm_bindgen]
 pub struct RunResult {
@@ -27,10 +31,9 @@ pub struct RunResult {
     by_yfn_by_run_after_withdrawals_allocation_stocks: Vec<f64>,
     by_yfn_by_run_excess_withdrawals_regular: Vec<f64>,
     by_run_ending_balance: Vec<f64>,
-
-    // Test
-    // by_yfn_by_run_returns_stocks: Vec<f64>,
-    // by_yfn_by_run_returns_bonds: Vec<f64>,
+    by_run_num_insufficient_fund_years: Vec<i32>, // Test
+                                                  // by_yfn_by_run_returns_stocks: Vec<f64>,
+                                                  // by_yfn_by_run_returns_bonds: Vec<f64>,
 }
 
 #[wasm_bindgen]
@@ -59,9 +62,22 @@ impl RunResult {
     pub fn by_yfn_by_run_excess_withdrawals_regular(&self) -> js_sys::Float64Array {
         to_js_arr(&self.by_yfn_by_run_excess_withdrawals_regular)
     }
-    pub fn by_run_ending_balance(&self) -> js_sys::Float64Array {
+    pub fn by_run_num_insufficient_fund_years(&self) -> js_sys::Int32Array {
+        to_js_arr_i32(&self.by_run_num_insufficient_fund_years)
+    }
+    pub fn test(&self) -> f64 {
+        return 3.5;
+    }
+    pub fn by_run_ending_balancee(&self) -> js_sys::Float64Array {
         to_js_arr(&self.by_run_ending_balance)
     }
+}
+
+#[wasm_bindgen]
+#[derive(Copy, Clone, Debug)]
+pub enum ParamsSWRWithdrawalType {
+    AsPercent = "asPercent",
+    AsAmount = "asAmount",
 }
 
 #[wasm_bindgen]
@@ -79,6 +95,8 @@ pub fn run(
     target_allocation_regular_portfolio_tpaw: f64,
     target_allocation_regular_portfolio_spaw: Box<[f64]>,
     target_allocation_legacy_portfolio: f64,
+    swr_withdrawal_type: ParamsSWRWithdrawalType,
+    swr_withdrawal_value: f64,
     lmp: Box<[f64]>,
     by_year_savings: Box<[f64]>,
     by_year_withdrawals_essential: Box<[f64]>,
@@ -88,7 +106,7 @@ pub fn run(
     spending_tilt: f64,
     spending_ceiling: Option<f64>,
     spending_floor: Option<f64>,
-    monte_carlo_sampling:bool,
+    monte_carlo_sampling: bool,
     test_truth: Option<Box<[f64]>>,
     test_index_into_historical_returns: Option<Box<[usize]>>,
 ) -> RunResult {
@@ -113,9 +131,18 @@ pub fn run(
         target_allocation: ParamsTargetAllocation {
             regular_portfolio: ParamsTargetAllocationRegularPortfolio {
                 tpaw: target_allocation_regular_portfolio_tpaw,
-                spaw: target_allocation_regular_portfolio_spaw,
+                spaw_and_swr: target_allocation_regular_portfolio_spaw,
             },
             legacy_portfolio: target_allocation_legacy_portfolio,
+        },
+        swr_withdrawal: match swr_withdrawal_type {
+            ParamsSWRWithdrawalType::AsPercent => ParamsSWRWithdrawal::AsPercent {
+                percent: swr_withdrawal_value,
+            },
+            ParamsSWRWithdrawalType::AsAmount => ParamsSWRWithdrawal::AsAmount {
+                amount: swr_withdrawal_value,
+            },
+            _ => panic!(),
         },
         lmp,
         by_year: ParamsByYear {
@@ -150,6 +177,7 @@ pub fn run(
         by_yfn_by_run_withdrawals_from_savings_portfolio_rate: create_vec(),
         by_yfn_by_run_after_withdrawals_allocation_stocks: create_vec(),
         by_yfn_by_run_excess_withdrawals_regular: create_vec(),
+        by_run_num_insufficient_fund_years: vec![0; (num_runs) as usize],
         by_run_ending_balance: vec![0.0; (num_runs) as usize],
         // Test
         // by_yfn_by_run_returns_stocks: create_vec(),
@@ -159,6 +187,7 @@ pub fn run(
     match strategy {
         params::ParamsStrategy::TPAW => run_tpaw::run(&params, &mut result),
         params::ParamsStrategy::SPAW => run_spaw::run(&params, &mut result),
+        params::ParamsStrategy::SWR => run_swr::run(&params, &mut result),
         _ => panic!(),
     };
     // console::log_1(
@@ -196,8 +225,12 @@ pub fn one_over_cv(data: Box<[f64]>, n: i32) -> f64 {
         standard_deviation,
         ..
     } = stats(data);
-    let result = mean / standard_deviation ;
-    return if result.is_nan() { 0.0 } else { result };
+    let result = mean / standard_deviation;
+    return if result.is_nan() || result.is_infinite() || result < 0.0 {
+        0.0
+    } else {
+        result
+    };
 }
 
 pub fn test_log() {
@@ -205,6 +238,6 @@ pub fn test_log() {
 }
 
 #[wasm_bindgen]
-pub fn clear_memoized_random(){
+pub fn clear_memoized_random() {
     utils::clear_memoized_random_store();
 }

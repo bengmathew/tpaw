@@ -74,7 +74,7 @@ fn pre_calculations_for_spaw(params: &Params) -> PreCalculationsForSPAW {
     let rate: Vec<f64> = params
         .target_allocation
         .regular_portfolio
-        .spaw
+        .spaw_and_swr
         .iter()
         .map(|x| expected_returns(*x))
         .collect();

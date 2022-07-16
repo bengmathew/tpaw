@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import {TPAWParams} from './TPAWParams'
 
 export function getDefaultParams() {
@@ -52,7 +53,6 @@ export function getDefaultParams() {
   return params
 }
 
-
-export const defaultSWRWithdrawalRate = (retirementLength :number)=>{
-  return .7125 * Math.pow(retirementLength, -.859)
+export const defaultSWRWithdrawalRate = (retirementLength: number) => {
+  return _.round(0.7125 * Math.pow(retirementLength, -0.859), 3)
 }

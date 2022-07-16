@@ -12,7 +12,7 @@ pub struct ParamsByYear {
 #[derive(Clone)]
 pub struct ParamsTargetAllocationRegularPortfolio {
     pub tpaw: f64,
-    pub spaw: Box<[f64]>,
+    pub spaw_and_swr: Box<[f64]>,
 }
 
 #[derive(Clone)]
@@ -27,11 +27,18 @@ pub struct ParamsTest {
     pub index_into_historical_returns: Vec<usize>,
 }
 
+#[derive(Clone)]
+pub enum ParamsSWRWithdrawal {
+    AsPercent { percent: f64 },
+    AsAmount { amount: f64 },
+}
+
 #[wasm_bindgen]
 #[derive(Copy, Clone, Debug)]
 pub enum ParamsStrategy {
     SPAW = "SPAW",
     TPAW = "TPAW",
+    SWR = "SWR",
 }
 
 #[derive(Clone)]
@@ -45,6 +52,7 @@ pub struct Params {
     pub expected_returns: ReturnsAtPointInTime,
     pub historical_returns: Vec<ReturnsAtPointInTime>,
     pub target_allocation: ParamsTargetAllocation,
+    pub swr_withdrawal: ParamsSWRWithdrawal,
     pub lmp: Box<[f64]>,
     pub by_year: ParamsByYear,
     pub legacy_target: f64,

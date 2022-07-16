@@ -290,14 +290,14 @@ fn run_for_single_year_using_historical_returns(
     //         .into(),
     //     );
     //     if year_index == 0 {
-    //         web_sys::console::log_1(
-    //             &wasm_bindgen::JsValue::from_serde(&(
-    //                 &savings_portfolio_after_contributions,
-    //                 &savings_portfolio_after_withdrawals,
-    //                 &savings_portfolio_at_end,
-    //             ))
-    //             .unwrap(),
-    //         );
+    // web_sys::console::log_1(
+    //     &wasm_bindgen::JsValue::from_serde(&(
+    //         &savings_portfolio_after_contributions,
+    //         &savings_portfolio_after_withdrawals,
+    //         &savings_portfolio_at_end,
+    //     ))
+    //     .unwrap(),
+    // );
     //     }
     // }
 
@@ -309,102 +309,54 @@ fn run_for_single_year_using_historical_returns(
 // --------------------- ACTUAL ------------------
 // -----------------------------------------------
 
-struct SingleYearPassForward {}
+#[derive(Serialize, Deserialize)]
+pub struct SingleYearPreWithdrawal {}
 
-fn initial_pass_forward() -> SingleYearPassForward {
-    return SingleYearPassForward {};
+struct SingleYearPassForward {
+    withdrawal: f64,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct SingleYearPreWithdrawal {
-    wealth_less_essential_and_lmp_expenses: f64,
+fn initial_pass_forward() -> SingleYearPassForward {
+    return SingleYearPassForward { withdrawal: 0.0 };
 }
 
 // ---- PRE WITHDRAWAL ----
 
 #[inline(always)]
 fn calculate_pre_withdrawal(
-    context: &SingleYearContext,
+    _context: &SingleYearContext,
     _pre_withdrawal_from_using_expected_returns: &Option<&SingleYearPreWithdrawal>,
 ) -> SingleYearPreWithdrawal {
-    let SingleYearContext {
-        pre_calculations,
-        year_index,
-        ..
-    } = *context;
-
-    let net_present_value = &pre_calculations.spaw.net_present_value;
-
-    let wealth_less_essential_and_lmp_expenses = context.balance_starting
-        + net_present_value.savings.with_current_year[year_index]
-        - net_present_value.withdrawals.essential.with_current_year[year_index]
-        - net_present_value.withdrawals.lmp.with_current_year[year_index];
-
-    SingleYearPreWithdrawal {
-        wealth_less_essential_and_lmp_expenses,
-    }
+    SingleYearPreWithdrawal {}
 }
 
 // ---- TARGET WITHDRAWAL ----
 #[inline(always)]
 fn calculate_target_withdrawals(
     context: &SingleYearContext,
-    _savings_portfolio_after_contributions: &portfolio_over_year::AfterContributions,
-    pre_withdrawal_from_using_expected_returns: &Option<&SingleYearPreWithdrawal>,
-    pre_withdrawal: &SingleYearPreWithdrawal,
-    _pass_forward: &SingleYearPassForward,
+    savings_portfolio_after_contributions: &portfolio_over_year::AfterContributions,
+    _pre_withdrawal_from_using_expected_returns: &Option<&SingleYearPreWithdrawal>,
+    _pre_withdrawal: &SingleYearPreWithdrawal,
+    pass_forward: &SingleYearPassForward,
 ) -> TargetWithdrawals {
     let SingleYearContext {
-        params,
-        pre_calculations,
-        year_index,
-        ..
+        params, year_index, ..
     } = *context;
 
-    let withdrawal_started = year_index >= params.withdrawal_start_year;
-    let PreCalculationsForSPAW {
-        net_present_value,
-        cumulative_1_plus_g_over_1_plus_r,
-    } = &pre_calculations.spaw;
-
-    let SingleYearPreWithdrawal {
-        wealth_less_essential_and_lmp_expenses,
-    } = pre_withdrawal;
-
-    let scale = match pre_withdrawal_from_using_expected_returns {
-        None => 1.0,
-        Some(results_from_using_expected_returns) => {
-            wealth_less_essential_and_lmp_expenses
-                / results_from_using_expected_returns.wealth_less_essential_and_lmp_expenses
-        }
+    let regular_without_lmp = match year_index.cmp(&params.withdrawal_start_year) {
+        Ordering::Less => 0.0,
+        Ordering::Equal => match params.swr_withdrawal {
+            ParamsSWRWithdrawal::AsPercent { percent } => {
+                savings_portfolio_after_contributions.balance * percent
+            }
+            ParamsSWRWithdrawal::AsAmount { amount } => amount,
+        },
+        Ordering::Greater => pass_forward.withdrawal,
     };
-
-    let regular_without_lmp = if !withdrawal_started {
-        0.0
-    } else {
-        f64::max(
-            (context.balance_starting + net_present_value.savings.with_current_year[year_index]
-                - net_present_value.withdrawals.lmp.with_current_year[year_index]
-                - net_present_value.withdrawals.essential.with_current_year[year_index]
-                - net_present_value
-                    .withdrawals
-                    .discretionary
-                    .with_current_year[year_index]
-                    * scale
-                - net_present_value.legacy.with_current_year[year_index] * scale)
-                / cumulative_1_plus_g_over_1_plus_r[year_index],
-            0.0,
-        )
-    };
-
-    // Should be 0 if withdrawal has not started.
-    let lmp = params.lmp[year_index];
-    let essential = params.by_year.withdrawals_essential[year_index];
-    let discretionary = params.by_year.withdrawals_discretionary[year_index] * scale;
     TargetWithdrawals {
-        lmp,
-        essential,
-        discretionary,
+        lmp: 0.0,
+        essential: params.by_year.withdrawals_essential[year_index],
+        discretionary: params.by_year.withdrawals_discretionary[year_index],
         regular_without_lmp,
     }
 }
@@ -423,6 +375,8 @@ fn calculate_stock_allocation(
         .spaw_and_swr[context.year_index]
 }
 
-fn get_pass_forward(_withdrawal_target: TargetWithdrawals) -> SingleYearPassForward {
-    return SingleYearPassForward {};
+fn get_pass_forward(withdrawal_target: TargetWithdrawals) -> SingleYearPassForward {
+    return SingleYearPassForward {
+        withdrawal: withdrawal_target.regular_without_lmp,
+    };
 }
