@@ -75,7 +75,7 @@ const _Rate = React.memo(({className = ''}: {className?: string}) => {
   const handleChange = (percent: number) =>
     setParams(params => {
       const clone = _.cloneDeep(params)
-      clone.swrWithdrawal = {type: 'asPercent', percent}
+      clone.swrWithdrawal = {type: 'asPercent', percent: _.clamp(percent, 0, 1)}
       return clone
     })
   return (
