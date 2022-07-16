@@ -11,7 +11,6 @@ import {fGet} from '../../../Utils/Utils'
 import {useChartData} from '../../App/WithChartData'
 import {useSimulation} from '../../App/WithSimulation'
 import {ToggleSwitch} from '../../Common/Inputs/ToggleSwitch'
-import {Config} from '../../Config'
 import {ChartPanelType} from '../ChartPanel/ChartPanelType'
 import {usePlanContent} from '../Plan'
 import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
@@ -128,38 +127,31 @@ export const ParamsInputCompareStrategies = React.memo((props: Props) => {
           </div>
         </div>
 
-        {!Config.client.production && (
-          <div
-            className="params-card outline-none mt-8"
-            style={{padding: paddingCSS(props.sizing.cardPadding)}}
+        <div
+          className="params-card outline-none mt-8"
+          style={{padding: paddingCSS(props.sizing.cardPadding)}}
+        >
+          <button
+            className={`text-left  `}
+            onClick={() => handleStrategy('SWR')}
           >
-            <button
-              className={`text-left  `}
-              onClick={() => handleStrategy('SWR')}
-            >
-              <h2 className=" font-bold text-lg">
-                <FontAwesomeIcon
-                  className="mr-2"
-                  icon={
-                    params.strategy === 'SWR'
-                      ? faCircleSelected
-                      : faCircleRegular
-                  }
-                />{' '}
-                SWR – <span className="">Safe Withdrawal Rate</span>
-              </h2>
-              {/* <h2 className=" font-semibold mt-2 ">
-    Savings Portfolio Allocation and Withdrawal
-  </h2> */}
-              <div className="mt-2">
-                <Contentful.RichText
-                  body={content.spawIntro[params.strategy]}
-                  p="p-base"
-                />
-              </div>
-            </button>
-          </div>
-        )}
+            <h2 className=" font-bold text-lg">
+              <FontAwesomeIcon
+                className="mr-2"
+                icon={
+                  params.strategy === 'SWR' ? faCircleSelected : faCircleRegular
+                }
+              />{' '}
+              SWR – <span className="">Safe Withdrawal Rate</span>
+            </h2>
+            <div className="mt-2">
+              <Contentful.RichText
+                body={content.spawIntro[params.strategy]}
+                p="p-base"
+              />
+            </div>
+          </button>
+        </div>
 
         <_ComparisonCard className="mt-8 params-card " props={props} />
       </div>
