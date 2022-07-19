@@ -1,3 +1,5 @@
+import _ from 'lodash'
+
 export const historicalReturns = [
   {year: 1871, stocks: 0.13905431, bonds: 0.035670483},
   {year: 1872, stocks: 0.087811663, bonds: 0.015561673},
@@ -150,3 +152,8 @@ export const historicalReturns = [
   {year: 2019, stocks: 0.250408607, bonds: 0.083400178},
   {year: 2020, stocks: 0.162378785, bonds: 0.05827981},
 ]
+
+export const historicalReturnsAverage = {
+  stocks: _.meanBy(historicalReturns, x => x.stocks),
+  bonds: _.meanBy(historicalReturns, x => x.bonds),
+}

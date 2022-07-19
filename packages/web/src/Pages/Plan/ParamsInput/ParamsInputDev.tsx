@@ -16,7 +16,7 @@ import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 export const ParamsInputDev = React.memo(
   (props: ParamsInputBodyPassThruProps) => {
-    const {params, setParams} = useSimulation()
+    const {params, setParams, paramsProcessed} = useSimulation()
     const content = usePlanContent()
 
     return (
@@ -61,8 +61,8 @@ export const ParamsInputDev = React.memo(
                     const clone = _.cloneDeep(p)
                     clone.returns.historical = {
                       type: 'fixed',
-                      stocks: clone.returns.expected.stocks,
-                      bonds: clone.returns.expected.bonds,
+                      stocks: paramsProcessed.returns.expected.stocks,
+                      bonds: paramsProcessed.returns.expected.bonds,
                     }
                     return clone
                   })

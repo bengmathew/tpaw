@@ -9,4 +9,21 @@ Sentry.init({
   // Note: if you want to override the automatic release value, do not set a
   // `release` value here - use the environment variable `SENTRY_RELEASE`, so
   // that it will also get attached to your source maps
+  beforeSend(event) {
+    if (event.request?.url) {
+      const url = new URL(event.request.url)
+      if (url.searchParams.get('params')) {
+        url.searchParams.set('params', 'redacted')
+        event.request.url = url.toString()
+      }
+    }
+    if (event.request.query_string) {
+      const query = new URLSearchParams(event.release.query_string)
+      if (query.get('params')) {
+        query.set('params', 'redacted')
+        event.request.query_string = query.toString()
+      }
+    }
+    return event
+  },
 });

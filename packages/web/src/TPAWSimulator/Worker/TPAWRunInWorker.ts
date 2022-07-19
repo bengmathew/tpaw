@@ -304,7 +304,6 @@ export class TPAWRunInWorker {
         this._workers[0],
         byYearsFromNowByRun.savingsPortfolio.excessWithdrawals.regular
       )
-    console.dir(sharpeRatioWithdrawalsRegular)
 
     const firstYearOfSomeRun = firstYearSavingsPortfolioDetail(
       runsByWorker[0].byYearsFromNowByRun.savingsPortfolio,

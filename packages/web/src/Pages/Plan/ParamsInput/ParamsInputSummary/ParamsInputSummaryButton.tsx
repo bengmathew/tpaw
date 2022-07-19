@@ -1,26 +1,28 @@
-import {faCircle, faExclamation} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {gsap, Power1} from 'gsap'
+import { faCircle, faExclamation } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { gsap, Power1 } from 'gsap'
 import _ from 'lodash'
-import React, {useEffect, useRef} from 'react'
+import React, { useEffect, useRef } from 'react'
 import {
   GlidePath,
   Person,
   TPAWParams,
-  ValueForYearRange,
+  ValueForYearRange
 } from '../../../../TPAWSimulator/TPAWParams'
-import {TPAWParamsExt} from '../../../../TPAWSimulator/TPAWParamsExt'
-import {formatCurrency} from '../../../../Utils/FormatCurrency'
-import {formatPercentage} from '../../../../Utils/FormatPercentage'
-import {Padding, paddingCSS} from '../../../../Utils/Geometry'
-import {SimpleRange} from '../../../../Utils/SimpleRange'
-import {trimAndNullify} from '../../../../Utils/TrimAndNullify'
-import {fGet, noCase} from '../../../../Utils/Utils'
-import {useSimulation} from '../../../App/WithSimulation'
-import {ChartUtils} from '../../../Common/Chart/ChartUtils/ChartUtils'
-import {ValueForYearRangeDisplay} from '../../../Common/ValueForYearRangeDisplay'
-import {paramsInputLabel} from '../Helpers/ParamsInputLabel'
-import {ParamsInputType} from '../Helpers/ParamsInputType'
+import { TPAWParamsExt } from '../../../../TPAWSimulator/TPAWParamsExt'
+import { processExpectedReturns } from '../../../../TPAWSimulator/TPAWParamsProcessed'
+import { formatCurrency } from '../../../../Utils/FormatCurrency'
+import { formatPercentage } from '../../../../Utils/FormatPercentage'
+import { Padding, paddingCSS } from '../../../../Utils/Geometry'
+import { SimpleRange } from '../../../../Utils/SimpleRange'
+import { trimAndNullify } from '../../../../Utils/TrimAndNullify'
+import { assertFalse, fGet, noCase } from '../../../../Utils/Utils'
+import { useSimulation } from '../../../App/WithSimulation'
+import { ChartUtils } from '../../../Common/Chart/ChartUtils/ChartUtils'
+import { ValueForYearRangeDisplay } from '../../../Common/ValueForYearRangeDisplay'
+import { paramsInputLabel } from '../Helpers/ParamsInputLabel'
+import { ParamsInputType } from '../Helpers/ParamsInputType'
+import { expectedReturnTypeLabel } from '../ParamsInputExpectedReturns'
 
 export const ParamsInputSummaryButton = React.memo(
   ({
@@ -67,7 +69,9 @@ export const ParamsInputSummaryButton = React.memo(
         <div className="border-[3px] bg-cardBG  border-gray-00 rounded-2xl -m-[2px] p-[2px]">
           <div className="relative" style={{padding: paddingCSS(padding)}}>
             {flagAsModified && (
-              <h2 className="absolute right-2 text-xs top-1.5 border border-gray-200 bg-gray-100 px-2 rounded-lg">modified</h2>
+              <h2 className="absolute right-2 text-xs top-1.5 border border-gray-200 bg-gray-100 px-2 rounded-lg">
+                modified
+              </h2>
             )}
             <div className=" flex  items-center mb-1">
               <h2 className="font-semibold mr-2 flex">
@@ -157,7 +161,7 @@ const _SectionSummary = React.memo(({type}: {type: ParamsInputType}) => {
       )
     case 'extra-spending': {
       const {essential, discretionary} = params.withdrawals
-      const showLabels = params.strategy !== 'SWR' 
+      const showLabels = params.strategy !== 'SWR'
       return (
         <>
           {essential.length === 0 && discretionary.length === 0 && (
@@ -282,16 +286,23 @@ const _SectionSummary = React.memo(({type}: {type: ParamsInputType}) => {
                   ? 'current portfolio balance'
                   : 'savings portfolio at retirement'
               }`
-            : `${formatCurrency(params.swrWithdrawal.amount)}`}
+            : params.swrWithdrawal.type === 'asAmount'
+            ? `${formatCurrency(params.swrWithdrawal.amount)}`
+            : params.swrWithdrawal.type === 'default'
+            ? // Default should have been changed to asPercent if we are showing this.
+              assertFalse()
+            : noCase(params.swrWithdrawal)}
         </h2>
       )
     }
     case 'expected-returns': {
       const format = formatPercentage(1)
+      const {stocks, bonds} = processExpectedReturns(params.returns.expected)
       return (
         <>
-          <h2>Stocks: {format(params.returns.expected.stocks)}</h2>
-          <h2>Bonds: {format(params.returns.expected.bonds)}</h2>
+          <h2>{expectedReturnTypeLabel(params.returns.expected)}</h2>
+          <h2>Stocks: {format(stocks)}</h2>
+          <h2>Bonds: {format(bonds)}</h2>
         </>
       )
     }

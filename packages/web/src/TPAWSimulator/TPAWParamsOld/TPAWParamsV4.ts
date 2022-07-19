@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import {Validator} from '../Utils/Validator'
+import { Validator } from '../../Utils/Validator'
 
 export namespace TPAWParamsV4 {
   export type YearRangeFixedEdge =

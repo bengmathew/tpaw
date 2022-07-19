@@ -2,6 +2,10 @@ import _ from 'lodash'
 import {linearFnFomPoints} from '../Utils/LinearFn'
 import {nominalToReal} from '../Utils/NominalToReal'
 import {assert, noCase} from '../Utils/Utils'
+import {
+  defaultSWRWithdrawalRate,
+  EXPECTED_RETURN_PRESETS,
+} from './DefaultParams'
 import {historicalReturns} from './HistoricalReturns'
 import {
   GlidePath,
@@ -13,7 +17,7 @@ import {extendTPAWParams, TPAWParamsExt} from './TPAWParamsExt'
 
 export type TPAWParamsProcessed = ReturnType<typeof processTPAWParams>
 export function processTPAWParams(paramsExt: TPAWParamsExt) {
-  const {numYears, asYFN, params} = paramsExt
+  const {numYears, asYFN, params, numRetirementYears} = paramsExt
   tpawParamsValidator(params)
   const {inflation, ...paramsWithoutInflation} = params
   const _normalizeGlidePath = (glidePath: GlidePath) => {
@@ -74,7 +78,13 @@ export function processTPAWParams(paramsExt: TPAWParamsExt) {
 
   const result = {
     ...paramsWithoutInflation,
-
+    swrWithdrawal:
+      params.swrWithdrawal.type === 'default'
+        ? {
+            type: 'asPercent' as const,
+            percent: defaultSWRWithdrawalRate(numRetirementYears),
+          }
+        : params.swrWithdrawal,
     spendingCeiling:
       params.spendingCeiling === null
         ? null
@@ -139,8 +149,20 @@ function _processByYearParams(paramsExt: TPAWParamsExt) {
   return byYear
 }
 
+export function processExpectedReturns(
+  expected: TPAWParams['returns']['expected']
+) {
+  switch (expected.type) {
+    case 'manual':
+      return {stocks: expected.stocks, bonds: expected.bonds}
+    default:
+      return EXPECTED_RETURN_PRESETS(expected.type)
+  }
+}
+
 function _processReturnsParams(params: TPAWParams) {
   const {returns} = params
+  const expected = processExpectedReturns(params.returns.expected)
   const n = historicalReturns.length
 
   const historicalAdjusted = (() => {
@@ -156,7 +178,7 @@ function _processReturnsParams(params: TPAWParams) {
             adjustment.type === 'to'
               ? adjustment[type]
               : adjustment.type === 'toExpected'
-              ? params.returns.expected[type]
+              ? expected[type]
               : adjustment.type === 'none'
               ? historicalExpected
               : adjustment.type === 'by'
@@ -209,5 +231,5 @@ function _processReturnsParams(params: TPAWParams) {
     }
   })()
 
-  return {...returns, historicalAdjusted}
+  return {historical: returns.historical, expected, historicalAdjusted}
 }

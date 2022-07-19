@@ -3,18 +3,20 @@ import {useRouter} from 'next/dist/client/router'
 import {useCallback, useEffect, useState} from 'react'
 import {getDefaultParams} from '../../TPAWSimulator/DefaultParams'
 import {TPAWParams} from '../../TPAWSimulator/TPAWParams'
-import {TPAWParamsV1WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV1'
-import {tpawParamsV1Validator} from '../../TPAWSimulator/TPAWParamsV1Validator'
-import {TPAWParamsV2WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV2'
-import {tpawParamsV2Validator} from '../../TPAWSimulator/TPAWParamsV2Validator'
-import {TPAWParamsV3WithoutHistorical} from '../../TPAWSimulator/TPAWParamsV3'
-import {tpawParamsV3Validator} from '../../TPAWSimulator/TPAWParamsV3Validator'
-import {TPAWParamsV4} from '../../TPAWSimulator/TPAWParamsV4'
-import {TPAWParamsV5} from '../../TPAWSimulator/TPAWParamsV5'
-import {TPAWParamsV6} from '../../TPAWSimulator/TPAWParamsV6'
-import {TPAWParamsV7} from '../../TPAWSimulator/TPAWParamsV7'
-import {TPAWParamsV8} from '../../TPAWSimulator/TPAWParamsV8'
-import { TPAWParamsV9 } from '../../TPAWSimulator/TPAWParamsV9'
+import {TPAWParamsV1WithoutHistorical} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV1'
+import {tpawParamsV1Validator} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV1Validator'
+import {TPAWParamsV2WithoutHistorical} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV2'
+import {tpawParamsV2Validator} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV2Validator'
+import {TPAWParamsV3WithoutHistorical} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV3'
+import {tpawParamsV3Validator} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV3Validator'
+import {TPAWParamsV4} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV4'
+import {TPAWParamsV5} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV5'
+import {TPAWParamsV6} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV6'
+import {TPAWParamsV7} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV7'
+import {TPAWParamsV8} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV8'
+
+import {TPAWParamsV9} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV9'
+import { TPAWParamsV10 } from '../../TPAWSimulator/TPAWParamsV10'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {fGet} from '../../Utils/Utils'
 import {Validator} from '../../Utils/Validator'
@@ -154,9 +156,16 @@ function _parseExternalParams(
       const v9 =
         parsed.v === 9
           ? TPAWParamsV9.validator(parsed)
-          : TPAWParamsV9.fromV8(fGet(v8))
+          : v8
+          ? TPAWParamsV9.fromV8(v8)
+          : null
 
-      return v9
+      const v10 =
+        parsed.v === 10
+          ? TPAWParamsV10.validator(parsed)
+          : TPAWParamsV10.fromV9(fGet(v9))
+
+      return v10
     } catch (e) {
       if (e instanceof Validator.Failed) {
         throw new AppError(`Error in parameter: ${e.fullMessage}`)

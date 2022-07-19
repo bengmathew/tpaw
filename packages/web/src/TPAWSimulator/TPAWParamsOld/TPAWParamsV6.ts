@@ -1,8 +1,8 @@
 import _ from 'lodash'
-import {Validator} from '../Utils/Validator'
-import {TPAWParamsV8} from './TPAWParamsV8'
+import {Validator} from '../../Utils/Validator'
+import {TPAWParamsV5} from './TPAWParamsV5'
 
-export namespace TPAWParamsV9 {
+export namespace TPAWParamsV6 {
   export const MAX_LABEL_LENGTH = 150
   export const MAX_AGE = 120
   export const MAX_NUM_YEARS_IN_GLIDE_PATH = 1000
@@ -62,30 +62,25 @@ export namespace TPAWParamsV9 {
   }
 
   export type Params = {
-    v: 9
-    strategy: 'TPAW' | 'SPAW' | 'SWR'
+    v: 6
+    strategy: 'TPAW' | 'SPAW'
     people: People
     returns: {
       expected: {
         stocks: number
         bonds: number
       }
-      historical:
-        | {
-            type: 'default'
-            adjust:
-              | {type: 'by'; stocks: number; bonds: number}
-              | {type: 'to'; stocks: number; bonds: number}
-              | {type: 'toExpected'}
-              | {type: 'none'}
-          }
-        | {type: 'fixed'; stocks: number; bonds: number}
+      historical: {
+        adjust:
+          | {type: 'by'; stocks: number; bonds: number}
+          | {type: 'to'; stocks: number; bonds: number}
+      }
     }
     inflation: number
     targetAllocation: {
       regularPortfolio: {
         forTPAW: {stocks: number}
-        forSPAWAndSWR: GlidePath
+        forSPAW: GlidePath
       }
       legacyPortfolio: {stocks: number}
     }
@@ -100,17 +95,13 @@ export namespace TPAWParamsV9 {
       essential: ValueForYearRange[]
       discretionary: ValueForYearRange[]
     }
-    swrWithdrawal:
-      | {type: 'asPercent'; percent: number}
-      | {type: 'asAmount'; amount: number}
     legacy: {
       total: number
       external: LabeledAmount[]
     }
-    sampling: 'monteCarlo' | 'historical'
-    display: {
-      alwaysShowAllYears: boolean
-    }
+  }
+  export type ParamsWithoutHistorical = Omit<Params, 'returns'> & {
+    returns: Omit<Params['returns'], 'historical'>
   }
 
   const {number, string, constant, chain, object, union, array, boolean} =
@@ -159,19 +150,32 @@ export namespace TPAWParamsV9 {
     return x
   }
 
-  // ---------- FROM V8 ------------//
-  export const fromV8 = (params: TPAWParamsV8.Params): Params => {
-    const result: Params = {
+  // ---------- FROM V5 ------------//
+  export const fromV5 = (
+    params: TPAWParamsV5.ParamsWithoutHistorical
+  ): ParamsWithoutHistorical => {
+    const result: ParamsWithoutHistorical = {
       ...params,
+      strategy: 'TPAW',
       targetAllocation: {
         ...params.targetAllocation,
         regularPortfolio: {
-          ...params.targetAllocation.regularPortfolio,
-          forSPAWAndSWR: params.targetAllocation.regularPortfolio.forSPAW,
+          forSPAW: {
+            start: {stocks: 0.5},
+            intermediate: [],
+            end: {stocks: 0.5},
+          },
+          forTPAW: {
+            stocks: params.targetAllocation.regularPortfolio.stocks,
+          },
         },
       },
-      swrWithdrawal: {type: 'asPercent', percent: 0.04},
-      v: 9,
+      withdrawals: {
+        lmp: 0,
+        essential: params.withdrawals.fundedByBonds,
+        discretionary: params.withdrawals.fundedByRiskPortfolio,
+      },
+      v: 6,
     }
     validator(result)
     return result
@@ -179,7 +183,7 @@ export namespace TPAWParamsV9 {
 
   // ----------- VALIDATOR  ---------//
 
-  const _ageRange = chain(number(), _geTest(0), _leTest(TPAWParamsV9.MAX_AGE))
+  const _ageRange = chain(number(), _geTest(0), _leTest(TPAWParamsV6.MAX_AGE))
 
   const _ages = chain(
     union(
@@ -195,7 +199,7 @@ export namespace TPAWParamsV9 {
         max: _ageRange,
       })
     ),
-    (ages): TPAWParamsV9.Person['ages'] => {
+    (ages): TPAWParamsV6.Person['ages'] => {
       const {current, max} = ages
       if (max < current + 1) {
         throw new Validator.Failed(
@@ -219,10 +223,10 @@ export namespace TPAWParamsV9 {
     }
   )
 
-  const _person: Validator<TPAWParamsV9.Person> = object({
+  const _person: Validator<TPAWParamsV6.Person> = object({
     ages: _ages,
     displayName: union(
-      strBoundedTrimmed(TPAWParamsV9.MAX_LABEL_LENGTH),
+      strBoundedTrimmed(TPAWParamsV6.MAX_LABEL_LENGTH),
       constant(null)
     ),
   })
@@ -261,7 +265,7 @@ export namespace TPAWParamsV9 {
 
   const _valueForYearRange = object({
     // Not trimmed because it won't allow space even temporarily.
-    label: union(strBounded(TPAWParamsV9.MAX_LABEL_LENGTH), constant(null)),
+    label: union(strBounded(TPAWParamsV6.MAX_LABEL_LENGTH), constant(null)),
     yearRange: _yearRange,
     value: numGE(0),
     nominal: boolean(),
@@ -278,156 +282,139 @@ export namespace TPAWParamsV9 {
     end: object({stocks: numRangeInclusive(0, 1)}),
   })
 
-  export const validator: Validator<Params> = chain(
-    object({
-      v: constant(9),
-      strategy: union(constant('TPAW'), constant('SPAW'), constant('SWR')),
-      people: union(
-        object({
-          withPartner: constant(false),
-          person1: _person,
-        }),
-        object({
-          withPartner: constant(true),
-          person2: _person,
-          person1: _person,
-          withdrawalStart: union(constant('person1'), constant('person2')),
-          xAxis: union(constant('person1'), constant('person2')),
-        })
-      ),
-      returns: object({
-        expected: object({
-          stocks: numRangeInclusive(-0.01, 0.1),
-          bonds: numRangeInclusive(-0.01, 0.1),
-        }),
-        historical: union(
+  export const validator: Validator<TPAWParamsV6.ParamsWithoutHistorical> =
+    chain(
+      object({
+        v: constant(6),
+        strategy: union(constant('TPAW'), constant('SPAW')),
+        people: union(
           object({
-            type: constant('default'),
-            adjust: union(
-              object({type: constant('to'), stocks: number(), bonds: number()}),
-              object({type: constant('by'), stocks: number(), bonds: number()}),
-              object({type: constant('toExpected')}),
-              object({type: constant('none')})
-            ),
+            withPartner: constant(false),
+            person1: _person,
           }),
-          object({type: constant('fixed'), stocks: number(), bonds: number()})
-        ),
-      }),
-
-      inflation: numRangeInclusive(-0.01, 0.1),
-      targetAllocation: object({
-        regularPortfolio: object({
-          forTPAW: object({
-            stocks: numRangeInclusive(0, 1),
-          }),
-          forSPAWAndSWR: _glidePath,
-        }),
-        legacyPortfolio: object({
-          stocks: numRangeInclusive(0, 1),
-        }),
-      }),
-      swrWithdrawal: union(
-        object({type: constant('asPercent'), percent: numRangeInclusive(0, 1)}),
-        object({type: constant('asAmount'), amount: numIntNonNeg()})
-      ),
-      scheduledWithdrawalGrowthRate: numRangeInclusive(-0.03, 0.03),
-      savingsAtStartOfStartYear: numGE(0),
-      savings: array(_valueForYearRange),
-      retirementIncome: array(_valueForYearRange),
-      spendingCeiling: union(constant(null), numGE(0)),
-      spendingFloor: union(constant(null), numGE(0)),
-      withdrawals: object({
-        lmp: numGE(0),
-        essential: array(_valueForYearRange),
-        discretionary: array(_valueForYearRange),
-      }),
-      legacy: object({
-        total: numGE(0),
-        external: array(
           object({
-            label: union(string(), constant(null)),
-            value: numGE(0),
-            nominal: boolean(),
+            withPartner: constant(true),
+            person2: _person,
+            person1: _person,
+            withdrawalStart: union(constant('person1'), constant('person2')),
+            xAxis: union(constant('person1'), constant('person2')),
           })
         ),
-      }),
-      sampling: union(constant('monteCarlo'), constant('historical')),
-      display: object({alwaysShowAllYears: boolean()}),
-    }),
-    x => {
-      if (
-        x.spendingCeiling !== null &&
-        (x.spendingFloor ?? 0) > x.spendingCeiling
-      ) {
-        throw new Validator.Failed(
-          'Spending Floor is greater than spending ceiling.'
-        )
-      }
+        returns: object({
+          expected: object({
+            stocks: numRangeInclusive(-0.01, 0.1),
+            bonds: numRangeInclusive(-0.01, 0.1),
+          }),
+        }),
 
-      const checkYear = (year: TPAWParamsV9.Year, prefix: string) => {
-        if (year.type === 'namedAge' || year.type === 'numericAge') {
-          let person: Person
-          if (year.person === 'person1') {
-            person = x.people.person1
-          } else {
-            if (!x.people.withPartner) {
+        inflation: numRangeInclusive(-0.01, 0.1),
+        targetAllocation: object({
+          regularPortfolio: object({
+            forTPAW: object({
+              stocks: numRangeInclusive(0, 1),
+            }),
+            forSPAW: _glidePath,
+          }),
+          legacyPortfolio: object({
+            stocks: numRangeInclusive(0, 1),
+          }),
+        }),
+        scheduledWithdrawalGrowthRate: numRangeInclusive(-0.03, 0.03),
+        savingsAtStartOfStartYear: numGE(0),
+        savings: array(_valueForYearRange),
+        retirementIncome: array(_valueForYearRange),
+        spendingCeiling: union(constant(null), numGE(0)),
+        spendingFloor: union(constant(null), numGE(0)),
+        withdrawals: object({
+          lmp: numGE(0),
+          essential: array(_valueForYearRange),
+          discretionary: array(_valueForYearRange),
+        }),
+        legacy: object({
+          total: numGE(0),
+          external: array(
+            object({
+              label: union(string(), constant(null)),
+              value: numGE(0),
+              nominal: boolean(),
+            })
+          ),
+        }),
+      }),
+      x => {
+        if (
+          x.spendingCeiling !== null &&
+          (x.spendingFloor ?? 0) > x.spendingCeiling
+        ) {
+          throw new Validator.Failed(
+            'Spending Floor is greater than spending ceiling.'
+          )
+        }
+
+        const checkYear = (year: TPAWParamsV6.Year, prefix: string) => {
+          if (year.type === 'namedAge' || year.type === 'numericAge') {
+            let person: Person
+            if (year.person === 'person1') {
+              person = x.people.person1
+            } else {
+              if (!x.people.withPartner) {
+                throw new Validator.Failed(
+                  `${prefix} is in terms of the age of an unspecified person.`
+                )
+              }
+              person = x.people.person2
+            }
+            if (
+              (year.age === 'retirement' || year.age === 'lastWorkingYear') &&
+              person.ages.type === 'retired'
+            ) {
               throw new Validator.Failed(
-                `${prefix} is in terms of the age of an unspecified person.`
+                `${prefix} is in terms retirement age of ${year.person}, but ${year.person} is already retired.`
               )
             }
-            person = x.people.person2
-          }
-          if (
-            (year.age === 'retirement' || year.age === 'lastWorkingYear') &&
-            person.ages.type === 'retired'
-          ) {
-            throw new Validator.Failed(
-              `${prefix} is in terms retirement age of ${year.person}, but ${year.person} is already retired.`
-            )
           }
         }
-      }
 
-      const checkYearRange =
-        (desc: string) =>
-        ({yearRange, label}: TPAWParamsV9.ValueForYearRange, i: number) => {
-          if (
-            yearRange.type === 'startAndEnd' ||
-            yearRange.type === 'startAndNumYears'
-          ) {
-            checkYear(
-              yearRange.start,
-              `Starting year of ${desc} entry ${label ?? `at index ${i}`}`
-            )
+        const checkYearRange =
+          (desc: string) =>
+          ({yearRange, label}: TPAWParamsV6.ValueForYearRange, i: number) => {
+            if (
+              yearRange.type === 'startAndEnd' ||
+              yearRange.type === 'startAndNumYears'
+            ) {
+              checkYear(
+                yearRange.start,
+                `Starting year of ${desc} entry ${label ?? `at index ${i}`}`
+              )
+            }
+            if (
+              yearRange.type === 'startAndEnd' ||
+              yearRange.type === 'endAndNumYears'
+            ) {
+              checkYear(
+                yearRange.end,
+                `Ending year of ${desc} ${label ?? `at index ${i}`}`
+              )
+            }
           }
-          if (
-            yearRange.type === 'startAndEnd' ||
-            yearRange.type === 'endAndNumYears'
-          ) {
-            checkYear(
-              yearRange.end,
-              `Ending year of ${desc} ${label ?? `at index ${i}`}`
-            )
-          }
-        }
-      x.savings.forEach(checkYearRange('savings'))
-      x.retirementIncome.forEach(checkYearRange('retirement income'))
-      x.withdrawals.essential.forEach(
-        checkYearRange('withdrawals funded by bonds')
-      )
-      x.withdrawals.discretionary.forEach(
-        checkYearRange('withdrawals funded by risk portfolio')
-      )
-
-      const checkGlidePathYears = (glidePath: GlidePath['intermediate']) => {
-        glidePath.forEach((x, i) =>
-          checkYear(x.year, `Year at entry ${i} in the static glide path`)
+        x.savings.forEach(checkYearRange('savings'))
+        x.retirementIncome.forEach(checkYearRange('retirement income'))
+        x.withdrawals.essential.forEach(
+          checkYearRange('withdrawals funded by bonds')
         )
+        x.withdrawals.discretionary.forEach(
+          checkYearRange('withdrawals funded by risk portfolio')
+        )
+
+        const checkGlidePathYears = (glidePath: GlidePath['intermediate']) => {
+          glidePath.forEach((x, i) =>
+            checkYear(x.year, `Year at entry ${i} in the static glide path`)
+          )
+        }
+        checkGlidePathYears(
+          x.targetAllocation.regularPortfolio.forSPAW.intermediate
+        )
+        return x
       }
-      checkGlidePathYears(
-        x.targetAllocation.regularPortfolio.forSPAWAndSWR.intermediate
-      )
-      return x
-    }
-  )
+    )
 }

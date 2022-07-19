@@ -1,9 +1,35 @@
 import _ from 'lodash'
+import {noCase} from '../Utils/Utils'
+import { historicalReturnsAverage } from './HistoricalReturns'
 import {TPAWParams} from './TPAWParams'
+
+export const EXPECTED_RETURN_PRESETS = (
+  type: Exclude<TPAWParams['returns']['expected']['type'], 'manual'>
+) => {
+  const suggested = {stocks: 0.043, bonds: 0.007}
+  switch (type) {
+    case 'suggested':
+      return {...suggested}
+    case 'oneOverCAPE':
+      return {
+        stocks: 0.035,
+        bonds: suggested.bonds,
+      }
+    case 'regressionPrediction':
+      return {
+        stocks: 0.055,
+        bonds: suggested.bonds,
+      }
+    case 'historical':
+      return {...historicalReturnsAverage}
+    default:
+      noCase(type)
+  }
+}
 
 export function getDefaultParams() {
   const params: TPAWParams = {
-    v: 9,
+    v: 10,
     strategy: 'TPAW',
     people: {
       withPartner: false,
@@ -13,7 +39,7 @@ export function getDefaultParams() {
       },
     },
     returns: {
-      expected: {stocks: 0.043, bonds: 0.007},
+      expected: {type: 'suggested'},
       historical: {type: 'default', adjust: {type: 'toExpected'}},
     },
     inflation: 0.024,
@@ -28,7 +54,7 @@ export function getDefaultParams() {
       },
       legacyPortfolio: {stocks: 0.7},
     },
-    swrWithdrawal: {type: 'asPercent', percent: 0.04},
+    swrWithdrawal: {type: 'default'},
     scheduledWithdrawalGrowthRate: 0.005,
     savingsAtStartOfStartYear: 100000,
     savings: [],

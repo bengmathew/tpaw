@@ -1,5 +1,4 @@
-import { Validator } from '../Utils/Validator'
-import { TPAWParams } from './TPAWParams'
+import { Validator } from '../../Utils/Validator'
 import { TPAWParamsV1, TPAWParamsV1WithoutHistorical } from './TPAWParamsV1'
 
 // ----------- UTILS ---------//

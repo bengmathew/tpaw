@@ -29,7 +29,7 @@ export const ParamsInputCompareStrategies = React.memo((props: Props) => {
       if (params.strategy === strategy) return params
       const clone = _.cloneDeep(params)
       clone.strategy = strategy
-      if (strategy === 'SWR') {
+      if (strategy === 'SWR' && clone.swrWithdrawal.type === 'default') {
         clone.swrWithdrawal = {
           type: 'asPercent',
           percent: defaultSWRWithdrawalRate(paramsExt.numRetirementYears),

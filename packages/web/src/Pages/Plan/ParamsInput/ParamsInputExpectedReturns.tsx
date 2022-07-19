@@ -1,33 +1,125 @@
+import {faCircle as faCircleRegular} from '@fortawesome/pro-regular-svg-icons'
+import {faCircle as faCircleSelected} from '@fortawesome/pro-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import React from 'react'
-import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
+import {EXPECTED_RETURN_PRESETS} from '../../../TPAWSimulator/DefaultParams'
+import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
+import {processExpectedReturns} from '../../../TPAWSimulator/TPAWParamsProcessed'
 import {Contentful} from '../../../Utils/Contentful'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
-import {paddingCSS} from '../../../Utils/Geometry'
+import {paddingCSSStyle} from '../../../Utils/Geometry'
 import {preciseRange} from '../../../Utils/PreciseRange'
 import {useSimulation} from '../../App/WithSimulation'
 import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
 import {usePlanContent} from '../Plan'
 import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
-const suggested = getDefaultParams().returns.expected
-const PRESETS = {
-  suggested: {...suggested},
-  oneOverCAPE: {
-    stocks: 0.035,
-    bonds: suggested.bonds,
-  },
-  regressionPrediction: {
-    stocks: 0.055,
-    bonds: suggested.bonds,
-  },
-  historical: {stocks: 0.085, bonds: 0.031},
-}
 export const ParamsInputExpectedReturns = React.memo(
   (props: ParamsInputBodyPassThruProps) => {
+    return (
+      <ParamsInputBody {...props} headingMarginLeft="normal">
+        <_ExpectedReturnsCard className="" props={props} />
+      </ParamsInputBody>
+    )
+  }
+)
+
+export const _ExpectedReturnsCard = React.memo(
+  ({
+    className = '',
+    props,
+  }: {
+    className?: string
+    props: ParamsInputBodyPassThruProps
+  }) => {
     const {params, setParams} = useSimulation()
     const content = usePlanContent()
 
+    const handleChange = (expected: TPAWParams['returns']['expected']) => {
+      setParams(params => {
+        const clone = _.cloneDeep(params)
+        clone.returns.expected = expected
+        return clone
+      })
+    }
+
+    return (
+      <div
+        className={`${className} params-card`}
+        style={{...paddingCSSStyle(props.sizing.cardPadding)}}
+      >
+        <div className="">
+          <Contentful.RichText
+            body={content['expected-returns'].intro[params.strategy]}
+            p="col-span-2 mb-2 p-base"
+          />
+          <_Preset className="mt-4" type="suggested" onChange={handleChange} />
+          <_Preset
+            className="mt-4"
+            type="oneOverCAPE"
+            onChange={handleChange}
+          />
+          <_Preset
+            className="mt-4"
+            type="regressionPrediction"
+            onChange={handleChange}
+          />
+          <_Preset className="mt-4" type="historical" onChange={handleChange} />
+          <_Manual className="mt-4" onChange={handleChange} />
+        </div>
+      </div>
+    )
+  }
+)
+
+export const _Preset = React.memo(
+  ({
+    className = '',
+    type,
+    onChange,
+  }: {
+    className?: string
+    type: Parameters<typeof EXPECTED_RETURN_PRESETS>[0]
+    onChange: (expected: TPAWParams['returns']['expected']) => void
+  }) => {
+    const {params} = useSimulation()
+    const {stocks, bonds} = EXPECTED_RETURN_PRESETS(type)
+
+    return (
+      <button
+        className={`${className} flex gap-x-2`}
+        onClick={() => onChange({type})}
+      >
+        <FontAwesomeIcon
+          className="mt-1"
+          icon={
+            params.returns.expected.type === type
+              ? faCircleSelected
+              : faCircleRegular
+          }
+        />
+        <div className="">
+          <h2 className="text-start">{expectedReturnTypeLabel({type})}</h2>
+          <h2 className="text-start lighten-2 text-sm">
+            Stocks: {formatPercentage(1)(stocks)}, Bonds:{' '}
+            {formatPercentage(1)(bonds)}
+          </h2>
+        </div>
+      </button>
+    )
+  }
+)
+
+export const _Manual = React.memo(
+  ({
+    className = '',
+    onChange,
+  }: {
+    className?: string
+    onChange: (expected: TPAWParams['returns']['expected']) => void
+  }) => {
+    const {params} = useSimulation()
     const sliderProps = {
       className: '',
       height: 60,
@@ -42,109 +134,71 @@ export const ParamsInputExpectedReturns = React.memo(
             : ('none' as const),
       })),
     }
-
-    const handleChange = (expected: {stocks: number; bonds: number}) => {
-      setParams(params => {
-        const clone = _.cloneDeep(params)
-        clone.returns.expected = expected
-        return clone
-      })
-    }
+    let {stocks, bonds} = processExpectedReturns(params.returns.expected)
+    stocks = _.round(stocks, 3)
+    bonds = _.round(bonds, 3)
     return (
-      <ParamsInputBody {...props} headingMarginLeft="normal">
-        <div
-          className="params-card"
-          style={{padding: paddingCSS(props.sizing.cardPadding)}}
+      <div className={`${className}`}>
+        <button
+          className={`${className} flex gap-x-2`}
+          onClick={() => onChange({type: 'manual', stocks, bonds})}
         >
-          <div
-            className="grid my-2 items-center"
-            style={{grid: 'auto / auto 1fr'}}
-          >
-            <Contentful.RichText
-              body={content['expected-returns'].intro[params.strategy]}
-              p="col-span-2 mb-2 p-base"
-            />
-
-            <h2 className=" whitespace-nowrap">Stocks</h2>
+          <FontAwesomeIcon
+            className="mt-1"
+            icon={
+              params.returns.expected.type === 'manual'
+                ? faCircleSelected
+                : faCircleRegular
+            }
+          />
+          <div className="">
+            <h2 className="text-start">
+              {expectedReturnTypeLabel({type: 'manual'})}
+            </h2>
+          </div>
+        </button>
+        {params.returns.expected.type === 'manual' && (
+          <div className="mt-4">
+            <h2 className="ml-6 mt-2 ">Stocks</h2>
             <SliderInput
               {...sliderProps}
               pointers={[
                 {value: params.returns.expected.stocks, type: 'normal'},
               ]}
-              onChange={([stocks]) =>
-                handleChange({stocks, bonds: params.returns.expected.bonds})
-              }
+              onChange={([stocks]) => onChange({type: 'manual', stocks, bonds})}
             />
-            <h2 className="whitespace-nowrap">Bonds</h2>
+            <h2 className="ml-6">Bonds</h2>
             <SliderInput
               {...sliderProps}
               pointers={[
                 {value: params.returns.expected.bonds, type: 'normal'},
               ]}
-              onChange={([bonds]) =>
-                handleChange({stocks: params.returns.expected.stocks, bonds})
-              }
+              onChange={([bonds]) => onChange({type: 'manual', stocks, bonds})}
             />
+            <p className="p-base ml-6">
+              Remember to use real and not nominal returns.
+            </p>
           </div>
-          <h2 className="font-bold mt-8 ">Presets</h2>
-          <div
-            className=" grid gap-x-4 gap-y-2"
-            style={{grid: 'auto/1fr auto auto'}}
-          >
-            <h2 className=""></h2>
-            <h2 className="">Stocks</h2>
-            <h2 className="">Bonds</h2>
-            <button
-              className="text-left underline py-1"
-              onClick={() => handleChange({...PRESETS.suggested})}
-            >
-              Suggested
-            </button>
-            <h2 className="text-right ">
-              {formatPercentage(1)(PRESETS.suggested.stocks)}
-            </h2>
-            <h2 className="text-right">
-              {formatPercentage(1)(PRESETS.suggested.bonds)}
-            </h2>
-            <button
-              className="text-left underline py-1"
-              onClick={() => handleChange({...PRESETS.oneOverCAPE})}
-            >
-              1/CAPE for stocks
-            </button>
-            <h2 className="text-right ">
-              {formatPercentage(1)(PRESETS.oneOverCAPE.stocks)}
-            </h2>
-            <h2 className="text-right">
-              {formatPercentage(1)(PRESETS.oneOverCAPE.bonds)}
-            </h2>
-            <button
-              className="text-left underline py-1"
-              onClick={() => handleChange({...PRESETS.regressionPrediction})}
-            >
-              Regression average for stocks
-            </button>
-            <h2 className="text-right ">
-              {formatPercentage(1)(PRESETS.regressionPrediction.stocks)}
-            </h2>
-            <h2 className="text-right">
-              {formatPercentage(1)(PRESETS.regressionPrediction.bonds)}
-            </h2>
-            <button
-              className="text-left underline py-1"
-              onClick={() => handleChange({...PRESETS.historical})}
-            >
-              Historical average
-            </button>
-            <h2 className="text-right ">
-              {formatPercentage(1)(PRESETS.historical.stocks)}
-            </h2>
-            <h2 className="text-right">
-              {formatPercentage(1)(PRESETS.historical.bonds)}
-            </h2>
-          </div>
-        </div>
-      </ParamsInputBody>
+        )}
+      </div>
     )
   }
 )
+export const expectedReturnTypeLabel = ({
+  type,
+}: {
+  type: TPAWParams['returns']['expected']['type']
+}) => {
+  switch (type) {
+    case 'suggested':
+      return 'Suggested'
+    case 'oneOverCAPE':
+      return '1/CAPE for stocks'
+    case 'regressionPrediction':
+      return 'Regression prediction for stocks'
+    case 'historical':
+      return 'Historical'
+    case 'manual':
+      return 'Manual'
+  }
+}

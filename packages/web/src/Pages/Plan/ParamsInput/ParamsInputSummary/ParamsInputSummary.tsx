@@ -175,17 +175,26 @@ export const ParamsInputSummary = React.memo(
 
             <div className="">
               <button
-                className="text-[20px] sm:text-xl2 font-bold text-left"
+                className=""
                 style={{...paddingCSSStyleHorz(cardPadding)}}
                 onClick={() => setShowAdvanced(!showAdvanced)}
               >
-                Advanced
-                <FontAwesomeIcon
-                  className="ml-2"
-                  icon={showAdvanced ? faCaretDown : faCaretRight}
-                />
+                <div className="text-[20px] sm:text-xl2 font-bold text-left">
+                  Advanced
+                  <FontAwesomeIcon
+                    className="ml-2"
+                    icon={showAdvanced ? faCaretDown : faCaretRight}
+                  />
+                </div>
+                {!showAdvanced && (
+                  <h2 className="text-left">
+                    {advancedModifiedCount === 0
+                      ? 'None'
+                      : `${advancedModifiedCount} modified`}
+                  </h2>
+                )}
               </button>
-              {showAdvanced ? (
+              {showAdvanced && (
                 <div className="flex flex-col gap-y-4 mt-4">
                   <ParamsInputSummaryButton
                     type="expected-returns"
@@ -224,12 +233,6 @@ export const ParamsInputSummary = React.memo(
                     />
                   )}
                 </div>
-              ) : (
-                <h2 className="" style={{...paddingCSSStyleHorz(cardPadding)}}>
-                  {advancedModifiedCount === 0
-                    ? 'None'
-                    : `${advancedModifiedCount} modified`}
-                </h2>
               )}
             </div>
           </div>
@@ -268,10 +271,7 @@ const _isModified = (type: _AdvancedParamInputType, params: TPAWParams) => {
   const def = getDefaultParams()
   switch (type) {
     case 'expected-returns':
-      return (
-        params.returns.expected.stocks !== def.returns.expected.stocks ||
-        params.returns.expected.bonds !== def.returns.expected.bonds
-      )
+      return params.returns.expected.type !== 'suggested'
     case 'inflation':
       return params.inflation !== def.inflation
     case 'compare-strategies':

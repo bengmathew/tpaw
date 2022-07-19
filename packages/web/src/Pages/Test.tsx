@@ -135,7 +135,7 @@ const excel = excelSimulated
 
 const testParams = processTPAWParams(
   extendTPAWParams({
-    v: 9,
+    v: 10,
     strategy: 'SWR',
     people: {
       withPartner: false,
@@ -145,7 +145,7 @@ const testParams = processTPAWParams(
       },
     },
     returns: {
-      expected: {stocks: 0.035, bonds: 0.01},
+      expected: {type:'suggested'},
       // historical: {type: 'default', adjust: {type: 'toExpected'}},
       historical: {
         type: 'default',

@@ -64,7 +64,9 @@ const _Rate = React.memo(({className = ''}: {className?: string}) => {
   const {numRetirementYears} = paramsExt
 
   const [lastEntry, setLastEntry] = useState(
-    defaultSWRWithdrawalRate(numRetirementYears)
+    params.swrWithdrawal.type === 'asPercent'
+      ? params.swrWithdrawal.percent
+      : defaultSWRWithdrawalRate(numRetirementYears)
   )
   useEffect(() => {
     if (params.swrWithdrawal.type === 'asPercent') {

@@ -23,7 +23,7 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "sentry.client.config.js"  ],
   "exclude": [
     "node_modules"
   ]
