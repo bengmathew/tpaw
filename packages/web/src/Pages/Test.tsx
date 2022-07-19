@@ -42,7 +42,6 @@ export const Test = React.memo(() => {
         }
       )
 
-
       // const resultsFromUsingExpectedReturns = runSPAWSimulation(params, {
       //   type: 'useExpectedReturns',
       // })
@@ -145,7 +144,7 @@ const testParams = processTPAWParams(
       },
     },
     returns: {
-      expected: {type:'suggested'},
+      expected: {type: 'suggested'},
       // historical: {type: 'default', adjust: {type: 'toExpected'}},
       historical: {
         type: 'default',
@@ -157,7 +156,7 @@ const testParams = processTPAWParams(
         adjust: {type: 'none'},
       },
     },
-    inflation: 0.02,
+    inflation: {type: 'suggested'},
     targetAllocation: {
       regularPortfolio: {
         forTPAW: {stocks: 0.3},

@@ -1,28 +1,32 @@
-import { faCircle, faExclamation } from '@fortawesome/pro-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { gsap, Power1 } from 'gsap'
+import {faCircle, faExclamation} from '@fortawesome/pro-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import {gsap, Power1} from 'gsap'
 import _ from 'lodash'
-import React, { useEffect, useRef } from 'react'
+import React, {useEffect, useRef} from 'react'
 import {
   GlidePath,
   Person,
   TPAWParams,
-  ValueForYearRange
+  ValueForYearRange,
 } from '../../../../TPAWSimulator/TPAWParams'
-import { TPAWParamsExt } from '../../../../TPAWSimulator/TPAWParamsExt'
-import { processExpectedReturns } from '../../../../TPAWSimulator/TPAWParamsProcessed'
-import { formatCurrency } from '../../../../Utils/FormatCurrency'
-import { formatPercentage } from '../../../../Utils/FormatPercentage'
-import { Padding, paddingCSS } from '../../../../Utils/Geometry'
-import { SimpleRange } from '../../../../Utils/SimpleRange'
-import { trimAndNullify } from '../../../../Utils/TrimAndNullify'
-import { assertFalse, fGet, noCase } from '../../../../Utils/Utils'
-import { useSimulation } from '../../../App/WithSimulation'
-import { ChartUtils } from '../../../Common/Chart/ChartUtils/ChartUtils'
-import { ValueForYearRangeDisplay } from '../../../Common/ValueForYearRangeDisplay'
-import { paramsInputLabel } from '../Helpers/ParamsInputLabel'
-import { ParamsInputType } from '../Helpers/ParamsInputType'
-import { expectedReturnTypeLabel } from '../ParamsInputExpectedReturns'
+import {TPAWParamsExt} from '../../../../TPAWSimulator/TPAWParamsExt'
+import {
+  processExpectedReturns,
+  processInflation,
+} from '../../../../TPAWSimulator/TPAWParamsProcessed'
+import {formatCurrency} from '../../../../Utils/FormatCurrency'
+import {formatPercentage} from '../../../../Utils/FormatPercentage'
+import {Padding, paddingCSS} from '../../../../Utils/Geometry'
+import {SimpleRange} from '../../../../Utils/SimpleRange'
+import {trimAndNullify} from '../../../../Utils/TrimAndNullify'
+import {assertFalse, fGet, noCase} from '../../../../Utils/Utils'
+import {useSimulation} from '../../../App/WithSimulation'
+import {ChartUtils} from '../../../Common/Chart/ChartUtils/ChartUtils'
+import {ValueForYearRangeDisplay} from '../../../Common/ValueForYearRangeDisplay'
+import {paramsInputLabel} from '../Helpers/ParamsInputLabel'
+import {ParamsInputType} from '../Helpers/ParamsInputType'
+import {expectedReturnTypeLabel} from '../ParamsInputExpectedReturns'
+import {inflationTypeLabel} from '../ParamsInputInflation'
 
 export const ParamsInputSummaryButton = React.memo(
   ({
@@ -308,7 +312,12 @@ const _SectionSummary = React.memo(({type}: {type: ParamsInputType}) => {
     }
     case 'inflation': {
       const format = formatPercentage(1)
-      return <h2>{format(params.inflation)}</h2>
+      return (
+        <h2>
+          {inflationTypeLabel(params.inflation)}:{' '}
+          {format(processInflation(params.inflation))}
+        </h2>
+      )
     }
     case 'compare-strategies': {
       return (

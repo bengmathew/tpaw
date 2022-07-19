@@ -6,7 +6,7 @@ import {historicalReturns} from '../HistoricalReturns'
 import {StatsTools} from '../StatsTools'
 import {ValueForYearRange} from '../TPAWParams'
 import {extendTPAWParams} from '../TPAWParamsExt'
-import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
+import {processInflation, TPAWParamsProcessed} from '../TPAWParamsProcessed'
 import {
   FirstYearSavingsPortfolioDetail,
   firstYearSavingsPortfolioDetail,
@@ -522,7 +522,7 @@ const _separateExtraWithdrawal = (
     const currYearParams = params.byYear[yearFromNow].withdrawals
     const withdrawalTargetForThisYear = nominalToReal(
       discretionaryWithdrawal,
-      params.original.inflation,
+      processInflation(params.original.inflation),
       yearFromNow
     )
     if (withdrawalTargetForThisYear === 0) return 0

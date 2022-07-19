@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import {Validator} from '../Utils/Validator'
-import {TPAWParamsV9} from './TPAWParamsOld/TPAWParamsV9'
+import {Validator} from '../../Utils/Validator'
+import {TPAWParamsV9} from './TPAWParamsV9'
 
 export namespace TPAWParamsV10 {
   export const MAX_LABEL_LENGTH = 150
@@ -178,7 +178,7 @@ export namespace TPAWParamsV10 {
 
   // ----------- VALIDATOR  ---------//
 
-  const _ageRange = chain(number(), _geTest(0), _leTest(TPAWParamsV10.MAX_AGE))
+  const _ageRange = chain(number(), _geTest(0), _leTest(MAX_AGE))
 
   const _ages = chain(
     union(
@@ -194,7 +194,7 @@ export namespace TPAWParamsV10 {
         max: _ageRange,
       })
     ),
-    (ages): TPAWParamsV10.Person['ages'] => {
+    (ages): Person['ages'] => {
       const {current, max} = ages
       if (max < current + 1) {
         throw new Validator.Failed(
@@ -218,10 +218,10 @@ export namespace TPAWParamsV10 {
     }
   )
 
-  const _person: Validator<TPAWParamsV10.Person> = object({
+  const _person: Validator<Person> = object({
     ages: _ages,
     displayName: union(
-      strBoundedTrimmed(TPAWParamsV10.MAX_LABEL_LENGTH),
+      strBoundedTrimmed(MAX_LABEL_LENGTH),
       constant(null)
     ),
   })

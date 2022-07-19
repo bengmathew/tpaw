@@ -98,7 +98,7 @@ const params = processTPAWParams(
       expected: {type:'suggested'},
       historical: {type: 'default', adjust: {type: 'toExpected'}},
     },
-    inflation: 0.02,
+    inflation: {type: 'suggested'},
     targetAllocation: {
       regularPortfolio: {
         forTPAW: {stocks: 0.35},

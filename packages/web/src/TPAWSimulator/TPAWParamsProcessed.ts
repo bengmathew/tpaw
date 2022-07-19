@@ -5,6 +5,7 @@ import {assert, noCase} from '../Utils/Utils'
 import {
   defaultSWRWithdrawalRate,
   EXPECTED_RETURN_PRESETS,
+  SUGGESTED_INFLATION,
 } from './DefaultParams'
 import {historicalReturns} from './HistoricalReturns'
 import {
@@ -19,7 +20,8 @@ export type TPAWParamsProcessed = ReturnType<typeof processTPAWParams>
 export function processTPAWParams(paramsExt: TPAWParamsExt) {
   const {numYears, asYFN, params, numRetirementYears} = paramsExt
   tpawParamsValidator(params)
-  const {inflation, ...paramsWithoutInflation} = params
+  const {inflation: inflationIn, ...paramsWithoutInflation} = params
+
   const _normalizeGlidePath = (glidePath: GlidePath) => {
     const stage1 = [
       {year: 0, stocks: glidePath.start.stocks},
@@ -69,7 +71,7 @@ export function processTPAWParams(paramsExt: TPAWParamsExt) {
     const {total} = params.legacy
     const external = _.sum(
       params.legacy.external.map(x =>
-        nominalToReal(x, params.inflation, numYears)
+        nominalToReal(x, processInflation(params.inflation), numYears)
       )
     )
     const target = Math.max(total - external, 0)
@@ -126,7 +128,11 @@ function _processByYearParams(paramsExt: TPAWParamsExt) {
       _.range(start, end + 1).forEach(yearsFromNow => {
         updater(
           byYear[yearsFromNow],
-          nominalToReal({value, nominal}, params.inflation, yearsFromNow)
+          nominalToReal(
+            {value, nominal},
+            processInflation(params.inflation),
+            yearsFromNow
+          )
         )
       })
     })
@@ -158,6 +164,14 @@ export function processExpectedReturns(
     default:
       return EXPECTED_RETURN_PRESETS(expected.type)
   }
+}
+
+export function processInflation(inflation: TPAWParams['inflation']) {
+  return inflation.type === 'suggested'
+    ? SUGGESTED_INFLATION
+    : inflation.type === 'manual'
+    ? inflation.value
+    : noCase(inflation)
 }
 
 function _processReturnsParams(params: TPAWParams) {

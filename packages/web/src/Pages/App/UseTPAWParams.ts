@@ -16,11 +16,12 @@ import {TPAWParamsV7} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV7'
 import {TPAWParamsV8} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV8'
 
 import {TPAWParamsV9} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV9'
-import { TPAWParamsV10 } from '../../TPAWSimulator/TPAWParamsV10'
+import { TPAWParamsV10 } from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV10'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {fGet} from '../../Utils/Utils'
 import {Validator} from '../../Utils/Validator'
 import {AppError} from './AppError'
+import { TPAWParamsV11 } from '../../TPAWSimulator/TPAWParamsV11'
 
 type _History = {stack: TPAWParams[]; curr: number}
 const _undo = (history: _History) =>
@@ -163,9 +164,16 @@ function _parseExternalParams(
       const v10 =
         parsed.v === 10
           ? TPAWParamsV10.validator(parsed)
-          : TPAWParamsV10.fromV9(fGet(v9))
+          : v9
+          ? TPAWParamsV10.fromV9(v9)
+          : null
 
-      return v10
+      const v11 =
+        parsed.v === 11
+          ? TPAWParamsV11.validator(parsed)
+          : TPAWParamsV11.fromV10(fGet(v10))
+
+      return v11
     } catch (e) {
       if (e instanceof Validator.Failed) {
         throw new AppError(`Error in parameter: ${e.fullMessage}`)

@@ -273,7 +273,7 @@ const _isModified = (type: _AdvancedParamInputType, params: TPAWParams) => {
     case 'expected-returns':
       return params.returns.expected.type !== 'suggested'
     case 'inflation':
-      return params.inflation !== def.inflation
+      return params.inflation.type !== 'suggested'
     case 'compare-strategies':
       return params.strategy !== def.strategy
     case 'simulation':

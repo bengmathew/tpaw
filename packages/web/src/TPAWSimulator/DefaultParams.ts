@@ -27,6 +27,8 @@ export const EXPECTED_RETURN_PRESETS = (
   }
 }
 
+export const SUGGESTED_INFLATION  = 0.024
+
 export function getDefaultParams() {
   const params: TPAWParams = {
     v: 10,
@@ -42,7 +44,7 @@ export function getDefaultParams() {
       expected: {type: 'suggested'},
       historical: {type: 'default', adjust: {type: 'toExpected'}},
     },
-    inflation: 0.024,
+    inflation: {type:'suggested'},
     targetAllocation: {
       regularPortfolio: {
         forTPAW: {stocks: 0.35},
