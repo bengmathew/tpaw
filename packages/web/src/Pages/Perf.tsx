@@ -85,7 +85,7 @@ export const Perf = React.memo(() => {
 
 const params = processTPAWParams(
   extendTPAWParams({
-    v: 10,
+    v: 11,
     strategy: 'TPAW',
     people: {
       withPartner: false,

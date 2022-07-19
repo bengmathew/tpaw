@@ -62,7 +62,7 @@ export namespace TPAWParamsV11 {
   }
 
   export type Params = {
-    v: 10
+    v: 11
     strategy: 'TPAW' | 'SPAW' | 'SWR'
     people: People
     returns: {
@@ -167,7 +167,7 @@ export namespace TPAWParamsV11 {
     const result: Params = {
       ...params,
       inflation: {type: 'manual', value: params.inflation},
-      v: 10,
+      v: 11,
     }
     validator(result)
     return result
@@ -276,7 +276,7 @@ export namespace TPAWParamsV11 {
 
   export const validator: Validator<Params> = chain(
     object({
-      v: constant(10),
+      v: constant(11),
       strategy: union(constant('TPAW'), constant('SPAW'), constant('SWR')),
       people: union(
         object({

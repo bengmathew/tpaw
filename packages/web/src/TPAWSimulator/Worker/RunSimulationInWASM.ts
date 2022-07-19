@@ -1,4 +1,3 @@
-import { RunResult } from '@tpaw/simulator'
 import _ from 'lodash'
 import {SimpleRange} from '../../Utils/SimpleRange'
 import {noCase} from '../../Utils/Utils'
@@ -92,7 +91,16 @@ export async function runSimulationInWASM(
         afterWithdrawals: {
           allocation: {
             stocks: splitArray(
-              runs.by_yfn_by_run_after_withdrawals_allocation_stocks()
+              runs.by_yfn_by_run_after_withdrawals_allocation_stocks_savings()
+            ),
+          },
+        },
+      },
+      totalPortfolio: {
+        afterWithdrawals: {
+          allocation: {
+            stocks: splitArray(
+              runs.by_yfn_by_run_after_withdrawals_allocation_stocks_total()
             ),
           },
         },

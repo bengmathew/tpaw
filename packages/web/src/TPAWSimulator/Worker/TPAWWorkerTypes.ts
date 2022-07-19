@@ -33,9 +33,14 @@ export type TPAWWorkerResult =
               allocation: {stocks: Float64Array[]}
             }
           }
+          totalPortfolio: {
+            afterWithdrawals: {
+              allocation: {stocks: Float64Array[]}
+            }
+          }
         }
         byRun: {
-          numInsufficientFundYears:Int32Array
+          numInsufficientFundYears: Int32Array
           endingBalanceOfSavingsPortfolio: Float64Array
         }
         perf: [

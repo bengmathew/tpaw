@@ -31,7 +31,7 @@ export const SUGGESTED_INFLATION  = 0.024
 
 export function getDefaultParams() {
   const params: TPAWParams = {
-    v: 10,
+    v: 11,
     strategy: 'TPAW',
     people: {
       withPartner: false,

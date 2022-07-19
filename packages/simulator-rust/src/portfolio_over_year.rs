@@ -36,7 +36,8 @@ pub struct AfterWithdrawals {
 
 #[derive(Serialize, Deserialize)]
 pub struct End {
-    pub stock_allocation: f64,
+    pub stock_allocation_percent: f64,
+    pub stock_allocation_amount: f64,
     pub balance: f64,
 }
 
@@ -167,17 +168,19 @@ pub fn apply_target_withdrawals(
 
 #[inline(always)]
 pub fn apply_allocation(
-    stock_allocation: f64,
+    stock_allocation_percent: f64,
     return_rate: &ReturnsAtPointInTime,
     after_withdrawals: &AfterWithdrawals,
 ) -> End {
     // Don't use blend_returns here. It is extremely slow.
-    let rate = return_rate.bonds * (1.0 - stock_allocation) + return_rate.stocks * stock_allocation;
-    let balance = after_withdrawals.balance * (1.0 + rate);
-    // web_sys::console::log_1(&wasm_bindgen::JsValue::from_serde(&(rate)).unwrap());
+    let stock_allocation_amount = after_withdrawals.balance * stock_allocation_percent;
+    let bond_allocation_amount = after_withdrawals.balance - stock_allocation_amount;
+    let balance = stock_allocation_amount * (1.0 + return_rate.stocks)
+        + bond_allocation_amount * (1.0 + return_rate.bonds);
 
     return End {
-        stock_allocation,
+        stock_allocation_percent,
+        stock_allocation_amount,
         balance,
     };
 }

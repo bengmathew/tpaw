@@ -176,6 +176,7 @@ function _parseExternalParams(
       return v11
     } catch (e) {
       if (e instanceof Validator.Failed) {
+        console.dir(parsed)
         throw new AppError(`Error in parameter: ${e.fullMessage}`)
       } else {
         throw e

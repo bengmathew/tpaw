@@ -134,7 +134,7 @@ const excel = excelSimulated
 
 const testParams = processTPAWParams(
   extendTPAWParams({
-    v: 10,
+    v: 11,
     strategy: 'SWR',
     people: {
       withPartner: false,

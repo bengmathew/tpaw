@@ -28,7 +28,8 @@ pub struct RunResult {
     by_yfn_by_run_withdrawals_regular: Vec<f64>,
     by_yfn_by_run_withdrawals_total: Vec<f64>,
     by_yfn_by_run_withdrawals_from_savings_portfolio_rate: Vec<f64>,
-    by_yfn_by_run_after_withdrawals_allocation_stocks: Vec<f64>,
+    by_yfn_by_run_after_withdrawals_allocation_stocks_savings: Vec<f64>,
+    by_yfn_by_run_after_withdrawals_allocation_stocks_total: Vec<f64>,
     by_yfn_by_run_excess_withdrawals_regular: Vec<f64>,
     by_run_ending_balance: Vec<f64>,
     by_run_num_insufficient_fund_years: Vec<i32>, // Test
@@ -56,8 +57,11 @@ impl RunResult {
     pub fn by_yfn_by_run_withdrawals_from_savings_portfolio_rate(&self) -> js_sys::Float64Array {
         to_js_arr(&self.by_yfn_by_run_withdrawals_from_savings_portfolio_rate)
     }
-    pub fn by_yfn_by_run_after_withdrawals_allocation_stocks(&self) -> js_sys::Float64Array {
-        to_js_arr(&self.by_yfn_by_run_after_withdrawals_allocation_stocks)
+    pub fn by_yfn_by_run_after_withdrawals_allocation_stocks_savings(&self) -> js_sys::Float64Array {
+        to_js_arr(&self.by_yfn_by_run_after_withdrawals_allocation_stocks_savings)
+    }
+    pub fn by_yfn_by_run_after_withdrawals_allocation_stocks_total(&self) -> js_sys::Float64Array {
+        to_js_arr(&self.by_yfn_by_run_after_withdrawals_allocation_stocks_total)
     }
     pub fn by_yfn_by_run_excess_withdrawals_regular(&self) -> js_sys::Float64Array {
         to_js_arr(&self.by_yfn_by_run_excess_withdrawals_regular)
@@ -175,7 +179,8 @@ pub fn run(
         by_yfn_by_run_withdrawals_regular: create_vec(),
         by_yfn_by_run_withdrawals_total: create_vec(),
         by_yfn_by_run_withdrawals_from_savings_portfolio_rate: create_vec(),
-        by_yfn_by_run_after_withdrawals_allocation_stocks: create_vec(),
+        by_yfn_by_run_after_withdrawals_allocation_stocks_savings: create_vec(),
+        by_yfn_by_run_after_withdrawals_allocation_stocks_total: create_vec(),
         by_yfn_by_run_excess_withdrawals_regular: create_vec(),
         by_run_num_insufficient_fund_years: vec![0; (num_runs) as usize],
         by_run_ending_balance: vec![0.0; (num_runs) as usize],

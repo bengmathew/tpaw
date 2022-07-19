@@ -209,6 +209,7 @@ fn run_for_single_year_using_historical_returns(
 ) -> (f64, SingleYearPassForward) {
     let SingleYearContext {
         params,
+        pre_calculations,
         year_index,
         returns,
         balance_starting,
@@ -248,6 +249,14 @@ fn run_for_single_year_using_historical_returns(
         &savings_portfolio_after_withdrawals,
     );
 
+    let stock_allocation_on_total_portfolio = savings_portfolio_at_end.stock_allocation_amount
+        / (savings_portfolio_after_withdrawals.balance
+            + pre_calculations
+                .tpaw
+                .net_present_value
+                .savings
+                .without_current_year[year_index]);
+
     let year_run_index = (year_index * (params.end_run - params.start_run)) + run_index;
     result.by_yfn_by_run_balance_start[year_run_index] = balance_starting;
     result.by_yfn_by_run_withdrawals_essential[year_run_index] =
@@ -267,8 +276,11 @@ fn run_for_single_year_using_historical_returns(
     result.by_yfn_by_run_excess_withdrawals_regular[year_run_index] =
         savings_portfolio_after_withdrawals.withdrawals.regular
             - withdrawal_from_using_bond_returns.regular;
-    result.by_yfn_by_run_after_withdrawals_allocation_stocks[year_run_index] =
-        savings_portfolio_at_end.stock_allocation;
+    result.by_yfn_by_run_after_withdrawals_allocation_stocks_savings[year_run_index] =
+        savings_portfolio_at_end.stock_allocation_percent;
+    result.by_yfn_by_run_after_withdrawals_allocation_stocks_total[year_run_index] =
+        stock_allocation_on_total_portfolio;
+
     if savings_portfolio_after_withdrawals.insufficient_funds {
         result.by_run_num_insufficient_fund_years[run_index] =
             result.by_run_num_insufficient_fund_years[run_index] + 1;

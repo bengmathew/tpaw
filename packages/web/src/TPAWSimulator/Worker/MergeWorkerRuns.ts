@@ -68,7 +68,8 @@ export const mergeWorkerRuns = (
       excessWithdrawals: {
         regular: _mergeNumberByWorkerByYearsFromNowByRun(
           runsByWorker.map(
-            x => x.byYearsFromNowByRun.savingsPortfolio.excessWithdrawals.regular
+            x =>
+              x.byYearsFromNowByRun.savingsPortfolio.excessWithdrawals.regular
           )
         ),
       },
@@ -79,6 +80,19 @@ export const mergeWorkerRuns = (
             runsByWorker.map(
               x =>
                 x.byYearsFromNowByRun.savingsPortfolio.afterWithdrawals
+                  .allocation.stocks
+            )
+          ),
+        },
+      },
+    },
+    totalPortfolio: {
+      afterWithdrawals: {
+        allocation: {
+          stocks: _mergeNumberByWorkerByYearsFromNowByRun(
+            runsByWorker.map(
+              x =>
+                x.byYearsFromNowByRun.totalPortfolio.afterWithdrawals
                   .allocation.stocks
             )
           ),
