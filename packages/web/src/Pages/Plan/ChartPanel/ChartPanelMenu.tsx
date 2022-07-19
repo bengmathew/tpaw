@@ -1,6 +1,6 @@
-import { faChevronRight } from '@fortawesome/pro-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { gsap } from 'gsap'
+import {faChevronRight} from '@fortawesome/pro-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import {gsap} from 'gsap'
 import _ from 'lodash'
 import React, {
   useCallback,
@@ -8,31 +8,31 @@ import React, {
   useImperativeHandle,
   useMemo,
   useRef,
-  useState
+  useState,
 } from 'react'
 import ReactDOM from 'react-dom'
-import { Contentful } from '../../../Utils/Contentful'
-import { Padding, rectExt, RectExt } from '../../../Utils/Geometry'
-import { assert, fGet, noCase } from '../../../Utils/Utils'
-import { useWindowSize } from '../../../Utils/WithWindowSize'
-import { useChartData } from '../../App/WithChartData'
-import { useSimulation } from '../../App/WithSimulation'
-import { chartDrawDataLines } from '../../Common/Chart/ChartComponent/ChartDrawDataLines'
+import {Contentful} from '../../../Utils/Contentful'
+import {Padding, rectExt, RectExt} from '../../../Utils/Geometry'
+import {assert, fGet, noCase} from '../../../Utils/Utils'
+import {useWindowSize} from '../../../Utils/WithWindowSize'
+import {useChartData} from '../../App/WithChartData'
+import {useSimulation} from '../../App/WithSimulation'
+import {chartDrawDataLines} from '../../Common/Chart/ChartComponent/ChartDrawDataLines'
 import {
   ChartReact,
   ChartReactState,
-  ChartReactStatefull
+  ChartReactStatefull,
 } from '../../Common/Chart/ChartReact'
-import { ChartUtils } from '../../Common/Chart/ChartUtils/ChartUtils'
-import { usePlanContent } from '../Plan'
-import { chartPanelLabel } from './ChartPanelLabel'
-import { ChartPanelMenuButton } from './ChartPanelMenuButton'
+import {ChartUtils} from '../../Common/Chart/ChartUtils/ChartUtils'
+import {usePlanContent} from '../Plan'
+import {chartPanelLabel} from './ChartPanelLabel'
+import {ChartPanelMenuButton} from './ChartPanelMenuButton'
 import {
   ChartPanelType,
   isChartPanelSpendingDiscretionaryType,
-  isChartPanelSpendingEssentialType
+  isChartPanelSpendingEssentialType,
 } from './ChartPanelType'
-import { TPAWChartDataMain } from './TPAWChart/TPAWChartDataMain'
+import {TPAWChartDataMain} from './TPAWChart/TPAWChartDataMain'
 
 const duration = 0.5
 const scale = 0.95
@@ -189,7 +189,14 @@ export const ChartPanelMenu = React.memo(
                   </div>
                 )}
                 <_Button type={'portfolio'} {...buttonProps} />
-                <_Button type={'glide-path'} {...buttonProps} />
+                <_Button
+                  type={'asset-allocation-total-portfolio'}
+                  {...buttonProps}
+                />
+                <_Button
+                  type={'asset-allocation-savings-portfolio'}
+                  {...buttonProps}
+                />
                 <_Button type={'withdrawal'} {...buttonProps} />
               </div>
             </div>,
@@ -288,9 +295,9 @@ const useInfo = (panelType: ChartPanelType) => {
       return [content.spending.regular.menu] as const
     }
     case 'portfolio':
-      return [content.portfolio.menu] as const
-    case 'glide-path':
-      return [content.glidePath.menu] as const
+      case 'asset-allocation-savings-portfolio':
+        case 'asset-allocation-total-portfolio':
+      return [content[panelType].menu] as const
     case 'withdrawal':
       return [content.withdrawalRate.menu] as const
     default:
@@ -318,11 +325,15 @@ const _Chart = React.memo(
   }) => {
     const ref = useRef<ChartReactStatefull<TPAWChartDataMain>>(null)
     useEffect(() => {
-      if(!ref.current) return
-      ref.current.setState(data, {
-        x: data.years.displayRange,
-        y: data.yDisplayRange,
-      }, null)
+      if (!ref.current) return
+      ref.current.setState(
+        data,
+        {
+          x: data.years.displayRange,
+          y: data.yDisplayRange,
+        },
+        null
+      )
     }, [data, drawKey])
 
     const components = useCallback(

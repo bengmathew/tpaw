@@ -249,13 +249,20 @@ fn run_for_single_year_using_historical_returns(
         &savings_portfolio_after_withdrawals,
     );
 
-    let stock_allocation_on_total_portfolio = savings_portfolio_at_end.stock_allocation_amount
+    let mut stock_allocation_on_total_portfolio = savings_portfolio_at_end.stock_allocation_amount
         / (savings_portfolio_after_withdrawals.balance
             + pre_calculations
                 .tpaw
                 .net_present_value
                 .savings
                 .without_current_year[year_index]);
+    stock_allocation_on_total_portfolio = if f64::is_nan(stock_allocation_on_total_portfolio)
+        || f64::is_infinite(stock_allocation_on_total_portfolio)
+    {
+        0.0
+    } else {
+        stock_allocation_on_total_portfolio
+    };
 
     let year_run_index = (year_index * (params.end_run - params.start_run)) + run_index;
     result.by_yfn_by_run_balance_start[year_run_index] = balance_starting;

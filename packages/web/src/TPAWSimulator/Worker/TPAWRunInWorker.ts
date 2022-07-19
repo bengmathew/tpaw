@@ -5,7 +5,7 @@ import {assert, fGet, noCase} from '../../Utils/Utils'
 import {historicalReturns} from '../HistoricalReturns'
 import {StatsTools} from '../StatsTools'
 import {ValueForYearRange} from '../TPAWParams'
-import {extendTPAWParams} from '../TPAWParamsExt'
+import {extendTPAWParams, TPAWParamsExt} from '../TPAWParamsExt'
 import {processInflation, TPAWParamsProcessed} from '../TPAWParamsProcessed'
 import {
   FirstYearSavingsPortfolioDetail,
@@ -51,6 +51,13 @@ export type TPAWRunInWorkerResult = {
         regular: Float64Array
       }
     }
+    afterWithdrawals: {
+      allocation: {
+        stocks: TPAWRunInWorkerByPercentileByYearsFromNow
+      }
+    }
+  }
+  totalPortfolio: {
     afterWithdrawals: {
       allocation: {
         stocks: TPAWRunInWorkerByPercentileByYearsFromNow
@@ -219,6 +226,25 @@ export class TPAWRunInWorker {
     )
   }
 
+  // async hasLiquidityProblem(
+  //   numRuns: number,
+  //   params: TPAWParamsProcessed
+  // ): Promise<boolean> {
+  //   const paramsExt = extendTPAWParams(params.original)
+    
+  //   numRuns = _numRuns(paramsExt, numRuns)
+  //   const runsByWorker = await Promise.all(
+  //     this._workers.map((worker, i) =>
+  //       this._runSimulation(
+  //         worker,
+  //         _loadBalance(i, numRuns, this._workers.length),
+  //         params
+  //       )
+  //     )
+  //   )
+
+  // }
+
   async runSimulations(
     status: {canceled: boolean},
     numRuns: number,
@@ -227,18 +253,9 @@ export class TPAWRunInWorker {
   ): Promise<TPAWRunInWorkerResult | null> {
     const start0 = performance.now()
     let start = performance.now()
-    numRuns = (() => {
-      switch (params.sampling) {
-        case 'monteCarlo':
-          return numRuns
-        case 'historical': {
-          const {numYears} = extendTPAWParams(params.original)
-          return historicalReturns.length - numYears + 1
-        }
-        default:
-          noCase(params.sampling)
-      }
-    })()
+    const paramsExt = extendTPAWParams(params.original)
+    numRuns = _numRuns(paramsExt, numRuns)
+
     const runsByWorker = await Promise.all(
       this._workers.map((worker, i) =>
         this._runSimulation(
@@ -248,6 +265,8 @@ export class TPAWRunInWorker {
         )
       )
     )
+
+
 
     const perfSimulation = performance.now() - start
     start = performance.now()
@@ -271,6 +290,7 @@ export class TPAWRunInWorker {
         withdrawalsTotal,
         withdrawalFromSavingsRate,
         savingsPortfolioStockAllocation,
+        totalPortfolioStockAllocation,
       ],
       perf: perfSortAndPickPercentilesYearly,
     } = await this._sortAndPickPercentilesForByYearsFromNowByRun(
@@ -283,6 +303,7 @@ export class TPAWRunInWorker {
         byYearsFromNowByRun.savingsPortfolio.withdrawals
           .fromSavingsPortfolioRate,
         byYearsFromNowByRun.savingsPortfolio.afterWithdrawals.allocation.stocks,
+        byYearsFromNowByRun.totalPortfolio.afterWithdrawals.allocation.stocks,
       ],
       percentiles
     )
@@ -370,6 +391,13 @@ export class TPAWRunInWorker {
         afterWithdrawals: {
           allocation: {
             stocks: savingsPortfolioStockAllocation,
+          },
+        },
+      },
+      totalPortfolio: {
+        afterWithdrawals: {
+          allocation: {
+            stocks: totalPortfolioStockAllocation,
           },
         },
       },
@@ -545,4 +573,17 @@ const _mapByPercentileByYearsFromNow = (
     percentile: x.percentile,
   }))
   return {byPercentileByYearsFromNow}
+}
+
+const _numRuns = (paramsExt: TPAWParamsExt, numRuns: number) => {
+  const {params, numYears} = paramsExt
+  switch (params.sampling) {
+    case 'monteCarlo':
+      return numRuns
+    case 'historical': {
+      return historicalReturns.length - numYears + 1
+    }
+    default:
+      noCase(params.sampling)
+  }
 }

@@ -9,7 +9,8 @@ export type ChartPanelType =
   | `spending-essential-${number}`
   | `spending-discretionary-${number}`
   | 'portfolio'
-  | 'glide-path'
+  | 'asset-allocation-savings-portfolio'
+  | 'asset-allocation-total-portfolio'
   | 'withdrawal'
 
 export const isChartPanelSpendingEssentialType = (

@@ -13,7 +13,7 @@ import {TPAWChartDataMain} from '../../ChartPanel/TPAWChart/TPAWChartDataMain'
 export const AssetAllocationChart = React.memo(
   ({className = ''}: {className?: string}) => {
     const data = fGet(
-      useChartData().byYearsFromNowPercentiles.get('glide-path')
+      useChartData().byYearsFromNowPercentiles.get('asset-allocation-savings-portfolio')
     )
 
     const divRef = useRef<HTMLDivElement | null>(null)

@@ -54,7 +54,8 @@ export const WithChartData = ({children}: {children: ReactNode}) => {
       _add(`spending-discretionary-${x.id}`),
     ])
     _add('portfolio')
-    _add('glide-path')
+    _add('asset-allocation-savings-portfolio')
+    _add('asset-allocation-total-portfolio')
     _add('withdrawal')
 
     const sharpeRatio =

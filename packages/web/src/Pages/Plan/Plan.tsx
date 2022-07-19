@@ -554,7 +554,8 @@ export type PlanContent = {
       essential: _IntroAndBodyAndMenu
     }
     portfolio: _IntroAndBodyAndMenu
-    glidePath: _IntroAndBodyAndMenu
+    'asset-allocation-savings-portfolio': _IntroAndBodyAndMenu
+    'asset-allocation-total-portfolio': _IntroAndBodyAndMenu
     withdrawalRate: _IntroAndBodyAndMenu
     sharpeRatio: _IntroAndBody
   }
@@ -667,9 +668,14 @@ export const planGetStaticProps: GetStaticProps<
         body: await Contentful.fetchInline('2iQeojVfV3Fw18WV4TRATR'),
         menu: await Contentful.fetchInline('7cRJH6TdeEPpcom84B8Dch'),
       },
-      glidePath: {
+      'asset-allocation-savings-portfolio': {
         intro: await Contentful.fetchInline('247ji3WlKEyiMcthzbcaUX'),
         body: await Contentful.fetchInline('1r6sBwyo6ulnzLQwQOM05L'),
+        menu: await Contentful.fetchInline('4OsYFfjGHmGn8HucKv2thb'),
+      },
+      'asset-allocation-total-portfolio': {
+        intro: await Contentful.fetchInline('1uowfKS8e8RqIANAucKTkX'),
+        body: await Contentful.fetchInline('1k57vBTerLEOp5ADAxDxoV'),
         menu: await Contentful.fetchInline('8MHwQEcXljZlEIcZrQRKd'),
       },
       withdrawalRate: {

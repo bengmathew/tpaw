@@ -2,11 +2,12 @@ import {faMinus, faPlus} from '@fortawesome/pro-regular-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import React from 'react'
+import { getTPAWRunInWorkerSingleton } from '../../../TPAWSimulator/Worker/UseTPAWWorker'
 import {Contentful} from '../../../Utils/Contentful'
 import {paddingCSSStyle} from '../../../Utils/Geometry'
 import {smartDeltaFn} from '../../../Utils/SmartDeltaFn'
 import {useSimulation} from '../../App/WithSimulation'
-import { AmountInput } from '../../Common/Inputs/AmountInput'
+import {AmountInput} from '../../Common/Inputs/AmountInput'
 import {usePlanContent} from '../Plan'
 import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
@@ -32,7 +33,7 @@ const _LMP = React.memo(
     className?: string
     props: ParamsInputBodyPassThruProps
   }) => {
-    const {params, setParams} = useSimulation()
+    const {params, setParams, numRuns} = useSimulation()
 
     const content = usePlanContent()['lmp']
     const handleAmount = (amount: number) => {
@@ -42,14 +43,27 @@ const _LMP = React.memo(
       setParams(p)
     }
 
+    const handleAutoLMP = async () => {
+      const clone =_.cloneDeep(params)
+      params.withdrawals.lmp = 0
+      const runInWorker = getTPAWRunInWorkerSingleton()
+      // await runInWorker.runSimulations({canceled:false}, numRuns, clone, )
+    }
+
     return (
       <div
         className={`${className} params-card`}
         style={{...paddingCSSStyle(props.sizing.cardPadding)}}
       >
         <div className="">
-          <Contentful.RichText body={content.intro[params.strategy]} p="p-base" />
+          <Contentful.RichText
+            body={content.intro[params.strategy]}
+            p="p-base"
+          />
         </div>
+        {/* <button className="btn-dark btn-sm mt-4" onClick={handleAutoLMP}>
+          Auto LMP
+        </button> */}
         <div className={`flex items-stretch gap-x-2 mt-4`}>
           <AmountInput
             className="text-input"

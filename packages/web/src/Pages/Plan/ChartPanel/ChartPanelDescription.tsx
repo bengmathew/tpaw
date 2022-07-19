@@ -92,9 +92,9 @@ function useContent(type: ChartPanelType | 'sharpe-ratio') {
     case 'spending-general':
       return content.spending.regular
     case 'portfolio':
-      return content.portfolio
-    case 'glide-path':
-      return content.glidePath
+    case 'asset-allocation-savings-portfolio':
+    case 'asset-allocation-total-portfolio':
+      return content[type]
     case 'withdrawal':
       return content.withdrawalRate
     case 'sharpe-ratio':

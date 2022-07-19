@@ -25,8 +25,10 @@ export const chartPanelLabel = (
       }
     case 'portfolio':
       return {label: ['Portfolio'], subLabel: null}
-    case 'glide-path':
-      return {label: ['Asset Allocation'], subLabel: null}
+    case 'asset-allocation-savings-portfolio':
+      return {label: ['Asset Allocation of Savings Portfolio'], subLabel: null}
+    case 'asset-allocation-total-portfolio':
+      return {label: ['Asset Allocation of Total Portfolio'], subLabel: null}
     case 'withdrawal':
       return {label: ['Withdrawal Rate'], subLabel: null}
     case 'sharpe-ratio':

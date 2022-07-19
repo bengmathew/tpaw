@@ -7,7 +7,7 @@ import {TPAWRunInWorker, TPAWRunInWorkerResult} from './TPAWRunInWorker'
 // SHould be singleton so multiple uses of useTPAWWorker all use the same
 // workers, and therefore the same random draws.
 let _singleton: TPAWRunInWorker | null = null
-const _getSingleton = () => {
+export const getTPAWRunInWorkerSingleton = () => {
   if (!_singleton) _singleton = new TPAWRunInWorker()
   return _singleton
 }
@@ -33,7 +33,7 @@ export function useTPAWWorker(
     } else {
       return asyncEffect(async status => {
         const args = {numRuns, params, percentiles}
-        const data = await _getSingleton().runSimulations(
+        const data = await getTPAWRunInWorkerSingleton().runSimulations(
           status,
           numRuns,
           params,
@@ -49,5 +49,5 @@ export function useTPAWWorker(
 }
 
 export async function clearMemoizedRandom() {
-  await _getSingleton().clearMemoizedRandom()
+  await getTPAWRunInWorkerSingleton().clearMemoizedRandom()
 }

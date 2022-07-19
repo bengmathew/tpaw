@@ -173,11 +173,22 @@ export const tpawChartDataMainPercentiles = (
         highlightPercentiles,
         'auto'
       )
-    case 'glide-path':
+    case 'asset-allocation-savings-portfolio':
       return _dataPercentiles(
         type,
         tpawResult,
         x => x.savingsPortfolio.afterWithdrawals.allocation.stocks,
+        formatPercentage(0),
+        'allYears',
+        hasLegacy ? 0 : -1,
+        highlightPercentiles,
+        {start: 0, end: 1}
+      )
+    case 'asset-allocation-total-portfolio':
+      return _dataPercentiles(
+        type,
+        tpawResult,
+        x => x.totalPortfolio.afterWithdrawals.allocation.stocks,
         formatPercentage(0),
         'allYears',
         hasLegacy ? 0 : -1,
