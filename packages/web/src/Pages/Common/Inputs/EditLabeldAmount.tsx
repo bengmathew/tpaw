@@ -82,6 +82,7 @@ export const EditLabeledAmount = React.memo(
                   value={value}
                   onChange={value => setEntry(entry => (entry.value = value))}
                   decimals={0}
+                  modalLabel={null}
                 />
                 <button
                   className="pl-6 pr-3"

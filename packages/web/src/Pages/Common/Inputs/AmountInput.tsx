@@ -1,70 +1,148 @@
-import _ from 'lodash'
-import React, {useEffect, useState} from 'react'
+import isMobile from 'is-mobile'
+import React, {CSSProperties, useEffect, useRef, useState} from 'react'
+import ReactDOM from 'react-dom'
 import NumberFormat from 'react-number-format'
 
+type Props = {
+  className?: string
+  value: number
+  onChange: (value: number) => void
+  disabled?: boolean
+  prefix?: string
+  suffix?: string
+  decimals: number
+  style?: CSSProperties
+  onTransitionEnd?: () => void
+}
+
 export const AmountInput = React.memo(
+  ({modalLabel, ...props}: Props & {modalLabel: string | null}) => {
+    const [showModal, setShowModal] = useState(false)
+
+    const [internalValue, setInternalValue] = useState(props.value)
+    useEffect(() => setInternalValue(props.value), [props.value])
+    return (
+      <>
+        <_AmountInput
+          {...props}
+          value={props.value}
+          onFocus={() => {
+            if (isMobile()) setShowModal(true)
+          }}
+        />
+
+        {showModal && modalLabel &&
+          ReactDOM.createPortal(
+            <div className="modal-base w-[100vw] h-[100vh] flex flex-col justify-center items-center">
+              <div className="w-full h-full absolute bg-black opacity-60 z-0"></div>
+              <div className="bg-pageBG z-10 w-[calc(100vw-50px)] py-5 px-5 rounded-lg ">
+                <div className="w-">
+                  <div className="">
+                    <h2 className="text-lg font-bold mb-6">{modalLabel}</h2>
+                    <_AmountInput
+                      {...props}
+                      value={internalValue}
+                      onChange={setInternalValue}
+                      onEnter={value => {
+                        props.onChange(internalValue)
+                        setShowModal(false)
+                      }}
+                      focusOnShow
+                    />
+                  </div>
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      className="btn-md "
+                      onClick={() => {
+                        setInternalValue(props.value)
+                        setShowModal(false)
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="btn-md btn-dark"
+                      onClick={() => {
+                        props.onChange(internalValue)
+                        setShowModal(false)
+                      }}
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>,
+            window.document.body
+          )}
+      </>
+    )
+  }
+)
+
+const _AmountInput = React.memo(
   ({
     className = '',
+    style,
     value,
     onChange,
     disabled = false,
     prefix,
     suffix,
     decimals,
-  }: {
-    className?: string
-    value: number
-    onChange: (value: number) => void
-    disabled?: boolean
-    prefix?: string
-    suffix?: string
-    decimals: number
+    onEnter,
+    onFocus,
+    focusOnShow = false,
+    onTransitionEnd,
+  }: Props & {
+    onEnter?: (value: number) => void
+    onFocus?: () => void
+    focusOnShow?: boolean
   }) => {
-    const [internalValue, setInternalValue] = useState(value)
-    useEffect(() => setInternalValue(value), [value])
-
+    const [internalValue, setInternalValue] = useState<number | null>(value)
+    useEffect(() => {
+      setInternalValue(value)
+    }, [value])
     const outputValue = internalValue === null ? 0 : internalValue
 
+    const ref = useRef<NumberFormat<unknown>>(null)
     return (
       <NumberFormat
+        ref={ref}
         className={` ${className} `}
+        style={style}
+        onTransitionEnd={onTransitionEnd}
+        autoFocus={focusOnShow}
         thousandSeparator={true}
+        disabled={disabled}
         prefix={prefix}
         suffix={suffix}
         value={internalValue}
         decimalScale={decimals}
         fixedDecimalScale
         onValueChange={x => {
-          setInternalValue(x.floatValue ?? 0)
+          setInternalValue(x.floatValue === undefined ? null : x.floatValue)
         }}
-        onBlur={() => onChange(outputValue)}
-        onFocus={(e: React.FocusEvent<HTMLInputElement>) =>
+        onBlur={() => {
+          // Don't rely on effect to change interval value. If inputValue is null
+          // and outputValue is 0, and value is 0, inputValue won't update to 0.
+          setInternalValue(outputValue)
+          onChange(outputValue)
+        }}
+        onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
           e.target.setSelectionRange(0, e.target.value.length)
-        }
-        onClick={(e: React.MouseEvent<HTMLInputElement>) =>
-          (e.target as HTMLInputElement).setSelectionRange(
-            0,
-            (e.target as HTMLInputElement).value.length
-          )
-        }
+          onFocus?.()
+        }}
         onKeyDown={(e: React.KeyboardEvent) => {
-          if (e.key === 'Enter') onChange(outputValue)
+          if (e.key === 'Enter') {
+            // Don't rely on effect to change interval value. If inputValue is null
+            // and outputValue is 0, and value is 0, inputValue won't update to 0.
+            setInternalValue(outputValue)
+            onChange(outputValue)
+            onEnter?.(outputValue)
+          }
         }}
       />
     )
   }
 )
-
-const _format = (type: 'currency' | 'percent', x: string) =>
-  type === 'percent'
-    ? x
-    : `$${_.chunk(x.split('').reverse(), 3)
-        .reverse()
-        .map(x => x.reverse().join(''))
-        .join(',')}`
-
-const _clean = (x: string) => x.trim().replaceAll(/[^\d]/g, '')
-
-const _parse = (cleaned: string) => {
-  return cleaned.length === 0 ? 0 : parseInt(cleaned)
-}

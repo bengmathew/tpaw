@@ -456,7 +456,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
       </Head>
       <AppPage
         className="h-screen  bg-planBG overflow-hidden"
-        style={{minHeight: `${windowSize.height}px`}}
+        // style={{minHeight: `${windowSize.height}px`}}
         title="TPAW Planner"
         curr="plan"
       >

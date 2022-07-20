@@ -64,10 +64,11 @@ const _Number = React.memo(
     toYFN,
     range,
     numericalComponent,
+    modalTextInputOnMobile
   }: YearInputProps & {
     numericalComponent: Exclude<ReturnType<typeof useNumericalComponent>, null>
   }) => {
-    const {asNumber, fromNumber} = numericalComponent
+    const {asNumber, fromNumber, modalLabel} = numericalComponent
     return (
       <NumberInput
         className={className}
@@ -96,6 +97,7 @@ const _Number = React.memo(
           )
         }}
         showPlusMinus
+        modalLabel={modalTextInputOnMobile? modalLabel: null}
       />
     )
   }
@@ -110,6 +112,7 @@ const useNumericalComponent = (value: Year | {numYears: number}) => {
       asNumber: value.numYears,
       fromNumber: (numYears: number) => ({numYears}),
       range: {start: 0, end: Number.MAX_SAFE_INTEGER},
+      modalLabel:'Number of Years'
     }
   } else {
     switch (value.type) {
@@ -122,6 +125,7 @@ const useNumericalComponent = (value: Year | {numYears: number}) => {
           asNumber: value.age,
           fromNumber: (age: number) => ({...value, age}),
           range: {start: ages.current, end: ages.max},
+          modalLabel:`${value.person === 'person1'? 'Your':'Your Partner\'s'} Age`
         }
       default:
         noCase(value)

@@ -27,6 +27,7 @@ export const YearInput = React.memo(
     toYFN: (value: Year | {numYears: number}) => number
     range: SimpleRange
     choices: YearType[]
+    modalTextInputOnMobile:boolean
   }) => {
     const [open, setOpen] = useState(false)
 

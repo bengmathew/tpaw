@@ -184,6 +184,7 @@ export const ParamsInputAgeAndRetirementPerson = React.memo(
               )
             }
             showPlusMinus
+            modalLabel="Current Age"
           />
 
           {person.ages.type === 'notRetired' && (
@@ -205,6 +206,7 @@ export const ParamsInputAgeAndRetirementPerson = React.memo(
                   _.clamp(value, person.ages.current + 1, person.ages.max - 1)
                 }
                 showPlusMinus
+                modalLabel="Retirement Age"
               />
             </>
           )}
@@ -230,6 +232,7 @@ export const ParamsInputAgeAndRetirementPerson = React.memo(
               )
             }
             showPlusMinus
+            modalLabel="Max Age"
           />
         </div>
         {person2DeleteError.length > 0 && (

@@ -15,12 +15,14 @@ export const YearRangeInput = React.memo(
     setValue,
     range,
     choices,
+    modalTextInputOnMobile
   }: {
     className?: string
     value: YearRange
     setValue: (year: YearRange) => void
     range: SimpleRange
     choices: {start: YearType[]; end: YearType[]}
+    modalTextInputOnMobile:boolean
   }) => {
     const {params, paramsExt} = useSimulation()
     const {people} = params
@@ -101,6 +103,7 @@ export const YearRangeInput = React.memo(
           location="rangeStart"
           range={range}
           choices={choices.start}
+          modalTextInputOnMobile={modalTextInputOnMobile}
         />
         <YearInput
           className=""
@@ -114,6 +117,7 @@ export const YearRangeInput = React.memo(
               : {start: asYFN(value.start), end: range.end}
           }
           choices={choices.end}
+          modalTextInputOnMobile={modalTextInputOnMobile}
         />
         {errorMsgs.length > 0 ? (
           <div className="bg-red-100 rounded-lg p-2 text-errorFG mt-4">

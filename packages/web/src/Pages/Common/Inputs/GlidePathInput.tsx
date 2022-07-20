@@ -68,6 +68,7 @@ export const GlidePathInput = React.memo(
               clone.start.stocks = stocks
               onChange(clone)
             }}
+            modalLabel="Stock Allocation Now"
           />
           <h2 className=""></h2>
           <_Intermediate
@@ -84,6 +85,7 @@ export const GlidePathInput = React.memo(
               clone.end.stocks = stocks
               onChange(clone)
             }}
+            modalLabel="Stock Allocation at End"
           />
           <_Intermediate
             value={intermediate}
@@ -221,7 +223,7 @@ const _YearAndStocksInput = React.memo(
     onDelete: (() => void) | null
   }) => {
     const {paramsExt} = useSimulation()
-    const {asYFN, years, maxMaxAge} = paramsExt
+    const {asYFN, years, maxMaxAge, yearToStr} = paramsExt
     return (
       <>
         <div className="">
@@ -238,13 +240,15 @@ const _YearAndStocksInput = React.memo(
             }}
             range={{start: asYFN(years.now) + 1, end: asYFN(maxMaxAge) - 1}}
             choices={['lastWorkingYear', 'retirement', 'numericAge']}
+            modalTextInputOnMobile
           />
         </div>
         <_Percent
           className=""
           value={value.stocks}
           onChange={stocks => onChange({...value, stocks})}
-        />
+          modalLabel={`Stock Allocation`}
+          />
         {onDelete && (
           <button className="px-2 py-1.5 -mr-2" onClick={onDelete}>
             <FontAwesomeIcon icon={faTrash} />
@@ -260,10 +264,12 @@ const _Percent = React.memo(
     className = '',
     value,
     onChange,
+    modalLabel,
   }: {
     className?: string
     value: number
     onChange: (x: number) => void
+    modalLabel: string
   }) => {
     return (
       <div className={`${className} flex justify-end items-stretch`}>
@@ -274,6 +280,7 @@ const _Percent = React.memo(
             onChange(_.clamp(stocks / 100, 0, 1))
           }}
           decimals={0}
+          modalLabel={modalLabel}
         />
         <button
           className={`flex items-center ml-2 px-2 `}

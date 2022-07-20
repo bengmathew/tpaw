@@ -8,6 +8,7 @@ import {useSimulation} from '../../App/WithSimulation'
 import {AmountInput} from '../../Common/Inputs/AmountInput'
 import {smartDeltaFnForAmountInput} from '../../Common/Inputs/SmartDeltaFnForAmountInput'
 import {usePlanContent} from '../Plan'
+import { paramsInputLabel } from './Helpers/ParamsInputLabel'
 import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 export const ParamsInputCurrentPortfolioBalance = React.memo(
@@ -38,6 +39,7 @@ export const ParamsInputCurrentPortfolioBalance = React.memo(
               value={params.savingsAtStartOfStartYear}
               onChange={handleChange}
               decimals={0}
+              modalLabel={paramsInputLabel('current-portfolio-balance')}
             />
             <button
               className="ml-2 px-3"

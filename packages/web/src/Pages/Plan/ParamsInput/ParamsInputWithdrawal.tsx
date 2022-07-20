@@ -74,6 +74,16 @@ const _Rate = React.memo(({className = ''}: {className?: string}) => {
     }
   }, [params])
 
+  const rateLabel = withdrawalsStarted
+    ? {
+        normal: 'Percentage of current portfolio balance',
+        title: 'Percentage of current portfolio balance',
+      }
+    : {
+        normal: 'Percentage of savings portfolio at retirement',
+        title: 'Percentage of Savings Portfolio at Retirement',
+      }
+
   const handleChange = (percent: number) =>
     setParams(params => {
       const clone = _.cloneDeep(params)
@@ -95,11 +105,7 @@ const _Rate = React.memo(({className = ''}: {className?: string}) => {
               : faCircleRegular
           }
         />
-        <span className="">
-          {withdrawalsStarted
-            ? 'Percentage of current portfolio balance'
-            : 'Percentage of savings portfolio at retirement'}
-        </span>
+        <span className="">{rateLabel.normal}</span>
       </button>
       {swrWithdrawal.type === 'asPercent' && (
         <div className="ml-5">
@@ -113,6 +119,7 @@ const _Rate = React.memo(({className = ''}: {className?: string}) => {
               onChange={percent => handleChange(percent / 100)}
               suffix="%"
               decimals={1}
+              modalLabel={rateLabel.title}
             />
             <button
               className="ml-2 px-3"
@@ -188,6 +195,7 @@ const _Amount = React.memo(({className = ''}: {className?: string}) => {
               onChange={amount => handleChange(amount)}
               prefix="$"
               decimals={0}
+              modalLabel="Withdrawal Amount"
             />
             <button
               className="ml-2 px-3"

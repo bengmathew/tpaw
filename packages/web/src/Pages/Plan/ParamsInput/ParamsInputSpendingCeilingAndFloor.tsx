@@ -246,6 +246,7 @@ const _SeparateCeilingAndFloor = React.memo(
                   value={params.spendingCeiling}
                   onChange={handleCeilingAmount}
                   decimals={0}
+                  modalLabel="Spending Ceiling"
                 />
                 <button
                   className={`flex items-center pl-4 pr-2 `}
@@ -294,6 +295,7 @@ const _SeparateCeilingAndFloor = React.memo(
                   value={params.spendingFloor}
                   onChange={handleFloorAmount}
                   decimals={0}
+                  modalLabel="Spending Floor"
                 />
                 <button
                   className={`flex items-center  pl-4 pr-2  `}
@@ -371,6 +373,7 @@ const _FixedSpending = React.memo(
               value={value}
               onChange={handleFixedAmount}
               decimals={0}
+              modalLabel="Fixed Spending Amount"
             />
             <button
               className={`flex items-center pl-4 pr-2 `}

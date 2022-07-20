@@ -222,6 +222,8 @@ const _Misc = React.memo(
             value={numRuns}
             onChange={setNumRuns}
             decimals={0}
+
+            modalLabel="Number of Simulations"
           />
         </div>
 

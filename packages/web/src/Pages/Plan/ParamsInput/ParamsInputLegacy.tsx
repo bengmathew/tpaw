@@ -98,6 +98,7 @@ const _TotalTargetCard = React.memo(
             value={params.legacy.total}
             onChange={handleAmount}
             decimals={0}
+            modalLabel="Total Legacy Target"
           />
           <button
             className={`flex items-center px-2 `}

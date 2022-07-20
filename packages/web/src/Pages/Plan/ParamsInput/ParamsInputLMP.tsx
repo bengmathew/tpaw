@@ -2,13 +2,14 @@ import {faMinus, faPlus} from '@fortawesome/pro-regular-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import React from 'react'
-import { getTPAWRunInWorkerSingleton } from '../../../TPAWSimulator/Worker/UseTPAWWorker'
+import {getTPAWRunInWorkerSingleton} from '../../../TPAWSimulator/Worker/UseTPAWWorker'
 import {Contentful} from '../../../Utils/Contentful'
 import {paddingCSSStyle} from '../../../Utils/Geometry'
 import {smartDeltaFn} from '../../../Utils/SmartDeltaFn'
 import {useSimulation} from '../../App/WithSimulation'
 import {AmountInput} from '../../Common/Inputs/AmountInput'
 import {usePlanContent} from '../Plan'
+import {paramsInputLabel} from './Helpers/ParamsInputLabel'
 import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 export const ParamsInputLMP = React.memo(
@@ -44,7 +45,7 @@ const _LMP = React.memo(
     }
 
     const handleAutoLMP = async () => {
-      const clone =_.cloneDeep(params)
+      const clone = _.cloneDeep(params)
       params.withdrawals.lmp = 0
       const runInWorker = getTPAWRunInWorkerSingleton()
       // await runInWorker.runSimulations({canceled:false}, numRuns, clone, )
@@ -71,6 +72,7 @@ const _LMP = React.memo(
             value={params.withdrawals.lmp}
             onChange={handleAmount}
             decimals={0}
+            modalLabel={`${paramsInputLabel('lmp')}`}
           />
           <button
             className={`flex items-center px-2 `}

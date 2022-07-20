@@ -89,6 +89,7 @@ export const EditValueForYearRange = React.memo(
                   value={value}
                   onChange={value => setEntry(entry => (entry.value = value))}
                   decimals={0}
+                  modalLabel={null}
                 />
                 <button
                   className="ml-3 px-3"
@@ -131,6 +132,7 @@ export const EditValueForYearRange = React.memo(
             }
             range={allowableRange}
             choices={choices}
+            modalTextInputOnMobile={false}
           />
         </div>
         <div className="mt-6 flex justify-between">
