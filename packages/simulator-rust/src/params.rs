@@ -11,7 +11,7 @@ pub struct ParamsByYear {
 
 #[derive(Clone)]
 pub struct ParamsTargetAllocationRegularPortfolio {
-    pub tpaw: f64,
+    pub tpaw: Box<[f64]>,
     pub spaw_and_swr: Box<[f64]>,
 }
 

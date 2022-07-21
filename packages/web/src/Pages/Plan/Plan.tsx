@@ -1,19 +1,14 @@
 import {gsap} from 'gsap'
 import _ from 'lodash'
-import {GetStaticProps} from 'next'
 import Head from 'next/head'
 import {useRouter} from 'next/router'
 import React, {useEffect, useMemo, useRef, useState} from 'react'
-import {Contentful} from '../../Utils/Contentful'
 import {createContext} from '../../Utils/CreateContext'
-import {rectExt} from '../../Utils/Geometry'
-import {linearFnFomPoints} from '../../Utils/LinearFn'
 import {useURLParam} from '../../Utils/UseURLParam'
-import {fGet, noCase} from '../../Utils/Utils'
+import {fGet} from '../../Utils/Utils'
 import {useWindowSize} from '../../Utils/WithWindowSize'
 import {AppPage} from '../App/AppPage'
 import {Footer} from '../App/Footer'
-import {headerHeight} from '../App/Header'
 import {useSimulation} from '../App/WithSimulation'
 import {ChartPanel, ChartPanelStateful} from './ChartPanel/ChartPanel'
 import {chartPanelLabel} from './ChartPanel/ChartPanelLabel'
@@ -25,9 +20,19 @@ import {
   ParamsInputType,
 } from './ParamsInput/Helpers/ParamsInputType'
 import {ParamsInput, ParamsInputStateful} from './ParamsInput/ParamsInput'
+import {
+  ParamsInputSummary,
+  ParamsInputSummaryStateful,
+} from './ParamsInput/ParamsInputSummary/ParamsInputSummary2'
+import {PlanContent} from './PlanGetStaticProps'
 import {PlanHeading, PlanHeadingStateful} from './PlanHeading'
+import {planSizing} from './PlanSizing/PlanSizing'
 
 const duration = 300 / 1000
+
+const [PlanContentContext, usePlanContent] =
+  createContext<PlanContent>('PlanContent')
+export {usePlanContent}
 
 type _State = 'summary' | ParamsInputType
 export const Plan = React.memo((planContent: PlanContent) => {
@@ -43,6 +48,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
 
   const headingRef = useRef<PlanHeadingStateful | null>(null)
   const paramsRef = useRef<ParamsInputStateful | null>(null)
+  const inputSummaryRef = useRef<ParamsInputSummaryStateful | null>(null)
   const guideRef = useRef<GuidePanelStateful | null>(null)
   const chartRef = useRef<ChartPanelStateful | null>(null)
   const aspectRatio = windowSize.width / windowSize.height
@@ -83,332 +89,10 @@ export const Plan = React.memo((planContent: PlanContent) => {
     transition: transitionStart,
     target: transitionStart,
   })
-  const _sizing = useMemo(() => {
-    switch (layout) {
-      // ------------------------------------------
-      // -------------- LAPTOP --------------------
-      // ------------------------------------------
-      case 'laptop': {
-        const pad = 30
-        const topFn = (transition: number) =>
-          linearFnFomPoints(0, 50, 1, 70)(transition)
-
-        const headingMarginBottom = 20
-
-        // Guide
-        const guide = (transition: number) => {
-          const y = 0
-          const height = windowSize.height - y
-          const width = windowSize.width * 0.28
-          const x = linearFnFomPoints(0, -width + pad * 0.75, 1, 0)(transition)
-          return {
-            position: rectExt({width, x, height, y}),
-            padding: {left: pad, right: pad * 0.75, top: topFn(1), bottom: pad},
-            headingMarginBottom,
-          }
-        }
-
-        // Input
-        const input = (transition: number) => {
-          const horzCardPadding = linearFnFomPoints(0, 15, 1, 15)(transition)
-          const vertCardPadding = linearFnFomPoints(0, 15, 1, 15)(transition)
-          const totalTop = topFn(transition)
-          // const y = linearFnFomPoints(0, 0, 1, totalTop)(transition)
-          const y = 0
-          const height = windowSize.height - y
-          const x = guide(transition).position.right
-          const width = Math.max(
-            windowSize.width * linearFnFomPoints(0, 0.37, 1, 0.3)(transition),
-            350
-          )
-          const padding = {
-            left: pad * 0.25,
-            right: pad * 0.75,
-            top: totalTop,
-            bottom: pad,
-          }
-
-          return {
-            position: rectExt({width, x, height, y}),
-            padding,
-            cardPadding: {
-              left: horzCardPadding,
-              right: horzCardPadding,
-              top: vertCardPadding,
-              bottom: vertCardPadding,
-            },
-            headingMarginBottom,
-          }
-        }
-
-        // Heading
-        const heading = (transition: number) => {
-          return {
-            position: rectExt({
-              width: input(1).position.right - pad,
-              height: 60,
-              x: guide(transition).position.x + pad,
-              y: 0,
-            }),
-          }
-        }
-
-        // Chart
-        const chart = (transition: number) => {
-          const padTop = 15
-          const positionFn = (transition: number) => {
-            const y = topFn(transition) - padTop
-            const x = input(transition).position.right + pad * 0.25
-            return {
-              y,
-              x,
-              width: windowSize.width - x - pad,
-              height: windowSize.height - 2 * y,
-            }
-          }
-
-          const position = positionFn(transition)
-          const positionAt0 = positionFn(0)
-          const positionAt1 = positionFn(1)
-
-          const heightAt1 = Math.min(
-            positionAt1.height,
-            Math.max(400, positionAt1.width * 0.85)
-          )
-          position.height = linearFnFomPoints(
-            0,
-            positionAt0.height,
-            1,
-            heightAt1
-          )(transition)
-
-          return {
-            position: rectExt(position),
-            padding: {left: 20, right: 20, top: 10, bottom: 10},
-            // 18px is text-lg 20px is text-xl.
-            menuButtonScale: linearFnFomPoints(0, 1, 1, 18 / 20)(transition),
-            cardPadding: {left: 15, right: 15, top: 10, bottom: 10},
-            headingMarginBottom: 10,
-            legacyWidth: linearFnFomPoints(0, 120, 1, 100)(transition),
-            intraGap: linearFnFomPoints(0, 20, 1, 10)(transition),
-          }
-        }
-
-        return {input, guide, chart, heading}
-      }
-
-      // ------------------------------------------
-      // -------------- DESKTOP --------------------
-      // ------------------------------------------
-      case 'desktop': {
-        const pad = 20
-
-        const navHeadingH = 60
-        const navHeadingMarginBottom = 20
-        const chart = (transition: number) => {
-          const inset = 0
-          let height =
-            windowSize.width < 800
-              ? linearFnFomPoints(400, 300, 800, 550)(windowSize.width)
-              : 550
-
-          const padBottom = (transition: number) =>
-            linearFnFomPoints(0, pad, 1, pad / 2)(transition)
-          height -= linearFnFomPoints(
-            0,
-            0,
-            1,
-            (navHeadingH + navHeadingMarginBottom) / 2
-          )(transition)
-          return {
-            position: rectExt({
-              width: windowSize.width - inset * 2,
-              height: height,
-              x: inset,
-              y: inset,
-            }),
-            padding: {
-              left: pad * 2,
-              right: pad * 2,
-              top: pad,
-              bottom: padBottom(transition),
-            },
-            cardPadding: {left: 15, right: 15, top: 10, bottom: 10},
-            headingMarginBottom,
-            menuButtonScale: 1,
-            legacyWidth: 120,
-            intraGap: pad,
-          }
-        }
-
-        const heading = (transition: number) => {
-          return {
-            position: rectExt({
-              width: windowSize.width - pad * 2,
-              height: navHeadingH,
-              x: pad * 2 + linearFnFomPoints(0, 0, 1, 0)(transition),
-              y: chart(transition).position.bottom,
-            }),
-          }
-        }
-
-        const input = (transition: number) => {
-          const y = chart(transition).position.bottom
-          const paddingTop =
-            navHeadingMarginBottom +
-            linearFnFomPoints(
-              0,
-              chart(0).position.bottom,
-              1,
-              heading(1).position.bottom
-            )(transition) -
-            y
-
-          return {
-            position: rectExt({
-              width: linearFnFomPoints(
-                0,
-                windowSize.width,
-                1,
-                windowSize.width * 0.5
-              )(transition),
-              height: windowSize.height - y,
-              x: 0,
-              y,
-            }),
-            padding: {
-              left: pad * 2,
-              right: pad * 1.75,
-              top: paddingTop,
-              bottom: linearFnFomPoints(0, 0, 1, pad)(transition),
-            },
-            cardPadding: {left: 15, right: 15, top: 15, bottom: 15},
-            headingMarginBottom,
-          }
-        }
-
-        const headingMarginBottom = 10
-
-        const guide = (transition: number) => {
-          const inputAt1 = input(1)
-          return {
-            position: rectExt({
-              width: windowSize.width - inputAt1.position.right,
-              height: inputAt1.position.height,
-              x: inputAt1.position.right,
-              y: input(transition).position.y,
-            }),
-            padding: {
-              left: pad * 0.25,
-              right: pad * 2,
-              top: inputAt1.padding.top,
-              bottom: pad,
-            },
-            cardPadding: {left: 0, right: 0, top: 0, bottom: 0},
-            headingMarginBottom,
-          }
-        }
-
-        return {input, guide, chart, heading}
-      }
-      // ------------------------------------------
-      // -------------- MOBILE --------------------
-      // ------------------------------------------
-      case 'mobile': {
-        const pad = 10
-
-        const navHeadingH = 40
-        const navHeadingMarginBottom = 10
-        const chart = (transition: number) => {
-          let height = linearFnFomPoints(375, 330, 415, 355)(windowSize.width)
-
-          height -= linearFnFomPoints(
-            0,
-            0,
-            1,
-            (navHeadingH + navHeadingMarginBottom) * 0.25
-          )(transition)
-          return {
-            position: rectExt({width: windowSize.width, height, x: 0, y: 0}),
-            padding: {
-              left: pad,
-              right: pad,
-              top: headerHeight + 5,
-              bottom: pad,
-            },
-            cardPadding: {left: 15, right: 15, top: 10, bottom: 10},
-            headingMarginBottom,
-            menuButtonScale: 1,
-            legacyWidth: 100,
-            intraGap: pad,
-          }
-        }
-
-        const heading = (transition: number) => {
-          return {
-            position: rectExt({
-              width: windowSize.width - pad * 2,
-              height: navHeadingH,
-              x: pad * 2,
-              y: chart(transition).position.bottom + 10,
-            }),
-          }
-        }
-
-        const input = (transition: number) => {
-          const y = linearFnFomPoints(
-            0,
-            chart(0).position.bottom,
-            1,
-            heading(1).position.bottom
-          )(transition)
-          const horzPad = linearFnFomPoints(0, pad, 1, pad)(transition)
-          return {
-            position: rectExt({
-              width: windowSize.width,
-              height: windowSize.height - y,
-              x: 0,
-              y,
-            }),
-            padding: {
-              left: horzPad,
-              right: horzPad,
-              top: navHeadingMarginBottom,
-              bottom: 0,
-            },
-            cardPadding: {left: 10, right: 10, top: 10, bottom: 10},
-            headingMarginBottom: 10,
-          }
-        }
-
-        const headingMarginBottom = 10
-
-        const guide = (transition: number) => {
-          const pad = 10
-          const height = 50
-          const width = 100
-          return {
-            position: rectExt({
-              width,
-              height,
-              x: windowSize.width - width - pad,
-              y:
-                windowSize.height -
-                height -
-                pad +
-                linearFnFomPoints(0, height + pad, 1, 0)(transition),
-            }),
-            padding: {left: pad, right: pad, top: pad, bottom: pad},
-            cardPadding: {left: 0, right: 0, top: 0, bottom: 0},
-            headingMarginBottom: 0,
-          }
-        }
-        return {input, guide, chart, heading}
-      }
-      default:
-        noCase(layout)
-    }
-  }, [layout, windowSize])
+  const _sizing = useMemo(
+    () => planSizing(layout, windowSize),
+    [layout, windowSize]
+  )
 
   const [chartPanelType, setChartPanelType] = useChartPanelTypeState()
 
@@ -430,6 +114,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
         const {transition} = this.targets()[0] as {transition: number}
         fGet(headingRef.current).setTransition(transition)
         fGet(paramsRef.current).setTransition(transition)
+        fGet(inputSummaryRef.current).setTransition(transition)
         fGet(guideRef.current).setTransition(transition)
         fGet(chartRef.current).setTransition(transition, target)
       },
@@ -456,7 +141,6 @@ export const Plan = React.memo((planContent: PlanContent) => {
       </Head>
       <AppPage
         className="h-screen  bg-planBG overflow-hidden"
-        // style={{minHeight: `${windowSize.height}px`}}
         title="TPAW Planner"
         curr="plan"
       >
@@ -476,12 +160,19 @@ export const Plan = React.memo((planContent: PlanContent) => {
           ref={chartRef}
           transitionRef={transitionRef}
         />
+        <ParamsInputSummary
+          layout={layout}
+          state={state}
+          setState={setState}
+          sizing={_sizing.inputSummary}
+          transitionRef={transitionRef}
+          ref={inputSummaryRef}
+        />
         <ParamsInput
           layout={layout}
           sizing={_sizing.input}
           transitionRef={transitionRef}
           paramInputType={paramType}
-          state={state}
           setState={setState}
           chartType={chartPanelType}
           setChartType={setChartPanelType}
@@ -503,194 +194,4 @@ export const Plan = React.memo((planContent: PlanContent) => {
       </AppPage>
     </PlanContentContext.Provider>
   )
-})
-
-type _FetchedInline = Awaited<ReturnType<typeof Contentful.fetchInline>>
-type _Body = {body: _FetchedInline}
-type _Intro = {intro: _FetchedInline}
-type _Menu = {menu: _FetchedInline}
-type _IntroAndBody = _Body & _Intro
-type _IntroAndBodyAndMenu = _IntroAndBody & _Menu
-
-export type PlanContent = {
-  'age-and-retirement': {
-    introRetired: _FetchedInline
-    introNotRetired: _FetchedInline
-    body: _FetchedInline
-  }
-  'current-portfolio-balance': _IntroAndBody
-  'income-during-retirement': _IntroAndBody
-  'future-savings': _IntroAndBody
-  'extra-spending': _IntroAndBody
-  'spending-ceiling-and-floor': _IntroAndBody
-  legacy: {
-    introAmount: _FetchedInline
-    introAssets: _FetchedInline
-    body: _FetchedInline
-  }
-  'stock-allocation': _IntroAndBody
-  'spending-tilt': _IntroAndBody
-  lmp: _IntroAndBody
-  'withdrawal': _IntroAndBody
-  'compare-strategies': _IntroAndBody & {
-    tpawIntro: _FetchedInline
-    spawIntro: _FetchedInline
-    sharpeRatioIntro: _FetchedInline
-  }
-  'expected-returns': _IntroAndBody
-  inflation: _IntroAndBody
-  simulation: {
-    body: _FetchedInline
-    introSampling: _FetchedInline
-    introSamplingMonteCarlo: _FetchedInline
-    introSamplingHistorical: _FetchedInline
-  }
-  dev: Record<string, never>
-  chart: {
-    spending: {
-      total: _IntroAndBodyAndMenu
-      regular: _IntroAndBodyAndMenu
-      discretionary: _IntroAndBodyAndMenu
-      essential: _IntroAndBodyAndMenu
-    }
-    portfolio: _IntroAndBodyAndMenu
-    'asset-allocation-savings-portfolio': _IntroAndBodyAndMenu
-    'asset-allocation-total-portfolio': _IntroAndBodyAndMenu
-    withdrawalRate: _IntroAndBodyAndMenu
-    sharpeRatio: _IntroAndBody
-  }
-}
-const [PlanContentContext, usePlanContent] =
-  createContext<PlanContent>('PlanContent')
-export {usePlanContent}
-export const planGetStaticProps: GetStaticProps<
-  PlanContent
-> = async context => ({
-  props: {
-    'age-and-retirement': {
-      introRetired: await Contentful.fetchInline('1dZPTbtQfLz3cyDrMGrAQB'),
-      introNotRetired: await Contentful.fetchInline('43EyTxBVHWOPcA6rgBpsnG'),
-      body: await Contentful.fetchInline('5EtkcdtSIg0rS8AETEsgnm'),
-    },
-    'current-portfolio-balance': {
-      intro: await Contentful.fetchInline('3iLyyrQAhHnzuc4IdftWT3'),
-      body: await Contentful.fetchInline('5RE7wTwvtTAsF1sWpKrFW2'),
-    },
-    'income-during-retirement': {
-      intro: await Contentful.fetchInline('3OqUTPDVRGzgQcVkJV7Lew'),
-      body: await Contentful.fetchInline('1MHvhL8ImdOL9FxE5qxK6F'),
-    },
-    'future-savings': {
-      intro: await Contentful.fetchInline('2rPr5mMTcScftXhletDeb4'),
-      body: await Contentful.fetchInline('5aJN2Z4tZ7zQ6Tw69VelRt'),
-    },
-    'extra-spending': {
-      intro: await Contentful.fetchInline('01kv7sKzniBagrcIwX86tJ'),
-      body: await Contentful.fetchInline('5zDvtk4dDOonIkoIyOeQH8'),
-    },
-    'spending-ceiling-and-floor': {
-      intro: await Contentful.fetchInline('19Llaw2GVZhEfBTfGzE7Ns'),
-      body: await Contentful.fetchInline('6hEbQkY7ctTpMpGV6fBBu2'),
-    },
-    legacy: {
-      introAmount: await Contentful.fetchInline('aSdQuriQu9ztfs812MRJj'),
-      introAssets: await Contentful.fetchInline('5glA8ryQcNh7SHP9ZlkZ2y'),
-      body: await Contentful.fetchInline('5nCHpNy6ReAEtBQTvDTwBf'),
-    },
-
-    'stock-allocation': {
-      body: await Contentful.fetchInline('3ofgPmJFLgtJpjl26E7jpB'),
-      intro: await Contentful.fetchInline('xWXcgVScUfdK1PaTNQeKz'),
-    },
-    'spending-tilt': {
-      body: await Contentful.fetchInline('6Dv02w4fUuFQUjyWxnR7Vq'),
-      intro: await Contentful.fetchInline('4UwuCPjuTz3SbwUcZIrLEG'),
-    },
-    lmp: {
-      body: await Contentful.fetchInline('3ofgPmJFLgtJpjl26E7jpB'),
-      intro: await Contentful.fetchInline('5FiPQS04F4uFngEMJium3B'),
-    },
-    'withdrawal': {
-      body: await Contentful.fetchInline('7eGRhX0KpxK2wKCzDTHLOs'),
-      intro: await Contentful.fetchInline('3H8rgiVzmnyD6H3ZUjvgp8'),
-    },
-    'compare-strategies': {
-      intro: await Contentful.fetchInline('52f9yaDqUCBBg3mkqGdZPc'),
-      tpawIntro: await Contentful.fetchInline('4qYue9K3cSpEkSrAhIn7AV'),
-      spawIntro: await Contentful.fetchInline('5W26KpQeXY9nC3FgKioesF'),
-      sharpeRatioIntro: await Contentful.fetchInline('7wNIfORQHqumvZG6wWcmqG'),
-      body: await Contentful.fetchInline('5F0tZKpZ2SPvljHIGkPYmy'),
-    },
-    'expected-returns': {
-      intro: await Contentful.fetchInline('2NxIclWQoxuk0TMVH0GjhR'),
-      body: await Contentful.fetchInline('2GxHf6q4kfRrz6AnFLniFh'),
-    },
-    inflation: {
-      intro: await Contentful.fetchInline('76BgIpwX9yZetMGungnfwC'),
-      body: await Contentful.fetchInline('6LqbR3PBA1uDe9xU2V1hk9'),
-    },
-    simulation: {
-      body: await Contentful.fetchInline('5alyO5geIHnQsw8ZMpbyf5'),
-      introSampling: await Contentful.fetchInline('6EwnBJaN5FYISgyPdSQe7U'),
-      introSamplingMonteCarlo: await Contentful.fetchInline(
-        '4ysOynT6PPgYFnY1BaLuy5'
-      ),
-      introSamplingHistorical: await Contentful.fetchInline(
-        '19JANDD3uLnVdh52HBMj6U'
-      ),
-    },
-    dev: {},
-    chart: {
-      spending: {
-        total: {
-          intro: await Contentful.fetchInline('6MH8oPq7ivMYJ4Ii8ZMtwg'),
-          body: await Contentful.fetchInline('4tlCDgSlcKXfO8hfmZvBoF'),
-          menu: await Contentful.fetchInline('21U0B92yz78PBR2YlX1CJP'),
-        },
-        regular: {
-          intro: await Contentful.fetchInline('3e3y2gADSUszUxSqWvC2EV'),
-          body: await Contentful.fetchInline('14KuXhGuaRok2dW0ppyArU'),
-          menu: await Contentful.fetchInline('2tmRByrkc7dPNVOS63CUy3'),
-        },
-        discretionary: {
-          intro: await Contentful.fetchInline('3pcwRLnI1BaBm0Hqv0Zyvg'),
-          body: await Contentful.fetchInline('4QRDrEzc3uJHNI4SzRJ6r7'),
-          menu: await Contentful.fetchInline('7F7JGrPs7ShQ2G4GyEkJ75'),
-        },
-        essential: {
-          intro: await Contentful.fetchInline('3oWMTqbZARYjiZ2G9fuwTb'),
-          body: await Contentful.fetchInline('4Vd9Ay5NnEodIMiBl83Vfs'),
-          menu: await Contentful.fetchInline('7xqfxGtRc4pHZFJvR9zaY1'),
-        },
-      },
-      portfolio: {
-        intro: await Contentful.fetchInline('5KzxtC01WrdXnahFd98zet'),
-        body: await Contentful.fetchInline('2iQeojVfV3Fw18WV4TRATR'),
-        menu: await Contentful.fetchInline('7cRJH6TdeEPpcom84B8Dch'),
-      },
-      'asset-allocation-savings-portfolio': {
-        intro: await Contentful.fetchInline('247ji3WlKEyiMcthzbcaUX'),
-        body: await Contentful.fetchInline('1r6sBwyo6ulnzLQwQOM05L'),
-        menu: await Contentful.fetchInline('4OsYFfjGHmGn8HucKv2thb'),
-      },
-      'asset-allocation-total-portfolio': {
-        intro: await Contentful.fetchInline('1uowfKS8e8RqIANAucKTkX'),
-        body: await Contentful.fetchInline('1k57vBTerLEOp5ADAxDxoV'),
-        menu: await Contentful.fetchInline('8MHwQEcXljZlEIcZrQRKd'),
-      },
-      withdrawalRate: {
-        intro: await Contentful.fetchInline('7nDVZLSFxZcdHWmuSqzo6o'),
-        body: await Contentful.fetchInline('79KDyYdPfxwl7BceHPECCe'),
-        menu: await Contentful.fetchInline('42bT4OaF5u9GXukOHXHnWz'),
-      },
-
-      // This is never show because it is displayed only on detail screen,
-      // but it is here to keep the code simple and uniform. Resusing content
-      // from above.
-      sharpeRatio: {
-        intro: await Contentful.fetchInline('7nDVZLSFxZcdHWmuSqzo6o'),
-        body: await Contentful.fetchInline('79KDyYdPfxwl7BceHPECCe'),
-      },
-    },
-  },
 })

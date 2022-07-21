@@ -60,7 +60,9 @@ export function processTPAWParams(paramsExt: TPAWParamsExt) {
   const targetAllocation = {
     ...params.targetAllocation,
     regularPortfolio: {
-      ...params.targetAllocation.regularPortfolio,
+      forTPAW: _normalizeGlidePath(
+        params.targetAllocation.regularPortfolio.forTPAW
+      ),
       forSPAWAndSWR: _normalizeGlidePath(
         params.targetAllocation.regularPortfolio.forSPAWAndSWR
       ),

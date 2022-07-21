@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import React from 'react'
+import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
 import {Contentful} from '../../../Utils/Contentful'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
 import {preciseRange} from '../../../Utils/PreciseRange'
@@ -13,8 +14,6 @@ import {ParamsInputBody, ParamsInputBodyPassThruProps} from './ParamsInputBody'
 
 export const ParamsInputStockAllocation = React.memo(
   (props: ParamsInputBodyPassThruProps) => {
-    const content = usePlanContent()['stock-allocation']
-
     return (
       <ParamsInputBody {...props} headingMarginLeft="reduced">
         <div className="">
@@ -46,33 +45,85 @@ const _TotalStockAllocationCard = React.memo(
         swr={false}
       >
         <h2 className="font-bold text-lg">
-          Stock Allocation on Total Portfolio
+          Stock Allocation of Total Portfolio
         </h2>
         <div className="mt-2">
-          <Contentful.RichText body={content.intro[params.strategy]} p="p-base" />
+          <Contentful.RichText
+            body={content.intro[params.strategy]}
+            p="p-base"
+          />
         </div>
-        <SliderInput
-          className={`-mx-3 mt-2 `}
-          height={60}
-          pointers={[
-            {
-              value: params.targetAllocation.regularPortfolio.forTPAW.stocks,
-              type: 'normal',
-            },
-          ]}
-          onChange={([value]) =>
+        <div
+          className="mt-2 mb-2 grid items-center gap-x-3"
+          style={{grid: 'auto/auto 1fr'}}
+        >
+          <h2 className="font-">Now</h2>
+          <SliderInput
+            className={`-mx-3 mt-2 `}
+            height={60}
+            pointers={[
+              {
+                value:
+                  params.targetAllocation.regularPortfolio.forTPAW.start.stocks,
+                type: 'normal',
+              },
+            ]}
+            onChange={([value]) =>
+              setParams(params => {
+                const p = _.cloneDeep(params)
+                p.targetAllocation.regularPortfolio.forTPAW.start.stocks = value
+                return p
+              })
+            }
+            formatValue={formatPercentage(0)}
+            domain={preciseRange(0, 1, 0.01, 2).map((value, i) => ({
+              value: value,
+              tick: i % 10 === 0 ? 'large' : i % 2 === 0 ? 'small' : 'none',
+            }))}
+          />
+          <h2 className="font-">Max Age</h2>
+          <SliderInput
+            className={`-mx-3 mt-2 `}
+            height={60}
+            pointers={[
+              {
+                value:
+                  params.targetAllocation.regularPortfolio.forTPAW.end.stocks,
+                type: 'normal',
+              },
+            ]}
+            onChange={([value]) =>
+              setParams(params => {
+                const p = _.cloneDeep(params)
+                p.targetAllocation.regularPortfolio.forTPAW.end.stocks = value
+                return p
+              })
+            }
+            formatValue={formatPercentage(0)}
+            domain={preciseRange(0, 1, 0.01, 2).map((value, i) => ({
+              value: value,
+              tick: i % 10 === 0 ? 'large' : i % 2 === 0 ? 'small' : 'none',
+            }))}
+          />
+        </div>
+        <button
+          className="mt-4 underline"
+          onClick={() => {
             setParams(params => {
               const p = _.cloneDeep(params)
-              p.targetAllocation.regularPortfolio.forTPAW.stocks = value
+              p.targetAllocation.regularPortfolio.forTPAW =
+                getDefaultParams().targetAllocation.regularPortfolio.forTPAW
               return p
             })
-          }
-          formatValue={formatPercentage(0)}
-          domain={preciseRange(0, 1, 0.01, 2).map((value, i) => ({
-            value: value,
-            tick: i % 10 === 0 ? 'large' : i % 2 === 0 ? 'small' : 'none',
-          }))}
-        />
+          }}
+        >
+          Reset to Default
+        </button>
+        {/* <h2 className="mt-6">Graph of this asset allocation:</h2>
+        <AssetAllocationChart
+          className="mt-4 "
+          type="asset-allocation-total-portfolio"
+        /> */}
         {/* {params.strategy === 'TPAW' && (
           <div className="p-base mt-2">
             <span className="bg-gray-300 px-2 rounded-lg ">Note</span> The stock
@@ -112,10 +163,13 @@ export const _SavingsStockAllocationCard = React.memo(
         swr
       >
         <h2 className="font-bold text-lg">
-          Stock Allocation on Savings Portfolio
+          Stock Allocation of Savings Portfolio
         </h2>
         <div className="mt-2">
-          <Contentful.RichText body={content.intro[params.strategy]} p="p-base" />
+          <Contentful.RichText
+            body={content.intro[params.strategy]}
+            p="p-base"
+          />
         </div>
         <GlidePathInput
           className="mt-4 border border-gray-300 p-2 rounded-lg"
@@ -129,7 +183,10 @@ export const _SavingsStockAllocationCard = React.memo(
           }
         />
         <h2 className="mt-6">Graph of this asset allocation:</h2>
-        <AssetAllocationChart className="mt-4 " />
+        <AssetAllocationChart
+          className="mt-4 "
+          type="asset-allocation-savings-portfolio"
+        />
       </ParamsInputStrategyConditionCard>
     )
   }

@@ -96,7 +96,7 @@ pub fn run(
     historical_returns_stocks: Box<[f64]>,
     historical_returns_bonds: Box<[f64]>,
     current_savings: f64,
-    target_allocation_regular_portfolio_tpaw: f64,
+    target_allocation_regular_portfolio_tpaw: Box<[f64]>,
     target_allocation_regular_portfolio_spaw: Box<[f64]>,
     target_allocation_legacy_portfolio: f64,
     swr_withdrawal_type: ParamsSWRWithdrawalType,

@@ -230,14 +230,17 @@ const _SectionSummary = React.memo(({type}: {type: ParamsInputType}) => {
         <>
           {params.strategy === 'TPAW' ? (
             <h2>
-              On Total Portfolio:{' '}
-              {formatPercentage(0)(
-                params.targetAllocation.regularPortfolio.forTPAW.stocks
-              )}
+              <h2>Of Total Portfolio:</h2>
+              <_GlidePath
+                className=""
+                glidePath={
+                  params.targetAllocation.regularPortfolio.forTPAW
+                }
+              />
             </h2>
           ) : (
             <div className="">
-              <h2>On Savings Portfolio:</h2>
+              <h2>Of Savings Portfolio:</h2>
               <_GlidePath
                 className=""
                 glidePath={
@@ -434,14 +437,14 @@ const _GlidePath = React.memo(
         <_GlidePathIntermediate
           intermediate={intermediate.filter(x => x.issue === 'before')}
         />
-        <h2>Start</h2>
+        <h2>Now</h2>
         <h2>{formatPercentage(0)(glidePath.start.stocks)}</h2>
         <_GlidePathIntermediate
           intermediate={intermediate.filter(
             x => x.issue !== 'before' && x.issue !== 'after'
           )}
         />
-        <h2>End</h2>
+        <h2>Max Age</h2>
         <h2>{formatPercentage(0)(glidePath.end.stocks)}</h2>
         <_GlidePathIntermediate
           intermediate={intermediate.filter(x => x.issue === 'after')}

@@ -25,7 +25,7 @@ pub fn run(params: &Params, result: &mut RunResult) {
     params_for_bond_returns
         .target_allocation
         .regular_portfolio
-        .tpaw = 0.0;
+        .tpaw = vec![0.0; params.num_years].into_boxed_slice();
     params_for_bond_returns
         .target_allocation
         .regular_portfolio
@@ -71,10 +71,35 @@ pub fn run_using_expected_returns(
             };
             let (
                 pre_withdrawal,
+                _savings_portfolio_after_contributions,
                 savings_portfolio_after_withdrawals,
                 savings_portfolio_at_end,
                 curr_pass_forward,
             ) = run_for_single_year_using_fixed_returns(&context, &pass_forward);
+
+            // if let Some(x) = &params.test {
+            //     let ours = &savings_portfolio_at_end.balance;
+            //     let truth = x.truth[year_index];
+            //     let diff = ours - truth;
+            //     web_sys::console::log_1(
+            //         &format!(
+            //             "{:3} {:15.2} {:15.2} {:15.2}",
+            //             year_index, diff, ours, truth
+            //         )
+            //         .into(),
+            //     );
+            //     if year_index == 30 {
+            //         web_sys::console::log_1(
+            //             &wasm_bindgen::JsValue::from_serde(&(
+            //                 &savings_portfolio_after_contributions,
+            //                 &savings_portfolio_after_withdrawals,
+            //                 &savings_portfolio_at_end,
+            //             ))
+            //             .unwrap(),
+            //         );
+            //     }
+            // }
+
             balance_starting = savings_portfolio_at_end.balance;
             pass_forward = curr_pass_forward;
             return (
@@ -144,6 +169,7 @@ fn run_for_single_year_using_fixed_returns(
     pass_forward: &SingleYearPassForward,
 ) -> (
     SingleYearPreWithdrawal,
+    portfolio_over_year::AfterContributions,
     portfolio_over_year::AfterWithdrawals,
     portfolio_over_year::End,
     SingleYearPassForward,
@@ -192,6 +218,7 @@ fn run_for_single_year_using_fixed_returns(
 
     (
         pre_withdrawal,
+        savings_portfolio_after_contributions,
         savings_portfolio_after_withdrawals,
         savings_portfolio_at_end,
         curr_pass_forward,
@@ -249,13 +276,20 @@ fn run_for_single_year_using_historical_returns(
         &savings_portfolio_after_withdrawals,
     );
 
-    let stock_allocation_on_total_portfolio = savings_portfolio_at_end.stock_allocation_amount
+    let mut stock_allocation_on_total_portfolio = savings_portfolio_at_end.stock_allocation_amount
         / (savings_portfolio_after_withdrawals.balance
             + pre_calculations
                 .tpaw
                 .net_present_value
                 .savings
                 .without_current_year[year_index]);
+    stock_allocation_on_total_portfolio = if f64::is_nan(stock_allocation_on_total_portfolio)
+        || f64::is_infinite(stock_allocation_on_total_portfolio)
+    {
+        0.0
+    } else {
+        stock_allocation_on_total_portfolio
+    };
 
     let year_run_index = (year_index * (params.end_run - params.start_run)) + run_index;
     result.by_yfn_by_run_balance_start[year_run_index] = balance_starting;
@@ -302,14 +336,15 @@ fn run_for_single_year_using_historical_returns(
     //         .into(),
     //     );
     //     if year_index == 0 {
-    // web_sys::console::log_1(
-    //     &wasm_bindgen::JsValue::from_serde(&(
-    //         &savings_portfolio_after_contributions,
-    //         &savings_portfolio_after_withdrawals,
-    //         &savings_portfolio_at_end,
-    //     ))
-    //     .unwrap(),
-    // );
+    //         web_sys::console::log_1(
+    //             &wasm_bindgen::JsValue::from_serde(&(
+    //                 &savings_portfolio_after_contributions,
+    //                 &savings_portfolio_after_withdrawals,
+    //                 &savings_portfolio_at_end,
+    //                 &returns
+    //             ))
+    //             .unwrap(),
+    //         );
     //     }
     // }
 
@@ -377,8 +412,8 @@ fn calculate_pre_withdrawal(
             let elasticity_of_wealth_wrt_stocks =
                 if pre_withdrawal_from_using_expected_returns.wealth == 0.0 {
                     (params.target_allocation.legacy_portfolio
-                        + params.target_allocation.regular_portfolio.tpaw
-                        + params.target_allocation.regular_portfolio.tpaw)
+                        + params.target_allocation.regular_portfolio.tpaw[year_index]
+                        + params.target_allocation.regular_portfolio.tpaw[year_index])
                         / 3.0
                 } else {
                     (pre_withdrawal_from_using_expected_returns
@@ -390,21 +425,21 @@ fn calculate_pre_withdrawal(
                             .present_value_of_spending
                             .withdrawals_discretionary
                             / pre_withdrawal_from_using_expected_returns.wealth)
-                            * params.target_allocation.regular_portfolio.tpaw
+                            * params.target_allocation.regular_portfolio.tpaw[year_index]
                         + (pre_withdrawal_from_using_expected_returns
                             .present_value_of_spending
                             .withdrawals_regular
                             / pre_withdrawal_from_using_expected_returns.wealth)
-                            * params.target_allocation.regular_portfolio.tpaw
+                            * params.target_allocation.regular_portfolio.tpaw[year_index]
                 };
 
-            let elasticity_of_extra_withdrawal_goals_wrt_wealth = if elasticity_of_wealth_wrt_stocks
-                == 0.0
-            {
-                0.0
-            } else {
-                params.target_allocation.regular_portfolio.tpaw / elasticity_of_wealth_wrt_stocks
-            };
+            let elasticity_of_extra_withdrawal_goals_wrt_wealth =
+                if elasticity_of_wealth_wrt_stocks == 0.0 {
+                    0.0
+                } else {
+                    params.target_allocation.regular_portfolio.tpaw[year_index]
+                        / elasticity_of_wealth_wrt_stocks
+                };
 
             let elasticity_of_legacy_goals_wrt_wealth = if elasticity_of_wealth_wrt_stocks == 0.0 {
                 0.0
@@ -488,7 +523,10 @@ fn calculate_target_withdrawals(
     _pass_forward: &SingleYearPassForward,
 ) -> TargetWithdrawals {
     let SingleYearContext {
-        params, year_index, ..
+        params,
+        year_index,
+        pre_calculations,
+        ..
     } = *context;
     let SingleYearPreWithdrawal {
         present_value_of_spending,
@@ -501,17 +539,21 @@ fn calculate_target_withdrawals(
     let regular_without_lmp = if !withdrawal_started {
         0.0
     } else {
-        let p = present_value_of_spending.withdrawals_regular;
-        let r = params.expected_returns.stocks * params.target_allocation.regular_portfolio.tpaw
-            + params.expected_returns.bonds
-                * (1.0 - params.target_allocation.regular_portfolio.tpaw);
-        let g = params.spending_tilt;
-        let n = params.num_years - year_index;
-        if f64::abs(r - g) < 0.0000000001 {
-            p / f64::from(n as i32)
-        } else {
-            (p * (r - g)) / ((1.0 - f64::powi((1.0 + g) / (1.0 + r), n as i32)) * (1.0 + r))
-        }
+        // let p = present_value_of_spending.withdrawals_regular;
+        // let r = params.expected_returns.stocks
+        //     * params.target_allocation.regular_portfolio.tpaw[year_index]
+        //     + params.expected_returns.bonds
+        //         * (1.0 - params.target_allocation.regular_portfolio.tpaw[year_index]);
+        // let g = params.spending_tilt;
+        // let n = params.num_years - year_index;
+        // if f64::abs(r - g) < 0.0000000001 {
+        //     p / f64::from(n as i32)
+        // } else {
+        //     (p * (r - g)) / ((1.0 - f64::powi((1.0 + g) / (1.0 + r), n as i32)) * (1.0 + r))
+        // }
+
+        present_value_of_spending.withdrawals_regular
+            / pre_calculations.tpaw.cumulative_1_plus_g_over_1_plus_r[year_index]
     };
 
     // Should be 0 if withdrawal has not started.
@@ -574,8 +616,25 @@ fn calculate_stock_allocation(
 
     let stocks_target = present_value_of_desired_legacy * params.target_allocation.legacy_portfolio
         + present_value_of_discretionary_withdrawals
-            * params.target_allocation.regular_portfolio.tpaw
-        + present_value_of_regular_withdrawals * params.target_allocation.regular_portfolio.tpaw;
+            * params.target_allocation.regular_portfolio.tpaw[year_index]
+        + present_value_of_regular_withdrawals
+            * params.target_allocation.regular_portfolio.tpaw[year_index];
+
+    // if year_index == 0 {
+    //     web_sys::console::log_1(
+    //         &wasm_bindgen::JsValue::from_serde(&(
+    //             &stocks_target,
+    //             &present_value_of_desired_legacy,
+    //             &params.target_allocation.legacy_portfolio,
+    //             &present_value_of_discretionary_withdrawals,
+    //             &present_value_of_regular_withdrawals,
+    //             &params.target_allocation.regular_portfolio.tpaw[year_index]
+
+
+    //         ))
+    //         .unwrap(),
+    //     );
+    // }
 
     let stocks_achieved = f64::min(savings_portfolio_after_withdrawals.balance, stocks_target);
     let stock_allocation = if savings_portfolio_after_withdrawals.balance > 0.0 {

@@ -30,6 +30,7 @@ pub struct TPAWNetPresentValue {
 
 pub struct PreCalculationsForTPAW {
     pub net_present_value: TPAWNetPresentValue,
+    pub cumulative_1_plus_g_over_1_plus_r: Vec<f64>,
 }
 
 pub struct PreCalculations {
@@ -48,8 +49,14 @@ fn pre_calculations_for_tpaw(params: &Params) -> PreCalculationsForTPAW {
     let expected_returns = blend_returns(&params.expected_returns);
 
     let bonds_rate = vec![expected_returns(0.0); num_years];
-    let regular_rate =
-        vec![expected_returns(params.target_allocation.regular_portfolio.tpaw); num_years];
+
+    let regular_rate: Vec<f64> = params
+        .target_allocation
+        .regular_portfolio
+        .tpaw
+        .iter()
+        .map(|x| expected_returns(*x))
+        .collect();
 
     let savings = get_net_present_value(&bonds_rate, &params.by_year.savings);
     let lmp = get_net_present_value(&bonds_rate, &params.lmp);
@@ -57,7 +64,7 @@ fn pre_calculations_for_tpaw(params: &Params) -> PreCalculationsForTPAW {
     let discretionary =
         get_net_present_value(&regular_rate, &params.by_year.withdrawals_discretionary);
 
-    PreCalculationsForTPAW {
+    let result = PreCalculationsForTPAW {
         net_present_value: TPAWNetPresentValue {
             savings,
             withdrawals: NetPresentValueForWithdrawals {
@@ -66,7 +73,12 @@ fn pre_calculations_for_tpaw(params: &Params) -> PreCalculationsForTPAW {
                 discretionary,
             },
         },
-    }
+        cumulative_1_plus_g_over_1_plus_r: cumulative_1_plus_g_over_1_plus_r(
+            &regular_rate,
+            params.spending_tilt,
+        ),
+    };
+    return result;
 }
 
 fn pre_calculations_for_spaw(params: &Params) -> PreCalculationsForSPAW {

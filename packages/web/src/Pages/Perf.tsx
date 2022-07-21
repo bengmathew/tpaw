@@ -85,7 +85,7 @@ export const Perf = React.memo(() => {
 
 const params = processTPAWParams(
   extendTPAWParams({
-    v: 11,
+    v: 12,
     strategy: 'TPAW',
     people: {
       withPartner: false,
@@ -95,13 +95,17 @@ const params = processTPAWParams(
       },
     },
     returns: {
-      expected: {type:'suggested'},
+      expected: {type: 'suggested'},
       historical: {type: 'default', adjust: {type: 'toExpected'}},
     },
     inflation: {type: 'suggested'},
     targetAllocation: {
       regularPortfolio: {
-        forTPAW: {stocks: 0.35},
+        forTPAW: {
+          start: {stocks: 0.35},
+          intermediate: [],
+          end: {stocks: 0.35},
+        },
         forSPAWAndSWR: {
           start: {stocks: 0.5},
           intermediate: [],

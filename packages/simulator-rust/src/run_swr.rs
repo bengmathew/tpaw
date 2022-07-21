@@ -25,7 +25,7 @@ pub fn run(params: &Params, result: &mut RunResult) {
     params_for_bond_returns
         .target_allocation
         .regular_portfolio
-        .tpaw = 0.0;
+        .tpaw = vec![0.0; params.num_years].into_boxed_slice();
     params_for_bond_returns
         .target_allocation
         .regular_portfolio
@@ -71,10 +71,35 @@ pub fn run_using_expected_returns(
             };
             let (
                 pre_withdrawal,
+                _savings_portfolio_after_contributions,
                 savings_portfolio_after_withdrawals,
                 savings_portfolio_at_end,
                 curr_pass_forward,
             ) = run_for_single_year_using_fixed_returns(&context, &pass_forward);
+
+            // if let Some(x) = &params.test {
+            //     let ours = &savings_portfolio_at_end.balance;
+            //     let truth = x.truth[year_index];
+            //     let diff = ours - truth;
+            //     web_sys::console::log_1(
+            //         &format!(
+            //             "{:3} {:15.2} {:15.2} {:15.2}",
+            //             year_index, diff, ours, truth
+            //         )
+            //         .into(),
+            //     );
+            //     if year_index == 30 {
+            //         web_sys::console::log_1(
+            //             &wasm_bindgen::JsValue::from_serde(&(
+            //                 &savings_portfolio_after_contributions,
+            //                 &savings_portfolio_after_withdrawals,
+            //                 &savings_portfolio_at_end,
+            //             ))
+            //             .unwrap(),
+            //         );
+            //     }
+            // }
+
             balance_starting = savings_portfolio_at_end.balance;
             pass_forward = curr_pass_forward;
             return (
@@ -144,6 +169,7 @@ fn run_for_single_year_using_fixed_returns(
     pass_forward: &SingleYearPassForward,
 ) -> (
     SingleYearPreWithdrawal,
+    portfolio_over_year::AfterContributions,
     portfolio_over_year::AfterWithdrawals,
     portfolio_over_year::End,
     SingleYearPassForward,
@@ -192,6 +218,7 @@ fn run_for_single_year_using_fixed_returns(
 
     (
         pre_withdrawal,
+        savings_portfolio_after_contributions,
         savings_portfolio_after_withdrawals,
         savings_portfolio_at_end,
         curr_pass_forward,
@@ -249,13 +276,20 @@ fn run_for_single_year_using_historical_returns(
         &savings_portfolio_after_withdrawals,
     );
 
-    let stock_allocation_on_total_portfolio = savings_portfolio_at_end.stock_allocation_amount
+    let mut stock_allocation_on_total_portfolio = savings_portfolio_at_end.stock_allocation_amount
         / (savings_portfolio_after_withdrawals.balance
             + pre_calculations
                 .tpaw
                 .net_present_value
                 .savings
                 .without_current_year[year_index]);
+    stock_allocation_on_total_portfolio = if f64::is_nan(stock_allocation_on_total_portfolio)
+        || f64::is_infinite(stock_allocation_on_total_portfolio)
+    {
+        0.0
+    } else {
+        stock_allocation_on_total_portfolio
+    };
 
     let year_run_index = (year_index * (params.end_run - params.start_run)) + run_index;
     result.by_yfn_by_run_balance_start[year_run_index] = balance_starting;
@@ -302,14 +336,15 @@ fn run_for_single_year_using_historical_returns(
     //         .into(),
     //     );
     //     if year_index == 0 {
-    // web_sys::console::log_1(
-    //     &wasm_bindgen::JsValue::from_serde(&(
-    //         &savings_portfolio_after_contributions,
-    //         &savings_portfolio_after_withdrawals,
-    //         &savings_portfolio_at_end,
-    //     ))
-    //     .unwrap(),
-    // );
+    //         web_sys::console::log_1(
+    //             &wasm_bindgen::JsValue::from_serde(&(
+    //                 &savings_portfolio_after_contributions,
+    //                 &savings_portfolio_after_withdrawals,
+    //                 &savings_portfolio_at_end,
+    //                 &returns
+    //             ))
+    //             .unwrap(),
+    //         );
     //     }
     // }
 

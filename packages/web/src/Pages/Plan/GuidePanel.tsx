@@ -36,6 +36,8 @@ type Props = {
     transition: number
   }>
 }
+export type GuidePanelSizing = Props['sizing']
+
 
 export const GuidePanel = React.memo(
   React.forwardRef<GuidePanelStateful, Props>((props, ref) =>

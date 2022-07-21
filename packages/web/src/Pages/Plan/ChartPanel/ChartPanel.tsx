@@ -49,6 +49,7 @@ export type ChartPanelStateful = {
   setTransition: (transition: number, target: 0 | 1) => void
 }
 
+
 type Props = {
   layout: 'laptop' | 'desktop' | 'mobile'
   sizing: (transition: number) => {
@@ -67,6 +68,8 @@ type Props = {
   type: ChartPanelType | 'sharpe-ratio'
   setType: Dispatch<ChartPanelType | 'sharpe-ratio'>
 }
+export type ChartPanelSizing = Props['sizing']
+
 
 export const ChartPanel = React.memo(
   React.forwardRef<ChartPanelStateful, Props>(

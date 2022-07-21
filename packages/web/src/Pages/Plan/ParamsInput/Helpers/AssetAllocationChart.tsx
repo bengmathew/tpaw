@@ -11,13 +11,20 @@ import {ChartUtils} from '../../../Common/Chart/ChartUtils/ChartUtils'
 import {TPAWChartDataMain} from '../../ChartPanel/TPAWChart/TPAWChartDataMain'
 
 export const AssetAllocationChart = React.memo(
-  ({className = ''}: {className?: string}) => {
-    const data = fGet(
-      useChartData().byYearsFromNowPercentiles.get('asset-allocation-savings-portfolio')
-    )
+  ({
+    className = '',
+    type,
+  }: {
+    className?: string
+    type:
+      | 'asset-allocation-savings-portfolio'
+      | 'asset-allocation-total-portfolio'
+  }) => {
+    const data = fGet(useChartData().byYearsFromNowPercentiles.get(type))
 
     const divRef = useRef<HTMLDivElement | null>(null)
-    const [ref, setRef] = useState<ChartReactStatefull<TPAWChartDataMain> | null>(null)
+    const [ref, setRef] =
+      useState<ChartReactStatefull<TPAWChartDataMain> | null>(null)
     const [width, setWidth] = useState(50)
     useEffect(() => {
       const div = fGet(divRef.current)

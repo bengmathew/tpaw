@@ -23,6 +23,9 @@ type Props = {
   onDone: () => void
 }
 
+export type PlanHeadingSizing = Props['sizing']
+
+
 export const PlanHeading = React.memo(
   React.forwardRef<PlanHeadingStateful, Props>(
     ({type, sizing, transitionRef, onDone}: Props, forwardRef) => {

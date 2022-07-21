@@ -15,13 +15,14 @@ import {TPAWParamsV6} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV6'
 import {TPAWParamsV7} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV7'
 import {TPAWParamsV8} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV8'
 
+import {TPAWParamsV10} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV10'
+import {TPAWParamsV11} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV11'
 import {TPAWParamsV9} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV9'
-import { TPAWParamsV10 } from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV10'
+import {TPAWParamsV12} from '../../TPAWSimulator/TPAWParamsV12'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {fGet} from '../../Utils/Utils'
 import {Validator} from '../../Utils/Validator'
 import {AppError} from './AppError'
-import { TPAWParamsV11 } from '../../TPAWSimulator/TPAWParamsV11'
 
 type _History = {stack: TPAWParams[]; curr: number}
 const _undo = (history: _History) =>
@@ -171,9 +172,16 @@ function _parseExternalParams(
       const v11 =
         parsed.v === 11
           ? TPAWParamsV11.validator(parsed)
-          : TPAWParamsV11.fromV10(fGet(v10))
+          : v10
+          ? TPAWParamsV11.fromV10(v10)
+          : null
 
-      return v11
+      const v12 =
+        parsed.v === 12
+          ? TPAWParamsV12.validator(parsed)
+          : TPAWParamsV12.fromV11(fGet(v11))
+
+      return v12
     } catch (e) {
       if (e instanceof Validator.Failed) {
         console.dir(parsed)

@@ -1,5 +1,3 @@
-import {faCaretDown, faColon} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import React, {
   useCallback,
   useImperativeHandle,
@@ -8,21 +6,17 @@ import React, {
   useState,
 } from 'react'
 import {
-  applyPaddingToHTMLElement,
   applyRectSizingToHTMLElement,
   Padding,
-  paddingCSSStyleHorz,
   RectExt,
 } from '../../../Utils/Geometry'
-import {linearFnFomPoints} from '../../../Utils/LinearFn'
 import {useAssertConst} from '../../../Utils/UseAssertConst'
 import {fGet, noCase} from '../../../Utils/Utils'
-import {useSimulation} from '../../App/WithSimulation'
 import {ChartPanelType} from '../ChartPanel/ChartPanelType'
-import {strategyName} from './Helpers/ParamsInputStrategyConditionCard'
 import {ParamsInputType} from './Helpers/ParamsInputType'
 import {ParamsInputAgeAndRetirement} from './ParamsInputAgeAndRetirement/ParamsInputAgeAndRetirement'
 import {ParamsInputBodyPassThruProps} from './ParamsInputBody'
+import {ParamsInputCompareStrategies} from './ParamsInputCompareStrategies'
 import {ParamsInputCurrentPortfolioBalance} from './ParamsInputCurrentPortfolioBalance'
 import {ParamsInputDev} from './ParamsInputDev'
 import {ParamsInputExpectedReturns} from './ParamsInputExpectedReturns'
@@ -36,29 +30,29 @@ import {ParamsInputSimulation} from './ParamsInputSimulation'
 import {ParamsInputSpendingCeilingAndFloor} from './ParamsInputSpendingCeilingAndFloor'
 import {ParamsInputSpendingTilt} from './ParamsInputSpendingTilt'
 import {ParamsInputStockAllocation} from './ParamsInputStockAllocation'
-import {ParamsInputCompareStrategies} from './ParamsInputCompareStrategies'
-import {ParamsInputSummary} from './ParamsInputSummary/ParamsInputSummary'
-import { ParamsInputWithdrawalRate } from './ParamsInputWithdrawal'
-import {Reset} from './Reset'
-import {Share} from './Share'
+import {ParamsInputWithdrawalRate} from './ParamsInputWithdrawal'
 
 type Props = {
   layout: 'laptop' | 'desktop' | 'mobile'
-  sizing: (transition: number) => {
-    position: RectExt
-    padding: Padding
-    cardPadding: Padding
-    headingMarginBottom: number
+  sizing: {
+    dynamic: (transition: number) => {
+      region: RectExt
+    }
+    fixed: {
+      padding: Padding
+      cardPadding: Padding
+      headingMarginBottom: number
+    }
   }
   transitionRef: React.MutableRefObject<{
     transition: number
   }>
-  state: ParamsInputType | 'summary'
   paramInputType: ParamsInputType
   setState: (state: 'summary' | ParamsInputType) => void
   chartType: ChartPanelType | 'sharpe-ratio'
   setChartType: (type: ChartPanelType | 'sharpe-ratio') => void
 }
+export type ParamsInputSizing = Props['sizing']
 
 export type ParamsInputStateful = {
   setTransition: (transition: number) => void
@@ -70,7 +64,6 @@ export const ParamsInput = React.memo(
         layout,
         sizing,
         paramInputType,
-        state,
         setState,
         chartType,
         setChartType,
@@ -78,25 +71,15 @@ export const ParamsInput = React.memo(
       }: Props,
       forwardRef
     ) => {
-      const {params} = useSimulation()
-      const outerRef = useRef<HTMLDivElement | null>(null)
-      const summaryRef = useRef<HTMLDivElement | null>(null)
       const detailRef = useRef<HTMLDivElement | null>(null)
 
       const [transitionCount, setTransitionCount] = useState(0)
       const setTransition = useCallback(
         (transition: number) => {
-          const {position} = sizing(transition)
-          const summary = fGet(summaryRef.current)
+          const {region} = sizing.dynamic(transition)
+          // const summary = fGet(summaryRef.current)
           const detail = fGet(detailRef.current)
-          const at0 = sizing(0)
-          const at1 = sizing(1)
-          applyRectSizingToHTMLElement(position, fGet(outerRef.current))
-
-          // Summary
-          summary.style.opacity = `${linearFnFomPoints(0, 1, 1, 0)(transition)}`
-          summary.style.display = transition === 1 ? 'none' : 'block'
-          applyPaddingToHTMLElement(at0.padding, summary)
+          applyRectSizingToHTMLElement(region, detail)
 
           // Detail.
           detail.style.opacity = `${transition}`
@@ -113,41 +96,20 @@ export const ParamsInput = React.memo(
       }, [setTransition, transitionRef])
       useAssertConst([transitionRef])
 
-      const sizingAt0 = sizing(0)
-      const sizingAt1 = sizing(1)
-
       return (
-        <div className="absolute overflow-hidden bg-planBG " ref={outerRef}>
-          <div
-            className={`absolute top-0 left-0 h-full overflow-y-scroll `}
-            style={{width: `${sizingAt0.position.width}px`}}
-            ref={summaryRef}
-          >
-            <ParamsInputSummary
-              layout={layout}
-              state={state}
-              setState={setState}
-              cardPadding={sizingAt0.cardPadding}
-            />
-          </div>
-          <div
-            className={`absolute top-0 left-0 h-full grid`}
-            style={{
-              width: `${sizingAt1.position.width}px`,
-              grid: '1fr/1fr',
-            }}
-            ref={detailRef}
-          >
-            <_Body
-              key={transitionCount}
-              sizing={sizingAt1}
-              layout={layout}
-              type={paramInputType}
-              onDone={() => setState('summary')}
-              chartType={chartType}
-              setChartType={setChartType}
-            />
-          </div>
+        <div
+          className={`absolute`}
+          ref={detailRef}
+        >
+          <_Body
+            key={transitionCount}
+            sizing={sizing.fixed}
+            layout={layout}
+            type={paramInputType}
+            onDone={() => setState('summary')}
+            chartType={chartType}
+            setChartType={setChartType}
+          />
         </div>
       )
     }

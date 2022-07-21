@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import {noCase} from '../Utils/Utils'
-import { historicalReturnsAverage } from './HistoricalReturns'
+import {historicalReturnsAverage} from './HistoricalReturns'
 import {TPAWParams} from './TPAWParams'
 
 export const EXPECTED_RETURN_PRESETS = (
@@ -27,11 +27,11 @@ export const EXPECTED_RETURN_PRESETS = (
   }
 }
 
-export const SUGGESTED_INFLATION  = 0.024
+export const SUGGESTED_INFLATION = 0.024
 
 export function getDefaultParams() {
   const params: TPAWParams = {
-    v: 11,
+    v: 12,
     strategy: 'TPAW',
     people: {
       withPartner: false,
@@ -44,10 +44,14 @@ export function getDefaultParams() {
       expected: {type: 'suggested'},
       historical: {type: 'default', adjust: {type: 'toExpected'}},
     },
-    inflation: {type:'suggested'},
+    inflation: {type: 'suggested'},
     targetAllocation: {
       regularPortfolio: {
-        forTPAW: {stocks: 0.35},
+        forTPAW: {
+          start: {stocks: 0.40},
+          intermediate: [],
+          end: {stocks: 0.30},
+        },
         forSPAWAndSWR: {
           start: {stocks: 0.5},
           intermediate: [],
@@ -57,7 +61,7 @@ export function getDefaultParams() {
       legacyPortfolio: {stocks: 0.7},
     },
     swrWithdrawal: {type: 'default'},
-    scheduledWithdrawalGrowthRate: 0.005,
+    scheduledWithdrawalGrowthRate: 0.01,
     savingsAtStartOfStartYear: 100000,
     savings: [],
     retirementIncome: [],

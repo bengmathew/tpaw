@@ -1,4 +1,6 @@
+import _ from 'lodash'
 import React from 'react'
+import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
 import {Contentful} from '../../../Utils/Contentful'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
 import {paddingCSSStyle} from '../../../Utils/Geometry'
@@ -35,7 +37,10 @@ const _SpendingTilt = React.memo(
         style={{...paddingCSSStyle(props.sizing.cardPadding)}}
       >
         <div className="">
-          <Contentful.RichText body={content.intro[params.strategy]} p="p-base" />
+          <Contentful.RichText
+            body={content.intro[params.strategy]}
+            p="p-base"
+          />
         </div>
         <SliderInput
           className="-mx-3 mt-2"
@@ -55,6 +60,19 @@ const _SpendingTilt = React.memo(
             tick: i % 10 === 0 ? 'large' : i % 1 === 0 ? 'small' : 'none',
           }))}
         />
+        <button
+          className="mt-4 underline"
+          onClick={() => {
+            setParams(params => {
+              const p = _.cloneDeep(params)
+              p.scheduledWithdrawalGrowthRate =
+                getDefaultParams().scheduledWithdrawalGrowthRate
+              return p
+            })
+          }}
+        >
+          Reset to Default
+        </button>
       </div>
     )
   }

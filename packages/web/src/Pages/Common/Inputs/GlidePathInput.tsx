@@ -76,7 +76,7 @@ export const GlidePathInput = React.memo(
             onChange={handleIntermediateChanged}
             filter={x => x !== 'before' && x !== 'after'}
           />
-          <h2 className="">End</h2>
+          <h2 className="">Max Age</h2>
           <_Percent
             className=""
             value={value.end.stocks}
@@ -85,7 +85,7 @@ export const GlidePathInput = React.memo(
               clone.end.stocks = stocks
               onChange(clone)
             }}
-            modalLabel="Stock Allocation at End"
+            modalLabel="Stock Allocation at Max Age"
           />
           <_Intermediate
             value={intermediate}

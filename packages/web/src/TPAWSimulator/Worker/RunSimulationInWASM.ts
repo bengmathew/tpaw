@@ -1,10 +1,10 @@
 import _ from 'lodash'
-import {SimpleRange} from '../../Utils/SimpleRange'
-import {noCase} from '../../Utils/Utils'
-import {getNumYears, getWithdrawalStartAsYFN} from '../TPAWParamsExt'
-import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
-import {getWASM} from './GetWASM'
-import {TPAWWorkerRunSimulationResult} from './TPAWWorkerTypes'
+import { SimpleRange } from '../../Utils/SimpleRange'
+import { noCase } from '../../Utils/Utils'
+import { getNumYears, getWithdrawalStartAsYFN } from '../TPAWParamsExt'
+import { TPAWParamsProcessed } from '../TPAWParamsProcessed'
+import { getWASM } from './GetWASM'
+import { TPAWWorkerRunSimulationResult } from './TPAWWorkerTypes'
 
 export async function runSimulationInWASM(
   params: TPAWParamsProcessed,
@@ -27,7 +27,7 @@ export async function runSimulationInWASM(
     Float64Array.from(params.returns.historicalAdjusted.map(x => x.stocks)),
     Float64Array.from(params.returns.historicalAdjusted.map(x => x.bonds)),
     params.savingsAtStartOfStartYear,
-    params.targetAllocation.regularPortfolio.forTPAW.stocks,
+    Float64Array.from(params.targetAllocation.regularPortfolio.forTPAW),
     Float64Array.from(params.targetAllocation.regularPortfolio.forSPAWAndSWR),
     params.targetAllocation.legacyPortfolio.stocks,
     params.swrWithdrawal.type,
