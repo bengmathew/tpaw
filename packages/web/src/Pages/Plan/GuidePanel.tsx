@@ -219,6 +219,7 @@ function useContent(type: ParamsInputType) {
     expectedReturnsStocksRegressionRestricted30Year: formatPercentage(1)(
       CAPE.regression.restricted.thirtyYear
     ),
+    expectedReturnsRegresssionAverage: formatPercentage(1)(CAPE.regressionAverage),
     expectedReturnsSuggested: formatPercentage(1)(CAPE.suggested),
     bondsDate:formatDate(bondRates.date),
     expectedReturnsBonds5Year: formatPercentage(1)(bondRates.fiveYear),
