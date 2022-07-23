@@ -6,9 +6,11 @@ import React, {
   useState,
 } from 'react'
 import {
-  applyRectSizingToHTMLElement,
+  applyOriginToHTMLElement,
+  Origin,
   Padding,
-  RectExt,
+  Size,
+  sizeCSSStyle,
 } from '../../../Utils/Geometry'
 import {useAssertConst} from '../../../Utils/UseAssertConst'
 import {fGet, noCase} from '../../../Utils/Utils'
@@ -36,9 +38,10 @@ type Props = {
   layout: 'laptop' | 'desktop' | 'mobile'
   sizing: {
     dynamic: (transition: number) => {
-      region: RectExt
+      origin: Origin
     }
     fixed: {
+      size: Size
       padding: Padding
       cardPadding: Padding
       headingMarginBottom: number
@@ -71,22 +74,17 @@ export const ParamsInput = React.memo(
       }: Props,
       forwardRef
     ) => {
-      const detailRef = useRef<HTMLDivElement | null>(null)
+      const outerRef = useRef<HTMLDivElement | null>(null)
 
       const [transitionCount, setTransitionCount] = useState(0)
       const setTransition = useCallback(
         (transition: number) => {
-          const {region} = sizing.dynamic(transition)
-          // const summary = fGet(summaryRef.current)
-          const detail = fGet(detailRef.current)
-          applyRectSizingToHTMLElement(region, detail)
-
-          // Detail.
-          detail.style.opacity = `${transition}`
-          detail.style.display = transition === 0 ? 'none' : 'grid'
-          if (transition === 0) {
-            setTransitionCount(x => x + 1)
-          }
+          const {origin} = sizing.dynamic(transition)
+          const outer = fGet(outerRef.current)
+          applyOriginToHTMLElement(origin, outer)
+          outer.style.opacity = `${transition}`
+          outer.style.display = transition === 0 ? 'none' : 'grid'
+          if (transition === 0) setTransitionCount(x => x + 1)
         },
         [sizing]
       )
@@ -96,14 +94,17 @@ export const ParamsInput = React.memo(
       }, [setTransition, transitionRef])
       useAssertConst([transitionRef])
 
+      const {size, padding, cardPadding, headingMarginBottom} = sizing.fixed
+
       return (
         <div
           className={`absolute`}
-          ref={detailRef}
+          ref={outerRef}
+          style={{...sizeCSSStyle(size)}}
         >
           <_Body
             key={transitionCount}
-            sizing={sizing.fixed}
+            sizing={{padding, cardPadding, headingMarginBottom}}
             layout={layout}
             type={paramInputType}
             onDone={() => setState('summary')}

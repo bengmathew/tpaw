@@ -37,7 +37,7 @@ export const ChartPanelMenuButton = React.memo(
           style={{...style, transformOrigin: 'top left'}}
         >
           <button
-            className={`${className}  flex items-start gap-x-2 text-lg sm:text-xl  font-bold text-left`}
+            className={`${className}  flex items-start gap-x-2 text-[20px] sm:text-[22px] font-bold text-left`}
             onClick={onClick}
           >
             <div className="">

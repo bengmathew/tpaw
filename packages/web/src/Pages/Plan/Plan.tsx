@@ -6,7 +6,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react'
 import {createContext} from '../../Utils/CreateContext'
 import {useURLParam} from '../../Utils/UseURLParam'
 import {fGet} from '../../Utils/Utils'
-import {useWindowSize} from '../../Utils/WithWindowSize'
+import {useWindowSize} from '../App/WithWindowSize'
 import {AppPage} from '../App/AppPage'
 import {Footer} from '../App/Footer'
 import {useSimulation} from '../App/WithSimulation'
@@ -23,7 +23,7 @@ import {ParamsInput, ParamsInputStateful} from './ParamsInput/ParamsInput'
 import {
   ParamsInputSummary,
   ParamsInputSummaryStateful,
-} from './ParamsInput/ParamsInputSummary/ParamsInputSummary2'
+} from './ParamsInputSummary/ParamsInputSummary'
 import {PlanContent} from './PlanGetStaticProps'
 import {PlanHeading, PlanHeadingStateful} from './PlanHeading'
 import {planSizing} from './PlanSizing/PlanSizing'
@@ -36,6 +36,8 @@ export {usePlanContent}
 
 type _State = 'summary' | ParamsInputType
 export const Plan = React.memo((planContent: PlanContent) => {
+
+
   const windowSizeIn = useWindowSize()
   // Hack to handle soft keyboard on Android.
   const windowSize = useMemo(() => {
@@ -187,7 +189,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
           ref={guideRef}
         />
         {layout === 'laptop' && (
-          <div className="absolute right-0 -bottom-0 mr-[35px]">
+          <div className="absolute right-0 -bottom-0 mr-[45px] z-20">
             <Footer />
           </div>
         )}

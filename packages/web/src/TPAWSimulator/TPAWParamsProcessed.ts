@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import {MarketData} from '../Pages/Common/GetMarketData'
 import {linearFnFomPoints} from '../Utils/LinearFn'
 import {nominalToReal} from '../Utils/NominalToReal'
 import {assert, noCase} from '../Utils/Utils'
@@ -17,7 +18,10 @@ import {
 import {extendTPAWParams, TPAWParamsExt} from './TPAWParamsExt'
 
 export type TPAWParamsProcessed = ReturnType<typeof processTPAWParams>
-export function processTPAWParams(paramsExt: TPAWParamsExt) {
+export function processTPAWParams(
+  paramsExt: TPAWParamsExt,
+  marketData: MarketData
+) {
   const {numYears, asYFN, params, numRetirementYears} = paramsExt
   tpawParamsValidator(params)
   const {inflation: inflationIn, ...paramsWithoutInflation} = params
@@ -55,7 +59,7 @@ export function processTPAWParams(paramsExt: TPAWParamsExt) {
     return result
   }
 
-  const byYear = _processByYearParams(paramsExt)
+  const byYear = _processByYearParams(paramsExt, marketData)
 
   const targetAllocation = {
     ...params.targetAllocation,
@@ -73,7 +77,11 @@ export function processTPAWParams(paramsExt: TPAWParamsExt) {
     const {total} = params.legacy
     const external = _.sum(
       params.legacy.external.map(x =>
-        nominalToReal(x, processInflation(params.inflation), numYears)
+        nominalToReal(
+          x,
+          processInflation(params.inflation, marketData),
+          numYears
+        )
       )
     )
     const target = Math.max(total - external, 0)
@@ -93,7 +101,7 @@ export function processTPAWParams(paramsExt: TPAWParamsExt) {
       params.spendingCeiling === null
         ? null
         : Math.max(params.spendingCeiling, params.withdrawals.lmp),
-    returns: _processReturnsParams(params),
+    returns: _processReturnsParams(params, marketData),
     targetAllocation,
     byYear,
     legacy,
@@ -102,7 +110,10 @@ export function processTPAWParams(paramsExt: TPAWParamsExt) {
   return result
 }
 
-function _processByYearParams(paramsExt: TPAWParamsExt) {
+function _processByYearParams(
+  paramsExt: TPAWParamsExt,
+  marketData: MarketData
+) {
   const {asYFN, withdrawalStartYear, numYears, params} = paramsExt
   const {savings, retirementIncome, withdrawals} = params
   const withdrawalStart = asYFN(withdrawalStartYear)
@@ -132,7 +143,7 @@ function _processByYearParams(paramsExt: TPAWParamsExt) {
           byYear[yearsFromNow],
           nominalToReal(
             {value, nominal},
-            processInflation(params.inflation),
+            processInflation(params.inflation, marketData),
             yearsFromNow
           )
         )
@@ -158,27 +169,31 @@ function _processByYearParams(paramsExt: TPAWParamsExt) {
 }
 
 export function processExpectedReturns(
-  expected: TPAWParams['returns']['expected']
+  expected: TPAWParams['returns']['expected'],
+  marketData: MarketData
 ) {
   switch (expected.type) {
     case 'manual':
       return {stocks: expected.stocks, bonds: expected.bonds}
     default:
-      return EXPECTED_RETURN_PRESETS(expected.type)
+      return EXPECTED_RETURN_PRESETS(expected.type, marketData)
   }
 }
 
-export function processInflation(inflation: TPAWParams['inflation']) {
+export function processInflation(
+  inflation: TPAWParams['inflation'],
+  marketData: MarketData
+) {
   return inflation.type === 'suggested'
-    ? SUGGESTED_INFLATION
+    ? SUGGESTED_INFLATION(marketData)
     : inflation.type === 'manual'
     ? inflation.value
     : noCase(inflation)
 }
 
-function _processReturnsParams(params: TPAWParams) {
+function _processReturnsParams(params: TPAWParams, marketData: MarketData) {
   const {returns} = params
-  const expected = processExpectedReturns(params.returns.expected)
+  const expected = processExpectedReturns(params.returns.expected, marketData)
   const n = historicalReturns.length
 
   const historicalAdjusted = (() => {

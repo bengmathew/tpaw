@@ -7,26 +7,28 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import {getDefaultParams} from '../../../../TPAWSimulator/DefaultParams'
-import {TPAWParams} from '../../../../TPAWSimulator/TPAWParams'
-import {TPAWParamsExt} from '../../../../TPAWSimulator/TPAWParamsExt'
+import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
+import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
+import {TPAWParamsExt} from '../../../TPAWSimulator/TPAWParamsExt'
 import {
-  applyRectSizingToHTMLElement,
+  applyOriginToHTMLElement,
+  Origin,
   Padding,
   paddingCSSStyle,
   paddingCSSStyleHorz,
-  RectExt,
-} from '../../../../Utils/Geometry'
-import {linearFnFomPoints} from '../../../../Utils/LinearFn'
-import {useAssertConst} from '../../../../Utils/UseAssertConst'
-import {fGet, noCase} from '../../../../Utils/Utils'
-import {Footer} from '../../../App/Footer'
-import {useSimulation} from '../../../App/WithSimulation'
-import {Config} from '../../../Config'
-import {analyzeYearsInParams} from '../Helpers/AnalyzeYearsInParams'
-import {ParamsInputType} from '../Helpers/ParamsInputType'
-import {Reset} from '../Reset'
-import {Share} from '../Share'
+  Size,
+  sizeCSSStyle,
+} from '../../../Utils/Geometry'
+import {linearFnFomPoints} from '../../../Utils/LinearFn'
+import {useAssertConst} from '../../../Utils/UseAssertConst'
+import {fGet, noCase} from '../../../Utils/Utils'
+import {Footer} from '../../App/Footer'
+import {useSimulation} from '../../App/WithSimulation'
+import {Config} from '../../Config'
+import {analyzeYearsInParams} from '../ParamsInput/Helpers/AnalyzeYearsInParams'
+import {ParamsInputType} from '../ParamsInput/Helpers/ParamsInputType'
+import {Reset} from '../ParamsInput/Reset'
+import {Share} from '../ParamsInput/Share'
 import {ParamsInputSummaryButton} from './ParamsInputSummaryButton'
 import {ParamsInputSummaryStrategy} from './ParamsInputSummaryStrategy'
 
@@ -38,8 +40,9 @@ type Props = {
     transition: number
   }>
   sizing: {
-    dynamic: (transition: number) => {region: RectExt}
+    dynamic: (transition: number) => {origin: Origin}
     fixed: {
+      size: Size
       padding: Padding
       cardPadding: Padding
     }
@@ -61,9 +64,10 @@ export const ParamsInputSummary = React.memo(
 
       const setTransition = useCallback(
         (transition: number) => {
-          const {region} = sizing.dynamic(transition)
+          const {origin} = sizing.dynamic(transition)
           const outer = fGet(outerRef.current)
-          applyRectSizingToHTMLElement(region, outer)
+          // applyRectSizingToHTMLElement(region, outer)
+          applyOriginToHTMLElement(origin, outer)
           outer.style.opacity = `${linearFnFomPoints(0, 1, 1, 0)(transition)}`
           outer.style.display = transition === 1 ? 'none' : 'block'
         },
@@ -80,12 +84,15 @@ export const ParamsInputSummary = React.memo(
         _isModified(x, params)
       ).length
 
-      const {cardPadding, padding} = sizing.fixed
+      const {cardPadding, padding, size} = sizing.fixed
 
       return (
         <div
           className={`absolute overflow-y-scroll `}
-          style={{...paddingCSSStyle(padding)}}
+          style={{
+            ...paddingCSSStyle(padding),
+            ...sizeCSSStyle(size),
+          }}
           ref={outerRef}
         >
           <div
@@ -114,7 +121,7 @@ export const ParamsInputSummary = React.memo(
               >
                 <div className="">
                   <h2
-                    className="text-[18px] sm:text-xl font-bold mb-4"
+                    className="text-[20px] sm:text-[22px] font-bold mb-4"
                     style={{...paddingCSSStyleHorz(cardPadding)}}
                   >
                     Basic Inputs
@@ -153,12 +160,12 @@ export const ParamsInputSummary = React.memo(
 
                 <div className="">
                   <h2
-                    className="text-[18px] sm:text-xl font-bold mb-4"
+                    className="text-[20px] sm:text-[22px] font-bold mb-4"
                     style={{...paddingCSSStyleHorz(cardPadding)}}
                   >
                     Spending Goals
                   </h2>
-                  <div className="flex flex-col gap-y-4">
+                  <div className="flex flex-col gap-y-4 ">
                     <ParamsInputSummaryButton
                       type="extra-spending"
                       setState={setState}
@@ -178,12 +185,12 @@ export const ParamsInputSummary = React.memo(
 
                 <div className="">
                   <h2
-                    className="text-[18px] sm:text-xl font-bold mb-4"
+                    className="text-[20px] sm:text-[22px] font-bold mb-4"
                     style={{...paddingCSSStyleHorz(cardPadding)}}
                   >
                     Risk and Time Preference
                   </h2>
-                  <div className="flex flex-col gap-y-4">
+                  <div className="flex flex-col gap-y-4 ">
                     <ParamsInputSummaryButton
                       type="stock-allocation"
                       setState={setState}
@@ -229,7 +236,7 @@ export const ParamsInputSummary = React.memo(
                     style={{...paddingCSSStyleHorz(cardPadding)}}
                     onClick={() => setShowAdvanced(!showAdvanced)}
                   >
-                    <div className="text-[20px] sm:text-xl2 font-bold text-left">
+                    <div className="text-[20px] sm:text-[22px] font-bold text-left">
                       Advanced
                       <FontAwesomeIcon
                         className="ml-2"

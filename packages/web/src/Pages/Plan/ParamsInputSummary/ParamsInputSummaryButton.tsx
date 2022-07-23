@@ -8,25 +8,26 @@ import {
   Person,
   TPAWParams,
   ValueForYearRange,
-} from '../../../../TPAWSimulator/TPAWParams'
-import {TPAWParamsExt} from '../../../../TPAWSimulator/TPAWParamsExt'
+} from '../../../TPAWSimulator/TPAWParams'
+import {TPAWParamsExt} from '../../../TPAWSimulator/TPAWParamsExt'
 import {
   processExpectedReturns,
   processInflation,
-} from '../../../../TPAWSimulator/TPAWParamsProcessed'
-import {formatCurrency} from '../../../../Utils/FormatCurrency'
-import {formatPercentage} from '../../../../Utils/FormatPercentage'
-import {Padding, paddingCSS} from '../../../../Utils/Geometry'
-import {SimpleRange} from '../../../../Utils/SimpleRange'
-import {trimAndNullify} from '../../../../Utils/TrimAndNullify'
-import {assertFalse, fGet, noCase} from '../../../../Utils/Utils'
-import {useSimulation} from '../../../App/WithSimulation'
-import {ChartUtils} from '../../../Common/Chart/ChartUtils/ChartUtils'
-import {ValueForYearRangeDisplay} from '../../../Common/ValueForYearRangeDisplay'
-import {paramsInputLabel} from '../Helpers/ParamsInputLabel'
-import {ParamsInputType} from '../Helpers/ParamsInputType'
-import {expectedReturnTypeLabel} from '../ParamsInputExpectedReturns'
-import {inflationTypeLabel} from '../ParamsInputInflation'
+} from '../../../TPAWSimulator/TPAWParamsProcessed'
+import {formatCurrency} from '../../../Utils/FormatCurrency'
+import {formatPercentage} from '../../../Utils/FormatPercentage'
+import {Padding, paddingCSS} from '../../../Utils/Geometry'
+import {SimpleRange} from '../../../Utils/SimpleRange'
+import {trimAndNullify} from '../../../Utils/TrimAndNullify'
+import {assertFalse, fGet, noCase} from '../../../Utils/Utils'
+import {useMarketData} from '../../App/WithMarketData'
+import {useSimulation} from '../../App/WithSimulation'
+import {ChartUtils} from '../../Common/Chart/ChartUtils/ChartUtils'
+import {ValueForYearRangeDisplay} from '../../Common/ValueForYearRangeDisplay'
+import {paramsInputLabel} from '../ParamsInput/Helpers/ParamsInputLabel'
+import {ParamsInputType} from '../ParamsInput/Helpers/ParamsInputType'
+import {expectedReturnTypeLabel} from '../ParamsInput/ParamsInputExpectedReturns'
+import {inflationTypeLabel} from '../ParamsInput/ParamsInputInflation'
 
 export const ParamsInputSummaryButton = React.memo(
   ({
@@ -70,7 +71,7 @@ export const ParamsInputSummaryButton = React.memo(
         onClick={() => setState(type)}
         ref={ref}
       >
-        <div className="border-[3px] bg-cardBG  border-gray-00 rounded-2xl -m-[2px] p-[2px]">
+        <div className="relative border-[3px] bg-cardBG  bg-cardB  rounded-2xl -m-[2px] p-[2px]">
           <div className="relative" style={{padding: paddingCSS(padding)}}>
             {flagAsModified && (
               <h2 className="absolute right-2 text-xs top-1.5 border border-gray-200 bg-gray-100 px-2 rounded-lg">
@@ -99,6 +100,7 @@ export const ParamsInputSummaryButton = React.memo(
 
 const _SectionSummary = React.memo(({type}: {type: ParamsInputType}) => {
   const {params, paramsProcessed, paramsExt} = useSimulation()
+  const marketData = useMarketData()
   const {validYearRange, pickPerson, yourOrYourPartners} = paramsExt
 
   switch (type) {
@@ -233,9 +235,7 @@ const _SectionSummary = React.memo(({type}: {type: ParamsInputType}) => {
               <h2>Of Total Portfolio:</h2>
               <_GlidePath
                 className=""
-                glidePath={
-                  params.targetAllocation.regularPortfolio.forTPAW
-                }
+                glidePath={params.targetAllocation.regularPortfolio.forTPAW}
               />
             </h2>
           ) : (
@@ -304,7 +304,10 @@ const _SectionSummary = React.memo(({type}: {type: ParamsInputType}) => {
     }
     case 'expected-returns': {
       const format = formatPercentage(1)
-      const {stocks, bonds} = processExpectedReturns(params.returns.expected)
+      const {stocks, bonds} = processExpectedReturns(
+        params.returns.expected,
+        marketData
+      )
       return (
         <>
           <h2>{expectedReturnTypeLabel(params.returns.expected)}</h2>
@@ -318,7 +321,7 @@ const _SectionSummary = React.memo(({type}: {type: ParamsInputType}) => {
       return (
         <h2>
           {inflationTypeLabel(params.inflation)}:{' '}
-          {format(processInflation(params.inflation))}
+          {format(processInflation(params.inflation, marketData))}
         </h2>
       )
     }

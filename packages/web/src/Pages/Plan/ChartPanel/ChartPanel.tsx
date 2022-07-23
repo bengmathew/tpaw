@@ -15,8 +15,8 @@ import React, {
 } from 'react'
 import {
   applyPaddingToHTMLElement,
-  applyPositionToHTMLElement,
-  applyRectSizingToHTMLElement,
+  applyOriginToHTMLElement,
+  applyRegionToHTMLElement,
   Padding,
   rectExt,
   RectExt,
@@ -49,7 +49,6 @@ export type ChartPanelStateful = {
   setTransition: (transition: number, target: 0 | 1) => void
 }
 
-
 type Props = {
   layout: 'laptop' | 'desktop' | 'mobile'
   sizing: (transition: number) => {
@@ -60,6 +59,7 @@ type Props = {
     menuButtonScale: number
     legacyWidth: number
     intraGap: number
+    borderRadius: number
   }
   transitionRef: React.MutableRefObject<{
     transition: number
@@ -70,7 +70,6 @@ type Props = {
 }
 export type ChartPanelSizing = Props['sizing']
 
-
 export const ChartPanel = React.memo(
   React.forwardRef<ChartPanelStateful, Props>(
     (
@@ -79,7 +78,8 @@ export const ChartPanel = React.memo(
     ) => {
       const {paramSpace, setParamSpace, tpawResult} = useSimulation()
       const shouldShowLegacy = _shouldShowLegacy(tpawResult, type)
-      const shouldShowSuccessRate = tpawResult.args.params.strategy === 'SWR' && type !== 'sharpe-ratio'
+      const shouldShowSuccessRate =
+        tpawResult.args.params.strategy === 'SWR' && type !== 'sharpe-ratio'
       const allChartData = useChartData()
       const chartMainData =
         type === 'sharpe-ratio'
@@ -231,6 +231,7 @@ export const ChartPanel = React.memo(
             headingMarginBottom,
             legacyWidth,
             menuButtonScale,
+            borderRadius,
           } = orig
 
           const bodyY = padding.top + measures.heading + headingMarginBottom
@@ -317,10 +318,11 @@ export const ChartPanel = React.memo(
           const tasksPosition = {
             right: padding.right,
             // y: bodyPosition.bottom ,
-
             y:
-              bodyPosition.bottom +
-              (position.height - bodyPosition.bottom - measures.tasks) / 2,
+              layout === 'laptop'
+                ? bodyPosition.bottom + 7
+                : bodyPosition.bottom +
+                  (position.height - bodyPosition.bottom - measures.tasks) / 2,
             // y: bodyPosition.bottom + ((padding.bottom-bodyPosition.bottom) - 30)/2 ,
           }
 
@@ -345,6 +347,7 @@ export const ChartPanel = React.memo(
             legacySizing,
             menuPosition,
             descriptionPosition,
+            borderRadius,
           }
         },
         [sizingIn, measures, shouldShowLegacy, layout]
@@ -388,6 +391,7 @@ export const ChartPanel = React.memo(
             headingPaddingLeft,
             menuPosition,
             descriptionPosition,
+            borderRadius,
           } = sizing(
             transition,
             target,
@@ -395,14 +399,17 @@ export const ChartPanel = React.memo(
             successRateTransition
           )
 
-          applyRectSizingToHTMLElement(position, fGet(outerRef.current))
-          applyPaddingToHTMLElement(padding, fGet(outerRef.current))
+          const outer = fGet(outerRef.current)
+          applyRegionToHTMLElement(position, outer)
+          applyPaddingToHTMLElement(padding, outer)
+          outer.style.borderRadius = `${borderRadius}px`
+
           if (headingRef.current) {
             headingRef.current.style.marginBottom = `${headingMarginBottom}px`
             headingRef.current.style.paddingLeft = `${headingPaddingLeft}px`
           }
 
-          applyRectSizingToHTMLElement(bodyPosition, fGet(bodyRef.current))
+          applyRegionToHTMLElement(bodyPosition, fGet(bodyRef.current))
           applyPaddingToHTMLElement(cardPadding, fGet(bodyRef.current))
 
           const transitionReverse = linearFnFomPoints(0, 1, 1, 0)(transition)
@@ -422,7 +429,7 @@ export const ChartPanel = React.memo(
           ).style.transform = `scale(${descriptionScale})`
           mainChartRef.current?.setSizing(chartSizing)
 
-          applyRectSizingToHTMLElement(
+          applyRegionToHTMLElement(
             legacyBodyPosition,
             fGet(legacyBodyRef.current)
           )
@@ -436,7 +443,7 @@ export const ChartPanel = React.memo(
           ).style.transform = `scale(${menuButtonScale})`
           legacyChartRef.current?.setSizing(legacySizing)
 
-          applyPositionToHTMLElement(rescalePosition, fGet(rescaleRef.current))
+          applyOriginToHTMLElement(rescalePosition, fGet(rescaleRef.current))
           fGet(rescaleRef.current).style.height = `${rescalePosition.height}px`
 
           fGet(tasksRef.current).style.right = `${tasksPosition.right}px`
@@ -507,7 +514,7 @@ export const ChartPanel = React.memo(
       return (
         <div
           className={`absolute top-0  right-0 z-10 bg-chartBG overflow-hidden
-          ${layout == 'laptop' ? 'rounded-2xl' : ''}`}
+          ${layout == 'laptop' ? '' : ''}`}
           ref={outerRef}
         >
           {layout !== 'mobile' && (

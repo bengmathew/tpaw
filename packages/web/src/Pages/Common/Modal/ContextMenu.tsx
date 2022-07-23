@@ -8,7 +8,7 @@ import React, {
 } from 'react'
 import ReactDOM from 'react-dom'
 import {fGet} from '../../../Utils/Utils'
-import {useWindowSize} from '../../../Utils/WithWindowSize'
+import {useWindowSize} from '../../App/WithWindowSize'
 
 export const ContextMenu = React.memo(
   ({

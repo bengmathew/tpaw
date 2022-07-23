@@ -1,23 +1,24 @@
 import _ from 'lodash'
-import {nominalToReal} from '../../Utils/NominalToReal'
-import {SimpleRange} from '../../Utils/SimpleRange'
-import {assert, fGet, noCase} from '../../Utils/Utils'
-import {historicalReturns} from '../HistoricalReturns'
-import {StatsTools} from '../StatsTools'
-import {ValueForYearRange} from '../TPAWParams'
-import {extendTPAWParams, TPAWParamsExt} from '../TPAWParamsExt'
-import {processInflation, TPAWParamsProcessed} from '../TPAWParamsProcessed'
+import { MarketData } from '../../Pages/Common/GetMarketData'
+import { nominalToReal } from '../../Utils/NominalToReal'
+import { SimpleRange } from '../../Utils/SimpleRange'
+import { assert, fGet, noCase } from '../../Utils/Utils'
+import { historicalReturns } from '../HistoricalReturns'
+import { StatsTools } from '../StatsTools'
+import { ValueForYearRange } from '../TPAWParams'
+import { extendTPAWParams, TPAWParamsExt } from '../TPAWParamsExt'
+import { processInflation, TPAWParamsProcessed } from '../TPAWParamsProcessed'
 import {
   FirstYearSavingsPortfolioDetail,
-  firstYearSavingsPortfolioDetail,
+  firstYearSavingsPortfolioDetail
 } from './FirstYearSavingsPortfolioDetail'
-import {mergeWorkerRuns} from './MergeWorkerRuns'
+import { mergeWorkerRuns } from './MergeWorkerRuns'
 import {
   TPAWWorkerArgs,
   TPAWWorkerCalculateOneOverCVResult,
   TPAWWorkerResult,
   TPAWWorkerRunSimulationResult,
-  TPAWWorkerSortResult,
+  TPAWWorkerSortResult
 } from './TPAWWorkerTypes'
 
 export type TPAWRunInWorkerByPercentileByYearsFromNow = {
@@ -231,7 +232,7 @@ export class TPAWRunInWorker {
   //   params: TPAWParamsProcessed
   // ): Promise<boolean> {
   //   const paramsExt = extendTPAWParams(params.original)
-    
+
   //   numRuns = _numRuns(paramsExt, numRuns)
   //   const runsByWorker = await Promise.all(
   //     this._workers.map((worker, i) =>
@@ -249,7 +250,8 @@ export class TPAWRunInWorker {
     status: {canceled: boolean},
     numRuns: number,
     params: TPAWParamsProcessed,
-    percentiles: number[]
+    percentiles: number[],
+    marketData:MarketData
   ): Promise<TPAWRunInWorkerResult | null> {
     const start0 = performance.now()
     let start = performance.now()
@@ -265,8 +267,6 @@ export class TPAWRunInWorker {
         )
       )
     )
-
-
 
     const perfSimulation = performance.now() - start
     start = performance.now()
@@ -333,7 +333,13 @@ export class TPAWRunInWorker {
     const withdrawlsEssentialById = new Map(
       params.withdrawals.essential.map(x => [
         x.id,
-        _separateExtraWithdrawal(x, params, withdrawalsEssential, 'essential'),
+        _separateExtraWithdrawal(
+          x,
+          params,
+          withdrawalsEssential,
+          'essential',
+          marketData
+        ),
       ])
     )
     const withdrawlsDiscretionaryById = new Map(
@@ -343,7 +349,8 @@ export class TPAWRunInWorker {
           x,
           params,
           withdrawalsDiscretionary,
-          'discretionary'
+          'discretionary',
+          marketData
         ),
       ])
     )
@@ -537,7 +544,8 @@ const _separateExtraWithdrawal = (
   discretionaryWithdrawal: ValueForYearRange,
   params: TPAWParamsProcessed,
   x: TPAWRunInWorkerByPercentileByYearsFromNow,
-  type: 'discretionary' | 'essential'
+  type: 'discretionary' | 'essential',
+  marketData: MarketData
 ): TPAWRunInWorkerByPercentileByYearsFromNow => {
   const yearRange = extendTPAWParams(params.original).asYFN(
     discretionaryWithdrawal.yearRange
@@ -550,7 +558,7 @@ const _separateExtraWithdrawal = (
     const currYearParams = params.byYear[yearFromNow].withdrawals
     const withdrawalTargetForThisYear = nominalToReal(
       discretionaryWithdrawal,
-      processInflation(params.original.inflation),
+      processInflation(params.original.inflation, marketData),
       yearFromNow
     )
     if (withdrawalTargetForThisYear === 0) return 0

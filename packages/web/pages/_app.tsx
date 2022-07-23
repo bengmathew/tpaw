@@ -44,12 +44,7 @@ function MyApp({Component, pageProps}: AppProps) {
 
   return (
     <GlobalErrorBoundary>
-      <WithSimulation>
-        <WithChartData>
-          <Component {...pageProps} />
-        </WithChartData>
-      </WithSimulation>
-
+      <Component {...pageProps} />
       <ToastContainer />
     </GlobalErrorBoundary>
   )

@@ -1,14 +1,23 @@
 import React from 'react'
+import {WithChartData} from '../src/Pages/App/WithChartData'
+import {WithMarketData} from '../src/Pages/App/WithMarketData'
+import {WithSimulation} from '../src/Pages/App/WithSimulation'
+import {WithWindowSize} from '../src/Pages/App/WithWindowSize'
 import {Plan} from '../src/Pages/Plan/Plan'
 import {
-  PlanContent,
   planGetStaticProps,
+  PlanStaticProps,
 } from '../src/Pages/Plan/PlanGetStaticProps'
-import {WithWindowSize} from '../src/Utils/WithWindowSize'
 
-export default React.memo((planContent: PlanContent) => (
+export default React.memo(({content, marketData}: PlanStaticProps) => (
   <WithWindowSize>
-    <Plan {...planContent} />
+    <WithMarketData marketData={marketData}>
+      <WithSimulation>
+        <WithChartData>
+          <Plan {...content} />
+        </WithChartData>
+      </WithSimulation>
+    </WithMarketData>
   </WithWindowSize>
 ))
 

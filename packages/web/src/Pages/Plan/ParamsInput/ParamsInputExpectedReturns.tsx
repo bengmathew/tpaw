@@ -10,6 +10,7 @@ import {Contentful} from '../../../Utils/Contentful'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
 import {paddingCSSStyle} from '../../../Utils/Geometry'
 import {preciseRange} from '../../../Utils/PreciseRange'
+import {useMarketData} from '../../App/WithMarketData'
 import {useSimulation} from '../../App/WithSimulation'
 import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
 import {usePlanContent} from '../Plan'
@@ -84,7 +85,8 @@ export const _Preset = React.memo(
     onChange: (expected: TPAWParams['returns']['expected']) => void
   }) => {
     const {params} = useSimulation()
-    const {stocks, bonds} = EXPECTED_RETURN_PRESETS(type)
+    const marketData = useMarketData()
+    const {stocks, bonds} = EXPECTED_RETURN_PRESETS(type, marketData)
 
     return (
       <button
@@ -119,6 +121,7 @@ export const _Manual = React.memo(
     className?: string
     onChange: (expected: TPAWParams['returns']['expected']) => void
   }) => {
+    const marketData = useMarketData()
     const {params} = useSimulation()
     const sliderProps = {
       className: '',
@@ -134,7 +137,10 @@ export const _Manual = React.memo(
             : ('none' as const),
       })),
     }
-    let {stocks, bonds} = processExpectedReturns(params.returns.expected)
+    let {stocks, bonds} = processExpectedReturns(
+      params.returns.expected,
+      marketData
+    )
     stocks = _.round(stocks, 3)
     bonds = _.round(bonds, 3)
     return (

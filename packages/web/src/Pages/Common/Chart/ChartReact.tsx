@@ -6,7 +6,7 @@ import React, {
   useState,
 } from 'react'
 import {
-  applyRectSizingToHTMLElement,
+  applyRegionToHTMLElement,
   Padding,
   RectExt,
 } from '../../../Utils/Geometry'
@@ -109,7 +109,7 @@ const applySizingToHTML = (
   type: 'init' | 'update'
 ) => {
   const size = {width: position.width, height: position.height}
-  applyRectSizingToHTMLElement(position, div)
+  applyRegionToHTMLElement(position, div)
   const dpr = window.devicePixelRatio || 1
 
   const pixelSize = (x: number) => Math.round(x * dpr)

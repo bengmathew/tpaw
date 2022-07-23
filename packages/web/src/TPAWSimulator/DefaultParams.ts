@@ -1,23 +1,28 @@
 import _ from 'lodash'
+import {MarketData} from '../Pages/Common/GetMarketData'
 import {noCase} from '../Utils/Utils'
 import {historicalReturnsAverage} from './HistoricalReturns'
 import {TPAWParams} from './TPAWParams'
 
 export const EXPECTED_RETURN_PRESETS = (
-  type: Exclude<TPAWParams['returns']['expected']['type'], 'manual'>
+  type: Exclude<TPAWParams['returns']['expected']['type'], 'manual'>,
+  {CAPE, bondRates}: MarketData
 ) => {
-  const suggested = {stocks: 0.043, bonds: 0.007}
+  const suggested = {
+    stocks: _.round(CAPE.suggested, 3),
+    bonds: _.round(bondRates.twentyYear, 3),
+  }
   switch (type) {
     case 'suggested':
       return {...suggested}
     case 'oneOverCAPE':
       return {
-        stocks: 0.035,
+        stocks: _.round(CAPE.oneOverCAPE, 3),
         bonds: suggested.bonds,
       }
     case 'regressionPrediction':
       return {
-        stocks: 0.055,
+        stocks: _.round(CAPE.regressionAverage, 3),
         bonds: suggested.bonds,
       }
     case 'historical':
@@ -27,7 +32,8 @@ export const EXPECTED_RETURN_PRESETS = (
   }
 }
 
-export const SUGGESTED_INFLATION = 0.024
+export const SUGGESTED_INFLATION = (marketData: MarketData) =>
+  _.round(marketData.inflation.value, 3)
 
 export function getDefaultParams() {
   const params: TPAWParams = {
@@ -48,9 +54,9 @@ export function getDefaultParams() {
     targetAllocation: {
       regularPortfolio: {
         forTPAW: {
-          start: {stocks: 0.40},
+          start: {stocks: 0.4},
           intermediate: [],
-          end: {stocks: 0.30},
+          end: {stocks: 0.3},
         },
         forSPAWAndSWR: {
           start: {stocks: 0.5},

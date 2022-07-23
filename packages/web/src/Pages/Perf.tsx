@@ -5,12 +5,14 @@ import {processTPAWParams} from '../TPAWSimulator/TPAWParamsProcessed'
 import {TPAWRunInWorker} from '../TPAWSimulator/Worker/TPAWRunInWorker'
 import {fGet} from '../Utils/Utils'
 import {AppPage} from './App/AppPage'
+import {useMarketData} from './App/WithMarketData'
 
-const numRuns = 50000
+const numRuns = 500
 const highlightPercentiles = [5, 25, 50, 75, 95]
 const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
 
 export const Perf = React.memo(() => {
+  const marketData = useMarketData()
   const workerRef = useRef<TPAWRunInWorker | null>(null)
   useEffect(() => {
     workerRef.current = new TPAWRunInWorker()
@@ -32,8 +34,9 @@ export const Perf = React.memo(() => {
             const result = await fGet(workerRef.current).runSimulations(
               {canceled: false},
               numRuns,
-              params,
-              percentiles
+              processTPAWParams(params, marketData),
+              percentiles,
+              marketData
             )
 
             const toLine = ([label, amount]: [string, number]) =>
@@ -83,105 +86,103 @@ export const Perf = React.memo(() => {
   )
 })
 
-const params = processTPAWParams(
-  extendTPAWParams({
-    v: 12,
-    strategy: 'TPAW',
-    people: {
-      withPartner: false,
-      person1: {
-        displayName: null,
-        ages: {type: 'notRetired', current: 25, retirement: 55, max: 100},
+const params = extendTPAWParams({
+  v: 12,
+  strategy: 'TPAW',
+  people: {
+    withPartner: false,
+    person1: {
+      displayName: null,
+      ages: {type: 'notRetired', current: 25, retirement: 55, max: 100},
+    },
+  },
+  returns: {
+    expected: {type: 'suggested'},
+    historical: {type: 'default', adjust: {type: 'toExpected'}},
+  },
+  inflation: {type: 'suggested'},
+  targetAllocation: {
+    regularPortfolio: {
+      forTPAW: {
+        start: {stocks: 0.35},
+        intermediate: [],
+        end: {stocks: 0.35},
+      },
+      forSPAWAndSWR: {
+        start: {stocks: 0.5},
+        intermediate: [],
+        end: {stocks: 0.5},
       },
     },
-    returns: {
-      expected: {type: 'suggested'},
-      historical: {type: 'default', adjust: {type: 'toExpected'}},
-    },
-    inflation: {type: 'suggested'},
-    targetAllocation: {
-      regularPortfolio: {
-        forTPAW: {
-          start: {stocks: 0.35},
-          intermediate: [],
-          end: {stocks: 0.35},
-        },
-        forSPAWAndSWR: {
-          start: {stocks: 0.5},
-          intermediate: [],
-          end: {stocks: 0.5},
-        },
-      },
 
-      legacyPortfolio: {stocks: 0.7},
+    legacyPortfolio: {stocks: 0.7},
+  },
+  swrWithdrawal: {type: 'asPercent', percent: 0.04},
+  scheduledWithdrawalGrowthRate: 0.02,
+  savingsAtStartOfStartYear: 50000,
+  savings: [
+    {
+      label: 'Savings',
+      yearRange: {
+        type: 'startAndEnd',
+        start: {type: 'now'},
+        end: {type: 'namedAge', person: 'person1', age: 'lastWorkingYear'},
+      },
+      value: 10000,
+      nominal: false,
+      id: 0,
     },
-    swrWithdrawal: {type: 'asPercent', percent: 0.04},
-    scheduledWithdrawalGrowthRate: 0.02,
-    savingsAtStartOfStartYear: 50000,
-    savings: [
+  ],
+  retirementIncome: [
+    {
+      label: 'Social Security',
+      yearRange: {
+        type: 'startAndEnd',
+        start: {type: 'numericAge', person: 'person1', age: 70},
+        end: {type: 'namedAge', person: 'person1', age: 'max'},
+      },
+      value: 20000,
+      nominal: false,
+      id: 0,
+    },
+  ],
+  withdrawals: {
+    lmp: 0,
+    essential: [
       {
-        label: 'Savings',
+        label: null,
         yearRange: {
           type: 'startAndEnd',
-          start: {type: 'now'},
-          end: {type: 'namedAge', person: 'person1', age: 'lastWorkingYear'},
+          start: {type: 'numericAge', person: 'person1', age: 76},
+          end: {type: 'numericAge', person: 'person1', age: 76},
         },
-        value: 10000,
+        value: 100000,
         nominal: false,
         id: 0,
       },
     ],
-    retirementIncome: [
+    discretionary: [
       {
-        label: 'Social Security',
+        label: null,
         yearRange: {
           type: 'startAndEnd',
-          start: {type: 'numericAge', person: 'person1', age: 70},
-          end: {type: 'namedAge', person: 'person1', age: 'max'},
+          start: {type: 'numericAge', person: 'person1', age: 58},
+          end: {type: 'numericAge', person: 'person1', age: 58},
         },
-        value: 20000,
+        value: 100000,
         nominal: false,
-        id: 0,
+        id: 1,
       },
     ],
-    withdrawals: {
-      lmp: 0,
-      essential: [
-        {
-          label: null,
-          yearRange: {
-            type: 'startAndEnd',
-            start: {type: 'numericAge', person: 'person1', age: 76},
-            end: {type: 'numericAge', person: 'person1', age: 76},
-          },
-          value: 100000,
-          nominal: false,
-          id: 0,
-        },
-      ],
-      discretionary: [
-        {
-          label: null,
-          yearRange: {
-            type: 'startAndEnd',
-            start: {type: 'numericAge', person: 'person1', age: 58},
-            end: {type: 'numericAge', person: 'person1', age: 58},
-          },
-          value: 100000,
-          nominal: false,
-          id: 1,
-        },
-      ],
-    },
-    spendingCeiling: null,
-    spendingFloor: null,
-    legacy: {
-      total: 50000,
-      external: [],
-    },
-    sampling: 'monteCarlo',
-    display: {
-      alwaysShowAllYears: false,
-    },
-  })
-)
+  },
+  spendingCeiling: null,
+  spendingFloor: null,
+  legacy: {
+    total: 50000,
+    external: [],
+  },
+  sampling: 'monteCarlo',
+  display: {
+    alwaysShowAllYears: false,
+  },
+})

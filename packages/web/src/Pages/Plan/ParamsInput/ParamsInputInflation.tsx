@@ -10,6 +10,7 @@ import {Contentful} from '../../../Utils/Contentful'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
 import {paddingCSS} from '../../../Utils/Geometry'
 import {preciseRange} from '../../../Utils/PreciseRange'
+import {useMarketData} from '../../App/WithMarketData'
 import {useSimulation} from '../../App/WithSimulation'
 import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
 import {usePlanContent} from '../Plan'
@@ -34,7 +35,9 @@ export const _InflationCard = React.memo(
     props: ParamsInputBodyPassThruProps
   }) => {
     const {params, setParams} = useSimulation()
-    const content = usePlanContent()
+    const marketData = useMarketData()
+    const content = usePlanContent().inflation.intro[params.strategy]
+
     const sliderProps = {
       className: '',
       height: 60,
@@ -62,10 +65,7 @@ export const _InflationCard = React.memo(
         className={`${className} params-card`}
         style={{padding: paddingCSS(props.sizing.cardPadding)}}
       >
-        <Contentful.RichText
-          body={content.inflation.intro[params.strategy]}
-          p="col-span-2 mb-2 p-base"
-        />
+        <Contentful.RichText body={content} p="col-span-2 mb-2 p-base" />
 
         <button
           className={`${className} flex gap-x-2 mt-4`}
@@ -84,7 +84,9 @@ export const _InflationCard = React.memo(
               {inflationTypeLabel({type: 'suggested'})}
             </h2>
             <h2 className="text-left text-sm lighten-2">
-              {formatPercentage(1)(processInflation({type: 'suggested'}))}
+              {formatPercentage(1)(
+                processInflation({type: 'suggested'}, marketData)
+              )}
             </h2>
           </div>
         </button>
@@ -94,7 +96,7 @@ export const _InflationCard = React.memo(
           onClick={() =>
             handleChange({
               type: 'manual',
-              value: processInflation(params.inflation),
+              value: processInflation(params.inflation, marketData),
             })
           }
         >
@@ -116,7 +118,10 @@ export const _InflationCard = React.memo(
           <SliderInput
             {...sliderProps}
             pointers={[
-              {value: processInflation(params.inflation), type: 'normal'},
+              {
+                value: processInflation(params.inflation, marketData),
+                type: 'normal',
+              },
             ]}
             onChange={([value]) => handleChange({type: 'manual', value})}
           />

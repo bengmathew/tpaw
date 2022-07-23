@@ -1,16 +1,11 @@
 import {useRouter} from 'next/router'
-import {useMemo} from 'react'
+import {useState} from 'react'
 
 export function useURLUpdater() {
   const router = useRouter()
 
-  const result = useMemo(
-    () => ({
-      push: (url: URL) => void router.push(url),
-    }),
-    
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  )
+  const [result] = useState(() => ({
+    push: (url: URL) => void router.push(url),
+  }))
   return result
 }

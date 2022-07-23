@@ -32,6 +32,7 @@
     "contentful": "^9.1.5",
     "cookie": "^0.5.0",
     "gsap": "^3.8.0",
+    "htmlparser2": "^8.0.1",
     "is-mobile": "^3.1.1",
     "lodash": "^4.17.21",
     "next": "^12.0.2",

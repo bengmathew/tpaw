@@ -1,5 +1,5 @@
 import React, {ReactElement, useEffect, useState} from 'react'
-import {createContext} from './CreateContext'
+import {createContext} from '../../Utils/CreateContext'
 
 const [Context, useWindowSize] = createContext<{width: number; height: number}>(
   'WindowSize'

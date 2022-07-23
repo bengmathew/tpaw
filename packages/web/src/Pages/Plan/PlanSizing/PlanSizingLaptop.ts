@@ -1,6 +1,6 @@
-import { rectExt } from '../../../Utils/Geometry'
-import { linearFnFomPoints } from '../../../Utils/LinearFn'
-import { PlanSizing } from './PlanSizing'
+import {rectExt} from '../../../Utils/Geometry'
+import {linearFnFomPoints} from '../../../Utils/LinearFn'
+import {PlanSizing} from './PlanSizing'
 
 export function planSizingLaptop(windowSize: {
   width: number
@@ -12,89 +12,131 @@ export function planSizingLaptop(windowSize: {
 
   const headingMarginBottom = 20
 
-  // Guide
-  const guide = (transition: number) => {
-    const y = 0
-    const height = windowSize.height - y
-    const width = windowSize.width * 0.28
-    const x = linearFnFomPoints(0, -width + pad * 0.75, 1, 0)(transition)
-    return {
-      position: rectExt({width, x, height, y}),
-      padding: {left: pad, right: pad * 0.75, top: topFn(1), bottom: pad},
-      headingMarginBottom,
+  // ---- GUIDE ----
+  const guide = (() => {
+    const size = {
+      width: windowSize.width * 0.28,
+      height: windowSize.height,
     }
-  }
+    const dynamic = (transition: number) => {
+      return {
+        origin: {
+          x: linearFnFomPoints(0, -size.width + pad * 0.75, 1, 0)(transition),
+          y: 0,
+        },
+      }
+    }
+    return {
+      dynamic,
+      fixed: {
+        size,
+        padding: {left: pad, right: pad * 0.75, top: topFn(1), bottom: pad},
+        headingMarginBottom,
+      },
+    }
+  })()
 
   // ---- INPUT SUMMARY ----
-  const inputSummary = ((): PlanSizing['inputSummary'] => ({
-    dynamic: (transition: number) => ({
-      region: rectExt({
-        x: guide(transition).position.right,
-        y: 0,
-        height: windowSize.height,
-        width: Math.max(windowSize.width * 0.37, 350),
+  const inputSummary = ((): PlanSizing['inputSummary'] => {
+    const extraPad = 10
+    return {
+      dynamic: (transition: number) => ({
+        origin: {
+          x: guide.dynamic(transition).origin.x + guide.fixed.size.width,
+          y: 0,
+        },
       }),
-    }),
-    fixed: {
-      padding: {
-        left: pad * 0.25,
-        right: pad * 0.75,
-        top: topFn(0),
-        bottom: pad,
+      fixed: {
+        size: {
+          height: windowSize.height,
+          width: Math.max(windowSize.width * 0.37, 350),
+        },
+        padding: {
+          left: pad * 0.25 + extraPad,
+          right: pad * 0.75 + extraPad,
+          top: topFn(0),
+          bottom: pad,
+        },
+        cardPadding: {left: 15, right: 15, top: 15, bottom: 15},
       },
-      cardPadding: {left: 15, right: 15, top: 15, bottom: 15},
-    },
-  }))()
+    }
+  })()
 
   // ---- INPUT ----
   const input = ((): PlanSizing['input'] => {
+    const dynamic = (transition: number) => ({
+      origin: {
+        x: inputSummary.dynamic(transition).origin.x,
+        y: 0,
+      },
+    })
     return {
-      dynamic: (transition: number) => ({
-        region: rectExt({
-          y: topFn(1),
-          bottom: windowSize.height,
-          width: Math.max(windowSize.width * 0.3, 350),
-          x: guide(transition).position.right,
-        }),
-      }),
+      dynamic,
       fixed: {
-        padding: {left: pad * 0.25, right: pad * 0.75, top: 0, bottom: pad},
+        size: {
+          width: Math.max(windowSize.width * 0.3, 350),
+          height: windowSize.height - dynamic(1).origin.y,
+        },
+        padding: {
+          left: pad * 0.25,
+          right: pad * 0.75,
+          top: topFn(1),
+          bottom: pad,
+        },
         cardPadding: {left: 15, right: 15, top: 15, bottom: 15},
         headingMarginBottom,
       },
     }
   })()
 
-  // Heading
-  const heading = (transition: number) => {
-    return {
-      position: rectExt({
-        width: input.dynamic(1).region.right - pad,
-        height: 60,
-        x: guide(transition).position.x + pad,
-        y: 0,
-      }),
+  // ---- HEADING -----
+  const heading = (() => {
+    const dynamic = (transition: number) => {
+      return {
+        origin: {
+          x: guide.dynamic(transition).origin.x + pad,
+          y: 0,
+        },
+      }
     }
-  }
+    return {
+      dynamic,
+      fixed: {
+        size: {
+          width:
+            input.dynamic(1).origin.x +
+            input.fixed.size.width -
+            dynamic(1).origin.x,
+          height: 60,
+        },
+      },
+    }
+  })()
 
-  // Chart
+  // ---- CHART ----
   const chart = (transition: number) => {
-    const padTop = 15
+    const vertInnerPadFn = linearFnFomPoints(0, 35, 1, 15)
+    const vertInnerPad = vertInnerPadFn(transition)
+    const hozrInnerPad = vertInnerPad * 1.25
     const positionFn = (transition: number) => {
-      const y = topFn(transition) - padTop
+      // const y = topFn(transition) - padTop
+      const y = linearFnFomPoints(0, 0, 1, topFn(1) - vertInnerPadFn(1))(transition)
       const x =
         linearFnFomPoints(
           0,
-          inputSummary.dynamic(0).region.right,
+          inputSummary.dynamic(0).origin.x + inputSummary.fixed.size.width,
           1,
-          input.dynamic(1).region.right
+          input.dynamic(1).origin.x + input.fixed.size.width
         )(transition) +
         pad * 0.25
       return {
-        y,
         x,
-        width: windowSize.width - x - pad,
-        height: windowSize.height - 2 * y,
+        y,
+        // width: windowSize.width - x - pad,
+        width:
+          windowSize.width - x - linearFnFomPoints(0, 0, 1, pad)(transition),
+        // height: windowSize.height - 2 * y,
+        height: windowSize.height - y,
       }
     }
 
@@ -115,13 +157,20 @@ export function planSizingLaptop(windowSize: {
 
     return {
       position: rectExt(position),
-      padding: {left: 20, right: 20, top: 10, bottom: 10},
+      // padding: {left: 20, right: 20, top: 10, bottom: 10},
+      padding: {
+        left: hozrInnerPad,
+        right: hozrInnerPad,
+        top: vertInnerPad,
+        bottom: vertInnerPad,
+      },
       // 18px is text-lg 20px is text-xl.
-      menuButtonScale: linearFnFomPoints(0, 1, 1, 18 / 20)(transition),
+      menuButtonScale: linearFnFomPoints(0, 1, 22/22, 18 / 22)(transition),
       cardPadding: {left: 15, right: 15, top: 10, bottom: 10},
       headingMarginBottom: 10,
       legacyWidth: linearFnFomPoints(0, 120, 1, 100)(transition),
       intraGap: linearFnFomPoints(0, 20, 1, 10)(transition),
+      borderRadius: linearFnFomPoints(0, 0, 1, 16)(transition),
     }
   }
 

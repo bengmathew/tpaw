@@ -16,6 +16,7 @@ import {
 import {createContext} from '../../Utils/CreateContext'
 import {fGet} from '../../Utils/Utils'
 import {useTPAWParams} from './UseTPAWParams'
+import {useMarketData} from './WithMarketData'
 
 export type SimulationInfoPerParam = {
   params: TPAWParams
@@ -133,9 +134,11 @@ function useForParams(
   params: TPAWParams | null,
   numRuns: number
 ): SimulationInfoPerParam | null {
+  const marketData = useMarketData()
   const paramsProcessed = useMemo(
-    () => (params ? processTPAWParams(extendTPAWParams(params)) : null),
-    [params]
+    () =>
+      params ? processTPAWParams(extendTPAWParams(params), marketData) : null,
+    [params, marketData]
   )
   const tpawResult = useTPAWWorker(paramsProcessed, numRuns, percentiles)
   return useMemo(

@@ -31,16 +31,29 @@ export const rectExt = (
   return {x, y, width, height, bottom, right}
 }
 
-export const applyRectSizingToHTMLElement = (
+export const applyRegionToHTMLElement = (
   {x, y, width, height}: RectExt,
   element: HTMLElement
 ) => {
-  applyPositionToHTMLElement({x, y}, element)
+  applyOriginToHTMLElement({x, y}, element)
+  applySizeToElement({width, height}, element)
+}
+
+export const applySizeToElement = (
+  {width, height}: Size,
+  element: HTMLElement
+) => {
   element.style.width = `${width}px`
   element.style.height = `${height}px`
 }
-export const applyPositionToHTMLElement = (
-  {x, y}: {x: number; y: number},
+
+export const sizeCSSStyle = ({width, height}: Size) => ({
+  width: `${width}px`,
+  height: `${height}px`,
+})
+
+export const applyOriginToHTMLElement = (
+  {x, y}: Origin,
   element: HTMLElement
 ) => {
   element.style.top = `${y}px`
@@ -89,3 +102,4 @@ export const paddingCSSStyle = (
 })
 
 export type Size = {width: number; height: number}
+export type Origin = {x: number; y: number}

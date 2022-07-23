@@ -6,7 +6,12 @@ import React, {
   useLayoutEffect,
   useRef,
 } from 'react'
-import {applyRectSizingToHTMLElement, RectExt} from '../../Utils/Geometry'
+import {
+  applyOriginToHTMLElement,
+  Origin,
+  Size,
+  sizeCSSStyle,
+} from '../../Utils/Geometry'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {fGet} from '../../Utils/Utils'
 import {paramsInputLabel} from './ParamsInput/Helpers/ParamsInputLabel'
@@ -18,13 +23,15 @@ export type PlanHeadingStateful = {
 
 type Props = {
   type: ParamsInputType
-  sizing: (transition: number) => {position: RectExt}
+  sizing: {
+    dynamic: (transition: number) => {origin: Origin}
+    fixed: {size: Size}
+  }
   transitionRef: React.MutableRefObject<{transition: number}>
   onDone: () => void
 }
 
 export type PlanHeadingSizing = Props['sizing']
-
 
 export const PlanHeading = React.memo(
   React.forwardRef<PlanHeadingStateful, Props>(
@@ -32,11 +39,11 @@ export const PlanHeading = React.memo(
       const outerRef = useRef<HTMLDivElement | null>(null)
       const setTransition = useCallback(
         (transition: number) => {
-          const {position} = sizing(transition)
+          const {origin} = sizing.dynamic(transition)
           const outer = fGet(outerRef.current)
           outer.style.opacity = `${transition}`
           outer.style.display = transition === 0 ? 'none' : 'flex'
-          applyRectSizingToHTMLElement(position, outer)
+          applyOriginToHTMLElement(origin, outer)
         },
         [sizing]
       )
@@ -46,8 +53,13 @@ export const PlanHeading = React.memo(
       }, [setTransition, transitionRef])
       useAssertConst([transitionRef])
 
+      const {size} = sizing.fixed
       return (
-        <div className="absolute  z-10" ref={outerRef}>
+        <div
+          className="absolute  z-10"
+          ref={outerRef}
+          style={{...sizeCSSStyle(size)}}
+        >
           <div className="flex  items-center gap-x-4  bg-planBG bg-opacity-90 rounded-br-xl">
             <button
               className="flex items-center gap-x-2 text-sm sm:text-base btn-dark px-4 py-1.5"

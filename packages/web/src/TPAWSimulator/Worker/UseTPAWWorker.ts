@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react'
+import {useMarketData} from '../../Pages/App/WithMarketData'
 import {asyncEffect} from '../../Utils/AsyncEffect'
 import {fGet} from '../../Utils/Utils'
 import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
@@ -26,6 +27,7 @@ export function useTPAWWorker(
   percentiles: number[]
 ) {
   const [result, setResult] = useState<UseTPAWWorkerResult | null>(null)
+  const marketData = useMarketData()
 
   useEffect(() => {
     if (!params) {
@@ -37,13 +39,14 @@ export function useTPAWWorker(
           status,
           numRuns,
           params,
-          percentiles
+          percentiles,
+          marketData
         )
         if (status.canceled) return
         setResult({...fGet(data), args})
       })
     }
-  }, [numRuns, params, percentiles])
+  }, [marketData, numRuns, params, percentiles])
 
   return result
 }

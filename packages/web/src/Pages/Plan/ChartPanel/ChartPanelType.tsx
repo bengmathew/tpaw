@@ -38,7 +38,8 @@ const _checkType = (x: string): x is ChartPanelType =>
   (x.startsWith('spending-discretionary-') &&
     _isDigits(x.substring('spending-discretionary-'.length))) ||
   x === 'portfolio' ||
-  x === 'glide-path' ||
+  x === 'asset-allocation-savings-portfolio' ||
+  x === 'asset-allocation-total-portfolio' ||
   x === 'withdrawal'
 
 export const isChartPanelType = (

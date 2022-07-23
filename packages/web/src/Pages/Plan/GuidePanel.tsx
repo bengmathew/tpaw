@@ -7,14 +7,18 @@ import React, {
   useState,
 } from 'react'
 import {Contentful} from '../../Utils/Contentful'
+import {formatPercentage} from '../../Utils/FormatPercentage'
 import {
-  applyPaddingToHTMLElement,
-  applyRectSizingToHTMLElement,
+  applyOriginToHTMLElement,
+  Origin,
   Padding,
-  RectExt,
+  paddingCSSStyle,
+  Size,
+  sizeCSSStyle,
 } from '../../Utils/Geometry'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {fGet} from '../../Utils/Utils'
+import {useMarketData} from '../App/WithMarketData'
 import {useSimulation} from '../App/WithSimulation'
 import {ModalBase} from '../Common/Modal/ModalBase'
 import {ParamsInputType} from './ParamsInput/Helpers/ParamsInputType'
@@ -27,17 +31,21 @@ export type GuidePanelStateful = {
 type Props = {
   layout: 'mobile' | 'desktop' | 'laptop'
   type: ParamsInputType
-  sizing: (transition: number) => {
-    position: RectExt
-    padding: Padding
-    headingMarginBottom: number
+  sizing: {
+    dynamic: (transition: number) => {
+      origin: Origin
+    }
+    fixed: {
+      size: Size
+      padding: Padding
+      headingMarginBottom: number
+    }
   }
   transitionRef: React.MutableRefObject<{
     transition: number
   }>
 }
 export type GuidePanelSizing = Props['sizing']
-
 
 export const GuidePanel = React.memo(
   React.forwardRef<GuidePanelStateful, Props>((props, ref) =>
@@ -55,21 +63,15 @@ const _Mobile = React.memo(
       const {params} = useSimulation()
       const [show, setShow] = useState(false)
       const outerRef = useRef<HTMLButtonElement | null>(null)
-      const [inner, setInner] = useState<HTMLDivElement | null>(null)
       const setTransition = useCallback(
         (transition: number) => {
-          const {position, padding, headingMarginBottom} = sizing(transition)
+          const {origin} = sizing.dynamic(transition)
           // Outer.
-          applyRectSizingToHTMLElement(position, fGet(outerRef.current))
+          applyOriginToHTMLElement(origin, fGet(outerRef.current))
           fGet(outerRef.current).style.display =
             transition === 0 ? 'none' : 'block'
-
-          // Inner.
-          if (inner) {
-            applyPaddingToHTMLElement(sizing(1).padding, inner)
-          }
         },
-        [sizing, inner]
+        [sizing]
       )
       useImperativeHandle(forwardRef, () => ({setTransition}), [setTransition])
       useLayoutEffect(() => {
@@ -77,13 +79,17 @@ const _Mobile = React.memo(
       }, [setTransition, transitionRef])
       useAssertConst([transitionRef])
 
-      const content = usePlanContent()[type]
+      const content = useContent(type)
+      const {size, padding} = sizing.fixed
       return (
         <>
           <button
             className="absolute rounded-full flex item-center justify-center bg-pageBG"
             ref={outerRef}
-            style={{boxShadow: 'rgba(0, 0, 0, 0.35) 0px 5px 10px'}}
+            style={{
+              boxShadow: 'rgba(0, 0, 0, 0.35) 0px 5px 10px',
+              ...sizeCSSStyle(size),
+            }}
             onClick={() => setShow(true)}
           >
             <h2 className="font-bold">Guide</h2>
@@ -91,10 +97,8 @@ const _Mobile = React.memo(
           {show && (
             <ModalBase onClose={() => setShow(false)}>
               {transitionOut => (
-                <div className="" ref={setInner}>
-                  <_RichText className="">
-                    {content.body[params.strategy]}
-                  </_RichText>
+                <div className="" style={{...paddingCSSStyle(padding)}}>
+                  <_RichText className="">{content}</_RichText>
                 </div>
               )}
             </ModalBase>
@@ -108,25 +112,16 @@ const _Mobile = React.memo(
 const _LaptopAndDesktop = React.memo(
   React.forwardRef<GuidePanelStateful, Props>(
     ({type, sizing, transitionRef}: Props, forwardRef) => {
-
       const {params} = useSimulation()
       const outerRef = useRef<HTMLDivElement | null>(null)
-      // const innerRef = useRef<HTMLDivElement | null>(null)
-      const headerRef = useRef<HTMLHeadingElement | null>(null)
       const setTransition = useCallback(
         (transition: number) => {
-          const {position, padding, headingMarginBottom} = sizing(transition)
+          const {origin} = sizing.dynamic(transition)
           // Outer.
-          applyRectSizingToHTMLElement(position, fGet(outerRef.current))
-          applyPaddingToHTMLElement(padding, fGet(outerRef.current))
+          applyOriginToHTMLElement(origin, fGet(outerRef.current))
           fGet(outerRef.current).style.opacity = `${transition}`
           fGet(outerRef.current).style.display =
             transition === 0 ? 'none' : 'block'
-
-          // Heading.
-          fGet(
-            headerRef.current
-          ).style.marginBottom = `${headingMarginBottom}px`
         },
         [sizing]
       )
@@ -136,19 +131,27 @@ const _LaptopAndDesktop = React.memo(
       }, [setTransition, transitionRef])
       useAssertConst([transitionRef])
 
-      const content = usePlanContent()[type]
+      const content = useContent(type)
+
+      const {padding, headingMarginBottom, size} = sizing.fixed
       return (
-        <div className="absolute overflow-scroll" ref={outerRef}>
-          <h2 className="uppercase font-bold " ref={headerRef}>
+        <div
+          className="absolute overflow-scroll"
+          ref={outerRef}
+          style={{
+            ...sizeCSSStyle(size),
+            ...paddingCSSStyle(padding),
+          }}
+        >
+          <h2
+            className="uppercase font-bold "
+            style={{marginBottom: `${headingMarginBottom}px`}}
+          >
             Guide
           </h2>
-          {content.body && (
-            <div className={` `}>
-              <_RichText className="">
-                {content.body[params.strategy]}
-              </_RichText>
-            </div>
-          )}
+          <div className={` `}>
+            <_RichText className="">{content}</_RichText>
+          </div>
         </div>
       )
     }
@@ -173,3 +176,57 @@ const _RichText = React.memo(
     )
   }
 )
+
+function useContent(type: ParamsInputType) {
+  const {params, numRuns} = useSimulation()
+  const {CAPE, bondRates, inflation} = useMarketData()
+
+  const formatDate = (epoch: number) =>
+    new Date(epoch).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    })
+
+  const content = usePlanContent()[type].body[params.strategy]
+  const variables = {
+    numRuns: `${numRuns}`,
+    capeDate:formatDate(CAPE.date),
+    expectedReturnsStocksCAPE: (CAPE.value.toFixed(2)),
+    expectedReturnsStocksOneOverCAPE: formatPercentage(1)(CAPE.oneOverCAPE),
+    expectedReturnsStocksRegressionFull5Year: formatPercentage(1)(
+      CAPE.regression.full.fiveYear
+    ),
+    expectedReturnsStocksRegressionFull10Year: formatPercentage(1)(
+      CAPE.regression.full.tenYear
+    ),
+    expectedReturnsStocksRegressionFull20Year: formatPercentage(1)(
+      CAPE.regression.full.twentyYear
+    ),
+    expectedReturnsStocksRegressionFull30Year: formatPercentage(1)(
+      CAPE.regression.full.thirtyYear
+    ),
+    expectedReturnsStocksRegressionRestricted5Year: formatPercentage(1)(
+      CAPE.regression.restricted.fiveYear
+    ),
+    expectedReturnsStocksRegressionRestricted10Year: formatPercentage(1)(
+      CAPE.regression.restricted.tenYear
+    ),
+    expectedReturnsStocksRegressionRestricted20Year: formatPercentage(1)(
+      CAPE.regression.restricted.twentyYear
+    ),
+    expectedReturnsStocksRegressionRestricted30Year: formatPercentage(1)(
+      CAPE.regression.restricted.thirtyYear
+    ),
+    expectedReturnsSuggested: formatPercentage(1)(CAPE.suggested),
+    bondsDate:formatDate(bondRates.date),
+    expectedReturnsBonds5Year: formatPercentage(1)(bondRates.fiveYear),
+    expectedReturnsBonds10Year: formatPercentage(1)(bondRates.tenYear),
+    expectedReturnsBonds20Year: formatPercentage(1)(bondRates.twentyYear),
+    expectedReturnsBonds30Year: formatPercentage(1)(bondRates.thirtyYear),
+    inflationDate: formatDate(inflation.date),
+    inflation: formatPercentage(1)(inflation.value),
+  }
+  return Contentful.replaceVariables(variables, content)
+}
