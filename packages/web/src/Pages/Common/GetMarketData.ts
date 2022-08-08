@@ -15,8 +15,9 @@ export async function getMarketData() {
 }
 
 async function getBondRates() {
+  const year = new Date().getFullYear()
   const response = await fetch(
-    'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/all/202207?type=daily_treasury_real_yield_curve&field_tdr_date_value_month=202207&page&_format=csv'
+    `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/${year}/all?type=daily_treasury_real_yield_curve&field_tdr_date_value=${year}&page&_format=csv`
   )
   assert(response.ok)
   const text = await response.text()
@@ -38,8 +39,12 @@ function _parseBondRow(row: string) {
 }
 
 async function getInflation() {
+  const date = new Date()
+  const oneYearAgoStr = `${date.getFullYear() - 1}-${
+    date.getMonth() + 1
+  }-${date.getDate()}`
   const response = await fetch(
-    'https://fred.stlouisfed.org/graph/fredgraph.csv?bgcolor=%23e1e9f0&chart_type=line&drp=0&fo=open%20sans&graph_bgcolor=%23ffffff&height=450&mode=fred&recession_bars=on&txtcolor=%23444444&ts=12&tts=12&width=1168&nt=0&thu=0&trc=0&show_legend=yes&show_axis_titles=yes&show_tooltip=yes&id=T10YIE&scale=left&cosd=2017-07-22&coed=2022-07-22&line_color=%234572a7&link_values=false&line_style=solid&mark_type=none&mw=3&lw=2&ost=-99999&oet=99999&mma=0&fml=a&fq=Daily&fam=avg&fgst=lin&fgsnd=2020-02-01&line_index=1&transformation=lin&vintage_date=2022-07-22&revision_date=2022-07-22&nd=2003-01-02'
+    `https://fred.stlouisfed.org/graph/fredgraph.csv?mode=fred&id=T10YIE&cosd=${oneYearAgoStr}`
   )
   assert(response.ok)
   const text = await response.text()
