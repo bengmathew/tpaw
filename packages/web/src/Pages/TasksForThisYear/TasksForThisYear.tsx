@@ -21,6 +21,9 @@ type _Props = Omit<FirstYearSavingsPortfolioDetail, 'withdrawals'> & {
   }
   withdrawalsStarted: boolean
   strategy: TPAWParams['strategy']
+  risk:{
+    useTPAWPreset:boolean
+  }
 }
 
 const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
@@ -61,6 +64,9 @@ const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
     },
     withdrawalsStarted,
     strategy: params.strategy,
+    risk:{
+      useTPAWPreset:params.original.risk.useTPAWPreset
+    }
   }
 }
 
@@ -404,7 +410,7 @@ const _AssetAllocation = React.memo(
             Rebalance this portfolio to the following asset allocation:
           </p>
           <_AllocationTable className="" {...props} />
-          {props.strategy === 'TPAW' && (
+          {props.strategy === 'TPAW' && !props.risk.useTPAWPreset && (
             <p className="mt-3">
               <span className="bg-gray-300 px-2 rounded-lg ">Note</span>{' '}
               {`This is the asset allocation for your savings portfolio and will typically 

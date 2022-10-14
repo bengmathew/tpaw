@@ -1,7 +1,8 @@
 import isMobile from 'is-mobile'
-import React, {CSSProperties, useEffect, useState} from 'react'
+import React, {CSSProperties, useEffect, useRef, useState} from 'react'
 import ReactDOM from 'react-dom'
 import {NumericFormat} from 'react-number-format'
+import {fGet} from '../../../Utils/Utils'
 
 type Props = {
   className?: string
@@ -20,14 +21,20 @@ export const AmountInput = React.memo(
     const [showModal, setShowModal] = useState(false)
 
     const [internalValue, setInternalValue] = useState(props.value)
+    const ref = useRef<HTMLInputElement>(null)
     useEffect(() => setInternalValue(props.value), [props.value])
+
     return (
       <>
         <_AmountInput
+          ref={ref}
           {...props}
           value={props.value}
           onFocus={() => {
             if (isMobile()) setShowModal(true)
+          }}
+          onEnter={() => {
+            if(isMobile()) fGet(ref.current).blur()
           }}
         />
 
@@ -81,67 +88,74 @@ export const AmountInput = React.memo(
   }
 )
 
+type _Props = Props & {
+  onEnter?: (value: number) => void
+  onFocus?: () => void
+  focusOnShow?: boolean
+}
 const _AmountInput = React.memo(
-  ({
-    className = '',
-    style,
-    value,
-    onChange,
-    disabled = false,
-    prefix,
-    suffix,
-    decimals,
-    onEnter,
-    onFocus,
-    focusOnShow = false,
-    onTransitionEnd,
-  }: Props & {
-    onEnter?: (value: number) => void
-    onFocus?: () => void
-    focusOnShow?: boolean
-  }) => {
-    const [internalValue, setInternalValue] = useState<number | null>(value)
-    useEffect(() => {
-      setInternalValue(value)
-    }, [value])
-    const outputValue = internalValue === null ? 0 : internalValue
+  React.forwardRef<HTMLInputElement, _Props>(
+    (
+      {
+        className = '',
+        style,
+        value,
+        onChange,
+        disabled = false,
+        prefix,
+        suffix,
+        decimals,
+        onEnter,
+        onFocus,
+        focusOnShow = false,
+        onTransitionEnd,
+      }: _Props,
+      forwardRef
+    ) => {
+      const [internalValue, setInternalValue] = useState<number | null>(value)
+      useEffect(() => {
+        setInternalValue(value)
+      }, [value])
+      const outputValue = internalValue === null ? 0 : internalValue
 
-    return (
-      <NumericFormat
-        className={` ${className} `}
-        style={style}
-        onTransitionEnd={onTransitionEnd}
-        autoFocus={focusOnShow}
-        thousandSeparator={true}
-        disabled={disabled}
-        prefix={prefix}
-        suffix={suffix}
-        value={internalValue}
-        decimalScale={decimals}
-        fixedDecimalScale
-        onValueChange={x => {
-          setInternalValue(x.floatValue === undefined ? null : x.floatValue)
-        }}
-        onBlur={() => {
-          // Don't rely on effect to change interval value. If inputValue is null
-          // and outputValue is 0, and value is 0, inputValue won't update to 0.
-          setInternalValue(outputValue)
-          onChange(outputValue)
-        }}
-        onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-          e.target.setSelectionRange(0, e.target.value.length)
-          onFocus?.()
-        }}
-        onKeyDown={(e: React.KeyboardEvent) => {
-          if (e.key === 'Enter') {
+      return (
+        <NumericFormat
+          getInputRef={forwardRef}
+          className={` ${className} `}
+          style={style}
+          onTransitionEnd={onTransitionEnd}
+          autoFocus={focusOnShow}
+          thousandSeparator={true}
+          disabled={disabled}
+          prefix={prefix}
+          suffix={suffix}
+          value={internalValue}
+          decimalScale={decimals}
+          fixedDecimalScale
+          onValueChange={x => {
+            setInternalValue(x.floatValue === undefined ? null : x.floatValue)
+          }}
+          onBlur={() => {
             // Don't rely on effect to change interval value. If inputValue is null
             // and outputValue is 0, and value is 0, inputValue won't update to 0.
             setInternalValue(outputValue)
             onChange(outputValue)
-            onEnter?.(outputValue)
-          }
-        }}
-      />
-    )
-  }
+          }}
+          onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
+            e.target.setSelectionRange(0, e.target.value.length)
+            onFocus?.()
+          }}
+          onKeyDown={(e: React.KeyboardEvent) => {
+            if (e.key === 'Enter') {
+              // Don't rely on effect to change interval value. If inputValue is null
+              // and outputValue is 0, and value is 0, inputValue won't update to 0.
+              setInternalValue(outputValue)
+              onChange(outputValue)
+              onEnter?.(outputValue)
+            }
+          }}
+        />
+      )
+    }
+  )
 )

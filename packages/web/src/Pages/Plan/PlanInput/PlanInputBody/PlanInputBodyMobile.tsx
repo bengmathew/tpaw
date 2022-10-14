@@ -55,7 +55,7 @@ export const PlanInputBodyMobile = React.memo(
           <div className="mb-20">
             {guideContent && (
               <PlanInputBodyGuide
-                className="pb-10"
+                className="mb-10"
                 type={type}
                 padding={sizing.cardPadding}
                 customIntro={customGuideIntro}

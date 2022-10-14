@@ -1,7 +1,7 @@
 import {
   faMinus as faMinusLight,
   faPlus as faPlusLight,
-} from '@fortawesome/pro-regular-svg-icons'
+} from '@fortawesome/pro-light-svg-icons'
 import {faPen} from '@fortawesome/pro-solid-svg-icons'
 import {faPlus as faPlusThin} from '@fortawesome/pro-thin-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
@@ -119,56 +119,44 @@ const _Entry = React.memo(
     onChangeAmount: (amount: number) => void
   }) => {
     const {increment, decrement} = smartDeltaFnForAmountInput
-    const postFix = ` per year (${entry.nominal ? 'nominal' : 'real'} dollars)`
-    const valueStr = `${formatCurrency(entry.value)}${postFix}`
     return (
-      <div className={`${className} border border-gray-200 rounded-2xl p-3`}>
-        <div className=" flex flex-row justify-between items-start ">
-          <div className="">
-            <h2 className="font-medium">
-              {trimAndNullify(entry.label) ?? '<no label>'}
-            </h2>
-            <div className="flex justify-between">
-              <div className="flex items-stretch">
-                <div className="flex flex-row items-center gap-x-2 mr-2">
-                  <h2
-                    className=" whitespace-nowrap"
-                    style={{
-                      width: `${
-                        Math.max(`10,000,000${postFix}`.length, valueStr.length) * 7.6
-                      }px`,
-                    }}
-                  >
-                    {valueStr}
-                  </h2>
-                  <h2 className=""></h2>
-                </div>
-                <button
-                  className="flex items-center px-2"
-                  onClick={() => onChangeAmount(increment(entry.value))}
-                >
-                  <FontAwesomeIcon className="text-base" icon={faPlusLight} />
-                </button>
-                <button
-                  className="flex items-center px-2"
-                  onClick={() => onChangeAmount(decrement(entry.value))}
-                >
-                  <FontAwesomeIcon className="text-base" icon={faMinusLight} />
-                </button>
-              </div>
-            </div>
+      <div className={`${className} border border-gray-200 rounded-2xl p-3 `}>
+        <div className="">
+          <h2 className="font-medium">
+            {trimAndNullify(entry.label) ?? '<no label>'}
+          </h2>
+          <h2 className=" whitespace-nowrap">
+            {formatCurrency(entry.value)} per year (
+            {entry.nominal ? 'nominal' : 'real'} dollars)
+          </h2>
+          <h2 className="">
+            <YearRangeDisplay
+              value={entry.yearRange}
+              range={allowableYearRange}
+              lengthInBrackets={false}
+            />
+          </h2>
+        </div>
+
+        <div className="flex justify-between items.center">
+          <div className="flex ">
+            <button
+              className="flex items-center px-4 -mx-4 pb-3 -mb-3 pt-2"
+              onClick={() => onChangeAmount(increment(entry.value))}
+            >
+              <FontAwesomeIcon className="text-lg" icon={faPlusLight} />
+            </button>
+            <button
+              className="flex items-center px-4 pb-3 -mb-3  pt-2"
+              onClick={() => onChangeAmount(decrement(entry.value))}
+            >
+              <FontAwesomeIcon className="text-lg" icon={faMinusLight} />
+            </button>
           </div>
-          <button className="px-2 -mr-2 py-2" onClick={onEdit}>
+          <button className="px-3 -mr-3 pb-3 -mb-3  pt-2" onClick={onEdit}>
             <FontAwesomeIcon className="text-lg" icon={faPen} />
           </button>
         </div>
-        <h2 className="">
-          <YearRangeDisplay
-            value={entry.yearRange}
-            range={allowableYearRange}
-            lengthInBrackets={false}
-          />
-        </h2>
       </div>
     )
   }
