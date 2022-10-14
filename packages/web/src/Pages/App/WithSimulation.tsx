@@ -1,22 +1,23 @@
 import _ from 'lodash'
-import {Dispatch, ReactNode, useMemo, useState} from 'react'
-import {TPAWParams} from '../../TPAWSimulator/TPAWParams'
+import { Dispatch, ReactNode, useMemo, useState } from 'react'
+import { resolveTPAWRiskPreset } from '../../TPAWSimulator/DefaultParams'
+import { TPAWParams } from '../../TPAWSimulator/TPAWParams'
 import {
   extendTPAWParams,
-  TPAWParamsExt,
+  TPAWParamsExt
 } from '../../TPAWSimulator/TPAWParamsExt'
 import {
   processTPAWParams,
-  TPAWParamsProcessed,
+  TPAWParamsProcessed
 } from '../../TPAWSimulator/TPAWParamsProcessed'
 import {
   useTPAWWorker,
-  UseTPAWWorkerResult,
+  UseTPAWWorkerResult
 } from '../../TPAWSimulator/Worker/UseTPAWWorker'
-import {createContext} from '../../Utils/CreateContext'
-import {fGet} from '../../Utils/Utils'
-import {useTPAWParams} from './UseTPAWParams'
-import {useMarketData} from './WithMarketData'
+import { createContext } from '../../Utils/CreateContext'
+import { fGet } from '../../Utils/Utils'
+import { useTPAWParams } from './UseTPAWParams'
+import { useMarketData } from './WithMarketData'
 
 export type SimulationInfoPerParam = {
   params: TPAWParams
@@ -31,10 +32,10 @@ export type SimulationInfoPerParam = {
 export type SimulationInfo = {
   paramSpace: 'a' | 'b'
   setParamSpace: (space: 'a' | 'b') => void
-  setCompareSharpeRatio: (x: boolean) => void
+  setCompareRewardRiskRatio: (x: boolean) => void
   setNumRuns: Dispatch<number>
   setParams: (params: TPAWParams | ((params: TPAWParams) => TPAWParams)) => void
-  forSharpeRatioComparison: {
+  forRewardRiskRatioComparison: {
     tpaw: SimulationInfoPerParam
     spaw: SimulationInfoPerParam
     swr: SimulationInfoPerParam
@@ -49,63 +50,67 @@ const highlightPercentiles = [5, 25, 50, 75, 95]
 // const highlightPercentiles = [10, 90]
 const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
 
-export {useSimulation}
+export { useSimulation }
 
 export const WithSimulation = ({children}: {children: ReactNode}) => {
   const [numRuns, setNumRuns] = useState(500)
   const {paramSpace, setParamSpace, params, setParams} = useTPAWParams()
-  const [compareSharpeRatio, setCompareSharpeRatio] = useState(false)
+  const [compareRewardRiskRatio, setCompareRewardRiskRatio] = useState(false)
 
-  const paramsForSharpeRatioComparison: {
+  const paramsForRewardRiskRatioComparison: {
     tpaw: TPAWParams
     spaw: TPAWParams
     swr: TPAWParams
   } | null = useMemo(() => {
-    if (!compareSharpeRatio) return null
+    if (!compareRewardRiskRatio) return null
     const clone = _.cloneDeep(params)
-    clone.legacy = {external: [], total: 0}
-    clone.withdrawals = {
+    clone.extraSpending = {
       essential: [],
       discretionary: [],
-      lmp: clone.withdrawals.lmp,
     }
-    clone.scheduledWithdrawalGrowthRate = 0
-    clone.spendingCeiling = null
-    clone.spendingFloor = null
+
+    clone.legacy.tpawAndSPAW = {
+      external: [],
+      total: 0,
+    }
+    clone.risk = resolveTPAWRiskPreset(params.risk)
+    clone.risk.tpawAndSPAW.spendingTilt = 0
+    clone.risk.tpawAndSPAW.spendingCeiling = null
+    clone.risk.tpawAndSPAW.spendingFloor = null
     return {
       tpaw: {...clone, strategy: 'TPAW'},
       spaw: {...clone, strategy: 'SPAW'},
       swr: {...clone, strategy: 'SWR'},
     }
-  }, [compareSharpeRatio, params])
+  }, [compareRewardRiskRatio, params])
 
-  const forTPAWSharpeRatio = useForParams(
-    paramsForSharpeRatioComparison?.tpaw ?? null,
+  const forTPAWRewardRiskRatio = useForParams(
+    paramsForRewardRiskRatioComparison?.tpaw ?? null,
     numRuns
   )
-  const forSPAWSharpeRatio = useForParams(
-    paramsForSharpeRatioComparison?.spaw ?? null,
+  const forSPAWRewardRiskRatio = useForParams(
+    paramsForRewardRiskRatioComparison?.spaw ?? null,
     numRuns
   )
-  const forSWRSharpeRatio = useForParams(
-    paramsForSharpeRatioComparison?.swr ?? null,
+  const forSWRRewardRiskRatio = useForParams(
+    paramsForRewardRiskRatioComparison?.swr ?? null,
     numRuns
   )
 
-  const forSharpeRatioComparison = useMemo(
+  const forRewardRiskRatioComparison = useMemo(
     () =>
-      compareSharpeRatio
+      compareRewardRiskRatio
         ? {
-            tpaw: fGet(forTPAWSharpeRatio),
-            spaw: fGet(forSPAWSharpeRatio),
-            swr: fGet(forSWRSharpeRatio),
+            tpaw: fGet(forTPAWRewardRiskRatio),
+            spaw: fGet(forSPAWRewardRiskRatio),
+            swr: fGet(forSWRRewardRiskRatio),
           }
         : null,
     [
-      forSPAWSharpeRatio,
-      forTPAWSharpeRatio,
-      forSWRSharpeRatio,
-      compareSharpeRatio,
+      forSPAWRewardRiskRatio,
+      forTPAWRewardRiskRatio,
+      forSWRRewardRiskRatio,
+      compareRewardRiskRatio,
     ]
   )
 
@@ -118,10 +123,10 @@ export const WithSimulation = ({children}: {children: ReactNode}) => {
       setNumRuns,
       setParams,
       ...forBase,
-      forSharpeRatioComparison,
-      setCompareSharpeRatio,
+      forRewardRiskRatioComparison,
+      setCompareRewardRiskRatio,
     }
-  }, [forBase, forSharpeRatioComparison, paramSpace, setParamSpace, setParams])
+  }, [forBase, forRewardRiskRatioComparison, paramSpace, setParamSpace, setParams])
   if (!_hasValue(value)) return <></>
   return <Context.Provider value={value}>{children}</Context.Provider>
 }

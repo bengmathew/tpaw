@@ -1,140 +1,172 @@
-import {rectExt} from '../../../Utils/Geometry'
+import {newPadding, rectExt} from '../../../Utils/Geometry'
 import {linearFnFomPoints} from '../../../Utils/LinearFn'
 import {headerHeight} from '../../App/Header'
 import {PlanSizing} from './PlanSizing'
+
+const cardPadding = {left: 15, right: 15, top: 10, bottom: 10}
 
 export function planSizingMobile(windowSize: {
   width: number
   height: number
 }): PlanSizing {
-  {
-    const pad = 10
+  const pad = windowSize.width < 400 ? 10 : 15
+  // ---- WELCOME ----
+  const welcome = ((): PlanSizing['welcome'] => {
+    const width = windowSize.width - pad * 2
+    const inOriginX = (windowSize.width - width) / 2
+    return {
+      dynamic: {
+        in: {origin: {x: inOriginX, y: headerHeight}, opacity: 1},
+        out: {origin: {x: inOriginX - 25, y: headerHeight}, opacity: 0},
+      },
+      fixed: {
+        size: {width, height: windowSize.height - headerHeight},
+      },
+    }
+  })()
 
-    const navHeadingH = 40
-    const navHeadingMarginBottom = 20
-    const headingMarginBottom = 10
-
-    const chart = (transition: number) => {
-      let height = linearFnFomPoints(375, 330, 415, 355)(windowSize.width)
-
-      height -= linearFnFomPoints(
-        0,
-        0,
-        1,
-        (navHeadingH + navHeadingMarginBottom) * 0.25
-      )(transition)
-      return {
-        position: rectExt({width: windowSize.width, height, x: 0, y: 0}),
-        padding: {
-          left: pad,
-          right: pad,
-          top: headerHeight + 5,
-          bottom: pad,
-        },
-        cardPadding: {left: 15, right: 15, top: 10, bottom: 10},
-        headingMarginBottom,
-        menuButtonScale: 1,
-        legacyWidth: 100,
-        intraGap: pad,
-        borderRadius:0
-      }
+  // ---- CHART ----
+  const chart = ((): PlanSizing['chart'] => {
+    type Dynamic = PlanSizing['chart']['dynamic']['hidden']
+    const summaryState: Dynamic = {
+      region: rectExt({
+        x: 0,
+        y: 0,
+        width: windowSize.width,
+        height: Math.min(
+          400,
+          linearFnFomPoints(375, 350, 412, 360)(windowSize.width)
+        ),
+      }),
+      padding: newPadding({top: pad * .5 + headerHeight, bottom: 45, horz: pad}),
+      legacyWidth: 100,
+      intraGap: pad,
+      borderRadius: 0,
+      opacity: 1,
+      tasksOpacity: 1,
     }
 
-    // ---- HEADING ----
-    const heading = ((): PlanSizing['heading'] => ({
-      dynamic: (transition: number) => ({
-        origin: {
-          x: pad * 2,
-          y: chart(transition).position.bottom + 10,
+    const inputState = {
+      ...summaryState,
+      tasksOpacity: 0,
+    }
+
+    const resultsState: Dynamic = inputState
+    const hiddenState = {
+      ...resultsState,
+      region: rectExt.translate(resultsState.region, {x: 0, y: -15}),
+      opacity: 0,
+    }
+    return {
+      dynamic: {
+        summary: summaryState,
+        input: inputState,
+        results: resultsState,
+        hidden: hiddenState,
+      },
+      fixed: {cardPadding},
+    }
+  })()
+
+  // ---- INPUT ----
+  const input = (() => {
+    const sizing: PlanSizing['input'] = {
+      dynamic: {
+        dialogModeIn: {
+          origin: {x: 0, y: headerHeight},
+          opacity: 1,
         },
-      }),
-      fixed: {
-        size: {
-          width: windowSize.width - pad * 2,
-          height: navHeadingH,
+        dialogModeOutRight: {
+          origin: {x: 25, y: headerHeight},
+          opacity: 0,
+        },
+        dialogModeOutLeft: {
+          origin: {x: -25, y: headerHeight},
+          opacity: 0,
+        },
+        notDialogModeIn: {
+          origin: {x: 0, y: chart.dynamic.input.region.bottom},
+          opacity: 1,
+        },
+        notDialogModeOut: {
+          origin: {x: 15, y: chart.dynamic.summary.region.bottom},
+          opacity: 0,
         },
       },
-    }))()
-
-    // ---- INPUT SUMMARY ----
-    const inputSummary = ((): PlanSizing['inputSummary'] => {
-      const dynamic = (transition: number) => ({
-        origin: {
-          x: 0,
-          y: chart(transition).position.bottom,
-        },
-      })
-      return {
-        dynamic,
-        fixed: {
+      fixed: {
+        dialogMode: {
           size: {
             width: windowSize.width,
-            height: windowSize.height - dynamic(1).origin.y,
+            height: windowSize.height - headerHeight,
           },
-          padding: {left: pad, right: pad, top: 20, bottom: 0},
-          cardPadding: {left: 10, right: 10, top: 10, bottom: 10},
+          padding: {horz: pad, top: pad * 3},
         },
-      }
-    })()
-
-    // ---- INPUT SUMMARY ----
-    const input = (() => {
-      const dynamic = (transition: number) => {
-        return {
-          origin: {
-            x: 0,
-            y: chart(transition).position.bottom,
-          },
-        }
-      }
-      return {
-        dynamic,
-        fixed: {
+        notDialogMode: {
           size: {
             width: windowSize.width,
-            height: windowSize.height - dynamic(1).origin.y,
+            height: windowSize.height - chart.dynamic.input.region.bottom,
           },
-          padding: {
-            left: pad,
-            right: pad,
-            top: heading.fixed.size.height + navHeadingMarginBottom,
-            bottom: 0,
-          },
-          cardPadding: {left: 10, right: 10, top: 10, bottom: 10},
-          headingMarginBottom: 10,
+          padding: {horz: pad, top: pad * 3},
         },
-      }
-    })()
+        cardPadding,
+      },
+    }
+    return sizing
+  })()
 
-    // ---- GUIDE ----
-    const guide = (() => {
-      const size = {
-        width: 100,
-        height: 50,
-      }
-      const dynamic = (transition: number) => {
-        const pad = 10
-        return {
-          origin: {
-            x: windowSize.width - size.width - pad,
-            y:
-              windowSize.height -
-              size.height -
-              pad +
-              linearFnFomPoints(0, size.height + pad, 1, 0)(transition),
-          },
-        }
-      }
-      return {
-        dynamic,
-        fixed: {
-          size,
-          padding: {left: pad, right: pad, top: pad, bottom: pad},
-          cardPadding: {left: 0, right: 0, top: 0, bottom: 0},
-          headingMarginBottom: 0,
+  // ---- SUMMARY ----
+  const summary = ((): PlanSizing['summary'] => {
+    return {
+      dynamic: {
+        in: {
+          origin: {x: 0, y: chart.dynamic.summary.region.bottom},
+          opacity: 1,
         },
-      }
-    })()
-    return {input, inputSummary, guide, chart, heading}
-  }
+        out: {
+          origin: {x: -15, y: chart.dynamic.input.region.bottom},
+          opacity: 0,
+        },
+      },
+      fixed: {
+        size: {
+          width: windowSize.width,
+          height: windowSize.height - chart.dynamic.summary.region.bottom,
+        },
+        padding: newPadding({horz: pad, top: pad / 2, bottom: 0}),
+        cardPadding,
+      },
+    }
+  })()
+
+  // ---- RESULTS ----
+  const results = ((): PlanSizing['results'] => {
+    return {
+      dynamic: {
+        in: {
+          origin: {x: 0, y: chart.dynamic.results.region.bottom},
+          opacity: 1,
+        },
+        outDialogMode: {
+          origin: {x: 0, y: chart.dynamic.results.region.bottom + 15},
+          opacity: 0,
+        },
+        outNotDialogMode: {
+          origin: {
+            x: input.dynamic.notDialogModeOut.origin.x,
+            y: chart.dynamic.summary.region.bottom,
+          },
+          opacity: 0,
+        },
+      },
+      fixed: {
+        size: {
+          width: windowSize.width,
+          height: windowSize.height - chart.dynamic.results.region.bottom,
+        },
+        padding: newPadding(pad),
+      },
+    }
+  })()
+
+  return {welcome, chart, input, results, summary}
 }

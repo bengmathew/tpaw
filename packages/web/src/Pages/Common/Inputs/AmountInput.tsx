@@ -1,7 +1,7 @@
 import isMobile from 'is-mobile'
-import React, {CSSProperties, useEffect, useRef, useState} from 'react'
+import React, {CSSProperties, useEffect, useState} from 'react'
 import ReactDOM from 'react-dom'
-import NumberFormat from 'react-number-format'
+import {NumericFormat} from 'react-number-format'
 
 type Props = {
   className?: string
@@ -31,7 +31,8 @@ export const AmountInput = React.memo(
           }}
         />
 
-        {showModal && modalLabel &&
+        {showModal &&
+          modalLabel &&
           ReactDOM.createPortal(
             <div className="modal-base w-[100vw] h-[100vh] flex flex-col justify-center items-center">
               <div className="w-full h-full absolute bg-black opacity-60 z-0"></div>
@@ -105,10 +106,8 @@ const _AmountInput = React.memo(
     }, [value])
     const outputValue = internalValue === null ? 0 : internalValue
 
-    const ref = useRef<NumberFormat<unknown>>(null)
     return (
-      <NumberFormat
-        ref={ref}
+      <NumericFormat
         className={` ${className} `}
         style={style}
         onTransitionEnd={onTransitionEnd}

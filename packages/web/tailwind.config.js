@@ -18,9 +18,10 @@ module.exports = {
     colors: {
       pageBG: 'white',
       planBG: colors.gray[100],
+      // planBG: colors.blue[50],
       // planBG: '',
       // chartBG: '#f7dacd',
-      chartBG:colors.gray[400],
+      chartBG: colors.gray[400],
       pageFG: colors.gray[800],
       cardBG: 'rgba(255,255,255, .95)',
       pageFGLight: colors.gray[600],
@@ -42,6 +43,9 @@ module.exports = {
       // theme2:colors.gray[300],
       theme1: colors.teal[600],
       theme1Dark: colors.teal[700],
+
+      // Interesting colors
+      intersting1: `rgb(245, 247, 252)`,
 
       ...colors,
     },

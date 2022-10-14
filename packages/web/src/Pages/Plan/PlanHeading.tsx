@@ -1,5 +1,3 @@
-import {faLeftLong} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import React, {
   useCallback,
   useImperativeHandle,
@@ -8,23 +6,24 @@ import React, {
 } from 'react'
 import {
   applyOriginToHTMLElement,
-  Origin,
   Size,
   sizeCSSStyle,
+  XY,
 } from '../../Utils/Geometry'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {fGet} from '../../Utils/Utils'
-import {paramsInputLabel} from './ParamsInput/Helpers/ParamsInputLabel'
-import {ParamsInputType} from './ParamsInput/Helpers/ParamsInputType'
+import {useSimulation} from '../App/WithSimulation'
+import {PlanInputType} from './PlanInput/Helpers/PlanInputType'
+import {planSectionLabel} from './PlanInput/Helpers/PlanSectionLabel'
 
 export type PlanHeadingStateful = {
   setTransition: (transition: number) => void
 }
 
 type Props = {
-  type: ParamsInputType
+  type: PlanInputType
   sizing: {
-    dynamic: (transition: number) => {origin: Origin}
+    dynamic: (transition: number) => {origin: XY}
     fixed: {size: Size}
   }
   transitionRef: React.MutableRefObject<{transition: number}>
@@ -36,6 +35,7 @@ export type PlanHeadingSizing = Props['sizing']
 export const PlanHeading = React.memo(
   React.forwardRef<PlanHeadingStateful, Props>(
     ({type, sizing, transitionRef, onDone}: Props, forwardRef) => {
+      const {params} = useSimulation()
       const outerRef = useRef<HTMLDivElement | null>(null)
       const setTransition = useCallback(
         (transition: number) => {
@@ -56,11 +56,11 @@ export const PlanHeading = React.memo(
       const {size} = sizing.fixed
       return (
         <div
-          className="absolute  z-10"
+          className="absolute  z-10 items-center bg-planBG bg-opacity-90 "
           ref={outerRef}
           style={{...sizeCSSStyle(size)}}
         >
-          <div className="flex  items-center gap-x-4  bg-planBG bg-opacity-90 rounded-br-xl">
+          {/* <div className="flex  items-center gap-x-4  bg-planBG bg-opacity-90 rounded-br-xl">
             <button
               className="flex items-center gap-x-2 text-sm sm:text-base btn-dark px-4 py-1.5"
               onClick={onDone}
@@ -69,7 +69,15 @@ export const PlanHeading = React.memo(
               Done
             </button>
             <h2 className="text-xl sm:text-2xl font-bold text-start pr-5">
-              {paramsInputLabel(type)}
+              {planSectionLabel(type)}
+            </h2>
+          </div> */}
+          <div className="w-full flex items-center gap-x-2">
+            <div className="w-[50px] h-[50px] bg-gray-700 rounded-full flex items-center justify-center text-white text-xl">
+              1
+            </div>
+            <h2 className="font-bold text-3xl">
+              {planSectionLabel(type, params.strategy)}
             </h2>
           </div>
         </div>

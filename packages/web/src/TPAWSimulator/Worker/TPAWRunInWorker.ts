@@ -1,24 +1,24 @@
 import _ from 'lodash'
-import { MarketData } from '../../Pages/Common/GetMarketData'
-import { nominalToReal } from '../../Utils/NominalToReal'
-import { SimpleRange } from '../../Utils/SimpleRange'
-import { assert, fGet, noCase } from '../../Utils/Utils'
-import { historicalReturns } from '../HistoricalReturns'
-import { StatsTools } from '../StatsTools'
-import { ValueForYearRange } from '../TPAWParams'
-import { extendTPAWParams, TPAWParamsExt } from '../TPAWParamsExt'
-import { processInflation, TPAWParamsProcessed } from '../TPAWParamsProcessed'
+import {MarketData} from '../../Pages/Common/GetMarketData'
+import {nominalToReal} from '../../Utils/NominalToReal'
+import {SimpleRange} from '../../Utils/SimpleRange'
+import {assert, fGet, noCase} from '../../Utils/Utils'
+import {historicalReturns} from '../HistoricalReturns'
+import {StatsTools} from '../StatsTools'
+import {ValueForYearRange} from '../TPAWParams'
+import {extendTPAWParams, TPAWParamsExt} from '../TPAWParamsExt'
+import {processInflation, TPAWParamsProcessed} from '../TPAWParamsProcessed'
 import {
   FirstYearSavingsPortfolioDetail,
-  firstYearSavingsPortfolioDetail
+  firstYearSavingsPortfolioDetail,
 } from './FirstYearSavingsPortfolioDetail'
-import { mergeWorkerRuns } from './MergeWorkerRuns'
+import {mergeWorkerRuns} from './MergeWorkerRuns'
 import {
   TPAWWorkerArgs,
   TPAWWorkerCalculateOneOverCVResult,
   TPAWWorkerResult,
   TPAWWorkerRunSimulationResult,
-  TPAWWorkerSortResult
+  TPAWWorkerSortResult,
 } from './TPAWWorkerTypes'
 
 export type TPAWRunInWorkerByPercentileByYearsFromNow = {
@@ -47,7 +47,7 @@ export type TPAWRunInWorkerResult = {
       total: TPAWRunInWorkerByPercentileByYearsFromNow
       fromSavingsPortfolioRate: TPAWRunInWorkerByPercentileByYearsFromNow
     }
-    sharpeRatio: {
+    rewardRiskRatio: {
       withdrawals: {
         regular: Float64Array
       }
@@ -251,7 +251,7 @@ export class TPAWRunInWorker {
     numRuns: number,
     params: TPAWParamsProcessed,
     percentiles: number[],
-    marketData:MarketData
+    marketData: MarketData
   ): Promise<TPAWRunInWorkerResult | null> {
     const start0 = performance.now()
     let start = performance.now()
@@ -320,7 +320,7 @@ export class TPAWRunInWorker {
     const perfSortAndPickPercentiles = performance.now() - start
     start = performance.now()
 
-    const {data: sharpeRatioWithdrawalsRegular} =
+    const {data: rewardRiskRatioWithdrawalsRegular} =
       await this._calculateOneOverCV(
         this._workers[0],
         byYearsFromNowByRun.savingsPortfolio.excessWithdrawals.regular
@@ -331,7 +331,7 @@ export class TPAWRunInWorker {
       params
     )
     const withdrawlsEssentialById = new Map(
-      params.withdrawals.essential.map(x => [
+      params.original.extraSpending.essential.map(x => [
         x.id,
         _separateExtraWithdrawal(
           x,
@@ -343,7 +343,7 @@ export class TPAWRunInWorker {
       ])
     )
     const withdrawlsDiscretionaryById = new Map(
-      params.withdrawals.discretionary.map(x => [
+      params.original.extraSpending.discretionary.map(x => [
         x.id,
         _separateExtraWithdrawal(
           x,
@@ -393,7 +393,7 @@ export class TPAWRunInWorker {
           ),
         },
 
-        sharpeRatio: {withdrawals: {regular: sharpeRatioWithdrawalsRegular}},
+        rewardRiskRatio: {withdrawals: {regular: rewardRiskRatioWithdrawalsRegular}},
 
         afterWithdrawals: {
           allocation: {
@@ -555,7 +555,7 @@ const _separateExtraWithdrawal = (
     if (yearFromNow < yearRange.start || yearFromNow > yearRange.end) {
       return 0
     }
-    const currYearParams = params.byYear[yearFromNow].withdrawals
+    const currYearParams = params.byYear[yearFromNow].extraSpending
     const withdrawalTargetForThisYear = nominalToReal(
       discretionaryWithdrawal,
       processInflation(params.original.inflation, marketData),

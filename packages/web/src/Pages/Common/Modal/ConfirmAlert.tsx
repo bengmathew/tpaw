@@ -13,7 +13,7 @@ export const ConfirmAlert = React.memo(
     onCancel,
     onConfirm,
   }: {
-    title: string
+    title: string | null
     children: React.ReactNode | React.ReactNode[]
     confirmText: string
     isWarningButton?: boolean
@@ -27,12 +27,12 @@ export const ConfirmAlert = React.memo(
       <ModalBase bg={isWarningBG ? 'bg-red-200' : undefined}>
         {transitionOut => (
           <>
-            <h2
+            {title && <h2
               className={`text-lg font-bold mb-4 
               ${isWarningTitle ? 'text-errorFG' : ''}`}
             >
               {title}
-            </h2>
+            </h2>}
             {_.flatten([children]).map((x, i) => (
               <div
                 key={i}

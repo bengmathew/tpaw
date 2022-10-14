@@ -1,3 +1,4 @@
+import gsap from 'gsap'
 import React, {
   useEffect,
   useImperativeHandle,
@@ -6,11 +7,13 @@ import React, {
   useState,
 } from 'react'
 import {
-  applyRegionToHTMLElement,
+  applySizeToHTMLElement,
+  originCSSStyle,
   Padding,
   RectExt,
 } from '../../../Utils/Geometry'
 import {fGet} from '../../../Utils/Utils'
+import {interpolateObj} from '../../Plan/PlanSizing/PlanSizingInterpolate'
 import {Chart, ChartAnimation, ChartXYRange} from './Chart'
 import {ChartComponent} from './ChartComponent/ChartComponent'
 
@@ -22,7 +25,10 @@ export type ChartReactState<Data> = {
 }
 
 export type ChartReactStatefull<Data> = {
-  setSizing: (sizing: ChartReactSizing) => void
+  setSizing: (
+    sizing: ChartReactSizing,
+    animation: ChartAnimation | null
+  ) => void
   setState: (
     data: Data,
     xyRange: ChartXYRange,
@@ -41,18 +47,58 @@ export const ChartReact = React.forwardRef(
         xyRange: ChartXYRange
         sizing: ChartReactSizing
       }
-      components: ()=> readonly ChartComponent<Data>[]
+      components: () => readonly ChartComponent<Data>[]
     },
     forwardedRef: React.ForwardedRef<ChartReactStatefull<Data>>
   ) => {
     const divRef = useRef<HTMLDivElement>(null)
     const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null)
-    const [chart, setChart] = useState<ChartReactStatefull<Data> | null>(null)
+    const [chart, setChart] = useState<_AfterCanvasStateful<Data> | null>(null)
+
+    const [sizingTransition, setSizingTransition] = useState({
+      prev: starting.sizing,
+      target: starting.sizing,
+      animation: null as ChartAnimation | null,
+    })
+
+    useEffect(() => {
+      if (canvas) {
+        applyTargetSizingToHTML(
+          sizingTransition.target.position,
+          sizingTransition.animation?.duration ?? 0,
+          fGet(divRef.current),
+          canvas,
+          'update'
+        )
+      }
+
+      const obj = {progress: 0}
+      const tween = gsap.to(obj, {
+        duration: (sizingTransition.animation?.duration ?? 0) / 1000,
+        progress: 1,
+        ease: sizingTransition.animation?.ease,
+        onUpdate: function () {
+          if (!canvas || !chart) return
+          const obj = this.targets()[0] as {progress: number}
+          chart.setSizing(
+            interpolateObj(
+              sizingTransition.prev,
+              sizingTransition.target,
+              obj.progress
+            )
+          )
+        },
+      })
+      return () => {
+        tween.kill()
+      }
+    }, [canvas, chart, sizingTransition])
 
     useLayoutEffect(() => {
       if (!canvas) return
-      applySizingToHTML(
+      applyTargetSizingToHTML(
         starting.sizing.position,
+        10,
         fGet(divRef.current),
         canvas,
         'init'
@@ -67,15 +113,12 @@ export const ChartReact = React.forwardRef(
         if (!canvas || !chart)
           return null as unknown as ChartReactStatefull<Data>
         return {
-          setSizing: sizing => {
-            if (!canvas) return
-            applySizingToHTML(
-              sizing.position,
-              fGet(divRef.current),
-              canvas,
-              'update'
-            )
-            chart.setSizing(sizing)
+          setSizing: (sizing, animation) => {
+            setSizingTransition(old => ({
+              prev: old.target,
+              target: sizing,
+              animation,
+            }))
           },
           setState: (data, xyRange, animation) => {
             chart.setState(data, xyRange, animation)
@@ -87,7 +130,11 @@ export const ChartReact = React.forwardRef(
     )
 
     return (
-      <div className="absolute overflow-hidden" ref={divRef}>
+      <div
+        className="absolute overflow-hidden"
+        ref={divRef}
+        style={{...originCSSStyle({x: 0, y: 0})}}
+      >
         <canvas className="" style={{touchAction: 'none'}} ref={setCanvas} />
         {canvas && (
           <_AfterCanvas
@@ -102,14 +149,20 @@ export const ChartReact = React.forwardRef(
   }
 )
 
-const applySizingToHTML = (
+const applyTargetSizingToHTML = (
   position: RectExt,
+  duration: number,
   div: HTMLDivElement,
   canvas: HTMLCanvasElement,
   type: 'init' | 'update'
 ) => {
   const size = {width: position.width, height: position.height}
-  applyRegionToHTMLElement(position, div)
+  div.style.width = `${position.width}px`
+  div.style.height = `${position.height}px`
+  div.style.transform = `translate(${position.x}px, ${position.y}px)`
+  div.style.transitionProperty = 'width, height, transform'
+  div.style.transitionDuration = `${duration}ms`
+  applySizeToHTMLElement(position, div)
   const dpr = window.devicePixelRatio || 1
 
   const pixelSize = (x: number) => Math.round(x * dpr)
@@ -132,6 +185,16 @@ const applySizingToHTML = (
   }
 }
 
+type _AfterCanvasStateful<Data> = {
+  setSizing: (sizing: ChartReactSizing) => void
+  setState: (
+    data: Data,
+    xyRange: ChartXYRange,
+    animation: ChartAnimation | null
+  ) => void
+  getState: () => {data: Data; xyRange: ChartXYRange}
+}
+
 const _AfterCanvas = React.forwardRef(
   <Data,>(
     {
@@ -144,10 +207,10 @@ const _AfterCanvas = React.forwardRef(
         xyRange: ChartXYRange
         sizing: ChartReactSizing
       }
-      components: ()=>readonly ChartComponent<Data>[]
+      components: () => readonly ChartComponent<Data>[]
       canvas: HTMLCanvasElement
     },
-    ref: React.ForwardedRef<ChartReactStatefull<Data>>
+    ref: React.ForwardedRef<_AfterCanvasStateful<Data>>
   ) => {
     const [chart, setChart] = useState<Chart<Data> | null>(null)
     useLayoutEffect(() => {
@@ -166,7 +229,7 @@ const _AfterCanvas = React.forwardRef(
     useImperativeHandle(
       ref,
       () => {
-        if (!chart) return null as unknown as ChartReactStatefull<Data>
+        if (!chart) return null as unknown as _AfterCanvasStateful<Data>
         return {
           setSizing: sizing => chart.setSizing(_sizingTransform(sizing)),
           setState: (data, xyRange, animation) =>

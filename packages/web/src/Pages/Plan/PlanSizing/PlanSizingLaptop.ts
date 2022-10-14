@@ -1,178 +1,196 @@
-import {rectExt} from '../../../Utils/Geometry'
-import {linearFnFomPoints} from '../../../Utils/LinearFn'
+import {newPadding, rectExt} from '../../../Utils/Geometry'
 import {PlanSizing} from './PlanSizing'
 
 export function planSizingLaptop(windowSize: {
   width: number
   height: number
 }): PlanSizing {
-  const pad = 30
-  const topFn = (transition: number) =>
-    linearFnFomPoints(0, 50, 1, 70)(transition)
+  const pad = 40
 
-  const headingMarginBottom = 20
+  const summaryWidth = Math.max(windowSize.width * 0.38, 500)
 
-  // ---- GUIDE ----
-  const guide = (() => {
-    const size = {
-      width: windowSize.width * 0.28,
-      height: windowSize.height,
-    }
-    const dynamic = (transition: number) => {
-      return {
-        origin: {
-          x: linearFnFomPoints(0, -size.width + pad * 0.75, 1, 0)(transition),
-          y: 0,
-        },
-      }
-    }
+  // ---- WELCOME ----
+  const welcome = ((): PlanSizing['welcome'] => {
+    const width = 500
+    const inOriginX = (windowSize.width - width) / 2
     return {
-      dynamic,
-      fixed: {
-        size,
-        padding: {left: pad, right: pad * 0.75, top: topFn(1), bottom: pad},
-        headingMarginBottom,
+      dynamic: {
+        in: {origin: {x: inOriginX, y: 0}, opacity: 1},
+        out: {origin: {x: inOriginX - 25, y: 0}, opacity: 0},
       },
-    }
-  })()
-
-  // ---- INPUT SUMMARY ----
-  const inputSummary = ((): PlanSizing['inputSummary'] => {
-    const extraPad = 10
-    return {
-      dynamic: (transition: number) => ({
-        origin: {
-          x: guide.dynamic(transition).origin.x + guide.fixed.size.width,
-          y: 0,
-        },
-      }),
       fixed: {
         size: {
+          width,
           height: windowSize.height,
-          width: Math.max(windowSize.width * 0.37, 350),
         },
-        padding: {
-          left: pad * 0.25 + extraPad,
-          right: pad * 0.75 + extraPad,
-          top: topFn(0),
-          bottom: pad,
-        },
-        cardPadding: {left: 15, right: 15, top: 15, bottom: 15},
       },
     }
   })()
 
   // ---- INPUT ----
   const input = ((): PlanSizing['input'] => {
-    const dynamic = (transition: number) => ({
-      origin: {
-        x: inputSummary.dynamic(transition).origin.x,
-        y: 0,
-      },
-    })
+    const inputWidth = {
+      dialogMode: 500,
+      notDialogMode: summaryWidth * 1.15,
+    }
+    type Dynamic = PlanSizing['input']['dynamic']['dialogModeIn']
+    const dialogModeIn: Dynamic = {
+      origin: {x: 0, y: 0},
+      opacity: 1,
+    }
     return {
-      dynamic,
+      dynamic: {
+        dialogModeIn,
+        dialogModeOutRight: {
+          origin: {x: 25, y: 0},
+          opacity: 0,
+        },
+        dialogModeOutLeft: {
+          origin: {x: -25, y: 0},
+          opacity: 0,
+        },
+        notDialogModeIn: {
+          origin: {x: 0, y: 0},
+          opacity: 1,
+        },
+        notDialogModeOut: {
+          origin: {x: -(inputWidth.notDialogMode - summaryWidth), y: 0},
+          opacity: 0,
+        },
+      },
       fixed: {
-        size: {
-          width: Math.max(windowSize.width * 0.3, 350),
-          height: windowSize.height - dynamic(1).origin.y,
+        dialogMode: {
+          size: {...windowSize},
+          padding: {
+            horz: (windowSize.width - inputWidth.dialogMode) / 2,
+            top: pad * 2,
+          },
         },
-        padding: {
-          left: pad * 0.25,
-          right: pad * 0.75,
-          top: topFn(1),
-          bottom: pad,
+        notDialogMode: {
+          size: {
+            width: inputWidth.notDialogMode,
+            height: windowSize.height,
+          },
+          padding: {left: pad, right: pad * 0.75, top: pad * 2},
         },
-        cardPadding: {left: 15, right: 15, top: 15, bottom: 15},
-        headingMarginBottom,
+        cardPadding: newPadding(20),
       },
     }
   })()
 
-  // ---- HEADING -----
-  const heading = (() => {
-    const dynamic = (transition: number) => {
-      return {
-        origin: {
-          x: guide.dynamic(transition).origin.x + pad,
-          y: 0,
-        },
-      }
-    }
+  // ---- RESULTS ----
+  const results = ((): PlanSizing['results'] => {
+    const width = input.fixed.notDialogMode.size.width
     return {
-      dynamic,
-      fixed: {
-        size: {
-          width:
-            input.dynamic(1).origin.x +
-            input.fixed.size.width -
-            dynamic(1).origin.x,
-          height: 60,
+      dynamic: {
+        in: {
+          origin: {x: 0, y: 0},
+          opacity: 1,
         },
+        outDialogMode: {
+          // origin: {x: -(width - summaryWidth), y: 0},
+
+          origin: {x: 50, y: 0},
+          opacity: 0,
+        },
+        outNotDialogMode: {
+          origin: {x: -50, y: 0},
+          opacity: 0,
+        },
+      },
+      fixed: {
+        size: {width, height: windowSize.height},
+        padding: {left: pad, right: pad * 0.95, top: pad * 2},
+      },
+    }
+  })()
+
+  // ---- SUMMARY ----
+  const summary = ((): PlanSizing['summary'] => {
+    const size = {width: summaryWidth, height: windowSize.height}
+
+    return {
+      dynamic: {
+        in: {
+          origin: {x: 0, y: 0},
+          opacity: 1,
+        },
+        out: {
+          origin: {
+            x:
+              input.dynamic.notDialogModeIn.origin.x +
+              input.fixed.notDialogMode.size.width -
+              size.width,
+            y: 0,
+          },
+          opacity: 0,
+        },
+      },
+      fixed: {
+        size,
+        padding: {left: pad, right: pad * 0.75, top: pad / 2},
+        cardPadding: newPadding(20),
       },
     }
   })()
 
   // ---- CHART ----
-  const chart = (transition: number) => {
-    const vertInnerPadFn = linearFnFomPoints(0, 35, 1, 15)
-    const vertInnerPad = vertInnerPadFn(transition)
-    const hozrInnerPad = vertInnerPad * 1.25
-    const positionFn = (transition: number) => {
-      // const y = topFn(transition) - padTop
-      const y = linearFnFomPoints(0, 0, 1, topFn(1) - vertInnerPadFn(1))(transition)
-      const x =
-        linearFnFomPoints(
-          0,
-          inputSummary.dynamic(0).origin.x + inputSummary.fixed.size.width,
-          1,
-          input.dynamic(1).origin.x + input.fixed.size.width
-        )(transition) +
-        pad * 0.25
+  const chart = ((): PlanSizing['chart'] => {
+    type Dynamic = PlanSizing['chart']['dynamic']['hidden']
+    const cardPadding = {left: 15, right: 15, top: 10, bottom: 10}
+    const exceptRegionAndFullyVisible = {
+      padding: newPadding({vert: pad * 1.5, horz: pad}),
+      legacyWidth: 120,
+      intraGap: 20,
+      borderRadius: 16,
+      opacity: 1,
+      tasksOpacity: 1,
+    }
+    const summaryState: Dynamic = (() => {
       return {
-        x,
-        y,
-        // width: windowSize.width - x - pad,
-        width:
-          windowSize.width - x - linearFnFomPoints(0, 0, 1, pad)(transition),
-        // height: windowSize.height - 2 * y,
-        height: windowSize.height - y,
+        ...exceptRegionAndFullyVisible,
+        region: rectExt({
+          x:
+            summary.dynamic.in.origin.x + summary.fixed.size.width + pad * 0.25,
+          y: pad * 2,
+          right: windowSize.width - pad,
+          bottom: windowSize.height - pad * 2,
+        }),
       }
+    })()
+    const inputState = {
+      ...exceptRegionAndFullyVisible,
+      region: rectExt({
+        x:
+          input.dynamic.notDialogModeIn.origin.x +
+          input.fixed.notDialogMode.size.width +
+          pad * 0.25,
+        y: summaryState.region.y,
+        right: windowSize.width - pad,
+        bottom: windowSize.height - pad * 4,
+      }),
+      padding: newPadding({
+        horz: summaryState.padding.left * 0.85,
+        vert: summaryState.padding.top * 0.85,
+      }),
+      tasksOpacity: 0,
     }
-
-    const position = positionFn(transition)
-    const positionAt0 = positionFn(0)
-    const positionAt1 = positionFn(1)
-
-    const heightAt1 = Math.min(
-      positionAt1.height,
-      Math.max(400, positionAt1.width * 0.85)
-    )
-    position.height = linearFnFomPoints(
-      0,
-      positionAt0.height,
-      1,
-      heightAt1
-    )(transition)
-
+    const resultsState = inputState
+    const hiddenState = {
+      ...resultsState,
+      region: rectExt.translate(resultsState.region, {x: 50, y: 0}),
+      opacity: 0,
+    }
     return {
-      position: rectExt(position),
-      // padding: {left: 20, right: 20, top: 10, bottom: 10},
-      padding: {
-        left: hozrInnerPad,
-        right: hozrInnerPad,
-        top: vertInnerPad,
-        bottom: vertInnerPad,
+      dynamic: {
+        summary: summaryState,
+        input: inputState,
+        results: resultsState,
+        hidden: hiddenState,
       },
-      // 18px is text-lg 20px is text-xl.
-      menuButtonScale: linearFnFomPoints(0, 1, 22/22, 18 / 22)(transition),
-      cardPadding: {left: 15, right: 15, top: 10, bottom: 10},
-      headingMarginBottom: 10,
-      legacyWidth: linearFnFomPoints(0, 120, 1, 100)(transition),
-      intraGap: linearFnFomPoints(0, 20, 1, 10)(transition),
-      borderRadius: linearFnFomPoints(0, 0, 1, 16)(transition),
+      fixed: {cardPadding},
     }
-  }
+  })()
 
-  return {input, inputSummary, guide, chart, heading}
+  return {welcome, input, results, chart, summary}
 }

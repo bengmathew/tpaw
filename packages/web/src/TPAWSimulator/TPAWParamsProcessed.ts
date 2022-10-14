@@ -4,8 +4,9 @@ import {linearFnFomPoints} from '../Utils/LinearFn'
 import {nominalToReal} from '../Utils/NominalToReal'
 import {assert, noCase} from '../Utils/Utils'
 import {
-  defaultSWRWithdrawalRate,
+  DEFAULT_SWR_WITHDRAWAL_PERCENT,
   EXPECTED_RETURN_PRESETS,
+  resolveTPAWRiskPreset,
   SUGGESTED_INFLATION,
 } from './DefaultParams'
 import {historicalReturns} from './HistoricalReturns'
@@ -24,7 +25,6 @@ export function processTPAWParams(
 ) {
   const {numYears, asYFN, params, numRetirementYears} = paramsExt
   tpawParamsValidator(params)
-  const {inflation: inflationIn, ...paramsWithoutInflation} = params
 
   const _normalizeGlidePath = (glidePath: GlidePath) => {
     const stage1 = [
@@ -59,52 +59,60 @@ export function processTPAWParams(
     return result
   }
 
-  const byYear = _processByYearParams(paramsExt, marketData)
-
-  const targetAllocation = {
-    ...params.targetAllocation,
-    regularPortfolio: {
-      forTPAW: _normalizeGlidePath(
-        params.targetAllocation.regularPortfolio.forTPAW
-      ),
-      forSPAWAndSWR: _normalizeGlidePath(
-        params.targetAllocation.regularPortfolio.forSPAWAndSWR
-      ),
-    },
-  }
-
-  const legacy = (() => {
-    const {total} = params.legacy
-    const external = _.sum(
-      params.legacy.external.map(x =>
-        nominalToReal(
-          x,
-          processInflation(params.inflation, marketData),
-          numYears
-        )
-      )
-    )
-    const target = Math.max(total - external, 0)
-    return {total, external, target}
-  })()
-
   const result = {
-    ...paramsWithoutInflation,
-    swrWithdrawal:
-      params.swrWithdrawal.type === 'default'
-        ? {
-            type: 'asPercent' as const,
-            percent: defaultSWRWithdrawalRate(numRetirementYears),
-          }
-        : params.swrWithdrawal,
-    spendingCeiling:
-      params.spendingCeiling === null
-        ? null
-        : Math.max(params.spendingCeiling, params.withdrawals.lmp),
+    strategy: params.strategy,
+    people: params.people,
+    currentPortfolioBalance: params.currentPortfolioBalance,
+    byYear: _processByYearParams(paramsExt, marketData),
+    legacy: {
+      tpawAndSPAW: (() => {
+        const {total} = params.legacy.tpawAndSPAW
+        const external = _.sum(
+          params.legacy.tpawAndSPAW.external.map(x =>
+            nominalToReal(
+              x,
+              processInflation(params.inflation, marketData),
+              numYears
+            )
+          )
+        )
+        const target = Math.max(total - external, 0)
+        return {total, external, target}
+      })(),
+    },
+    risk: (() => {
+      const {spawAndSWR, swr, tpaw, tpawAndSPAW} = resolveTPAWRiskPreset(
+        params.risk
+      )
+      return {
+        tpaw: {
+          allocation: _normalizeGlidePath(tpaw.allocation),
+          allocationForLegacy: tpaw.allocationForLegacy,
+        },
+        tpawAndSPAW: {
+          ...tpawAndSPAW,
+          spendingCeiling:
+            tpawAndSPAW.spendingCeiling === null
+              ? null
+              : Math.max(tpawAndSPAW.spendingCeiling, tpawAndSPAW.lmp),
+        },
+        spawAndSWR: {
+          allocation: _normalizeGlidePath(spawAndSWR.allocation),
+        },
+        swr: {
+          withdrawal:
+            swr.withdrawal.type === 'default'
+              ? {
+                  type: 'asPercent' as const,
+                  percent: DEFAULT_SWR_WITHDRAWAL_PERCENT(numRetirementYears),
+                }
+              : swr.withdrawal,
+        },
+      }
+    })(),
+
     returns: _processReturnsParams(params, marketData),
-    targetAllocation,
-    byYear,
-    legacy,
+    sampling: params.sampling,
     original: params,
   }
   return result
@@ -115,16 +123,24 @@ function _processByYearParams(
   marketData: MarketData
 ) {
   const {asYFN, withdrawalStartYear, numYears, params} = paramsExt
-  const {savings, retirementIncome, withdrawals} = params
+  const {futureSavings, retirementIncome, extraSpending} = params
   const withdrawalStart = asYFN(withdrawalStartYear)
   const lastWorkingYear = withdrawalStart > 0 ? withdrawalStart - 1 : 0
   const endYear = numYears - 1
+  const lmp = params.risk.useTPAWPreset
   const byYear = _.times(numYears, year => ({
-    savings: 0,
-    withdrawals: {
+    futureSavingsAndRetirementIncome: 0,
+    extraSpending: {
       essential: 0,
       discretionary: 0,
-      lmp: year < withdrawalStart ? 0 : params.withdrawals.lmp,
+    },
+    tpawAndSPAW: {
+      risk: {
+        lmp:
+          year < withdrawalStart
+            ? 0
+            : resolveTPAWRiskPreset(params.risk).tpawAndSPAW.lmp,
+      },
     },
   }))
 
@@ -151,19 +167,29 @@ function _processByYearParams(
     })
   }
 
-  exec(savings, 0, lastWorkingYear, (t, v) => (t.savings += v))
-  exec(retirementIncome, withdrawalStart, endYear, (t, v) => (t.savings += v))
   exec(
-    withdrawals.essential,
+    futureSavings,
     0,
-    endYear,
-    (t, v) => (t.withdrawals.essential += v)
+    lastWorkingYear,
+    (t, v) => (t.futureSavingsAndRetirementIncome += v)
   )
   exec(
-    withdrawals.discretionary,
+    retirementIncome,
+    withdrawalStart,
+    endYear,
+    (t, v) => (t.futureSavingsAndRetirementIncome += v)
+  )
+  exec(
+    extraSpending.essential,
     0,
     endYear,
-    (t, v) => (t.withdrawals.discretionary += v)
+    (t, v) => (t.extraSpending.essential += v)
+  )
+  exec(
+    extraSpending.discretionary,
+    0,
+    endYear,
+    (t, v) => (t.extraSpending.discretionary += v)
   )
   return byYear
 }

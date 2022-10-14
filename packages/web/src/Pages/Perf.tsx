@@ -87,100 +87,64 @@ export const Perf = React.memo(() => {
 })
 
 const params = extendTPAWParams({
-  v: 12,
+  v: 13,
   strategy: 'TPAW',
+  dialogMode: true,
   people: {
     withPartner: false,
     person1: {
       displayName: null,
-      ages: {type: 'notRetired', current: 25, retirement: 55, max: 100},
+      ages: {type: 'notRetired', current: 35, retirement: 65, max: 100},
     },
   },
-  returns: {
-    expected: {type: 'suggested'},
-    historical: {type: 'default', adjust: {type: 'toExpected'}},
+  currentPortfolioBalance: 0,
+  futureSavings: [],
+  retirementIncome: [],
+  extraSpending: {
+    essential: [],
+    discretionary: [],
   },
-  inflation: {type: 'suggested'},
-  targetAllocation: {
-    regularPortfolio: {
-      forTPAW: {
-        start: {stocks: 0.35},
+  legacy: {
+    tpawAndSPAW: {
+      total: 0,
+      external: [],
+    },
+  },
+  risk: {
+    useTPAWPreset: false,
+    tpawPreset: 'riskLevel-2',
+    customTPAWPreset: null,
+    tpaw: {
+      allocation: {
+        start: {stocks: 0.4},
         intermediate: [],
-        end: {stocks: 0.35},
+        end: {stocks: 0.3},
       },
-      forSPAWAndSWR: {
+      allocationForLegacy: {stocks: 0.7},
+    },
+    tpawAndSPAW: {
+      spendingCeiling: null,
+      spendingFloor: null,
+      spendingTilt: 0.01,
+      lmp: 0,
+    },
+    spawAndSWR: {
+      allocation: {
         start: {stocks: 0.5},
         intermediate: [],
         end: {stocks: 0.5},
       },
     },
+    swr: {
+      withdrawal: {type: 'default'},
+    },
+  },
 
-    legacyPortfolio: {stocks: 0.7},
+  returns: {
+    expected: {type: 'suggested'},
+    historical: {type: 'default', adjust: {type: 'toExpected'}},
   },
-  swrWithdrawal: {type: 'asPercent', percent: 0.04},
-  scheduledWithdrawalGrowthRate: 0.02,
-  savingsAtStartOfStartYear: 50000,
-  savings: [
-    {
-      label: 'Savings',
-      yearRange: {
-        type: 'startAndEnd',
-        start: {type: 'now'},
-        end: {type: 'namedAge', person: 'person1', age: 'lastWorkingYear'},
-      },
-      value: 10000,
-      nominal: false,
-      id: 0,
-    },
-  ],
-  retirementIncome: [
-    {
-      label: 'Social Security',
-      yearRange: {
-        type: 'startAndEnd',
-        start: {type: 'numericAge', person: 'person1', age: 70},
-        end: {type: 'namedAge', person: 'person1', age: 'max'},
-      },
-      value: 20000,
-      nominal: false,
-      id: 0,
-    },
-  ],
-  withdrawals: {
-    lmp: 0,
-    essential: [
-      {
-        label: null,
-        yearRange: {
-          type: 'startAndEnd',
-          start: {type: 'numericAge', person: 'person1', age: 76},
-          end: {type: 'numericAge', person: 'person1', age: 76},
-        },
-        value: 100000,
-        nominal: false,
-        id: 0,
-      },
-    ],
-    discretionary: [
-      {
-        label: null,
-        yearRange: {
-          type: 'startAndEnd',
-          start: {type: 'numericAge', person: 'person1', age: 58},
-          end: {type: 'numericAge', person: 'person1', age: 58},
-        },
-        value: 100000,
-        nominal: false,
-        id: 1,
-      },
-    ],
-  },
-  spendingCeiling: null,
-  spendingFloor: null,
-  legacy: {
-    total: 50000,
-    external: [],
-  },
+  inflation: {type: 'suggested'},
   sampling: 'monteCarlo',
   display: {
     alwaysShowAllYears: false,

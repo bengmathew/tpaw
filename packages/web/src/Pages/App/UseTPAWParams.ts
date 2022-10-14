@@ -17,8 +17,9 @@ import {TPAWParamsV8} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV8'
 
 import {TPAWParamsV10} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV10'
 import {TPAWParamsV11} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV11'
+import {TPAWParamsV12} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV12'
 import {TPAWParamsV9} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV9'
-import {TPAWParamsV12} from '../../TPAWSimulator/TPAWParamsV12'
+import {TPAWParamsV13} from '../../TPAWSimulator/TPAWParamsV13'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {fGet} from '../../Utils/Utils'
 import {Validator} from '../../Utils/Validator'
@@ -34,10 +35,15 @@ const _redo = (history: _History) =>
   history.curr === 0 ? history : {stack: history.stack, curr: history.curr - 1}
 
 const _curr = ({stack, curr}: _History) => stack[curr]
-const _new = ({stack, curr}: _History, params: TPAWParams) => ({
-  stack: [params, ...stack.slice(curr)].slice(0, 100),
-  curr: 0,
-})
+const _new = ({stack, curr}: _History, params: TPAWParams) => {
+  // All the dialogModes should be match curr because undo and redo should not
+  // change dialogMode.
+  stack.forEach(x => (x.dialogMode = params.dialogMode))
+  return {
+    stack: [params, ...stack.slice(curr)].slice(0, 100),
+    curr: 0,
+  }
+}
 
 export function useTPAWParams() {
   const router = useRouter()
@@ -61,9 +67,12 @@ export function useTPAWParams() {
   const setHistory = useCallback(
     (history: _History | ((x: _History) => _History)) => {
       setABHistory(abHistory => {
+        const currHistory = abHistory[abHistory.space]
+        const newHistoryObj =
+          typeof history === 'function' ? history(currHistory) : history
+        if (newHistoryObj === currHistory) return abHistory
         const clone = _.cloneDeep(abHistory)
-        clone[clone.space] =
-          typeof history === 'function' ? history(clone[clone.space]) : history
+        clone[clone.space] = newHistoryObj
         return clone
       })
     },
@@ -91,18 +100,23 @@ export function useTPAWParams() {
     window.localStorage.setItem('params', tpawParamsForURL(value))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
+
+  const setParams = useCallback(
+    (params: TPAWParams | ((params: TPAWParams) => TPAWParams)) =>
+      setHistory(history => {
+        const paramsObj =
+          typeof params === 'function' ? params(_curr(history)) : params
+        return paramsObj === _curr(history) ? history : _new(history, paramsObj)
+      }),
+    [setHistory]
+  )
+  useAssertConst([setHistory])
+
   return {
     paramSpace: abHistory.space,
     setParamSpace,
     params: value,
-    setParams: (params: TPAWParams | ((params: TPAWParams) => TPAWParams)) => {
-      setHistory(history =>
-        _new(
-          history,
-          typeof params === 'function' ? params(_curr(history)) : params
-        )
-      )
-    },
+    setParams,
   }
 }
 
@@ -179,9 +193,16 @@ function _parseExternalParams(
       const v12 =
         parsed.v === 12
           ? TPAWParamsV12.validator(parsed)
-          : TPAWParamsV12.fromV11(fGet(v11))
+          : v11
+          ? TPAWParamsV12.fromV11(v11)
+          : null
 
-      return v12
+      const v13 =
+        parsed.v === 13
+          ? TPAWParamsV13.validator(parsed)
+          : TPAWParamsV13.fromV12(fGet(v12))
+
+      return v13
     } catch (e) {
       if (e instanceof Validator.Failed) {
         throw new AppError(`Error in parameter: ${e.fullMessage}`)

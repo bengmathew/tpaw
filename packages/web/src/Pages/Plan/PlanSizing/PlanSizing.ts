@@ -1,20 +1,22 @@
 import {Size} from '../../../Utils/Geometry'
 import {noCase} from '../../../Utils/Utils'
-import {ChartPanelSizing} from '../ChartPanel/ChartPanel'
-import {GuidePanelSizing} from '../GuidePanel'
-import {ParamsInputSizing} from '../ParamsInput/ParamsInput'
-import {ParamsInputSummaySizing} from '../ParamsInputSummary/ParamsInputSummary'
-import {PlanHeadingSizing} from '../PlanHeading'
+import {PlanInputSizing} from '../PlanInput/PlanInput'
+import {PlanChartSizing} from '../PlanChart/PlanChart'
+import {PlanResultsSizing} from '../PlanResults'
+import {PlanSummaySizing} from '../PlanSummary/PlanSummary'
+import {PlanTransition} from '../PlanTransition'
+import {PlanWelcomeSizing} from '../PlanWelcome'
 import {planSizingDesktop} from './PlanSizingDesktop'
 import {planSizingLaptop} from './PlanSizingLaptop'
 import {planSizingMobile} from './PlanSizingMobile'
 
+
 export type PlanSizing = {
-  heading: PlanHeadingSizing
-  inputSummary: ParamsInputSummaySizing
-  input: ParamsInputSizing
-  guide: GuidePanelSizing
-  chart: ChartPanelSizing
+  welcome: PlanWelcomeSizing
+  input: PlanInputSizing
+  results: PlanResultsSizing
+  chart: PlanChartSizing
+  summary: PlanSummaySizing
 }
 
 export function planSizing(

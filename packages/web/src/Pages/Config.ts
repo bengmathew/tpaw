@@ -13,7 +13,7 @@ export class Config {
   static get client() {
     return {
       urls: {
-        app: () => `${fGet(process.env.NEXT_PUBLIC_URL_WEBSITE)}}`,
+        app: () => `${fGet(process.env.NEXT_PUBLIC_URL_WEBSITE)}`,
       },
       production: process.env.NODE_ENV === 'production',
       debug: {},

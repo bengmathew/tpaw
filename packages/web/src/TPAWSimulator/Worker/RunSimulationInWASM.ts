@@ -1,10 +1,10 @@
 import _ from 'lodash'
-import { SimpleRange } from '../../Utils/SimpleRange'
-import { noCase } from '../../Utils/Utils'
-import { getNumYears, getWithdrawalStartAsYFN } from '../TPAWParamsExt'
-import { TPAWParamsProcessed } from '../TPAWParamsProcessed'
-import { getWASM } from './GetWASM'
-import { TPAWWorkerRunSimulationResult } from './TPAWWorkerTypes'
+import {SimpleRange} from '../../Utils/SimpleRange'
+import {noCase} from '../../Utils/Utils'
+import {getNumYears, getWithdrawalStartAsYFN} from '../TPAWParamsExt'
+import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
+import {getWASM} from './GetWASM'
+import {TPAWWorkerRunSimulationResult} from './TPAWWorkerTypes'
 
 export async function runSimulationInWASM(
   params: TPAWParamsProcessed,
@@ -26,25 +26,27 @@ export async function runSimulationInWASM(
     params.returns.expected.bonds,
     Float64Array.from(params.returns.historicalAdjusted.map(x => x.stocks)),
     Float64Array.from(params.returns.historicalAdjusted.map(x => x.bonds)),
-    params.savingsAtStartOfStartYear,
-    Float64Array.from(params.targetAllocation.regularPortfolio.forTPAW),
-    Float64Array.from(params.targetAllocation.regularPortfolio.forSPAWAndSWR),
-    params.targetAllocation.legacyPortfolio.stocks,
-    params.swrWithdrawal.type,
-    params.swrWithdrawal.type === 'asAmount'
-      ? params.swrWithdrawal.amount
-      : params.swrWithdrawal.type === 'asPercent'
-      ? params.swrWithdrawal.percent
-      : noCase(params.swrWithdrawal),
-    Float64Array.from(params.byYear.map(x => x.withdrawals.lmp)),
-    Float64Array.from(params.byYear.map(x => x.savings)),
-    Float64Array.from(params.byYear.map(x => x.withdrawals.essential)),
-    Float64Array.from(params.byYear.map(x => x.withdrawals.discretionary)),
-    params.legacy.target,
-    params.legacy.external,
-    params.scheduledWithdrawalGrowthRate,
-    params.spendingCeiling ?? undefined,
-    params.spendingFloor ?? undefined,
+    params.currentPortfolioBalance,
+    Float64Array.from(params.risk.tpaw.allocation),
+    Float64Array.from(params.risk.spawAndSWR.allocation),
+    params.risk.tpaw.allocationForLegacy.stocks,
+    params.risk.swr.withdrawal.type,
+    params.risk.swr.withdrawal.type === 'asAmount'
+      ? params.risk.swr.withdrawal.amount
+      : params.risk.swr.withdrawal.type === 'asPercent'
+      ? params.risk.swr.withdrawal.percent
+      : noCase(params.risk.swr.withdrawal),
+    Float64Array.from(
+      params.byYear.map(x => x.tpawAndSPAW.risk.lmp)
+    ),
+    Float64Array.from(params.byYear.map(x => x.futureSavingsAndRetirementIncome)),
+    Float64Array.from(params.byYear.map(x => x.extraSpending.essential)),
+    Float64Array.from(params.byYear.map(x => x.extraSpending.discretionary)),
+    params.legacy.tpawAndSPAW.target,
+    params.legacy.tpawAndSPAW.external,
+    params.risk.tpawAndSPAW.spendingTilt,
+    params.risk.tpawAndSPAW.spendingCeiling ?? undefined,
+    params.risk.tpawAndSPAW.spendingFloor ?? undefined,
     params.sampling === 'monteCarlo'
       ? true
       : params.sampling === 'historical'

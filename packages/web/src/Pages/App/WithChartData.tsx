@@ -1,20 +1,23 @@
 import {ReactNode, useMemo} from 'react'
 import {createContext} from '../../Utils/CreateContext'
-import {ChartPanelType} from '../Plan/ChartPanel/ChartPanelType'
+import {PlanChartType} from '../Plan/PlanChart/PlanChartType'
 import {
   tpawChartDataLegacy,
   TPAWChartDataLegacy,
-} from '../Plan/ChartPanel/TPAWChart/TPAWChartDataLegacy'
+} from '../Plan/PlanChart/TPAWChart/TPAWChartDataLegacy'
 import {
   TPAWChartDataMain,
   tpawChartDataMainPercentiles,
-  tpawChartDataMainSharpeRatio,
-} from '../Plan/ChartPanel/TPAWChart/TPAWChartDataMain'
+  tpawChartDataMainRewardRiskRatio,
+} from '../Plan/PlanChart/TPAWChart/TPAWChartDataMain'
 import {useSimulation} from './WithSimulation'
 
 type _Value = {
-  byYearsFromNowPercentiles: Map<ChartPanelType, TPAWChartDataMain>
-  sharpeRatio: TPAWChartDataMain | null
+  byYearsFromNowPercentiles: Map<
+    Exclude<PlanChartType, 'reward-risk-ratio-comparison'>,
+    TPAWChartDataMain
+  >
+  rewardRiskRatio: TPAWChartDataMain | null
   legacy: TPAWChartDataLegacy
 }
 
@@ -28,15 +31,17 @@ export const WithChartData = ({children}: {children: ReactNode}) => {
     tpawResult,
     highlightPercentiles,
     percentiles: percentileList,
-    forSharpeRatioComparison,
+    forRewardRiskRatioComparison,
   } = simulation
   const value = useMemo(() => {
     const {params} = tpawResult.args
     const byYearsFromNowPercentiles = new Map<
-      ChartPanelType,
+      Exclude<PlanChartType, 'reward-risk-ratio-comparison'>,
       TPAWChartDataMain
     >()
-    const _add = (type: ChartPanelType) => {
+    const _add = (
+      type: Exclude<PlanChartType, 'reward-risk-ratio-comparison'>
+    ) => {
       byYearsFromNowPercentiles.set(
         type,
         tpawChartDataMainPercentiles(type, tpawResult, highlightPercentiles)
@@ -45,11 +50,11 @@ export const WithChartData = ({children}: {children: ReactNode}) => {
 
     _add('spending-total')
     _add('spending-general')
-    params.withdrawals.essential.forEach(x => [
+    params.original.extraSpending.essential.forEach(x => [
       x.id,
       _add(`spending-essential-${x.id}`),
     ])
-    params.withdrawals.discretionary.forEach(x => [
+    params.original.extraSpending.discretionary.forEach(x => [
       x.id,
       _add(`spending-discretionary-${x.id}`),
     ])
@@ -58,17 +63,17 @@ export const WithChartData = ({children}: {children: ReactNode}) => {
     _add('asset-allocation-total-portfolio')
     _add('withdrawal')
 
-    const sharpeRatio =
-      forSharpeRatioComparison &&
-      forSharpeRatioComparison.tpaw.tpawResult &&
-      forSharpeRatioComparison.spaw.tpawResult &&
-      forSharpeRatioComparison.swr.tpawResult
-        ? tpawChartDataMainSharpeRatio(
-            'sharpe-ratio',
+    const rewardRiskRatio =
+      forRewardRiskRatioComparison &&
+      forRewardRiskRatioComparison.tpaw.tpawResult &&
+      forRewardRiskRatioComparison.spaw.tpawResult &&
+      forRewardRiskRatioComparison.swr.tpawResult
+        ? tpawChartDataMainRewardRiskRatio(
+            'reward-risk-ratio-comparision',
             {
-              tpaw: forSharpeRatioComparison.tpaw.tpawResult,
-              spaw: forSharpeRatioComparison.spaw.tpawResult,
-              swr: forSharpeRatioComparison.swr.tpawResult,
+              tpaw: forRewardRiskRatioComparison.tpaw.tpawResult,
+              spaw: forRewardRiskRatioComparison.spaw.tpawResult,
+              swr: forRewardRiskRatioComparison.swr.tpawResult,
             },
             percentileList,
             highlightPercentiles
@@ -76,9 +81,9 @@ export const WithChartData = ({children}: {children: ReactNode}) => {
         : null
 
     const legacy = tpawChartDataLegacy(tpawResult, highlightPercentiles)
-    return {byYearsFromNowPercentiles, sharpeRatio, legacy}
+    return {byYearsFromNowPercentiles, rewardRiskRatio, legacy}
   }, [
-    forSharpeRatioComparison,
+    forRewardRiskRatioComparison,
     highlightPercentiles,
     percentileList,
     tpawResult,

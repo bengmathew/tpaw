@@ -106,8 +106,8 @@ export namespace Validator {
     }
 
   export const union =
-    <T extends Validator<any>[]>(...tests: T) =>
-    (x: unknown): MapType<T>[number] => {
+    <T extends Validator<any>[]>(...tests: T): Validator<MapType<T>[number]> =>
+    (x: unknown) => {
       const messages = [] as string[]
       let i = 0
       for (const test of tests) {
@@ -128,14 +128,21 @@ export namespace Validator {
       throw new Failed(messages)
     }
 
-  export const chain2 =
-    <T0, T1, T2>(
-      t1: Validator<T1, T0>,
-      t2: Validator<T2, T1>
-    ): Validator<T2, T0> =>
-    (x: T0) => {
-      return t2(t1(x))
+  export function intersection<T1, T2>(
+    ...tests: [Validator<T1>, Validator<T2>]
+  ): Validator<T1 & T2>
+  export function intersection<T1, T2, T3>(
+    ...tests: [Validator<T1>, Validator<T2>, Validator<T3>]
+  ): Validator<T1 & T2 & T3>
+  export function intersection(...tests: any[]) {
+    return (x: any) => {
+      let result: any = {}
+      for (const test of tests) {
+        result = {...result, ...test(x)}
+      }
+      return result
     }
+  }
 
   export function chain<T0, T1, T2>(
     ...tests: [Validator<T1, T0>, Validator<T2, T1>]
@@ -147,7 +154,12 @@ export namespace Validator {
     ...tests: [Validator<T1, T0>, Validator<T2, T1>, Validator<T3, T2>]
   ): Validator<T3, T0>
   export function chain<T0, T1, T2, T3, T4>(
-    ...tests: [Validator<T1, T0>, Validator<T2, T1>, Validator<T3, T2>, Validator<T4, T3>]
+    ...tests: [
+      Validator<T1, T0>,
+      Validator<T2, T1>,
+      Validator<T3, T2>,
+      Validator<T4, T3>
+    ]
   ): Validator<T4, T0>
   export function chain(...tests: any[]) {
     return (x: any) => {
@@ -159,5 +171,4 @@ export namespace Validator {
       return result
     }
   }
-
 }

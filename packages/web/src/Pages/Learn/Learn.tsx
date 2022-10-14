@@ -1,17 +1,16 @@
-import { faChevronUp, faStream } from '@fortawesome/pro-regular-svg-icons'
-import { faChevronRight, faHomeAlt } from '@fortawesome/pro-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Transition } from '@headlessui/react'
+import {faChevronUp, faStream} from '@fortawesome/pro-regular-svg-icons'
+import {faChevronRight, faHomeAlt} from '@fortawesome/pro-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import {Transition} from '@headlessui/react'
 import _ from 'lodash'
-import { GetStaticProps, InferGetStaticPropsType } from 'next'
+import {GetStaticProps, InferGetStaticPropsType} from 'next'
 import Link from 'next/link'
-import { useRouter } from 'next/router'
-import React, { useEffect, useState } from 'react'
+import {useRouter} from 'next/router'
+import React, {useEffect, useState} from 'react'
 import ReactDOM from 'react-dom'
-import { Contentful } from '../../Utils/Contentful'
-import { assert } from '../../Utils/Utils'
-import { AppPage } from '../App/AppPage'
-import { Footer } from '../App/Footer'
+import {Contentful} from '../../Utils/Contentful'
+import {assert} from '../../Utils/Utils'
+import {AppPage} from '../App/AppPage'
 
 export const learnGetStaticProps: GetStaticProps<{
   outline: Contentful.FetchedKnowledgeBaseOutline
@@ -65,15 +64,11 @@ const _Desktop = React.memo(
             slug={content.fields.slug}
           />
         </div>
-        <div
-          className="grid pl-8 relative pt-header max-w-[650px] "
-          style={{grid: '1fr auto/1fr'}}
-        >
+        <div className="pl-8 relative pt-header max-w-[650px] ">
           <_Content
             className="relative z-0 pr-8 mb-20  mt-4"
             {...{content, outline}}
           />
-          <Footer />
         </div>
       </div>
     )
@@ -84,20 +79,11 @@ const _Mobile = React.memo(
   ({outline, content}: InferGetStaticPropsType<typeof learnGetStaticProps>) => {
     const [showContents, setShowContents] = useState(false)
     return (
-      <div
-        className={`grid learn:hidden  min-h-screen pt-header`}
-        style={{grid: '1fr auto  / auto'}}
-      >
+      <div className={` learn:hidden  min-h-screen pt-header`}>
         <_Content
           className="relative z-0 px-4 sm:px-8 mb-20 mt-6"
           {...{content, outline}}
         />
-        {/* This hack is to line the footer to the bottom when it fits in a screen, but still scroll it up above the floating "contents" button to be able to click it. */}
-        <div className="pb-16 -mb-16">
-          <div className="">
-            <Footer />
-          </div>
-        </div>
         <button
           className="fixed bottom-0 right-0 mb-4 mr-4 btn-dark btn-lg flex items-center gap-x-2"
           style={{boxShadow: '0px 0px 15px 5px rgba(0,0,0,0.28)'}}

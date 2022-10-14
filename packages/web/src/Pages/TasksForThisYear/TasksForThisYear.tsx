@@ -1,19 +1,18 @@
-import {faLeftLong} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import { faLeftLong } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
-import React, {ReactNode} from 'react'
-import {TPAWParams} from '../../TPAWSimulator/TPAWParams'
-import {extendTPAWParams} from '../../TPAWSimulator/TPAWParamsExt'
-import {FirstYearSavingsPortfolioDetail} from '../../TPAWSimulator/Worker/FirstYearSavingsPortfolioDetail'
-import {TPAWRunInWorkerByPercentileByYearsFromNow} from '../../TPAWSimulator/Worker/TPAWRunInWorker'
-import {UseTPAWWorkerResult} from '../../TPAWSimulator/Worker/UseTPAWWorker'
-import {formatCurrency} from '../../Utils/FormatCurrency'
-import {formatPercentage} from '../../Utils/FormatPercentage'
-import {fGet} from '../../Utils/Utils'
-import {AppPage} from '../App/AppPage'
-import {Footer} from '../App/Footer'
-import {useSimulation} from '../App/WithSimulation'
-import {paramsInputLabel} from '../Plan/ParamsInput/Helpers/ParamsInputLabel'
+import React, { ReactNode } from 'react'
+import { TPAWParams } from '../../TPAWSimulator/TPAWParams'
+import { extendTPAWParams } from '../../TPAWSimulator/TPAWParamsExt'
+import { FirstYearSavingsPortfolioDetail } from '../../TPAWSimulator/Worker/FirstYearSavingsPortfolioDetail'
+import { TPAWRunInWorkerByPercentileByYearsFromNow } from '../../TPAWSimulator/Worker/TPAWRunInWorker'
+import { UseTPAWWorkerResult } from '../../TPAWSimulator/Worker/UseTPAWWorker'
+import { formatCurrency } from '../../Utils/FormatCurrency'
+import { formatPercentage } from '../../Utils/FormatPercentage'
+import { fGet } from '../../Utils/Utils'
+import { AppPage } from '../App/AppPage'
+import { useSimulation } from '../App/WithSimulation'
+import { planSectionLabel } from '../Plan/PlanInput/Helpers/PlanSectionLabel'
 
 type _Props = Omit<FirstYearSavingsPortfolioDetail, 'withdrawals'> & {
   withdrawals: FirstYearSavingsPortfolioDetail['withdrawals'] & {
@@ -39,15 +38,17 @@ const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
     ...original,
     withdrawals: {
       ...original.withdrawals,
-      essentialByEntry: params.withdrawals.essential.map(({id, label}) => ({
-        id,
-        label,
-        amount: firstYearOfAnyPercentile(
+      essentialByEntry: params.original.extraSpending.essential.map(
+        ({id, label}) => ({
           id,
-          tpawResult.savingsPortfolio.withdrawals.essential
-        ),
-      })),
-      discretionaryByEntry: params.withdrawals.discretionary.map(
+          label,
+          amount: firstYearOfAnyPercentile(
+            id,
+            tpawResult.savingsPortfolio.withdrawals.essential
+          ),
+        })
+      ),
+      discretionaryByEntry: params.original.extraSpending.discretionary.map(
         ({id, label}) => ({
           id,
           label,
@@ -70,9 +71,8 @@ export const TasksForThisYear = React.memo(() => {
 
   return (
     <AppPage
-      className="grid pt-header min-h-screen"
+      className="pt-header min-h-screen"
       title="Tasks for This Year - TPAW Planner"
-      style={{grid: '1fr auto/auto'}}
       curr="plan"
     >
       <div className="flex flex-col items-center mb-20 mt-6">
@@ -102,7 +102,6 @@ export const TasksForThisYear = React.memo(() => {
           </div>
         </div>
       </div>
-      <Footer />
     </AppPage>
   )
 })
@@ -405,16 +404,19 @@ const _AssetAllocation = React.memo(
             Rebalance this portfolio to the following asset allocation:
           </p>
           <_AllocationTable className="" {...props} />
-          {props.strategy === 'TPAW' && <p className="mt-3">
-            <span className="bg-gray-300 px-2 rounded-lg ">Note</span>{' '}
-            {`This is the asset allocation for your savings portfolio and will typically 
-            be different from the asset allocation for the total portfolio that you entered in the "${paramsInputLabel(
-              'stock-allocation'
+          {props.strategy === 'TPAW' && (
+            <p className="mt-3">
+              <span className="bg-gray-300 px-2 rounded-lg ">Note</span>{' '}
+              {`This is the asset allocation for your savings portfolio and will typically 
+            be different from the asset allocation for the total portfolio that you entered in the "${planSectionLabel(
+              'stock-allocation',
+              props.strategy
             )} section." `}
-            <Link href="learn/future-savings-and-retirement-income">
-              <a className="underline">Learn more.</a>
-            </Link>
-          </p>}
+              <Link href="learn/future-savings-and-retirement-income">
+                <a className="underline">Learn more.</a>
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     )

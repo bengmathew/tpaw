@@ -10,9 +10,9 @@ export const ValueForYearRangeDisplay = React.memo(
     return (
       <div>
         <h2>{trimAndNullify(entry.label) ?? '<no label>'}</h2>
-        <h2>{`${formatCurrency(entry.value)} per year. ${
-          entry.nominal ? 'Nominal dollars' : 'Real dollars'
-        }. `}</h2>
+        <h2>{`${formatCurrency(entry.value)} per year ${
+          entry.nominal ? '(nominal dollars)' : '(real dollars)'
+        }`}</h2>
         <YearRangeDisplay
           value={entry.yearRange}
           range={range}

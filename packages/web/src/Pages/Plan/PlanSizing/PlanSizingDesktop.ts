@@ -1,138 +1,199 @@
-import {rectExt} from '../../../Utils/Geometry'
+import {newPadding, rectExt} from '../../../Utils/Geometry'
 import {linearFnFomPoints} from '../../../Utils/LinearFn'
 import {PlanSizing} from './PlanSizing'
+
+const pad = 40
+const cardPadding = newPadding(20)
 
 export function planSizingDesktop(windowSize: {
   width: number
   height: number
 }): PlanSizing {
-  const pad = 20
 
-  const navHeadingH = 80
-  const headingMarginBottom = 10
+  const contentWidth = 600
 
-  const chart = (transition: number) => {
-    const inset = 0
-    let height =
-      windowSize.width < 800
-        ? linearFnFomPoints(400, 300, 800, 550)(windowSize.width)
-        : 550
-
-    const padBottom = (transition: number) =>
-      linearFnFomPoints(0, pad, 1, pad / 2)(transition)
-    height -= linearFnFomPoints(0, 0, 1, navHeadingH / 2)(transition)
+  // ---- WELCOME ----
+  const welcome = ((): PlanSizing['welcome'] => {
+    const width = 500
+    const inOriginX = (windowSize.width - width) / 2
     return {
-      position: rectExt({
-        width: windowSize.width - inset * 2,
-        height: height,
-        x: inset,
-        y: inset,
-      }),
-      padding: {
-        left: pad * 2,
-        right: pad * 2,
-        top: pad,
-        bottom: padBottom(transition),
-      },
-      cardPadding: {left: 15, right: 15, top: 10, bottom: 10},
-      headingMarginBottom,
-      menuButtonScale: 1,
-      legacyWidth: 120,
-      intraGap: pad,
-      borderRadius:0
-    }
-  }
-
-  // ---- HEADING ----
-  const heading = (() => {
-    const dynamic = (transition: number) => {
-      return {
-        origin: {
-          x: pad * 2 + linearFnFomPoints(0, 0, 1, 0)(transition),
-          y: chart(transition).position.bottom,
+      dynamic: {
+        in: {
+          origin: {x: inOriginX, y: 0},
+          opacity: 1,
         },
-      }
-    }
-    return {
-      dynamic,
-      fixed: {size: {width: windowSize.width - pad * 2, height: navHeadingH}},
+        out: {
+          origin: {x: inOriginX - 25, y: 0},
+          opacity: 0,
+        },
+      },
+      fixed: {
+        size: {width, height: windowSize.height},
+      },
     }
   })()
 
-  // ---- INPUT SUMMARY ----
-  const inputSummary = ((): PlanSizing['inputSummary'] => {
-    const dynamic = (transition: number) => ({
-      origin: {x: 0, y: chart(transition).position.bottom},
-    })
+  // ---- CHART ----
+
+  const chart = ((): PlanSizing['chart'] => {
+    type Dynamic = PlanSizing['chart']['dynamic']['hidden']
+    const summaryState: Dynamic = {
+      region: rectExt({
+        x: 0,
+        y: 0,
+        width: windowSize.width,
+        height:
+          windowSize.width < 800
+            ? linearFnFomPoints(400, 300, 800, 550)(windowSize.width)
+            : 550,
+      }),
+      padding: newPadding({vert: pad * 1.5, horz: pad}),
+      legacyWidth: 120,
+      intraGap: pad,
+      borderRadius: 0,
+      opacity: 1,
+      tasksOpacity: 1,
+    }
+
+    const inputState = {
+      ...summaryState,
+      region: rectExt({
+        x: 0,
+        y: 0,
+        width: summaryState.region.width,
+        height: summaryState.region.height - 50,
+      }),
+      padding: newPadding({
+        horz: summaryState.padding.left,
+        top: summaryState.padding.top,
+        bottom: summaryState.padding.bottom * 0.75,
+      }),
+      tasksOpacity: 0,
+    }
+    const resultsState: Dynamic = {
+      ...inputState,
+    }
+    const hiddenState = {
+      ...resultsState,
+      region: rectExt.translate(resultsState.region, {x: 0, y: -30}),
+      opacity: 0,
+    }
     return {
-      dynamic,
+      dynamic: {
+        summary: summaryState,
+        input: inputState,
+        results: resultsState,
+        hidden: hiddenState,
+      },
       fixed: {
-        size: {
-          width: windowSize.width,
-          height: windowSize.height - dynamic(1).origin.y,
-        },
-        padding: {left: pad * 2, right: pad * 1.75, top: 20, bottom: 0},
-        cardPadding: {left: 15, right: 15, top: 15, bottom: 15},
+        cardPadding:{left: 15, right: 15, top: 10, bottom: 10},
       },
     }
   })()
 
   // ---- INPUT ----
-  const input = (() => {
-    const dynamic = (transition: number) => ({
-      origin: {
-        x: 0,
-        y: chart(transition).position.bottom,
-      },
-    })
+
+  const input = ((): PlanSizing['input'] => {
+
     return {
-      dynamic,
+      dynamic: {
+        dialogModeIn: {
+          origin: {x: 0, y: 0},
+          opacity: 1,
+        },
+        dialogModeOutRight: {
+          origin: {x: 25, y: 0},
+          opacity: 0,
+        },
+        dialogModeOutLeft: {
+          origin: {x: -25, y: 0},
+          opacity: 0,
+        },
+        notDialogModeIn: {
+          origin: {x: 0, y: chart.dynamic.input.region.bottom},
+          opacity: 1,
+        },
+        notDialogModeOut: {
+          origin: {x: 0, y: chart.dynamic.summary.region.bottom},
+          opacity: 0,
+        },
+      },
       fixed: {
-        size: {
-          width: windowSize.width * 0.5,
-          height: windowSize.height - dynamic(1).origin.y,
+        dialogMode: {
+          size: {...windowSize},
+          padding: {horz: (windowSize.width - contentWidth) / 2, top: pad * 2},
         },
-        padding: {
-          left: pad * 2,
-          right: pad * 1.75,
-          top: heading.fixed.size.height,
-          bottom: pad,
+        notDialogMode: {
+          size: {
+            width: windowSize.width,
+            height: windowSize.height - chart.dynamic.input.region.bottom,
+          },
+          padding: {
+            left: pad,
+            right: windowSize.width - contentWidth - pad,
+            top: pad,
+          },
         },
-        cardPadding: {left: 15, right: 15, top: 15, bottom: 15},
-        headingMarginBottom,
+        cardPadding,
       },
     }
   })()
 
-  // ---- GUIDE ----
-  const guide = (() => {
-    const dynamic = (transition: number) => {
-      const currInputOrigin = input.dynamic(transition).origin
-      return {
-        origin: {
-          x: currInputOrigin.x + input.fixed.size.width,
-          y: currInputOrigin.y,
-        },
-      }
-    }
+  // ---- SUMMARY ----
+  const summary = ((): PlanSizing['summary'] => {
     return {
-      dynamic,
+      dynamic: {
+        in: {
+          origin: {x: 0, y: chart.dynamic.summary.region.bottom},
+          opacity: 1,
+        },
+        out: {
+          origin: {x: 0, y: chart.dynamic.input.region.bottom},
+          opacity: 0,
+        },
+      },
       fixed: {
         size: {
-          width: windowSize.width - dynamic(1).origin.x,
-          height: input.fixed.size.height,
+          width: windowSize.width,
+          height: windowSize.height - chart.dynamic.summary.region.height,
         },
-        padding: {
-          left: pad * 0.25,
-          right: pad * 2,
-          top: input.fixed.padding.top,
-          bottom: input.fixed.padding.bottom,
-        },
-        cardPadding: {left: 0, right: 0, top: 0, bottom: 0},
-        headingMarginBottom,
+        padding: newPadding({
+          left: pad,
+          right: windowSize.width - contentWidth - pad,
+          top: pad / 2,
+          bottom: 0,
+        }),
+        cardPadding,
       },
     }
   })()
 
-  return {input, inputSummary, guide, chart, heading}
+  // ---- RESULTS ----
+  const results = ((): PlanSizing['results'] => {
+    return {
+      dynamic: {
+        in: {
+          origin: {x: 0, y: chart.dynamic.results.region.bottom},
+          opacity: 1,
+        },
+        outDialogMode: {
+          origin: {x: 0, y: chart.dynamic.results.region.bottom + 30},
+          opacity: 0,
+        },
+        outNotDialogMode: {
+          origin: {x: 0, y: chart.dynamic.summary.region.bottom},
+          opacity: 0,
+        },
+      },
+      fixed: {
+        size: {
+          width: windowSize.width,
+          height: windowSize.height - chart.dynamic.results.region.bottom,
+        },
+        padding: input.fixed.notDialogMode.padding,
+      },
+    }
+  })()
+
+  return {welcome, chart, input, results, summary}
 }
