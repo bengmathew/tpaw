@@ -30,7 +30,7 @@ export const PlanInputIncomeDuringRetirement = React.memo(
           >
             <Contentful.RichText
               body={content['income-during-retirement'].intro[params.strategy]}
-              p="p-base"
+              p="p-base mb-4"
             />
             <ByYearSchedule
               className="mt-6"
