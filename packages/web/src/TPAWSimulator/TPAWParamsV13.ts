@@ -226,27 +226,33 @@ export namespace TPAWParamsV13 {
         },
       },
 
-      risk: {
-        useTPAWPreset: false,
-        tpawPreset: 'riskLevel-2',
-        customTPAWPreset: null,
-        tpaw: {
-          allocation: v12.targetAllocation.regularPortfolio.forTPAW,
-          allocationForLegacy: v12.targetAllocation.legacyPortfolio,
-        },
-        tpawAndSPAW: {
-          spendingCeiling: v12.spendingCeiling,
-          spendingFloor: v12.spendingFloor,
-          spendingTilt: v12.scheduledWithdrawalGrowthRate,
-          lmp: v12.withdrawals.lmp,
-        },
-        spawAndSWR: {
-          allocation: v12.targetAllocation.regularPortfolio.forSPAWAndSWR,
-        },
-        swr: {
-          withdrawal: v12.swrWithdrawal,
-        },
-      },
+      risk: (() => {
+        const tpawRisk = {
+          tpaw: {
+            allocation: v12.targetAllocation.regularPortfolio.forTPAW,
+            allocationForLegacy: v12.targetAllocation.legacyPortfolio,
+          },
+          tpawAndSPAW: {
+            spendingCeiling: v12.spendingCeiling,
+            spendingFloor: v12.spendingFloor,
+            spendingTilt: v12.scheduledWithdrawalGrowthRate,
+            lmp: v12.withdrawals.lmp,
+          },
+        }
+
+        return {
+          useTPAWPreset: v12.strategy === 'TPAW',
+          tpawPreset: 'custom',
+          customTPAWPreset: _.cloneDeep(tpawRisk),
+          ...tpawRisk,
+          spawAndSWR: {
+            allocation: v12.targetAllocation.regularPortfolio.forSPAWAndSWR,
+          },
+          swr: {
+            withdrawal: v12.swrWithdrawal,
+          },
+        }
+      })(),
 
       // Advanced.
       returns: v12.returns,
