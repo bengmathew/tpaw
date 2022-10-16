@@ -1,8 +1,6 @@
 import _ from 'lodash'
 import {useRouter} from 'next/router'
 import React, {useCallback, useEffect, useMemo, useState} from 'react'
-import {asyncEffect} from '../../Utils/AsyncEffect'
-import {Contentful} from '../../Utils/Contentful'
 import {createContext} from '../../Utils/CreateContext'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {useURLParam} from '../../Utils/UseURLParam'
@@ -53,7 +51,6 @@ export const Plan = React.memo((planContent: PlanContent) => {
 
   const state = usePlanState()
 
-
   const [transition, setTransition] = useState(() => ({
     prev: state,
     target: state,
@@ -74,12 +71,19 @@ export const Plan = React.memo((planContent: PlanContent) => {
     })
   }, [state, setParams])
   useAssertConst([setParams])
-  const router = useRouter()
+
+  const isIPhone = window.navigator.userAgent.match(/iPhone/i) !== null
 
   return (
     <PlanContentContext.Provider value={planContent}>
       <AppPage
-        className="h-screen  bg-planBG overflow-hidden"
+        // iPhone viewport height is the max viewport height, but the scroll
+        // that results does not properly hide the address and nav bar, so it
+        // just does not work. Tested on iOS 15.4. So dont use h-screen, max out
+        // based on windowSize.
+        className={`${isIPhone ? '' : 'h-screen'} 
+        h-screen bg-planBG overflow-hidden`}
+        style={{height: isIPhone ? `${windowSize.height}px` : undefined}}
         title={`Plan
           ${
             planChartType === 'spending-total'
