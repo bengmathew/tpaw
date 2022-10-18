@@ -1,36 +1,36 @@
-import {faCheck, faExclamation} from '@fortawesome/pro-solid-svg-icons'
-import {faPlus} from '@fortawesome/pro-thin-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import { faCheck, faExclamation } from '@fortawesome/pro-solid-svg-icons'
+import { faPlus } from '@fortawesome/pro-thin-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import Link from 'next/link'
 import React from 'react'
-import {riskLevelLabel} from '../../../TPAWSimulator/RiskLevelLabel'
+import { riskLevelLabel } from '../../../TPAWSimulator/RiskLevelLabel'
 import {
   GlidePath,
   Person,
-  ValueForYearRange,
+  ValueForYearRange
 } from '../../../TPAWSimulator/TPAWParams'
-import {TPAWParamsExt} from '../../../TPAWSimulator/TPAWParamsExt'
+import { TPAWParamsExt } from '../../../TPAWSimulator/TPAWParamsExt'
 import {
   processExpectedReturns,
-  processInflation,
+  processInflation
 } from '../../../TPAWSimulator/TPAWParamsProcessed'
-import {formatCurrency} from '../../../Utils/FormatCurrency'
-import {formatPercentage} from '../../../Utils/FormatPercentage'
-import {Padding, paddingCSSStyle} from '../../../Utils/Geometry'
-import {SimpleRange} from '../../../Utils/SimpleRange'
-import {trimAndNullify} from '../../../Utils/TrimAndNullify'
-import {assert, assertFalse, fGet, noCase} from '../../../Utils/Utils'
-import {useMarketData} from '../../App/WithMarketData'
-import {useSimulation} from '../../App/WithSimulation'
-import {ChartUtils} from '../../Common/Chart/ChartUtils/ChartUtils'
-import {ValueForYearRangeDisplay} from '../../Common/ValueForYearRangeDisplay'
-import {useGetSectionURL} from '../Plan'
-import {PlanInputType} from '../PlanInput/Helpers/PlanInputType'
-import {planSectionLabel} from '../PlanInput/Helpers/PlanSectionLabel'
-import {PlanSectionName} from '../PlanInput/Helpers/PlanSectionName'
-import {expectedReturnTypeLabel} from '../PlanInput/PlanInputExpectedReturns'
-import {inflationTypeLabel} from '../PlanInput/PlanInputInflation'
+import { formatCurrency } from '../../../Utils/FormatCurrency'
+import { formatPercentage } from '../../../Utils/FormatPercentage'
+import { Padding, paddingCSSStyle } from '../../../Utils/Geometry'
+import { SimpleRange } from '../../../Utils/SimpleRange'
+import { trimAndNullify } from '../../../Utils/TrimAndNullify'
+import { assert, assertFalse, fGet, noCase } from '../../../Utils/Utils'
+import { useMarketData } from '../../App/WithMarketData'
+import { useSimulation } from '../../App/WithSimulation'
+import { ChartUtils } from '../../Common/Chart/ChartUtils/ChartUtils'
+import { ValueForYearRangeDisplay } from '../../Common/ValueForYearRangeDisplay'
+import { useGetSectionURL } from '../Plan'
+import { PlanInputType } from '../PlanInput/Helpers/PlanInputType'
+import { planSectionLabel } from '../PlanInput/Helpers/PlanSectionLabel'
+import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
+import { expectedReturnTypeLabel } from '../PlanInput/PlanInputExpectedReturns'
+import { inflationTypeLabel } from '../PlanInput/PlanInputInflation'
 
 export const PlanSummaryButton = React.memo(
   ({
@@ -250,14 +250,7 @@ const _SectionSummary = React.memo(({type}: {type: PlanInputType}) => {
     case 'risk-level': {
       assert(params.risk.useTPAWPreset)
       return (
-        <div>
-          <div
-            className={`inline-grid gap-y-1 ${
-              params.risk.customTPAWPreset
-                ? 'border-b border-gray-300 pb-2 mb-2'
-                : ''
-            }`}
-          >
+          <>
             {(
               [
                 'riskLevel-1',
@@ -276,17 +269,7 @@ const _SectionSummary = React.memo(({type}: {type: PlanInputType}) => {
                   />
                 )
             )}
-          </div>
-          {params.risk.customTPAWPreset && (
-            <div className="">
-              <_ChoiceItem
-                value={'custom'}
-                label={riskLevelLabel}
-                selected={value => params.risk.tpawPreset === value}
-              />
-            </div>
-          )}
-        </div>
+          </>
       )
     }
     case 'stock-allocation': {

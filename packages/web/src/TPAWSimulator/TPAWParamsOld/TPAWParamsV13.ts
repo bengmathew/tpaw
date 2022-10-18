@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import {Validator} from '../Utils/Validator'
-import {TPAWParamsV12} from './TPAWParamsOld/TPAWParamsV12'
+import {Validator} from '../../Utils/Validator'
+import {TPAWParamsV12} from './TPAWParamsV12'
 
 export namespace TPAWParamsV13 {
   export const MAX_LABEL_LENGTH = 150

@@ -1,5 +1,5 @@
-import {faChevronRight} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import { faChevronRight } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import Link from 'next/link'
 import React, {
@@ -7,39 +7,39 @@ import React, {
   useCallback,
   useEffect,
   useRef,
-  useState,
+  useState
 } from 'react'
 import ReactDOM from 'react-dom'
-import {Contentful} from '../../../../Utils/Contentful'
+import { Contentful } from '../../../../Utils/Contentful'
 import {
   applyOriginToHTMLElement,
   Padding,
   rectExt,
-  RectExt,
+  RectExt
 } from '../../../../Utils/Geometry'
-import {assert, fGet, noCase} from '../../../../Utils/Utils'
-import {useChartData} from '../../../App/WithChartData'
-import {useSimulation} from '../../../App/WithSimulation'
-import {useWindowSize} from '../../../App/WithWindowSize'
-import {chartDrawDataLines} from '../../../Common/Chart/ChartComponent/ChartDrawDataLines'
-import {ChartReact, ChartReactStatefull} from '../../../Common/Chart/ChartReact'
-import {ChartUtils} from '../../../Common/Chart/ChartUtils/ChartUtils'
-import {usePlanContent} from '../../Plan'
+import { assert, fGet, noCase } from '../../../../Utils/Utils'
+import { useChartData } from '../../../App/WithChartData'
+import { useSimulation } from '../../../App/WithSimulation'
+import { useWindowSize } from '../../../App/WithWindowSize'
+import { chartDrawDataLines } from '../../../Common/Chart/ChartComponent/ChartDrawDataLines'
+import { ChartReact, ChartReactStatefull } from '../../../Common/Chart/ChartReact'
+import { ChartUtils } from '../../../Common/Chart/ChartUtils/ChartUtils'
+import { usePlanContent } from '../../Plan'
 import { PlanChartInternalTransitionState } from '../PlanChart'
 import {
   isPlanChartSpendingDiscretionaryType,
   isPlanChartSpendingEssentialType,
-  PlanChartType,
+  PlanChartType
 } from '../PlanChartType'
-import {TPAWChartDataMain} from '../TPAWChart/TPAWChartDataMain'
-import {useGetPlanChartURL} from '../UseGetPlanChartURL'
-import {usePlanChartType} from '../UsePlanChartType'
-import {planChartLabel} from './PlanChartLabel'
-import {PlanChartMainCardMenuButton} from './PlanChartMainCardMenuButton'
+import { TPAWChartDataMain } from '../TPAWChart/TPAWChartDataMain'
+import { useGetPlanChartURL } from '../UseGetPlanChartURL'
+import { usePlanChartType } from '../UsePlanChartType'
+import { planChartLabel } from './PlanChartLabel'
+import { PlanChartMainCardMenuButton } from './PlanChartMainCardMenuButton'
 
 const duration = 500
 const scale = 0.95
-const widthForFullSize = 700
+const maxWidth = 700
 export type PlanChartMainCardMenuStateful = {
   setButtonScale: (scale: number) => void
 }
@@ -56,17 +56,13 @@ export const PlanChartMainCardMenu = React.memo(
     transition: {target: PlanChartInternalTransitionState; duration: number}
   }) => {
     const windowSize = useWindowSize()
-    const width = Math.min(windowSize.width, widthForFullSize)
+    const width = Math.min(windowSize.width, maxWidth)
     const simulation = useSimulation()
     const {params} = simulation.tpawResult.args
     const type = usePlanChartType()
 
-    const [referenceElement, setReferenceElement] =
-      useState<HTMLDivElement | null>(null)
-
-    const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(
-      null
-    )
+    const referenceElementRef = useRef<HTMLDivElement | null>(null)
+    const popperElementRef = useRef<HTMLDivElement | null>(null)
     // Hack to force redraw on open. Seemed like the draws were not taking
     // effect when the canvas was not visible.
     const [drawKey, setDrawKey] = useState(0)
@@ -75,15 +71,15 @@ export const PlanChartMainCardMenu = React.memo(
     const handleShow = () => {
       setDrawKey(x => x + 1)
       setShow(true)
-      const position = fGet(referenceElement).getBoundingClientRect()
+      const position = fGet(referenceElementRef.current).getBoundingClientRect()
       const origin = {
         y: position.top,
         x:
-          width < widthForFullSize
+          width < maxWidth
             ? 0
             : Math.min(position.left, windowSize.width - width - 20),
       }
-      applyOriginToHTMLElement(origin, fGet(popperElement))
+      applyOriginToHTMLElement(origin, fGet(popperElementRef.current))
     }
 
     const buttonProps = {
@@ -98,7 +94,7 @@ export const PlanChartMainCardMenu = React.memo(
     return (
       <>
         <PlanChartMainCardMenuButton
-          ref={setReferenceElement}
+          ref={referenceElementRef}
           className={className}
           style={style}
           onClick={handleShow}
@@ -123,7 +119,7 @@ export const PlanChartMainCardMenu = React.memo(
             />
             <div
               className={`flex absolute flex-col  rounded-xl  bg-pageBG  max-h-[calc(100vh-150px)] overflow-scroll`}
-              ref={setPopperElement}
+              ref={popperElementRef}
               style={{
                 transitionProperty: 'transform',
                 transitionDuration: `${duration}ms`,

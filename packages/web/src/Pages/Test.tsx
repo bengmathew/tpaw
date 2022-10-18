@@ -134,7 +134,7 @@ const excelSimulated = [
 const excel = excelSimulated
 
 const testParams = extendTPAWParams({
-  v: 13,
+  v: 14,
   strategy: 'TPAW',
   dialogMode: true,
   people: {
@@ -161,6 +161,7 @@ const testParams = extendTPAWParams({
     useTPAWPreset:false,
     tpawPreset:'riskLevel-2',
     customTPAWPreset:null,
+    savedTPAWPreset:null,
     tpaw: {
       allocation: {
         start: {stocks: 0.4},

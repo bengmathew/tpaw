@@ -1,23 +1,24 @@
 import _ from 'lodash'
-import { Dispatch, ReactNode, useMemo, useState } from 'react'
-import { resolveTPAWRiskPreset } from '../../TPAWSimulator/DefaultParams'
-import { TPAWParams } from '../../TPAWSimulator/TPAWParams'
+import {Dispatch, ReactNode, useMemo, useState} from 'react'
+import {resolveTPAWRiskPreset} from '../../TPAWSimulator/DefaultParams'
+import {TPAWParams} from '../../TPAWSimulator/TPAWParams'
 import {
   extendTPAWParams,
-  TPAWParamsExt
+  getNumYears,
+  TPAWParamsExt,
 } from '../../TPAWSimulator/TPAWParamsExt'
 import {
   processTPAWParams,
-  TPAWParamsProcessed
+  TPAWParamsProcessed,
 } from '../../TPAWSimulator/TPAWParamsProcessed'
 import {
   useTPAWWorker,
-  UseTPAWWorkerResult
+  UseTPAWWorkerResult,
 } from '../../TPAWSimulator/Worker/UseTPAWWorker'
-import { createContext } from '../../Utils/CreateContext'
-import { fGet } from '../../Utils/Utils'
-import { useTPAWParams } from './UseTPAWParams'
-import { useMarketData } from './WithMarketData'
+import {createContext} from '../../Utils/CreateContext'
+import {fGet} from '../../Utils/Utils'
+import {useTPAWParams} from './UseTPAWParams'
+import {useMarketData} from './WithMarketData'
 
 export type SimulationInfoPerParam = {
   params: TPAWParams
@@ -50,7 +51,7 @@ const highlightPercentiles = [5, 25, 50, 75, 95]
 // const highlightPercentiles = [10, 90]
 const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
 
-export { useSimulation }
+export {useSimulation}
 
 export const WithSimulation = ({children}: {children: ReactNode}) => {
   const [numRuns, setNumRuns] = useState(500)
@@ -73,7 +74,7 @@ export const WithSimulation = ({children}: {children: ReactNode}) => {
       external: [],
       total: 0,
     }
-    clone.risk = resolveTPAWRiskPreset(params.risk)
+    clone.risk = resolveTPAWRiskPreset(params.risk, getNumYears(params))
     clone.risk.tpawAndSPAW.spendingTilt = 0
     clone.risk.tpawAndSPAW.spendingCeiling = null
     clone.risk.tpawAndSPAW.spendingFloor = null
@@ -126,7 +127,13 @@ export const WithSimulation = ({children}: {children: ReactNode}) => {
       forRewardRiskRatioComparison,
       setCompareRewardRiskRatio,
     }
-  }, [forBase, forRewardRiskRatioComparison, paramSpace, setParamSpace, setParams])
+  }, [
+    forBase,
+    forRewardRiskRatioComparison,
+    paramSpace,
+    setParamSpace,
+    setParams,
+  ])
   if (!_hasValue(value)) return <></>
   return <Context.Provider value={value}>{children}</Context.Provider>
 }

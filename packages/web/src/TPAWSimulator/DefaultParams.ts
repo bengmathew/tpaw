@@ -1,8 +1,9 @@
 import _ from 'lodash'
-import { MarketData } from '../Pages/Common/GetMarketData'
-import { fGet, noCase } from '../Utils/Utils'
-import { historicalReturnsAverage } from './HistoricalReturns'
-import { TPAWParams, TPAWRisk, TPAWRiskLevel } from './TPAWParams'
+import {MarketData} from '../Pages/Common/GetMarketData'
+import {linearFnFomPoints} from '../Utils/LinearFn'
+import {noCase} from '../Utils/Utils'
+import {historicalReturnsAverage} from './HistoricalReturns'
+import {TPAWParams, TPAWRisk, TPAWRiskLevel} from './TPAWParams'
 
 export const EXPECTED_RETURN_PRESETS = (
   type: Exclude<TPAWParams['returns']['expected']['type'], 'manual'>,
@@ -36,91 +37,54 @@ export const SUGGESTED_INFLATION = (marketData: MarketData) =>
   _.round(marketData.inflation.value, 3)
 
 export const TPAW_RISK_PRESETS = (
-  preset: Exclude<TPAWRiskLevel, 'custom'>
+  preset: Exclude<TPAWRiskLevel, 'custom'>,
+  numYears: number
 ): TPAWRisk => {
+  const allocFn = (at20of100: number, spendingTilt: number): TPAWRisk => {
+    const at100of100 = _.round(at20of100 - 0.1, 2)
+    return {
+      tpaw: {
+        allocation: {
+          start: {
+            stocks: _.round(
+              linearFnFomPoints(0, at100of100, 100 - 20, at20of100)(numYears),
+              2
+            ),
+          },
+          intermediate: [],
+          end: {stocks: at100of100},
+        },
+        allocationForLegacy: {stocks: _.round(at20of100 + 0.2, 2)},
+      },
+      tpawAndSPAW: {
+        spendingCeiling: null,
+        spendingFloor: null,
+        spendingTilt,
+        lmp: 0,
+      },
+    }
+  }
   switch (preset) {
     case 'riskLevel-1':
-      return {
-        tpaw: {
-          allocation: {
-            start: {stocks: 0.3},
-            intermediate: [],
-            end: {stocks: 0.2},
-          },
-          allocationForLegacy: {stocks: 0.5},
-        },
-        tpawAndSPAW: {
-          spendingCeiling: null,
-          spendingFloor: null,
-          spendingTilt: 0.005,
-          lmp: 0,
-        },
-      }
+      return allocFn(0.3, 0.005)
     case 'riskLevel-2':
-      return {
-        tpaw: {
-          allocation: {
-            start: {stocks: 0.4},
-            intermediate: [],
-            end: {stocks: 0.3},
-          },
-          allocationForLegacy: {stocks: 0.6},
-        },
-        tpawAndSPAW: {
-          spendingCeiling: null,
-          spendingFloor: null,
-          spendingTilt: 0.008,
-          lmp: 0,
-        },
-      }
+      return allocFn(0.4, 0.008)
     case 'riskLevel-3':
-      return {
-        tpaw: {
-          allocation: {
-            start: {stocks: 0.5},
-            intermediate: [],
-            end: {stocks: 0.4},
-          },
-          allocationForLegacy: {stocks: 0.7},
-        },
-        tpawAndSPAW: {
-          spendingCeiling: null,
-          spendingFloor: null,
-          spendingTilt: 0.011,
-          lmp: 0,
-        },
-      }
+      return allocFn(0.5, 0.011)
     case 'riskLevel-4':
-      return {
-        tpaw: {
-          allocation: {
-            start: {stocks: 0.6},
-            intermediate: [],
-            end: {stocks: 0.5},
-          },
-          allocationForLegacy: {stocks: 0.8},
-        },
-        tpawAndSPAW: {
-          spendingCeiling: null,
-          spendingFloor: null,
-          spendingTilt: 0.014,
-          lmp: 0,
-        },
-      }
+      return allocFn(0.6, 0.014)
     default:
       noCase(preset)
   }
 }
 
 export const resolveTPAWRiskPreset = (
-  risk: TPAWParams['risk']
+  risk: TPAWParams['risk'],
+  numYears: number
 ): Exclude<TPAWParams['risk'], {useTPAWPreset: true}> => {
   if (!risk.useTPAWPreset) return risk
-  const {swr, spawAndSWR, tpawPreset, customTPAWPreset} = risk
-  const {tpaw, tpawAndSPAW} =
-    risk.tpawPreset === 'custom'
-      ? fGet(customTPAWPreset)
-      : TPAW_RISK_PRESETS(risk.tpawPreset)
+  const {swr, spawAndSWR, tpawPreset, customTPAWPreset, savedTPAWPreset} = risk
+  const {tpaw, tpawAndSPAW} = TPAW_RISK_PRESETS(risk.tpawPreset, numYears)
   return {
     useTPAWPreset: false,
     tpaw,
@@ -129,6 +93,7 @@ export const resolveTPAWRiskPreset = (
     spawAndSWR,
     tpawPreset,
     customTPAWPreset,
+    savedTPAWPreset,
   }
 }
 
@@ -138,7 +103,7 @@ export const DEFAULT_SWR_WITHDRAWAL_PERCENT = (retirementLength: number) => {
 
 export function getDefaultParams() {
   const params: TPAWParams = {
-    v: 13,
+    v: 14,
     strategy: 'TPAW',
     dialogMode: true,
     people: {
@@ -165,6 +130,7 @@ export function getDefaultParams() {
       useTPAWPreset: true,
       tpawPreset: 'riskLevel-2',
       customTPAWPreset: null,
+      savedTPAWPreset: null,
       spawAndSWR: {
         allocation: {
           start: {stocks: 0.5},

@@ -11,6 +11,7 @@ export const ConfirmAlert = React.memo(
     isWarningTitle = false,
     isWarningContent = false,
     onCancel,
+    option2,
     onConfirm,
   }: {
     title: string | null
@@ -21,18 +22,25 @@ export const ConfirmAlert = React.memo(
     isWarningTitle?: boolean
     isWarningContent?: boolean
     onCancel: (() => void) | null
+    option2?: {
+      onOption2: () => void
+      label: string
+      isWarningButton?: boolean
+    }
     onConfirm: () => void
   }) => {
     return (
       <ModalBase bg={isWarningBG ? 'bg-red-200' : undefined}>
         {transitionOut => (
           <>
-            {title && <h2
-              className={`text-lg font-bold mb-4 
+            {title && (
+              <h2
+                className={`text-lg font-bold mb-4 
               ${isWarningTitle ? 'text-errorFG' : ''}`}
-            >
-              {title}
-            </h2>}
+              >
+                {title}
+              </h2>
+            )}
             {_.flatten([children]).map((x, i) => (
               <div
                 key={i}
@@ -51,6 +59,16 @@ export const ConfirmAlert = React.memo(
                   onClick={() => transitionOut(onCancel)}
                 >
                   Cancel
+                </button>
+              )}
+              {option2 && (
+                <button
+                  className={`btn-md relative ${
+                    option2.isWarningButton ? 'btn-dark-warnBG' : 'btn-dark'
+                  }`}
+                  onClick={() => transitionOut(option2.onOption2)}
+                >
+                  {option2.label}
                 </button>
               )}
               <button

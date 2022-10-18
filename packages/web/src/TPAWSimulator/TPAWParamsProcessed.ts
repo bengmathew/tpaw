@@ -82,7 +82,8 @@ export function processTPAWParams(
     },
     risk: (() => {
       const {spawAndSWR, swr, tpaw, tpawAndSPAW} = resolveTPAWRiskPreset(
-        params.risk
+        params.risk,
+        numYears
       )
       return {
         tpaw: {
@@ -139,7 +140,7 @@ function _processByYearParams(
         lmp:
           year < withdrawalStart
             ? 0
-            : resolveTPAWRiskPreset(params.risk).tpawAndSPAW.lmp,
+            : resolveTPAWRiskPreset(params.risk, numYears).tpawAndSPAW.lmp,
       },
     },
   }))

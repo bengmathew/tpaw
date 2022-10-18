@@ -247,7 +247,7 @@ export function cloneWithNewStrategy(
   paramsExt: TPAWParamsExt,
   strategy: TPAWParams['strategy']
 ) {
-  const {params} = paramsExt
+  const {params, numYears} = paramsExt
   assert(params.strategy !== strategy)
   const clone = _.cloneDeep(params)
   clone.strategy = strategy
@@ -258,7 +258,7 @@ export function cloneWithNewStrategy(
     }
   }
   if (strategy !== 'TPAW' && clone.risk.useTPAWPreset) {
-    clone.risk = resolveTPAWRiskPreset(clone.risk)
+    clone.risk = resolveTPAWRiskPreset(clone.risk, numYears)
   }
   return clone
 }

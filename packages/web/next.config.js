@@ -7,7 +7,7 @@ const {withSentryConfig} = require('@sentry/nextjs')
 const moduleExports = {
   reactStrictMode: true,
   sentry: {
-    hideSourceMaps: true,
+    hideSourceMaps: false,
   },
   // https://github.com/vercel/next.js/issues/25484#issuecomment-874942566
   webpack: (config, options) => {

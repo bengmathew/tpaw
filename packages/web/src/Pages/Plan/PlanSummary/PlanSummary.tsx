@@ -1,35 +1,34 @@
-import {faCaretDown, faCaretRight} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import Link from 'next/link'
-import React, {useMemo, useState} from 'react'
-import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
-import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
-import {TPAWParamsExt} from '../../../TPAWSimulator/TPAWParamsExt'
+import { faCaretDown, faCaretRight } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import React, { useMemo, useState } from 'react'
+import { getDefaultParams } from '../../../TPAWSimulator/DefaultParams'
+import { TPAWParams } from '../../../TPAWSimulator/TPAWParams'
+import { TPAWParamsExt } from '../../../TPAWSimulator/TPAWParamsExt'
 import {
   newPaddingHorz,
   originCSSStyle,
   Padding,
-  paddingCSSStyle,
   paddingCSSStyleHorz,
   Size,
   sizeCSSStyle,
-  XY,
+  XY
 } from '../../../Utils/Geometry'
-import {NoDisplayOnOpacity0Transition} from '../../../Utils/NoDisplayOnOpacity0Transition'
-import {noCase} from '../../../Utils/Utils'
-import {useSimulation} from '../../App/WithSimulation'
-import {Config} from '../../Config'
-import {useGetSectionURL} from '../Plan'
-import {analyzeYearsInParams} from '../PlanInput/Helpers/AnalyzeYearsInParams'
-import {PlanSectionName} from '../PlanInput/Helpers/PlanSectionName'
+import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity0Transition'
+import { noCase } from '../../../Utils/Utils'
+import { useSimulation } from '../../App/WithSimulation'
+import { Config } from '../../Config'
+import { useGetSectionURL } from '../Plan'
+import { analyzeYearsInParams } from '../PlanInput/Helpers/AnalyzeYearsInParams'
+import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import {
   PlanTransitionState,
-  simplifyPlanTransitionState2,
+  simplifyPlanTransitionState2
 } from '../PlanTransition'
-import {PlanSummaryButton} from './PlanSummaryButton'
-import {PlanSummaryCustomRisk} from './PlanSummaryCustomRisk'
-import {PlanSummaryReset} from './PlanSummaryReset'
-import {PlanSummaryShare} from './PlanSummaryShare'
+import { PlanSummaryButton } from './PlanSummaryButton'
+import { PlanSummaryRiskSwitchMode } from './PlanSummaryRiskSwitchMode'
+import { PlanSummaryReset } from './PlanSummaryReset'
+import { PlanSummaryRiskCopyFromAPreset } from './PlanSummaryRiskCopyFromAPreset'
+import { PlanSummaryShare } from './PlanSummaryShare'
 
 export type PlanSummaySizing = {
   dynamic: Record<
@@ -182,13 +181,18 @@ export const PlanSummary = React.memo(
             </div>
 
             <div className="">
-              <h2
-                className="text-[20px] sm:text-[26px] font-bold mb-6 flex justify-between items-center"
+              <div
+                className=""
                 style={{...paddingCSSStyleHorz(sizing.fixed.cardPadding)}}
               >
-                Risk
-                <PlanSummaryCustomRisk className="" />
-              </h2>
+                <h2 className="text-[20px] sm:text-[26px] font-bold  flex justify-between items-center">
+                  Risk
+                  <PlanSummaryRiskSwitchMode className="" />
+                </h2>
+                {!params.risk.useTPAWPreset && (
+                  <PlanSummaryRiskCopyFromAPreset className="pt-2 pb-4"/>
+                )}
+              </div>
               <div className="flex flex-col gap-y-6 ">
                 {params.risk.useTPAWPreset ? (
                   <PlanSummaryButton

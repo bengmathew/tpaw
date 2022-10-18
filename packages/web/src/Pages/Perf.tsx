@@ -87,7 +87,7 @@ export const Perf = React.memo(() => {
 })
 
 const params = extendTPAWParams({
-  v: 13,
+  v: 14,
   strategy: 'TPAW',
   dialogMode: true,
   people: {
@@ -114,6 +114,7 @@ const params = extendTPAWParams({
     useTPAWPreset: false,
     tpawPreset: 'riskLevel-2',
     customTPAWPreset: null,
+    savedTPAWPreset: null,
     tpaw: {
       allocation: {
         start: {stocks: 0.4},

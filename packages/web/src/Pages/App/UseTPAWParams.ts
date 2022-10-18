@@ -18,8 +18,9 @@ import {TPAWParamsV8} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV8'
 import {TPAWParamsV10} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV10'
 import {TPAWParamsV11} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV11'
 import {TPAWParamsV12} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV12'
+import {TPAWParamsV13} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV13'
 import {TPAWParamsV9} from '../../TPAWSimulator/TPAWParamsOld/TPAWParamsV9'
-import {TPAWParamsV13} from '../../TPAWSimulator/TPAWParamsV13'
+import {TPAWParamsV14} from '../../TPAWSimulator/TPAWParamsV14'
 import {useAssertConst} from '../../Utils/UseAssertConst'
 import {fGet} from '../../Utils/Utils'
 import {Validator} from '../../Utils/Validator'
@@ -200,9 +201,16 @@ function _parseExternalParams(
       const v13 =
         parsed.v === 13
           ? TPAWParamsV13.validator(parsed)
-          : TPAWParamsV13.fromV12(fGet(v12))
+          : v12
+          ? TPAWParamsV13.fromV12(v12)
+          : null
 
-      return v13
+      const v14 =
+        parsed.v === 14
+          ? TPAWParamsV14.validator(parsed)
+          : TPAWParamsV14.fromV13(fGet(v13))
+
+      return v14
     } catch (e) {
       if (e instanceof Validator.Failed) {
         throw new AppError(`Error in parameter: ${e.fullMessage}`)

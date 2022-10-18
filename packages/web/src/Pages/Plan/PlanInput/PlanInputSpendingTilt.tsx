@@ -43,7 +43,7 @@ const _SpendingTiltCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const {params, setParams} = useSimulation()
+    const {params, paramsExt, setParams} = useSimulation()
     assert(!params.risk.useTPAWPreset)
     const content = usePlanContent()['spending-tilt']
     return (
@@ -87,7 +87,8 @@ const _SpendingTiltCard = React.memo(
               const clone = _.cloneDeep(params)
               assert(!clone.risk.useTPAWPreset)
               clone.risk.tpawAndSPAW.spendingTilt = resolveTPAWRiskPreset(
-                getDefaultParams().risk
+                getDefaultParams().risk,
+                paramsExt.numYears
               ).tpawAndSPAW.spendingTilt
               return clone
             })

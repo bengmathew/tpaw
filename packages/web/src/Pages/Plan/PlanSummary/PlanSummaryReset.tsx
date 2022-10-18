@@ -26,7 +26,7 @@ export const PlanSummaryReset = React.memo(() => {
             setParams(getDefaultParams())
           }}
         >
-          Are you sure you want to reset the inputs?
+          Are you sure you want to reset all inputs?
         </ConfirmAlert>
       )}
     </>

@@ -7,7 +7,6 @@ export const riskLevelLabel = (riskLevel:TPAWRiskLevel)=>{
     case 'riskLevel-2': return 'Moderately Conservative'
     case 'riskLevel-3': return 'Moderately Aggressive'
     case 'riskLevel-4': return 'Aggressive'
-    case 'custom': return 'Custom'
     default:noCase(riskLevel)
   }
 }
