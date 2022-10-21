@@ -1,5 +1,6 @@
 import {faChevronLeft, faChevronRight} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import _ from 'lodash'
 import Link from 'next/link'
 import React from 'react'
 import {useSimulation} from '../../../App/WithSimulation'
@@ -7,19 +8,24 @@ import {useGetSectionURL} from '../../Plan'
 import {PlanInputType} from '../Helpers/PlanInputType'
 import {PlanSectionName} from '../Helpers/PlanSectionName'
 
-export const planDialogOrder: readonly PlanSectionName[] = [
-  'welcome',
-  'age',
-  'current-portfolio-balance',
-  'future-savings',
-  'income-during-retirement',
-  'results',
-]
+export const getPlanDialogOrder = (
+  withdrawalStarted: boolean
+): readonly PlanSectionName[] =>
+  _.compact([
+    'welcome',
+    'age',
+    'current-portfolio-balance',
+    withdrawalStarted ?undefined: 'future-savings' ,
+    'income-during-retirement',
+    'results',
+  ])
 
 export const PlanInputBodyDialogNav = React.memo(
   ({className = '', type}: {className?: string; type: PlanInputType}) => {
-    const {params} = useSimulation()
+    const {params, paramsExt} = useSimulation()
+    const {withdrawalsStarted} = paramsExt
     const sectionURLFn = useGetSectionURL()
+    const planDialogOrder = getPlanDialogOrder(withdrawalsStarted)
 
     const index = planDialogOrder.indexOf(type)
     if (!params.dialogMode || index <= 0) return <></>

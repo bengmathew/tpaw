@@ -1,12 +1,12 @@
-import {faLeftLong} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import { faLeftLong } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import React from 'react'
-import {useSimulation} from '../../../App/WithSimulation'
-import {useGetSectionURL} from '../../Plan'
-import {PlanInputType} from '../Helpers/PlanInputType'
-import {planSectionLabel} from '../Helpers/PlanSectionLabel'
-import {planDialogOrder} from './PlanInputBodyDialogNav'
+import { useSimulation } from '../../../App/WithSimulation'
+import { useGetSectionURL } from '../../Plan'
+import { PlanInputType } from '../Helpers/PlanInputType'
+import { planSectionLabel } from '../Helpers/PlanSectionLabel'
+import { getPlanDialogOrder } from './PlanInputBodyDialogNav'
 
 export const PlanInputBodyHeader = React.memo(
   ({
@@ -16,9 +16,10 @@ export const PlanInputBodyHeader = React.memo(
     type: PlanInputType | 'results'
     className?: string
   }) => {
-    const {params} = useSimulation()
+    const {params, paramsExt} = useSimulation()
+    const {withdrawalsStarted} = paramsExt
     const getSectionURL = useGetSectionURL()
-    const index = planDialogOrder.indexOf(type) - 1
+    const index = getPlanDialogOrder(withdrawalsStarted).indexOf(type) - 1
     return (
       <div className={`${className} flex justify-start `}>
         <div className="flex  items-center gap-x-4 pr-4 bg-planBG bg-opacity-90 rounded-br-xl">
