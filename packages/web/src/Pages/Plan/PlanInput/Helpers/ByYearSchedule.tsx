@@ -8,10 +8,10 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import React from 'react'
 import {
-  TPAWParams,
+  PlanParams,
   ValueForYearRange,
   YearRange,
-} from '../../../../TPAWSimulator/TPAWParams'
+} from '@tpaw/common'
 import {formatCurrency} from '../../../../Utils/FormatCurrency'
 import {SimpleRange} from '../../../../Utils/SimpleRange'
 import {trimAndNullify} from '../../../../Utils/TrimAndNullify'
@@ -33,12 +33,12 @@ export const ByYearSchedule = React.memo(
   }: {
     className?: string
     style?: React.CSSProperties
-    entries: (params: TPAWParams) => ValueForYearRange[]
+    entries: (params: PlanParams) => ValueForYearRange[]
     hideEntry: number | null
     defaultYearRange: YearRange
     allowableYearRange: SimpleRange
     heading: string | null
-    addButtonText?: string //TODO: make null
+    addButtonText: string 
     onEdit: (index: number, isAdd: boolean) => void
   }) => {
     const {params, setParams} = useSimulation()

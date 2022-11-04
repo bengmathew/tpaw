@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import {TPAWParams} from '../../../../TPAWSimulator/TPAWParams'
+import {PlanParams} from '@tpaw/common'
 import {trimAndNullify} from '../../../../Utils/TrimAndNullify'
 import {assert, noCase} from '../../../../Utils/Utils'
 import {
@@ -11,7 +11,7 @@ import {
 } from '../PlanChartType'
 
 export const planChartLabel = (
-  params: TPAWParams,
+  params: PlanParams,
   panelType: PlanChartType,
   type: 'full' | 'short'
 ) => {

@@ -1,5 +1,5 @@
 import React from 'react'
-import {ValueForYearRange} from '../../TPAWSimulator/TPAWParams'
+import {ValueForYearRange} from '@tpaw/common'
 import {formatCurrency} from '../../Utils/FormatCurrency'
 import {SimpleRange} from '../../Utils/SimpleRange'
 import {trimAndNullify} from '../../Utils/TrimAndNullify'

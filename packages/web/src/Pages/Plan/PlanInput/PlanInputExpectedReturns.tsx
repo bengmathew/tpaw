@@ -5,10 +5,10 @@ import _ from 'lodash'
 import React from 'react'
 import {
   EXPECTED_RETURN_PRESETS,
-  getDefaultParams,
-} from '../../../TPAWSimulator/DefaultParams'
-import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
-import {processExpectedReturns} from '../../../TPAWSimulator/TPAWParamsProcessed'
+  getDefaultPlanParams,
+} from '@tpaw/common'
+import {PlanParams} from '@tpaw/common'
+import {processExpectedReturns} from '../../../TPAWSimulator/PlanParamsProcessed'
 import {Contentful} from '../../../Utils/Contentful'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
 import {paddingCSSStyle} from '../../../Utils/Geometry'
@@ -43,7 +43,7 @@ export const _ExpectedReturnsCard = React.memo(
     const {params, setParams} = useSimulation()
     const content = usePlanContent()
 
-    const handleChange = (expected: TPAWParams['returns']['expected']) => {
+    const handleChange = (expected: PlanParams['returns']['expected']) => {
       setParams(params => {
         const clone = _.cloneDeep(params)
         clone.returns.expected = expected
@@ -77,7 +77,7 @@ export const _ExpectedReturnsCard = React.memo(
         </div>
         <button
           className="mt-6 underline"
-          onClick={() => handleChange(getDefaultParams().returns.expected)}
+          onClick={() => handleChange(getDefaultPlanParams().returns.expected)}
         >
           Reset to Default
         </button>
@@ -94,7 +94,7 @@ export const _Preset = React.memo(
   }: {
     className?: string
     type: Parameters<typeof EXPECTED_RETURN_PRESETS>[0]
-    onChange: (expected: TPAWParams['returns']['expected']) => void
+    onChange: (expected: PlanParams['returns']['expected']) => void
   }) => {
     const {params} = useSimulation()
     const marketData = useMarketData()
@@ -131,7 +131,7 @@ export const _Manual = React.memo(
     onChange,
   }: {
     className?: string
-    onChange: (expected: TPAWParams['returns']['expected']) => void
+    onChange: (expected: PlanParams['returns']['expected']) => void
   }) => {
     const marketData = useMarketData()
     const {params} = useSimulation()
@@ -205,7 +205,7 @@ export const _Manual = React.memo(
 export const expectedReturnTypeLabel = ({
   type,
 }: {
-  type: TPAWParams['returns']['expected']['type']
+  type: PlanParams['returns']['expected']['type']
 }) => {
   switch (type) {
     case 'suggested':

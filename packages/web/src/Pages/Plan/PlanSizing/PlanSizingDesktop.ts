@@ -1,5 +1,5 @@
 import {newPadding, rectExt} from '../../../Utils/Geometry'
-import {linearFnFomPoints} from '../../../Utils/LinearFn'
+import { linearFnFomPoints } from '@tpaw/common'
 import {PlanSizing} from './PlanSizing'
 
 const pad = 40

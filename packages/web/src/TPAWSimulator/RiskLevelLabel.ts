@@ -1,5 +1,5 @@
 import { noCase } from '../Utils/Utils'
-import { TPAWRiskLevel } from './TPAWParams'
+import { TPAWRiskLevel } from '@tpaw/common'
 
 export const riskLevelLabel = (riskLevel:TPAWRiskLevel)=>{
   switch(riskLevel){

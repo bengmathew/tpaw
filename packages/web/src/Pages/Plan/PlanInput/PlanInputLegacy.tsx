@@ -3,7 +3,7 @@ import {faPen} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import React, {Dispatch, useState} from 'react'
-import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
+import {PlanParams} from '@tpaw/common'
 import {Contentful} from '../../../Utils/Contentful'
 import {formatCurrency} from '../../../Utils/FormatCurrency'
 import {paddingCSSStyle} from '../../../Utils/Geometry'
@@ -200,7 +200,7 @@ const _Entry = React.memo(
     onEdit,
   }: {
     className?: string
-    entry: TPAWParams['legacy']['tpawAndSPAW']['external'][0]
+    entry: PlanParams['legacy']['tpawAndSPAW']['external'][0]
     onEdit: () => void
   }) => (
     <div

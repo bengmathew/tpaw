@@ -1,0 +1,47 @@
+input CreateLinkBasedPlanInput {
+  params: String!
+}
+
+type LinkBasedPlan {
+  createdAt: Float!
+  id: ID!
+  params: String!
+}
+
+type Mutation {
+  createLinkBasedPlan(input: CreateLinkBasedPlanInput!): LinkBasedPlan!
+  sendSignInEmail(input: SendSignInEmailInput!): Success!
+  setUserPlan(input: SetUserPlanInput!): User!
+}
+
+type Plan {
+  createdAt: Float!
+  id: ID!
+  modifiedAt: Float!
+  params: String!
+}
+
+type Query {
+  linkBasedPlan(linkId: ID!): LinkBasedPlan
+  ping: String!
+  user(userId: ID!): User!
+}
+
+input SendSignInEmailInput {
+  dest: String!
+  email: String!
+}
+
+input SetUserPlanInput {
+  params: String!
+  userId: ID!
+}
+
+type Success {
+  _: Int!
+}
+
+type User {
+  id: ID!
+  plan: Plan
+}

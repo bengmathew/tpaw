@@ -1,0 +1,14 @@
+import { PlanInputsV14 } from './PlanInputsV14';
+export declare type PlanInputs = PlanInputsV14.Params;
+export declare type Person = PlanInputsV14.Person;
+export declare type People = PlanInputsV14.People;
+export declare type Year = PlanInputsV14.Year;
+export declare type YearRange = PlanInputsV14.YearRange;
+export declare type ValueForYearRange = PlanInputsV14.ValueForYearRange;
+export declare type LabeledAmount = PlanInputsV14.LabeledAmount;
+export declare type GlidePath = PlanInputsV14.GlidePath;
+export declare type TPAWRiskLevel = PlanInputsV14.TPAWRiskLevel;
+export declare type TPAWRisk = PlanInputsV14.TPAWRisk;
+export declare const PlanInputsValidator: any;
+export declare const MAX_AGE: any;
+export declare const MAX_LABEL_LENGTH: any;

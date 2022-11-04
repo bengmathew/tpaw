@@ -4,7 +4,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {Switch} from '@headlessui/react'
 import _ from 'lodash'
 import React from 'react'
-import {TPAWParams, ValueForYearRange} from '../../../TPAWSimulator/TPAWParams'
+import {PlanParams, ValueForYearRange} from '@tpaw/common'
 import {SimpleRange} from '../../../Utils/SimpleRange'
 import {useSimulation} from '../../App/WithSimulation'
 import {AmountInput} from './AmountInput'
@@ -31,7 +31,7 @@ export const EditValueForYearRange = React.memo(
     onDone: () => void
     onBeforeDelete?: (id: number) => void
     transitionOut: (onDone: () => void) => void
-    entries: (params: TPAWParams) => ValueForYearRange[]
+    entries: (params: PlanParams) => ValueForYearRange[]
     index: number
     allowableRange: SimpleRange
     choices: YearRangeInputProps['choices']

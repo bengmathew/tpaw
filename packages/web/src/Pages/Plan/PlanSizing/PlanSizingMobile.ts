@@ -1,5 +1,5 @@
 import {newPadding, rectExt} from '../../../Utils/Geometry'
-import {linearFnFomPoints} from '../../../Utils/LinearFn'
+import { linearFnFomPoints } from '@tpaw/common'
 import {headerHeight} from '../../App/Header'
 import {PlanSizing} from './PlanSizing'
 

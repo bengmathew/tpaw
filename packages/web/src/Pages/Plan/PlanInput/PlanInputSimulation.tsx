@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { RadioGroup } from '@headlessui/react'
 import _ from 'lodash'
 import React from 'react'
-import { getDefaultParams } from '../../../TPAWSimulator/DefaultParams'
+import { getDefaultPlanParams } from '@tpaw/common'
 import { Contentful } from '../../../Utils/Contentful'
 import { paddingCSSStyle } from '../../../Utils/Geometry'
 import { useSimulation } from '../../App/WithSimulation'
@@ -103,7 +103,7 @@ const _SamplingCard = React.memo(
         </RadioGroup>
         <button
           className="mt-6 underline"
-          onClick={() => handleChange(getDefaultParams().sampling)}
+          onClick={() => handleChange(getDefaultPlanParams().sampling)}
         >
           Reset to Default
         </button>

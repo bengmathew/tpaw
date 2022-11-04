@@ -4,9 +4,9 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {RadioGroup} from '@headlessui/react'
 import _ from 'lodash'
 import React, {useEffect} from 'react'
-import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
+import {getDefaultPlanParams} from '@tpaw/common'
 import {riskLevelLabel} from '../../../TPAWSimulator/RiskLevelLabel'
-import {TPAWRiskLevel} from '../../../TPAWSimulator/TPAWParams'
+import {TPAWRiskLevel} from '@tpaw/common'
 import {Contentful} from '../../../Utils/Contentful'
 import {paddingCSSStyle} from '../../../Utils/Geometry'
 import {useURLUpdater} from '../../../Utils/UseURLUpdater'
@@ -80,7 +80,7 @@ const _RiskLevelCard = React.memo(
           </p>
           <button
             className="mt-6 underline"
-            onClick={() => handleChange(getDefaultParams().risk.tpawPreset)}
+            onClick={() => handleChange(getDefaultPlanParams().risk.tpawPreset)}
           >
             Reset to Default
           </button>

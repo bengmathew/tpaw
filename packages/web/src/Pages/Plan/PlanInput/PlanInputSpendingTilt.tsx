@@ -1,9 +1,9 @@
 import _ from 'lodash'
 import React, {useEffect} from 'react'
 import {
-  getDefaultParams,
+  getDefaultPlanParams,
   resolveTPAWRiskPreset,
-} from '../../../TPAWSimulator/DefaultParams'
+} from '@tpaw/common'
 import {Contentful} from '../../../Utils/Contentful'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
 import {paddingCSSStyle} from '../../../Utils/Geometry'
@@ -87,7 +87,7 @@ const _SpendingTiltCard = React.memo(
               const clone = _.cloneDeep(params)
               assert(!clone.risk.useTPAWPreset)
               clone.risk.tpawAndSPAW.spendingTilt = resolveTPAWRiskPreset(
-                getDefaultParams().risk,
+                getDefaultPlanParams().risk,
                 paramsExt.numYears
               ).tpawAndSPAW.spendingTilt
               return clone

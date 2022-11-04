@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import {extendTPAWParams} from '../../../../TPAWSimulator/TPAWParamsExt'
+import {extendPlanParams} from '../../../../TPAWSimulator/PlanParamsExt'
 import {SimpleRange} from '../../../../Utils/SimpleRange'
 import {fGet} from '../../../../Utils/Utils'
 import {SimulationInfo} from '../../../App/WithSimulation'
@@ -20,7 +20,7 @@ export function tpawChartDataLegacy(
   highlightPercentiles: SimulationInfo['highlightPercentiles']
 ): TPAWChartDataLegacy {
   const {endingBalanceOfSavingsPortfolioByPercentile, args} = tpawResult
-  const {numYears} = extendTPAWParams(args.params.original)
+  const {numYears} = extendPlanParams(args.params.original)
   const percentiles = endingBalanceOfSavingsPortfolioByPercentile.map(x => ({
     data: x.data + args.params.legacy.tpawAndSPAW.external,
     percentile: x.percentile,

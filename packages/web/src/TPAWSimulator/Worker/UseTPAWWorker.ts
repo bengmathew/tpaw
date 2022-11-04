@@ -1,9 +1,9 @@
-import {useEffect, useState} from 'react'
-import {useMarketData} from '../../Pages/App/WithMarketData'
-import {asyncEffect} from '../../Utils/AsyncEffect'
-import {fGet} from '../../Utils/Utils'
-import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
-import {TPAWRunInWorker, TPAWRunInWorkerResult} from './TPAWRunInWorker'
+import { useEffect, useState } from 'react'
+import { useMarketData } from '../../Pages/App/WithMarketData'
+import { asyncEffect } from '../../Utils/AsyncEffect'
+import { fGet } from '../../Utils/Utils'
+import { PlanParamsProcessed } from '../PlanParamsProcessed'
+import { TPAWRunInWorker, TPAWRunInWorkerResult } from './TPAWRunInWorker'
 
 // SHould be singleton so multiple uses of useTPAWWorker all use the same
 // workers, and therefore the same random draws.
@@ -16,15 +16,15 @@ export const getTPAWRunInWorkerSingleton = () => {
 export type UseTPAWWorkerResult = TPAWRunInWorkerResult & {
   args: {
     numRuns: number
-    params: TPAWParamsProcessed
+    params: PlanParamsProcessed
     percentiles: number[]
   }
 }
 
 export function useTPAWWorker(
-  params: TPAWParamsProcessed | null,
+  params: PlanParamsProcessed | null,
   numRuns: number,
-  percentiles: number[]
+  percentiles: number[],
 ) {
   const [result, setResult] = useState<UseTPAWWorkerResult | null>(null)
   const marketData = useMarketData()
@@ -33,17 +33,17 @@ export function useTPAWWorker(
     if (!params) {
       setResult(null)
     } else {
-      return asyncEffect(async status => {
-        const args = {numRuns, params, percentiles}
+      return asyncEffect(async (status) => {
+        const args = { numRuns, params, percentiles }
         const data = await getTPAWRunInWorkerSingleton().runSimulations(
           status,
           numRuns,
           params,
           percentiles,
-          marketData
+          marketData,
         )
         if (status.canceled) return
-        setResult({...fGet(data), args})
+        setResult({ ...fGet(data), args })
       })
     }
   }, [marketData, numRuns, params, percentiles])

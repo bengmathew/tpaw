@@ -1,37 +1,38 @@
 import _ from 'lodash'
-import React from 'react'
-import {ModalBase} from './ModalBase'
+import React, { ReactNode } from 'react'
+import { ModalBase } from './ModalBase'
 export const ConfirmAlert = React.memo(
   ({
     title,
     children,
-    confirmText,
-    isWarningButton = false,
     isWarningBG = false,
     isWarningTitle = false,
     isWarningContent = false,
     onCancel,
+    option1,
     option2,
-    onConfirm,
   }: {
-    title: string | null
+    title?: string 
     children: React.ReactNode | React.ReactNode[]
-    confirmText: string
-    isWarningButton?: boolean
     isWarningBG?: boolean
     isWarningTitle?: boolean
     isWarningContent?: boolean
-    onCancel: (() => void) | null
+    option1: {
+      onBeforeClose?: (close: () => void) => void
+      onClose: () => void
+      label: Exclude<ReactNode, undefined>
+      isWarning?: boolean
+    }
     option2?: {
       onOption2: () => void
-      label: string
-      isWarningButton?: boolean
+      label: Exclude<ReactNode, undefined>
+      isWarning?: boolean
     }
-    onConfirm: () => void
+    onCancel: (() => void) | null
   }) => {
     return (
       <ModalBase bg={isWarningBG ? 'bg-red-200' : undefined}>
-        {transitionOut => (
+        {(transitionOut) => (
           <>
             {title && (
               <h2
@@ -64,7 +65,7 @@ export const ConfirmAlert = React.memo(
               {option2 && (
                 <button
                   className={`btn-md relative ${
-                    option2.isWarningButton ? 'btn-dark-warnBG' : 'btn-dark'
+                    option2.isWarning ? 'btn-dark-warnBG' : 'btn-dark'
                   }`}
                   onClick={() => transitionOut(option2.onOption2)}
                 >
@@ -73,16 +74,22 @@ export const ConfirmAlert = React.memo(
               )}
               <button
                 className={`btn-md relative ${
-                  isWarningButton ? 'btn-dark-warnBG' : 'btn-dark'
+                  option1.isWarning ? 'btn-dark-warnBG' : 'btn-dark'
                 }`}
-                onClick={() => transitionOut(onConfirm)}
+                onClick={() =>
+                  option1.onBeforeClose
+                    ? option1.onBeforeClose(() =>
+                        transitionOut(option1.onClose),
+                      )
+                    : transitionOut(option1.onClose)
+                }
               >
-                {confirmText}
+                {option1.label}
               </button>
             </div>
           </>
         )}
       </ModalBase>
     )
-  }
+  },
 )

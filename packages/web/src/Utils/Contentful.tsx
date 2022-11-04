@@ -294,7 +294,7 @@ export namespace Contentful {
                 <li className={li}>{children}</li>
               ),
               [BLOCKS.UL_LIST]: (node, children) => (
-                <ol className={ul}>{children}</ol>
+                <ul className={ul}>{children}</ul>
               ),
               [BLOCKS.OL_LIST]: (node, children) => (
                 <ol className={ol}>{children}</ol>

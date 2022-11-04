@@ -1,6 +1,6 @@
+import { linearFnFomPoints } from '@tpaw/common'
 import _ from 'lodash'
 import {RectExt, rectExt} from '../../../../Utils/Geometry'
-import {linearFnFomPoints} from '../../../../Utils/LinearFn'
 import {ChartUtils} from '../ChartUtils/ChartUtils'
 import {
   ChartPointerComponentDrawArg,

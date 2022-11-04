@@ -1,16 +1,13 @@
 import _ from 'lodash'
 import {
-  extendTPAWParams,
-  TPAWParamsExt,
-} from '../../../../TPAWSimulator/TPAWParamsExt'
+  extendPlanParams,
+  PlanParamsExt,
+} from '../../../../TPAWSimulator/PlanParamsExt'
 import {TPAWRunInWorkerByPercentileByYearsFromNow} from '../../../../TPAWSimulator/Worker/TPAWRunInWorker'
 import {UseTPAWWorkerResult} from '../../../../TPAWSimulator/Worker/UseTPAWWorker'
 import {formatCurrency} from '../../../../Utils/FormatCurrency'
 import {formatPercentage} from '../../../../Utils/FormatPercentage'
-import {
-  linearFnFomPoints,
-  linearFnFromPointAndSlope,
-} from '../../../../Utils/LinearFn'
+import { linearFnFomPoints, linearFnFromPointAndSlope } from '@tpaw/common'
 import {SimpleRange} from '../../../../Utils/SimpleRange'
 import {assert, fGet, noCase} from '../../../../Utils/Utils'
 import {SimulationInfo} from '../../../App/WithSimulation'
@@ -113,7 +110,7 @@ const _spendingYears = ({
   params,
   asYFN,
   withdrawalStartYear,
-}: TPAWParamsExt) => {
+}: PlanParamsExt) => {
   const withdrawalStart = asYFN(withdrawalStartYear)
   return params.display.alwaysShowAllYears
     ? 'allYears'
@@ -130,7 +127,7 @@ export const tpawChartDataMainPercentiles = (
   highlightPercentiles: SimulationInfo['highlightPercentiles']
 ): TPAWChartDataMain => {
   const {params} = tpawResult.args
-  const paramsExt = extendTPAWParams(params.original)
+  const paramsExt = extendPlanParams(params.original)
   const hasLegacy =
     params.legacy.tpawAndSPAW.total !== 0 ||
     params.risk.tpawAndSPAW.spendingCeiling !== null
@@ -270,7 +267,7 @@ export const tpawChartDataMainRewardRiskRatio = (
 ): TPAWChartDataMain => {
   const {args} = tpawResult.tpaw
   const {params} = args
-  const {asYFN, withdrawalStartYear, pickPerson, maxMaxAge} = extendTPAWParams(
+  const {asYFN, withdrawalStartYear, pickPerson, maxMaxAge} = extendPlanParams(
     params.original
   )
   const retirement = asYFN(withdrawalStartYear)
@@ -365,7 +362,7 @@ const _dataPercentiles = (
 ): TPAWChartDataMain => {
   const {args} = tpawResult
   const {params} = args
-  const {asYFN, withdrawalStartYear, pickPerson, maxMaxAge} = extendTPAWParams(
+  const {asYFN, withdrawalStartYear, pickPerson, maxMaxAge} = extendPlanParams(
     params.original
   )
   const retirement = asYFN(withdrawalStartYear)

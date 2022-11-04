@@ -1,29 +1,28 @@
+import { PlanParams, resolveTPAWRiskPreset } from '@tpaw/common'
 import _ from 'lodash'
-import {Dispatch, ReactNode, useMemo, useState} from 'react'
-import {resolveTPAWRiskPreset} from '../../TPAWSimulator/DefaultParams'
-import {TPAWParams} from '../../TPAWSimulator/TPAWParams'
+import { Dispatch, ReactNode, useMemo, useState } from 'react'
 import {
-  extendTPAWParams,
+  extendPlanParams,
   getNumYears,
-  TPAWParamsExt,
-} from '../../TPAWSimulator/TPAWParamsExt'
+  PlanParamsExt
+} from '../../TPAWSimulator/PlanParamsExt'
 import {
-  processTPAWParams,
-  TPAWParamsProcessed,
-} from '../../TPAWSimulator/TPAWParamsProcessed'
+  PlanParamsProcessed,
+  processPlanParams
+} from '../../TPAWSimulator/PlanParamsProcessed'
 import {
   useTPAWWorker,
-  UseTPAWWorkerResult,
+  UseTPAWWorkerResult
 } from '../../TPAWSimulator/Worker/UseTPAWWorker'
-import {createContext} from '../../Utils/CreateContext'
-import {fGet} from '../../Utils/Utils'
-import {useTPAWParams} from './UseTPAWParams'
-import {useMarketData} from './WithMarketData'
+import { createContext } from '../../Utils/CreateContext'
+import { fGet } from '../../Utils/Utils'
+import { usePlanParams } from './UsePlanParams'
+import { useMarketData } from './WithMarketData'
 
 export type SimulationInfoPerParam = {
-  params: TPAWParams
-  paramsProcessed: TPAWParamsProcessed
-  paramsExt: TPAWParamsExt
+  params: PlanParams
+  paramsProcessed: PlanParamsProcessed
+  paramsExt: PlanParamsExt
   tpawResult: UseTPAWWorkerResult | null
   numRuns: number
   percentiles: number[]
@@ -31,11 +30,9 @@ export type SimulationInfoPerParam = {
 }
 
 export type SimulationInfo = {
-  paramSpace: 'a' | 'b'
-  setParamSpace: (space: 'a' | 'b') => void
   setCompareRewardRiskRatio: (x: boolean) => void
   setNumRuns: Dispatch<number>
-  setParams: (params: TPAWParams | ((params: TPAWParams) => TPAWParams)) => void
+  setParams: (params: PlanParams | ((params: PlanParams) => PlanParams)) => void
   forRewardRiskRatioComparison: {
     tpaw: SimulationInfoPerParam
     spaw: SimulationInfoPerParam
@@ -51,17 +48,30 @@ const highlightPercentiles = [5, 25, 50, 75, 95]
 // const highlightPercentiles = [10, 90]
 const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
 
-export {useSimulation}
+export { useSimulation }
 
-export const WithSimulation = ({children}: {children: ReactNode}) => {
+import React from 'react'
+import { WithURLPlanParams } from './WithURLPlanParams'
+
+export const WithSimulation = React.memo(
+  ({ children }: { children: ReactNode }) => {
+    return (
+      <WithURLPlanParams>
+        <_Body>{children}</_Body>
+      </WithURLPlanParams>
+    )
+  },
+)
+
+const _Body = ({ children }: { children: ReactNode }) => {
   const [numRuns, setNumRuns] = useState(500)
-  const {paramSpace, setParamSpace, params, setParams} = useTPAWParams()
+  const { params, setParams } = usePlanParams()
   const [compareRewardRiskRatio, setCompareRewardRiskRatio] = useState(false)
 
   const paramsForRewardRiskRatioComparison: {
-    tpaw: TPAWParams
-    spaw: TPAWParams
-    swr: TPAWParams
+    tpaw: PlanParams
+    spaw: PlanParams
+    swr: PlanParams
   } | null = useMemo(() => {
     if (!compareRewardRiskRatio) return null
     const clone = _.cloneDeep(params)
@@ -79,23 +89,23 @@ export const WithSimulation = ({children}: {children: ReactNode}) => {
     clone.risk.tpawAndSPAW.spendingCeiling = null
     clone.risk.tpawAndSPAW.spendingFloor = null
     return {
-      tpaw: {...clone, strategy: 'TPAW'},
-      spaw: {...clone, strategy: 'SPAW'},
-      swr: {...clone, strategy: 'SWR'},
+      tpaw: { ...clone, strategy: 'TPAW' },
+      spaw: { ...clone, strategy: 'SPAW' },
+      swr: { ...clone, strategy: 'SWR' },
     }
   }, [compareRewardRiskRatio, params])
 
   const forTPAWRewardRiskRatio = useForParams(
     paramsForRewardRiskRatioComparison?.tpaw ?? null,
-    numRuns
+    numRuns,
   )
   const forSPAWRewardRiskRatio = useForParams(
     paramsForRewardRiskRatioComparison?.spaw ?? null,
-    numRuns
+    numRuns,
   )
   const forSWRRewardRiskRatio = useForParams(
     paramsForRewardRiskRatioComparison?.swr ?? null,
-    numRuns
+    numRuns,
   )
 
   const forRewardRiskRatioComparison = useMemo(
@@ -112,45 +122,37 @@ export const WithSimulation = ({children}: {children: ReactNode}) => {
       forTPAWRewardRiskRatio,
       forSWRRewardRiskRatio,
       compareRewardRiskRatio,
-    ]
+    ],
   )
 
   const forBase = fGet(useForParams(params, numRuns))
 
   const value = useMemo(() => {
     return {
-      paramSpace,
-      setParamSpace,
       setNumRuns,
       setParams,
       ...forBase,
       forRewardRiskRatioComparison,
       setCompareRewardRiskRatio,
     }
-  }, [
-    forBase,
-    forRewardRiskRatioComparison,
-    paramSpace,
-    setParamSpace,
-    setParams,
-  ])
+  }, [forBase, forRewardRiskRatioComparison, setParams])
   if (!_hasValue(value)) return <></>
   return <Context.Provider value={value}>{children}</Context.Provider>
 }
 
 const _hasValue = (x: {
   tpawResult: UseTPAWWorkerResult | null
-}): x is {tpawResult: UseTPAWWorkerResult} => x.tpawResult !== null
+}): x is { tpawResult: UseTPAWWorkerResult } => x.tpawResult !== null
 
 function useForParams(
-  params: TPAWParams | null,
-  numRuns: number
+  params: PlanParams | null,
+  numRuns: number,
 ): SimulationInfoPerParam | null {
   const marketData = useMarketData()
   const paramsProcessed = useMemo(
     () =>
-      params ? processTPAWParams(extendTPAWParams(params), marketData) : null,
-    [params, marketData]
+      params ? processPlanParams(extendPlanParams(params), marketData) : null,
+    [params, marketData],
   )
   const tpawResult = useTPAWWorker(paramsProcessed, numRuns, percentiles)
   return useMemo(
@@ -159,7 +161,7 @@ function useForParams(
         ? {
             params,
             paramsProcessed: fGet(paramsProcessed),
-            paramsExt: extendTPAWParams(params),
+            paramsExt: extendPlanParams(params),
             numRuns,
             percentiles,
             highlightPercentiles,
@@ -168,6 +170,6 @@ function useForParams(
             tpawResult,
           }
         : null,
-    [numRuns, params, paramsProcessed, tpawResult]
+    [numRuns, params, paramsProcessed, tpawResult],
   )
 }

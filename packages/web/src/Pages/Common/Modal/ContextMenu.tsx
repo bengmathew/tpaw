@@ -7,8 +7,8 @@ import React, {
   useState,
 } from 'react'
 import ReactDOM from 'react-dom'
-import {fGet} from '../../../Utils/Utils'
-import {useWindowSize} from '../../App/WithWindowSize'
+import { fGet } from '../../../Utils/Utils'
+import { useWindowSize } from '../../App/WithWindowSize'
 
 export const ContextMenu = React.memo(
   ({
@@ -35,17 +35,17 @@ export const ContextMenu = React.memo(
         if (align === 'left') {
           menu.style.left = `${Math.min(
             referenceBounds.left,
-            windowSize.width - menuBounds.width
+            windowSize.width - menuBounds.width,
           )}px`
         } else {
           menu.style.left = `${Math.max(
             referenceBounds.right - menuBounds.width,
-            0
+            0,
           )}px`
         }
         const windowBottom = windowSize.height - 25
         const menuTop = Math.floor(
-          Math.min(referenceBounds.top, windowBottom - menuBounds.height)
+          Math.min(referenceBounds.top, windowBottom - menuBounds.height),
         )
 
         if (ifNeeded && Math.round(menuBounds.top) !== menuTop) {
@@ -53,13 +53,11 @@ export const ContextMenu = React.memo(
         }
         menu.style.top = `${menuTop}px`
       },
-      [align, referenceElement, windowSize]
+      [align, referenceElement, windowSize],
     )
 
     useLayoutEffect(() => {
-      const resizeObserver = new ResizeObserver(() => {
-        handleResize(true)
-      })
+      const resizeObserver = new ResizeObserver(() => handleResize(true))
       resizeObserver.observe(fGet(menuRef.current))
       resizeObserver.observe(referenceElement)
       return () => resizeObserver.disconnect()
@@ -78,13 +76,13 @@ export const ContextMenu = React.memo(
           className={`fixed inset-0 duration-300 
               ${darkBG || windowSize.width < 640 ? 'bg-black' : ''}
               ${show ? 'opacity-50' : 'opacity-0'}`}
-          onClick={e => {
+          onClick={(e) => {
             if (e.target === e.currentTarget) setShow(false)
           }}
           onTransitionEnd={() => {
             if (!show) onClose()
           }}
-          style={{transitionProperty: 'opacity'}}
+          style={{ transitionProperty: 'opacity' }}
         />
         <div
           className={`absolute overflow-hidden bg-pageBG rounded-lg  duration-300
@@ -99,7 +97,7 @@ export const ContextMenu = React.memo(
           {children(() => setShow(false))}
         </div>
       </div>,
-      window.document.body
+      window.document.body,
     )
-  }
+  },
 )

@@ -6,9 +6,9 @@ import React, {useEffect, useRef, useState} from 'react'
 import {
   DEFAULT_SWR_WITHDRAWAL_PERCENT,
   resolveTPAWRiskPreset,
-} from '../../../TPAWSimulator/DefaultParams'
-import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
-import {TPAWParamsExt} from '../../../TPAWSimulator/TPAWParamsExt'
+} from '@tpaw/common'
+import {PlanParams} from '@tpaw/common'
+import {PlanParamsExt} from '../../../TPAWSimulator/PlanParamsExt'
 import {Contentful} from '../../../Utils/Contentful'
 import {paddingCSS, paddingCSSStyleHorz} from '../../../Utils/Geometry'
 import {useURLUpdater} from '../../../Utils/UseURLUpdater'
@@ -29,7 +29,7 @@ export const PlanInputCompareStrategies = React.memo(
     const {params, setParams, paramsExt} = useSimulation()
 
     const content = usePlanContent()['strategy']
-    const handleStrategy = (strategy: TPAWParams['strategy']) => {
+    const handleStrategy = (strategy: PlanParams['strategy']) => {
       if (params.strategy === strategy) return
       setParams(cloneWithNewStrategy(paramsExt, strategy))
     }
@@ -88,8 +88,8 @@ const _StrategyCard = React.memo(
   }: {
     className?: string
     props: PlanInputBodyPassThruProps
-    strategy: TPAWParams['strategy']
-    handleStrategy: (strategy: TPAWParams['strategy']) => void
+    strategy: PlanParams['strategy']
+    handleStrategy: (strategy: PlanParams['strategy']) => void
   }) => {
     const {params} = useSimulation()
     const content = usePlanContent()['strategy']
@@ -244,8 +244,8 @@ const _ComparisonCard = React.memo(
 )
 
 export function cloneWithNewStrategy(
-  paramsExt: TPAWParamsExt,
-  strategy: TPAWParams['strategy']
+  paramsExt: PlanParamsExt,
+  strategy: PlanParams['strategy']
 ) {
   const {params, numYears} = paramsExt
   assert(params.strategy !== strategy)

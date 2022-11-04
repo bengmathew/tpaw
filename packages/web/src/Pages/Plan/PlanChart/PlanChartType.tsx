@@ -1,6 +1,6 @@
 // Embedding index into type instead of expanding to {type:..., index:number}
 
-import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
+import {PlanParams} from '@tpaw/common'
 
 // because it helps when adding to useEffect dep list.
 export type PlanChartType =
@@ -44,7 +44,7 @@ const _checkType = (x: string): x is PlanChartType =>
   x === 'withdrawal' || x === 'reward-risk-ratio-comparison'
 
 export const isPlanChartType = (
-  params: TPAWParams,
+  params: PlanParams,
   type: string
 ): type is PlanChartType => {
   if (!_checkType(type)) return false

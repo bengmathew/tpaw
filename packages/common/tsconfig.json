@@ -1,0 +1,32 @@
+{
+  "include": ["./src/**/*"],
+  
+  "compilerOptions": {
+    // Type checking.
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+
+    "forceConsistentCasingInFileNames": true,
+
+    // Output controls.
+    "outDir": "./dist",
+    "target": "es2019",
+    "module": "commonjs", // module system to use in generated js. commonjs is what is used by node.
+    "sourceMap": true,
+    "inlineSources": true, // otherwise sourcemaps will refer to the original ts sources, which will have to be served for resolution to work.
+    "declaration": true, // output declaration files (.d.ts)
+    "incremental": true,
+
+    // Input controls.
+    "rootDir": "./src",
+
+    "lib": ["es2019", "DOM"],
+    "esModuleInterop": true
+  }
+}

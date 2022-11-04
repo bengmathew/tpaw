@@ -1,26 +1,26 @@
-import {faTrash} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {Switch} from '@headlessui/react'
-import _ from 'lodash'
-import React, {ReactNode, useState} from 'react'
-import {getDefaultParams} from '../../../../TPAWSimulator/DefaultParams'
+import { faTrash } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Switch } from '@headlessui/react'
 import {
+  getDefaultPlanParams,
   MAX_AGE,
   Person,
-  TPAWParams,
+  PlanParams,
   Year,
-} from '../../../../TPAWSimulator/TPAWParams'
+} from '@tpaw/common'
+import _ from 'lodash'
+import React, { ReactNode, useState } from 'react'
 import {
-  extendTPAWParams,
-  TPAWParamsExt,
-} from '../../../../TPAWSimulator/TPAWParamsExt'
-import {assert, noCase} from '../../../../Utils/Utils'
-import {useSimulation} from '../../../App/WithSimulation'
-import {CheckBox} from '../../../Common/Inputs/CheckBox'
-import {NumberInput} from '../../../Common/Inputs/NumberInput'
-import {ConfirmAlert} from '../../../Common/Modal/ConfirmAlert'
-import {ValueForYearRangeDisplay} from '../../../Common/ValueForYearRangeDisplay'
-import {analyzeYearsInParams} from '../Helpers/AnalyzeYearsInParams'
+  extendPlanParams,
+  PlanParamsExt,
+} from '../../../../TPAWSimulator/PlanParamsExt'
+import { assert, noCase } from '../../../../Utils/Utils'
+import { useSimulation } from '../../../App/WithSimulation'
+import { CheckBox } from '../../../Common/Inputs/CheckBox'
+import { NumberInput } from '../../../Common/Inputs/NumberInput'
+import { ConfirmAlert } from '../../../Common/Modal/ConfirmAlert'
+import { ValueForYearRangeDisplay } from '../../../Common/ValueForYearRangeDisplay'
+import { analyzeYearsInParams } from '../Helpers/AnalyzeYearsInParams'
 
 export const PlanInputAgePerson = React.memo(
   ({
@@ -32,8 +32,8 @@ export const PlanInputAgePerson = React.memo(
     className?: string
     style?: React.CSSProperties
   }) => {
-    const {params, paramsExt, setParams} = useSimulation()
-    const setPersonInParams = (params: TPAWParams, person: Person) => {
+    const { params, paramsExt, setParams } = useSimulation()
+    const setPersonInParams = (params: PlanParams, person: Person) => {
       if (type === 'person1') {
         params.people.person1 = person
       } else {
@@ -41,7 +41,7 @@ export const PlanInputAgePerson = React.memo(
         params.people.person2 = person
       }
     }
-    const getPersonInParams = (params: TPAWParams) => {
+    const getPersonInParams = (params: PlanParams) => {
       if (type === 'person1') return params.people.person1
       assert(params.people.withPartner)
       return params.people.person2
@@ -57,25 +57,26 @@ export const PlanInputAgePerson = React.memo(
               setPerson2DeleteError(errMessage)
               return
             }
-            setParams(params => {
+            setParams((params) => {
               const clone = _.cloneDeep(params)
-              const {person1} = clone.people
+              const { person1 } = clone.people
               // Validation won't trigger if strategy is not SPAW or SWR and the
               // glide path actually has a ref to person2. So remove those
               // entires here.
               clone.risk.spawAndSWR.allocation.intermediate =
                 clone.risk.spawAndSWR.allocation.intermediate.filter(
-                  ({year}) => year.type === 'now' || year.person === 'person1'
+                  ({ year }) =>
+                    year.type === 'now' || year.person === 'person1',
                 )
-              clone.people = {withPartner: false, person1}
+              clone.people = { withPartner: false, person1 }
 
               return _setXAxisDisplay(clone)
             })
           }
 
     const handleRetired = () => {
-      setParams(params => {
-        const paramsExt = extendTPAWParams(params)
+      setParams((params) => {
+        const paramsExt = extendPlanParams(params)
         const clone = _.cloneDeep(params)
         const p = getPersonInParams(clone)
         const futureSavingsWarning = _futureSavingsWarning(paramsExt, type)
@@ -85,7 +86,7 @@ export const PlanInputAgePerson = React.memo(
         }
         const retirementRemovalWarning = _retirementReferenceWarning(
           paramsExt,
-          type
+          type,
         )
         if (retirementRemovalWarning.length > 0) {
           setRetirementRemovalWarning(retirementRemovalWarning)
@@ -101,7 +102,7 @@ export const PlanInputAgePerson = React.memo(
       })
     }
     const [person2DeleteError, setPerson2DeleteError] = useState<ReactNode[]>(
-      []
+      [],
     )
     const [futureSavingsWarning, setFutureSavingsWarning] = useState<
       ReactNode[]
@@ -131,15 +132,15 @@ export const PlanInputAgePerson = React.memo(
             <CheckBox
               className=""
               enabled={person.ages.type === 'retired'}
-              setEnabled={retired => {
+              setEnabled={(retired) => {
                 if (retired) {
                   handleRetired()
                   return
                 }
-                setParams(params => {
+                setParams((params) => {
                   const clone = _.cloneDeep(params)
                   const p = getPersonInParams(clone)
-                  const defaultPerson1 = getDefaultParams().people.person1
+                  const defaultPerson1 = getDefaultPlanParams().people.person1
                   assert(defaultPerson1.ages.type === 'notRetired')
                   const defaultRetirementAge = defaultPerson1.ages.retirement
                   const retirement =
@@ -161,26 +162,26 @@ export const PlanInputAgePerson = React.memo(
 
         <div
           className="grid gap-y-2 items-center gap-x-4"
-          style={{grid: 'auto / 145px 1fr'}}
+          style={{ grid: 'auto / 145px 1fr' }}
         >
           <h2 className="">Current Age</h2>
           <NumberInput
             value={person.ages.current}
-            setValue={value =>
-              setParams(params => {
+            setValue={(value) =>
+              setParams((params) => {
                 const clone = _.cloneDeep(params)
                 setPersonInParams(clone, _.cloneDeep(person))
                 getPersonInParams(clone).ages.current = value
                 return _setXAxisDisplay(clone)
               })
             }
-            clamp={value =>
+            clamp={(value) =>
               _.clamp(
                 value,
                 0,
                 person.ages.type === 'retired'
                   ? person.ages.max - 1
-                  : person.ages.retirement - 1
+                  : person.ages.retirement - 1,
               )
             }
             showPlusMinus
@@ -192,8 +193,8 @@ export const PlanInputAgePerson = React.memo(
               <h2 className="">Retirement Age</h2>
               <NumberInput
                 value={person.ages.retirement}
-                setValue={value =>
-                  setParams(params => {
+                setValue={(value) =>
+                  setParams((params) => {
                     const clone = _.cloneDeep(params)
                     setPersonInParams(clone, _.cloneDeep(person))
                     const p = getPersonInParams(clone)
@@ -202,7 +203,7 @@ export const PlanInputAgePerson = React.memo(
                     return _setXAxisDisplay(clone)
                   })
                 }
-                clamp={value =>
+                clamp={(value) =>
                   _.clamp(value, person.ages.current + 1, person.ages.max - 1)
                 }
                 showPlusMinus
@@ -214,21 +215,21 @@ export const PlanInputAgePerson = React.memo(
           <h2 className="">Max Age</h2>
           <NumberInput
             value={person.ages.max}
-            setValue={value =>
-              setParams(params => {
+            setValue={(value) =>
+              setParams((params) => {
                 const clone = _.cloneDeep(params)
                 setPersonInParams(clone, _.cloneDeep(person))
                 getPersonInParams(clone).ages.max = value
                 return _setXAxisDisplay(clone)
               })
             }
-            clamp={value =>
+            clamp={(value) =>
               _.clamp(
                 value,
                 person.ages.type === 'retired'
                   ? person.ages.current + 1
                   : person.ages.retirement + 1,
-                MAX_AGE
+                MAX_AGE,
               )
             }
             showPlusMinus
@@ -239,10 +240,12 @@ export const PlanInputAgePerson = React.memo(
           <ConfirmAlert
             title={'Error Removing Partner'}
             isWarningTitle
-            isWarningButton
-            confirmText={'Close'}
+            option1={{
+              onClose: () => setPerson2DeleteError([]),
+              label: 'Close',
+              isWarning: true,
+            }}
             onCancel={null}
-            onConfirm={() => setPerson2DeleteError([])}
           >
             {person2DeleteError}
           </ConfirmAlert>
@@ -251,18 +254,20 @@ export const PlanInputAgePerson = React.memo(
           <ConfirmAlert
             title={'Warning'}
             isWarningTitle
-            isWarningButton
-            confirmText={'Delete Entries'}
-            onCancel={() => setFutureSavingsWarning([])}
-            onConfirm={() => {
-              setFutureSavingsWarning([])
-              setParams(params => {
-                const clone = _.cloneDeep(params)
-                clone.futureSavings = []
-                return clone
-              })
-              handleRetired()
+            option1={{
+              onClose: () => {
+                setFutureSavingsWarning([])
+                setParams((params) => {
+                  const clone = _.cloneDeep(params)
+                  clone.futureSavings = []
+                  return clone
+                })
+                handleRetired()
+              },
+              label: 'Delete Entried',
+              isWarning: true,
             }}
+            onCancel={() => setFutureSavingsWarning([])}
           >
             {futureSavingsWarning}
           </ConfirmAlert>
@@ -271,52 +276,54 @@ export const PlanInputAgePerson = React.memo(
           <ConfirmAlert
             title={'Warning'}
             isWarningTitle
-            isWarningButton
-            confirmText={'Convert References'}
-            onCancel={() => setRetirementRemovalWarning([])}
-            onConfirm={() => {
-              setRetirementRemovalWarning([])
-              setParams(params => {
-                const clone = _.cloneDeep(params)
-                analyzeYearsInParams(
-                  extendTPAWParams(clone),
-                  (year: Year): Year => {
-                    if (
-                      year.type === 'namedAge' &&
-                      year.person === type &&
-                      (year.age === 'retirement' ||
-                        year.age === 'lastWorkingYear')
-                    ) {
-                      return {type: 'now'}
-                    } else {
-                      return year
-                    }
-                  }
-                )
+            option1={{
+              label: 'Convert References',
+              onClose: () => {
+                setRetirementRemovalWarning([])
+                setParams((params) => {
+                  const clone = _.cloneDeep(params)
+                  analyzeYearsInParams(
+                    extendPlanParams(clone),
+                    (year: Year): Year => {
+                      if (
+                        year.type === 'namedAge' &&
+                        year.person === type &&
+                        (year.age === 'retirement' ||
+                          year.age === 'lastWorkingYear')
+                      ) {
+                        return { type: 'now' }
+                      } else {
+                        return year
+                      }
+                    },
+                  )
 
-                const p = getPersonInParams(clone)
-                p.ages = {
-                  type: 'retired',
-                  current: p.ages.current,
-                  max: p.ages.max,
-                }
-                return clone
-              })
+                  const p = getPersonInParams(clone)
+                  p.ages = {
+                    type: 'retired',
+                    current: p.ages.current,
+                    max: p.ages.max,
+                  }
+                  return clone
+                })
+              },
+              isWarning: true,
             }}
+            onCancel={() => setRetirementRemovalWarning([])}
           >
             {retirementReferenceWarning}
           </ConfirmAlert>
         )}
       </div>
     )
-  }
+  },
 )
 
-const _person2RequiredMessage = (params: TPAWParamsExt) => {
+const _person2RequiredMessage = (params: PlanParamsExt) => {
   const analysis = analyzeYearsInParams(params)
-  const fromRanges = analysis.valueForYearRange.filter(x => x.usesPerson2)
+  const fromRanges = analysis.valueForYearRange.filter((x) => x.usesPerson2)
 
-  const fromGlidePath = analysis.glidePath.filter(x => x.usesPerson2)
+  const fromGlidePath = analysis.glidePath.filter((x) => x.usesPerson2)
 
   if (fromRanges.length === 0 || fromGlidePath.length === 0) return []
   const result = [
@@ -339,17 +346,17 @@ const _person2RequiredMessage = (params: TPAWParamsExt) => {
         </li>
       ))}
     </ol>,
-    `Remove these references to your partner's age before removing your partner.`
+    `Remove these references to your partner's age before removing your partner.`,
   )
   return result
 }
 
 const _futureSavingsWarning = (
-  paramsExt: TPAWParamsExt,
-  person: 'person1' | 'person2'
+  paramsExt: PlanParamsExt,
+  person: 'person1' | 'person2',
 ) => {
   const result = [] as ReactNode[]
-  const {people, futureSavings} = paramsExt.params
+  const { people, futureSavings } = paramsExt.params
   const otherPerson = people.withPartner
     ? person === 'person1'
       ? people.person2
@@ -371,20 +378,22 @@ const _futureSavingsWarning = (
         </li>
       ))}
     </ol>,
-    'Would you like to delete these entries?'
+    'Would you like to delete these entries?',
   )
   return result
 }
 
 const _retirementReferenceWarning = (
-  paramsExt: TPAWParamsExt,
-  person: 'person1' | 'person2'
+  paramsExt: PlanParamsExt,
+  person: 'person1' | 'person2',
 ) => {
   const analysis = analyzeYearsInParams(paramsExt)
-  const fromRanges = analysis.valueForYearRange.filter(x =>
-    x.useRetirement(person)
+  const fromRanges = analysis.valueForYearRange.filter((x) =>
+    x.useRetirement(person),
   )
-  const fromGlidePath = analysis.glidePath.filter(x => x.usesRetirement(person))
+  const fromGlidePath = analysis.glidePath.filter((x) =>
+    x.usesRetirement(person),
+  )
 
   if (fromRanges.length === 0 && fromGlidePath.length === 0) return []
 
@@ -412,14 +421,14 @@ const _retirementReferenceWarning = (
     </ul>,
     `Would your like to convert these references to ${
       person === 'person1' ? 'your' : "your partner's"
-    } retirement to "now"?`
+    } retirement to "now"?`,
   )
   return result
 }
 
-const _setXAxisDisplay = (params: TPAWParams) => {
+const _setXAxisDisplay = (params: PlanParams) => {
   if (!params.people.withPartner) return params
-  const {asYFN, years} = extendTPAWParams(params)
+  const { asYFN, years } = extendPlanParams(params)
   params.people.xAxis =
     asYFN(years.person1.max) >= asYFN(years.person2.max) ? 'person1' : 'person2'
   return params

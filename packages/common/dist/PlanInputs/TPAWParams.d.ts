@@ -1,0 +1,14 @@
+import { TPAWParamsV14 } from './TPAWParamsV14';
+export declare type TPAWParams = TPAWParamsV14.Params;
+export declare type Person = TPAWParamsV14.Person;
+export declare type People = TPAWParamsV14.People;
+export declare type Year = TPAWParamsV14.Year;
+export declare type YearRange = TPAWParamsV14.YearRange;
+export declare type ValueForYearRange = TPAWParamsV14.ValueForYearRange;
+export declare type LabeledAmount = TPAWParamsV14.LabeledAmount;
+export declare type GlidePath = TPAWParamsV14.GlidePath;
+export declare type TPAWRiskLevel = TPAWParamsV14.TPAWRiskLevel;
+export declare type TPAWRisk = TPAWParamsV14.TPAWRisk;
+export declare const tpawParamsValidator: any;
+export declare const MAX_AGE: any;
+export declare const MAX_LABEL_LENGTH: any;

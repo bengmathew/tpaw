@@ -1,5 +1,5 @@
 import React from 'react'
-import {Year, YearRange} from '../../../TPAWSimulator/TPAWParams'
+import {Year, YearRange} from '@tpaw/common'
 import {pluralize} from '../../../Utils/Pluralize'
 import {SimpleRange} from '../../../Utils/SimpleRange'
 import {assert, noCase} from '../../../Utils/Utils'

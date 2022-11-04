@@ -1,11 +1,11 @@
 import {SimpleRange} from '../../Utils/SimpleRange'
-import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
+import {PlanParamsProcessed} from '../PlanParamsProcessed'
 
 export type TPAWWorkerArgs =
   | {
       type: 'runSimulation'
       taskID: string
-      args: {params: TPAWParamsProcessed; runs: SimpleRange}
+      args: {params: PlanParamsProcessed; runs: SimpleRange}
     }
   | {type: 'sort'; taskID: string; args: {data: Float64Array[]}}
   | {type: 'calculateOneOverCV'; taskID: string; args: {data: Float64Array[]}}

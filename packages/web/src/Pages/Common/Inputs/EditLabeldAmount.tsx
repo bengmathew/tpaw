@@ -4,7 +4,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {Switch} from '@headlessui/react'
 import _ from 'lodash'
 import React from 'react'
-import {LabeledAmount, TPAWParams} from '../../../TPAWSimulator/TPAWParams'
+import {LabeledAmount, PlanParams} from '@tpaw/common'
 import {useSimulation} from '../../App/WithSimulation'
 import {AmountInput} from './AmountInput'
 import {CheckBox} from './CheckBox'
@@ -25,7 +25,7 @@ export const EditLabeledAmount = React.memo(
     setHideInMain: (visible: boolean) => void
     onDone: () => void
     transitionOut: (onDone: () => void) => void
-    entries: (params: TPAWParams) => LabeledAmount[]
+    entries: (params: PlanParams) => LabeledAmount[]
     index: number
   }) => {
     const {params, setParams} = useSimulation()

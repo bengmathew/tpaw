@@ -1,39 +1,65 @@
 import _ from 'lodash'
-import {useRouter} from 'next/router'
-import React, {useCallback, useEffect, useMemo, useState} from 'react'
-import {createContext} from '../../Utils/CreateContext'
-import {useAssertConst} from '../../Utils/UseAssertConst'
-import {useURLParam} from '../../Utils/UseURLParam'
-import {useURLUpdater} from '../../Utils/UseURLUpdater'
-import {AppPage} from '../App/AppPage'
-import {useSimulation} from '../App/WithSimulation'
-import {useWindowSize} from '../App/WithWindowSize'
-import {Config} from '../Config'
-import {PlanChart} from './PlanChart/PlanChart'
-import {planChartLabel} from './PlanChart/PlanChartMainCard/PlanChartLabel'
-import {usePlanChartType} from './PlanChart/UsePlanChartType'
-import {PlanContent} from './PlanGetStaticProps'
+import { useRouter } from 'next/router'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLazyLoadQuery } from 'react-relay'
+import { graphql } from 'relay-runtime'
+import { createContext } from '../../Utils/CreateContext'
+import { useAssertConst } from '../../Utils/UseAssertConst'
+import { useURLParam } from '../../Utils/UseURLParam'
+import { useURLUpdater } from '../../Utils/UseURLUpdater'
+import { AppPage } from '../App/AppPage'
+import { useUserGQLArgs } from '../App/WithFirebaseUser'
+import { useSimulation, WithSimulation } from '../App/WithSimulation'
+import { useWindowSize } from '../App/WithWindowSize'
+import { Config } from '../Config'
+import { PlanChart } from './PlanChart/PlanChart'
+import { planChartLabel } from './PlanChart/PlanChartMainCard/PlanChartLabel'
+import { usePlanChartType } from './PlanChart/UsePlanChartType'
+import { PlanContent } from './PlanGetStaticProps'
 import {
   isPlanInputType,
   paramsInputTypes,
 } from './PlanInput/Helpers/PlanInputType'
-import {planSectionLabel} from './PlanInput/Helpers/PlanSectionLabel'
-import {PlanSectionName} from './PlanInput/Helpers/PlanSectionName'
-import {PlanInput} from './PlanInput/PlanInput'
-import {PlanResults} from './PlanResults'
-import {planSizing} from './PlanSizing/PlanSizing'
-import {PlanSummary} from './PlanSummary/PlanSummary'
-import {PlanWelcome} from './PlanWelcome'
+import { planSectionLabel } from './PlanInput/Helpers/PlanSectionLabel'
+import { PlanSectionName } from './PlanInput/Helpers/PlanSectionName'
+import { PlanInput } from './PlanInput/PlanInput'
+import { PlanResults } from './PlanResults'
+import { planSizing } from './PlanSizing/PlanSizing'
+import { PlanSummary } from './PlanSummary/PlanSummary'
+import { PlanWelcome } from './PlanWelcome'
+import { PlanQuery } from './__generated__/PlanQuery.graphql'
 
 const [PlanContentContext, usePlanContent] =
   createContext<PlanContent>('PlanContent')
-export {usePlanContent}
+export { usePlanContent }
+
+const query = graphql`
+  query PlanQuery($userId: ID!, $includeUser: Boolean!) {
+    ...UserFragment_query
+  }
+`
+
+import { WithChartData } from '../App/WithChartData'
+import { WithUser } from '../QueryFragments/UserFragment'
 
 export const Plan = React.memo((planContent: PlanContent) => {
-  const {params, setParams} = useSimulation()
+  const userGQLArgs = useUserGQLArgs()
+  const data = useLazyLoadQuery<PlanQuery>(query, { ...userGQLArgs })
+  return (
+    <WithUser value={data}>
+      <WithSimulation>
+        <WithChartData>
+          <_Plan planContent={planContent} />
+        </WithChartData>
+      </WithSimulation>
+    </WithUser>
+  )
+})
+
+const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
+  const { params, setParams } = useSimulation()
   const windowSize = useWindowSize()
   const aspectRatio = windowSize.width / windowSize.height
-
   const layout =
     aspectRatio > 1.2
       ? 'laptop'
@@ -43,7 +69,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
 
   const _sizing = useMemo(
     () => planSizing(layout, windowSize),
-    [layout, windowSize]
+    [layout, windowSize],
   )
 
   const planChartType = usePlanChartType()
@@ -58,7 +84,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
   }))
 
   useEffect(() => {
-    setTransition(t => {
+    setTransition((t) => {
       const prev = t.target
       const target = state
       const duration =
@@ -67,7 +93,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
           : target.dialogMode || prev.dialogMode
           ? 1000
           : 300
-      return {prev, target: state, duration}
+      return { prev, target: state, duration }
     })
   }, [state, setParams])
   useAssertConst([setParams])
@@ -83,7 +109,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
         // based on windowSize.
         className={`${isIPhone ? '' : 'h-screen'} 
         h-screen bg-planBG overflow-hidden`}
-        style={{height: isIPhone ? `${windowSize.height}px` : undefined}}
+        style={{ height: isIPhone ? `${windowSize.height}px` : undefined }}
         title={`Plan
           ${
             planChartType === 'spending-total'
@@ -104,7 +130,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
         curr="plan"
       >
         <PlanWelcome sizing={_sizing.welcome} planTransition={transition} />
-        {paramsInputTypes.map(type => (
+        {paramsInputTypes.map((type) => (
           <PlanInput
             key={type}
             layout={layout}
@@ -131,7 +157,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
 })
 
 function usePlanState() {
-  const {params, setParams} = useSimulation()
+  const { params, setParams } = useSimulation()
 
   const urlSection = useURLSection()
 
@@ -143,7 +169,7 @@ function usePlanState() {
     dialogMode: params.dialogMode && _isDialogInputStage(urlSection),
   })
   useEffect(() => {
-    setState(prev => ({
+    setState((prev) => ({
       section: urlSection,
       dialogMode:
         urlSection === 'welcome' ||
@@ -152,7 +178,7 @@ function usePlanState() {
   }, [urlSection])
 
   useEffect(() => {
-    setParams(params => {
+    setParams((params) => {
       if (params.dialogMode === state.dialogMode) return params
       const clone = _.cloneDeep(params)
       clone.dialogMode = state.dialogMode
@@ -164,7 +190,7 @@ function usePlanState() {
 }
 
 function useURLSection() {
-  const {params} = useSimulation()
+  const { params } = useSimulation()
   const urlUpdater = useURLUpdater()
   const getSectionURL = useGetSectionURL()
 
@@ -196,7 +222,7 @@ export const useGetSectionURL = () => {
           : `/plan/${section}`
       return url
     },
-    [path]
+    [path],
   )
 }
 

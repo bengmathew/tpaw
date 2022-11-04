@@ -4,9 +4,9 @@ import {faCircle as faCircleSelected} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import React from 'react'
-import {getDefaultParams} from '../../../TPAWSimulator/DefaultParams'
-import {TPAWParams} from '../../../TPAWSimulator/TPAWParams'
-import {processInflation} from '../../../TPAWSimulator/TPAWParamsProcessed'
+import {getDefaultPlanParams} from '@tpaw/common'
+import {PlanParams} from '@tpaw/common'
+import {processInflation} from '../../../TPAWSimulator/PlanParamsProcessed'
 import {Contentful} from '../../../Utils/Contentful'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
 import {paddingCSS} from '../../../Utils/Geometry'
@@ -57,7 +57,7 @@ export const _InflationCard = React.memo(
       })),
     }
 
-    const handleChange = (inflation: TPAWParams['inflation']) => {
+    const handleChange = (inflation: PlanParams['inflation']) => {
       setParams(params => {
         const clone = _.cloneDeep(params)
         clone.inflation = inflation
@@ -132,7 +132,7 @@ export const _InflationCard = React.memo(
         )}
         <button
           className="mt-6 underline"
-          onClick={() => handleChange(getDefaultParams().inflation)}
+          onClick={() => handleChange(getDefaultPlanParams().inflation)}
         >
           Reset to Default
         </button>
@@ -144,7 +144,7 @@ export const _InflationCard = React.memo(
 export const inflationTypeLabel = ({
   type,
 }: {
-  type: TPAWParams['inflation']['type']
+  type: PlanParams['inflation']['type']
 }) => {
   switch (type) {
     case 'suggested':

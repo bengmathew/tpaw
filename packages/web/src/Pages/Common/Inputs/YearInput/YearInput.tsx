@@ -1,5 +1,5 @@
 import React, {useState} from 'react'
-import {Year} from '../../../../TPAWSimulator/TPAWParams'
+import {Year} from '@tpaw/common'
 import {SimpleRange} from '../../../../Utils/SimpleRange'
 import {fGet} from '../../../../Utils/Utils'
 import {YearInputButton} from './YearInputButton'

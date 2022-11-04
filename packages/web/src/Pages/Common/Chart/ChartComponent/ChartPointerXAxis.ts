@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import {rectExt, RectExt} from '../../../../Utils/Geometry'
-import {linearFnFomPoints} from '../../../../Utils/LinearFn'
+import { linearFnFomPoints } from '@tpaw/common'
 import {ChartStateDerived} from '../Chart'
 import {ChartUtils} from '../ChartUtils/ChartUtils'
 import {

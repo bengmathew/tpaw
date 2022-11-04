@@ -1,24 +1,24 @@
+import { linearFnFomPoints } from '@tpaw/common'
 import localPoint from '@visx/event/lib/localPoint'
-import {gsap} from 'gsap'
+import { gsap } from 'gsap'
 import _ from 'lodash'
-import {Padding, rectExt, Size} from '../../../Utils/Geometry'
-import {linearFnFomPoints} from '../../../Utils/LinearFn'
-import {SimpleRange} from '../../../Utils/SimpleRange'
-import {assert, fGet} from '../../../Utils/Utils'
-import {ChartComponent} from './ChartComponent/ChartComponent'
-import {ChartContext} from './ChartContext'
+import { Padding, rectExt, Size } from '../../../Utils/Geometry'
+import { SimpleRange } from '../../../Utils/SimpleRange'
+import { assert, fGet } from '../../../Utils/Utils'
+import { ChartComponent } from './ChartComponent/ChartComponent'
+import { ChartContext } from './ChartContext'
 import {
   ChartDataTransition,
   chartDataTransitionCurrObj,
 } from './ChartUtils/ChartDataTransition'
 
-export type ChartXYRange = {x: SimpleRange; y: SimpleRange}
-export type ChartAnimation = {ease: gsap.EaseFunction; duration: number}
-export type ChartState = {xyRange: ChartXYRange}
-export type ChartSizing = {size: Size; padding: Padding}
+export type ChartXYRange = { x: SimpleRange; y: SimpleRange }
+export type ChartAnimation = { ease: gsap.EaseFunction; duration: number }
+export type ChartState = { xyRange: ChartXYRange }
+export type ChartSizing = { size: Size; padding: Padding }
 
 export class Chart<Data> {
-  private _pointer: {x: number; y: number}
+  private _pointer: { x: number; y: number }
   private _dataTransition: ChartDataTransition<Data>
   private _dataAnimation: ReturnType<typeof gsap.to> | null = null
   private _stateTransition: ChartDataTransition<ChartState>
@@ -37,17 +37,21 @@ export class Chart<Data> {
     data: Data,
     xyRange: ChartXYRange,
     components: readonly ChartComponent<Data>[],
-    private _sizing: ChartSizing
+    private _sizing: ChartSizing,
   ) {
     this._components = components
 
-    this._dataTransition = {target: data, prev: data, transition: 1}
-    this._stateTransition = {target: {xyRange}, prev: {xyRange}, transition: 1}
+    this._dataTransition = { target: data, prev: data, transition: 1 }
+    this._stateTransition = {
+      target: { xyRange },
+      prev: { xyRange },
+      transition: 1,
+    }
 
-    this._pointer = {x: this._sizing.size.width * 0.25, y: 0}
+    this._pointer = { x: this._sizing.size.width * 0.25, y: 0 }
     const context = this._getContext()
-    this._components.forEach(x =>
-      x.update?.('init', context, this._callbacks.registerAnimation)
+    this._components.forEach((x) =>
+      x.update?.('init', context, this._callbacks.registerAnimation),
     )
     _canvas.addEventListener('pointermove', this._callbacks.onMouse)
     _canvas.addEventListener('pointerenter', this._callbacks.onMouse)
@@ -55,7 +59,7 @@ export class Chart<Data> {
   }
 
   destroy() {
-    this._components.forEach(x => x.destroy?.())
+    this._components.forEach((x) => x.destroy?.())
     this._dataAnimation?.kill()
     this._stateAnimation?.kill()
     assert(this._activeAnimations.length === 0)
@@ -65,11 +69,11 @@ export class Chart<Data> {
   }
 
   setComponents(components: readonly ChartComponent<Data>[]) {
-    this._components.forEach(x => x.destroy?.())
+    this._components.forEach((x) => x.destroy?.())
     this._components = components
     const context = this._getContext()
-    this._components.forEach(x =>
-      x.update?.('init', context, this._callbacks.registerAnimation)
+    this._components.forEach((x) =>
+      x.update?.('init', context, this._callbacks.registerAnimation),
     )
     this.draw()
   }
@@ -84,7 +88,7 @@ export class Chart<Data> {
   setState(
     data: Data,
     xyRange: ChartXYRange,
-    animation: ChartAnimation | null
+    animation: ChartAnimation | null,
   ) {
     if (this._dataTransition.target !== data) {
       // Cannot interpolate data, so accept that data update mid transition will
@@ -97,9 +101,13 @@ export class Chart<Data> {
         this._dataAnimation = this._registerAnimation(
           gsap.fromTo(
             this._dataTransition,
-            {transition: 0},
-            {transition: 1, ease: animation.ease, duration: animation.duration}
-          )
+            { transition: 0 },
+            {
+              transition: 1,
+              ease: animation.ease,
+              duration: animation.duration,
+            },
+          ),
         )
       } else {
         this._dataTransition.transition = 1
@@ -107,23 +115,23 @@ export class Chart<Data> {
     }
 
     this._stateTransition.prev = _interpolateState(this._stateTransition)
-    this._stateTransition.target = {xyRange}
+    this._stateTransition.target = { xyRange }
     this._stateAnimation?.kill()
     if (animation) {
       this._stateAnimation = this._registerAnimation(
         gsap.fromTo(
           this._stateTransition,
-          {transition: 0},
-          {transition: 1, ease: animation.ease, duration: animation.duration}
-        )
+          { transition: 0 },
+          { transition: 1, ease: animation.ease, duration: animation.duration },
+        ),
       )
     } else {
       this._stateTransition.transition = 1
     }
 
     const context = this._getContext()
-    this._components.forEach(x =>
-      x.update?.('state', context, this._callbacks.registerAnimation)
+    this._components.forEach((x) =>
+      x.update?.('state', context, this._callbacks.registerAnimation),
     )
     this.draw()
   }
@@ -133,17 +141,17 @@ export class Chart<Data> {
 
     this._sizing = sizing
     const context = this._getContext()
-    this._components.forEach(x =>
-      x.update?.('sizing', context, this._callbacks.registerAnimation)
+    this._components.forEach((x) =>
+      x.update?.('sizing', context, this._callbacks.registerAnimation),
     )
     this.draw()
   }
 
   draw() {
     const context = this._getContext()
-    const {canvasContext} = context
+    const { canvasContext } = context
     canvasContext.clearRect(0, 0, this._canvas.width, this._canvas.height)
-    this._components.forEach(component => {
+    this._components.forEach((component) => {
       canvasContext.save()
       component.draw(context)
       canvasContext.restore()
@@ -170,14 +178,14 @@ export class Chart<Data> {
   private _handleMouse(e: MouseEvent) {
     this._pointer = fGet(localPoint(this._canvas, e))
     const context = this._getContext()
-    this._components.forEach(x =>
-      x.update?.('pointer', context, this._callbacks.registerAnimation)
+    this._components.forEach((x) =>
+      x.update?.('pointer', context, this._callbacks.registerAnimation),
     )
     this.draw()
   }
 
   private _registerAnimation<T extends gsap.core.Tween | gsap.core.Timeline>(
-    tween: T
+    tween: T,
   ): T {
     tween.eventCallback('onStart', () => {
       this._activeAnimations.push(tween)
@@ -186,7 +194,7 @@ export class Chart<Data> {
       }
     })
     const handleDone = () => {
-      _.remove(this._activeAnimations, x => x === tween)
+      _.remove(this._activeAnimations, (x) => x === tween)
       if (this._activeAnimations.length === 0) {
         gsap.ticker.remove(this._callbacks.draw)
       }
@@ -200,16 +208,16 @@ export class Chart<Data> {
 }
 
 const _interpolateState = (
-  stateTransition: ChartDataTransition<ChartState>
+  stateTransition: ChartDataTransition<ChartState>,
 ): ChartState => ({
-  xyRange: chartDataTransitionCurrObj(stateTransition, x => x.xyRange),
+  xyRange: chartDataTransitionCurrObj(stateTransition, (x) => x.xyRange),
 })
 
 export type ChartStateDerived = ReturnType<typeof _chartDerivedState>
 const _chartDerivedState = (sizing: ChartSizing, state: ChartState) => {
-  const {xyRange} = state
-  const {size, padding} = sizing
-  const viewport = rectExt({x: 0, y: 0, ...size})
+  const { xyRange } = state
+  const { size, padding } = sizing
+  const viewport = rectExt({ x: 0, y: 0, ...size })
   const plotArea = rectExt({
     x: viewport.x + padding.left,
     y: viewport.y + padding.top,
@@ -221,14 +229,14 @@ const _chartDerivedState = (sizing: ChartSizing, state: ChartState) => {
       xyRange.x.start,
       plotArea.x,
       xyRange.x.end,
-      plotArea.width + plotArea.x
+      plotArea.width + plotArea.x,
     ),
     y: linearFnFomPoints(
       xyRange.y.start,
       plotArea.y + plotArea.height,
       xyRange.y.end,
-      plotArea.y
+      plotArea.y,
     ),
   }
-  return {plotArea, scale, viewport, padding}
+  return { plotArea, scale, viewport, padding }
 }

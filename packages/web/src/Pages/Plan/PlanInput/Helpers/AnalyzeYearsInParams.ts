@@ -4,13 +4,13 @@ import {
   ValueForYearRange,
   Year,
   YearRange,
-} from '../../../../TPAWSimulator/TPAWParams'
-import {TPAWParamsExt} from '../../../../TPAWSimulator/TPAWParamsExt'
+} from '@tpaw/common'
+import {PlanParamsExt} from '../../../../TPAWSimulator/PlanParamsExt'
 import {noCase} from '../../../../Utils/Utils'
 import {planSectionLabel} from './PlanSectionLabel'
 
 export function analyzeYearsInParams(
-  paramsExt: TPAWParamsExt,
+  paramsExt: PlanParamsExt,
   yearUpdater?: (year: Year) => Year
 ) {
   const {params} = paramsExt
@@ -59,7 +59,7 @@ const _analyzeGlidePath = (
   glidePath: GlidePath,
   section: 'strategy',
   location: 'assetAllocationForSPAW',
-  paramsExt: TPAWParamsExt,
+  paramsExt: PlanParamsExt,
   yearUpdater?: (year: Year) => Year
 ) => {
   const {glidePathIntermediateValidated} = paramsExt
@@ -85,7 +85,7 @@ const _analyzeGlidePath = (
 const _analyzeValueForYearRange = (
   entry: ValueForYearRange,
   section: 'future-savings' | 'income-during-retirement' | 'extra-spending',
-  paramsExt: TPAWParamsExt,
+  paramsExt: PlanParamsExt,
   yearUpdater?: (year: Year) => Year
 ) => {
   const {yearRange, label} = entry

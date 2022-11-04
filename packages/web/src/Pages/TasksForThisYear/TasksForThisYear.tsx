@@ -2,8 +2,8 @@ import { faLeftLong } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import React, { ReactNode } from 'react'
-import { TPAWParams } from '../../TPAWSimulator/TPAWParams'
-import { extendTPAWParams } from '../../TPAWSimulator/TPAWParamsExt'
+import { PlanParams } from '@tpaw/common'
+import { extendPlanParams } from '../../TPAWSimulator/PlanParamsExt'
 import { FirstYearSavingsPortfolioDetail } from '../../TPAWSimulator/Worker/FirstYearSavingsPortfolioDetail'
 import { TPAWRunInWorkerByPercentileByYearsFromNow } from '../../TPAWSimulator/Worker/TPAWRunInWorker'
 import { UseTPAWWorkerResult } from '../../TPAWSimulator/Worker/UseTPAWWorker'
@@ -20,7 +20,7 @@ type _Props = Omit<FirstYearSavingsPortfolioDetail, 'withdrawals'> & {
     discretionaryByEntry: {id: number; label: string | null; amount: number}[]
   }
   withdrawalsStarted: boolean
-  strategy: TPAWParams['strategy']
+  strategy: PlanParams['strategy']
   risk:{
     useTPAWPreset:boolean
   }
@@ -30,7 +30,7 @@ const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
   const original = tpawResult.firstYearOfSomeRun
   const {params} = tpawResult.args
 
-  const {withdrawalsStarted} = extendTPAWParams(params.original)
+  const {withdrawalsStarted} = extendPlanParams(params.original)
 
   const firstYearOfAnyPercentile = (
     id: number,

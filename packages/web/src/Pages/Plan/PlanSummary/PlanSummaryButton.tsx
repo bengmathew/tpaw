@@ -9,12 +9,12 @@ import {
   GlidePath,
   Person,
   ValueForYearRange
-} from '../../../TPAWSimulator/TPAWParams'
-import { TPAWParamsExt } from '../../../TPAWSimulator/TPAWParamsExt'
+} from '@tpaw/common'
+import { PlanParamsExt } from '../../../TPAWSimulator/PlanParamsExt'
 import {
   processExpectedReturns,
   processInflation
-} from '../../../TPAWSimulator/TPAWParamsProcessed'
+} from '../../../TPAWSimulator/PlanParamsProcessed'
 import { formatCurrency } from '../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../Utils/FormatPercentage'
 import { Padding, paddingCSSStyle } from '../../../Utils/Geometry'
@@ -453,7 +453,7 @@ const _GlidePathIntermediate = React.memo(
   ({
     intermediate,
   }: {
-    intermediate: ReturnType<TPAWParamsExt['glidePathIntermediateValidated']>
+    intermediate: ReturnType<PlanParamsExt['glidePathIntermediateValidated']>
   }) => {
     const {yearToStr} = useSimulation().paramsExt
     return (

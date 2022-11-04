@@ -1,9 +1,15 @@
 import React from 'react'
-import {Contentful} from '../../Utils/Contentful'
-import {AppPage} from '../App/AppPage'
+import { Contentful } from '../../Utils/Contentful'
+import { AppPage } from '../App/AppPage'
 
 export const TOS = React.memo(
-  ({content, title}: {content: Contentful.FetchedInline; title: string}) => {
+  ({
+    content,
+    title,
+  }: {
+    content: Contentful.FetchedInline
+    title: string
+  }) => {
     return (
       <AppPage
         className=" pt-header min-h-screen"
@@ -18,11 +24,12 @@ export const TOS = React.memo(
                 h1="font-bold text-4xl "
                 h2="font-bold text-xl mt-6"
                 p="mt-4 p-base"
+                ul="list-disc ml-5"
               />
             </div>
           </div>
         </div>
       </AppPage>
     )
-  }
+  },
 )

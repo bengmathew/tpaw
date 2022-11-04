@@ -8,8 +8,8 @@ import {faTrash} from '@fortawesome/pro-solid-svg-icons'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import React, {useMemo, useState} from 'react'
-import {GlidePath} from '../../../TPAWSimulator/TPAWParams'
-import {TPAWParamsExt} from '../../../TPAWSimulator/TPAWParamsExt'
+import {GlidePath} from '@tpaw/common'
+import {PlanParamsExt} from '../../../TPAWSimulator/PlanParamsExt'
 import {assert, noCase} from '../../../Utils/Utils'
 import {useSimulation} from '../../App/WithSimulation'
 import {AmountInput} from './AmountInput'
@@ -146,7 +146,7 @@ export const GlidePathInput = React.memo(
 )
 
 type _ProcessedIntermediate = ReturnType<
-  TPAWParamsExt['glidePathIntermediateValidated']
+  PlanParamsExt['glidePathIntermediateValidated']
 >
 
 const _Intermediate = React.memo(

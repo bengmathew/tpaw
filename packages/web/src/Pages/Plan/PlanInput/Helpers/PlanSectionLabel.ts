@@ -1,4 +1,4 @@
-import {TPAWParams} from '../../../../TPAWSimulator/TPAWParams'
+import {PlanParams} from '@tpaw/common'
 import {noCase} from '../../../../Utils/Utils'
 import {PlanSectionName} from './PlanSectionName'
 
@@ -7,11 +7,11 @@ export function planSectionLabel(
 ): string
 export function planSectionLabel(
   type: PlanSectionName,
-  strategy: TPAWParams['strategy']
+  strategy: PlanParams['strategy']
 ): string
 export function planSectionLabel(
   type: PlanSectionName,
-  strategy?: TPAWParams['strategy']
+  strategy?: PlanParams['strategy']
 ): string {
   switch (type) {
     case 'summary':

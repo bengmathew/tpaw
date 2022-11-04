@@ -1,14 +1,15 @@
-import React, {ReactElement, useEffect, useState} from 'react'
-import {createContext} from '../../Utils/CreateContext'
+import React, { ReactElement, useEffect, useState } from 'react'
+import { createContext } from '../../Utils/CreateContext'
 
-const [Context, useWindowSize] = createContext<{width: number; height: number}>(
-  'WindowSize'
-)
+const [Context, useWindowSize] = createContext<{
+  width: number
+  height: number
+}>('WindowSize')
 
-export {useWindowSize}
+export { useWindowSize }
 
 export const WithWindowSize = React.memo(
-  ({children}: {children: ReactElement}) => {
+  ({ children }: { children: ReactElement }) => {
     const [value, setValue] = useState(_get)
 
     useEffect(() => {
@@ -22,7 +23,7 @@ export const WithWindowSize = React.memo(
     }, [])
 
     return <Context.Provider value={value}>{children}</Context.Provider>
-  }
+  },
 )
 
-const _get = () => ({width: window.innerWidth, height: window.innerHeight})
+const _get = () => ({ width: window.innerWidth, height: window.innerHeight })

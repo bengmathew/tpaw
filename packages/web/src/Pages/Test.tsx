@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react'
-import {extendTPAWParams} from '../TPAWSimulator/TPAWParamsExt'
-import {processTPAWParams} from '../TPAWSimulator/TPAWParamsProcessed'
+import {extendPlanParams} from '../TPAWSimulator/PlanParamsExt'
+import {processPlanParams} from '../TPAWSimulator/PlanParamsProcessed'
 import {runSimulationInWASM} from '../TPAWSimulator/Worker/RunSimulationInWASM'
 import {useMarketData} from './App/WithMarketData'
 import {Config} from './Config'
@@ -29,7 +29,7 @@ export const Test = React.memo(() => {
 
   useEffect(() => {
     void (async () => {
-      const params = processTPAWParams(testParams, marketData)
+      const params = processPlanParams(testParams, marketData)
 
       console.dir(
         params.returns.historicalAdjusted[indexIntoHistoricalReturns[0]]
@@ -133,7 +133,7 @@ const excelSimulated = [
 ]
 const excel = excelSimulated
 
-const testParams = extendTPAWParams({
+const testParams = extendPlanParams({
   v: 14,
   strategy: 'TPAW',
   dialogMode: true,

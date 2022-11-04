@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import React, {useEffect, useRef, useState} from 'react'
-import {extendTPAWParams} from '../TPAWSimulator/TPAWParamsExt'
-import {processTPAWParams} from '../TPAWSimulator/TPAWParamsProcessed'
+import {extendPlanParams} from '../TPAWSimulator/PlanParamsExt'
+import {processPlanParams} from '../TPAWSimulator/PlanParamsProcessed'
 import {TPAWRunInWorker} from '../TPAWSimulator/Worker/TPAWRunInWorker'
 import {fGet} from '../Utils/Utils'
 import {AppPage} from './App/AppPage'
@@ -34,7 +34,7 @@ export const Perf = React.memo(() => {
             const result = await fGet(workerRef.current).runSimulations(
               {canceled: false},
               numRuns,
-              processTPAWParams(params, marketData),
+              processPlanParams(params, marketData),
               percentiles,
               marketData
             )
@@ -86,7 +86,7 @@ export const Perf = React.memo(() => {
   )
 })
 
-const params = extendTPAWParams({
+const params = extendPlanParams({
   v: 14,
   strategy: 'TPAW',
   dialogMode: true,

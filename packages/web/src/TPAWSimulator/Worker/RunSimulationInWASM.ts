@@ -1,13 +1,13 @@
 import _ from 'lodash'
 import {SimpleRange} from '../../Utils/SimpleRange'
 import {noCase} from '../../Utils/Utils'
-import {getNumYears, getWithdrawalStartAsYFN} from '../TPAWParamsExt'
-import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
+import {getNumYears, getWithdrawalStartAsYFN} from '../PlanParamsExt'
+import {PlanParamsProcessed} from '../PlanParamsProcessed'
 import {getWASM} from './GetWASM'
 import {TPAWWorkerRunSimulationResult} from './TPAWWorkerTypes'
 
 export async function runSimulationInWASM(
-  params: TPAWParamsProcessed,
+  params: PlanParamsProcessed,
   runsSpec: SimpleRange,
   test?: {truth: number[]; indexIntoHistoricalReturns: number[]}
 ): Promise<TPAWWorkerRunSimulationResult> {

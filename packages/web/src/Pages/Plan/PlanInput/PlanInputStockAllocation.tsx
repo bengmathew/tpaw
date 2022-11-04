@@ -1,9 +1,9 @@
 import _ from 'lodash'
 import React, {useEffect} from 'react'
 import {
-  getDefaultParams,
+  getDefaultPlanParams,
   resolveTPAWRiskPreset,
-} from '../../../TPAWSimulator/DefaultParams'
+} from '@tpaw/common'
 import {Contentful} from '../../../Utils/Contentful'
 import {formatPercentage} from '../../../Utils/FormatPercentage'
 import {paddingCSSStyle} from '../../../Utils/Geometry'
@@ -138,7 +138,7 @@ const _TotalStockAllocationCard = React.memo(
               const clone = _.cloneDeep(params)
               assert(!clone.risk.useTPAWPreset)
               clone.risk.tpaw.allocation = resolveTPAWRiskPreset(
-                getDefaultParams().risk,
+                getDefaultPlanParams().risk,
                 paramsExt.numYears
               ).tpaw.allocation
               return clone
@@ -200,7 +200,7 @@ export const _SavingsStockAllocationCard = React.memo(
               const clone = _.cloneDeep(params)
               assert(!clone.risk.useTPAWPreset)
               clone.risk.spawAndSWR.allocation = resolveTPAWRiskPreset(
-                getDefaultParams().risk,
+                getDefaultPlanParams().risk,
                 paramsExt.numYears
               ).spawAndSWR.allocation
               return clone
@@ -261,7 +261,7 @@ const _LegacyStockAllocationCard = React.memo(
               const clone = _.cloneDeep(params)
               assert(!clone.risk.useTPAWPreset)
               clone.risk.tpaw.allocationForLegacy = resolveTPAWRiskPreset(
-                getDefaultParams().risk,
+                getDefaultPlanParams().risk,
                 paramsExt.numYears
               ).tpaw.allocationForLegacy
               return clone

@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Switch } from '@headlessui/react'
 import _ from 'lodash'
 import React, { useEffect, useMemo, useState } from 'react'
-import { extendTPAWParams } from '../../../TPAWSimulator/TPAWParamsExt'
+import { extendPlanParams } from '../../../TPAWSimulator/PlanParamsExt'
 import { Contentful } from '../../../Utils/Contentful'
 import { paddingCSSStyle } from '../../../Utils/Geometry'
 import { useURLUpdater } from '../../../Utils/UseURLUpdater'
@@ -48,7 +48,7 @@ export const _SpendingCeilingAndFloorCard = React.memo(
   }) => {
     const {params, tpawResult, highlightPercentiles} = useSimulation()
     assert(!params.risk.useTPAWPreset)
-    const {asYFN, withdrawalStartYear} = extendTPAWParams(
+    const {asYFN, withdrawalStartYear} = extendPlanParams(
       tpawResult.args.params.original
     )
     const withdrawalStartAsYFN = asYFN(withdrawalStartYear)
@@ -158,7 +158,7 @@ const _SeparateCeilingAndFloor = React.memo(
     assert(!params.risk.useTPAWPreset)
     const {tpaw, tpawAndSPAW} = params.risk
 
-    const {asYFN, withdrawalStartYear} = extendTPAWParams(
+    const {asYFN, withdrawalStartYear} = extendPlanParams(
       tpawResult.args.params.original
     )
     const withdrawalStartAsYFN = asYFN(withdrawalStartYear)

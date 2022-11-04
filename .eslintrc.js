@@ -1,17 +1,17 @@
 module.exports = {
-  parser: '@typescript-eslint/parser', // Specifies the ESLint parser
-  extends: [
-    'plugin:@typescript-eslint/recommended', // Uses the recommended rules from the @typescript-eslint/eslint-plugin
-    'plugin:@typescript-eslint/recommended-requiring-type-checking',
-    'plugin:promise/recommended',
-  ],
-  plugins: ['promise', '@typescript-eslint'],
+  parser: '@typescript-eslint/parser', 
   parserOptions: {
     ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
     sourceType: 'module', // Allows for the use of imports        // Needed for typescript-eslint rules that need type info.
     tsconfigRootDir: __dirname,
     project: [`${process.cwd()}/tsconfig.json`],
   },
+  extends: [
+    'plugin:@typescript-eslint/recommended', 
+    'plugin:@typescript-eslint/recommended-requiring-type-checking',
+    'plugin:promise/recommended',
+  ],
+  plugins: ['promise', '@typescript-eslint'],
   rules: {
     indent: 'off',
 

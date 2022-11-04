@@ -1,4 +1,4 @@
-import {TPAWParamsProcessed} from '../TPAWParamsProcessed'
+import {PlanParamsProcessed} from '../PlanParamsProcessed'
 import {TPAWWorkerRunSimulationResult} from './TPAWWorkerTypes'
 
 export type FirstYearSavingsPortfolioDetail = {
@@ -30,7 +30,7 @@ export type FirstYearSavingsPortfolioDetail = {
 
 export const firstYearSavingsPortfolioDetail = (
   byYearsFromNowByRun: TPAWWorkerRunSimulationResult['byYearsFromNowByRun']['savingsPortfolio'],
-  params: TPAWParamsProcessed
+  params: PlanParamsProcessed
 ): FirstYearSavingsPortfolioDetail => {
   const start = {
     balance: byYearsFromNowByRun.start.balance[0][0],

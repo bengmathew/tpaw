@@ -1,4 +1,4 @@
-import {TPAWParams, Year} from '../../../../TPAWSimulator/TPAWParams'
+import {PlanParams, Year} from '@tpaw/common'
 import {noCase} from '../../../../Utils/Utils'
 import {YearInputProps} from './YearInput'
 
@@ -6,7 +6,7 @@ export function yearLabel(
   value: Year | {numYears: number},
   location: YearInputProps['location'],
   type: 'includeNumber' | 'numberIsBlank',
-  {people}: TPAWParams
+  {people}: PlanParams
 ) {
   if ('numYears' in value) {
     return type === 'includeNumber'

@@ -1,5 +1,5 @@
 import React, {useState} from 'react'
-import {YearRange} from '../../../TPAWSimulator/TPAWParams'
+import {YearRange} from '@tpaw/common'
 import {Contentful} from '../../../Utils/Contentful'
 import {paddingCSS, paddingCSSStyleHorz} from '../../../Utils/Geometry'
 import {useURLUpdater} from '../../../Utils/UseURLUpdater'
