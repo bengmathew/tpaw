@@ -15,13 +15,7 @@ export const PlanSummarySaveReset = React.memo(
     const [showConfirm, setShowConfirm] = useState(false)
     return (
       <>
-        <button
-          className={`${className}`}
-          onClick={() => {
-            closeMenu()
-            setShowConfirm(true)
-          }}
-        >
+        <button className={`${className}`} onClick={() => setShowConfirm(true)}>
           Reset
         </button>
         {showConfirm && (
@@ -32,6 +26,7 @@ export const PlanSummarySaveReset = React.memo(
               onClose: () => {
                 setShowConfirm(false)
                 setParams(getDefaultPlanParams())
+                closeMenu()
               },
               isWarning: true,
             }}

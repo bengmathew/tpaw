@@ -27,16 +27,16 @@ export const PlanSummarySaveToAccount = React.memo(
 
     return (
       <>
-        <button
-          className={`${className}`}
-          onClick={() => {
-            closeMenu()
-            setConfirm(true)
-          }}
-        >
+        <button className={`${className}`} onClick={() => setConfirm(true)}>
           Save
         </button>
-        {confirm && <_ConfirmSave user={user} setConfirm={setConfirm} />}
+        {confirm && (
+          <_ConfirmSave
+            user={user}
+            setConfirm={setConfirm}
+            closeMenu={closeMenu}
+          />
+        )}
       </>
     )
   },
@@ -46,10 +46,12 @@ const _ConfirmSave = React.memo(
     className = '',
     user,
     setConfirm,
+    closeMenu,
   }: {
     className?: string
     user: UserFragment_user$data
     setConfirm: (x: boolean) => void
+    closeMenu: () => void
   }) => {
     // User starting value of hasParams to maitain stability until dialog is
     // closed.
@@ -79,6 +81,7 @@ const _ConfirmSave = React.memo(
         onCompleted: () => {
           setSaved(true)
           window.setTimeout(() => {
+            closeMenu()
             close?.()
           }, 1000)
         },
@@ -107,10 +110,7 @@ const _ConfirmSave = React.memo(
             </div>
           ),
           onBeforeClose: (close) => handleSave(close),
-          onClose: () => {
-            setSaved(false)
-            setConfirm(false)
-          },
+          onClose: () => setConfirm(false),
         }}
         onCancel={() => setConfirm(false)}
       >

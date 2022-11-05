@@ -25,7 +25,6 @@ export const PlanSummarySaveLoadFromAccount = React.memo(
           disabled={!user.plan}
           onClick={() => {
             setConfirm(true)
-            closeMenu()
           }}
         >
           Open Saved Plan
@@ -35,6 +34,7 @@ export const PlanSummarySaveLoadFromAccount = React.memo(
             option1={{
               label: 'Overwrite',
               onClose: () => {
+                closeMenu()
                 setParams(JSON.parse(fGet(user.plan).params) as PlanParams)
                 setConfirm(false)
               },
