@@ -33,3 +33,18 @@ export const builder = new SchemaBuilder<{
 builder.queryType()
 builder.mutationType()
 builder.queryField('ping', (t) => t.string({ resolve: () => 'pong' }))
+builder.queryField('crash', (t) =>
+  t.string({
+    resolve: () => {
+      throw new Error('Crash!')
+    },
+  }),
+)
+builder.mutationField('crash', (t) =>
+  t.field({
+    type: 'Success',
+    resolve: async () => {
+      throw new Error('Crash!')
+    },
+  }),
+)

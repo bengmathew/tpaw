@@ -9,6 +9,7 @@ type LinkBasedPlan {
 }
 
 type Mutation {
+  crash: Success!
   createLinkBasedPlan(input: CreateLinkBasedPlanInput!): LinkBasedPlan!
   sendSignInEmail(input: SendSignInEmailInput!): Success!
   setUserPlan(input: SetUserPlanInput!): User!
@@ -22,6 +23,7 @@ type Plan {
 }
 
 type Query {
+  crash: String!
   linkBasedPlan(linkId: ID!): LinkBasedPlan
   ping: String!
   user(userId: ID!): User!

@@ -5,11 +5,13 @@ builder.queryField('user', (t) =>
   t.prismaField({
     type: 'User',
     args: { userId: t.arg({ type: 'ID' }) },
-    resolve: async (query, _, args) =>
-      await Clients.prisma.user.findUniqueOrThrow({
+    resolve: async (query, _, args) => {
+      throw new Error('OhOh')
+      return await Clients.prisma.user.findUniqueOrThrow({
         ...query,
         where: { id: `${args.userId}` },
-      }),
+      })
+    },
   }),
 )
 
@@ -18,6 +20,6 @@ builder.prismaObject('User', {
   authScopes: (user, context) => context.user?.id === user.id,
   fields: (t) => ({
     id: t.exposeID('id'),
-    plan: t.relation('plan', {nullable:true}),
+    plan: t.relation('plan', { nullable: true }),
   }),
 })

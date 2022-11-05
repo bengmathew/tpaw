@@ -43,6 +43,7 @@ async function _impl() {
   server.use(Sentry.Handlers.errorHandler({ shouldHandleError: () => true }))
   // GCP Cloud Run does not gzip for us so do it here. 
   server.use(compression()) 
+  server.get('/', (req, res) => res.send('I am root!'))
   server.get('/ping', (req, res) => res.send('pong'))
 
   const apollo = new ApolloServer<Context>({ schema, plugins: [sentryPlugin] })
