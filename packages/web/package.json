@@ -26,7 +26,7 @@
     "@mojotech/json-type-validation": "^3.1.0",
     "@popperjs/core": "^2.11.2",
     "@sentry/nextjs": "^7.3.0",
-    "@tpaw/common": "^1.0.0",
+    "@tpaw/common": "^1.0.1",
     "@tpaw/simulator": "2.6.0",
     "@visx/event": "^2.1.2",
     "@visx/scale": "^2.1.2",

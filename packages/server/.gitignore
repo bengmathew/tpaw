@@ -1,6 +1,8 @@
 
 .env
 /config
+/.vscode
+tsconfig.tsbuildinfo
 
 # compiled output
 /dist
