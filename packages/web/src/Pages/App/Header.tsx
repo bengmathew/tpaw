@@ -46,7 +46,7 @@ export const Header = React.memo(
         {ReactDOM.createPortal(
           <Transition
             show={showMenu}
-            className="absolute inset-0 page overflow-hidden"
+            className="fixed inset-0 page overflow-hidden"
             enter="transition-opacity duration-300"
             enterFrom="opacity-0"
             enterTo="opacity-100"
