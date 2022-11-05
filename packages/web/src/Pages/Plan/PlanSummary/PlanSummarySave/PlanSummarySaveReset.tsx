@@ -3,30 +3,44 @@ import React, { useState } from 'react'
 import { useSimulation } from '../../../App/WithSimulation'
 import { ConfirmAlert } from '../../../Common/Modal/ConfirmAlert'
 
-export const PlanSummarySaveReset = React.memo(({ className = '' }: { className?: string }) => {
-  const { setParams } = useSimulation()
-  const [showConfirm, setShowConfirm] = useState(false)
-  return (
-    <>
-      <button className={`${className}`} onClick={() => setShowConfirm(true)}>
-        Reset
-      </button>
-      {showConfirm && (
-        <ConfirmAlert
-          title="Confirm Reset"
-          option1={{
-            label: 'Reset',
-            onClose: () => {
-              setShowConfirm(false)
-              setParams(getDefaultPlanParams())
-            },
-            isWarning: true,
+export const PlanSummarySaveReset = React.memo(
+  ({
+    className = '',
+    closeMenu,
+  }: {
+    className?: string
+    closeMenu: () => void
+  }) => {
+    const { setParams } = useSimulation()
+    const [showConfirm, setShowConfirm] = useState(false)
+    return (
+      <>
+        <button
+          className={`${className}`}
+          onClick={() => {
+            closeMenu()
+            setShowConfirm(true)
           }}
-          onCancel={() => setShowConfirm(false)}
         >
-          Are you sure you want to reset all inputs?
-        </ConfirmAlert>
-      )}
-    </>
-  )
-})
+          Reset
+        </button>
+        {showConfirm && (
+          <ConfirmAlert
+            title="Confirm Reset"
+            option1={{
+              label: 'Reset',
+              onClose: () => {
+                setShowConfirm(false)
+                setParams(getDefaultPlanParams())
+              },
+              isWarning: true,
+            }}
+            onCancel={() => setShowConfirm(false)}
+          >
+            Are you sure you want to reset all inputs?
+          </ConfirmAlert>
+        )}
+      </>
+    )
+  },
+)

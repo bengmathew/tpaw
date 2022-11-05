@@ -63,7 +63,10 @@ export const PlanSummarySave = React.memo(
             <PlanSummarySaveLongLink className="w-full text-start py-2 px-4" />
             <PlanSummarySaveShortLink className="w-full text-start py-2 px-4" />
             <h2 className=" px-4 text-base font-bold mt-4 mb-2">Reset</h2>
-            <PlanSummarySaveReset className="w-full text-start py-2 px-4" />
+            <PlanSummarySaveReset
+              className="w-full text-start py-2 px-4"
+              closeMenu={closeMenu}
+            />
           </div>
         )}
       </BasicMenu>
