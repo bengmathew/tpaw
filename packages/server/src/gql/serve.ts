@@ -41,8 +41,8 @@ async function _impl() {
     tracesSampleRate: 1.0,
   })
   server.use(Sentry.Handlers.errorHandler({ shouldHandleError: () => true }))
-  // GCP Cloud Run does not gzip for us so do it here. 
-  server.use(compression()) 
+  // GCP Cloud Run does not gzip for us so do it here.
+  server.use(compression())
   server.get('/', (req, res) => res.send('I am root!'))
   server.get('/ping', (req, res) => res.send('pong'))
 
@@ -54,25 +54,32 @@ async function _impl() {
     bodyParser.json(),
     expressMiddleware<Context>(apollo, {
       context: async ({ req }) => {
-        const user = await (async () => {
-          const idToken = (req.headers.authorization || '')
-            .split(', ')
-            .filter((x) => x.startsWith('Bearer'))
-            .map((x) => x.substring('Bearer '.length))[0]
+        try {
+          const user = await (async () => {
+            const idToken = (req.headers.authorization || '')
+              .split(', ')
+              .filter((x) => x.startsWith('Bearer'))
+              .map((x) => x.substring('Bearer '.length))[0]
 
-          if (!idToken) return null
-          const decodedToken = await Clients.firebaseAuth.verifyIdToken(idToken)
-          const user: Prisma.UserCreateInput & Prisma.UserUpdateInput = {
-            id: decodedToken.uid,
-          }
-          await Clients.prisma.user.upsert({
-            create: user,
-            update: {},
-            where: { id: user.id },
-          })
-          return { id: decodedToken.uid }
-        })()
-        return { user }
+            if (!idToken) return null
+            const decodedToken = await Clients.firebaseAuth.verifyIdToken(
+              idToken,
+            )
+            const user: Prisma.UserCreateInput & Prisma.UserUpdateInput = {
+              id: decodedToken.uid,
+            }
+            await Clients.prisma.user.upsert({
+              create: user,
+              update: {},
+              where: { id: user.id },
+            })
+            return { id: decodedToken.uid }
+          })()
+          return { user }
+        } catch (e) {
+          Sentry.captureException(e)
+          throw e
+        }
       },
     }),
   )
