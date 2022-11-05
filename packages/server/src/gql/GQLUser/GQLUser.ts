@@ -5,13 +5,11 @@ builder.queryField('user', (t) =>
   t.prismaField({
     type: 'User',
     args: { userId: t.arg({ type: 'ID' }) },
-    resolve: async (query, _, args) => {
-      throw new Error('OhOh')
-      return await Clients.prisma.user.findUniqueOrThrow({
+    resolve: async (query, _, args) =>
+      await Clients.prisma.user.findUniqueOrThrow({
         ...query,
         where: { id: `${args.userId}` },
-      })
-    },
+      }),
   }),
 )
 
