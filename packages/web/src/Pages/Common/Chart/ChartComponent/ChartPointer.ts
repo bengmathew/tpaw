@@ -9,7 +9,7 @@ import { ChartUtils } from '../ChartUtils/ChartUtils'
 import { ChartComponent } from './ChartComponent'
 
 export type ChartPointerOpts = {
-  formatX: (dataX: number) => { text: string; color: string|null }[]
+  formatX: (dataX: number) => { text: string; color: string | null }[]
   formatY: (dataY: number) => string
   showTh: boolean
   pad: {
@@ -249,19 +249,23 @@ const _calculateBox = (
     canvasContext.lineWidth = 1
     canvasContext.strokeStyle = ChartUtils.color.gray[700]
 
-    pixelYs.forEach((pixelY, i) => {
-      const graphYOnBox =
-        y + labelRelativePixelYs[i] + textInfos.lines[i].label.height / 2
-      canvasContext.beginPath()
+    // Math.max, because it it goes to far out, the lines won't draw.
+    pixelYs
+      .map((x) => Math.max(x, viewport.x - 10000000)) 
+      .forEach((pixelY, i) => {
+        const graphYOnBox =
+          y + labelRelativePixelYs[i] + textInfos.lines[i].label.height / 2
+        canvasContext.beginPath()
 
-      const line = [
-        { x: pixelX, y: pixelY },
-        { x: pixelX + (xLineTarget - pixelX) * 0.6, y: graphYOnBox },
-        { x: xLineTarget, y: graphYOnBox },
-      ]
-      ChartUtils.roundedLine(canvasContext, line, 10)
-      canvasContext.stroke()
-    })
+        const line = [
+          { x: pixelX, y: pixelY },
+          { x: pixelX + (xLineTarget - pixelX) * 0.6, y: graphYOnBox },
+          { x: xLineTarget, y: graphYOnBox },
+        ]
+        console.dir(line)
+        ChartUtils.roundedLine(canvasContext, line, 10)
+        canvasContext.stroke()
+      })
 
     // Clip the box.
     canvasContext.beginPath()
@@ -279,7 +283,8 @@ const _calculateBox = (
     textInfos.header.forEach(({ font, width, text }, i) => {
       canvasContext.font = font
       canvasContext.textAlign = 'left'
-      canvasContext.fillStyle = headerFormatted[i].color ?? ChartUtils.color.gray[200]
+      canvasContext.fillStyle =
+        headerFormatted[i].color ?? ChartUtils.color.gray[200]
       canvasContext.fillText(text, headerPixelX, y + headerRelativePosition.y)
       headerPixelX += width
     })
