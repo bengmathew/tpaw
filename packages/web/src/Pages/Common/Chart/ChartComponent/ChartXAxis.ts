@@ -110,33 +110,8 @@ export class ChartXAxis<Data> implements ChartComponent<Data> {
         pixelRegion.height,
       )
 
-      // canvasContext.beginPath()
-      // canvasContext.moveTo(retirementPixelX, pixelRegion.y)
-      // canvasContext.lineTo(retirementPixelX, pixelRegion.bottom)
-      // canvasContext.lineWidth = 1
-      // canvasContext.strokeStyle = ChartUtils.color.gray[400]
-      // canvasContext.stroke()
-
       canvasContext.restore()
     }
-
-    // ---- RETIREMENT LINE ----
-    // {
-    //   if (
-    //     retirementDataX >= dataXs[0] &&
-    //     retirementDataX <= fGet(_.last(dataXs))
-    //   ) {
-    //     const pixelHeight = pixelRegion.height * 0.75
-    //     const pixelTop = pixelRegion.y + (pixelRegion.height - pixelHeight) / 2
-    //     canvasContext.beginPath()
-    //     canvasContext.moveTo(retirementPixelX, pixelTop)
-    //     canvasContext.lineTo(retirementPixelX, pixelTop + pixelHeight)
-    //     canvasContext.lineWidth = 2
-    //     canvasContext.lineCap = 'round'
-    //     canvasContext.strokeStyle = ChartUtils.color.orange[700]
-    //     canvasContext.stroke()
-    //   }
-    // }
 
     // ---- LABEL ----
     canvasContext.font = labelStyle.font
