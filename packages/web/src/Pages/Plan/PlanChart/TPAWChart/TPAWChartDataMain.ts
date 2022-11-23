@@ -1,16 +1,20 @@
+import {
+  linearFnFomPoints,
+  linearFnFromPointAndSlope,
+  PlanParams,
+} from '@tpaw/common'
 import _ from 'lodash'
 import {
   extendPlanParams,
   PlanParamsExt,
 } from '../../../../TPAWSimulator/PlanParamsExt'
-import {TPAWRunInWorkerByPercentileByYearsFromNow} from '../../../../TPAWSimulator/Worker/TPAWRunInWorker'
-import {UseTPAWWorkerResult} from '../../../../TPAWSimulator/Worker/UseTPAWWorker'
-import {formatCurrency} from '../../../../Utils/FormatCurrency'
-import {formatPercentage} from '../../../../Utils/FormatPercentage'
-import { linearFnFomPoints, linearFnFromPointAndSlope } from '@tpaw/common'
-import {SimpleRange} from '../../../../Utils/SimpleRange'
-import {assert, fGet, noCase} from '../../../../Utils/Utils'
-import {SimulationInfo} from '../../../App/WithSimulation'
+import { TPAWRunInWorkerByPercentileByYearsFromNow } from '../../../../TPAWSimulator/Worker/TPAWRunInWorker'
+import { UseTPAWWorkerResult } from '../../../../TPAWSimulator/Worker/UseTPAWWorker'
+import { formatCurrency } from '../../../../Utils/FormatCurrency'
+import { formatPercentage } from '../../../../Utils/FormatPercentage'
+import { SimpleRange } from '../../../../Utils/SimpleRange'
+import { assert, fGet, noCase } from '../../../../Utils/Utils'
+import { SimulationInfo } from '../../../App/WithSimulation'
 import {
   isPlanChartSpendingDiscretionaryType,
   isPlanChartSpendingEssentialType,
@@ -20,8 +24,10 @@ import {
 } from '../PlanChartType'
 
 export type TPAWChartDataMain = {
+  params: PlanParams
+  paramsExt: PlanParamsExt
   label: string
-  type: PlanChartType 
+  type: PlanChartType
   series:
     | {
         type: 'percentiles'
@@ -40,13 +46,12 @@ export type TPAWChartDataMain = {
           label: string
         }[]
       }
-  min: {x: number; y: number}
-  max: {x: number; y: number}
+  min: { x: number; y: number }
+  max: { x: number; y: number }
   years: {
     displayRange: SimpleRange
     retirement: number
     max: number
-    display: (yearsFromNow: number) => number
   }
   yDisplayRange: SimpleRange
   yFormat: (x: number) => string
@@ -55,13 +60,13 @@ export type TPAWChartDataMain = {
 
 export const tpawChartDataScaled = (
   curr: TPAWChartDataMain,
-  targetYRange: SimpleRange
+  targetYRange: SimpleRange,
 ): TPAWChartDataMain => {
   const scaleY = linearFnFomPoints(
     curr.yDisplayRange.start,
     targetYRange.start,
     curr.yDisplayRange.end,
-    targetYRange.end
+    targetYRange.end,
   )
   const series: TPAWChartDataMain['series'] = (() => {
     switch (curr.series.type) {
@@ -69,11 +74,11 @@ export const tpawChartDataScaled = (
         return {
           type: curr.series.type,
           percentiles: curr.series.percentiles.map(
-            ({data, percentile, isHighlighted}) => ({
+            ({ data, percentile, isHighlighted }) => ({
               data: (x: number) => scaleY(data(x)),
               percentile,
               isHighlighted,
-            })
+            }),
           ),
         }
       case 'labeledLines':
@@ -81,7 +86,7 @@ export const tpawChartDataScaled = (
           type: curr.series.type,
           percentiles: curr.series.percentiles,
           highlightedPercentiles: curr.series.highlightedPercentiles,
-          lines: curr.series.lines.map(({data, label}) => ({
+          lines: curr.series.lines.map(({ data, label }) => ({
             data: (x: number) => scaleY(data(x)),
             label,
           })),
@@ -91,11 +96,13 @@ export const tpawChartDataScaled = (
     }
   })()
   return {
+    params: curr.params,
+    paramsExt: curr.paramsExt,
     label: `${curr.label} scaled.`,
     type: curr.type,
     series,
-    min: {x: curr.min.x, y: scaleY(curr.min.y)},
-    max: {x: curr.max.x, y: scaleY(curr.max.y)},
+    min: { x: curr.min.x, y: scaleY(curr.min.y) },
+    max: { x: curr.max.x, y: scaleY(curr.max.y) },
     yDisplayRange: {
       start: scaleY(curr.yDisplayRange.start),
       end: scaleY(curr.yDisplayRange.end),
@@ -117,16 +124,16 @@ const _spendingYears = ({
     : [
         ...params.extraSpending.essential,
         ...params.extraSpending.discretionary,
-      ].some(x => asYFN(x.yearRange).start < withdrawalStart)
+      ].some((x) => asYFN(x.yearRange).start < withdrawalStart)
     ? ('allYears' as const)
     : ('retirementYears' as const)
 }
 export const tpawChartDataMainPercentiles = (
   type: Exclude<PlanChartType, 'reward-risk-ratio-comparison'>,
   tpawResult: UseTPAWWorkerResult,
-  highlightPercentiles: SimulationInfo['highlightPercentiles']
+  highlightPercentiles: SimulationInfo['highlightPercentiles'],
 ): TPAWChartDataMain => {
-  const {params} = tpawResult.args
+  const { params } = tpawResult.args
   const paramsExt = extendPlanParams(params.original)
   const hasLegacy =
     params.legacy.tpawAndSPAW.total !== 0 ||
@@ -137,104 +144,105 @@ export const tpawChartDataMainPercentiles = (
       return _dataPercentiles(
         type,
         tpawResult,
-        x => x.savingsPortfolio.withdrawals.total,
-        x => formatCurrency(x),
+        (x) => x.savingsPortfolio.withdrawals.total,
+        (x) => formatCurrency(x),
         spendingYears,
         0,
         highlightPercentiles,
-        'auto'
+        'auto',
       )
     case 'spending-general':
       return _dataPercentiles(
         type,
         tpawResult,
-        x => x.savingsPortfolio.withdrawals.regular,
-        x => formatCurrency(x),
+        (x) => x.savingsPortfolio.withdrawals.regular,
+        (x) => formatCurrency(x),
         spendingYears,
         0,
         highlightPercentiles,
-        'auto'
+        'auto',
       )
 
     case 'portfolio':
       return _dataPercentiles(
         type,
         tpawResult,
-        x =>
+        (x) =>
           _addYear(
             x.savingsPortfolio.start.balance,
-            x.endingBalanceOfSavingsPortfolioByPercentile
+            x.endingBalanceOfSavingsPortfolioByPercentile,
           ),
-        x => formatCurrency(x),
+        (x) => formatCurrency(x),
         'allYears',
         1,
         highlightPercentiles,
-        'auto'
+        'auto',
       )
     case 'asset-allocation-savings-portfolio':
       return _dataPercentiles(
         type,
         tpawResult,
-        x => x.savingsPortfolio.afterWithdrawals.allocation.stocks,
+        (x) => x.savingsPortfolio.afterWithdrawals.allocation.stocks,
         formatPercentage(0),
         'allYears',
         hasLegacy ? 0 : -1,
         highlightPercentiles,
-        {start: 0, end: 1}
+        { start: 0, end: 1 },
       )
     case 'asset-allocation-total-portfolio':
       return _dataPercentiles(
         type,
         tpawResult,
-        x => x.totalPortfolio.afterWithdrawals.allocation.stocks,
+        (x) => x.totalPortfolio.afterWithdrawals.allocation.stocks,
         formatPercentage(0),
         'allYears',
         hasLegacy ? 0 : -1,
         highlightPercentiles,
-        {start: 0, end: 1}
+        { start: 0, end: 1 },
       )
     case 'withdrawal':
       return _dataPercentiles(
         type,
         tpawResult,
-        x => x.savingsPortfolio.withdrawals.fromSavingsPortfolioRate,
+        (x) => x.savingsPortfolio.withdrawals.fromSavingsPortfolioRate,
         formatPercentage(1),
         params.original.display.alwaysShowAllYears
           ? 'allYears'
           : 'retirementYears',
         0,
         highlightPercentiles,
-        'auto'
+        'auto',
       )
     default:
       if (isPlanChartSpendingEssentialType(type)) {
         const id = planChartSpendingEssentialTypeID(type)
-        assert(params.original.extraSpending.essential.find(x => x.id === id))
+        assert(params.original.extraSpending.essential.find((x) => x.id === id))
         return _dataPercentiles(
           type,
           tpawResult,
-          x => fGet(x.savingsPortfolio.withdrawals.essential.byId.get(id)),
-          x => formatCurrency(x),
+          (x) => fGet(x.savingsPortfolio.withdrawals.essential.byId.get(id)),
+          (x) => formatCurrency(x),
           spendingYears,
           0,
           highlightPercentiles,
-          'auto'
+          'auto',
         )
       }
       if (isPlanChartSpendingDiscretionaryType(type)) {
         const id = planChartSpendingDiscretionaryTypeID(type)
         assert(
-          params.original.extraSpending.discretionary.find(x => x.id === id)
+          params.original.extraSpending.discretionary.find((x) => x.id === id),
         )
         return _dataPercentiles(
           type,
           tpawResult,
-          x => fGet(x.savingsPortfolio.withdrawals.discretionary.byId.get(id)),
-          x => formatCurrency(x),
+          (x) =>
+            fGet(x.savingsPortfolio.withdrawals.discretionary.byId.get(id)),
+          (x) => formatCurrency(x),
           spendingYears,
           0,
           highlightPercentiles,
-          'auto'
+          'auto',
         )
       }
       noCase(type)
@@ -245,13 +253,13 @@ const _addYear = (
   {
     byPercentileByYearsFromNow,
   }: ReturnType<Parameters<typeof _dataPercentiles>[2]>,
-  numberByPercentile: {data: number; percentile: number}[]
+  numberByPercentile: { data: number; percentile: number }[],
 ) => ({
   byPercentileByYearsFromNow: byPercentileByYearsFromNow.map(
-    ({data, percentile}, p) => ({
+    ({ data, percentile }, p) => ({
       data: [...data, numberByPercentile[p].data],
       percentile,
-    })
+    }),
   ),
 })
 
@@ -263,70 +271,62 @@ export const tpawChartDataMainRewardRiskRatio = (
     swr: UseTPAWWorkerResult
   },
   percentiles: readonly number[],
-  highlightedPercentiles: readonly number[]
+  highlightedPercentiles: readonly number[],
 ): TPAWChartDataMain => {
-  const {args} = tpawResult.tpaw
-  const {params} = args
-  const {asYFN, withdrawalStartYear, pickPerson, maxMaxAge} = extendPlanParams(
-    params.original
-  )
+  const { args } = tpawResult.tpaw
+  const { params } = args
+  const paramsExt = extendPlanParams(params.original)
+  const { asYFN, withdrawalStartYear, maxMaxAge } = paramsExt
   const retirement = asYFN(withdrawalStartYear)
   const maxYear = asYFN(maxMaxAge)
-  const xAxisPerson = params.people.withPartner
-    ? pickPerson(params.people.xAxis)
-    : params.people.person1
   const years: TPAWChartDataMain['years'] = {
     displayRange: {
       start: retirement > 0 ? retirement : 1,
-      // start:retirement,
       end: maxYear,
     },
     retirement,
     max: maxYear,
-    display: yearsFromNow => yearsFromNow + xAxisPerson.ages.current,
   }
 
   const tpawData = Array.from(
-    tpawResult.tpaw.savingsPortfolio.rewardRiskRatio.withdrawals.regular
+    tpawResult.tpaw.savingsPortfolio.rewardRiskRatio.withdrawals.regular,
   )
   const spawData = Array.from(
-    tpawResult.spaw.savingsPortfolio.rewardRiskRatio.withdrawals.regular
+    tpawResult.spaw.savingsPortfolio.rewardRiskRatio.withdrawals.regular,
   )
   const swrData = Array.from(
-    tpawResult.swr.savingsPortfolio.rewardRiskRatio.withdrawals.regular
+    tpawResult.swr.savingsPortfolio.rewardRiskRatio.withdrawals.regular,
   )
   const [tpawInterpolated, spawInterpolated, swrInterpolated] = _interpolate(
-    [{data: tpawData}, {data: spawData}, {data: swrData}],
-    years.displayRange
+    [{ data: tpawData }, { data: spawData }, { data: swrData }],
+    years.displayRange,
   )
   const series: TPAWChartDataMain['series'] = {
     type: 'labeledLines',
     percentiles,
     highlightedPercentiles,
     lines: [
-      {label: 'TPAW', data: tpawInterpolated},
-      {label: 'SPAW', data: spawInterpolated},
-      {label: 'SWR', data: swrInterpolated},
+      { label: 'TPAW', data: tpawInterpolated },
+      { label: 'SPAW', data: spawInterpolated },
+      { label: 'SWR', data: swrInterpolated },
     ],
   }
 
-  // const last = fGet(_.last(byPercentileByYearsFromNow)).data
-  // const first = fGet(_.first(byPercentileByYearsFromNow)).data
   const maxMin = (data: number[]) => {
     const maxY = Math.max(...data)
     const minY = Math.min(...data)
     return {
-      max: {y: maxY, x: data.indexOf(maxY)},
-      min: {y: minY, x: data.indexOf(minY)},
+      max: { y: maxY, x: data.indexOf(maxY) },
+      min: { y: minY, x: data.indexOf(minY) },
     }
   }
 
   const blendMaxMin = (x: ReturnType<typeof maxMin>[]) => ({
-    max: fGet(_.maxBy(x, x => x.max.y)).max,
-    min: fGet(_.minBy(x, x => x.min.y)).min,
+    max: fGet(_.maxBy(x, (x) => x.max.y)).max,
+    min: fGet(_.minBy(x, (x) => x.min.y)).min,
   })
 
-  const {max, min} = blendMaxMin([
+  const { max, min } = blendMaxMin([
     maxMin(tpawData),
     maxMin(spawData),
     maxMin(swrData),
@@ -336,13 +336,15 @@ export const tpawChartDataMainRewardRiskRatio = (
     end: Math.max(0.0001, max.y),
   }
   return {
+    params: params.original,
+    paramsExt,
     type: 'reward-risk-ratio-comparison',
     label,
     years,
     series,
     min,
     max,
-    yFormat: x => x.toFixed(2),
+    yFormat: (x) => x.toFixed(2),
     yDisplayRange,
     successRate: 0,
   }
@@ -352,24 +354,20 @@ const _dataPercentiles = (
   type: PlanChartType,
   tpawResult: UseTPAWWorkerResult,
   dataFn: (
-    tpawResult: UseTPAWWorkerResult
+    tpawResult: UseTPAWWorkerResult,
   ) => TPAWRunInWorkerByPercentileByYearsFromNow,
   yFormat: (x: number) => string,
   yearRange: 'retirementYears' | 'allYears',
   yearEndDelta: number,
   highlightPercentiles: number[],
-  yDisplayRangeIn: 'auto' | SimpleRange
+  yDisplayRangeIn: 'auto' | SimpleRange,
 ): TPAWChartDataMain => {
-  const {args} = tpawResult
-  const {params} = args
-  const {asYFN, withdrawalStartYear, pickPerson, maxMaxAge} = extendPlanParams(
-    params.original
-  )
+  const { args } = tpawResult
+  const { params } = args
+  const paramsExt = extendPlanParams(params.original)
+  const { asYFN, withdrawalStartYear, maxMaxAge } = paramsExt
   const retirement = asYFN(withdrawalStartYear)
   const maxYear = asYFN(maxMaxAge)
-  const xAxisPerson = params.people.withPartner
-    ? pickPerson(params.people.xAxis)
-    : params.people.person1
   const years: TPAWChartDataMain['years'] = {
     displayRange: {
       start: yearRange === 'retirementYears' ? retirement : 0,
@@ -377,31 +375,32 @@ const _dataPercentiles = (
     },
     retirement,
     max: maxYear,
-    display: yearsFromNow => yearsFromNow + xAxisPerson.ages.current,
   }
-  const {byPercentileByYearsFromNow} = dataFn(tpawResult)
+  const { byPercentileByYearsFromNow } = dataFn(tpawResult)
 
   const percentiles = _addPercentileInfo(
     _interpolate(byPercentileByYearsFromNow, years.displayRange),
     args.percentiles,
-    highlightPercentiles
+    highlightPercentiles,
   )
-  const series = {type: 'percentiles' as const, percentiles}
+  const series = { type: 'percentiles' as const, percentiles }
 
   const last = fGet(_.last(byPercentileByYearsFromNow)).data
   const first = fGet(_.first(byPercentileByYearsFromNow)).data
   const maxY = Math.max(...last)
   const minY = Math.min(...first)
 
-  const max = {x: last.indexOf(maxY), y: maxY}
-  const min = {x: first.indexOf(minY), y: minY}
+  const max = { x: last.indexOf(maxY), y: maxY }
+  const min = { x: first.indexOf(minY), y: minY }
   const yDisplayRange =
     yDisplayRangeIn === 'auto'
-      ? {start: Math.min(0, min.y), end: Math.max(0.0001, max.y)}
+      ? { start: Math.min(0, min.y), end: Math.max(0.0001, max.y) }
       : yDisplayRangeIn
 
   const successRate = 1 - tpawResult.percentageOfRunsWithInsufficientFunds
   return {
+    params: params.original,
+    paramsExt,
     type,
     label: type,
     years,
@@ -417,7 +416,7 @@ const _dataPercentiles = (
 const _addPercentileInfo = <T>(
   ys: T[],
   percentiles: number[],
-  highlightedPercentiles: number[]
+  highlightedPercentiles: number[],
 ) => {
   return ys.map((data, i) => ({
     data,
@@ -427,21 +426,21 @@ const _addPercentileInfo = <T>(
 }
 
 const _interpolate = (
-  ys: {data: number[]}[],
-  {start: xStart, end: xEnd}: SimpleRange
+  ys: { data: number[] }[],
+  { start: xStart, end: xEnd }: SimpleRange,
 ) => {
   const beforeSlope = _avgSlope(ys, xStart)
   const afterSlope = _avgSlope(ys, xEnd)
-  return ys.map(({data}) => {
+  return ys.map(({ data }) => {
     const extrapolateBefore = linearFnFromPointAndSlope(
       xStart,
       data[xStart],
-      beforeSlope
+      beforeSlope,
     )
     const extrapolateAfter = linearFnFromPointAndSlope(
       xEnd,
       data[xEnd],
-      afterSlope
+      afterSlope,
     )
     const interpolated = data
       .slice(0, -1)
@@ -459,9 +458,9 @@ const _interpolate = (
   })
 }
 
-const _avgSlope = (ys: {data: number[]}[], i: number) => {
+const _avgSlope = (ys: { data: number[] }[], i: number) => {
   const iPlus1 = Math.min(i + 1, ys[0].data.length - 1)
-  const sum = _.sum(ys.map(x => x.data[iPlus1] - x.data[i]))
+  const sum = _.sum(ys.map((x) => x.data[iPlus1] - x.data[i]))
   const result = sum / ys.length
   return result
 }

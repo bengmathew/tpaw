@@ -1,265 +1,311 @@
-import {gsap} from 'gsap'
+import { assert, fGet, noCase } from '@tpaw/common'
 import _ from 'lodash'
-import {assert, fGet, noCase} from '../../../../Utils/Utils'
-import {ChartState, ChartStateDerived} from '../Chart'
-import {ChartContext} from '../ChartContext'
-import {
-  ChartDataTransition,
-  chartDataTransitionCurrObj,
-  chartDataTransitionTransform,
-} from '../ChartUtils/ChartDataTransition'
-import {zeroOneInterpolate} from '../ChartUtils/ZeroOneInterpolate'
-import {ChartComponent, ChartRegisterAnimation} from './ChartComponent'
-import {chartPointerBox, ChartPointerBoxAnimatedState} from './ChartPointerBox'
-import {
-  chartPointerXAxis,
-  ChartPointerXAxisAnimatedState,
-} from './ChartPointerXAxis'
+import { Rect, rectExt } from '../../../../Utils/Geometry'
+import { interpolate } from '../../../../Utils/Interpolate'
+import { transitionTransform } from '../../../../Utils/Transition'
+import { ChartStateDerived } from '../Chart'
+import { ChartContext } from '../ChartContext'
+import { ChartUtils } from '../ChartUtils/ChartUtils'
+import { ChartComponent } from './ChartComponent'
 
-const duration = 1
-
-type _DataFn<Data> = (
-  data: Data
-) => ({line: (x: number) => number; label: string} | null)[]
-
-export type ChartPointerState = {dataX: number}
-export type ChartPointerContext<Data> = ChartContext<Data> & {
-  pointerTransition: ChartDataTransition<ChartPointerState>
-}
-
-export type ChartPointerComponentTargetArgs = {
-  dataX: number
-  dataYInfos: {dataY: number; label: string}[]
-  chartState: ChartState
-  chartStateDerived: ChartStateDerived
-
-  // These can be used in the draw method.
-  ctx: CanvasRenderingContext2D
-  displayX: (x: number) => number
-  formatY: (y: number) => string
-  formatX: (x: number, type: 'long' | 'short') => string
-  markDataX: number
+export type ChartPointerOpts = {
+  formatX: (dataX: number) => { text: string; color: string|null }[]
+  formatY: (dataY: number) => string
   showTh: boolean
+  pad: {
+    vert: { top: number; between: number; bottom: number }
+    horz: {
+      edge: number
+      between: number
+      outside: { lineLength: number; margin: number }
+    }
+  }
 }
-
-export type ChartPointerComponentDrawArg<AnimatedProps> = {
-  dataX: number
-  dataYInfos: {dataY: number; label: string}[]
-  chartState: ChartState
-  chartStateDerived: ChartStateDerived
-  animatedProps: AnimatedProps
-  // Other values remain constant between target and draw.
-}
-
-export type ChartPointerComponent<AnimatedProps> = (
-  args: ChartPointerComponentTargetArgs
-) => {
-  animated: AnimatedProps
-  draw: (args: ChartPointerComponentDrawArg<AnimatedProps>) => void
-}
+const verticalLineDash = [10, 5]
+type _DataFn<Data> = (
+  data: Data,
+) => ({ line: (x: number) => number; label: string } | null)[]
 
 export class ChartPointer<Data> implements ChartComponent<Data> {
-  private _state: {
-    transition: ChartDataTransition<{
-      dataX: number
-      box: ChartPointerBoxAnimatedState
-      xAxis: ChartPointerXAxisAnimatedState
-    }>
-    draws: {
-      box: (
-        args: ChartPointerComponentDrawArg<ChartPointerBoxAnimatedState>
-      ) => void
-      xAxis: (
-        args: ChartPointerComponentDrawArg<ChartPointerXAxisAnimatedState>
-      ) => void
-    }
+  private _boxInfoTransition: {
+    from: { region: Rect; xLineTarget: number }
+    curr: { region: Rect; xLineTarget: number }
   } | null = null
-  private _animation: gsap.core.Tween | null = null
-
   constructor(
-    private _dataFn: _DataFn<Data>,
-    private _displayX: (data: Data, x: number) => number,
-    private _formatX: (data: Data, x: number, type: 'long' | 'short') => string,
-    private _formatY: (data: Data, x: number) => string,
-    private _markFn: (data: Data) => number,
-    private _showTh: (data: Data) => boolean
+    private readonly _dataFn: _DataFn<Data>,
+    private readonly _opts: (
+      chartContext: ChartContext<Data>,
+    ) => ChartPointerOpts,
   ) {}
 
-  destroy() {
-    this._animation?.kill()
-  }
-
-  update(
-    change: 'init' | 'pointer' | 'state' | 'sizing',
-    context: ChartContext<Data>,
-    registerAnimation: ChartRegisterAnimation
-  ) {
-    const {
-      canvasContext: ctx,
-      pointer,
-      derivedState,
-      dataTransition,
-      stateTransition,
-    } = context
-    const dataX = (() => {
+  public update(change: 'init' | 'pointer' | 'stateAndPointer' | 'sizing') {
+    this._boxInfoTransition = (() => {
       switch (change) {
+        case 'pointer':
+        case 'stateAndPointer':
+          const curr = fGet(this._boxInfoTransition).curr
+          return { from: curr, curr: curr }
         case 'init':
-        case 'pointer': {
-          const {scale, plotArea} = derivedState.target
-          return Math.round(
-            _.clamp(
-              scale.x.inverse(pointer.x),
-              scale.x.inverse(plotArea.x),
-              scale.x.inverse(plotArea.right)
-            )
-          )
-        }
-        case 'state': {
-          assert(this._state)
-          const {scale, plotArea} = derivedState.target
-          return _.clamp(
-            this._state.transition.target.dataX,
-            Math.ceil(scale.x.inverse(plotArea.x)),
-            Math.floor(scale.x.inverse(plotArea.right))
-          )
-        }
-
         case 'sizing':
-          assert(this._state)
-          return this._state.transition.target.dataX
+          return this._boxInfoTransition
         default:
           noCase(change)
       }
     })()
+  }
 
-    const targetArgs: ChartPointerComponentTargetArgs = {
-      ctx,
-      dataX,
-      dataYInfos: _.compact(
-        _.reverse(
-          this._dataFn(dataTransition.target).map(x =>
-            x === null
-              ? null
-              : {
-                  dataY: x.line(dataX),
-                  label: x.label,
-                }
-          )
+  public draw(chartContext: ChartContext<Data>) {
+    const {
+      canvasContext,
+      currPointerInDataCoord,
+      derivedState,
+      dataTransition,
+      pointerInDataCoordTransition,
+    } = chartContext
+    const { scale, plotArea } = derivedState.curr
+    const opts = this._opts(chartContext)
+
+    const filteredDataTransition = (() => {
+      const unfiltered = transitionTransform(dataTransition, this._dataFn)
+      const selector = unfiltered.target.map((x) => x !== null)
+      return transitionTransform(unfiltered, (x) =>
+        x.filter((_, i) => selector[i]),
+      )
+    })()
+
+    const currDataYs = _.reverse(
+      filteredDataTransition.target.map((target, i) => {
+        assert(target)
+        const from = filteredDataTransition.from[i]
+        if (from === null) return target.line(currPointerInDataCoord.x)
+        return interpolate(
+          from.line(currPointerInDataCoord.x),
+          target.line(currPointerInDataCoord.x),
+          filteredDataTransition.progress,
         )
+      }),
+    )
+
+    canvasContext.save()
+    const { drawBox, targetBoxInfo } = _calculateBox(
+      _.reverse(
+        filteredDataTransition.target
+          .map((x) => fGet(x))
+          .map((x) => ({
+            dataY: x.line(pointerInDataCoordTransition.target.x),
+            label: x.label,
+          })),
       ),
-      chartState: stateTransition.target,
-      chartStateDerived: derivedState.target,
-      displayX: x => this._displayX(dataTransition.target, x),
-      formatY: y => this._formatY(dataTransition.target, y),
-      formatX: (x, type) => this._formatX(dataTransition.target, x, type),
-      markDataX: Math.round(this._markFn(dataTransition.target)),
-      showTh: this._showTh(dataTransition.target),
+      pointerInDataCoordTransition.target.x,
+      canvasContext,
+      derivedState.curr,
+      opts,
+    )
+    canvasContext.restore()
+    if (!this._boxInfoTransition) {
+      this._boxInfoTransition = { from: targetBoxInfo, curr: targetBoxInfo }
     }
-    ctx.save()
-    const boxInfo = chartPointerBox(targetArgs)
-    ctx.restore()
-    ctx.save()
-    const xAxisInfo = chartPointerXAxis(targetArgs)
-    ctx.restore()
+    this._boxInfoTransition.curr = interpolate(
+      this._boxInfoTransition.from,
+      targetBoxInfo,
+      pointerInDataCoordTransition.progress,
+    )
 
-    const target = {dataX, box: boxInfo.animated, xAxis: xAxisInfo.animated}
-    if (change === 'init') {
-      assert(!this._state)
-      this._state = {
-        draws: {box: boxInfo.draw, xAxis: xAxisInfo.draw},
-        transition: {prev: target, target, transition: 1},
-      }
-    } else {
-      assert(this._state)
-      const curr = chartDataTransitionCurrObj(this._state.transition, x => x)
+    const pixelX = scale.x(currPointerInDataCoord.x)
+    const pixelYs = currDataYs.map(scale.y)
 
-      // Take care not to maintain the same transition object so animation
-      // will not reference old object.
-      this._state = {
-        draws: {box: boxInfo.draw, xAxis: xAxisInfo.draw},
-        transition: this._state.transition,
-      }
+    canvasContext.save()
+    drawBox(this._boxInfoTransition.curr, pixelX, pixelYs)
+    canvasContext.restore()
 
-      this._state.transition.target = target
+    // Draw the vertical line.
+    canvasContext.globalAlpha = 0.3
+    canvasContext.lineWidth = 1.5
+    canvasContext.strokeStyle = ChartUtils.color.gray[500]
+    canvasContext.setLineDash(verticalLineDash)
+    canvasContext.lineDashOffset = verticalLineDash[0]
+    canvasContext.beginPath()
+    canvasContext.moveTo(pixelX, plotArea.bottom) // +20 is a hack to show line when person1 xaxis is cut short.
+    canvasContext.lineTo(pixelX, Math.min(...pixelYs))
+    canvasContext.stroke()
+    canvasContext.setLineDash([])
 
-      switch (change) {
-        case 'sizing':
-          break
-        case 'pointer':
-        case 'state':
-          this._state.transition.prev = curr
-          this._state.transition.transition = 0
-          this._animation?.kill()
-          this._animation = registerAnimation(
-            gsap.to(this._state.transition, {
-              transition: 1,
-              duration,
-              ease: 'power4',
-            })
-          )
-          break
-        default:
-          noCase(change)
-      }
+    // Draw the target on the data line.
+    canvasContext.globalAlpha = 0.7
+    canvasContext.lineWidth = 2
+    canvasContext.fillStyle = ChartUtils.color.gray[900]
+    pixelYs.forEach((pixelY) => {
+      canvasContext.beginPath()
+      canvasContext.ellipse(pixelX, pixelY, 4, 4, 0, 0, Math.PI * 4)
+      canvasContext.fill()
+    })
+  }
+}
+
+const _measureText =
+  (canvasContext: CanvasRenderingContext2D) =>
+  (text: string, fontSize: number, style?: 'bold' | '') => {
+    const font = ChartUtils.getMonoFont(fontSize, style)
+    canvasContext.font = font
+    const { width, actualBoundingBoxAscent, actualBoundingBoxDescent } =
+      canvasContext.measureText(text)
+    return {
+      text,
+      font,
+      width,
+      height: actualBoundingBoxAscent + actualBoundingBoxDescent,
     }
   }
 
-  draw(context: ChartContext<Data>) {
-    const {
-      canvasContext: ctx,
-      dataTransition,
-      derivedState,
-      currState,
-    } = context
+const _calculateBox = (
+  labeledDataYsAtTarget: { dataY: number; label: string }[],
+  dataXAtTarget: number,
+  canvasContext: CanvasRenderingContext2D,
+  { scale, viewport, plotArea }: ChartStateDerived,
+  { formatX, formatY, showTh, pad }: ChartPointerOpts,
+) => {
+  const headerFormatted = formatX(dataXAtTarget)
+  const mt = _measureText(canvasContext)
+  const textInfos = {
+    header: headerFormatted.map(({ text }) => mt(text, 13, 'bold')),
+    lines: labeledDataYsAtTarget.map(({ dataY, label }, i) => ({
+      label: mt(label, 11),
+      dataY: mt(formatY(dataY), 11),
+    })),
+    th: showTh ? mt('th', 7) : null,
+  }
 
-    assert(this._state)
-    const currTransition = chartDataTransitionCurrObj(
-      this._state.transition,
-      x => x
-    )
-    const {dataX} = currTransition
-    const lineTransition = chartDataTransitionTransform(dataTransition, x =>
-      this._dataFn(x).map(x => x?.line(dataX) ?? null)
-    )
-    const labels = this._dataFn(dataTransition.target).map(
-      x => x?.label ?? null
-    )
+  const headerRelativePosition = { x: pad.horz.edge, y: pad.vert.top }
 
-    const dataYInfos = _.compact(
-      _.reverse(
-        lineTransition.target
-          .map((target, i) => {
-            const prev = lineTransition.prev[i]
-            if (target === null) return null
-            if (prev === null) return target
-            const result = zeroOneInterpolate(prev, target, lineTransition)
-            // if (isNaN(result)) {
-            //   console.dir({prev, target, lineTransition})
-            // }
-            return result
-          })
-          .map((dataY, i) =>
-            dataY === null ? null : {dataY, label: fGet(labels[i])}
-          )
-      )
-    )
+  let labelRelativePixelY =
+    headerRelativePosition.y +
+    Math.max(...textInfos.header.map((x) => x.height)) +
+    pad.vert.between
 
-    const drawArgs = <A>(animatedProps: A) => ({
-      dataX,
-      dataYInfos,
-      chartState: currState,
-      chartStateDerived: derivedState.curr,
-      animatedProps,
+  const labelRelativePixelYs = textInfos.lines.map(({ label }) => {
+    const result = labelRelativePixelY
+    labelRelativePixelY += label.height + pad.vert.between
+    return result
+  })
+  const height = labelRelativePixelY - pad.vert.between + pad.vert.bottom
+
+  const labelsMaxWidth = Math.max(...textInfos.lines.map((x) => x.label.width))
+  const labelRight = pad.horz.edge + labelsMaxWidth
+
+  const dataYsMaxWidth = Math.max(...textInfos.lines.map((x) => x.dataY.width))
+
+  const width = Math.max(
+    labelRight +
+      (textInfos.th?.width ?? 0) +
+      pad.horz.between +
+      dataYsMaxWidth +
+      pad.horz.edge,
+    pad.horz.edge * 2 + _.sum(textInfos.header.map((x) => x.width)),
+  )
+
+  const pixelYsAtTarget = labeledDataYsAtTarget.map(({ dataY }) =>
+    scale.y(dataY),
+  )
+  const pixelXAtTarget = scale.x(dataXAtTarget)
+
+  const y = _.clamp(
+    _.mean(pixelYsAtTarget) - height * 0.45,
+    viewport.y,
+    plotArea.y + plotArea.height - height - 10,
+  )
+
+  const { lineLength } = pad.horz.outside
+  const side =
+    pixelXAtTarget + lineLength + width + pad.horz.outside.margin <
+    viewport.right
+      ? 1
+      : -1
+  const x = pixelXAtTarget + (side === -1 ? -lineLength - width : lineLength)
+  const targetXLineTarget = side === -1 ? x + width : x
+
+  const targetBoxRegion = rectExt({ x, y, height, width })
+  const targetBoxInfo = {
+    region: targetBoxRegion,
+    xLineTarget: targetXLineTarget,
+  }
+  const drawBox = (
+    {
+      region,
+      xLineTarget,
+    }: {
+      region: Rect
+      xLineTarget: number
+    },
+    pixelX: number,
+    pixelYs: number[],
+  ) => {
+    const regionExt = rectExt(region)
+    const { x, y, right } = regionExt
+
+    canvasContext.textBaseline = 'top'
+
+    // Draw the lines.
+    canvasContext.globalAlpha = 1
+    canvasContext.lineWidth = 1
+    canvasContext.strokeStyle = ChartUtils.color.gray[700]
+
+    pixelYs.forEach((pixelY, i) => {
+      const graphYOnBox =
+        y + labelRelativePixelYs[i] + textInfos.lines[i].label.height / 2
+      canvasContext.beginPath()
+
+      const line = [
+        { x: pixelX, y: pixelY },
+        { x: pixelX + (xLineTarget - pixelX) * 0.6, y: graphYOnBox },
+        { x: xLineTarget, y: graphYOnBox },
+      ]
+      ChartUtils.roundedLine(canvasContext, line, 10)
+      canvasContext.stroke()
     })
 
-    // Draw the box.
-    ctx.save()
-    this._state.draws.box(drawArgs(currTransition.box))
-    ctx.restore()
+    // Clip the box.
+    canvasContext.beginPath()
+    ChartUtils.roundRect(canvasContext, regionExt, 10)
+    canvasContext.clip()
 
-    // Draw the xAxis
-    ctx.save()
-    this._state.draws.xAxis(drawArgs(currTransition.xAxis))
-    ctx.restore()
+    // Draw the box.
+    canvasContext.beginPath()
+    ChartUtils.roundRect(canvasContext, regionExt, 10)
+    canvasContext.fillStyle = ChartUtils.color.gray[700]
+    canvasContext.fill()
+
+    // Draw the header.
+    let headerPixelX = x + headerRelativePosition.x
+    textInfos.header.forEach(({ font, width, text }, i) => {
+      canvasContext.font = font
+      canvasContext.textAlign = 'left'
+      canvasContext.fillStyle = headerFormatted[i].color ?? ChartUtils.color.gray[200]
+      canvasContext.fillText(text, headerPixelX, y + headerRelativePosition.y)
+      headerPixelX += width
+    })
+
+    // Draw the text lines.
+    canvasContext.fillStyle = ChartUtils.color.gray[200]
+    textInfos.lines.forEach(({ label, dataY }, i) => {
+      const currY = y + labelRelativePixelYs[i]
+
+      // Draw the label.
+      canvasContext.font = label.font
+      canvasContext.textAlign = 'right'
+      canvasContext.fillText(label.text, x + labelRight, currY)
+
+      // Draw the th.]
+      if (textInfos.th) {
+        canvasContext.font = textInfos.th.font
+        canvasContext.textAlign = 'left'
+        canvasContext.fillText(textInfos.th.text, x + labelRight, currY - 2)
+      }
+      // Draw the dataY.
+      canvasContext.font = dataY.font
+      canvasContext.textAlign = 'right'
+      canvasContext.fillText(dataY.text, right - pad.horz.edge, currY)
+    })
   }
+
+  return { drawBox, targetBoxInfo }
 }

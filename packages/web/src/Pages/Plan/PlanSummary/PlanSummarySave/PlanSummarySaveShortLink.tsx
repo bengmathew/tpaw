@@ -4,6 +4,7 @@ import {
   faSpinnerThird,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { assertFalse, noCase } from '@tpaw/common'
 import React, { useState } from 'react'
 import { graphql, useMutation } from 'react-relay'
 import { errorToast } from '../../../../Utils/CustomToasts'
@@ -11,9 +12,19 @@ import { useSimulation } from '../../../App/WithSimulation'
 import { Config } from '../../../Config'
 import { PlanSummarySaveShortLinkMutation } from './__generated__/PlanSummarySaveShortLinkMutation.graphql'
 
+type _State =
+  | { type: 'idle' }
+  | { type: 'showCopied' }
+  | { type: 'gotLink'; href: string }
 export const PlanSummarySaveShortLink = React.memo(
-  ({ className = '' }: { className?: string }) => {
-    const [copied, setCopied] = useState(false)
+  ({
+    className = '',
+    closeMenu,
+  }: {
+    className?: string
+    closeMenu: () => void
+  }) => {
+    const [state, setState] = useState<_State>({ type: 'idle' })
     const { params } = useSimulation()
     const [commitMutation, isMutationRunning] =
       useMutation<PlanSummarySaveShortLinkMutation>(graphql`
@@ -25,10 +36,10 @@ export const PlanSummarySaveShortLink = React.memo(
           }
         }
       `)
-    return (
-      <button
-        className={`${className}`}
-        onClick={() =>
+
+    const handleClick = () => {
+      switch (state.type) {
+        case 'idle':
           commitMutation({
             variables: { input: { params: JSON.stringify(params) } },
             onCompleted: (result) => {
@@ -39,29 +50,49 @@ export const PlanSummarySaveShortLink = React.memo(
                   }).toString()}`,
                 ),
               ).toString()
-              void navigator.clipboard.writeText(href).then(() => {
-                setCopied(true)
-                window.setTimeout(() => setCopied(false), 1000)
-                return null
-              })
+              setState({ type: 'gotLink', href })
             },
             onError: () => errorToast(),
           })
-        }
+          break
+        case 'gotLink':
+          void navigator.clipboard.writeText(state.href).then(() => {
+            setState({ type: 'showCopied' })
+            window.setTimeout(() => closeMenu(), 1000)
+            return null
+          })
+          break
+        case 'showCopied':
+          assertFalse()
+        default:
+          noCase(state)
+      }
+    }
+    return (
+      <button
+        className={`${className}`}
+        disabled={isMutationRunning || state.type === 'showCopied'}
+        onClick={handleClick}
       >
-        {copied ? (
+        {state.type === 'showCopied' ? (
           <>
-            <FontAwesomeIcon className="" icon={faClipboard} /> Copied to
-            clipboard{' '}
+            <FontAwesomeIcon className="mr-2" icon={faClipboard} />Copied{' '}
             <FontAwesomeIcon className="ml-1 font-bold" icon={faCheck} />
+          </>
+        ) : state.type === 'gotLink' ? (
+          <>
+            <FontAwesomeIcon className="mr-2" icon={faClipboard} />Copy to
+            Clipboard
           </>
         ) : isMutationRunning ? (
           <>
-            <FontAwesomeIcon className="fa-spin" icon={faSpinnerThird} />{' '}
+            <FontAwesomeIcon className="fa-spin mr-2" icon={faSpinnerThird} />
             Generating...
           </>
-        ) : (
+        ) : state.type === 'idle' ? (
           'Shortened Link'
+        ) : (
+          noCase(state)
         )}
       </button>
     )

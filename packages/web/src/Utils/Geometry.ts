@@ -1,10 +1,12 @@
+import _ from 'lodash'
+
 export type Rect = {
   x: number
   y: number
   width: number
   height: number
 }
-export type RectExt = Rect & {right: number; bottom: number}
+export type RectExt = Rect & { right: number; bottom: number }
 
 export type PaddingVert = {
   top: number
@@ -19,32 +21,32 @@ export type Inset = Padding
 
 export const newPadding = (
   x:
-    | {top: number; bottom: number; left: number; right: number}
-    | {vert: number; left: number; right: number}
-    | {top: number; bottom: number; horz: number}
-    | {vert: number; horz: number}
-    | number
-): Padding => ({...newPaddingHorz(x), ...newPaddingVert(x)})
+    | { top: number; bottom: number; left: number; right: number }
+    | { vert: number; left: number; right: number }
+    | { top: number; bottom: number; horz: number }
+    | { vert: number; horz: number }
+    | number,
+): Padding => ({ ...newPaddingHorz(x), ...newPaddingVert(x) })
 
 export const newPaddingHorz = (
-  x: number | {horz: number} | {left: number; right: number}
+  x: number | { horz: number } | { left: number; right: number },
 ) =>
   typeof x === 'number'
-    ? {left: x, right: x}
+    ? { left: x, right: x }
     : 'horz' in x
-    ? {left: x.horz, right: x.horz}
-    : {left: x.left, right: x.right}
+    ? { left: x.horz, right: x.horz }
+    : { left: x.left, right: x.right }
 
 export const newPaddingVert = (
-  x: number | {vert: number} | {top: number; bottom: number}
+  x: number | { vert: number } | { top: number; bottom: number },
 ) =>
   typeof x === 'number'
-    ? {top: x, bottom: x}
+    ? { top: x, bottom: x }
     : 'vert' in x
-    ? {top: x.vert, bottom: x.vert}
-    : {top: x.top, bottom: x.bottom}
+    ? { top: x.vert, bottom: x.vert }
+    : { top: x.top, bottom: x.bottom }
 
-export type InsetExt = Inset & {width: number; height: number}
+export type InsetExt = Inset & { width: number; height: number }
 export const insetExt = (spec: Inset | RectExt, parentSize: Size): InsetExt => {
   if ('width' in spec) {
     return insetExt(
@@ -54,10 +56,10 @@ export const insetExt = (spec: Inset | RectExt, parentSize: Size): InsetExt => {
         right: parentSize.width - spec.right,
         bottom: parentSize.height - spec.bottom,
       },
-      parentSize
+      parentSize,
     )
   }
-  const {top, left, right, bottom} = spec
+  const { top, left, right, bottom } = spec
   return {
     top,
     left,
@@ -70,17 +72,17 @@ export const insetExt = (spec: Inset | RectExt, parentSize: Size): InsetExt => {
 
 export const rectExt = (
   rect:
-    | {x: number; y: number; width: number; height: number}
-    | {x: number; y: number; width: number; bottom: number}
-    | {x: number; y: number; right: number; height: number}
-    | {x: number; y: number; right: number; bottom: number}
+    | { x: number; y: number; width: number; height: number }
+    | { x: number; y: number; width: number; bottom: number }
+    | { x: number; y: number; right: number; height: number }
+    | { x: number; y: number; right: number; bottom: number },
 ): RectExt => {
   const width = 'width' in rect ? rect.width : rect.right - rect.x
   const height = 'height' in rect ? rect.height : rect.bottom - rect.y
   const right = 'right' in rect ? rect.right : rect.width + rect.x
   const bottom = 'bottom' in rect ? rect.bottom : rect.height + rect.y
-  const {x, y} = rect
-  return {x, y, width, height, bottom, right}
+  const { x, y } = rect
+  return { x, y, width, height, bottom, right }
 }
 
 rectExt.inset = (rect: RectExt, inset: Padding) =>
@@ -100,11 +102,11 @@ rectExt.translate = (rect: RectExt, translate: XY) =>
   })
 
 export const applyRegionToHTMLElement = (
-  {x, y, width, height}: RectExt,
-  element: HTMLElement
+  { x, y, width, height }: RectExt,
+  element: HTMLElement,
 ) => {
-  applyOriginToHTMLElement({x, y}, element)
-  applySizeToHTMLElement({width, height}, element)
+  applyOriginToHTMLElement({ x, y }, element)
+  applySizeToHTMLElement({ width, height }, element)
 }
 
 export const regionCSSStyle = (region: RectExt) => ({
@@ -113,27 +115,30 @@ export const regionCSSStyle = (region: RectExt) => ({
 })
 
 export const applySizeToHTMLElement = (
-  {width, height}: Size,
-  element: HTMLElement
+  { width, height }: Size,
+  element: HTMLElement,
 ) => {
   element.style.width = `${width}px`
   element.style.height = `${height}px`
 }
 
-export const sizeCSSStyle = ({width, height}: Size) => ({
+export const sizeCSSStyle = ({ width, height }: Size) => ({
   width: `${width}px`,
   height: `${height}px`,
 })
 
-export const applyOriginToHTMLElement = ({x, y}: XY, element: HTMLElement) => {
+export const applyOriginToHTMLElement = (
+  { x, y }: XY,
+  element: HTMLElement,
+) => {
   element.style.top = `${y}px`
   element.style.left = `${x}px`
 }
-export const originCSSStyle = ({x, y}: XY) => ({
+export const originCSSStyle = ({ x, y }: XY) => ({
   left: `${x}px`,
   top: `${y}px`,
 })
-export const insetCSSStyle = ({top, left, right, bottom}: Inset) => ({
+export const insetCSSStyle = ({ top, left, right, bottom }: Inset) => ({
   left: `${left}px`,
   top: `${top}px`,
   right: `${right}px`,
@@ -141,46 +146,51 @@ export const insetCSSStyle = ({top, left, right, bottom}: Inset) => ({
 })
 
 export const applyHorzPaddingToHTMLElement = (
-  {left, right}: {left: number; right: number},
-  element: HTMLElement
+  { left, right }: { left: number; right: number },
+  element: HTMLElement,
 ) => {
   element.style.paddingLeft = `${left}px`
   element.style.paddingRight = `${right}px`
 }
 
 export const applyPaddingToHTMLElement = (
-  {left, right, top, bottom}: Padding,
-  element: HTMLElement
+  { left, right, top, bottom }: Padding,
+  element: HTMLElement,
 ) => {
-  applyHorzPaddingToHTMLElement({left, right}, element)
+  applyHorzPaddingToHTMLElement({ left, right }, element)
   element.style.paddingTop = `${top}px`
   element.style.paddingBottom = `${bottom}px`
 }
 
-export const paddingCSS = ({top, left, right, bottom}: Padding) =>
+export const paddingCSS = ({ top, left, right, bottom }: Padding) =>
   `${top}px ${right}px ${bottom}px ${left}px`
 
 export const paddingCSSStyleVert = (
-  {top, bottom}: PaddingVert,
-  {scale = 1}: {scale?: number} = {}
+  { top, bottom }: PaddingVert,
+  { scale = 1 }: { scale?: number } = {},
 ) => ({
   paddingTop: `${top * scale}px`,
   paddingBottom: `${bottom * scale}px`,
 })
 export const paddingCSSStyleHorz = (
-  {left, right}: PaddingHorz,
-  {scale = 1}: {scale?: number} = {}
+  { left, right }: PaddingHorz,
+  { scale = 1 }: { scale?: number } = {},
 ) => ({
   paddingLeft: `${left * scale}px`,
   paddingRight: `${right * scale}px`,
 })
 export const paddingCSSStyle = (
   padding: Padding,
-  {scale}: {scale?: number} = {}
+  { scale }: { scale?: number } = {},
 ) => ({
-  ...paddingCSSStyleHorz(padding, {scale}),
-  ...paddingCSSStyleVert(padding, {scale}),
+  ...paddingCSSStyleHorz(padding, { scale }),
+  ...paddingCSSStyleVert(padding, { scale }),
 })
 
-export type Size = {width: number; height: number}
-export type XY = {x: number; y: number}
+export type Size = { width: number; height: number }
+export type XY = { x: number; y: number }
+
+export const clampPoint = ({ x, y }: XY, rect: RectExt) => ({
+  x: _.clamp(x, rect.x, rect.right),
+  y: _.clamp(y, rect.y, rect.bottom),
+})

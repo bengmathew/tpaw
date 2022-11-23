@@ -2,7 +2,7 @@ import _ from 'lodash'
 import {formatCurrency} from '../../../../Utils/FormatCurrency'
 import {ChartComponent} from '../../../Common/Chart/ChartComponent/ChartComponent'
 import {ChartContext} from '../../../Common/Chart/ChartContext'
-import {chartDataTransitionCurrNumArr} from '../../../Common/Chart/ChartUtils/ChartDataTransition'
+import {chartDataTransitionCurrNumArr} from '../../../../Utils/Transition'
 import {ChartUtils} from '../../../Common/Chart/ChartUtils/ChartUtils'
 import {TPAWChartDataLegacy} from '../TPAWChart/TPAWChartDataLegacy'
 

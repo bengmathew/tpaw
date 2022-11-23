@@ -3,7 +3,7 @@ import {ChartContext} from '../ChartContext'
 import {
   chartDataTransitionCurrNum,
   chartDataTransitionCurrObj,
-} from '../ChartUtils/ChartDataTransition'
+} from '../../../../Utils/Transition'
 import {ChartUtils} from '../ChartUtils/ChartUtils'
 import {ChartComponent} from './ChartComponent'
 
@@ -119,7 +119,7 @@ export class ChartMinMaxYAxis<Data> implements ChartComponent<Data> {
     // The global max.
     ctx.textAlign = 'center'
 
-    const prevGlobalMaxDataX = this.globalMaxX(dataTransition.prev)
+    const prevGlobalMaxDataX = this.globalMaxX(dataTransition.from)
     const targetGlobalMaxDataX = this.globalMaxX(dataTransition.target)
 
     const prevGlobalMaxDataY = chartDataTransitionCurrNum(

@@ -86,7 +86,7 @@ export function planSizingDesktop(windowSize: {
         hidden: hiddenState,
       },
       fixed: {
-        cardPadding:{left: 15, right: 15, top: 10, bottom: 10},
+        cardPadding:{left: 15, right: 15, top: 10, bottom: 0},
       },
     }
   })()

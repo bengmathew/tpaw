@@ -64,7 +64,7 @@ export function planSizingMobile(windowSize: {
         results: resultsState,
         hidden: hiddenState,
       },
-      fixed: {cardPadding},
+      fixed: {cardPadding:{...cardPadding, bottom:0}},
     }
   })()
 

@@ -1,5 +1,5 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react'
-import {cssEaseAsGSAPEase} from '../../../../Utils/CSSEaseAsGSAPEase'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { cssEaseAsGSAPEase } from '../../../../Utils/CSSEaseAsGSAPEase'
 import {
   insetCSSStyle,
   InsetExt,
@@ -7,13 +7,13 @@ import {
   rectExt,
   regionCSSStyle,
 } from '../../../../Utils/Geometry'
-import {Record} from '../../../../Utils/Record'
-import {SimpleRange} from '../../../../Utils/SimpleRange'
-import {useAssertConst} from '../../../../Utils/UseAssertConst'
-import {fGet} from '../../../../Utils/Utils'
-import {useChartData} from '../../../App/WithChartData'
-import {useSimulation} from '../../../App/WithSimulation'
-import {ChartReactStatefull} from '../../../Common/Chart/ChartReact'
+import { Record } from '../../../../Utils/Record'
+import { SimpleRange } from '../../../../Utils/SimpleRange'
+import { useAssertConst } from '../../../../Utils/UseAssertConst'
+import { fGet } from '../../../../Utils/Utils'
+import { useChartData } from '../../../App/WithChartData'
+import { useSimulation } from '../../../App/WithSimulation'
+import { ChartReactStatefull } from '../../../Common/Chart/ChartReact'
 import {
   PlanChartInternalTransitionState,
   planChartMorphAnimation,
@@ -23,17 +23,20 @@ import {
   TPAWChartDataMain,
   tpawChartDataScaled,
 } from '../TPAWChart/TPAWChartDataMain'
-import {TPAWChartMain} from '../TPAWChart/TPAWChartMain'
-import {usePlanChartType} from '../UsePlanChartType'
-import {HeightsForWidths} from './HeightsForWidths'
-import {PlanChartMainCardMenu} from './PlanChartMainCardMenu'
-import {PlanChartMainCardMenuButton} from './PlanChartMainCardMenuButton'
-import {PlanInputMainCardHelp} from './PlanInputMainCardHelp'
+import {
+  TPAWChartMain,
+  tpawChartMainXAxisSizing,
+} from '../TPAWChart/TPAWChartMain'
+import { usePlanChartType } from '../UsePlanChartType'
+import { HeightsForWidths } from './HeightsForWidths'
+import { PlanChartMainCardMenu } from './PlanChartMainCardMenu'
+import { PlanChartMainCardMenuButton } from './PlanChartMainCardMenuButton'
+import { PlanInputMainCardHelp } from './PlanInputMainCardHelp'
 
 export type PlanChartMainCardSizing = {
   dynamic: Record<
     PlanChartInternalTransitionState,
-    {mainCard: {inset: InsetExt}}
+    { mainCard: { inset: InsetExt } }
   >
   fixed: {
     cardPadding: Padding
@@ -55,31 +58,32 @@ export const PlanChartMainCard = React.memo(
     yRange: SimpleRange
     setYRange: (y: SimpleRange) => void
     sizing: PlanChartMainCardSizing
-    transition: {target: PlanChartInternalTransitionState; duration: number}
+    transition: { target: PlanChartInternalTransitionState; duration: number }
   }) => {
-    const {params} = useSimulation()
+    const { params, tpawResult } = useSimulation()
     const type = usePlanChartType()
 
     const chartRef = useRef<ChartReactStatefull<TPAWChartDataMain> | null>(null)
     const [heights, setHeights] = useState<{
       menu: Record<_TransitionState, number> | null
       help: Record<_TransitionState, number> | null
-    }>({menu: null, help: null})
+    }>({ menu: null, help: null })
     const [handleMenuHeights] = useState(
       () => (heights: Record<_TransitionState, number>) =>
-        setHeights(x => ({...x, menu: heights}))
+        setHeights((x) => ({ ...x, menu: heights })),
     )
     const [handleHelpHeights] = useState(
       () => (heights: Record<_TransitionState, number>) =>
-        setHeights(x => ({...x, help: heights}))
+        setHeights((x) => ({ ...x, help: heights })),
     )
     const showSuccessRate = params.strategy === 'SWR'
+    const hasPartner = tpawResult.args.params.people.withPartner
 
     const sizing = useMemo(() => {
       const _map = (
         state: _TransitionState,
         dynamic: PlanChartMainCardSizing['dynamic']['hiddenWithLegacy'],
-        showSuccessRate: boolean
+        showSuccessRate: boolean,
       ) =>
         [
           state,
@@ -90,19 +94,20 @@ export const PlanChartMainCard = React.memo(
               menu: heights.menu ? heights.menu[state] : 0,
               help: heights.help ? heights.help[state] : 0,
             },
-            showSuccessRate
+            hasPartner,
+            showSuccessRate,
           ),
         ] as const
 
       return Record.merge(
         Record.map(sizingIn.dynamic, (state, dynamic) =>
-          _map(`${state}WithSuccessRate`, dynamic, true)
+          _map(`${state}WithSuccessRate`, dynamic, true),
         ),
         Record.map(sizingIn.dynamic, (state, dynamic) =>
-          _map(`${state}WithoutSuccessRate`, dynamic, false)
-        )
+          _map(`${state}WithoutSuccessRate`, dynamic, false),
+        ),
       )
-    }, [heights, sizingIn])
+    }, [heights, sizingIn, hasPartner])
     const targetSizing = useMemo(
       () =>
         sizing[
@@ -110,7 +115,7 @@ export const PlanChartMainCard = React.memo(
             showSuccessRate ? 'With' : 'Without'
           }SuccessRate`
         ],
-      [showSuccessRate, sizing, transition.target]
+      [showSuccessRate, sizing, transition.target],
     )
 
     const allChartData = useChartData()
@@ -127,19 +132,19 @@ export const PlanChartMainCard = React.memo(
       if (type === prevState.data.type) {
         chart.setState(
           data,
-          {x: data.years.displayRange, y: prevState.xyRange.y},
-          planChartNormalAnimation
+          { x: data.years.displayRange, y: prevState.xyRange.y },
+          planChartNormalAnimation,
         )
       } else {
         chart.setState(
           tpawChartDataScaled(prevState.data, data.yDisplayRange),
-          {x: prevState.xyRange.x, y: data.yDisplayRange},
-          null
+          { x: prevState.xyRange.x, y: data.yDisplayRange },
+          null,
         )
         chart.setState(
           data,
-          {x: data.years.displayRange, y: data.yDisplayRange},
-          planChartMorphAnimation
+          { x: data.years.displayRange, y: data.yDisplayRange },
+          planChartMorphAnimation,
         )
       }
       setYRange(chart.getState().xyRange.y)
@@ -152,8 +157,8 @@ export const PlanChartMainCard = React.memo(
       const prevState = chart.getState()
       chart.setState(
         prevState.data,
-        {x: prevState.xyRange.x, y: yRange},
-        planChartNormalAnimation
+        { x: prevState.xyRange.x, y: yRange },
+        planChartNormalAnimation,
       )
     }, [yRange])
 
@@ -169,7 +174,7 @@ export const PlanChartMainCard = React.memo(
       transition.target === 'summaryWithoutLegacy'
     return (
       <div
-        className="absolute bg-cardBG   rounded-t-2xl rounded-b-2xl overflow-hidden border-gray-300 border"
+        className="absolute bg-cardBG   rounded-t-2xl rounded-b-2xl overflow-hidden "
         style={{
           transitionProperty: 'top, left, right, bottom',
           transitionDuration: `${transition.duration}ms`,
@@ -179,8 +184,8 @@ export const PlanChartMainCard = React.memo(
         }}
       >
         <HeightsForWidths sizing={sizing} onHeights={handleMenuHeights}>
-          {sizing => (
-            <div style={{width: `${sizing.menu.region.width}px`}}>
+          {(sizing) => (
+            <div style={{ width: `${sizing.menu.region.width}px` }}>
               <PlanChartMainCardMenuButton
                 layout={layout}
                 onClick={() => {}}
@@ -191,15 +196,15 @@ export const PlanChartMainCard = React.memo(
         </HeightsForWidths>
         <div
           className="absolute"
-          style={{...regionCSSStyle(targetSizing.menu.region)}}
+          style={{ ...regionCSSStyle(targetSizing.menu.region) }}
         >
           <PlanChartMainCardMenu layout={layout} transition={transition} />
         </div>
         {layout !== 'mobile' && (
           <>
             <HeightsForWidths sizing={sizing} onHeights={handleHelpHeights}>
-              {sizing => (
-                <div className="" style={{width: sizing.help.width}}>
+              {(sizing) => (
+                <div className="" style={{ width: sizing.help.width }}>
                   <PlanInputMainCardHelp />
                 </div>
               )}
@@ -229,19 +234,37 @@ export const PlanChartMainCard = React.memo(
           }}
           ref={chartRef}
         />
+        {/* <div
+          className="absolute bottom-0 flex justify-center items-center w-full gap-x-4 text-sm sm:text-base "
+          style={{ height: `${sizingIn.fixed.cardPadding.bottom}px` }}
+        >
+          <div className="flex gap-x-2 items-center">
+            {hasPartner && (
+              <div className="w-[8px] h-[8px] bg-theme1 rounded-full"></div>
+            )}
+            <h2 className="font-medium ">Your Age</h2>
+          </div>
+          {hasPartner && (
+            <div className="flex gap-x-2 items-center">
+              <div className="w-[8px] h-[8px] bg-amber-600 rounded-full"></div>
+              <h2 className="font-medium">{`Partner's Age`}</h2>
+            </div>
+          )}
+        </div> */}
       </div>
     )
-  }
+  },
 )
 
 const _transformSizing = (
-  {mainCard}: PlanChartMainCardSizing['dynamic']['hiddenWithLegacy'],
-  {cardPadding}: PlanChartMainCardSizing['fixed'],
-  heights: {menu: number; help: number},
-  showSuccessRate: boolean
+  { mainCard }: PlanChartMainCardSizing['dynamic']['hiddenWithLegacy'],
+  { cardPadding }: PlanChartMainCardSizing['fixed'],
+  heights: { menu: number; help: number },
+  hasPartner: boolean,
+  showSuccessRate: boolean,
 ) => {
   // Scaling does not affect caluclated height, so scale it here.
-  const {inset} = mainCard
+  const { inset } = mainCard
   const menuHeight = heights.menu
   const menu = {
     region: rectExt({
@@ -257,19 +280,27 @@ const _transformSizing = (
     width: inset.width - cardPadding.right - cardPadding.left,
     height: heights.help,
   })
-  const chart = {
-    position: rectExt({
+  const chart = (() => {
+    const position = rectExt({
       x: 0,
       y: help.bottom,
       width: inset.width,
-      bottom: inset.height,
-    }),
-    padding: {
-      left: cardPadding.left,
-      right: cardPadding.right,
-      top: 20, // 20 is needed for the max y label.
-      bottom: cardPadding.bottom + 30 + (showSuccessRate ? 30 : 0), // 30 is needed for the axis, which is in the padding.
-    },
-  }
-  return {menu, help, chart, inset}
+      bottom: inset.height - cardPadding.bottom,
+    })
+    const xAxisSizing = tpawChartMainXAxisSizing(position.width)
+    return {
+      position,
+      padding: {
+        left: cardPadding.left,
+        right: cardPadding.right,
+        top: 20, // 20 is needed for the max y label.
+        bottom:
+          4 +
+          xAxisSizing.height +
+          (hasPartner ? +3 * xAxisSizing.gap + xAxisSizing.height : 2 * xAxisSizing.gap),
+      },
+    }
+  })()
+
+  return { menu, help, chart, inset }
 }

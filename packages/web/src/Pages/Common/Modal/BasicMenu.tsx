@@ -80,7 +80,9 @@ export const BasicMenu = React.memo(
                 boxShadow: '0px 0px 10px 5px rgba(0,0,0,0.28)',
               }}
             >
-              {children[1](() => setShow(false))}
+              <div key={invisible ? 1 : 0}>
+                {children[1](() => setShow(false))}
+              </div>
             </div>
           </div>,
           window.document.body,

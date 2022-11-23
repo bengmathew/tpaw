@@ -24,6 +24,7 @@ export const PlanSummarySaveLongLink = React.memo(({ className = '' }: { classNa
             }).toString()}`
           )
         ).toString()
+
         void navigator.clipboard.writeText(href).then(() => {
           setCopied(true)
           window.setTimeout(() => setCopied(false), 1000)
@@ -33,7 +34,7 @@ export const PlanSummarySaveLongLink = React.memo(({ className = '' }: { classNa
     >
       {copied ? (
         <>
-          <FontAwesomeIcon className="" icon={faClipboard} /> Copied to
+          <FontAwesomeIcon className="mr-2" icon={faClipboard} />Copied to
           clipboard{' '}
           <FontAwesomeIcon className="ml-1 font-bold" icon={faCheck} />
         </>

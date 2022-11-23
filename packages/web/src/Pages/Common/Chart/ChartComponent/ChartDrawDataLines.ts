@@ -1,8 +1,8 @@
 import _ from 'lodash'
-import {fGet} from '../../../../Utils/Utils'
-import {ChartContext} from '../ChartContext'
-import {chartDataTransitionCurrNum} from '../ChartUtils/ChartDataTransition'
-import {ChartComponent} from './ChartComponent'
+import { fGet } from '../../../../Utils/Utils'
+import { ChartContext } from '../ChartContext'
+import { chartDataTransitionCurrNum } from '../../../../Utils/Transition'
+import { ChartComponent } from './ChartComponent'
 
 export const chartDrawDataLines = <Data>({
   lineWidth,
@@ -16,12 +16,12 @@ export const chartDrawDataLines = <Data>({
   }
 }): ChartComponent<Data> => ({
   draw: (context: ChartContext<Data>) => {
-    const {canvasContext: ctx, dataTransition, derivedState} = context
-    const {scale, plotArea, viewport} = derivedState.curr
+    const { canvasContext: ctx, dataTransition, derivedState } = context
+    const { scale, plotArea, viewport } = derivedState.curr
 
     const dataXs = _.range(
       Math.floor(scale.x.inverse(plotArea.x)),
-      Math.ceil(scale.x.inverse(plotArea.x + plotArea.width)) + 1
+      Math.ceil(scale.x.inverse(plotArea.x + plotArea.width)) + 1,
     )
 
     ctx.beginPath()
@@ -31,7 +31,7 @@ export const chartDrawDataLines = <Data>({
       plotArea.x,
       viewport.y,
       plotArea.width,
-      plotArea.y + plotArea.height + Math.ceil(lineWidth)
+      plotArea.y + plotArea.height + Math.ceil(lineWidth),
     )
     ctx.clip()
 
@@ -39,14 +39,14 @@ export const chartDrawDataLines = <Data>({
     ctx.strokeStyle = strokeStyle
     ctx.beginPath()
 
-    const prevLines = dataFn(dataTransition.prev).lines
+    const prevLines = dataFn(dataTransition.from).lines
     const targetLines = dataFn(dataTransition.target).lines
     const mismatch = !_.isEqual(
-      prevLines.map(x => x === null),
-      targetLines.map(x => x === null)
+      prevLines.map((x) => x === null),
+      targetLines.map((x) => x === null),
     )
 
-    prevLines.map((prevLine, i) => {
+    prevLines.forEach((prevLine, i) => {
       const targetLine = targetLines[i]
       if (!mismatch && prevLine === null) return
 
@@ -54,14 +54,14 @@ export const chartDrawDataLines = <Data>({
       const transition = mismatch
         ? null
         : {
-            prev: fGet(prevLine),
+            from: fGet(prevLine),
             target: targetLine,
-            transition: dataTransition.transition,
+            progress: dataTransition.progress,
           }
 
       dataXs.forEach((dataX, j) => {
         const dataY = transition
-          ? chartDataTransitionCurrNum(transition, x => x(dataX))
+          ? chartDataTransitionCurrNum(transition, (x) => x(dataX))
           : targetLine(dataX)
         const graphX = scale.x(dataX)
         const graphY = scale.y(dataY)

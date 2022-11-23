@@ -1,19 +1,21 @@
+import { linearFnFomPoints } from '@tpaw/common'
 import _ from 'lodash'
 import React from 'react'
-import {formatPercentage} from '../../../../Utils/FormatPercentage'
-import {fGet, noCase} from '../../../../Utils/Utils'
-import {ChartXYRange} from '../../../Common/Chart/Chart'
-import {chartDrawDataLines} from '../../../Common/Chart/ChartComponent/ChartDrawDataLines'
-import {chartDrawText} from '../../../Common/Chart/ChartComponent/ChartDrawText'
-import {ChartMinMaxYAxis} from '../../../Common/Chart/ChartComponent/ChartMinMaxYAxis'
-import {ChartPointer} from '../../../Common/Chart/ChartComponent/ChartPointer'
+import { newPadding } from '../../../../Utils/Geometry'
+import { fGet, noCase } from '../../../../Utils/Utils'
+import { ChartXYRange } from '../../../Common/Chart/Chart'
+import { chartDrawDataLines } from '../../../Common/Chart/ChartComponent/ChartDrawDataLines'
+import { ChartMinMaxYAxis } from '../../../Common/Chart/ChartComponent/ChartMinMaxYAxis'
+import { ChartPointer } from '../../../Common/Chart/ChartComponent/ChartPointer'
+import { ChartXAxis } from '../../../Common/Chart/ChartComponent/ChartXAxis'
 import {
   ChartReact,
   ChartReactSizing,
   ChartReactStatefull,
 } from '../../../Common/Chart/ChartReact'
-import {ChartUtils} from '../../../Common/Chart/ChartUtils/ChartUtils'
-import {TPAWChartDataMain} from './TPAWChartDataMain'
+import { ChartUtils } from '../../../Common/Chart/ChartUtils/ChartUtils'
+import { ChartDrawMain } from '../CustomComponents/ChartDrawMain'
+import { TPAWChartDataMain } from './TPAWChartDataMain'
 
 export const TPAWChartMain = React.memo(
   React.forwardRef(
@@ -27,7 +29,7 @@ export const TPAWChartMain = React.memo(
           sizing: ChartReactSizing
         }
       },
-      ref: React.ForwardedRef<ChartReactStatefull<TPAWChartDataMain>>
+      ref: React.ForwardedRef<ChartReactStatefull<TPAWChartDataMain>>,
     ) => {
       return (
         <ChartReact<TPAWChartDataMain>
@@ -36,8 +38,8 @@ export const TPAWChartMain = React.memo(
           components={components}
         />
       )
-    }
-  )
+    },
+  ),
 )
 
 const components = () => {
@@ -48,14 +50,14 @@ const components = () => {
       data.series.type === 'percentiles'
         ? {
             lines: data.series.percentiles
-              .filter(x => !x.isHighlighted)
-              .map(x => x.data),
+              .filter((x) => !x.isHighlighted)
+              .map((x) => x.data),
           }
         : data.series.type === 'labeledLines'
         ? {
             lines: _.times(
               data.series.percentiles.length -
-                data.series.highlightedPercentiles.length
+                data.series.highlightedPercentiles.length,
             ).map(() => null),
           }
         : noCase(data.series),
@@ -67,14 +69,14 @@ const components = () => {
       data.series.type === 'percentiles'
         ? {
             lines: data.series.percentiles
-              .filter(x => x.isHighlighted)
-              .map(x => x.data),
+              .filter((x) => x.isHighlighted)
+              .map((x) => x.data),
           }
         : {
             lines: [
               data.series.lines[0].data,
               ..._.times(data.series.highlightedPercentiles.length - 3).map(
-                () => null
+                () => null,
               ),
               data.series.lines[1].data,
               data.series.lines[2].data,
@@ -85,7 +87,7 @@ const components = () => {
   const minMaxYAxis = new ChartMinMaxYAxis<TPAWChartDataMain>(
     (data, x) => data.yFormat(x),
     ChartUtils.color.gray[800],
-    data => data.max.x,
+    (data) => data.max.x,
     (data, x) => {
       switch (data.series.type) {
         case 'percentiles':
@@ -94,7 +96,7 @@ const components = () => {
             max: fGet(_.last(data.series.percentiles)).data(x),
           }
         case 'labeledLines':
-          const ys = data.series.lines.map(({data}) => data(x))
+          const ys = data.series.lines.map(({ data }) => data(x))
           return {
             min: Math.min(...ys),
             max: Math.max(...ys),
@@ -102,16 +104,16 @@ const components = () => {
         default:
           noCase(data.series)
       }
-    }
+    },
   )
 
   const pointer = new ChartPointer<TPAWChartDataMain>(
-    data => {
+    (data) => {
       switch (data.series.type) {
         case 'percentiles':
           return data.series.percentiles
-            .filter(x => x.isHighlighted)
-            .map(x => ({line: x.data, label: `${x.percentile}`}))
+            .filter((x) => x.isHighlighted)
+            .map((x) => ({ line: x.data, label: `${x.percentile}` }))
         case 'labeledLines': {
           const tpaw = {
             line: data.series.lines[0].data,
@@ -125,15 +127,15 @@ const components = () => {
             line: data.series.lines[2].data,
             label: data.series.lines[2].label,
           }
-          const ordered = _.sortBy([tpaw, spaw, swr], x =>
-            x.line(data.years.displayRange.start)
+          const ordered = _.sortBy([tpaw, spaw, swr], (x) =>
+            x.line(data.years.displayRange.start),
           )
 
           return [
             ordered[0],
             ordered[1],
             ..._.times(
-              data.series.highlightedPercentiles.length - ordered.length
+              data.series.highlightedPercentiles.length - ordered.length,
             ).map(() => null),
             ordered[2],
           ]
@@ -142,29 +144,178 @@ const components = () => {
           noCase(data.series)
       }
     },
-    (data, x) => data.years.display(x),
-    (data: TPAWChartDataMain, x: number, type) =>
-      x === data.years.max + 1
-        ? type === 'short'
-          ? 'L'
-          : 'Legacy'
-        : `${type === 'short' ? '' : 'Age '}${data.years.display(x)}`,
-    (data, x) => data.yFormat(x),
-    data => data.years.retirement,
-    data => data.type !== 'reward-risk-ratio-comparison'
+    ({ dataTransition, derivedState }) => {
+      const data = dataTransition.target
+      const { viewport } = derivedState.curr
+      const { pickPerson, asYFN, years } = data.paramsExt
+      const scaled = (at200: number, at500: number) =>
+        _.clamp(
+          linearFnFomPoints(200, at200, 500, at500)(viewport.width),
+          at200,
+          at500,
+        )
+      return {
+        formatX: (dataX: number) => {
+          return dataX === data.years.max + 1
+            ? [{ text: 'Legacy', color: ChartUtils.color.teal[500] }]
+            : [
+                data.params.people.withPartner
+                  ? {
+                      text: `Ages ${
+                        dataX > asYFN(years.person1.max)
+                          ? '＿'
+                          : pickPerson('person1').ages.current + dataX
+                      },${
+                        dataX > asYFN(years.person2.max)
+                          ? '＿'
+                          : pickPerson('person1').ages.current + dataX
+                      }`,
+                      color: ChartUtils.color.teal[500],
+                    }
+                  : {
+                      text: `Age ${pickPerson('person1').ages.current + dataX}`,
+                      color: ChartUtils.color.teal[500],
+                    },
+              ]
+        },
+        formatY: data.yFormat,
+        showTh: data.type !== 'reward-risk-ratio-comparison',
+        pad: {
+          vert: { top: 8, between: 6, bottom: 11 },
+          horz: {
+            edge: 8,
+            between: scaled(5, 10),
+            outside: { lineLength: 35 * scaled(0.3, 1), margin: scaled(0, 25) },
+          },
+        },
+      }
+    },
   )
 
-  const successRate = chartDrawText<TPAWChartDataMain>(
-    (data, {size, padding}) => ({
-      text: `Success Rate: ${formatPercentage(0)(data.successRate)}`,
-      font: ChartUtils.getFont(17, '600'),
-      fillStyle: ChartUtils.color.gray[700],
-      textAlign: 'right',
-      position: {
-        graphX: size.width - padding.right + 5,
-        graphY: size.height - padding.bottom + 55,
-      },
+  const colorCode = {
+    person1: ChartUtils.color.theme1,
+    person2: ChartUtils.color.theme1,
+  }
+  const xAxis = (personIn: 'person1' | 'person2') =>
+    new ChartXAxis<TPAWChartDataMain>(({ dataTransition, derivedState }) => {
+      let person = personIn
+      const { viewport } = derivedState.curr
+      const { params, pickPerson, years, asYFN } =
+        dataTransition.target.paramsExt
+      if (person === 'person2' && !params.people.withPartner) {
+        // We are invisible anyway, so it does not matter, but this will preven
+        // asserts. Hacky, I know.
+        person = 'person1'
+      }
+      const dataXTransform = (dataX: number) =>
+        dataX + pickPerson(person).ages.current
+      const sizing = tpawChartMainXAxisSizing(viewport.width)
+      const dyn = _dynSizing(viewport.width)
+
+      return {
+        type: (x) =>
+          x % 10 === 0 ? 'large' : x % 5 === 0 ? 'medium' : 'small',
+        tickStyle: (type) => {
+          const result = (length: number, color: string, font: string) => ({
+            length,
+            color,
+            font,
+            gap: 2,
+          })
+          const color =
+            person === 'person1' ? ChartUtils.color.gray : ChartUtils.color.gray
+          return type === 'large'
+            ? result(
+                dyn(4, 6),
+                color[900],
+                ChartUtils.getFont(dyn(8, 10), '500'),
+              )
+            : type === 'medium'
+            ? result(dyn(3, 4), color['600'], ChartUtils.getFont(dyn(8, 9)))
+            : result(dyn(1, 2), color['600'], ChartUtils.getFont(dyn(8, 9)))
+        },
+        style: {
+          background: {
+            retired: ChartUtils.color.gray[300],
+            notRetired: ChartUtils.color.gray[200],
+          },
+        },
+        pointerStyle: {
+          color: {
+            fill: colorCode[person],
+          },
+          height: dyn(6,7)
+        },
+        padding: newPadding({ horz: 1, vert: 0 }),
+        dataXTransform,
+        formatLabel: (transformedDataX) => `${transformedDataX}`,
+        shouldLabel: (pixelsPerTick, type) => {
+          switch (type) {
+            case 'small':
+              return false
+            case 'medium':
+              return pixelsPerTick > 15
+            case 'large':
+              return true
+          }
+        },
+        visible: person === 'person1' ? true : params.people.withPartner,
+        yOffset:
+          4 +
+          (params.people.withPartner
+            ? +sizing.gap +
+              (person === 'person1' ? 0 : sizing.height + sizing.gap)
+            : sizing.gap),
+        maxDataX: asYFN(years[person].max),
+        retirementDataX: asYFN(years[person].retirement),
+        label: person === 'person1' ? 'Your Age' : `Partner's Age`,
+        tempPerson: person,
+        height: sizing.height,
+        labelStyle: {
+          font: ChartUtils.getFont(dyn(12, 14), '600'),
+          color: ChartUtils.color.gray[700],
+          padding: {
+            left: dyn(15, 20),
+            bottom: dyn(2, 3),
+          },
+        },
+      }
     })
-  )
-  return [minorLine, majorLine, minMaxYAxis, pointer, successRate]
+
+  // const successRate = chartDrawText<TPAWChartDataMain>(
+  //   (data, { size, padding }) => ({
+  //     text: `Success Rate: ${formatPercentage(0)(data.successRate)}`,
+  //     font: ChartUtils.getFont(17, '600'),
+  //     fillStyle: ChartUtils.color.gray[700],
+  //     textAlign: 'right',
+  //     position: {
+  //       graphX: size.width - padding.right + 5,
+  //       graphY: size.height - padding.bottom + 55,
+  //     },
+  //   }),
+  // )
+  // return [minorLine, majorLine, minMaxYAxis, xAxis, pointer, successRate]
+  const custom = new ChartDrawMain()
+  return [
+    minorLine,
+    majorLine,
+    minMaxYAxis,
+    pointer,
+    custom,
+    xAxis('person1'),
+    xAxis('person2'),
+    // xAxisLabel,
+  ]
 }
+
+export const tpawChartMainXAxisSizing = (viewportWidth: number) => ({
+  height: _dynSizing(viewportWidth)(22, 23),
+  gap: 2,
+})
+
+const _dynSizing = (viewportWidth: number) => (at250: number, at500: number) =>
+  _.clamp(
+    linearFnFomPoints(250, at250, 500, at500)(viewportWidth),
+    at250,
+    at500,
+  )

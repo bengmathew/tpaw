@@ -137,7 +137,7 @@ export function planSizingLaptop(windowSize: {
   // ---- CHART ----
   const chart = ((): PlanSizing['chart'] => {
     type Dynamic = PlanSizing['chart']['dynamic']['hidden']
-    const cardPadding = {left: 15, right: 15, top: 10, bottom: 10}
+    const cardPadding = {left: 15, right: 15, top: 10, bottom: 0}
     const exceptRegionAndFullyVisible = {
       padding: newPadding({vert: pad * 1.5, horz: pad}),
       legacyWidth: 120,

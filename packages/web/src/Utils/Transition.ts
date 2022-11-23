@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import _ from 'lodash'
-import {zeroOneInterpolate} from './ZeroOneInterpolate'
+import { zeroOneInterpolate } from './ZeroOneInterpolate'
 
-export type ChartDataTransition<Data> = {
-  prev: Data
+export type Transition<Data> = {
+  from: Data
   target: Data
-  transition: number
+  progress: number
 }
 
-export const chartDataTransitionTransform = <T, U>(
-  x: ChartDataTransition<T>,
-  transform: (x: T) => U
-): ChartDataTransition<U> => ({
-  prev: transform(x.prev),
+export const transitionTransform = <T, U>(
+  x: Transition<T>,
+  transform: (x: T) => U,
+): Transition<U> => ({
+  from: transform(x.from),
   target: transform(x.target),
-  transition: x.transition,
+  progress: x.progress,
 })
 
 // Thanks: https://stackoverflow.com/a/47842314
@@ -23,52 +23,54 @@ type Indirect<X> = Record<string, number | number[] | X>
 interface TransitionObject extends Indirect<TransitionObject> {}
 
 export const chartDataTransitionCurrObj = <Obj extends TransitionObject, Data>(
-  dataTransition: ChartDataTransition<Data>,
-  dataFn: (state: Data) => Obj
-): {[P in keyof Obj]: Obj[P]} => {
+  dataTransition: Transition<Data>,
+  dataFn: (state: Data) => Obj,
+): { [P in keyof Obj]: Obj[P] } => {
   const target = dataFn(dataTransition.target)
-  const prev = dataFn(dataTransition.prev)
+  const prev = dataFn(dataTransition.from)
   return _.mapValues(target, (value, key) =>
     typeof value === 'number'
       ? zeroOneInterpolate(
           prev[key] as number,
           target[key] as number,
-          dataTransition
+          dataTransition.progress,
         )
       : value instanceof Array
       ? chartDataTransitionCurrNumArr(
           {
-            prev: prev[key] as any,
+            from: prev[key] as any,
             target: target[key] as any,
-            transition: dataTransition.transition,
+            progress: dataTransition.progress,
           },
-          (x: any) => x
+          (x: any) => x,
         )
       : chartDataTransitionCurrObj(
           {
-            prev: prev[key] as any,
+            from: prev[key] as any,
             target: target[key] as any,
-            transition: dataTransition.transition,
+            progress: dataTransition.progress,
           },
-          (x: any) => x
-        )
+          (x: any) => x,
+        ),
   ) as any
 }
 
 export function chartDataTransitionCurrNum<Data>(
-  dataTransition: ChartDataTransition<Data>,
-  dataFn: (state: Data) => number
+  dataTransition: Transition<Data>,
+  dataFn: (state: Data) => number,
 ): number {
   const target = dataFn(dataTransition.target)
-  const prev = dataFn(dataTransition.prev)
-  return zeroOneInterpolate(prev, target, dataTransition)
+  const prev = dataFn(dataTransition.from)
+  return zeroOneInterpolate(prev, target, dataTransition.progress)
 }
 
 export function chartDataTransitionCurrNumArr<Data>(
-  dataTransition: ChartDataTransition<Data>,
-  dataFn: (state: Data) => number[]
+  dataTransition: Transition<Data>,
+  dataFn: (state: Data) => number[],
 ): number[] {
   const target = dataFn(dataTransition.target)
-  const prev = dataFn(dataTransition.prev)
-  return target.map((t, i) => zeroOneInterpolate(prev[i], t, dataTransition))
+  const prev = dataFn(dataTransition.from)
+  return target.map((t, i) =>
+    zeroOneInterpolate(prev[i], t, dataTransition.progress),
+  )
 }

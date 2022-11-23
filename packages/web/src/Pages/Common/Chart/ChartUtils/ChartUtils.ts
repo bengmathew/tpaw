@@ -1,15 +1,12 @@
-import {Rect} from '../../../../Utils/Geometry'
-import {fGet} from '../../../../Utils/Utils'
+import { Rect } from '../../../../Utils/Geometry'
+import { fGet } from '../../../../Utils/Utils'
 
+type FontWeight = 'bold' | '400' | '500' | '600' | '800' | '900' | ''
 export namespace ChartUtils {
-  export const getFont = (
-    size: number,
-    style: 'bold' | '600' | '800' | '900' | '' = ''
-  ) => `${style} ${size}px Montserrat, sans-serif`
-  export const getMonoFont = (
-    size: number,
-    style: 'bold' | '600' | '800' | '900' | '' = ''
-  ) => `${style} ${size}px Roboto Mono, monospace`
+  export const getFont = (size: number, style: FontWeight = '') =>
+    `${style} ${size}px Montserrat, sans-serif`
+  export const getMonoFont = (size: number, style: FontWeight = '') =>
+    `${style} ${size}px Roboto Mono, monospace`
   export const color = {
     gray: {
       '0': '#FFFFFF',
@@ -206,7 +203,7 @@ export namespace ChartUtils {
       '900': '#78350f',
     },
     // theme2: '#f7dacd',
-  // theme2: '#9ed4cf',
+    // theme2: '#9ed4cf',
     theme1Light: '#14b8a6', // teal 500
     theme1: '#0d9488', // teal 600
     theme1Dark: '#0f766e', // teal 700
@@ -219,30 +216,30 @@ export namespace ChartUtils {
 
   export function roundRect(
     ctx: CanvasRenderingContext2D,
-    {x, y, width, height}: Rect,
-    radius: number
+    { x, y, width, height }: Rect,
+    radius: number,
   ) {
     const right = x + width
     const bottom = y + height
     const edges = [
-      {x, y},
-      {x: right, y},
-      {x: right, y: bottom},
-      {x, y: bottom},
+      { x, y },
+      { x: right, y },
+      { x: right, y: bottom },
+      { x, y: bottom },
     ]
     roundedPolygon(ctx, edges, radius)
   }
 
   // Thanks, https://stackoverflow.com/a/56214413
-  type _Point = {x: number; y: number}
+  type _Point = { x: number; y: number }
   export function roundedPolygon(
     ctx: CanvasRenderingContext2D,
     points: _Point[],
-    radius: number
+    radius: number,
   ) {
     const corners = _roundedPolygonCorners(points, radius)
     ctx.moveTo(corners[0].start.x, corners[0].start.y)
-    for (const {start, ctrl, end} of corners) {
+    for (const { start, ctrl, end } of corners) {
       ctx.lineTo(start.x, start.y)
       ctx.quadraticCurveTo(ctrl.x, ctrl.y, end.x, end.y)
     }
@@ -252,7 +249,7 @@ export namespace ChartUtils {
   export function roundedLine(
     ctx: CanvasRenderingContext2D,
     points: readonly _Point[],
-    radius: number
+    radius: number,
   ) {
     // const [last, ...corners] = _roundedPolygonCorners(points, radius)
     // ctx.moveTo(last[1].x, last[1].y)
@@ -266,7 +263,7 @@ export namespace ChartUtils {
     const first = fGet(corners.pop())
     const last = fGet(corners.pop())
     ctx.moveTo(first.ctrl.x, first.ctrl.y)
-    for (const {start, ctrl, end} of corners) {
+    for (const { start, ctrl, end } of corners) {
       ctx.lineTo(start.x, start.y)
       ctx.quadraticCurveTo(ctrl.x, ctrl.y, end.x, end.y)
     }
@@ -297,7 +294,7 @@ export namespace ChartUtils {
       const start = lerp2D(
         thisPoint,
         lastPoint,
-        lastOffsetDistance / lastEdgeLength
+        lastOffsetDistance / lastEdgeLength,
       )
 
       const nextEdgeLength = distance(nextPoint, thisPoint)
@@ -305,10 +302,10 @@ export namespace ChartUtils {
       const end = lerp2D(
         thisPoint,
         nextPoint,
-        nextOffsetDistance / nextEdgeLength
+        nextOffsetDistance / nextEdgeLength,
       )
 
-      corners.push({start, ctrl: thisPoint, end})
+      corners.push({ start, ctrl: thisPoint, end })
     }
     return corners
   }

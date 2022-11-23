@@ -5,7 +5,7 @@ import {
   ChartReactSizing,
   ChartReactStatefull,
 } from '../../../Common/Chart/ChartReact'
-import {chartDrawLegacy} from '../LegacyComponents/ChartDrawLegacy'
+import {chartDrawLegacy} from '../CustomComponents/ChartDrawLegacy'
 import {TPAWChartDataLegacy} from './TPAWChartDataLegacy'
 
 export const TPAWChartLegacy = React.memo(
