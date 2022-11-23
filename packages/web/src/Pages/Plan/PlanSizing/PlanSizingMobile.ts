@@ -1,9 +1,9 @@
-import {newPadding, rectExt} from '../../../Utils/Geometry'
 import { linearFnFomPoints } from '@tpaw/common'
-import {headerHeight} from '../../App/Header'
-import {PlanSizing} from './PlanSizing'
+import { newPadding, rectExt } from '../../../Utils/Geometry'
+import { headerHeight } from '../../App/Header'
+import { PlanSizing } from './PlanSizing'
 
-const cardPadding = {left: 15, right: 15, top: 10, bottom: 10}
+const cardPadding = { left: 15, right: 15, top: 10, bottom: 10 }
 
 export function planSizingMobile(windowSize: {
   width: number
@@ -16,11 +16,11 @@ export function planSizingMobile(windowSize: {
     const inOriginX = (windowSize.width - width) / 2
     return {
       dynamic: {
-        in: {origin: {x: inOriginX, y: headerHeight}, opacity: 1},
-        out: {origin: {x: inOriginX - 25, y: headerHeight}, opacity: 0},
+        in: { origin: { x: inOriginX, y: headerHeight }, opacity: 1 },
+        out: { origin: { x: inOriginX - 25, y: headerHeight }, opacity: 0 },
       },
       fixed: {
-        size: {width, height: windowSize.height - headerHeight},
+        size: { width, height: windowSize.height - headerHeight },
       },
     }
   })()
@@ -35,10 +35,14 @@ export function planSizingMobile(windowSize: {
         width: windowSize.width,
         height: Math.min(
           400,
-          linearFnFomPoints(375, 350, 412, 360)(windowSize.width)
+          linearFnFomPoints(375, 350, 412, 360)(windowSize.width),
         ),
       }),
-      padding: newPadding({top: pad * .5 + headerHeight, bottom: 45, horz: pad}),
+      padding: newPadding({
+        top: pad * 0.5 + headerHeight,
+        bottom: 45,
+        horz: pad,
+      }),
       legacyWidth: 100,
       intraGap: pad,
       borderRadius: 0,
@@ -54,7 +58,7 @@ export function planSizingMobile(windowSize: {
     const resultsState: Dynamic = inputState
     const hiddenState = {
       ...resultsState,
-      region: rectExt.translate(resultsState.region, {x: 0, y: -15}),
+      region: rectExt.translate(resultsState.region, { x: 0, y: -15 }),
       opacity: 0,
     }
     return {
@@ -64,7 +68,7 @@ export function planSizingMobile(windowSize: {
         results: resultsState,
         hidden: hiddenState,
       },
-      fixed: {cardPadding:{...cardPadding, bottom:0}},
+      fixed: { cardPadding: { top:10, left: 10, right: 10, bottom: 0 } },
     }
   })()
 
@@ -73,23 +77,23 @@ export function planSizingMobile(windowSize: {
     const sizing: PlanSizing['input'] = {
       dynamic: {
         dialogModeIn: {
-          origin: {x: 0, y: headerHeight},
+          origin: { x: 0, y: headerHeight },
           opacity: 1,
         },
         dialogModeOutRight: {
-          origin: {x: 25, y: headerHeight},
+          origin: { x: 25, y: headerHeight },
           opacity: 0,
         },
         dialogModeOutLeft: {
-          origin: {x: -25, y: headerHeight},
+          origin: { x: -25, y: headerHeight },
           opacity: 0,
         },
         notDialogModeIn: {
-          origin: {x: 0, y: chart.dynamic.input.region.bottom},
+          origin: { x: 0, y: chart.dynamic.input.region.bottom },
           opacity: 1,
         },
         notDialogModeOut: {
-          origin: {x: 15, y: chart.dynamic.summary.region.bottom},
+          origin: { x: 15, y: chart.dynamic.summary.region.bottom },
           opacity: 0,
         },
       },
@@ -99,14 +103,14 @@ export function planSizingMobile(windowSize: {
             width: windowSize.width,
             height: windowSize.height - headerHeight,
           },
-          padding: {horz: pad, top: pad * 3},
+          padding: { horz: pad, top: pad * 3 },
         },
         notDialogMode: {
           size: {
             width: windowSize.width,
             height: windowSize.height - chart.dynamic.input.region.bottom,
           },
-          padding: {horz: pad, top: pad * 3},
+          padding: { horz: pad, top: pad * 3 },
         },
         cardPadding,
       },
@@ -119,11 +123,11 @@ export function planSizingMobile(windowSize: {
     return {
       dynamic: {
         in: {
-          origin: {x: 0, y: chart.dynamic.summary.region.bottom},
+          origin: { x: 0, y: chart.dynamic.summary.region.bottom },
           opacity: 1,
         },
         out: {
-          origin: {x: -15, y: chart.dynamic.input.region.bottom},
+          origin: { x: -15, y: chart.dynamic.input.region.bottom },
           opacity: 0,
         },
       },
@@ -132,7 +136,7 @@ export function planSizingMobile(windowSize: {
           width: windowSize.width,
           height: windowSize.height - chart.dynamic.summary.region.bottom,
         },
-        padding: newPadding({horz: pad, top: pad / 2, bottom: 0}),
+        padding: newPadding({ horz: pad, top: pad / 2, bottom: 0 }),
         cardPadding,
       },
     }
@@ -143,11 +147,11 @@ export function planSizingMobile(windowSize: {
     return {
       dynamic: {
         in: {
-          origin: {x: 0, y: chart.dynamic.results.region.bottom},
+          origin: { x: 0, y: chart.dynamic.results.region.bottom },
           opacity: 1,
         },
         outDialogMode: {
-          origin: {x: 0, y: chart.dynamic.results.region.bottom + 15},
+          origin: { x: 0, y: chart.dynamic.results.region.bottom + 15 },
           opacity: 0,
         },
         outNotDialogMode: {
@@ -168,5 +172,5 @@ export function planSizingMobile(windowSize: {
     }
   })()
 
-  return {welcome, chart, input, results, summary}
+  return { welcome, chart, input, results, summary }
 }

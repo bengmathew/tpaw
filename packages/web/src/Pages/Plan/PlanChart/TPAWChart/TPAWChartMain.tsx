@@ -155,36 +155,29 @@ const components = () => {
           at500,
         )
       return {
+        subHeading: 'Percentiles',
         formatX: (dataX: number) => {
+          const ageX = (person: 'person1' | 'person2') =>
+            pickPerson(person).ages.current + dataX
           return dataX === data.years.max + 1
-            ? [{ text: 'Legacy', color: ChartUtils.color.teal[500] }]
-            : [
-                data.params.people.withPartner
-                  ? {
-                      text: `Ages ${
-                        dataX > asYFN(years.person1.max)
-                          ? '＿'
-                          : pickPerson('person1').ages.current + dataX
-                      },${
-                        dataX > asYFN(years.person2.max)
-                          ? '＿'
-                          : pickPerson('person2').ages.current + dataX
-                      }`,
-                      color: ChartUtils.color.teal[500],
-                    }
-                  : {
-                      text: `Age ${pickPerson('person1').ages.current + dataX}`,
-                      color: ChartUtils.color.teal[500],
-                    },
-              ]
+            ? 'Legacy'
+            : data.params.people.withPartner
+            ? `Ages ${
+                dataX > asYFN(years.person1.max) ? '＿' : ageX('person1')
+              },${dataX > asYFN(years.person2.max) ? '＿' : ageX('person2')}`
+            : `Age ${ageX('person1')}`
         },
         formatY: data.yFormat,
         showTh: data.type !== 'reward-risk-ratio-comparison',
         pad: {
-          vert: { top: 8, between: 6, bottom: 11 },
+          vert: {
+            top: scaled(8, 10),
+            between: scaled(6, 9  ),
+            bottom: scaled(8, 10),
+          },
           horz: {
-            edge: 8,
-            between: scaled(5, 10),
+            edge: scaled(8, 10),
+            between: scaled(5, 20),
             outside: { lineLength: 35 * scaled(0.3, 1), margin: scaled(0, 25) },
           },
         },
@@ -244,7 +237,7 @@ const components = () => {
           color: {
             fill: colorCode[person],
           },
-          height: dyn(6,7)
+          height: dyn(6, 7),
         },
         padding: newPadding({ horz: 1, vert: 0 }),
         dataXTransform,

@@ -9,7 +9,8 @@ import { ChartUtils } from '../ChartUtils/ChartUtils'
 import { ChartComponent } from './ChartComponent'
 
 export type ChartPointerOpts = {
-  formatX: (dataX: number) => { text: string; color: string | null }[]
+  subHeading: string
+  formatX: (dataX: number) => string
   formatY: (dataY: number) => string
   showTh: boolean
   pad: {
@@ -142,65 +143,93 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
   }
 }
 
-const _measureText =
-  (canvasContext: CanvasRenderingContext2D) =>
-  (text: string, fontSize: number, style?: 'bold' | '') => {
-    const font = ChartUtils.getMonoFont(fontSize, style)
-    canvasContext.font = font
-    const { width, actualBoundingBoxAscent, actualBoundingBoxDescent } =
-      canvasContext.measureText(text)
-    return {
-      text,
-      font,
-      width,
-      height: actualBoundingBoxAscent + actualBoundingBoxDescent,
-    }
-  }
-
 const _calculateBox = (
   labeledDataYsAtTarget: { dataY: number; label: string }[],
   dataXAtTarget: number,
   canvasContext: CanvasRenderingContext2D,
   { scale, viewport, plotArea }: ChartStateDerived,
-  { formatX, formatY, showTh, pad }: ChartPointerOpts,
+  { subHeading, formatX, formatY, showTh, pad }: ChartPointerOpts,
 ) => {
-  const headerFormatted = formatX(dataXAtTarget)
-  const mt = _measureText(canvasContext)
-  const textInfos = {
-    header: headerFormatted.map(({ text }) => mt(text, 13, 'bold')),
-    lines: labeledDataYsAtTarget.map(({ dataY, label }, i) => ({
-      label: mt(label, 11),
-      dataY: mt(formatY(dataY), 11),
-    })),
-    th: showTh ? mt('th', 7) : null,
+  const getTextInfo = (
+    text: string,
+    font: string,
+    color: string,
+    textAlign: 'left' | 'right',
+  ) => {
+    return {
+      ..._measureText(canvasContext, text, font),
+      draw: (x: number, y: number) => {
+        canvasContext.textBaseline = 'top'
+        canvasContext.textAlign = textAlign
+        canvasContext.font = font
+        canvasContext.fillStyle = color
+        canvasContext.fillText(text, x, y)
+      },
+    }
+  }
+  const defaultColor = ChartUtils.color.gray[200]
+  const lineInfos = {
+    heading: getTextInfo(
+      formatX(dataXAtTarget),
+      ChartUtils.getMonoFont(13, 'bold'),
+      ChartUtils.color.teal[500],
+      'left',
+    ),
+    subHeading: getTextInfo(
+      subHeading,
+      ChartUtils.getMonoFont(12),
+      defaultColor,
+      'left',
+    ),
+    dataLines: (() => {
+      const th = showTh
+        ? getTextInfo('th', ChartUtils.getMonoFont(7), defaultColor, 'left')
+        : null
+      return labeledDataYsAtTarget.map(({ dataY, label }, i) => {
+        const font = ChartUtils.getMonoFont(11)
+        return {
+          label: getTextInfo(label, font, defaultColor, 'right'),
+          th,
+          dataY: getTextInfo(formatY(dataY), font, defaultColor, 'right'),
+        }
+      })
+    })(),
   }
 
-  const headerRelativePosition = { x: pad.horz.edge, y: pad.vert.top }
+  const headingRelativePosition = { x: pad.horz.edge, y: pad.vert.top }
 
   let labelRelativePixelY =
-    headerRelativePosition.y +
-    Math.max(...textInfos.header.map((x) => x.height)) +
-    pad.vert.between
+    headingRelativePosition.y +
+    lineInfos.heading.height +
+    pad.vert.between * .75 +
+    lineInfos.subHeading.height +
+    pad.vert.between +
+    pad.vert.between 
 
-  const labelRelativePixelYs = textInfos.lines.map(({ label }) => {
+  const labelRelativePixelYs = lineInfos.dataLines.map(({ label }) => {
     const result = labelRelativePixelY
     labelRelativePixelY += label.height + pad.vert.between
     return result
   })
   const height = labelRelativePixelY - pad.vert.between + pad.vert.bottom
 
-  const labelsMaxWidth = Math.max(...textInfos.lines.map((x) => x.label.width))
+  const labelsMaxWidth = Math.max(
+    ...lineInfos.dataLines.map((x) => x.label.width),
+  )
   const labelRight = pad.horz.edge + labelsMaxWidth
 
-  const dataYsMaxWidth = Math.max(...textInfos.lines.map((x) => x.dataY.width))
+  const dataYsMaxWidth = Math.max(
+    ...lineInfos.dataLines.map((x) => x.dataY.width),
+  )
 
   const width = Math.max(
     labelRight +
-      (textInfos.th?.width ?? 0) +
+      (lineInfos.dataLines[0].th?.width ?? 0) +
       pad.horz.between +
       dataYsMaxWidth +
       pad.horz.edge,
-    pad.horz.edge * 2 + _.sum(textInfos.header.map((x) => x.width)),
+    pad.horz.edge * 2 + lineInfos.heading.width,
+    pad.horz.edge * 2 + lineInfos.subHeading.width,
   )
 
   const pixelYsAtTarget = labeledDataYsAtTarget.map(({ dataY }) =>
@@ -251,10 +280,10 @@ const _calculateBox = (
 
     // Math.max, because it it goes to far out, the lines won't draw.
     pixelYs
-      .map((x) => Math.max(x, viewport.x - 10000000)) 
+      .map((x) => Math.max(x, viewport.x - 10000000))
       .forEach((pixelY, i) => {
         const graphYOnBox =
-          y + labelRelativePixelYs[i] + textInfos.lines[i].label.height / 2
+          y + labelRelativePixelYs[i] + lineInfos.dataLines[i].label.height / 2
         canvasContext.beginPath()
 
         const line = [
@@ -262,7 +291,6 @@ const _calculateBox = (
           { x: pixelX + (xLineTarget - pixelX) * 0.6, y: graphYOnBox },
           { x: xLineTarget, y: graphYOnBox },
         ]
-        console.dir(line)
         ChartUtils.roundedLine(canvasContext, line, 10)
         canvasContext.stroke()
       })
@@ -278,39 +306,55 @@ const _calculateBox = (
     canvasContext.fillStyle = ChartUtils.color.gray[700]
     canvasContext.fill()
 
-    // Draw the header.
-    let headerPixelX = x + headerRelativePosition.x
-    textInfos.header.forEach(({ font, width, text }, i) => {
-      canvasContext.font = font
-      canvasContext.textAlign = 'left'
-      canvasContext.fillStyle =
-        headerFormatted[i].color ?? ChartUtils.color.gray[200]
-      canvasContext.fillText(text, headerPixelX, y + headerRelativePosition.y)
-      headerPixelX += width
-    })
+    let currY = y + headingRelativePosition.y
+
+    // Draw the heading.
+    lineInfos.heading.draw(x + headingRelativePosition.x, currY)
+    currY += lineInfos.heading.height + pad.vert.between * .75
+
+    // Draw the subHeading.
+    lineInfos.subHeading.draw(x + headingRelativePosition.x, currY)
+    currY += lineInfos.subHeading.height + pad.vert.between
+    canvasContext.beginPath()
+    canvasContext.moveTo(x + pad.horz.edge, currY)
+    canvasContext.lineTo(regionExt.right - pad.horz.edge , currY)
+    canvasContext.lineCap = 'round'
+    canvasContext.lineWidth = .5
+    canvasContext.strokeStyle = ChartUtils.color.gray[400]
+    canvasContext.stroke()
+    currY += pad.vert.between 
+    
+    // canvasContext.beginPath()
+    // ChartUtils.roundRect(
+    //   canvasContext,
+    //   rectExt({ x, y: currY, width: region.width, height: region.height }),
+    //   0,
+    //   )
+    //   canvasContext.fillStyle=ChartUtils.color.gray[500]
+    // canvasContext.fill()
 
     // Draw the text lines.
-    canvasContext.fillStyle = ChartUtils.color.gray[200]
-    textInfos.lines.forEach(({ label, dataY }, i) => {
-      const currY = y + labelRelativePixelYs[i]
-
-      // Draw the label.
-      canvasContext.font = label.font
-      canvasContext.textAlign = 'right'
-      canvasContext.fillText(label.text, x + labelRight, currY)
-
-      // Draw the th.]
-      if (textInfos.th) {
-        canvasContext.font = textInfos.th.font
-        canvasContext.textAlign = 'left'
-        canvasContext.fillText(textInfos.th.text, x + labelRight, currY - 2)
-      }
-      // Draw the dataY.
-      canvasContext.font = dataY.font
-      canvasContext.textAlign = 'right'
-      canvasContext.fillText(dataY.text, right - pad.horz.edge, currY)
+    lineInfos.dataLines.forEach(({ label, th, dataY }, i) => {
+      label.draw(x + labelRight, currY)
+      th?.draw(x + labelRight, currY - 2)
+      dataY.draw(right - pad.horz.edge, currY)
+      currY += label.height + pad.vert.between
     })
   }
 
   return { drawBox, targetBoxInfo }
+}
+
+const _measureText = (
+  canvasContext: CanvasRenderingContext2D,
+  text: string,
+  font: string,
+) => {
+  canvasContext.font = font
+  const { width, actualBoundingBoxAscent, actualBoundingBoxDescent } =
+    canvasContext.measureText(text)
+  return {
+    width,
+    height: actualBoundingBoxAscent + actualBoundingBoxDescent,
+  }
 }
