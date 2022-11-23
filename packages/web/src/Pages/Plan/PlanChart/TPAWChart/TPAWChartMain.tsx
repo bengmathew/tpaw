@@ -168,7 +168,7 @@ const components = () => {
                       },${
                         dataX > asYFN(years.person2.max)
                           ? '＿'
-                          : pickPerson('person1').ages.current + dataX
+                          : pickPerson('person2').ages.current + dataX
                       }`,
                       color: ChartUtils.color.teal[500],
                     }
