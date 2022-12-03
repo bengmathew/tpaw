@@ -238,7 +238,7 @@ const _calculateBox = (
   const pixelXAtTarget = scale.x(dataXAtTarget)
 
   const y = _.clamp(
-    _.mean(pixelYsAtTarget) - height * 0.45,
+    _.mean(pixelYsAtTarget) - height * .75,
     viewport.y,
     plotArea.y + plotArea.height - height - 10,
   )
@@ -278,7 +278,7 @@ const _calculateBox = (
     canvasContext.lineWidth = 1
     canvasContext.strokeStyle = ChartUtils.color.gray[700]
 
-    // Math.max, because it it goes to far out, the lines won't draw.
+    // Math.max, because if it goes to far out, the lines won't draw.
     pixelYs
       .map((x) => Math.max(x, viewport.x - 10000000))
       .forEach((pixelY, i) => {
@@ -310,11 +310,11 @@ const _calculateBox = (
 
     // Draw the heading.
     lineInfos.heading.draw(x + headingRelativePosition.x, currY)
-    currY += lineInfos.heading.height + pad.vert.between * .75
+    currY += lineInfos.heading.height + pad.vert.between 
 
     // Draw the subHeading.
     lineInfos.subHeading.draw(x + headingRelativePosition.x, currY)
-    currY += lineInfos.subHeading.height + pad.vert.between
+    currY += lineInfos.subHeading.height + pad.vert.between * .75
     canvasContext.beginPath()
     canvasContext.moveTo(x + pad.horz.edge, currY)
     canvasContext.lineTo(regionExt.right - pad.horz.edge , currY)
@@ -322,16 +322,7 @@ const _calculateBox = (
     canvasContext.lineWidth = .5
     canvasContext.strokeStyle = ChartUtils.color.gray[400]
     canvasContext.stroke()
-    currY += pad.vert.between 
-    
-    // canvasContext.beginPath()
-    // ChartUtils.roundRect(
-    //   canvasContext,
-    //   rectExt({ x, y: currY, width: region.width, height: region.height }),
-    //   0,
-    //   )
-    //   canvasContext.fillStyle=ChartUtils.color.gray[500]
-    // canvasContext.fill()
+    currY += pad.vert.between  * .75
 
     // Draw the text lines.
     lineInfos.dataLines.forEach(({ label, th, dataY }, i) => {

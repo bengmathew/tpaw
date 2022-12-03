@@ -239,7 +239,7 @@ const components = () => {
           },
           height: dyn(6, 7),
         },
-        padding: newPadding({ horz: 1, vert: 0 }),
+        padding: newPadding({ horz: 1, vert: 1 }),
         dataXTransform,
         formatLabel: (transformedDataX) => `${transformedDataX}`,
         shouldLabel: (pixelsPerTick, type) => {

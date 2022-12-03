@@ -18,7 +18,7 @@ import { usePlanChartType } from './PlanChart/UsePlanChartType'
 import { PlanContent } from './PlanGetStaticProps'
 import {
   isPlanInputType,
-  paramsInputTypes,
+  paramsInputTypes
 } from './PlanInput/Helpers/PlanInputType'
 import { planSectionLabel } from './PlanInput/Helpers/PlanSectionLabel'
 import { PlanSectionName } from './PlanInput/Helpers/PlanSectionName'
@@ -57,7 +57,8 @@ export const Plan = React.memo((planContent: PlanContent) => {
 })
 
 const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
-  const { params, setParams } = useSimulation()
+  const simulation = useSimulation()
+  const { params, setParams } = simulation
   const windowSize = useWindowSize()
   const aspectRatio = windowSize.width / windowSize.height
   const layout =
@@ -214,7 +215,7 @@ function useURLSection() {
 export const useGetSectionURL = () => {
   const path = useRouter().asPath
   return useCallback(
-    (section: PlanSectionName) => {
+    (section:  PlanSectionName) => {
       const url = new URL(`${Config.client.urls.app()}${path}`)
       url.pathname =
         section === 'summary' || section === 'welcome'

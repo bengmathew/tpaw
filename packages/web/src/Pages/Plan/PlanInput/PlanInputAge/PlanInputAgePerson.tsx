@@ -264,7 +264,7 @@ export const PlanInputAgePerson = React.memo(
                 })
                 handleRetired()
               },
-              label: 'Delete Entried',
+              label: 'Delete Entries',
               isWarning: true,
             }}
             onCancel={() => setFutureSavingsWarning([])}

@@ -1,8 +1,8 @@
 import { faLeftLong } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { PlanParams } from '@tpaw/common'
 import Link from 'next/link'
 import React, { ReactNode } from 'react'
-import { PlanParams } from '@tpaw/common'
 import { extendPlanParams } from '../../TPAWSimulator/PlanParamsExt'
 import { FirstYearSavingsPortfolioDetail } from '../../TPAWSimulator/Worker/FirstYearSavingsPortfolioDetail'
 import { TPAWRunInWorkerByPercentileByYearsFromNow } from '../../TPAWSimulator/Worker/TPAWRunInWorker'
@@ -14,27 +14,32 @@ import { AppPage } from '../App/AppPage'
 import { useSimulation } from '../App/WithSimulation'
 import { planSectionLabel } from '../Plan/PlanInput/Helpers/PlanSectionLabel'
 
-type _Props = Omit<FirstYearSavingsPortfolioDetail, 'withdrawals'> & {
+export type TasksForThisYearProps = Omit<
+  FirstYearSavingsPortfolioDetail,
+  'withdrawals'
+> & {
   withdrawals: FirstYearSavingsPortfolioDetail['withdrawals'] & {
-    essentialByEntry: {id: number; label: string | null; amount: number}[]
-    discretionaryByEntry: {id: number; label: string | null; amount: number}[]
+    essentialByEntry: { id: number; label: string | null; amount: number }[]
+    discretionaryByEntry: { id: number; label: string | null; amount: number }[]
   }
   withdrawalsStarted: boolean
   strategy: PlanParams['strategy']
-  risk:{
-    useTPAWPreset:boolean
+  risk: {
+    useTPAWPreset: boolean
   }
 }
 
-const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
+export const getTasksForThisYearProps = (
+  tpawResult: UseTPAWWorkerResult,
+): TasksForThisYearProps => {
   const original = tpawResult.firstYearOfSomeRun
-  const {params} = tpawResult.args
+  const { params } = tpawResult.args
 
-  const {withdrawalsStarted} = extendPlanParams(params.original)
+  const { withdrawalsStarted } = extendPlanParams(params.original)
 
   const firstYearOfAnyPercentile = (
     id: number,
-    {byId}: {byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>}
+    { byId }: { byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow> },
   ) => fGet(byId.get(id)).byPercentileByYearsFromNow[0].data[0]
 
   return {
@@ -42,47 +47,47 @@ const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
     withdrawals: {
       ...original.withdrawals,
       essentialByEntry: params.original.extraSpending.essential.map(
-        ({id, label}) => ({
+        ({ id, label }) => ({
           id,
           label,
           amount: firstYearOfAnyPercentile(
             id,
-            tpawResult.savingsPortfolio.withdrawals.essential
+            tpawResult.savingsPortfolio.withdrawals.essential,
           ),
-        })
+        }),
       ),
       discretionaryByEntry: params.original.extraSpending.discretionary.map(
-        ({id, label}) => ({
+        ({ id, label }) => ({
           id,
           label,
           amount: firstYearOfAnyPercentile(
             id,
-            tpawResult.savingsPortfolio.withdrawals.discretionary
+            tpawResult.savingsPortfolio.withdrawals.discretionary,
           ),
-        })
+        }),
       ),
     },
     withdrawalsStarted,
     strategy: params.strategy,
-    risk:{
-      useTPAWPreset:params.original.risk.useTPAWPreset
-    }
+    risk: {
+      useTPAWPreset: params.original.risk.useTPAWPreset,
+    },
   }
 }
 
 export const TasksForThisYear = React.memo(() => {
-  const {tpawResult} = useSimulation()
-  const props = _getProps(tpawResult)
-  const {withdrawals, withdrawalsStarted} = props
+  const { tpawResult } = useSimulation()
+  const props = getTasksForThisYearProps(tpawResult)
+  const { withdrawals, withdrawalsStarted } = props
 
   return (
     <AppPage
-      className="pt-header min-h-screen"
+      className="pt-header min-h-screen bg-gray-300"
       title="Tasks for This Year - TPAW Planner"
       curr="plan"
     >
-      <div className="flex flex-col items-center mb-20 mt-6">
-        <div className="w-full max-w-[650px] px-2 z-0">
+      <div className="flex flex-col items-center  mt-6 px-4 ">
+        <div className="w-full max-w-[650px] px-4 py-4 z-0 bg-orange-50 rounded-2xl mb-20 ">
           <div className="">
             <div className=" flex flex-row items-center gap-x-4 gap-y-">
               <Link href="/plan">
@@ -114,17 +119,17 @@ export const TasksForThisYear = React.memo(() => {
 
 // -------- SUMMARY --------
 const _Summary = React.memo(
-  ({className, ...props}: _Props & {className: string}) => {
-    const {contributionToOrWithdrawalFromSavingsPortfolio} = props
+  ({ className, ...props }: TasksForThisYearProps & { className: string }) => {
+    const { contributionToOrWithdrawalFromSavingsPortfolio } = props
     const withdrawalText =
       contributionToOrWithdrawalFromSavingsPortfolio.type === 'withdrawal'
         ? `Withdraw ${formatCurrency(
-            contributionToOrWithdrawalFromSavingsPortfolio.withdrawal
+            contributionToOrWithdrawalFromSavingsPortfolio.withdrawal,
           )} from `
         : `Contribute ${formatCurrency(
             Math.abs(
-              contributionToOrWithdrawalFromSavingsPortfolio.contribution
-            )
+              contributionToOrWithdrawalFromSavingsPortfolio.contribution,
+            ),
           )} to`
 
     return (
@@ -139,12 +144,12 @@ const _Summary = React.memo(
         </div>
       </div>
     )
-  }
+  },
 )
 
 //  -------- DETAILS --------
 const _Details = React.memo(
-  ({className, ...props}: _Props & {className: string}) => {
+  ({ className, ...props }: TasksForThisYearProps & { className: string }) => {
     const {
       withdrawals,
       contributionToOrWithdrawalFromSavingsPortfolio,
@@ -164,10 +169,10 @@ const _Details = React.memo(
         {(!withdrawalsStarted ||
           contributionToOrWithdrawalFromSavingsPortfolio.type ===
             'contribution') && <_Contribution className="mb-8" {...props} />}
-        <_AssetAllocation className="mb-8" {...props} />
+        <_AssetAllocation className="" {...props} />
       </div>
     )
-  }
+  },
 )
 
 // -------- HOW MUCH YOU HAVE --------
@@ -177,7 +182,7 @@ const _HowMuchYouHave = React.memo(
     contributions,
     className = '',
     ...props
-  }: _Props & {className?: string}) => {
+  }: TasksForThisYearProps & { className?: string }) => {
     return (
       <div className={className}>
         <_Heading>How Much You Have</_Heading>
@@ -200,12 +205,16 @@ const _HowMuchYouHave = React.memo(
         </p>
       </div>
     )
-  }
+  },
 )
 
 // -------- HOW MUCH TO SPEND --------
 const _HowMuchToSpend = React.memo(
-  ({withdrawals, className = '', ...props}: _Props & {className?: string}) => {
+  ({
+    withdrawals,
+    className = '',
+    ...props
+  }: TasksForThisYearProps & { className?: string }) => {
     const needsBreakdown =
       withdrawals.essentialByEntry.length > 0 ||
       withdrawals.discretionaryByEntry.length > 0
@@ -224,7 +233,7 @@ const _HowMuchToSpend = React.memo(
         {needsBreakdown && (
           <div
             className="grid justify-start gap-x-10 mt-2 p-base"
-            style={{grid: 'auto/auto auto'}}
+            style={{ grid: 'auto/auto auto' }}
           >
             <h2 className="">Regular</h2>
             <h2 className="text-right">
@@ -234,7 +243,7 @@ const _HowMuchToSpend = React.memo(
               <>
                 <h2 className="">Extra</h2>
                 <h2></h2>
-                {withdrawals.essentialByEntry.map(({id, label, amount}) => (
+                {withdrawals.essentialByEntry.map(({ id, label, amount }) => (
                   <React.Fragment key={id}>
                     <h2 className="ml-8">{label ?? '<no label>'}</h2>
                     <h2 className="text-right">
@@ -242,14 +251,16 @@ const _HowMuchToSpend = React.memo(
                     </h2>
                   </React.Fragment>
                 ))}
-                {withdrawals.discretionaryByEntry.map(({id, label, amount}) => (
-                  <React.Fragment key={id}>
-                    <h2 className="ml-8">{label ?? '<no label>'}</h2>
-                    <h2 className="text-right">
-                      <_Value>{amount}</_Value>
-                    </h2>
-                  </React.Fragment>
-                ))}
+                {withdrawals.discretionaryByEntry.map(
+                  ({ id, label, amount }) => (
+                    <React.Fragment key={id}>
+                      <h2 className="ml-8">{label ?? '<no label>'}</h2>
+                      <h2 className="text-right">
+                        <_Value>{amount}</_Value>
+                      </h2>
+                    </React.Fragment>
+                  ),
+                )}
               </>
             ) : (
               <>
@@ -257,14 +268,16 @@ const _HowMuchToSpend = React.memo(
                   <>
                     <h2 className="">Extra - Essential</h2>
                     <h2></h2>
-                    {withdrawals.essentialByEntry.map(({id, label, amount}) => (
-                      <React.Fragment key={id}>
-                        <h2 className="ml-8">{label ?? '<no label>'}</h2>
-                        <h2 className="text-right">
-                          <_Value>{amount}</_Value>
-                        </h2>
-                      </React.Fragment>
-                    ))}
+                    {withdrawals.essentialByEntry.map(
+                      ({ id, label, amount }) => (
+                        <React.Fragment key={id}>
+                          <h2 className="ml-8">{label ?? '<no label>'}</h2>
+                          <h2 className="text-right">
+                            <_Value>{amount}</_Value>
+                          </h2>
+                        </React.Fragment>
+                      ),
+                    )}
                   </>
                 )}
                 {withdrawals.discretionaryByEntry.length > 0 && (
@@ -272,14 +285,14 @@ const _HowMuchToSpend = React.memo(
                     <h2 className="">Extra - Discretionary</h2>
                     <h2></h2>
                     {withdrawals.discretionaryByEntry.map(
-                      ({id, label, amount}) => (
+                      ({ id, label, amount }) => (
                         <React.Fragment key={id}>
                           <h2 className="ml-8">{label ?? '<no label>'}</h2>
                           <h2 className="text-right">
                             <_Value>{amount}</_Value>
                           </h2>
                         </React.Fragment>
-                      )
+                      ),
                     )}
                   </>
                 )}
@@ -289,7 +302,7 @@ const _HowMuchToSpend = React.memo(
         )}
       </div>
     )
-  }
+  },
 )
 
 // -------- HOW TO FUND THE SPENDING --------
@@ -298,7 +311,7 @@ const _HowToFundTheSpending = React.memo(
     withdrawals,
     withdrawalsStarted,
     className = '',
-  }: _Props & {className?: string}) => {
+  }: TasksForThisYearProps & { className?: string }) => {
     return (
       <div className={className}>
         <_Heading>How To Fund The Spending</_Heading>
@@ -308,7 +321,7 @@ const _HowToFundTheSpending = React.memo(
         </p>
         <div
           className="grid  justify-start gap-x-6 p-base"
-          style={{grid: 'auto/auto auto'}}
+          style={{ grid: 'auto/auto auto' }}
         >
           <h2 className="">Withdrawal from Portfolio</h2>
           <h2 className="text-right">
@@ -323,7 +336,7 @@ const _HowToFundTheSpending = React.memo(
         </div>
       </div>
     )
-  }
+  },
 )
 
 // -------- CONTRIBUTION --------
@@ -333,7 +346,7 @@ const _Contribution = React.memo(
     contributionToOrWithdrawalFromSavingsPortfolio,
     withdrawalsStarted,
     className = '',
-  }: _Props & {className?: string}) => {
+  }: TasksForThisYearProps & { className?: string }) => {
     return (
       <div className={className}>
         <_Heading>How Much To Contribute To Your Portfolio</_Heading>
@@ -365,7 +378,7 @@ const _Contribution = React.memo(
         )}
       </div>
     )
-  }
+  },
 )
 
 // -------- ASSET ALLOCATION --------
@@ -374,8 +387,8 @@ const _AssetAllocation = React.memo(
     className = '',
 
     ...props
-  }: _Props & {className?: string}) => {
-    const {contributionToOrWithdrawalFromSavingsPortfolio} = props
+  }: TasksForThisYearProps & { className?: string }) => {
+    const { contributionToOrWithdrawalFromSavingsPortfolio } = props
     return (
       <div className={className}>
         <_Heading>What Asset Allocation To Use</_Heading>
@@ -416,7 +429,7 @@ const _AssetAllocation = React.memo(
               {`This is the asset allocation for your savings portfolio and will typically 
             be different from the asset allocation for the total portfolio that you entered in the "${planSectionLabel(
               'stock-allocation',
-              props.strategy
+              props.strategy,
             )} section." `}
               <Link href="learn/future-savings-and-retirement-income">
                 <a className="underline">Learn more.</a>
@@ -426,18 +439,21 @@ const _AssetAllocation = React.memo(
         </div>
       </div>
     )
-  }
+  },
 )
 
 const _AllocationTable = React.memo(
-  ({className = '', ...props}: _Props & {className?: string}) => {
-    const {allocation} = props.afterWithdrawals
+  ({
+    className = '',
+    ...props
+  }: TasksForThisYearProps & { className?: string }) => {
+    const { allocation } = props.afterWithdrawals
     const stocks = props.afterWithdrawals.balance * allocation.stocks
     const bonds = props.afterWithdrawals.balance - stocks
     return (
       <div
         className={`${className} grid justify-start gap-x-16`}
-        style={{grid: 'auto/auto auto'}}
+        style={{ grid: 'auto/auto auto' }}
       >
         <h2 className="">Stocks - {formatPercentage(0)(allocation.stocks)}</h2>
         <h2 className="text-right">
@@ -451,15 +467,15 @@ const _AllocationTable = React.memo(
         </h2>
       </div>
     )
-  }
+  },
 )
 
-const _Heading = React.memo(({children}: {children: ReactNode}) => (
+const _Heading = React.memo(({ children }: { children: ReactNode }) => (
   <h2 className="font-bold text-lg mb-1">{children}</h2>
 ))
 
 const _Value = React.memo(
-  ({children, className}: {children: number; className?: string}) => (
+  ({ children, className }: { children: number; className?: string }) => (
     <span className={className}>{formatCurrency(children)}</span>
-  )
+  ),
 )

@@ -8,6 +8,7 @@ import {PlanWelcomeSizing} from '../PlanWelcome'
 import {planSizingDesktop} from './PlanSizingDesktop'
 import {planSizingLaptop} from './PlanSizingLaptop'
 import {planSizingMobile} from './PlanSizingMobile'
+import { SimulationInfo } from '../../App/WithSimulation'
 
 
 export type PlanSizing = {
@@ -20,7 +21,7 @@ export type PlanSizing = {
 
 export function planSizing(
   layout: 'mobile' | 'laptop' | 'desktop',
-  windowSize: Size
+  windowSize: Size,
 ) {
   switch (layout) {
     case 'laptop':

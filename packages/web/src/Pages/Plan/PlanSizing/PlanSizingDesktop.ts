@@ -1,6 +1,6 @@
-import {newPadding, rectExt} from '../../../Utils/Geometry'
 import { linearFnFomPoints } from '@tpaw/common'
-import {PlanSizing} from './PlanSizing'
+import { newPadding, rectExt } from '../../../Utils/Geometry'
+import { PlanSizing } from './PlanSizing'
 
 const pad = 40
 const cardPadding = newPadding(20)
@@ -9,7 +9,6 @@ export function planSizingDesktop(windowSize: {
   width: number
   height: number
 }): PlanSizing {
-
   const contentWidth = 600
 
   // ---- WELCOME ----
@@ -19,22 +18,21 @@ export function planSizingDesktop(windowSize: {
     return {
       dynamic: {
         in: {
-          origin: {x: inOriginX, y: 0},
+          origin: { x: inOriginX, y: 0 },
           opacity: 1,
         },
         out: {
-          origin: {x: inOriginX - 25, y: 0},
+          origin: { x: inOriginX - 25, y: 0 },
           opacity: 0,
         },
       },
       fixed: {
-        size: {width, height: windowSize.height},
+        size: { width, height: windowSize.height },
       },
     }
   })()
 
   // ---- CHART ----
-
   const chart = ((): PlanSizing['chart'] => {
     type Dynamic = PlanSizing['chart']['dynamic']['hidden']
     const summaryState: Dynamic = {
@@ -47,12 +45,9 @@ export function planSizingDesktop(windowSize: {
             ? linearFnFomPoints(400, 300, 800, 550)(windowSize.width)
             : 550,
       }),
-      padding: newPadding({vert: pad * 1.5, horz: pad}),
-      legacyWidth: 120,
-      intraGap: pad,
+      padding: newPadding({ vert: pad * 1.5, horz: pad }),
       borderRadius: 0,
       opacity: 1,
-      tasksOpacity: 1,
     }
 
     const inputState = {
@@ -61,21 +56,20 @@ export function planSizingDesktop(windowSize: {
         x: 0,
         y: 0,
         width: summaryState.region.width,
-        height: summaryState.region.height - 50,
+        height: summaryState.region.height - 30,
       }),
       padding: newPadding({
         horz: summaryState.padding.left,
         top: summaryState.padding.top,
-        bottom: summaryState.padding.bottom * 0.75,
+        bottom: summaryState.padding.bottom * 0.90,
       }),
-      tasksOpacity: 0,
     }
     const resultsState: Dynamic = {
       ...inputState,
     }
     const hiddenState = {
       ...resultsState,
-      region: rectExt.translate(resultsState.region, {x: 0, y: -30}),
+      region: rectExt.translate(resultsState.region, { x: 0, y: -30 }),
       opacity: 0,
     }
     return {
@@ -86,7 +80,8 @@ export function planSizingDesktop(windowSize: {
         hidden: hiddenState,
       },
       fixed: {
-        cardPadding:{left: 15, right: 15, top: 10, bottom: 0},
+        intraGap: pad / 2,
+        cardPadding: { left: 15, right: 15, top: 10, bottom: 10 },
       },
     }
   })()
@@ -94,34 +89,36 @@ export function planSizingDesktop(windowSize: {
   // ---- INPUT ----
 
   const input = ((): PlanSizing['input'] => {
-
     return {
       dynamic: {
         dialogModeIn: {
-          origin: {x: 0, y: 0},
+          origin: { x: 0, y: 0 },
           opacity: 1,
         },
         dialogModeOutRight: {
-          origin: {x: 25, y: 0},
+          origin: { x: 25, y: 0 },
           opacity: 0,
         },
         dialogModeOutLeft: {
-          origin: {x: -25, y: 0},
+          origin: { x: -25, y: 0 },
           opacity: 0,
         },
         notDialogModeIn: {
-          origin: {x: 0, y: chart.dynamic.input.region.bottom},
+          origin: { x: 0, y: chart.dynamic.input.region.bottom },
           opacity: 1,
         },
         notDialogModeOut: {
-          origin: {x: 0, y: chart.dynamic.summary.region.bottom},
+          origin: { x: 0, y: chart.dynamic.summary.region.bottom },
           opacity: 0,
         },
       },
       fixed: {
         dialogMode: {
-          size: {...windowSize},
-          padding: {horz: (windowSize.width - contentWidth) / 2, top: pad * 2},
+          size: { ...windowSize },
+          padding: {
+            horz: (windowSize.width - contentWidth) / 2,
+            top: pad * 2,
+          },
         },
         notDialogMode: {
           size: {
@@ -144,11 +141,11 @@ export function planSizingDesktop(windowSize: {
     return {
       dynamic: {
         in: {
-          origin: {x: 0, y: chart.dynamic.summary.region.bottom},
+          origin: { x: 0, y: chart.dynamic.summary.region.bottom },
           opacity: 1,
         },
         out: {
-          origin: {x: 0, y: chart.dynamic.input.region.bottom},
+          origin: { x: 0, y: chart.dynamic.input.region.bottom },
           opacity: 0,
         },
       },
@@ -173,15 +170,15 @@ export function planSizingDesktop(windowSize: {
     return {
       dynamic: {
         in: {
-          origin: {x: 0, y: chart.dynamic.results.region.bottom},
+          origin: { x: 0, y: chart.dynamic.results.region.bottom },
           opacity: 1,
         },
         outDialogMode: {
-          origin: {x: 0, y: chart.dynamic.results.region.bottom + 30},
+          origin: { x: 0, y: chart.dynamic.results.region.bottom + 30 },
           opacity: 0,
         },
         outNotDialogMode: {
-          origin: {x: 0, y: chart.dynamic.summary.region.bottom},
+          origin: { x: 0, y: chart.dynamic.summary.region.bottom },
           opacity: 0,
         },
       },
@@ -195,5 +192,5 @@ export function planSizingDesktop(windowSize: {
     }
   })()
 
-  return {welcome, chart, input, results, summary}
+  return { welcome, chart, input, results, summary }
 }

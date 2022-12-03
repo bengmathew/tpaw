@@ -9,7 +9,7 @@ export function planSizingMobile(windowSize: {
   width: number
   height: number
 }): PlanSizing {
-  const pad = windowSize.width < 400 ? 10 : 15
+  const pad = windowSize.width < 400 ? 10 : 12
   // ---- WELCOME ----
   const welcome = ((): PlanSizing['welcome'] => {
     const width = windowSize.width - pad * 2
@@ -35,7 +35,7 @@ export function planSizingMobile(windowSize: {
         width: windowSize.width,
         height: Math.min(
           400,
-          linearFnFomPoints(375, 350, 412, 360)(windowSize.width),
+          linearFnFomPoints(375, 355, 412, 360)(windowSize.width),
         ),
       }),
       padding: newPadding({
@@ -43,16 +43,12 @@ export function planSizingMobile(windowSize: {
         bottom: 45,
         horz: pad,
       }),
-      legacyWidth: 100,
-      intraGap: pad,
       borderRadius: 0,
       opacity: 1,
-      tasksOpacity: 1,
     }
 
     const inputState = {
       ...summaryState,
-      tasksOpacity: 0,
     }
 
     const resultsState: Dynamic = inputState
@@ -68,7 +64,10 @@ export function planSizingMobile(windowSize: {
         results: resultsState,
         hidden: hiddenState,
       },
-      fixed: { cardPadding: { top:10, left: 10, right: 10, bottom: 0 } },
+      fixed: {
+        intraGap: pad,
+        cardPadding: { top: 7, left: 10, right: 10, bottom: 7 },
+      },
     }
   })()
 

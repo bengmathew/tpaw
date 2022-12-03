@@ -18,7 +18,7 @@ export const PlanSummarySave = React.memo(
     const firebaseUser = useFirebaseUser()
     return (
       <BasicMenu align="right">
-        <div className="flex items-center gap-x-2 font-medium bg-theme1 rounded-lg px-4 py-2 mt-0.5">
+        <div className="flex items-center gap-x-2 font-medium bg-gray-700 text-white rounded-lg px-4 py-2 mt-0.5">
           Save / Reset
           <FontAwesomeIcon icon={faCaretDown} />
         </div>
@@ -60,7 +60,10 @@ export const PlanSummarySave = React.memo(
               </Link>
             )}
             <h2 className=" px-4 text-base font-bold mt-4 mb-2">Get a Link</h2>
-            <PlanSummarySaveLongLink className="w-full text-start py-2 px-4" />
+            <PlanSummarySaveLongLink
+              className="w-full text-start py-2 px-4"
+              closeMenu={closeMenu}
+            />
             <PlanSummarySaveShortLink
               className="w-full text-start py-2 px-4"
               closeMenu={closeMenu}

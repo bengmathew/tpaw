@@ -91,7 +91,7 @@ export class ChartXAxis<Data> implements ChartComponent<Data> {
     {
       canvasContext.save()
       canvasContext.beginPath()
-      ChartUtils.roundRect(canvasContext, pixelRegion, 3)
+      ChartUtils.roundRect(canvasContext, pixelRegion, 5)
       canvasContext.clip()
 
       canvasContext.fillStyle = style.background.notRetired

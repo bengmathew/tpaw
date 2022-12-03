@@ -1,5 +1,5 @@
-import {newPadding, rectExt} from '../../../Utils/Geometry'
-import {PlanSizing} from './PlanSizing'
+import { newPadding, rectExt } from '../../../Utils/Geometry'
+import { PlanSizing } from './PlanSizing'
 
 export function planSizingLaptop(windowSize: {
   width: number
@@ -15,8 +15,8 @@ export function planSizingLaptop(windowSize: {
     const inOriginX = (windowSize.width - width) / 2
     return {
       dynamic: {
-        in: {origin: {x: inOriginX, y: 0}, opacity: 1},
-        out: {origin: {x: inOriginX - 25, y: 0}, opacity: 0},
+        in: { origin: { x: inOriginX, y: 0 }, opacity: 1 },
+        out: { origin: { x: inOriginX - 25, y: 0 }, opacity: 0 },
       },
       fixed: {
         size: {
@@ -35,32 +35,32 @@ export function planSizingLaptop(windowSize: {
     }
     type Dynamic = PlanSizing['input']['dynamic']['dialogModeIn']
     const dialogModeIn: Dynamic = {
-      origin: {x: 0, y: 0},
+      origin: { x: 0, y: 0 },
       opacity: 1,
     }
     return {
       dynamic: {
         dialogModeIn,
         dialogModeOutRight: {
-          origin: {x: 25, y: 0},
+          origin: { x: 25, y: 0 },
           opacity: 0,
         },
         dialogModeOutLeft: {
-          origin: {x: -25, y: 0},
+          origin: { x: -25, y: 0 },
           opacity: 0,
         },
         notDialogModeIn: {
-          origin: {x: 0, y: 0},
+          origin: { x: 0, y: 0 },
           opacity: 1,
         },
         notDialogModeOut: {
-          origin: {x: -(inputWidth.notDialogMode - summaryWidth), y: 0},
+          origin: { x: -(inputWidth.notDialogMode - summaryWidth), y: 0 },
           opacity: 0,
         },
       },
       fixed: {
         dialogMode: {
-          size: {...windowSize},
+          size: { ...windowSize },
           padding: {
             horz: (windowSize.width - inputWidth.dialogMode) / 2,
             top: pad * 2,
@@ -71,7 +71,7 @@ export function planSizingLaptop(windowSize: {
             width: inputWidth.notDialogMode,
             height: windowSize.height,
           },
-          padding: {left: pad, right: pad * 0.75, top: pad * 2},
+          padding: { left: pad, right: pad * 0.75, top: pad * 2 },
         },
         cardPadding: newPadding(20),
       },
@@ -84,35 +84,35 @@ export function planSizingLaptop(windowSize: {
     return {
       dynamic: {
         in: {
-          origin: {x: 0, y: 0},
+          origin: { x: 0, y: 0 },
           opacity: 1,
         },
         outDialogMode: {
           // origin: {x: -(width - summaryWidth), y: 0},
 
-          origin: {x: 50, y: 0},
+          origin: { x: 50, y: 0 },
           opacity: 0,
         },
         outNotDialogMode: {
-          origin: {x: -50, y: 0},
+          origin: { x: -50, y: 0 },
           opacity: 0,
         },
       },
       fixed: {
-        size: {width, height: windowSize.height},
-        padding: {left: pad, right: pad * 0.95, top: pad * 2},
+        size: { width, height: windowSize.height },
+        padding: { left: pad, right: pad * 0.95, top: pad * 2 },
       },
     }
   })()
 
   // ---- SUMMARY ----
   const summary = ((): PlanSizing['summary'] => {
-    const size = {width: summaryWidth, height: windowSize.height}
+    const size = { width: summaryWidth, height: windowSize.height }
 
     return {
       dynamic: {
         in: {
-          origin: {x: 0, y: 0},
+          origin: { x: 0, y: 0 },
           opacity: 1,
         },
         out: {
@@ -128,7 +128,7 @@ export function planSizingLaptop(windowSize: {
       },
       fixed: {
         size,
-        padding: {left: pad, right: pad * 0.75, top: pad / 2},
+        padding: { left: pad, right: pad * 0.75, top: pad / 2 },
         cardPadding: newPadding(20),
       },
     }
@@ -137,14 +137,11 @@ export function planSizingLaptop(windowSize: {
   // ---- CHART ----
   const chart = ((): PlanSizing['chart'] => {
     type Dynamic = PlanSizing['chart']['dynamic']['hidden']
-    const cardPadding = {left: 15, right: 15, top: 10, bottom: 0}
-    const exceptRegionAndFullyVisible = {
-      padding: newPadding({vert: pad * 1.5, horz: pad}),
-      legacyWidth: 120,
-      intraGap: 20,
+    const cardPadding = { left: 15, right: 15, top: 10, bottom: 10 }
+    const exceptRegionAndFullyVisible: Omit<Dynamic, 'region'> = {
+      padding: newPadding({ vert: pad * 1.5, horz: pad }),
       borderRadius: 16,
       opacity: 1,
-      tasksOpacity: 1,
     }
     const summaryState: Dynamic = (() => {
       return {
@@ -173,12 +170,11 @@ export function planSizingLaptop(windowSize: {
         horz: summaryState.padding.left * 0.85,
         vert: summaryState.padding.top * 0.85,
       }),
-      tasksOpacity: 0,
     }
     const resultsState = inputState
     const hiddenState = {
       ...resultsState,
-      region: rectExt.translate(resultsState.region, {x: 50, y: 0}),
+      region: rectExt.translate(resultsState.region, { x: 50, y: 0 }),
       opacity: 0,
     }
     return {
@@ -188,9 +184,12 @@ export function planSizingLaptop(windowSize: {
         results: resultsState,
         hidden: hiddenState,
       },
-      fixed: {cardPadding},
+      fixed: {
+        intraGap: 20,
+        cardPadding,
+      },
     }
   })()
 
-  return {welcome, input, results, chart, summary}
+  return { welcome, input, results, chart, summary }
 }

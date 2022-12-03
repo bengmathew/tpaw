@@ -45,7 +45,6 @@ export type SimulationInfo = {
 const [Context, useSimulation] = createContext<SimulationInfo>('Simulation')
 
 const highlightPercentiles = [5, 25, 50, 75, 95]
-// const highlightPercentiles = [10, 90]
 const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
 
 export { useSimulation }

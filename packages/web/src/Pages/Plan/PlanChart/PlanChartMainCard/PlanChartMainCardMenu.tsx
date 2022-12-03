@@ -7,7 +7,7 @@ import React, {
   useCallback,
   useEffect,
   useRef,
-  useState
+  useState,
 } from 'react'
 import ReactDOM from 'react-dom'
 import { Contentful } from '../../../../Utils/Contentful'
@@ -15,21 +15,24 @@ import {
   applyOriginToHTMLElement,
   Padding,
   rectExt,
-  RectExt
+  RectExt,
 } from '../../../../Utils/Geometry'
 import { assert, fGet, noCase } from '../../../../Utils/Utils'
 import { useChartData } from '../../../App/WithChartData'
 import { useSimulation } from '../../../App/WithSimulation'
 import { useWindowSize } from '../../../App/WithWindowSize'
 import { chartDrawDataLines } from '../../../Common/Chart/ChartComponent/ChartDrawDataLines'
-import { ChartReact, ChartReactStatefull } from '../../../Common/Chart/ChartReact'
+import {
+  ChartReact,
+  ChartReactStatefull,
+} from '../../../Common/Chart/ChartReact'
 import { ChartUtils } from '../../../Common/Chart/ChartUtils/ChartUtils'
 import { usePlanContent } from '../../Plan'
-import { PlanChartInternalTransitionState } from '../PlanChart'
+import { PlanChartTransitionState } from '../PlanChart'
 import {
   isPlanChartSpendingDiscretionaryType,
   isPlanChartSpendingEssentialType,
-  PlanChartType
+  PlanChartType,
 } from '../PlanChartType'
 import { TPAWChartDataMain } from '../TPAWChart/TPAWChartDataMain'
 import { useGetPlanChartURL } from '../UseGetPlanChartURL'
@@ -47,18 +50,16 @@ export const PlanChartMainCardMenu = React.memo(
   ({
     className = '',
     style,
-    layout,
     transition,
   }: {
     className?: string
     style?: CSSProperties
-    layout: 'mobile' | 'desktop' | 'laptop'
-    transition: {target: PlanChartInternalTransitionState; duration: number}
+    transition: { target: PlanChartTransitionState; duration: number }
   }) => {
     const windowSize = useWindowSize()
     const width = Math.min(windowSize.width, maxWidth)
     const simulation = useSimulation()
-    const {params} = simulation.tpawResult.args
+    const { params } = simulation.tpawResult.args
     const type = usePlanChartType()
 
     const referenceElementRef = useRef<HTMLDivElement | null>(null)
@@ -69,7 +70,7 @@ export const PlanChartMainCardMenu = React.memo(
     const [show, setShow] = useState(false)
 
     const handleShow = () => {
-      setDrawKey(x => x + 1)
+      setDrawKey((x) => x + 1)
       setShow(true)
       const position = fGet(referenceElementRef.current).getBoundingClientRect()
       const origin = {
@@ -98,7 +99,6 @@ export const PlanChartMainCardMenu = React.memo(
           className={className}
           style={style}
           onClick={handleShow}
-          layout={layout}
           transition={transition}
         />
 
@@ -137,7 +137,7 @@ export const PlanChartMainCardMenu = React.memo(
                     type="spending-general"
                     {...buttonProps}
                   />
-                  {params.original.extraSpending.essential.map(x => (
+                  {params.original.extraSpending.essential.map((x) => (
                     <_Link
                       className="pl-10"
                       key={`essential-${x.id}`}
@@ -145,7 +145,7 @@ export const PlanChartMainCardMenu = React.memo(
                       {...buttonProps}
                     />
                   ))}
-                  {params.original.extraSpending.discretionary.map(x => (
+                  {params.original.extraSpending.discretionary.map((x) => (
                     <_Link
                       className="pl-10"
                       key={`discretionary-${x.id}`}
@@ -170,11 +170,11 @@ export const PlanChartMainCardMenu = React.memo(
               <_Link type={'withdrawal'} {...buttonProps} />
             </div>
           </div>,
-          window.document.body
+          window.document.body,
         )}
       </>
     )
-  }
+  },
 )
 
 const _Link = React.memo(
@@ -191,12 +191,12 @@ const _Link = React.memo(
     type: Exclude<PlanChartType, 'reward-risk-ratio-comparison'>
     drawKey: number
   }) => {
-    const {tpawResult} = useSimulation()
-    const {params} = tpawResult.args
+    const { tpawResult } = useSimulation()
+    const { params } = tpawResult.args
     const getPlanChartURL = useGetPlanChartURL()
     const chartData = fGet(useChartData().byYearsFromNowPercentiles.get(type))
     const [description] = useInfo(type)
-    const {label, subLabel} = planChartLabel(params.original, type, 'short')
+    const { label, subLabel } = planChartLabel(params.original, type, 'short')
     const isCurrent = _.isEqual(currType, type)
     const windowSize = useWindowSize()
     const width = windowSize.width < 640 ? 120 : 145
@@ -207,7 +207,7 @@ const _Link = React.memo(
           className={`${className} text-left px-4 py-2  grid  gap-x-4 items-center
           ${isCurrent ? 'bg-gray-200 ' : ''} `}
           onClick={() => onHide()}
-          style={{grid: 'auto / 1fr auto'}}
+          style={{ grid: 'auto / 1fr auto' }}
         >
           <div className="">
             <h2 className="text-base sm:text-lg font-bold">
@@ -240,26 +240,26 @@ const _Link = React.memo(
                 ? 'bg-gray-300 border-gray-300 '
                 : 'bg-gray-200 border-gray-300 '
             }`}
-            style={{width: `${width}px`, height: `${height}px`}}
+            style={{ width: `${width}px`, height: `${height}px` }}
           >
             <_Chart
               data={chartData}
               isCurrent={isCurrent}
               drawKey={drawKey}
               startingSizing={{
-                position: rectExt({x: 0, y: 0, width, height}),
-                padding: {left: 10, right: 10, top: 5, bottom: 5},
+                position: rectExt({ x: 0, y: 0, width, height }),
+                padding: { left: 10, right: 10, top: 5, bottom: 5 },
               }}
             />
           </div>
         </a>
       </Link>
     )
-  }
+  },
 )
 
 const useInfo = (
-  panelType: Exclude<PlanChartType, 'reward-risk-ratio-comparison'>
+  panelType: Exclude<PlanChartType, 'reward-risk-ratio-comparison'>,
 ) => {
   const content = usePlanContent().chart
   switch (panelType) {
@@ -295,7 +295,7 @@ const _Chart = React.memo(
     data: TPAWChartDataMain
     isCurrent: boolean
     drawKey: number
-    startingSizing: {position: RectExt; padding: Padding}
+    startingSizing: { position: RectExt; padding: Padding }
   }) => {
     const ref = useRef<ChartReactStatefull<TPAWChartDataMain>>(null)
     useEffect(() => {
@@ -306,7 +306,7 @@ const _Chart = React.memo(
           x: data.years.displayRange,
           y: data.yDisplayRange,
         },
-        null
+        null,
       )
     }, [data, drawKey])
 
@@ -321,8 +321,8 @@ const _Chart = React.memo(
             assert(data.series.type === 'percentiles')
             return {
               lines: data.series.percentiles
-                .filter(x => !x.isHighlighted)
-                .map(x => x.data),
+                .filter((x) => !x.isHighlighted)
+                .map((x) => x.data),
             }
           },
         }),
@@ -336,13 +336,13 @@ const _Chart = React.memo(
             assert(data.series.type === 'percentiles')
             return {
               lines: data.series.percentiles
-                .filter(x => x.isHighlighted)
-                .map(x => x.data),
+                .filter((x) => x.isHighlighted)
+                .map((x) => x.data),
             }
           },
         }),
       ],
-      [isCurrent]
+      [isCurrent],
     )
 
     return (
@@ -359,5 +359,5 @@ const _Chart = React.memo(
         components={components}
       />
     )
-  }
+  },
 )

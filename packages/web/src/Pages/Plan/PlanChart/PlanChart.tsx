@@ -1,4 +1,4 @@
-import { faClipboardList } from '@fortawesome/pro-regular-svg-icons'
+import { faQuestion } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Power1, Power4 } from 'gsap'
 import Link from 'next/link'
@@ -10,23 +10,27 @@ import {
   RectExt,
   rectExt,
   regionCSSStyle,
-  Size,
 } from '../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity0Transition'
 import { Record } from '../../../Utils/Record'
 import { fGet } from '../../../Utils/Utils'
 import { useChartData } from '../../App/WithChartData'
-import { SimulationInfo, useSimulation } from '../../App/WithSimulation'
+import { useSimulation } from '../../App/WithSimulation'
 import { ChartAnimation } from '../../Common/Chart/Chart'
+import { useGetSectionURL } from '../Plan'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
+import { setPlanInputBodyHeaderOnDoneSection } from '../PlanInput/PlanInputBody/PlanInputBodyHeader'
 import {
   PlanTransitionState,
   simplifyPlanTransitionState4,
 } from '../PlanTransition'
-import { PlanChartLegacyCard } from './PlanChartLegacyCard'
 import { PlanChartMainCard } from './PlanChartMainCard/PlanChartMainCard'
 import { PlanChartRescale } from './PlanChartRescale'
-import { PlanChartType } from './PlanChartType'
+import { PlanChartSidePanel } from './PlanChartSidePanel/PlanChartSidePanel'
+import {
+  planChartLegacyCardFormat,
+  usePlanChartLegacyCardData,
+} from './PlanChartSidePanel/PlanChartSidePanelLegacyCard'
 import { usePlanChartType } from './UsePlanChartType'
 
 export const planChartMorphAnimation: ChartAnimation = {
@@ -40,10 +44,9 @@ export const planChartNormalAnimation: ChartAnimation = {
 
 export type PlanChartStateful = { transitionUpdated: () => void }
 
-type PlanChartTransitionState = ReturnType<typeof _toPlanChartTransitionState>
-export type PlanChartInternalTransitionState = `${PlanChartTransitionState}${
-  | 'With'
-  | 'Without'}Legacy`
+export type PlanChartTransitionState = ReturnType<
+  typeof _toPlanChartTransitionState
+>
 
 const _toPlanChartTransitionState = simplifyPlanTransitionState4(
   { label: 'results', sections: [{ name: 'results', dialogMode: 'any' }] },
@@ -58,14 +61,12 @@ export type PlanChartSizing = {
     {
       region: RectExt
       padding: Padding
-      legacyWidth: number
-      intraGap: number
       borderRadius: number
-      tasksOpacity: number
       opacity: number
     }
   >
   fixed: {
+    intraGap: number
     cardPadding: Padding
   }
 }
@@ -82,46 +83,43 @@ export const PlanChart = React.memo(
     section: PlanSectionName
   }) => {
     const { tpawResult } = useSimulation()
+    const getSectionURL = useGetSectionURL()
+
     const type = usePlanChartType()
-    const shouldShowLegacy = _shouldShowLegacy(tpawResult, type)
-    const tasksRef = useRef<HTMLAnchorElement>(null)
+    const helpRef = useRef<HTMLAnchorElement>(null)
 
     const allChartData = useChartData()
     const chartMainData =
       type === 'reward-risk-ratio-comparison'
         ? fGet(allChartData.rewardRiskRatio)
         : fGet(allChartData.byYearsFromNowPercentiles.get(type))
-    const chartLegacyData = allChartData.legacy
 
     const [mainYRange, setMainYRange] = useState(chartMainData.yDisplayRange)
-    const [legacyYRange, setLegacyYRange] = useState(
-      chartLegacyData.xyDisplayRange.y,
-    )
 
-    const [measures, setMeasures] = useState({ tasks: { height: 0, width: 0 } })
+    const [measures, setMeasures] = useState({ help: { height: 0 } })
     useLayoutEffect(() => {
       const observer = new ResizeObserver(() => {
-        const tasks = fGet(tasksRef.current).getBoundingClientRect()
-        setMeasures({
-          tasks: { width: tasks.width, height: tasks.height },
-        })
+        const help = fGet(helpRef.current).getBoundingClientRect()
+        setMeasures({ help: { height: help.height } })
       })
-      observer.observe(fGet(tasksRef.current))
+      observer.observe(fGet(helpRef.current))
       return () => observer.disconnect()
     }, [])
 
+    const maxLegacy = Math.max(
+      ...usePlanChartLegacyCardData().map((x) => x.amount),
+    )
+
     const sizing = useMemo(
-      () => _transformSizing(sizingIn, measures),
-      [measures, sizingIn],
+      () => _transformSizing(sizingIn, measures, maxLegacy, layout),
+      [sizingIn, maxLegacy, layout, measures],
     )
     const transition = useMemo(
       () => ({
-        target: `${_toPlanChartTransitionState(planTransition.target)}${
-          shouldShowLegacy ? 'With' : 'Without'
-        }Legacy` as const,
+        target: _toPlanChartTransitionState(planTransition.target),
         duration: planTransition.duration,
       }),
-      [planTransition, shouldShowLegacy],
+      [planTransition],
     )
     const targetSizing = useMemo(
       () => sizing.dynamic[transition.target],
@@ -144,19 +142,17 @@ export const PlanChart = React.memo(
           ...regionCSSStyle(targetSizing.region),
         }}
       >
-        {layout !== 'mobile' && (
-          <h2
-            className={`absolute uppercase font-bold text-white `}
-            style={{
-              transitionProperty: 'transform',
-              transitionDuration,
-              transform: `translate(${targetSizing.heading.origin.x}px,${targetSizing.heading.origin.y}px)`,
-              ...originCSSStyle({ x: 0, y: 0 }),
-            }}
-          >
-            Results
-          </h2>
-        )}
+        {/* <h2
+          className={`absolute uppercase font-bold text-white text-lg `}
+          style={{
+            transitionProperty: 'transform',
+            transitionDuration,
+            transform: `translate(${targetSizing.heading.origin.x}px,${targetSizing.heading.origin.y}px)`,
+            ...originCSSStyle({ x: 0, y: 0 }),
+          }}
+        >
+          Results
+        </h2> */}
 
         <PlanChartMainCard
           layout={layout}
@@ -165,8 +161,8 @@ export const PlanChart = React.memo(
           sizing={sizing}
           transition={transition}
         />
-        <PlanChartLegacyCard
-          yRange={legacyYRange}
+        <PlanChartSidePanel
+          layout={layout}
           sizing={sizing}
           transition={transition}
         />
@@ -183,31 +179,41 @@ export const PlanChart = React.memo(
           <PlanChartRescale
             section={section}
             type={type}
-            shouldShowLegacy={shouldShowLegacy}
             mainYRange={mainYRange}
             setMainYRange={setMainYRange}
-            legacyYRange={legacyYRange}
-            setLegacyYRange={setLegacyYRange}
           />
         </div>
 
-        <Link href="/plan/tasks-for-this-year">
+        <Link href={getSectionURL('results')} shallow>
           <a
-            ref={tasksRef}
-            className="absolute whitespace-nowrap bg-cardB py-1 rounded-xl flex items-center gap-x-2 text-white"
+            ref={helpRef}
+            className="absolute text-gray-50  font-semibold flex items-center"
             style={{
-              transitionProperty: 'opacity, transform',
+              transitionProperty: 'opacity, transform, left, bottom',
               transitionDuration,
-              transform: `translate(${targetSizing.tasks.x}px,${targetSizing.tasks.y}px)`,
-              ...originCSSStyle({ x: 0, y: 0 }),
-              opacity: `${targetSizing.tasks.opacity}`,
-              pointerEvents: targetSizing.tasks.opacity === 0 ? 'none' : 'auto',
+              bottom: `${targetSizing.help.inset.bottom}px`,
+              left: `${targetSizing.help.inset.left}px`,
+              opacity: `${section === 'results' ? '0' : '1'}`,
+              pointerEvents: section === 'results' ? 'none' : 'auto',
+            }}
+            onClick={() => {
+              setPlanInputBodyHeaderOnDoneSection(section)
             }}
           >
-            <h2 className="font-bold text-base sm:text-xl flex items-center gap-x-2">
-              <FontAwesomeIcon icon={faClipboardList} />
-              Tasks for this year
-            </h2>
+            <span
+              className={`flex items-center justify-center bg-gray-200 rounded-full  mr-2 ${
+                layout === 'mobile'
+                  ? 'w-[20px] h-[20px] text-[12px]'
+                  : 'w-[25px] h-[25px] text-[18px]'
+              }`}
+            >
+              <FontAwesomeIcon
+                className={` text-gray-700 
+                ${layout === 'mobile' ? 'text-sm' : 'text-lg'}`}
+                icon={faQuestion}
+              />
+            </span>
+            Help me understand this
           </a>
         </Link>
       </NoDisplayOnOpacity0Transition>
@@ -217,23 +223,30 @@ export const PlanChart = React.memo(
 
 const _transformSizing = (
   sizingIn: PlanChartSizing,
-  measures: { tasks: Size },
+  measures: { help: { height: number } },
+  maxLegacy: number,
+  layout: 'laptop' | 'desktop' | 'mobile',
 ) => {
-  const { cardPadding } = sizingIn.fixed
+  const { cardPadding, intraGap } = sizingIn.fixed
   const _map = (
-    state: PlanChartInternalTransitionState,
+    state: PlanChartTransitionState,
     orig: PlanChartSizing['dynamic']['hidden'],
-    shouldShowLegacy: boolean,
   ) => {
-    const { padding, region, legacyWidth, intraGap, tasksOpacity } = orig
+    const { padding, region } = orig
+    const legacyWidth = Math.max(
+      cardPadding.left +
+        cardPadding.right +
+        (planChartLegacyCardFormat(maxLegacy, layout).length + 2) * 7 +
+        30,
+      layout === 'mobile' ? 100 : 125,
+    )
+
     const mainCard = (() => {
-      const widthWithoutLegacy = region.width - padding.left - padding.right
       const mainRegion = rectExt({
         x: padding.left,
         y: padding.top,
-        width: shouldShowLegacy
-          ? widthWithoutLegacy - legacyWidth - intraGap
-          : widthWithoutLegacy,
+        width:
+          region.width - padding.left - padding.right - legacyWidth - intraGap,
         height: region.height - padding.top - padding.bottom,
       })
       return {
@@ -241,67 +254,55 @@ const _transformSizing = (
         inset: insetExt(mainRegion, region),
       }
     })()
-    const legacyCard = {
+    const sidePanel = {
       inset: insetExt(
         rectExt({
-          x: shouldShowLegacy
-            ? mainCard.region.right + intraGap
-            : region.width + 1,
+          x: mainCard.region.right + intraGap,
           y: padding.top,
           width: legacyWidth,
           height: region.height - padding.top - padding.bottom,
         }),
         region,
       ),
-      visibility: shouldShowLegacy ? ('visible' as const) : ('hidden' as const),
     }
 
     const heading = {
       origin: { x: padding.left + cardPadding.left, y: mainCard.region.y - 30 },
     }
     const rescale = (() => {
-      const height = 25
+      const height = 30
       const origin = {
-        x: padding.left,
-        y:
-          mainCard.region.bottom +
-          Math.max(0, (region.height - mainCard.region.bottom - height) / 2),
+        x: padding.left + 3,
+        y: mainCard.region.bottom - 3 - height,
       }
       return { height, origin }
     })()
-    const tasks = {
-      y:
-        mainCard.region.bottom +
-        Math.max(
-          0,
-          (region.height - mainCard.region.bottom - measures.tasks.height) / 2,
-        ),
-      x: region.width - padding.right - measures.tasks.width,
-      opacity: tasksOpacity,
+    const help = {
+      inset: {
+        bottom:
+          (region.height - mainCard.region.bottom - measures.help.height) / 2,
+        left: padding.left,
+      },
     }
 
     return [
       state,
-      { ...orig, mainCard, legacyCard, heading, tasks, rescale },
+      {
+        ...orig,
+        mainCard,
+        sidePanel,
+        heading,
+        help,
+        rescale,
+      },
     ] as const
   }
 
   return {
-    dynamic: Record.merge(
-      Record.map(sizingIn.dynamic, (state, orig) =>
-        _map(`${state}WithLegacy`, orig, true),
-      ),
-      Record.map(sizingIn.dynamic, (state, orig) =>
-        _map(`${state}WithoutLegacy`, orig, false),
-      ),
-    ),
+    dynamic: Record.map(sizingIn.dynamic, (state, orig) => _map(state, orig)),
     fixed: {
+      intraGap: sizingIn.fixed.intraGap,
       cardPadding: sizingIn.fixed.cardPadding,
     },
   }
 }
-
-const _shouldShowLegacy = (
-  _: SimulationInfo['tpawResult'],
-  __: PlanChartType,
-) => true // Always showing legacy now.
