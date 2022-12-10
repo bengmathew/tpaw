@@ -14,10 +14,13 @@ export const PlanSummaryRiskSwitchMode = React.memo(
       <div
         className={`${className} flex flex-col items-end text-sm font-normal`}
       >
-        <button className="underline" onClick={() => setShowPopup(true)}>
-          {params.risk.useTPAWPreset
-            ? `Switch to custom mode`
-            : `Switch to preset mode`}
+        <button className="text-right" onClick={() => setShowPopup(true)}>
+          <h2 className="underline">
+            {params.risk.useTPAWPreset
+              ? `Switch to custom mode`
+              : `Switch to preset mode`}
+          </h2>
+          {params.risk.useTPAWPreset && <h2 className="lighten text-xs">(advanced)</h2>}
         </button>
         {showPopup && (
           <ConfirmAlert

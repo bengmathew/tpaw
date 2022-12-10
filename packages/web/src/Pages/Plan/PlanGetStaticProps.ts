@@ -1,11 +1,11 @@
-import {GetStaticProps} from 'next'
-import {Contentful} from '../../Utils/Contentful'
-import {getMarketData, MarketData} from '../Common/GetMarketData'
+import { GetStaticProps } from 'next'
+import { Contentful } from '../../Utils/Contentful'
+import { getMarketData, MarketData } from '../Common/GetMarketData'
 
 type _FetchedInline = Awaited<ReturnType<typeof Contentful.fetchInline>>
-type _Guide = {guide: _FetchedInline}
-type _Intro = {intro: _FetchedInline}
-type _Menu = {menu: _FetchedInline}
+type _Guide = { guide: _FetchedInline }
+type _Intro = { intro: _FetchedInline }
+type _Menu = { menu: _FetchedInline }
 type _IntroAndGuide = _Guide & _Intro
 type _IntroAndGuideAndMenu = _IntroAndGuide & _Menu
 
@@ -47,8 +47,12 @@ export type PlanContent = {
     introSamplingMonteCarlo: _FetchedInline
     introSamplingHistorical: _FetchedInline
   }
-  dev: {guide: _FetchedInline}
+  dev: { guide: _FetchedInline }
+  misc: {
+    realDollarExplanation: _FetchedInline
+  }
   chart: {
+    realBlurb: _FetchedInline
     spending: {
       total: _IntroAndGuideAndMenu
       regular: _IntroAndGuideAndMenu
@@ -72,9 +76,9 @@ export type PlanStaticProps = {
   content: PlanContent
 }
 
-export const planGetStaticProps: GetStaticProps<
-  PlanStaticProps
-> = async context => {
+export const planGetStaticProps: GetStaticProps<PlanStaticProps> = async (
+  context,
+) => {
   return {
     props: {
       marketData: await getMarketData(),
@@ -155,10 +159,14 @@ export const planGetStaticProps: GetStaticProps<
           introSamplingMonteCarlo: '4ysOynT6PPgYFnY1BaLuy5',
           introSamplingHistorical: '19JANDD3uLnVdh52HBMj6U',
         },
+        misc: {
+          realDollarExplanation: '3Xp6QN75C8mEljylz013Ek',
+        },
         dev: {
           guide: '6jDlL7lhj5dYAatVc8Grb7',
         },
         chart: {
+          realBlurb: '0OBu1kF01M6HktVFh6haL',
           spending: {
             total: {
               intro: '6MH8oPq7ivMYJ4Ii8ZMtwg',

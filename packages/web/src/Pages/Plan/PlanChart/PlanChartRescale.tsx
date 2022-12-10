@@ -1,6 +1,6 @@
 import { faArrowsUpDown } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { SimpleRange } from '../../../Utils/SimpleRange'
 import { fGet } from '../../../Utils/Utils'
 import { useChartData } from '../../App/WithChartData'
@@ -34,7 +34,16 @@ export const PlanChartRescale = React.memo(
 
     // const [pingRescale, setPingRescale] = useState(false)
     // useEffect(() => setPingRescale(true), [rescaleWarningLevel])
-    const handleRescale = () => setMainYRange(chartMainData.yDisplayRange)
+    const handleRescale = useCallback(
+      () => setMainYRange(chartMainData.yDisplayRange),
+      [chartMainData.yDisplayRange, setMainYRange],
+    )
+
+    useEffect(() => {
+      if (rescaleWarningLevel === 0) return
+      const timeout = window.setTimeout(handleRescale, 60 * 1000)
+      return () => window.clearTimeout(timeout)
+    }, [rescaleWarningLevel, handleRescale])
 
     // This is so chart will be scaled when results are first shown.
     useEffect(() => {

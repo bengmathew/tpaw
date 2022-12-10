@@ -1,20 +1,20 @@
-import React, {useState} from 'react'
-import {YearRange} from '@tpaw/common'
-import {Contentful} from '../../../Utils/Contentful'
-import {paddingCSS, paddingCSSStyleHorz} from '../../../Utils/Geometry'
-import {useURLUpdater} from '../../../Utils/UseURLUpdater'
-import {useSimulation} from '../../App/WithSimulation'
-import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
-import {usePlanContent} from '../Plan'
+import { YearRange } from '@tpaw/common'
+import React, { useState } from 'react'
+import { Contentful } from '../../../Utils/Contentful'
+import { paddingCSS, paddingCSSStyleHorz } from '../../../Utils/Geometry'
+import { useURLUpdater } from '../../../Utils/UseURLUpdater'
+import { useSimulation } from '../../App/WithSimulation'
+import { EditValueForYearRange } from '../../Common/Inputs/EditValueForYearRange'
+import { usePlanContent } from '../Plan'
 import {
   isPlanChartSpendingDiscretionaryType,
   isPlanChartSpendingEssentialType,
   planChartSpendingDiscretionaryTypeID,
   planChartSpendingEssentialTypeID,
 } from '../PlanChart/PlanChartType'
-import {useGetPlanChartURL} from '../PlanChart/UseGetPlanChartURL'
-import {usePlanChartType} from '../PlanChart/UsePlanChartType'
-import {ByYearSchedule} from './Helpers/ByYearSchedule'
+import { useGetPlanChartURL } from '../PlanChart/UseGetPlanChartURL'
+import { usePlanChartType } from '../PlanChart/UsePlanChartType'
+import { ByYearSchedule } from './Helpers/ByYearSchedule'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
@@ -22,14 +22,14 @@ import {
 
 export const PlanInputExtraSpending = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const {paramsExt, params} = useSimulation()
+    const { paramsExt, params } = useSimulation()
     const getPlanChartURL = useGetPlanChartURL()
     const chartType = usePlanChartType()
     const urlUpdater = useURLUpdater()
-    const {years, validYearRange, maxMaxAge, asYFN} = paramsExt
+    const { years, validYearRange, maxMaxAge, asYFN } = paramsExt
     const content = usePlanContent()
     const [state, setState] = useState<
-      | {type: 'main'}
+      | { type: 'main' }
       | {
           type: 'edit'
           isEssential: boolean
@@ -37,7 +37,7 @@ export const PlanInputExtraSpending = React.memo(
           index: number
           hideInMain: boolean
         }
-    >({type: 'main'})
+    >({ type: 'main' })
 
     const allowableRange = validYearRange('extra-spending')
     const defaultRange: YearRange = {
@@ -48,7 +48,7 @@ export const PlanInputExtraSpending = React.memo(
           : years.person1.retirement,
       numYears: Math.min(
         5,
-        asYFN(maxMaxAge) + 1 - asYFN(years.person1.retirement)
+        asYFN(maxMaxAge) + 1 - asYFN(years.person1.retirement),
       ),
     }
 
@@ -61,7 +61,7 @@ export const PlanInputExtraSpending = React.memo(
           <div
             className=""
             style={{
-              ...paddingCSSStyleHorz(props.sizing.cardPadding, {scale: 0.5}),
+              ...paddingCSSStyleHorz(props.sizing.cardPadding, { scale: 0.5 }),
             }}
           >
             <Contentful.RichText
@@ -78,7 +78,7 @@ export const PlanInputExtraSpending = React.memo(
           </div>
           <div
             className="params-card mt-8"
-            style={{padding: paddingCSS(props.sizing.cardPadding)}}
+            style={{ padding: paddingCSS(props.sizing.cardPadding) }}
           >
             {showDiscretionary && (
               <h2 className="font-bold text-lg mb-2">Essential Expenses</h2>
@@ -91,7 +91,7 @@ export const PlanInputExtraSpending = React.memo(
               className="mt-6"
               heading={null}
               addButtonText="Add an Essential Expense"
-              entries={params => params.extraSpending.essential}
+              entries={(params) => params.extraSpending.essential}
               hideEntry={
                 state.type === 'edit' && state.isEssential && state.hideInMain
                   ? state.index
@@ -113,7 +113,7 @@ export const PlanInputExtraSpending = React.memo(
           {showDiscretionary && (
             <div
               className="params-card mt-8"
-              style={{padding: paddingCSS(props.sizing.cardPadding)}}
+              style={{ padding: paddingCSS(props.sizing.cardPadding) }}
             >
               <h2 className="font-bold text-lg mb-2">Discretionary Expenses</h2>
               <Contentful.RichText
@@ -124,7 +124,7 @@ export const PlanInputExtraSpending = React.memo(
                 className="mt-6"
                 heading={null}
                 addButtonText="Add a Discretionary Expense"
-                entries={params => params.extraSpending.discretionary}
+                entries={(params) => params.extraSpending.discretionary}
                 hideEntry={
                   state.type === 'edit' &&
                   !state.isEssential &&
@@ -150,7 +150,7 @@ export const PlanInputExtraSpending = React.memo(
         {{
           input:
             state.type === 'edit'
-              ? transitionOut => (
+              ? (transitionOut) => (
                   <EditValueForYearRange
                     title={
                       state.isAdd
@@ -163,19 +163,24 @@ export const PlanInputExtraSpending = React.memo(
                             state.isEssential ? 'Essential' : 'Discretionary'
                           } Expense `
                     }
-                    setHideInMain={hideInMain =>
-                      setState({...state, hideInMain})
+                    labelPlaceholder={
+                      state.isEssential
+                        ? 'E.g. Mortgage Payments'
+                        : 'E.g. Travel'
+                    }
+                    setHideInMain={(hideInMain) =>
+                      setState({ ...state, hideInMain })
                     }
                     transitionOut={transitionOut}
-                    onDone={() => setState({type: 'main'})}
-                    onBeforeDelete={id => {
+                    onDone={() => setState({ type: 'main' })}
+                    onBeforeDelete={(id) => {
                       if (state.isEssential) {
                         if (isPlanChartSpendingEssentialType(chartType)) {
                           const currChartID =
                             planChartSpendingEssentialTypeID(chartType)
                           if (id === currChartID)
                             urlUpdater.replace(
-                              getPlanChartURL('spending-total')
+                              getPlanChartURL('spending-total'),
                             )
                         }
                       } else {
@@ -184,12 +189,12 @@ export const PlanInputExtraSpending = React.memo(
                             planChartSpendingDiscretionaryTypeID(chartType)
                           if (id === currChartID)
                             urlUpdater.replace(
-                              getPlanChartURL('spending-total')
+                              getPlanChartURL('spending-total'),
                             )
                         }
                       }
                     }}
-                    entries={params =>
+                    entries={(params) =>
                       state.isEssential
                         ? params.extraSpending.essential
                         : params.extraSpending.discretionary
@@ -216,5 +221,5 @@ export const PlanInputExtraSpending = React.memo(
         }}
       </PlanInputBody>
     )
-  }
+  },
 )

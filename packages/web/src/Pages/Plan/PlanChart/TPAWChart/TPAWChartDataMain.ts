@@ -206,9 +206,7 @@ export const tpawChartDataMainPercentiles = (
         tpawResult,
         (x) => x.savingsPortfolio.withdrawals.fromSavingsPortfolioRate,
         formatPercentage(1),
-        params.original.display.alwaysShowAllYears
-          ? 'allYears'
-          : 'retirementYears',
+        spendingYears,
         0,
         highlightPercentiles,
         'auto',

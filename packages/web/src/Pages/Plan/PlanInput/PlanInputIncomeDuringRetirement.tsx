@@ -65,6 +65,7 @@ export const PlanInputIncomeDuringRetirement = React.memo(
                         ? 'Add Retirement Income'
                         : 'Edit Retirement Income'
                     }
+                    labelPlaceholder="E.g. Social Security"
                     setHideInMain={hideInMain =>
                       setState({...state, hideInMain})
                     }

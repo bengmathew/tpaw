@@ -1,14 +1,14 @@
 import { linearFnFomPoints } from '@tpaw/common'
-import { newPadding, rectExt } from '../../../Utils/Geometry'
+import { newPadding, rectExt, Size } from '../../../Utils/Geometry'
 import { PlanSizing } from './PlanSizing'
 
 const pad = 40
 const cardPadding = newPadding(20)
 
-export function planSizingDesktop(windowSize: {
-  width: number
-  height: number
-}): PlanSizing {
+export function planSizingDesktop(
+  windowSize: Size,
+  isSWR: boolean,
+): PlanSizing {
   const contentWidth = 600
 
   // ---- WELCOME ----
@@ -61,7 +61,7 @@ export function planSizingDesktop(windowSize: {
       padding: newPadding({
         horz: summaryState.padding.left,
         top: summaryState.padding.top,
-        bottom: summaryState.padding.bottom * 0.90,
+        bottom: summaryState.padding.bottom * 0.9,
       }),
     }
     const resultsState: Dynamic = {

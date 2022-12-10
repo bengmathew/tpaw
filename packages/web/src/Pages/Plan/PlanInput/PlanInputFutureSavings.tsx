@@ -37,6 +37,7 @@ export const PlanInputFutureSavings = React.memo(
               ? transitionOut => (
                   <EditValueForYearRange
                     title={state.isAdd ? 'Add Savings' : 'Edit Savings'}
+                    labelPlaceholder="E.g. From My Salary"
                     setHideInMain={hideInMain =>
                       setState({...state, hideInMain})
                     }

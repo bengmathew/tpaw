@@ -1,16 +1,15 @@
-import {faMinus, faPlus} from '@fortawesome/pro-regular-svg-icons'
-import {faTrash} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {Switch} from '@headlessui/react'
+import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
+import { faTrash } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { PlanParams, ValueForYearRange } from '@tpaw/common'
 import _ from 'lodash'
 import React from 'react'
-import {PlanParams, ValueForYearRange} from '@tpaw/common'
-import {SimpleRange} from '../../../Utils/SimpleRange'
-import {useSimulation} from '../../App/WithSimulation'
-import {AmountInput} from './AmountInput'
-import {CheckBox} from './CheckBox'
-import {smartDeltaFnForAmountInput} from './SmartDeltaFnForAmountInput'
-import {YearRangeInput, YearRangeInputProps} from './YearRangeInput'
+import { SimpleRange } from '../../../Utils/SimpleRange'
+import { useSimulation } from '../../App/WithSimulation'
+import { AmountInput } from './AmountInput'
+import { RealOrNominalInput } from './RealOrNominalInput'
+import { smartDeltaFnForAmountInput } from './SmartDeltaFnForAmountInput'
+import { YearRangeInput, YearRangeInputProps } from './YearRangeInput'
 
 export const EditValueForYearRange = React.memo(
   ({
@@ -24,6 +23,7 @@ export const EditValueForYearRange = React.memo(
     index,
     allowableRange,
     choices,
+    labelPlaceholder,
   }: {
     className?: string
     title: string
@@ -35,10 +35,11 @@ export const EditValueForYearRange = React.memo(
     index: number
     allowableRange: SimpleRange
     choices: YearRangeInputProps['choices']
+    labelPlaceholder: string
   }) => {
-    const {params, setParams} = useSimulation()
+    const { params, setParams } = useSimulation()
     const setEntry = (editEntry: (entry: ValueForYearRange) => void) => {
-      setParams(params => {
+      setParams((params) => {
         const clone = _.cloneDeep(params)
         const entryClone = _.cloneDeep(entry)
         editEntry(entryClone)
@@ -48,32 +49,32 @@ export const EditValueForYearRange = React.memo(
     }
     const entry = entries(params)[index]
 
-    const {label, value} = entry
+    const { label, value } = entry
 
-    const {increment, decrement} = smartDeltaFnForAmountInput
+    const { increment, decrement } = smartDeltaFnForAmountInput
     return (
       <div className={`${className}`}>
         <h2 className="text-lg font-bold text-center">{title}</h2>
         <div className="mt-6">
           <div
-            className="grid gap-y-6 gap-x-4 items-center"
-            style={{grid: 'auto auto / auto 1fr '}}
+            className="grid gap-y-6 gap-x-4 items-start"
+            style={{ grid: 'auto auto / auto 1fr ' }}
           >
-            <h2 className=" justify-self-end">Label</h2>
-            {/* <h2 className=""></h2> */}
+            <h2 className=" justify-self-end mt-1.5">Label</h2>
             <input
               type="text"
               className="bg-gray-200 px-2 py-1.5 rounded-lg w-full"
               value={label ?? ''}
-              onChange={e => {
-                setEntry(entry => {
+              onChange={(e) => {
+                setEntry((entry) => {
                   const trimmed = e.target.value.trim()
                   // Cannot set it to trimmed value because we cannot have
                   entry.label = trimmed.length === 0 ? null : e.target.value
                 })
               }}
+              placeholder={labelPlaceholder}
             />
-            <h2 className="justify-self-end">
+            <h2 className=" justify-self-end mt-1.5">
               Amount <br /> per Year
             </h2>
             <div
@@ -82,19 +83,21 @@ export const EditValueForYearRange = React.memo(
                 grid: 'auto auto /  auto',
               }}
             >
-              <div className="grid" style={{grid: 'auto / 1fr auto auto'}}>
+              <div className="grid" style={{ grid: 'auto / 1fr auto auto' }}>
                 <AmountInput
                   className="w-[100%] text-input"
                   prefix="$"
                   value={value}
-                  onChange={value => setEntry(entry => (entry.value = value))}
+                  onChange={(value) =>
+                    setEntry((entry) => (entry.value = value))
+                  }
                   decimals={0}
                   modalLabel={null}
                 />
                 <button
                   className="ml-3 px-3"
                   onClick={() =>
-                    setEntry(entry => (entry.value = increment(entry.value)))
+                    setEntry((entry) => (entry.value = increment(entry.value)))
                   }
                 >
                   <FontAwesomeIcon icon={faPlus} />
@@ -102,33 +105,26 @@ export const EditValueForYearRange = React.memo(
                 <button
                   className="px-3"
                   onClick={() =>
-                    setEntry(entry => (entry.value = decrement(entry.value)))
+                    setEntry((entry) => (entry.value = decrement(entry.value)))
                   }
                 >
                   <FontAwesomeIcon icon={faMinus} />
                 </button>
               </div>
-              <div className="flex flex-row items-center gap-x-2 mt-2">
-                <Switch.Group>
-                  <CheckBox
-                    className=""
-                    enabled={!entry.nominal}
-                    setEnabled={real =>
-                      setEntry(entry => (entry.nominal = !real))
-                    }
-                  />
-                  <Switch.Label className=" text-sm">
-                    real dollars (adjusted for inflation)
-                  </Switch.Label>
-                </Switch.Group>
-              </div>
+              <RealOrNominalInput
+                className=""
+                nominal={entry.nominal}
+                onChange={(nominal) =>
+                  setEntry((entry) => (entry.nominal = nominal))
+                }
+              />
             </div>
           </div>
           <YearRangeInput
             className="mt-6"
             value={entry.yearRange}
-            setValue={yearRange =>
-              setEntry(entry => (entry.yearRange = yearRange))
+            setValue={(yearRange) =>
+              setEntry((entry) => (entry.yearRange = yearRange))
             }
             range={allowableRange}
             choices={choices}
@@ -152,7 +148,7 @@ export const EditValueForYearRange = React.memo(
               onBeforeDelete?.(entry.id)
               transitionOut(() => {
                 onDone()
-                setParams(params => {
+                setParams((params) => {
                   const clone = _.cloneDeep(params)
                   entries(clone).splice(index, 1)
                   return clone
@@ -165,5 +161,5 @@ export const EditValueForYearRange = React.memo(
         </div>
       </div>
     )
-  }
+  },
 )

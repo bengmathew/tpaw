@@ -46,6 +46,7 @@ export const PlanInputLegacy = React.memo(
                     title={
                       state.isAdd ? 'Add a Legacy Entry' : 'Edit Legacy Entry'
                     }
+                    labelPlaceholder="E.g. Home Equity"
                     setHideInMain={hideInMain =>
                       setState({...state, hideInMain})
                     }

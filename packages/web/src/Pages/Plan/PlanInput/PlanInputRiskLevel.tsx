@@ -1,17 +1,16 @@
-import {faCircle} from '@fortawesome/pro-light-svg-icons'
-import {faCircle as faCircleSolid} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {RadioGroup} from '@headlessui/react'
+import { faCircle } from '@fortawesome/pro-light-svg-icons'
+import { faCircle as faCircleSolid } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { RadioGroup } from '@headlessui/react'
+import { assert, getDefaultPlanParams, TPAWRiskLevel } from '@tpaw/common'
 import _ from 'lodash'
-import React, {useEffect} from 'react'
-import {getDefaultPlanParams} from '@tpaw/common'
-import {riskLevelLabel} from '../../../TPAWSimulator/RiskLevelLabel'
-import {TPAWRiskLevel} from '@tpaw/common'
-import {Contentful} from '../../../Utils/Contentful'
-import {paddingCSSStyle} from '../../../Utils/Geometry'
-import {useURLUpdater} from '../../../Utils/UseURLUpdater'
-import {useSimulation} from '../../App/WithSimulation'
-import {useGetSectionURL, usePlanContent} from '../Plan'
+import React, { useEffect } from 'react'
+import { riskLevelLabel } from '../../../TPAWSimulator/RiskLevelLabel'
+import { Contentful } from '../../../Utils/Contentful'
+import { paddingCSSStyle } from '../../../Utils/Geometry'
+import { useURLUpdater } from '../../../Utils/UseURLUpdater'
+import { useSimulation } from '../../App/WithSimulation'
+import { useGetSectionURL, usePlanContent } from '../Plan'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
@@ -19,7 +18,7 @@ import {
 
 export const PlanInputRiskLevel = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const {params} = useSimulation()
+    const { params } = useSimulation()
     const summarySectionURL = useGetSectionURL()('summary')
     const urlUpdater = useURLUpdater()
     useEffect(() => {
@@ -32,7 +31,7 @@ export const PlanInputRiskLevel = React.memo(
         <_RiskLevelCard className="" props={props} />
       </PlanInputBody>
     )
-  }
+  },
 )
 
 const _RiskLevelCard = React.memo(
@@ -43,11 +42,11 @@ const _RiskLevelCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const {params, setParams} = useSimulation()
+    const { params, setParams } = useSimulation()
     const content = usePlanContent()['risk-level']
 
     const handleChange = (x: TPAWRiskLevel) => {
-      setParams(params => {
+      setParams((params) => {
         const clone = _.cloneDeep(params)
         clone.risk.tpawPreset = x
         return clone
@@ -57,13 +56,15 @@ const _RiskLevelCard = React.memo(
     return (
       <div
         className={`${className} params-card`}
-        style={{...paddingCSSStyle(props.sizing.cardPadding)}}
+        style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
       >
         <div className="">
-          <Contentful.RichText
-            body={content.intro[params.strategy]}
-            p="p-base"
-          />
+          <div className="-mt-2">
+            <Contentful.RichText
+              body={content.intro[params.strategy]}
+              p="p-base mt-2"
+            />
+          </div>
           <RadioGroup<'div', TPAWRiskLevel>
             value={params.risk.tpawPreset}
             onChange={handleChange}
@@ -76,7 +77,10 @@ const _RiskLevelCard = React.memo(
             </div>
           </RadioGroup>
           <p className="p-base mt-6">
-            {`If you want to see the settings for these presets, switch to custom mode and select "Copy from a Preset."`}
+            {`If you want to see the asset allocation for these presets, select Asset Allocation from the drop down menu in the graph.`}
+          </p>
+          <p className="p-base mt-2">
+            {`If you want to see the underlying settings for these presets, switch to custom mode and select "Copy from a Preset."`}
           </p>
           <button
             className="mt-6 underline"
@@ -87,7 +91,7 @@ const _RiskLevelCard = React.memo(
         </div>
       </div>
     )
-  }
+  },
 )
 
 const _Option = React.memo(
@@ -103,7 +107,7 @@ const _Option = React.memo(
         value={riskLevel}
         className={`${className} cursor-pointer`}
       >
-        {({checked}) => (
+        {({ checked }) => (
           <div className="flex items-start gap-x-2 py-0.5 ">
             <FontAwesomeIcon
               className="mt-1"
@@ -116,5 +120,5 @@ const _Option = React.memo(
         )}
       </RadioGroup.Option>
     )
-  }
+  },
 )

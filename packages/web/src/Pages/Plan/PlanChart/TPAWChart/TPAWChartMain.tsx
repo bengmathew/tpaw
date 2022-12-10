@@ -275,29 +275,15 @@ const components = () => {
       }
     })
 
-  // const successRate = chartDrawText<TPAWChartDataMain>(
-  //   (data, { size, padding }) => ({
-  //     text: `Success Rate: ${formatPercentage(0)(data.successRate)}`,
-  //     font: ChartUtils.getFont(17, '600'),
-  //     fillStyle: ChartUtils.color.gray[700],
-  //     textAlign: 'right',
-  //     position: {
-  //       graphX: size.width - padding.right + 5,
-  //       graphY: size.height - padding.bottom + 55,
-  //     },
-  //   }),
-  // )
-  // return [minorLine, majorLine, minMaxYAxis, xAxis, pointer, successRate]
   const custom = new ChartDrawMain()
   return [
     minorLine,
     majorLine,
     minMaxYAxis,
-    pointer,
     custom,
     xAxis('person1'),
     xAxis('person2'),
-    // xAxisLabel,
+    pointer,
   ]
 }
 

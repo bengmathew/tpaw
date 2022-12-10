@@ -1,14 +1,11 @@
 import { linearFnFomPoints } from '@tpaw/common'
-import { newPadding, rectExt } from '../../../Utils/Geometry'
+import { newPadding, rectExt, Size } from '../../../Utils/Geometry'
 import { headerHeight } from '../../App/Header'
 import { PlanSizing } from './PlanSizing'
 
 const cardPadding = { left: 15, right: 15, top: 10, bottom: 10 }
 
-export function planSizingMobile(windowSize: {
-  width: number
-  height: number
-}): PlanSizing {
+export function planSizingMobile(windowSize: Size, isSWR: boolean): PlanSizing {
   const pad = windowSize.width < 400 ? 10 : 12
   // ---- WELCOME ----
   const welcome = ((): PlanSizing['welcome'] => {
@@ -33,10 +30,11 @@ export function planSizingMobile(windowSize: {
         x: 0,
         y: 0,
         width: windowSize.width,
-        height: Math.min(
-          400,
-          linearFnFomPoints(375, 355, 412, 360)(windowSize.width),
-        ),
+        height:
+          Math.min(
+            400,
+            linearFnFomPoints(375, 355, 412, 360)(windowSize.width),
+          ) + (isSWR ? 15 : 0),
       }),
       padding: newPadding({
         top: pad * 0.5 + headerHeight,

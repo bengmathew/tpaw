@@ -1,10 +1,8 @@
-import { newPadding, rectExt } from '../../../Utils/Geometry'
+import { newPadding, rectExt, Size } from '../../../Utils/Geometry'
 import { PlanSizing } from './PlanSizing'
 
-export function planSizingLaptop(windowSize: {
-  width: number
-  height: number
-}): PlanSizing {
+export function planSizingLaptop(windowSize: Size,
+  isSWR:boolean): PlanSizing {
   const pad = 40
 
   const summaryWidth = Math.max(windowSize.width * 0.38, 500)

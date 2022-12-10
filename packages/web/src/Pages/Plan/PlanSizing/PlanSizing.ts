@@ -22,14 +22,15 @@ export type PlanSizing = {
 export function planSizing(
   layout: 'mobile' | 'laptop' | 'desktop',
   windowSize: Size,
+  isSWR:boolean
 ) {
   switch (layout) {
     case 'laptop':
-      return planSizingLaptop(windowSize)
+      return planSizingLaptop(windowSize, isSWR)
     case 'desktop':
-      return planSizingDesktop(windowSize)
+      return planSizingDesktop(windowSize, isSWR)
     case 'mobile':
-      return planSizingMobile(windowSize)
+      return planSizingMobile(windowSize, isSWR)
     default:
       noCase(layout)
   }

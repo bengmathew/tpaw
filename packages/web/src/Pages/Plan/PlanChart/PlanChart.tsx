@@ -142,17 +142,6 @@ export const PlanChart = React.memo(
           ...regionCSSStyle(targetSizing.region),
         }}
       >
-        {/* <h2
-          className={`absolute uppercase font-bold text-white text-lg `}
-          style={{
-            transitionProperty: 'transform',
-            transitionDuration,
-            transform: `translate(${targetSizing.heading.origin.x}px,${targetSizing.heading.origin.y}px)`,
-            ...originCSSStyle({ x: 0, y: 0 }),
-          }}
-        >
-          Results
-        </h2> */}
 
         <PlanChartMainCard
           layout={layout}
