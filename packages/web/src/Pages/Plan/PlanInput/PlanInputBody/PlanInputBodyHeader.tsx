@@ -46,7 +46,7 @@ export const PlanInputBodyHeader = React.memo(
             </button>
           )}
           <h2 className="text-xl sm:text-2xl font-bold text-start">
-            {planSectionLabel(type, params.strategy)}
+            {planSectionLabel(type)}
           </h2>
         </div>
       </div>

@@ -6,6 +6,7 @@ import {
   paddingCSSStyle,
   rectExt,
 } from '../../../../Utils/Geometry'
+import { PlanSectionName } from '../../PlanInput/Helpers/PlanSectionName'
 import { PlanChartSizing, PlanChartTransitionState } from '../PlanChart'
 import { PlanChartSidePanelLegacyCard } from './PlanChartSidePanelLegacyCard'
 import { PlanChartSidePanelTasksCard } from './PlanChartSidePanelTasksCard'
@@ -26,10 +27,12 @@ export const PlanChartSidePanel = React.memo(
     sizing,
     transition,
     layout,
+    section,
   }: {
     sizing: PlanChartSidePanelSizing
     transition: { target: PlanChartTransitionState; duration: number }
     layout: 'laptop' | 'desktop' | 'mobile'
+    section: PlanSectionName
   }) => {
     const targetSizing = useMemo(
       () => _transformSizing(sizing.dynamic[transition.target]),
@@ -62,6 +65,7 @@ export const PlanChartSidePanel = React.memo(
             marginTop: `${intraGap}px`,
           }}
           cardPadding={cardPadding}
+          section={section}
         />
       </div>
     )

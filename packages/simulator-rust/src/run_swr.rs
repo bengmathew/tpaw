@@ -6,7 +6,6 @@ use crate::portfolio_over_year::SingleYearContext;
 use crate::portfolio_over_year::TargetWithdrawals;
 use crate::portfolio_over_year::Withdrawals;
 use crate::pre_calculations::*;
-use crate::run_tpaw;
 use crate::utils::*;
 use crate::RunResult;
 use serde::Deserialize;
@@ -21,33 +20,12 @@ pub fn run(params: &Params, result: &mut RunResult) {
             .map(|(pre_withdrawal, _)| pre_withdrawal)
             .collect();
 
-    let mut params_for_bond_returns = params.clone();
-    params_for_bond_returns
-        .target_allocation
-        .regular_portfolio
-        .tpaw = vec![0.0; params.num_years].into_boxed_slice();
-    params_for_bond_returns
-        .target_allocation
-        .regular_portfolio
-        .spaw_and_swr = vec![0.0; params.num_years].into_boxed_slice();
-    params_for_bond_returns.expected_returns.stocks = 0.0;
-    params_for_bond_returns.expected_returns.bonds = params.expected_returns.bonds;
-    let withdrawals_from_using_bond_returns: Vec<Withdrawals> =
-        run_tpaw::run_using_expected_returns(
-            &params_for_bond_returns,
-            &do_pre_calculations(&params_for_bond_returns),
-        )
-        .into_iter()
-        .map(|(_, withdrawals)| withdrawals)
-        .collect();
-
     let num_runs = params.end_run - params.start_run;
     for run_index in 0..num_runs {
         run_using_historical_returns(
             &params,
             &pre_calculations,
             &pre_withdrawal_from_using_expected_returns,
-            &withdrawals_from_using_bond_returns,
             result,
             run_index,
         )
@@ -114,7 +92,6 @@ fn run_using_historical_returns(
     params: &Params,
     pre_calculations: &PreCalculations,
     pre_withdrawal_from_using_expected_returns: &Vec<SingleYearPreWithdrawal>,
-    withdrawal_from_using_bond_returns: &Vec<Withdrawals>,
     result: &mut RunResult,
     run_index: usize,
 ) {
@@ -153,7 +130,6 @@ fn run_using_historical_returns(
             &context,
             &pass_forward,
             &pre_withdrawal_from_using_expected_returns[year_index],
-            &withdrawal_from_using_bond_returns[year_index],
             result,
             run_index,
         );
@@ -188,13 +164,8 @@ fn run_for_single_year_using_fixed_returns(
 
     let pre_withdrawal = calculate_pre_withdrawal(context, &None);
 
-    let target_withdrawals = calculate_target_withdrawals(
-        context,
-        balance_starting,
-        &None,
-        &pre_withdrawal,
-        pass_forward,
-    );
+    let target_withdrawals =
+        calculate_target_withdrawals(context, &None, &pre_withdrawal, pass_forward);
 
     let savings_portfolio_after_withdrawals = portfolio_over_year::apply_target_withdrawals(
         &target_withdrawals,
@@ -216,13 +187,13 @@ fn run_for_single_year_using_fixed_returns(
 
     let curr_pass_forward = get_pass_forward(target_withdrawals);
 
-    (
+    return (
         pre_withdrawal,
         savings_portfolio_after_contributions,
         savings_portfolio_after_withdrawals,
         savings_portfolio_at_end,
         curr_pass_forward,
-    )
+    );
 }
 
 #[inline(always)]
@@ -230,7 +201,6 @@ fn run_for_single_year_using_historical_returns(
     context: &SingleYearContext,
     pass_forward: &SingleYearPassForward,
     pre_withdrawal_from_using_expected_returns: &SingleYearPreWithdrawal,
-    withdrawal_from_using_bond_returns: &Withdrawals,
     result: &mut RunResult,
     run_index: usize,
 ) -> (f64, SingleYearPassForward) {
@@ -252,7 +222,6 @@ fn run_for_single_year_using_historical_returns(
 
     let target_withdrawals = calculate_target_withdrawals(
         context,
-        balance_starting,
         &Some(pre_withdrawal_from_using_expected_returns),
         &pre_withdrawal,
         pass_forward,
@@ -276,19 +245,61 @@ fn run_for_single_year_using_historical_returns(
         &savings_portfolio_after_withdrawals,
     );
 
-    let mut stock_allocation_on_total_portfolio = savings_portfolio_at_end.stock_allocation_amount
-        / (savings_portfolio_after_withdrawals.balance
-            + pre_calculations
-                .tpaw
-                .net_present_value
-                .savings
-                .without_current_year[year_index]);
-    stock_allocation_on_total_portfolio = if f64::is_nan(stock_allocation_on_total_portfolio)
-        || f64::is_infinite(stock_allocation_on_total_portfolio)
-    {
-        0.0
-    } else {
-        stock_allocation_on_total_portfolio
+    let stock_allocation_on_total_portfolio = {
+        let x = savings_portfolio_at_end.stock_allocation_amount
+            / (savings_portfolio_after_withdrawals.balance
+                + pre_calculations
+                    .tpaw
+                    .net_present_value
+                    .savings
+                    .without_current_year[year_index]);
+        if f64::is_nan(x) || f64::is_infinite(x) {
+            0.0
+        } else {
+            x
+        }
+    };
+
+    let withdrawals_from_savings_portfolio_rate = {
+        let x = savings_portfolio_after_withdrawals
+            .withdrawals
+            .from_savings_portfolio_rate_or_nan;
+        if x.is_nan() {
+            let context2 = SingleYearContext {
+                params: context.params,
+                pre_calculations: context.pre_calculations,
+                year_index: context.year_index,
+                returns: context.returns,
+                balance_starting: 1.0,
+            };
+            let savings_portfolio_after_contributions = portfolio_over_year::apply_contributions(
+                params.by_year.savings[year_index],
+                balance_starting,
+            );
+
+            let pre_withdrawal = calculate_pre_withdrawal(
+                &context2,
+                &Some(pre_withdrawal_from_using_expected_returns),
+            );
+
+            let target_withdrawals = calculate_target_withdrawals(
+                &context2,
+                &Some(pre_withdrawal_from_using_expected_returns),
+                &pre_withdrawal,
+                pass_forward,
+            );
+
+            let savings_portfolio_after_withdrawals = portfolio_over_year::apply_target_withdrawals(
+                &target_withdrawals,
+                &context2,
+                &savings_portfolio_after_contributions,
+            );
+            savings_portfolio_after_withdrawals
+                .withdrawals
+                .from_savings_portfolio_rate_or_nan
+        } else {
+            x
+        }
     };
 
     let year_run_index = (year_index * (params.end_run - params.start_run)) + run_index;
@@ -304,12 +315,7 @@ fn run_for_single_year_using_historical_returns(
     result.by_yfn_by_run_withdrawals_total[year_run_index] =
         savings_portfolio_after_withdrawals.withdrawals.total;
     result.by_yfn_by_run_withdrawals_from_savings_portfolio_rate[year_run_index] =
-        savings_portfolio_after_withdrawals
-            .withdrawals
-            .from_savings_portfolio_rate;
-    result.by_yfn_by_run_excess_withdrawals_regular[year_run_index] =
-        savings_portfolio_after_withdrawals.withdrawals.regular
-            - withdrawal_from_using_bond_returns.regular;
+        withdrawals_from_savings_portfolio_rate;
     result.by_yfn_by_run_after_withdrawals_allocation_stocks_savings[year_run_index] =
         savings_portfolio_at_end.stock_allocation_percent;
     result.by_yfn_by_run_after_withdrawals_allocation_stocks_total[year_run_index] =
@@ -381,20 +387,19 @@ fn calculate_pre_withdrawal(
 #[inline(always)]
 fn calculate_target_withdrawals(
     context: &SingleYearContext,
-    savings_portfolio_starting_balance: f64,
     _pre_withdrawal_from_using_expected_returns: &Option<&SingleYearPreWithdrawal>,
     _pre_withdrawal: &SingleYearPreWithdrawal,
     pass_forward: &SingleYearPassForward,
 ) -> TargetWithdrawals {
     let SingleYearContext {
-        params, year_index, ..
+        params, year_index, balance_starting, ..
     } = *context;
 
     let regular_without_lmp = match year_index.cmp(&params.withdrawal_start_year) {
         Ordering::Less => 0.0,
         Ordering::Equal => match params.swr_withdrawal {
             ParamsSWRWithdrawal::AsPercent { percent } => {
-                savings_portfolio_starting_balance * percent
+                balance_starting * percent
             }
             ParamsSWRWithdrawal::AsAmount { amount } => amount,
         },

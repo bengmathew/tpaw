@@ -10,7 +10,7 @@ import {
   paddingCSSStyleHorz,
   Size,
   sizeCSSStyle,
-  XY,
+  XY
 } from '../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity0Transition'
 import { noCase } from '../../../Utils/Utils'
@@ -20,11 +20,9 @@ import { analyzeYearsInParams } from '../PlanInput/Helpers/AnalyzeYearsInParams'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import {
   PlanTransitionState,
-  simplifyPlanTransitionState2,
+  simplifyPlanTransitionState2
 } from '../PlanTransition'
 import { PlanSummaryButton } from './PlanSummaryButton'
-import { PlanSummaryRiskCopyFromAPreset } from './PlanSummaryRiskCopyFromAPreset'
-import { PlanSummaryRiskSwitchMode } from './PlanSummaryRiskSwitchMode'
 import { PlanSummarySave } from './PlanSummarySave/PlanSummarySave'
 
 export type PlanSummaySizing = {
@@ -147,7 +145,7 @@ export const PlanSummary = React.memo(
               className="text-[20px] sm:text-[26px] font-bold mb-6"
               style={{ ...paddingCSSStyleHorz(sizing.fixed.cardPadding) }}
             >
-              Spending Goals
+              Adjustments To Spending
             </h2>
             <div className="flex flex-col gap-y-6 ">
               <PlanSummaryButton
@@ -156,8 +154,10 @@ export const PlanSummary = React.memo(
                 warn={!_paramsOk(paramsExt, 'extra-spending')}
                 padding={sizing.fixed.cardPadding}
                 empty={
-                  params.extraSpending.discretionary.length === 0 &&
-                  params.extraSpending.essential.length === 0
+                  params.adjustmentsToSpending.extraSpending.discretionary
+                    .length === 0 &&
+                  params.adjustmentsToSpending.extraSpending.essential
+                    .length === 0
                 }
               />
 
@@ -167,8 +167,20 @@ export const PlanSummary = React.memo(
                   section={section}
                   padding={sizing.fixed.cardPadding}
                   empty={
-                    params.legacy.tpawAndSPAW.external.length === 0 &&
-                    params.legacy.tpawAndSPAW.total === 0
+                    params.adjustmentsToSpending.tpawAndSPAW.legacy.external
+                      .length === 0 &&
+                    params.adjustmentsToSpending.tpawAndSPAW.legacy.total === 0
+                  }
+                />
+              )}
+              {params.strategy !== 'SWR' && (
+                <PlanSummaryButton
+                  type="spending-ceiling-and-floor"
+                  section={section}
+                  padding={sizing.fixed.cardPadding}
+                  empty={
+                    params.adjustmentsToSpending.tpawAndSPAW.spendingCeiling ===
+                    null
                   }
                 />
               )}
@@ -176,66 +188,19 @@ export const PlanSummary = React.memo(
           </div>
 
           <div className="">
-            <div
-              className=""
+            <h2
+              className="text-[20px] sm:text-[26px] font-bold mb-6"
               style={{ ...paddingCSSStyleHorz(sizing.fixed.cardPadding) }}
             >
-              <h2 className="text-[20px] sm:text-[26px] font-bold  flex justify-between items-center">
-                Risk
-                <PlanSummaryRiskSwitchMode className="" />
-              </h2>
-              {!params.risk.useTPAWPreset && (
-                <PlanSummaryRiskCopyFromAPreset className="pt-2 pb-4" />
-              )}
-            </div>
+              Risk
+            </h2>
             <div className="flex flex-col gap-y-6 ">
-              {params.risk.useTPAWPreset ? (
-                <PlanSummaryButton
-                  type="risk-level"
-                  section={section}
-                  padding={sizing.fixed.cardPadding}
-                />
-              ) : (
-                <>
-                  <PlanSummaryButton
-                    type="stock-allocation"
-                    section={section}
-                    padding={sizing.fixed.cardPadding}
-                  />
-                  {params.strategy !== 'SWR' && (
-                    <PlanSummaryButton
-                      type="spending-tilt"
-                      section={section}
-                      padding={sizing.fixed.cardPadding}
-                    />
-                  )}
-                  {params.strategy !== 'SWR' && (
-                    <PlanSummaryButton
-                      type="spending-ceiling-and-floor"
-                      section={section}
-                      padding={sizing.fixed.cardPadding}
-                      empty={
-                        params.risk.tpawAndSPAW.spendingCeiling === null &&
-                        params.risk.tpawAndSPAW.spendingFloor === null
-                      }
-                    />
-                  )}
-                  {!Config.client.production && params.strategy !== 'SWR' && (
-                    <PlanSummaryButton
-                      type="lmp"
-                      section={section}
-                      padding={sizing.fixed.cardPadding}
-                    />
-                  )}
-                  {params.strategy === 'SWR' && (
-                    <PlanSummaryButton
-                      type="withdrawal"
-                      section={section}
-                      padding={sizing.fixed.cardPadding}
-                    />
-                  )}
-                </>
-              )}
+              <PlanSummaryButton
+                type="risk"
+                section={section}
+                padding={sizing.fixed.cardPadding}
+                hideTitle
+              />
             </div>
           </div>
 

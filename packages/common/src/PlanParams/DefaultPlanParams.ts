@@ -1,7 +1,7 @@
 import _ from 'lodash'
-import { historicalReturnsAverage } from '../HistoricalReturns'
-import { linearFnFomPoints, noCase } from '../Utils'
-import { PlanParams, TPAWRisk, TPAWRiskLevel } from './PlanParams'
+import { historicalReturns } from '../HistoricalReturns'
+import { noCase } from '../Utils'
+import { PlanParams } from './PlanParams'
 
 type MarketData = {
   CAPE: {
@@ -12,7 +12,7 @@ type MarketData = {
   bondRates: { twentyYear: number }
   inflation: { value: number }
 }
-1
+
 export const EXPECTED_RETURN_PRESETS = (
   type: Exclude<PlanParams['returns']['expected']['type'], 'manual'>,
   { CAPE, bondRates }: MarketData,
@@ -35,7 +35,10 @@ export const EXPECTED_RETURN_PRESETS = (
         bonds: suggested.bonds,
       }
     case 'historical':
-      return { ...historicalReturnsAverage }
+      return {
+        stocks: historicalReturns.stocks.expectedValue,
+        bonds: historicalReturns.bonds.expectedValue,
+      }
     default:
       noCase(type)
   }
@@ -44,75 +47,14 @@ export const EXPECTED_RETURN_PRESETS = (
 export const SUGGESTED_INFLATION = (marketData: MarketData) =>
   _.round(marketData.inflation.value, 3)
 
-export const TPAW_RISK_PRESETS = (
-  preset: Exclude<TPAWRiskLevel, 'custom'>,
-  numYears: number,
-): TPAWRisk => {
-  const allocFn = (at20of100: number, spendingTilt: number): TPAWRisk => {
-    const at100of100 = _.round(at20of100 - 0.1, 2)
-    return {
-      tpaw: {
-        allocation: {
-          start: {
-            stocks: _.round(
-              linearFnFomPoints(0, at100of100, 100 - 20, at20of100)(numYears),
-              2,
-            ),
-          },
-          intermediate: [],
-          end: { stocks: at100of100 },
-        },
-        allocationForLegacy: { stocks: _.round(at20of100 + 0.2, 2) },
-      },
-      tpawAndSPAW: {
-        spendingCeiling: null,
-        spendingFloor: null,
-        spendingTilt,
-        lmp: 0,
-      },
-    }
-  }
-  switch (preset) {
-    case 'riskLevel-1':
-      return allocFn(0.3, 0.005)
-    case 'riskLevel-2':
-      return allocFn(0.4, 0.008)
-    case 'riskLevel-3':
-      return allocFn(0.5, 0.011)
-    case 'riskLevel-4':
-      return allocFn(0.6, 0.014)
-    default:
-      noCase(preset)
-  }
-}
-
-export const resolveTPAWRiskPreset = (
-  risk: PlanParams['risk'],
-  numYears: number,
-): Exclude<PlanParams['risk'], { useTPAWPreset: true }> => {
-  if (!risk.useTPAWPreset) return risk
-  const { swr, spawAndSWR, tpawPreset, customTPAWPreset, savedTPAWPreset } =
-    risk
-  const { tpaw, tpawAndSPAW } = TPAW_RISK_PRESETS(risk.tpawPreset, numYears)
-  return {
-    useTPAWPreset: false,
-    tpaw,
-    tpawAndSPAW,
-    swr,
-    spawAndSWR,
-    tpawPreset,
-    customTPAWPreset,
-    savedTPAWPreset,
-  }
-}
-
 export const DEFAULT_SWR_WITHDRAWAL_PERCENT = (retirementLength: number) => {
   return _.round(0.7125 * Math.pow(retirementLength, -0.859), 3)
 }
 
 export function getDefaultPlanParams() {
   const params: PlanParams = {
-    v: 14,
+    v: 15,
+    warnedAbout14to15Converstion: true,
     strategy: 'TPAW',
     dialogMode: true,
     people: {
@@ -125,21 +67,38 @@ export function getDefaultPlanParams() {
     currentPortfolioBalance: 0,
     futureSavings: [],
     retirementIncome: [],
-    extraSpending: {
-      essential: [],
-      discretionary: [],
-    },
-    legacy: {
+
+    adjustmentsToSpending: {
       tpawAndSPAW: {
-        total: 0,
-        external: [],
+        spendingCeiling: null,
+        spendingFloor: null,
+        legacy: {
+          total: 0,
+          external: [],
+        },
+      },
+      extraSpending: {
+        essential: [],
+        discretionary: [],
       },
     },
+
     risk: {
-      useTPAWPreset: true,
-      tpawPreset: 'riskLevel-2',
-      customTPAWPreset: null,
-      savedTPAWPreset: null,
+      tpaw: {
+        riskTolerance: {
+          at20: 12,
+          deltaAtMaxAge: -2,
+          forLegacyAsDeltaFromAt20: 2,
+        },
+        timePreference: 0,
+      },
+      tpawAndSPAW: {
+        lmp: 0,
+      },
+      spaw: {
+        spendingTilt: 0.008,
+      },
+
       spawAndSWR: {
         allocation: {
           start: { stocks: 0.5 },

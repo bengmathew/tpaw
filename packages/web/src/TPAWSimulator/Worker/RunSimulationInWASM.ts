@@ -1,15 +1,15 @@
 import _ from 'lodash'
-import {SimpleRange} from '../../Utils/SimpleRange'
-import {noCase} from '../../Utils/Utils'
-import {getNumYears, getWithdrawalStartAsYFN} from '../PlanParamsExt'
-import {PlanParamsProcessed} from '../PlanParamsProcessed'
-import {getWASM} from './GetWASM'
-import {TPAWWorkerRunSimulationResult} from './TPAWWorkerTypes'
+import { SimpleRange } from '../../Utils/SimpleRange'
+import { noCase } from '../../Utils/Utils'
+import { getNumYears, getWithdrawalStartAsYFN } from '../PlanParamsExt'
+import { PlanParamsProcessed } from '../PlanParamsProcessed'
+import { getWASM } from './GetWASM'
+import { TPAWWorkerRunSimulationResult } from './TPAWWorkerTypes'
 
 export async function runSimulationInWASM(
   params: PlanParamsProcessed,
   runsSpec: SimpleRange,
-  test?: {truth: number[]; indexIntoHistoricalReturns: number[]}
+  test?: { truth: number[]; indexIntoHistoricalReturns: number[] },
 ): Promise<TPAWWorkerRunSimulationResult> {
   let start0 = performance.now()
   const numYears = getNumYears(params.original)
@@ -24,8 +24,8 @@ export async function runSimulationInWASM(
     getWithdrawalStartAsYFN(params.original),
     params.returns.expected.stocks,
     params.returns.expected.bonds,
-    Float64Array.from(params.returns.historicalAdjusted.map(x => x.stocks)),
-    Float64Array.from(params.returns.historicalAdjusted.map(x => x.bonds)),
+    Float64Array.from(params.returns.historicalAdjusted.map((x) => x.stocks)),
+    Float64Array.from(params.returns.historicalAdjusted.map((x) => x.bonds)),
     params.currentPortfolioBalance,
     Float64Array.from(params.risk.tpaw.allocation),
     Float64Array.from(params.risk.spawAndSWR.allocation),
@@ -36,17 +36,17 @@ export async function runSimulationInWASM(
       : params.risk.swr.withdrawal.type === 'asPercent'
       ? params.risk.swr.withdrawal.percent
       : noCase(params.risk.swr.withdrawal),
+    Float64Array.from(params.byYear.map((x) => x.tpawAndSPAW.risk.lmp)),
     Float64Array.from(
-      params.byYear.map(x => x.tpawAndSPAW.risk.lmp)
+      params.byYear.map((x) => x.futureSavingsAndRetirementIncome),
     ),
-    Float64Array.from(params.byYear.map(x => x.futureSavingsAndRetirementIncome)),
-    Float64Array.from(params.byYear.map(x => x.extraSpending.essential)),
-    Float64Array.from(params.byYear.map(x => x.extraSpending.discretionary)),
-    params.legacy.tpawAndSPAW.target,
-    params.legacy.tpawAndSPAW.external,
-    params.risk.tpawAndSPAW.spendingTilt,
-    params.risk.tpawAndSPAW.spendingCeiling ?? undefined,
-    params.risk.tpawAndSPAW.spendingFloor ?? undefined,
+    Float64Array.from(params.byYear.map((x) => x.extraSpending.essential)),
+    Float64Array.from(params.byYear.map((x) => x.extraSpending.discretionary)),
+    params.adjustmentsToSpending.tpawAndSPAW.legacy.target,
+    params.adjustmentsToSpending.tpawAndSPAW.legacy.external,
+    Float64Array.from(params.risk.tpawAndSPAW.spendingTilt),
+    params.adjustmentsToSpending.tpawAndSPAW.spendingCeiling ?? undefined,
+    params.adjustmentsToSpending.tpawAndSPAW.spendingFloor ?? undefined,
     params.sampling === 'monteCarlo'
       ? true
       : params.sampling === 'historical'
@@ -55,7 +55,7 @@ export async function runSimulationInWASM(
     test?.truth ? Float64Array.from(test.truth) : undefined,
     test?.indexIntoHistoricalReturns
       ? Uint32Array.from(test.indexIntoHistoricalReturns)
-      : undefined
+      : undefined,
   )
   const perfRuns = performance.now() - start
 
@@ -63,8 +63,8 @@ export async function runSimulationInWASM(
   const yearIndexes = _.range(0, numYears)
   const splitArray = (x: Float64Array) => {
     const copy = x.slice()
-    return yearIndexes.map(year =>
-      copy.subarray(year * numRuns, (year + 1) * numRuns)
+    return yearIndexes.map((year) =>
+      copy.subarray(year * numRuns, (year + 1) * numRuns),
     )
   }
 
@@ -79,21 +79,18 @@ export async function runSimulationInWASM(
         withdrawals: {
           essential: splitArray(runs.by_yfn_by_run_withdrawals_essential()),
           discretionary: splitArray(
-            runs.by_yfn_by_run_withdrawals_discretionary()
+            runs.by_yfn_by_run_withdrawals_discretionary(),
           ),
           regular: splitArray(runs.by_yfn_by_run_withdrawals_regular()),
           total: splitArray(runs.by_yfn_by_run_withdrawals_total()),
           fromSavingsPortfolioRate: splitArray(
-            runs.by_yfn_by_run_withdrawals_from_savings_portfolio_rate()
+            runs.by_yfn_by_run_withdrawals_from_savings_portfolio_rate(),
           ),
-        },
-        excessWithdrawals: {
-          regular: splitArray(runs.by_yfn_by_run_excess_withdrawals_regular()),
         },
         afterWithdrawals: {
           allocation: {
             stocks: splitArray(
-              runs.by_yfn_by_run_after_withdrawals_allocation_stocks_savings()
+              runs.by_yfn_by_run_after_withdrawals_allocation_stocks_savings(),
             ),
           },
         },
@@ -102,7 +99,7 @@ export async function runSimulationInWASM(
         afterWithdrawals: {
           allocation: {
             stocks: splitArray(
-              runs.by_yfn_by_run_after_withdrawals_allocation_stocks_total()
+              runs.by_yfn_by_run_after_withdrawals_allocation_stocks_total(),
             ),
           },
         },
@@ -112,7 +109,7 @@ export async function runSimulationInWASM(
       numInsufficientFundYears: runs
         .by_run_num_insufficient_fund_years()
         .slice(),
-      endingBalanceOfSavingsPortfolio: runs.by_run_ending_balancee().slice(),
+      endingBalanceOfSavingsPortfolio: runs.by_run_ending_balance().slice(),
     },
   }
   runs.free()

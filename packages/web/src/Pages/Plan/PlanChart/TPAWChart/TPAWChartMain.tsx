@@ -168,11 +168,11 @@ const components = () => {
             : `Age ${ageX('person1')}`
         },
         formatY: data.yFormat,
-        showTh: data.type !== 'reward-risk-ratio-comparison',
+        showTh: true,
         pad: {
           vert: {
             top: scaled(8, 10),
-            between: scaled(6, 9  ),
+            between: scaled(6, 9),
             bottom: scaled(8, 10),
           },
           horz: {

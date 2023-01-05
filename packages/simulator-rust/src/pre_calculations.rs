@@ -75,7 +75,7 @@ fn pre_calculations_for_tpaw(params: &Params) -> PreCalculationsForTPAW {
         },
         cumulative_1_plus_g_over_1_plus_r: cumulative_1_plus_g_over_1_plus_r(
             &regular_rate,
-            params.spending_tilt,
+            &params.spending_tilt,
         ),
     };
     return result;
@@ -111,7 +111,7 @@ fn pre_calculations_for_spaw(params: &Params) -> PreCalculationsForSPAW {
         },
         cumulative_1_plus_g_over_1_plus_r: cumulative_1_plus_g_over_1_plus_r(
             &rate,
-            params.spending_tilt,
+            &params.spending_tilt,
         ),
     }
 }
@@ -137,14 +137,14 @@ fn get_net_present_value(r: &[f64], amounts: &[f64]) -> NetPresentValueOfSequenc
     }
 }
 
-fn cumulative_1_plus_g_over_1_plus_r(r: &[f64], g: f64) -> Vec<f64> {
+fn cumulative_1_plus_g_over_1_plus_r(r: &[f64], g: &[f64]) -> Vec<f64> {
     let n = r.len();
     let mut result = vec![0.0; n];
     for i in (0..n).rev() {
         let x = if i == n - 1 {
             0.0
         } else {
-            (result[i + 1] * (1.0 + g)) / (1.0 + r[i])
+            (result[i + 1] * (1.0 + g[i])) / (1.0 + r[i])
         };
         result[i] = 1.0 + x
     }

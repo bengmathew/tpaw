@@ -23,7 +23,7 @@ pub struct Withdrawals {
     pub discretionary: f64,
     pub regular: f64,
     pub total: f64,
-    pub from_savings_portfolio_rate: f64,
+    pub from_savings_portfolio_rate_or_nan: f64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -146,11 +146,8 @@ pub fn apply_target_withdrawals(
     let balance = after_contributions.balance - total;
     let from_contributions = f64::min(total, contributions);
     let from_savings_portfolio = total - from_contributions;
-    let from_savings_portfolio_rate = if balance_starting == 0.0 {
-        0.0
-    } else {
-        from_savings_portfolio / balance_starting
-    };
+
+    let from_savings_portfolio_rate_or_nan = from_savings_portfolio / balance_starting;
 
     AfterWithdrawals {
         contributions,
@@ -159,7 +156,7 @@ pub fn apply_target_withdrawals(
             discretionary,
             regular,
             total,
-            from_savings_portfolio_rate,
+            from_savings_portfolio_rate_or_nan,
         },
         balance,
         insufficient_funds,

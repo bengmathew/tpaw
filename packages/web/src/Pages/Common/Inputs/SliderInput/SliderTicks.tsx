@@ -1,48 +1,42 @@
 import React from 'react'
-import { animated, useSpring } from 'react-spring'
-import { lineFromPoints } from '../../../../Utils/SVG/LineFromPoints'
+import { SliderSizing } from './UseSliderSizing'
 
 export const SliderTicks = React.memo(
   ({
-    values,
-    type,
-    scale,
+    ticks,
+    sizing: { pixelXToDataX },
     inDrag,
-    activeRange,
   }: {
     inDrag: boolean
-    values: number[]
-    type: 'small' | 'large'
-    scale: (x: number) => number
-    activeRange: {start: number; end: number}
+    ticks: ('small' | 'large' | 'none')[]
+    sizing: SliderSizing
   }) => {
-    const size = type === 'small' ? 6 : 12
-
-    const spring = useSpring(inDrag ? {size} : {size:0})
-
     return (
       <g>
-        {values.map((value, i) => {
-          const x = scale(value)
+        {ticks.map((type, index) => {
+          const x = pixelXToDataX.inverse(index)
+
+          if (type === 'none')
+            return <React.Fragment key={index}></React.Fragment>
+
+          const size = type === 'small' ? 6 : 12
           return (
-            <animated.path
-              key={i}
-              className={`stroke-current 
-              ${type === 'small' ? 'text-gray-500' : 'text-gray-600'}`}
-              strokeWidth={type === 'small' ? 1 : 1}
-              opacity={
-                value < activeRange.start || value > activeRange.end ? 0.3 : 1
-              }
-              d={spring.size.to(size =>
-                lineFromPoints([
-                  [x, 0],
-                  [x, -size],
-                ])
-              )}
+            <rect
+              key={index}
+              className={`fill-current 
+              ${type === 'small' ? 'text-gray-500' : 'text-gray-700'}`}
+              x={x - 0.5}
+              y={0}
+              width={1}
+              height={1}
+              style={{
+                transition: 'transform 300ms',
+                transform: `scaleY(${inDrag ? -size : 0})`,
+              }}
             />
           )
         })}
       </g>
     )
-  }
+  },
 )

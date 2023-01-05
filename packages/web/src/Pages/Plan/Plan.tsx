@@ -40,11 +40,13 @@ const query = graphql`
 `
 
 import { WithChartData } from '../App/WithChartData'
+import { ConfirmAlert } from '../Common/Modal/ConfirmAlert'
 import { WithUser } from '../QueryFragments/UserFragment'
 
 export const Plan = React.memo((planContent: PlanContent) => {
   const userGQLArgs = useUserGQLArgs()
   const data = useLazyLoadQuery<PlanQuery>(query, { ...userGQLArgs })
+
   return (
     <WithUser value={data}>
       <WithSimulation>
@@ -59,6 +61,7 @@ export const Plan = React.memo((planContent: PlanContent) => {
 const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
   const simulation = useSimulation()
   const { params, setParams } = simulation
+
   const isSWR = params.strategy === 'SWR'
   const windowSize = useWindowSize()
   const aspectRatio = windowSize.width / windowSize.height
@@ -126,7 +129,7 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
               ? ''
               : state.section === 'results' && state.dialogMode
               ? ' - Preliminary Results'
-              : ` - ${planSectionLabel(state.section, params.strategy)}`
+              : ` - ${planSectionLabel(state.section)}`
           }
           - TPAW Planner`}
         curr="plan"
@@ -153,6 +156,29 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
           sizing={_sizing.summary}
           planTransition={transition}
         />
+        {!params.warnedAbout14to15Converstion && (
+          <ConfirmAlert
+            title={'Migration to New Risk Inputs'}
+            option1={{
+              label: 'Close',
+              onClose: () => {
+                setParams((params) => {
+                  const clone = _.cloneDeep(params)
+                  clone.warnedAbout14to15Converstion = true
+                  return clone
+                })
+              },
+            }}
+            onCancel={null}
+          >
+            <p className="p-base">
+              The planner has been updated to use different inputs for risk.
+              Your previous risk inputs have been migrated to the new version.
+              The mapping is not exact, so please review the inputs in the risk
+              section.
+            </p>
+          </ConfirmAlert>
+        )}
       </AppPage>
     </PlanContentContext.Provider>
   )

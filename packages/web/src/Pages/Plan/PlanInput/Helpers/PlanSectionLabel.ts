@@ -1,18 +1,7 @@
-import {PlanParams} from '@tpaw/common'
-import {noCase} from '../../../../Utils/Utils'
-import {PlanSectionName} from './PlanSectionName'
+import { noCase } from '../../../../Utils/Utils'
+import { PlanSectionName } from './PlanSectionName'
 
-export function planSectionLabel(
-  type: Exclude<PlanSectionName, 'stock-allocation'>
-): string
-export function planSectionLabel(
-  type: PlanSectionName,
-  strategy: PlanParams['strategy']
-): string
-export function planSectionLabel(
-  type: PlanSectionName,
-  strategy?: PlanParams['strategy']
-): string {
+export function planSectionLabel(type: PlanSectionName): string {
   switch (type) {
     case 'summary':
       return 'Summary'
@@ -32,28 +21,10 @@ export function planSectionLabel(
       return 'Extra Spending'
     case 'legacy':
       return 'Legacy'
-    case 'risk-level':
-      return 'Risk Level'
-    case 'stock-allocation':
-      switch (strategy) {
-        case 'TPAW':
-          return 'Stock Allocation of Total Portfolio'
-        case 'SPAW':
-        case 'SWR':
-          return 'Stock Allocation of Savings Portfolio'
-        case undefined:
-          throw new Error()
-        default:
-          noCase(strategy)
-      }
+    case 'risk':
+      return 'Risk'
     case 'spending-ceiling-and-floor':
       return 'Spending Ceiling and Floor'
-    case 'spending-tilt':
-      return 'Spending Tilt'
-    case 'lmp':
-      return 'LMP'
-    case 'withdrawal':
-      return 'Withdrawal'
     case 'inflation':
       return 'Inflation'
     case 'strategy':

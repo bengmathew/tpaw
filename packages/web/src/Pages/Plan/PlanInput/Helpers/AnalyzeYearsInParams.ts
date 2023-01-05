@@ -1,42 +1,37 @@
+import { GlidePath, ValueForYearRange, Year, YearRange } from '@tpaw/common'
 import _ from 'lodash'
-import {
-  GlidePath,
-  ValueForYearRange,
-  Year,
-  YearRange,
-} from '@tpaw/common'
-import {PlanParamsExt} from '../../../../TPAWSimulator/PlanParamsExt'
-import {noCase} from '../../../../Utils/Utils'
-import {planSectionLabel} from './PlanSectionLabel'
+import { PlanParamsExt } from '../../../../TPAWSimulator/PlanParamsExt'
+import { noCase } from '../../../../Utils/Utils'
+import { planSectionLabel } from './PlanSectionLabel'
 
 export function analyzeYearsInParams(
   paramsExt: PlanParamsExt,
-  yearUpdater?: (year: Year) => Year
+  yearUpdater?: (year: Year) => Year,
 ) {
-  const {params} = paramsExt
+  const { params } = paramsExt
   const {
     futureSavings,
     retirementIncome,
-    extraSpending,
+    adjustmentsToSpending: { extraSpending },
     risk,
   } = params
   const valueForYearRange = [
-    ...futureSavings.map(x =>
-      _analyzeValueForYearRange(x, 'future-savings', paramsExt, yearUpdater)
+    ...futureSavings.map((x) =>
+      _analyzeValueForYearRange(x, 'future-savings', paramsExt, yearUpdater),
     ),
-    ...retirementIncome.map(x =>
+    ...retirementIncome.map((x) =>
       _analyzeValueForYearRange(
         x,
         'income-during-retirement',
         paramsExt,
-        yearUpdater
-      )
+        yearUpdater,
+      ),
     ),
-    ...extraSpending.essential.map(x =>
-      _analyzeValueForYearRange(x, 'extra-spending', paramsExt, yearUpdater)
+    ...extraSpending.essential.map((x) =>
+      _analyzeValueForYearRange(x, 'extra-spending', paramsExt, yearUpdater),
     ),
-    ...extraSpending.discretionary.map(x =>
-      _analyzeValueForYearRange(x, 'extra-spending', paramsExt, yearUpdater)
+    ...extraSpending.discretionary.map((x) =>
+      _analyzeValueForYearRange(x, 'extra-spending', paramsExt, yearUpdater),
     ),
   ]
 
@@ -45,14 +40,14 @@ export function analyzeYearsInParams(
     'strategy',
     'assetAllocationForSPAW',
     paramsExt,
-    yearUpdater
+    yearUpdater,
   )
 
   const glidePath = _.compact([
     // Condition only on returning the results, not on running the year updater.
     params.strategy === 'SPAW' ? spawGlidePath : undefined,
   ])
-  return {valueForYearRange, glidePath}
+  return { valueForYearRange, glidePath }
 }
 
 const _analyzeGlidePath = (
@@ -60,16 +55,16 @@ const _analyzeGlidePath = (
   section: 'strategy',
   location: 'assetAllocationForSPAW',
   paramsExt: PlanParamsExt,
-  yearUpdater?: (year: Year) => Year
+  yearUpdater?: (year: Year) => Year,
 ) => {
-  const {glidePathIntermediateValidated} = paramsExt
+  const { glidePathIntermediateValidated } = paramsExt
   if (yearUpdater) {
-    glidePath.intermediate.forEach(x => (x.year = yearUpdater(x.year)))
+    glidePath.intermediate.forEach((x) => (x.year = yearUpdater(x.year)))
   }
   const analyzed = glidePathIntermediateValidated(glidePath.intermediate)
 
   const sectionLabel = planSectionLabel(section)
-  const usesPerson2 = glidePath.intermediate.some(x => _usesPerson2(x.year))
+  const usesPerson2 = glidePath.intermediate.some((x) => _usesPerson2(x.year))
   return {
     section,
     sectionLabel,
@@ -78,7 +73,7 @@ const _analyzeGlidePath = (
     location,
     usesPerson2,
     usesRetirement: (person: 'person1' | 'person2') =>
-      glidePath.intermediate.some(x => _usesRetirement(x.year, person)),
+      glidePath.intermediate.some((x) => _usesRetirement(x.year, person)),
   }
 }
 
@@ -86,10 +81,10 @@ const _analyzeValueForYearRange = (
   entry: ValueForYearRange,
   section: 'future-savings' | 'income-during-retirement' | 'extra-spending',
   paramsExt: PlanParamsExt,
-  yearUpdater?: (year: Year) => Year
+  yearUpdater?: (year: Year) => Year,
 ) => {
-  const {yearRange, label} = entry
-  const {validYearRange, yearRangeBoundsCheck, params} = paramsExt
+  const { yearRange, label } = entry
+  const { validYearRange, yearRangeBoundsCheck, params } = paramsExt
 
   const sectionLabel = planSectionLabel(section)
   if (yearUpdater) {
@@ -129,7 +124,7 @@ const _analyzeValueForYearRange = (
     entry,
     usesPerson2: doesSomeEdgeYear(_usesPerson2, yearRange),
     useRetirement: (person: 'person1' | 'person2') =>
-      doesSomeEdgeYear(x => _usesRetirement(x, person), yearRange),
+      doesSomeEdgeYear((x) => _usesRetirement(x, person), yearRange),
   }
 }
 

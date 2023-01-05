@@ -22,25 +22,24 @@ import {
   union,
 } from 'json-guard'
 import _ from 'lodash'
-import { fGet } from '../Utils'
-import { getDefaultPlanParams } from './DefaultPlanParams'
-import { TPAWParamsV1WithoutHistorical } from './Old/TPAWParamsV1'
-import { TPAWParamsV10 } from './Old/TPAWParamsV10'
-import { TPAWParamsV11 } from './Old/TPAWParamsV11'
-import { TPAWParamsV12 } from './Old/TPAWParamsV12'
-import { TPAWParamsV13 } from './Old/TPAWParamsV13'
-import { tpawParamsV1Validator } from './Old/TPAWParamsV1Validator'
-import { TPAWParamsV2WithoutHistorical } from './Old/TPAWParamsV2'
-import { tpawParamsV2Validator } from './Old/TPAWParamsV2Validator'
-import { TPAWParamsV3WithoutHistorical } from './Old/TPAWParamsV3'
-import { tpawParamsV3Validator } from './Old/TPAWParamsV3Validator'
-import { TPAWParamsV4 } from './Old/TPAWParamsV4'
-import { TPAWParamsV5 } from './Old/TPAWParamsV5'
-import { TPAWParamsV6 } from './Old/TPAWParamsV6'
-import { TPAWParamsV7 } from './Old/TPAWParamsV7'
-import { TPAWParamsV8 } from './Old/TPAWParamsV8'
-import { TPAWParamsV9 } from './Old/TPAWParamsV9'
-import { Validator } from './Old/Validator'
+import { fGet } from '../../Utils'
+import { TPAWParamsV1WithoutHistorical } from './TPAWParamsV1'
+import { TPAWParamsV10 } from './TPAWParamsV10'
+import { TPAWParamsV11 } from './TPAWParamsV11'
+import { TPAWParamsV12 } from './TPAWParamsV12'
+import { TPAWParamsV13 } from './TPAWParamsV13'
+import { tpawParamsV1Validator } from './TPAWParamsV1Validator'
+import { TPAWParamsV2WithoutHistorical } from './TPAWParamsV2'
+import { tpawParamsV2Validator } from './TPAWParamsV2Validator'
+import { TPAWParamsV3WithoutHistorical } from './TPAWParamsV3'
+import { tpawParamsV3Validator } from './TPAWParamsV3Validator'
+import { TPAWParamsV4 } from './TPAWParamsV4'
+import { TPAWParamsV5 } from './TPAWParamsV5'
+import { TPAWParamsV6 } from './TPAWParamsV6'
+import { TPAWParamsV7 } from './TPAWParamsV7'
+import { TPAWParamsV8 } from './TPAWParamsV8'
+import { TPAWParamsV9 } from './TPAWParamsV9'
+import { Validator } from './Validator'
 
 export namespace PlanParams14 {
   export const MAX_LABEL_LENGTH = 150
@@ -524,7 +523,7 @@ export namespace PlanParams14 {
           v13.risk.tpawPreset === 'custom'
             ? {
                 useTPAWPreset: false,
-                tpawPreset: getDefaultPlanParams().risk.tpawPreset,
+                tpawPreset: 'riskLevel-2',
                 customTPAWPreset: v13.risk.customTPAWPreset,
                 savedTPAWPreset: null,
                 tpaw: _.cloneDeep(fGet(v13.risk.customTPAWPreset).tpaw),

@@ -1,3 +1,5 @@
+import _ from 'lodash'
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function assert(condition: any): asserts condition {
   if (!condition) {
@@ -51,4 +53,15 @@ export const linearFnFromSlopeAndIntercept = (
   const result = (x: number) => slope * x + intercept
   result.inverse = (y: number) => (y - intercept) / slope
   return result
+}
+
+export const preciseRange = (
+  start: number,
+  end: number,
+  stepSize: number,
+  precision: number
+) => {
+  return _.range(_.round((end - start) / stepSize + 1)).map(x =>
+    _.round(x * stepSize + start, precision)
+  )
 }

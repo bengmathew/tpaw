@@ -28,8 +28,6 @@ addEventListener('message', async event => {
             .fromSavingsPortfolioRate[0].buffer,
           result.byYearsFromNowByRun.savingsPortfolio.afterWithdrawals
             .allocation.stocks[0].buffer,
-          result.byYearsFromNowByRun.savingsPortfolio.excessWithdrawals
-            .regular[0].buffer,
           result.byRun.endingBalanceOfSavingsPortfolio.buffer,
         ])
       }

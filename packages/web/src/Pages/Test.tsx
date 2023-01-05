@@ -1,9 +1,9 @@
-import React, {useEffect, useState} from 'react'
-import {extendPlanParams} from '../TPAWSimulator/PlanParamsExt'
-import {processPlanParams} from '../TPAWSimulator/PlanParamsProcessed'
-import {runSimulationInWASM} from '../TPAWSimulator/Worker/RunSimulationInWASM'
-import {useMarketData} from './App/WithMarketData'
-import {Config} from './Config'
+import React, { useEffect, useState } from 'react'
+import { extendPlanParams } from '../TPAWSimulator/PlanParamsExt'
+import { processPlanParams } from '../TPAWSimulator/PlanParamsProcessed'
+import { runSimulationInWASM } from '../TPAWSimulator/Worker/RunSimulationInWASM'
+import { useMarketData } from './App/WithMarketData'
+import { Config } from './Config'
 
 export const Test = React.memo(() => {
   const marketData = useMarketData()
@@ -32,15 +32,15 @@ export const Test = React.memo(() => {
       const params = processPlanParams(testParams, marketData)
 
       console.dir(
-        params.returns.historicalAdjusted[indexIntoHistoricalReturns[0]]
+        params.returns.historicalAdjusted[indexIntoHistoricalReturns[0]],
       )
       const wasm = await runSimulationInWASM(
         params,
-        {start: 0, end: 1},
+        { start: 0, end: 1 },
         {
           truth: excel,
           indexIntoHistoricalReturns,
-        }
+        },
       )
 
       // const resultsFromUsingExpectedReturns = runSPAWSimulation(params, {
@@ -134,65 +134,64 @@ const excelSimulated = [
 const excel = excelSimulated
 
 const testParams = extendPlanParams({
-  v: 14,
+  v: 15,
+  warnedAbout14to15Converstion: true,
   strategy: 'TPAW',
   dialogMode: true,
   people: {
     withPartner: false,
     person1: {
       displayName: null,
-      ages: {type: 'notRetired', current: 35, retirement: 65, max: 100},
+      ages: { type: 'notRetired', current: 35, retirement: 65, max: 100 },
     },
   },
   currentPortfolioBalance: 0,
   futureSavings: [],
   retirementIncome: [],
-  extraSpending: {
-    essential: [],
-    discretionary: [],
-  },
-  legacy: {
-    tpawAndSPAW: {
-      total: 0,
-      external: [],
-    },
-  },
-  risk: {
-    useTPAWPreset:false,
-    tpawPreset:'riskLevel-2',
-    customTPAWPreset:null,
-    savedTPAWPreset:null,
-    tpaw: {
-      allocation: {
-        start: {stocks: 0.4},
-        intermediate: [],
-        end: {stocks: 0.3},
-      },
-      allocationForLegacy: {stocks: 0.7},
-    },
+  adjustmentsToSpending: {
     tpawAndSPAW: {
       spendingCeiling: null,
       spendingFloor: null,
-      spendingTilt: 0.01,
+      legacy: {
+        total: 0,
+        external: [],
+      },
+    },
+    extraSpending: {
+      essential: [],
+      discretionary: [],
+    },
+  },
+  risk: {
+    tpaw: {
+      riskTolerance: {
+        at20: 12,
+        deltaAtMaxAge: -2,
+        forLegacyAsDeltaFromAt20: 2,
+      },
+      timePreference: 0,
+    },
+    tpawAndSPAW: {
       lmp: 0,
     },
+    spaw: { spendingTilt: 0.01 },
     spawAndSWR: {
       allocation: {
-        start: {stocks: 0.5},
+        start: { stocks: 0.5 },
         intermediate: [],
-        end: {stocks: 0.5},
+        end: { stocks: 0.5 },
       },
     },
     swr: {
-      withdrawal: {type: 'default'},
+      withdrawal: { type: 'default' },
     },
   },
 
   returns: {
-    expected: {type: 'suggested'},
-    historical: {type: 'default', adjust: {type: 'toExpected'}},
+    expected: { type: 'suggested' },
+    historical: { type: 'default', adjust: { type: 'toExpected' } },
   },
-  inflation: {type: 'suggested'},
+  inflation: { type: 'suggested' },
   sampling: 'monteCarlo',
   display: {
     alwaysShowAllYears: false,
@@ -204,6 +203,6 @@ const indexIntoHistoricalReturns = [
   128, 131, 24, 25, 27, 18, 140, 129, 73, 136, 140, 33, 104, 112, 94, 45, 110,
   48, 96, 11, 122, 73, 56, 99, 6, 5, 86, 21, 133, 28, 123, 88, 112, 86, 120, 73,
   134, 87, 11,
-].map(x => x - 1)
+].map((x) => x - 1)
 const randomIndexesIntoHistoricalReturnsByYear = (year: number) =>
   indexIntoHistoricalReturns[year]

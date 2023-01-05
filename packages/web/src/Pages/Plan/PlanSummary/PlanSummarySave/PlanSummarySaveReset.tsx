@@ -16,7 +16,7 @@ export const PlanSummarySaveReset = React.memo(
     return (
       <>
         <button className={`${className}`} onClick={() => setShowConfirm(true)}>
-          Reset
+          Clear All Inputs
         </button>
         {showConfirm && (
           <ConfirmAlert
@@ -32,7 +32,7 @@ export const PlanSummarySaveReset = React.memo(
             }}
             onCancel={() => setShowConfirm(false)}
           >
-            Are you sure you want to reset all inputs?
+            Are you sure you want to clear all inputs?
           </ConfirmAlert>
         )}
       </>

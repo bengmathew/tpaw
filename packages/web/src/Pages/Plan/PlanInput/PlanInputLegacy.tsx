@@ -1,29 +1,29 @@
-import {faMinus, faPlus} from '@fortawesome/pro-light-svg-icons'
-import {faPen} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import { faMinus, faPlus } from '@fortawesome/pro-light-svg-icons'
+import { faPen } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { PlanParams } from '@tpaw/common'
 import _ from 'lodash'
-import React, {Dispatch, useState} from 'react'
-import {PlanParams} from '@tpaw/common'
-import {Contentful} from '../../../Utils/Contentful'
-import {formatCurrency} from '../../../Utils/FormatCurrency'
-import {paddingCSSStyle} from '../../../Utils/Geometry'
-import {smartDeltaFn} from '../../../Utils/SmartDeltaFn'
-import {useSimulation} from '../../App/WithSimulation'
-import {AmountInput} from '../../Common/Inputs/AmountInput'
-import {EditLabeledAmount} from '../../Common/Inputs/EditLabeldAmount'
-import {usePlanContent} from '../Plan'
+import React, { Dispatch, useState } from 'react'
+import { Contentful } from '../../../Utils/Contentful'
+import { formatCurrency } from '../../../Utils/FormatCurrency'
+import { paddingCSSStyle } from '../../../Utils/Geometry'
+import { smartDeltaFn } from '../../../Utils/SmartDeltaFn'
+import { useSimulation } from '../../App/WithSimulation'
+import { AmountInput } from '../../Common/Inputs/AmountInput'
+import { EditLabeledAmount } from '../../Common/Inputs/EditLabeldAmount'
+import { usePlanContent } from '../Plan'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 type _State =
-  | {type: 'main'}
-  | {type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean}
+  | { type: 'main' }
+  | { type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean }
 
 export const PlanInputLegacy = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const [state, setState] = useState<_State>({type: 'main'})
+    const [state, setState] = useState<_State>({ type: 'main' })
     return (
       <PlanInputBody {...props}>
         <div className="">
@@ -41,18 +41,20 @@ export const PlanInputLegacy = React.memo(
         {{
           input:
             state.type === 'edit'
-              ? transitionOut => (
+              ? (transitionOut) => (
                   <EditLabeledAmount
                     title={
                       state.isAdd ? 'Add a Legacy Entry' : 'Edit Legacy Entry'
                     }
                     labelPlaceholder="E.g. Home Equity"
-                    setHideInMain={hideInMain =>
-                      setState({...state, hideInMain})
+                    setHideInMain={(hideInMain) =>
+                      setState({ ...state, hideInMain })
                     }
                     transitionOut={transitionOut}
-                    onDone={() => setState({type: 'main'})}
-                    entries={params => params.legacy.tpawAndSPAW.external}
+                    onDone={() => setState({ type: 'main' })}
+                    entries={(params) =>
+                      params.adjustmentsToSpending.tpawAndSPAW.legacy.external
+                    }
                     index={state.index}
                   />
                 )
@@ -60,7 +62,7 @@ export const PlanInputLegacy = React.memo(
         }}
       </PlanInputBody>
     )
-  }
+  },
 )
 
 const _TotalTargetCard = React.memo(
@@ -71,18 +73,19 @@ const _TotalTargetCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const {params, setParams} = useSimulation()
+    const { params, setParams } = useSimulation()
     const handleAmount = (amount: number) => {
-      if (amount === params.legacy.tpawAndSPAW.total) return
-      const p = _.cloneDeep(params)
-      p.legacy.tpawAndSPAW.total = amount
-      setParams(p)
+      if (amount === params.adjustmentsToSpending.tpawAndSPAW.legacy.total)
+        return
+      const clone = _.cloneDeep(params)
+      clone.adjustmentsToSpending.tpawAndSPAW.legacy.total = amount
+      setParams(clone)
     }
     const content = usePlanContent()['legacy']
     return (
       <div
         className={`${className} params-card`}
-        style={{...paddingCSSStyle(props.sizing.cardPadding)}}
+        style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
       >
         <h2 className="font-bold text-lg mb-3">Total Legacy Target</h2>
         <Contentful.RichText
@@ -93,7 +96,7 @@ const _TotalTargetCard = React.memo(
           <AmountInput
             className=" text-input"
             prefix="$"
-            value={params.legacy.tpawAndSPAW.total}
+            value={params.adjustmentsToSpending.tpawAndSPAW.legacy.total}
             onChange={handleAmount}
             decimals={0}
             modalLabel="Total Legacy Target"
@@ -101,7 +104,11 @@ const _TotalTargetCard = React.memo(
           <button
             className={`flex items-center px-2 `}
             onClick={() =>
-              handleAmount(increment(params.legacy.tpawAndSPAW.total))
+              handleAmount(
+                increment(
+                  params.adjustmentsToSpending.tpawAndSPAW.legacy.total,
+                ),
+              )
             }
           >
             <FontAwesomeIcon className="text-base" icon={faPlus} />
@@ -109,7 +116,11 @@ const _TotalTargetCard = React.memo(
           <button
             className={`flex items-center px-2 `}
             onClick={() =>
-              handleAmount(decrement(params.legacy.tpawAndSPAW.total))
+              handleAmount(
+                decrement(
+                  params.adjustmentsToSpending.tpawAndSPAW.legacy.total,
+                ),
+              )
             }
           >
             <FontAwesomeIcon className="text-base" icon={faMinus} />
@@ -117,7 +128,7 @@ const _TotalTargetCard = React.memo(
         </div>
       </div>
     )
-  }
+  },
 )
 
 const _NonPortfolioSourcesCard = React.memo(
@@ -132,13 +143,13 @@ const _NonPortfolioSourcesCard = React.memo(
     state: _State
     setState: Dispatch<_State>
   }) => {
-    const {params, setParams} = useSimulation()
+    const { params, setParams } = useSimulation()
     const content = usePlanContent()['legacy']
 
     return (
       <div
         className={`${className} params-card`}
-        style={{...paddingCSSStyle(props.sizing.cardPadding)}}
+        style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
       >
         <h2 className="font-bold text-lg mb-3">Non-portfolio Sources</h2>
         <Contentful.RichText
@@ -149,24 +160,25 @@ const _NonPortfolioSourcesCard = React.memo(
           <button
             className="flex items-center justify-center gap-x-2 py-1 pr-2  "
             onClick={() => {
-              const index = params.legacy.tpawAndSPAW.external.length
-              setParams(params => {
+              const index =
+                params.adjustmentsToSpending.tpawAndSPAW.legacy.external.length
+              setParams((params) => {
                 const clone = _.cloneDeep(params)
-                clone.legacy.tpawAndSPAW.external.push({
+                clone.adjustmentsToSpending.tpawAndSPAW.legacy.external.push({
                   label: null,
                   value: 0,
                   nominal: false,
                 })
                 return clone
               })
-              setState({type: 'edit', isAdd: true, hideInMain: true, index})
+              setState({ type: 'edit', isAdd: true, hideInMain: true, index })
             }}
           >
             <FontAwesomeIcon className="text-2xl" icon={faPlus} />
           </button>
         </div>
         <div className="flex flex-col gap-y-6 mt-4 ">
-          {params.legacy.tpawAndSPAW.external.map(
+          {params.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
             (entry, index) =>
               !(
                 state.type === 'edit' &&
@@ -186,12 +198,12 @@ const _NonPortfolioSourcesCard = React.memo(
                     })
                   }}
                 />
-              )
+              ),
           )}
         </div>
       </div>
     )
-  }
+  },
 )
 
 const _Entry = React.memo(
@@ -201,7 +213,7 @@ const _Entry = React.memo(
     onEdit,
   }: {
     className?: string
-    entry: PlanParams['legacy']['tpawAndSPAW']['external'][0]
+    entry: PlanParams['adjustmentsToSpending']['tpawAndSPAW']['legacy']['external'][0]
     onEdit: () => void
   }) => (
     <div
@@ -226,12 +238,12 @@ const _Entry = React.memo(
         </button>
       </div>
     </div>
-  )
+  ),
 )
 
-const {increment, decrement} = smartDeltaFn([
-  {value: 1000000, delta: 100000},
-  {value: 2000000, delta: 250000},
+const { increment, decrement } = smartDeltaFn([
+  { value: 1000000, delta: 100000 },
+  { value: 2000000, delta: 250000 },
 ])
 
 const _RemainderCard = React.memo(
@@ -242,20 +254,22 @@ const _RemainderCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const {paramsProcessed} = useSimulation()
+    const { paramsProcessed } = useSimulation()
     return (
       <div
         className={`${className} params-card`}
-        style={{...paddingCSSStyle(props.sizing.cardPadding)}}
+        style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
       >
         <h2 className="font-bold text-lg mb-3">
           Remainder Funded by Portfolio
         </h2>
         <h2 className="">
-          {formatCurrency(paramsProcessed.legacy.tpawAndSPAW.target)}{' '}
+          {formatCurrency(
+            paramsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.target,
+          )}{' '}
           <span className="">real</span>
         </h2>
       </div>
     )
-  }
+  },
 )

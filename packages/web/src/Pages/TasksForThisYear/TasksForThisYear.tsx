@@ -1,7 +1,6 @@
 import { faLeftLong } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { PlanParams } from '@tpaw/common'
-import Link from 'next/link'
 import React, { ReactNode } from 'react'
 import { extendPlanParams } from '../../TPAWSimulator/PlanParamsExt'
 import { FirstYearSavingsPortfolioDetail } from '../../TPAWSimulator/Worker/FirstYearSavingsPortfolioDetail'
@@ -9,10 +8,12 @@ import { TPAWRunInWorkerByPercentileByYearsFromNow } from '../../TPAWSimulator/W
 import { UseTPAWWorkerResult } from '../../TPAWSimulator/Worker/UseTPAWWorker'
 import { formatCurrency } from '../../Utils/FormatCurrency'
 import { formatPercentage } from '../../Utils/FormatPercentage'
+import { useURLUpdater } from '../../Utils/UseURLUpdater'
 import { fGet } from '../../Utils/Utils'
 import { AppPage } from '../App/AppPage'
 import { useSimulation } from '../App/WithSimulation'
-import { planSectionLabel } from '../Plan/PlanInput/Helpers/PlanSectionLabel'
+import { useGetSectionURL } from '../Plan/Plan'
+import { PlanSectionName } from '../Plan/PlanInput/Helpers/PlanSectionName'
 
 export type TasksForThisYearProps = Omit<
   FirstYearSavingsPortfolioDetail,
@@ -24,9 +25,6 @@ export type TasksForThisYearProps = Omit<
   }
   withdrawalsStarted: boolean
   strategy: PlanParams['strategy']
-  risk: {
-    useTPAWPreset: boolean
-  }
 }
 
 export const getTasksForThisYearProps = (
@@ -46,32 +44,31 @@ export const getTasksForThisYearProps = (
     ...original,
     withdrawals: {
       ...original.withdrawals,
-      essentialByEntry: params.original.extraSpending.essential.map(
-        ({ id, label }) => ({
-          id,
-          label,
-          amount: firstYearOfAnyPercentile(
+      essentialByEntry:
+        params.original.adjustmentsToSpending.extraSpending.essential.map(
+          ({ id, label }) => ({
             id,
-            tpawResult.savingsPortfolio.withdrawals.essential,
-          ),
-        }),
-      ),
-      discretionaryByEntry: params.original.extraSpending.discretionary.map(
-        ({ id, label }) => ({
-          id,
-          label,
-          amount: firstYearOfAnyPercentile(
+            label,
+            amount: firstYearOfAnyPercentile(
+              id,
+              tpawResult.savingsPortfolio.withdrawals.essential,
+            ),
+          }),
+        ),
+      discretionaryByEntry:
+        params.original.adjustmentsToSpending.extraSpending.discretionary.map(
+          ({ id, label }) => ({
             id,
-            tpawResult.savingsPortfolio.withdrawals.discretionary,
-          ),
-        }),
-      ),
+            label,
+            amount: firstYearOfAnyPercentile(
+              id,
+              tpawResult.savingsPortfolio.withdrawals.discretionary,
+            ),
+          }),
+        ),
     },
     withdrawalsStarted,
     strategy: params.strategy,
-    risk: {
-      useTPAWPreset: params.original.risk.useTPAWPreset,
-    },
   }
 }
 
@@ -79,6 +76,9 @@ export const TasksForThisYear = React.memo(() => {
   const { tpawResult } = useSimulation()
   const props = getTasksForThisYearProps(tpawResult)
   const { withdrawals, withdrawalsStarted } = props
+
+  const getSectionURL = useGetSectionURL()
+  const urlUpdater = useURLUpdater()
 
   return (
     <AppPage
@@ -90,12 +90,17 @@ export const TasksForThisYear = React.memo(() => {
         <div className="w-full max-w-[650px] px-4 py-4 z-0 bg-orange-50 rounded-2xl mb-20 ">
           <div className="">
             <div className=" flex flex-row items-center gap-x-4 gap-y-">
-              <Link href="/plan">
-                <a className="flex items-center gap-x-2 text-sm sm:text-base btn-dark px-4 py-1.5">
-                  <FontAwesomeIcon className="" icon={faLeftLong} />
-                  Done
-                </a>
-              </Link>
+              <button
+                className="flex items-center gap-x-2 text-sm sm:text-base btn-dark px-4 py-1.5"
+                onClick={() =>
+                  urlUpdater.push(
+                    getSectionURL(getTasksForThisYearOnDoneSection()),
+                  )
+                }
+              >
+                <FontAwesomeIcon className="" icon={faLeftLong} />
+                Done
+              </button>
               <h1 className="font-bold text-3xl">Tasks for This Year</h1>
             </div>
 
@@ -423,19 +428,6 @@ const _AssetAllocation = React.memo(
             Rebalance this portfolio to the following asset allocation:
           </p>
           <_AllocationTable className="" {...props} />
-          {props.strategy === 'TPAW' && !props.risk.useTPAWPreset && (
-            <p className="mt-3">
-              <span className="bg-gray-300 px-2 rounded-lg ">Note</span>{' '}
-              {`This is the asset allocation for your savings portfolio and will typically 
-            be different from the asset allocation for the total portfolio that you entered in the "${planSectionLabel(
-              'stock-allocation',
-              props.strategy,
-            )} section." `}
-              <Link href="learn/future-savings-and-retirement-income">
-                <a className="underline">Learn more.</a>
-              </Link>
-            </p>
-          )}
         </div>
       </div>
     )
@@ -479,3 +471,15 @@ const _Value = React.memo(
     <span className={className}>{formatCurrency(children)}</span>
   ),
 )
+
+export const setTasksForThisYearOnDoneSection = (section: PlanSectionName) => {
+  window.localStorage.setItem('TasksForThisYearOnDoneSection', section)
+}
+const getTasksForThisYearOnDoneSection = (): PlanSectionName => {
+  const result = window.localStorage.getItem(
+    'TasksForThisYearOnDoneSection',
+  ) as PlanSectionName | undefined
+
+  window.localStorage.removeItem('TasksForThisYearOnDoneSection')
+  return result ?? ('summary' as PlanSectionName)
+}

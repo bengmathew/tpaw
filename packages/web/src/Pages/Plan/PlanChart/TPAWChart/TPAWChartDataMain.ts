@@ -122,8 +122,8 @@ const _spendingYears = ({
   return params.display.alwaysShowAllYears
     ? 'allYears'
     : [
-        ...params.extraSpending.essential,
-        ...params.extraSpending.discretionary,
+        ...params.adjustmentsToSpending.extraSpending.essential,
+        ...params.adjustmentsToSpending.extraSpending.discretionary,
       ].some((x) => asYFN(x.yearRange).start < withdrawalStart)
     ? ('allYears' as const)
     : ('retirementYears' as const)
@@ -136,8 +136,8 @@ export const tpawChartDataMainPercentiles = (
   const { params } = tpawResult.args
   const paramsExt = extendPlanParams(params.original)
   const hasLegacy =
-    params.legacy.tpawAndSPAW.total !== 0 ||
-    params.risk.tpawAndSPAW.spendingCeiling !== null
+    params.adjustmentsToSpending.tpawAndSPAW.legacy.total !== 0 ||
+    params.adjustmentsToSpending.tpawAndSPAW.spendingCeiling !== null
   const spendingYears = _spendingYears(paramsExt)
   switch (type) {
     case 'spending-total':
@@ -214,7 +214,11 @@ export const tpawChartDataMainPercentiles = (
     default:
       if (isPlanChartSpendingEssentialType(type)) {
         const id = planChartSpendingEssentialTypeID(type)
-        assert(params.original.extraSpending.essential.find((x) => x.id === id))
+        assert(
+          params.original.adjustmentsToSpending.extraSpending.essential.find(
+            (x) => x.id === id,
+          ),
+        )
         return _dataPercentiles(
           type,
           tpawResult,
@@ -229,7 +233,9 @@ export const tpawChartDataMainPercentiles = (
       if (isPlanChartSpendingDiscretionaryType(type)) {
         const id = planChartSpendingDiscretionaryTypeID(type)
         assert(
-          params.original.extraSpending.discretionary.find((x) => x.id === id),
+          params.original.adjustmentsToSpending.extraSpending.discretionary.find(
+            (x) => x.id === id,
+          ),
         )
         return _dataPercentiles(
           type,
@@ -260,93 +266,6 @@ const _addYear = (
     }),
   ),
 })
-
-export const tpawChartDataMainRewardRiskRatio = (
-  label: string,
-  tpawResult: {
-    tpaw: UseTPAWWorkerResult
-    spaw: UseTPAWWorkerResult
-    swr: UseTPAWWorkerResult
-  },
-  percentiles: readonly number[],
-  highlightedPercentiles: readonly number[],
-): TPAWChartDataMain => {
-  const { args } = tpawResult.tpaw
-  const { params } = args
-  const paramsExt = extendPlanParams(params.original)
-  const { asYFN, withdrawalStartYear, maxMaxAge } = paramsExt
-  const retirement = asYFN(withdrawalStartYear)
-  const maxYear = asYFN(maxMaxAge)
-  const years: TPAWChartDataMain['years'] = {
-    displayRange: {
-      start: retirement > 0 ? retirement : 1,
-      end: maxYear,
-    },
-    retirement,
-    max: maxYear,
-  }
-
-  const tpawData = Array.from(
-    tpawResult.tpaw.savingsPortfolio.rewardRiskRatio.withdrawals.regular,
-  )
-  const spawData = Array.from(
-    tpawResult.spaw.savingsPortfolio.rewardRiskRatio.withdrawals.regular,
-  )
-  const swrData = Array.from(
-    tpawResult.swr.savingsPortfolio.rewardRiskRatio.withdrawals.regular,
-  )
-  const [tpawInterpolated, spawInterpolated, swrInterpolated] = _interpolate(
-    [{ data: tpawData }, { data: spawData }, { data: swrData }],
-    years.displayRange,
-  )
-  const series: TPAWChartDataMain['series'] = {
-    type: 'labeledLines',
-    percentiles,
-    highlightedPercentiles,
-    lines: [
-      { label: 'TPAW', data: tpawInterpolated },
-      { label: 'SPAW', data: spawInterpolated },
-      { label: 'SWR', data: swrInterpolated },
-    ],
-  }
-
-  const maxMin = (data: number[]) => {
-    const maxY = Math.max(...data)
-    const minY = Math.min(...data)
-    return {
-      max: { y: maxY, x: data.indexOf(maxY) },
-      min: { y: minY, x: data.indexOf(minY) },
-    }
-  }
-
-  const blendMaxMin = (x: ReturnType<typeof maxMin>[]) => ({
-    max: fGet(_.maxBy(x, (x) => x.max.y)).max,
-    min: fGet(_.minBy(x, (x) => x.min.y)).min,
-  })
-
-  const { max, min } = blendMaxMin([
-    maxMin(tpawData),
-    maxMin(spawData),
-    maxMin(swrData),
-  ])
-  const yDisplayRange = {
-    start: Math.min(0, min.y),
-    end: Math.max(0.0001, max.y),
-  }
-  return {
-    params: params.original,
-    paramsExt,
-    type: 'reward-risk-ratio-comparison',
-    label,
-    years,
-    series,
-    min,
-    max,
-    yFormat: (x) => x.toFixed(2),
-    yDisplayRange,
-    successRate: 0,
-  }
-}
 
 const _dataPercentiles = (
   type: PlanChartType,

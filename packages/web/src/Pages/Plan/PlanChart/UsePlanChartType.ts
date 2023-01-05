@@ -6,7 +6,7 @@ import { isPlanChartType } from './PlanChartType'
 import { useGetPlanChartURL } from './UseGetPlanChartURL'
 
 export function usePlanChartType() {
-  const {tpawResult} = useSimulation()
+  const { tpawResult } = useSimulation()
   const chartData = useChartData()
   const urlUpdater = useURLUpdater()
   const getPlanChartURL = useGetPlanChartURL()
@@ -15,12 +15,6 @@ export function usePlanChartType() {
   let type = isPlanChartType(tpawResult.args.params.original, typeStr)
     ? typeStr
     : 'spending-total'
-  if (
-    type === 'reward-risk-ratio-comparison' &&
-    chartData.rewardRiskRatio === null
-  ) {
-    type = 'spending-total'
-  }
   if (typeStr.length > 0 && typeStr !== type)
     urlUpdater.replace(getPlanChartURL(type))
 

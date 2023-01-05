@@ -1,11 +1,12 @@
 import {
   DEFAULT_SWR_WITHDRAWAL_PERCENT,
   EXPECTED_RETURN_PRESETS,
+  fGet,
   GlidePath,
   historicalReturns,
   linearFnFomPoints,
   PlanParams,
-  resolveTPAWRiskPreset,
+  RISK_TOLERANCE_VALUES,
   SUGGESTED_INFLATION,
   ValueForYearRange,
 } from '@tpaw/common'
@@ -54,44 +55,75 @@ export function processPlanParams(
     assert(result.length === numYears)
     return result
   }
+  const returns = _processReturnsParams(params, marketData)
 
   const result = {
     strategy: params.strategy,
     people: params.people,
     currentPortfolioBalance: params.currentPortfolioBalance,
     byYear: _processByYearParams(paramsExt, marketData),
-    legacy: {
+    adjustmentsToSpending: {
       tpawAndSPAW: (() => {
-        const { total } = params.legacy.tpawAndSPAW
-        const external = _.sum(
-          params.legacy.tpawAndSPAW.external.map((x) =>
-            nominalToReal(
-              x,
-              processInflation(params.inflation, marketData),
-              numYears,
-            ),
-          ),
-        )
-        const target = Math.max(total - external, 0)
-        return { total, external, target }
+        const { spendingCeiling, spendingFloor, legacy } =
+          params.adjustmentsToSpending.tpawAndSPAW
+        return {
+          spendingCeiling:
+            spendingCeiling === null
+              ? null
+              : Math.max(spendingCeiling, params.risk.tpawAndSPAW.lmp),
+          spendingFloor,
+          legacy: (() => {
+            const { total } = params.adjustmentsToSpending.tpawAndSPAW.legacy
+            const external = _.sum(
+              legacy.external.map((x) =>
+                nominalToReal(
+                  x,
+                  processInflation(params.inflation, marketData),
+                  numYears,
+                ),
+              ),
+            )
+            const target = Math.max(total - external, 0)
+            return { total, external, target }
+          })(),
+        }
       })(),
     },
+
     risk: (() => {
-      const { spawAndSWR, swr, tpaw, tpawAndSPAW } = resolveTPAWRiskPreset(
-        params.risk,
-        numYears,
-      )
+      const { spawAndSWR, spaw, swr, tpaw, tpawAndSPAW } = params.risk
+
+      const tpawGlidePath = _tpawGlidePath(paramsExt, returns)
+
+      const legacyStockAllocation = _applyMerton(
+        returns,
+        tpaw.riskTolerance.at20 + tpaw.riskTolerance.forLegacyAsDeltaFromAt20,
+        0, // Does not matter
+      ).stockAllocation
+
       return {
         tpaw: {
-          allocation: _normalizeGlidePath(tpaw.allocation),
-          allocationForLegacy: tpaw.allocationForLegacy,
+          allocation: _normalizeGlidePath({
+            start: { stocks: tpawGlidePath.now.stockAllocation },
+            intermediate: [],
+            end: { stocks: tpawGlidePath.atMaxAge.stockAllocation },
+          }),
+          allocationForLegacy: {
+            stocks: legacyStockAllocation,
+          },
         },
         tpawAndSPAW: {
-          ...tpawAndSPAW,
-          spendingCeiling:
-            tpawAndSPAW.spendingCeiling === null
-              ? null
-              : Math.max(tpawAndSPAW.spendingCeiling, tpawAndSPAW.lmp),
+          spendingTilt: _.times(numYears, (x) =>
+            params.strategy === 'SPAW'
+              ? spaw.spendingTilt
+              : linearFnFomPoints(
+                  0,
+                  tpawGlidePath.now.spendingTilt,
+                  numYears - 1,
+                  tpawGlidePath.atMaxAge.spendingTilt,
+                )(x),
+          ),
+          lmp: tpawAndSPAW.lmp,
         },
         spawAndSWR: {
           allocation: _normalizeGlidePath(spawAndSWR.allocation),
@@ -108,11 +140,99 @@ export function processPlanParams(
       }
     })(),
 
-    returns: _processReturnsParams(params, marketData),
+    returns,
     sampling: params.sampling,
     original: params,
   }
   return result
+}
+
+const _tpawGlidePath = (
+  paramsExt: PlanParamsExt,
+  returns: ReturnType<typeof _processReturnsParams>,
+) => {
+  const { params, pickPerson, longerLivedPerson } = paramsExt
+  const riskTolerance = (() => {
+    const person = pickPerson(longerLivedPerson)
+    const atAge = (x: number) =>
+      Math.max(
+        RISK_TOLERANCE_VALUES.DATA[0],
+        linearFnFomPoints(
+          20,
+          params.risk.tpaw.riskTolerance.at20,
+          person.ages.max,
+          params.risk.tpaw.riskTolerance.at20 +
+            params.risk.tpaw.riskTolerance.deltaAtMaxAge,
+        )(x),
+      )
+    return {
+      now: atAge(person.ages.current),
+      atMaxAge: atAge(person.ages.max),
+    }
+  })()
+
+  const deltaOverPlanningYears = riskTolerance.atMaxAge - riskTolerance.now
+
+  const _currMerton = (riskTolerance: number) =>
+    _applyMerton(returns, riskTolerance, params.risk.tpaw.timePreference)
+
+  const maxRiskTolerance =
+    _.find(
+      RISK_TOLERANCE_VALUES.DATA,
+      (x) => _currMerton(x).stockAllocation === 1,
+    ) ?? fGet(_.last(RISK_TOLERANCE_VALUES.DATA))
+
+  const riskToleranceAtMaxAge = Math.min(
+    maxRiskTolerance,
+    riskTolerance.atMaxAge,
+  )
+
+  return {
+    now: _currMerton(riskToleranceAtMaxAge - deltaOverPlanningYears),
+    atMaxAge: _currMerton(riskToleranceAtMaxAge),
+  }
+}
+
+const _applyMerton = (
+  returns: ReturnType<typeof _processReturnsParams>,
+  riskTolerance: number,
+  timePreference: number,
+) => {
+  if (riskTolerance === 0) {
+    const gContinuous = timePreference
+    return {
+      spendingTilt: Math.exp(gContinuous) - 1,
+      stockAllocation: 0,
+    }
+  }
+  // Don't use historicalReturns.stocks.convertExpectedToLog() because we
+  // want to assume variance is 0 and not use the historical variance,
+  // unlike for stocks.
+  const r = Math.log(1 + returns.expected.bonds)
+  const mu = historicalReturns.stocks.convertExpectedToLog(
+    returns.expected.stocks,
+  )
+  const sigmaPow2 = historicalReturns.stocks.log.variance
+  const gamma = RISK_TOLERANCE_VALUES.riskToleranceToRRA(riskTolerance)
+
+  const stockAllocation = Math.min(1, (mu - r) / (sigmaPow2 * gamma))
+  const rho = timePreference
+
+  const nu =
+    (rho - (1 - gamma) * (Math.pow(mu - r, 2) / (2 * sigmaPow2 * gamma) + r)) /
+    gamma
+
+  const logROfPortfolio = historicalReturns.statsFn(
+    returns.historicalAdjusted.map(
+      ({ stocks }) =>
+        stocks * stockAllocation +
+        returns.expected.bonds * (1 - stockAllocation),
+    ),
+  ).log.expectedValue
+  const gContinuous = logROfPortfolio - nu
+  const spendingTilt = Math.exp(gContinuous) - 1
+
+  return { spendingTilt, stockAllocation }
 }
 
 function _processByYearParams(
@@ -120,11 +240,14 @@ function _processByYearParams(
   marketData: MarketData,
 ) {
   const { asYFN, withdrawalStartYear, numYears, params } = paramsExt
-  const { futureSavings, retirementIncome, extraSpending } = params
+  const {
+    futureSavings,
+    retirementIncome,
+    adjustmentsToSpending: { extraSpending },
+  } = params
   const withdrawalStart = asYFN(withdrawalStartYear)
   const lastWorkingYear = withdrawalStart > 0 ? withdrawalStart - 1 : 0
   const endYear = numYears - 1
-  const lmp = params.risk.useTPAWPreset
   const byYear = _.times(numYears, (year) => ({
     futureSavingsAndRetirementIncome: 0,
     extraSpending: {
@@ -132,12 +255,7 @@ function _processByYearParams(
       discretionary: 0,
     },
     tpawAndSPAW: {
-      risk: {
-        lmp:
-          year < withdrawalStart
-            ? 0
-            : resolveTPAWRiskPreset(params.risk, numYears).tpawAndSPAW.lmp,
-      },
+      risk: { lmp: year < withdrawalStart ? 0 : params.risk.tpawAndSPAW.lmp },
     },
   }))
 
@@ -217,16 +335,13 @@ export function processInflation(
 function _processReturnsParams(params: PlanParams, marketData: MarketData) {
   const { returns } = params
   const expected = processExpectedReturns(params.returns.expected, marketData)
-  const n = historicalReturns.length
 
   const historicalAdjusted = (() => {
     switch (returns.historical.type) {
       case 'default': {
         const adjustment = returns.historical.adjust
         const adjust = (type: 'stocks' | 'bonds') => {
-          const n = historicalReturns.length
-          const historical = historicalReturns.map((x) => x[type])
-          const historicalExpected = _.mean(historical)
+          const historical = historicalReturns[type]
 
           const targetExpected =
             adjustment.type === 'to'
@@ -234,51 +349,23 @@ function _processReturnsParams(params: PlanParams, marketData: MarketData) {
               : adjustment.type === 'toExpected'
               ? expected[type]
               : adjustment.type === 'none'
-              ? historicalExpected
+              ? historical.expectedValue
               : adjustment.type === 'by'
-              ? historicalExpected - adjustment[type]
+              ? historical.expectedValue - adjustment[type]
               : noCase(adjustment)
 
-          const historicalLog = historical.map((x) => Math.log(1 + x))
-          const historicalLogExpected = _.mean(historicalLog)
-          const historicalLogVariance =
-            _.sumBy(historicalLog, (x) =>
-              Math.pow(x - historicalLogExpected, 2),
-            ) /
-            (n - 1)
-
-          // Empirically determined to be more accurate.
-          const delta = { stocks: 0.0006162, bonds: 0.0000005 }
-          const targetLogExpected =
-            Math.log(1 + targetExpected) -
-            historicalLogVariance / 2 +
-            delta[type]
-
-          const adjustmentLogExpected =
-            historicalLogExpected - targetLogExpected
-
-          const adjustedLog = historicalLog.map(
-            (log) => log - adjustmentLogExpected,
-          )
-          const adjusted = adjustedLog.map((x) => Math.exp(x) - 1)
-          // console.dir('-------------')
-          // console.dir(type)
-          // console.dir(`historicalLogVariance/2: ${historicalLogVariance / 2}`)
-          // console.dir(`additionalDelta: ${delta[type]}`)
-          // console.dir(`total: ${historicalLogVariance / 2 + delta[type]}`)
-          // console.dir(`targetExpected: ${targetExpected}`)
-          // console.dir(`adjustedExpected: ${_.mean(adjusted)}`)
-          // console.dir(`diff: ${Math.abs(targetExpected - _.mean(adjusted))}`)
-          return adjusted
+          return historical.adjust(targetExpected)
         }
 
-        const stocks = adjust('stocks')
-        const bonds = adjust('bonds')
-        return stocks.map((stocks, i) => ({ stocks, bonds: bonds[i] }))
+        return _.zipWith(
+          adjust('stocks'),
+          adjust('bonds'),
+          (stocks, bonds) => ({ stocks, bonds }),
+        )
       }
       case 'fixed': {
         const { stocks, bonds } = returns.historical
-        return _.times(n, () => ({ stocks, bonds }))
+        return _.times(historicalReturns.raw.length, () => ({ stocks, bonds }))
       }
       default:
         noCase(returns.historical)

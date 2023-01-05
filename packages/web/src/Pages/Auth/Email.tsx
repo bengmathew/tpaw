@@ -1,4 +1,3 @@
-import { faBowlChopsticksNoodles } from '@fortawesome/sharp-solid-svg-icons'
 import { FirebaseError } from 'firebase/app'
 import {
   getAuth,
@@ -15,6 +14,8 @@ type _State =
   | { type: 'error'; message: string }
   | { type: 'doSignIn'; email: string }
   | { type: 'loggedIn' }
+
+  
 export const Email = React.memo(() => {
   const auth = getAuth()
   const isLink = isSignInWithEmailLink(auth, window.location.href)

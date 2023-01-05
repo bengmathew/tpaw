@@ -53,7 +53,8 @@ export const PlanInputExtraSpending = React.memo(
     }
 
     const showDiscretionary =
-      params.strategy !== 'SWR' || params.extraSpending.discretionary.length > 0
+      params.strategy !== 'SWR' ||
+      params.adjustmentsToSpending.extraSpending.discretionary.length > 0
 
     return (
       <PlanInputBody {...props}>
@@ -91,7 +92,9 @@ export const PlanInputExtraSpending = React.memo(
               className="mt-6"
               heading={null}
               addButtonText="Add an Essential Expense"
-              entries={(params) => params.extraSpending.essential}
+              entries={(params) =>
+                params.adjustmentsToSpending.extraSpending.essential
+              }
               hideEntry={
                 state.type === 'edit' && state.isEssential && state.hideInMain
                   ? state.index
@@ -124,7 +127,9 @@ export const PlanInputExtraSpending = React.memo(
                 className="mt-6"
                 heading={null}
                 addButtonText="Add a Discretionary Expense"
-                entries={(params) => params.extraSpending.discretionary}
+                entries={(params) =>
+                  params.adjustmentsToSpending.extraSpending.discretionary
+                }
                 hideEntry={
                   state.type === 'edit' &&
                   !state.isEssential &&
@@ -196,8 +201,9 @@ export const PlanInputExtraSpending = React.memo(
                     }}
                     entries={(params) =>
                       state.isEssential
-                        ? params.extraSpending.essential
-                        : params.extraSpending.discretionary
+                        ? params.adjustmentsToSpending.extraSpending.essential
+                        : params.adjustmentsToSpending.extraSpending
+                            .discretionary
                     }
                     index={state.index}
                     allowableRange={allowableRange}

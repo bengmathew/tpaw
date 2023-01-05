@@ -1,7 +1,7 @@
+import { PlanParams } from '@tpaw/common'
 import _ from 'lodash'
-import {PlanParams} from '@tpaw/common'
-import {trimAndNullify} from '../../../../Utils/TrimAndNullify'
-import {assert, noCase} from '../../../../Utils/Utils'
+import { trimAndNullify } from '../../../../Utils/TrimAndNullify'
+import { assert, noCase } from '../../../../Utils/Utils'
 import {
   isPlanChartSpendingDiscretionaryType,
   isPlanChartSpendingEssentialType,
@@ -13,39 +13,33 @@ import {
 export const planChartLabel = (
   params: PlanParams,
   panelType: PlanChartType,
-  type: 'full' | 'short'
+  type: 'full' | 'short',
 ) => {
   switch (panelType) {
     case 'spending-total':
-      return {label: ['Spending During Retirement'], subLabel: null}
+      return { label: ['Spending During Retirement'], subLabel: null }
     case 'spending-general':
       return {
         label: _.compact([type === 'full' ? 'Spending' : undefined, `General`]),
         subLabel: null,
       }
     case 'portfolio':
-      return {label: ['Portfolio'], subLabel: null}
+      return { label: ['Portfolio'], subLabel: null }
     case 'asset-allocation-savings-portfolio':
-      return {
-        label: [
-          params.strategy !== 'TPAW' || params.risk.useTPAWPreset
-            ? 'Asset Allocation'
-            : 'Asset Allocation of Savings Portfolio',
-        ],
-        subLabel: null,
-      }
+      return { label: ['Asset Allocation'], subLabel: null }
     case 'asset-allocation-total-portfolio':
-      return {label: ['Asset Allocation of Total Portfolio'], subLabel: null}
+      return { label: ['Asset Allocation of Total Portfolio'], subLabel: null }
     case 'withdrawal':
-      return {label: ['Withdrawal Rate'], subLabel: null}
+      return { label: ['Withdrawal Rate'], subLabel: null }
     case 'reward-risk-ratio-comparison':
-      return {label: ['Reward/Risk Ratio Comparison'], subLabel: null}
+      return { label: ['Reward/Risk Ratio Comparison'], subLabel: null }
     default:
-      const {essential, discretionary} = params.extraSpending
+      const { essential, discretionary } =
+        params.adjustmentsToSpending.extraSpending
       const showLabel = params.strategy !== 'SWR'
       if (isPlanChartSpendingEssentialType(panelType)) {
         const id = planChartSpendingEssentialTypeID(panelType)
-        const index = essential.findIndex(x => x.id === id)
+        const index = essential.findIndex((x) => x.id === id)
         assert(index !== -1)
 
         const spendingLabel = `${
@@ -59,11 +53,11 @@ export const planChartLabel = (
             : [spendingLabel]),
         ])
         const subLabel = showLabel ? spendingLabel : null
-        return {label, subLabel}
+        return { label, subLabel }
       }
       if (isPlanChartSpendingDiscretionaryType(panelType)) {
         const id = planChartSpendingDiscretionaryTypeID(panelType)
-        const index = discretionary.findIndex(x => x.id === id)
+        const index = discretionary.findIndex((x) => x.id === id)
         assert(index !== -1)
 
         const spendingLabel = `${
@@ -77,7 +71,7 @@ export const planChartLabel = (
             : [spendingLabel]),
         ])
         const subLabel = showLabel ? spendingLabel : null
-        return {label, subLabel}
+        return { label, subLabel }
       }
       noCase(panelType)
   }

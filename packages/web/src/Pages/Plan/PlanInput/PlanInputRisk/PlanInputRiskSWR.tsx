@@ -1,33 +1,34 @@
 import {
   faCircle as faCircleRegular,
   faMinus,
-  faPlus
+  faPlus,
 } from '@fortawesome/pro-regular-svg-icons'
 import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { DEFAULT_SWR_WITHDRAWAL_PERCENT, fGet } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
-import { DEFAULT_SWR_WITHDRAWAL_PERCENT } from '@tpaw/common'
-import { Contentful } from '../../../Utils/Contentful'
-import { paddingCSSStyle } from '../../../Utils/Geometry'
-import { fGet } from '../../../Utils/Utils'
-import { useSimulation } from '../../App/WithSimulation'
-import { AmountInput } from '../../Common/Inputs/AmountInput'
-import { smartDeltaFnForAmountInput } from '../../Common/Inputs/SmartDeltaFnForAmountInput'
-import { usePlanContent } from '../Plan'
-import {
-  PlanInputBody,
-  PlanInputBodyPassThruProps
-} from './PlanInputBody/PlanInputBody'
+import { Contentful } from '../../../../Utils/Contentful'
+import { paddingCSSStyle } from '../../../../Utils/Geometry'
+import { useSimulation } from '../../../App/WithSimulation'
+import { AmountInput } from '../../../Common/Inputs/AmountInput'
+import { smartDeltaFnForAmountInput } from '../../../Common/Inputs/SmartDeltaFnForAmountInput'
+import { usePlanContent } from '../../Plan'
+import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
+import { PlanInputRiskSPAWAndSWRStockAllocationCard } from './PlanInputRiskSPAWAndSWRStockAllocation'
 
-export const PlanInputWithdrawalRate = React.memo(
-  (props: PlanInputBodyPassThruProps) => {
+export const PlanInputRiskSWR = React.memo(
+  ({ props }: { props: PlanInputBodyPassThruProps }) => {
     return (
-      <PlanInputBody {...props}>
-        <_WithdrawalCard className="" props={props} />
-      </PlanInputBody>
+      <>
+        <PlanInputRiskSPAWAndSWRStockAllocationCard
+          className="mt-4"
+          props={props}
+        />
+        <_WithdrawalCard className="mt-8" props={props} />
+      </>
     )
-  }
+  },
 )
 
 const _WithdrawalCard = React.memo(
@@ -38,15 +39,16 @@ const _WithdrawalCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const {params, tpawResult} = useSimulation()
+    const { params } = useSimulation()
     const content = usePlanContent()['withdrawal']
 
     return (
       <div
         className={`${className} params-card`}
-        style={{...paddingCSSStyle(props.sizing.cardPadding)}}
+        style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
       >
-        <div className="">
+        <h2 className="font-bold text-lg">Withdrawal</h2>
+        <div className="mt-4">
           <Contentful.RichText
             body={content.intro[params.strategy]}
             p=" p-base"
@@ -56,20 +58,20 @@ const _WithdrawalCard = React.memo(
         <_Amount className="mt-6" />
       </div>
     )
-  }
+  },
 )
 
-const _Rate = React.memo(({className = ''}: {className?: string}) => {
-  const {params, setParams, paramsExt} = useSimulation()
-  const {withdrawal} = params.risk.swr
-  const {withdrawalsStarted} = paramsExt
+const _Rate = React.memo(({ className = '' }: { className?: string }) => {
+  const { params, setParams, paramsExt } = useSimulation()
+  const { withdrawal } = params.risk.swr
+  const { withdrawalsStarted } = paramsExt
 
-  const {numRetirementYears} = paramsExt
+  const { numRetirementYears } = paramsExt
 
   const [lastEntry, setLastEntry] = useState(
     withdrawal.type === 'asPercent'
       ? withdrawal.percent
-      : DEFAULT_SWR_WITHDRAWAL_PERCENT(numRetirementYears)
+      : DEFAULT_SWR_WITHDRAWAL_PERCENT(numRetirementYears),
   )
   useEffect(() => {
     if (withdrawal.type === 'asPercent') {
@@ -88,7 +90,7 @@ const _Rate = React.memo(({className = ''}: {className?: string}) => {
       }
 
   const handleChange = (percent: number) =>
-    setParams(params => {
+    setParams((params) => {
       const clone = _.cloneDeep(params)
       clone.risk.swr.withdrawal = {
         type: 'asPercent',
@@ -115,12 +117,12 @@ const _Rate = React.memo(({className = ''}: {className?: string}) => {
         <div className="ml-5">
           <div
             className="inline-grid items-stretch mt-4"
-            style={{grid: 'auto/auto auto auto'}}
+            style={{ grid: 'auto/auto auto auto' }}
           >
             <AmountInput
               className="text-input w-[60px]"
               value={withdrawal.percent * 100}
-              onChange={percent => handleChange(percent / 100)}
+              onChange={(percent) => handleChange(percent / 100)}
               suffix="%"
               decimals={1}
               modalLabel={rateLabel.title}
@@ -143,20 +145,20 @@ const _Rate = React.memo(({className = ''}: {className?: string}) => {
     </div>
   )
 })
-const _Amount = React.memo(({className = ''}: {className?: string}) => {
-  const {params, setParams, tpawResult, paramsExt} = useSimulation()
-  const {withdrawal} = params.risk.swr
-  const {asYFN, withdrawalStartYear} = paramsExt
+const _Amount = React.memo(({ className = '' }: { className?: string }) => {
+  const { params, setParams, tpawResult, paramsExt } = useSimulation()
+  const { withdrawal } = params.risk.swr
+  const { asYFN, withdrawalStartYear } = paramsExt
 
   const [lastEntry, setLastEntry] = useState(
     _.round(
       fGet(
         tpawResult.savingsPortfolio.withdrawals.regular.byPercentileByYearsFromNow.find(
-          x => x.percentile === 50
-        )
+          (x) => x.percentile === 50,
+        ),
       ).data[asYFN(withdrawalStartYear)],
-      -3
-    )
+      -3,
+    ),
   )
   useEffect(() => {
     if (params.risk.swr.withdrawal.type === 'asAmount') {
@@ -165,9 +167,9 @@ const _Amount = React.memo(({className = ''}: {className?: string}) => {
   }, [params])
 
   const handleChange = (amount: number) =>
-    setParams(params => {
+    setParams((params) => {
       const clone = _.cloneDeep(params)
-      clone.risk.swr.withdrawal = {type: 'asAmount', amount}
+      clone.risk.swr.withdrawal = { type: 'asAmount', amount }
       return clone
     })
   return (
@@ -191,12 +193,12 @@ const _Amount = React.memo(({className = ''}: {className?: string}) => {
         <div className="ml-5">
           <div
             className="inline-grid items-stretch mt-4"
-            style={{grid: 'auto/auto auto auto'}}
+            style={{ grid: 'auto/auto auto auto' }}
           >
             <AmountInput
               className="text-input w-[160px]"
               value={withdrawal.amount}
-              onChange={amount => handleChange(amount)}
+              onChange={(amount) => handleChange(amount)}
               prefix="$"
               decimals={0}
               modalLabel="Withdrawal Amount"
@@ -205,7 +207,7 @@ const _Amount = React.memo(({className = ''}: {className?: string}) => {
               className="ml-2 px-3"
               onClick={() =>
                 handleChange(
-                  smartDeltaFnForAmountInput.increment(withdrawal.amount)
+                  smartDeltaFnForAmountInput.increment(withdrawal.amount),
                 )
               }
             >
@@ -215,7 +217,7 @@ const _Amount = React.memo(({className = ''}: {className?: string}) => {
               className="px-3"
               onClick={() =>
                 handleChange(
-                  smartDeltaFnForAmountInput.decrement(withdrawal.amount)
+                  smartDeltaFnForAmountInput.decrement(withdrawal.amount),
                 )
               }
             >

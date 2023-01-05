@@ -1,7 +1,7 @@
-import {assert} from '../../Utils/Utils'
+import { assert } from '../../Utils/Utils'
 
-import {Element} from 'domhandler'
-import {findAll, textContent} from 'domutils'
+import { Element } from 'domhandler'
+import { findAll, textContent } from 'domutils'
 import * as htmlparser2 from 'htmlparser2'
 import _ from 'lodash'
 
@@ -11,18 +11,22 @@ export async function getMarketData() {
   const inflation = await getInflation()
   const CAPE = await getCAPE()
   const bondRates = await getBondRates()
-  return {CAPE, inflation, bondRates}
+  return { CAPE, inflation, bondRates }
 }
 
 async function getBondRates() {
   const year = new Date().getFullYear()
-  const response = await fetch(
-    `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/${year}/all?type=daily_treasury_real_yield_curve&field_tdr_date_value=${year}&page&_format=csv`
-  )
-  assert(response.ok)
-  const text = await response.text()
-  const rows = text.split('\n')
-
+  const rowsForYear = async (year: number) => {
+    const response = await fetch(
+      `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/${year}/all?type=daily_treasury_real_yield_curve&field_tdr_date_value=${year}&page&_format=csv`,
+    )
+    assert(response.ok)
+    const text = await response.text()
+    const rows = text.split('\n')
+    return rows
+  }
+  let rows = await rowsForYear(year)
+  if (rows.length < 2) rows = await rowsForYear(year - 1)
   return _parseBondRow(rows[1])
 }
 
@@ -44,7 +48,7 @@ async function getInflation() {
     date.getMonth() + 1
   }-${date.getDate()}`
   const response = await fetch(
-    `https://fred.stlouisfed.org/graph/fredgraph.csv?mode=fred&id=T10YIE&cosd=${oneYearAgoStr}`
+    `https://fred.stlouisfed.org/graph/fredgraph.csv?mode=fred&id=T10YIE&cosd=${oneYearAgoStr}`,
   )
   assert(response.ok)
   const text = await response.text()
@@ -62,13 +66,13 @@ function _parseInflationRow(row: string) {
 
 async function getCAPE() {
   const response = await fetch(
-    'https://www.multpl.com/shiller-pe/table/by-month'
+    'https://www.multpl.com/shiller-pe/table/by-month',
   )
   assert(response.ok)
   const htmlString = await response.text()
   const dom = htmlparser2.parseDocument(htmlString)
-  const rows = findAll(e => e.tagName === 'tr', dom.childNodes)
-  const {date, value} = _parseCAPERow(rows[1])
+  const rows = findAll((e) => e.tagName === 'tr', dom.childNodes)
+  const { date, value } = _parseCAPERow(rows[1])
   const oneOverCAPE = 1 / value
   const lnOnePlusOneOverCAPE = Math.log(1 + oneOverCAPE)
   const regressionLog = {
@@ -109,8 +113,8 @@ async function getCAPE() {
         ..._.values(regression.full),
         ..._.values(regression.restricted),
       ],
-      x => x
-    ).slice(0, 4)
+      (x) => x,
+    ).slice(0, 4),
   )
 
   const regressionAverage = _.mean([
@@ -129,8 +133,10 @@ async function getCAPE() {
 }
 
 const _parseCAPERow = (row: Element) => {
-  const cols = findAll(e => e.tagName === 'td', [row]).map(x => textContent(x))
-  return {date: fParseDate(cols[0]), value: fParseFloat(cols[1])}
+  const cols = findAll((e) => e.tagName === 'td', [row]).map((x) =>
+    textContent(x),
+  )
+  return { date: fParseDate(cols[0]), value: fParseFloat(cols[1]) }
 }
 
 const fParseFloat = (x: string) => {

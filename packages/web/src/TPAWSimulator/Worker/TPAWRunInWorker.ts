@@ -1,13 +1,12 @@
-import { historicalReturns } from '@tpaw/common'
+import { historicalReturns, ValueForYearRange } from '@tpaw/common'
 import _ from 'lodash'
 import { MarketData } from '../../Pages/Common/GetMarketData'
 import { nominalToReal } from '../../Utils/NominalToReal'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { assert, fGet, noCase } from '../../Utils/Utils'
-import { StatsTools } from '../StatsTools'
-import { ValueForYearRange } from '@tpaw/common'
 import { extendPlanParams, PlanParamsExt } from '../PlanParamsExt'
-import { processInflation, PlanParamsProcessed } from '../PlanParamsProcessed'
+import { PlanParamsProcessed, processInflation } from '../PlanParamsProcessed'
+import { StatsTools } from '../StatsTools'
 import {
   FirstYearSavingsPortfolioDetail,
   firstYearSavingsPortfolioDetail,
@@ -47,11 +46,11 @@ export type TPAWRunInWorkerResult = {
       total: TPAWRunInWorkerByPercentileByYearsFromNow
       fromSavingsPortfolioRate: TPAWRunInWorkerByPercentileByYearsFromNow
     }
-    rewardRiskRatio: {
-      withdrawals: {
-        regular: Float64Array
-      }
-    }
+    // rewardRiskRatio: {
+    //   withdrawals: {
+    //     regular: Float64Array
+    //   }
+    // }
     afterWithdrawals: {
       allocation: {
         stocks: TPAWRunInWorkerByPercentileByYearsFromNow
@@ -320,18 +319,12 @@ export class TPAWRunInWorker {
     const perfSortAndPickPercentiles = performance.now() - start
     start = performance.now()
 
-    const { data: rewardRiskRatioWithdrawalsRegular } =
-      await this._calculateOneOverCV(
-        this._workers[0],
-        byYearsFromNowByRun.savingsPortfolio.excessWithdrawals.regular,
-      )
-
     const firstYearOfSomeRun = firstYearSavingsPortfolioDetail(
       runsByWorker[0].byYearsFromNowByRun.savingsPortfolio,
       params,
     )
     const withdrawlsEssentialById = new Map(
-      params.original.extraSpending.essential.map((x) => [
+      params.original.adjustmentsToSpending.extraSpending.essential.map((x) => [
         x.id,
         _separateExtraWithdrawal(
           x,
@@ -343,16 +336,18 @@ export class TPAWRunInWorker {
       ]),
     )
     const withdrawlsDiscretionaryById = new Map(
-      params.original.extraSpending.discretionary.map((x) => [
-        x.id,
-        _separateExtraWithdrawal(
-          x,
-          params,
-          withdrawalsDiscretionary,
-          'discretionary',
-          marketData,
-        ),
-      ]),
+      params.original.adjustmentsToSpending.extraSpending.discretionary.map(
+        (x) => [
+          x.id,
+          _separateExtraWithdrawal(
+            x,
+            params,
+            withdrawalsDiscretionary,
+            'discretionary',
+            marketData,
+          ),
+        ],
+      ),
     )
 
     const percentageOfRunsWithInsufficientFunds =
@@ -393,9 +388,9 @@ export class TPAWRunInWorker {
           ),
         },
 
-        rewardRiskRatio: {
-          withdrawals: { regular: rewardRiskRatioWithdrawalsRegular },
-        },
+        // rewardRiskRatio: {
+        //   withdrawals: { regular: rewardRiskRatioWithdrawalsRegular },
+        // },
 
         afterWithdrawals: {
           allocation: {
@@ -591,7 +586,7 @@ const _numRuns = (paramsExt: PlanParamsExt, numRuns: number) => {
     case 'monteCarlo':
       return numRuns
     case 'historical': {
-      return historicalReturns.length - numYears + 1
+      return historicalReturns.raw.length - numYears + 1
     }
     default:
       noCase(params.sampling)

@@ -129,30 +129,36 @@ export const PlanChartMainCardMenu = React.memo(
               }}
             >
               <_Link type="spending-total" {...buttonProps} />
-              {(params.original.extraSpending.essential.length > 0 ||
-                params.original.extraSpending.discretionary.length > 0) && (
+              {(params.original.adjustmentsToSpending.extraSpending.essential
+                .length > 0 ||
+                params.original.adjustmentsToSpending.extraSpending
+                  .discretionary.length > 0) && (
                 <div className=" flex flex-col border- border-gray-400 ">
                   <_Link
                     className="pl-10"
                     type="spending-general"
                     {...buttonProps}
                   />
-                  {params.original.extraSpending.essential.map((x) => (
-                    <_Link
-                      className="pl-10"
-                      key={`essential-${x.id}`}
-                      type={`spending-essential-${x.id}`}
-                      {...buttonProps}
-                    />
-                  ))}
-                  {params.original.extraSpending.discretionary.map((x) => (
-                    <_Link
-                      className="pl-10"
-                      key={`discretionary-${x.id}`}
-                      type={`spending-discretionary-${x.id}`}
-                      {...buttonProps}
-                    />
-                  ))}
+                  {params.original.adjustmentsToSpending.extraSpending.essential.map(
+                    (x) => (
+                      <_Link
+                        className="pl-10"
+                        key={`essential-${x.id}`}
+                        type={`spending-essential-${x.id}`}
+                        {...buttonProps}
+                      />
+                    ),
+                  )}
+                  {params.original.adjustmentsToSpending.extraSpending.discretionary.map(
+                    (x) => (
+                      <_Link
+                        className="pl-10"
+                        key={`discretionary-${x.id}`}
+                        type={`spending-discretionary-${x.id}`}
+                        {...buttonProps}
+                      />
+                    ),
+                  )}
                 </div>
               )}
               <_Link type={'portfolio'} {...buttonProps} />
@@ -160,13 +166,6 @@ export const PlanChartMainCardMenu = React.memo(
                 type={'asset-allocation-savings-portfolio'}
                 {...buttonProps}
               />
-              {!params.original.risk.useTPAWPreset &&
-                params.strategy === 'TPAW' && (
-                  <_Link
-                    type={'asset-allocation-total-portfolio'}
-                    {...buttonProps}
-                  />
-                )}
               <_Link type={'withdrawal'} {...buttonProps} />
             </div>
           </div>,

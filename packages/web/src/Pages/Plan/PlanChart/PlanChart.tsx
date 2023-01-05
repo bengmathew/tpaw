@@ -15,7 +15,6 @@ import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity
 import { Record } from '../../../Utils/Record'
 import { fGet } from '../../../Utils/Utils'
 import { useChartData } from '../../App/WithChartData'
-import { useSimulation } from '../../App/WithSimulation'
 import { ChartAnimation } from '../../Common/Chart/Chart'
 import { useGetSectionURL } from '../Plan'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
@@ -82,17 +81,13 @@ export const PlanChart = React.memo(
     planTransition: { target: PlanTransitionState; duration: number }
     section: PlanSectionName
   }) => {
-    const { tpawResult } = useSimulation()
     const getSectionURL = useGetSectionURL()
 
     const type = usePlanChartType()
     const helpRef = useRef<HTMLAnchorElement>(null)
 
     const allChartData = useChartData()
-    const chartMainData =
-      type === 'reward-risk-ratio-comparison'
-        ? fGet(allChartData.rewardRiskRatio)
-        : fGet(allChartData.byYearsFromNowPercentiles.get(type))
+    const chartMainData = fGet(allChartData.byYearsFromNowPercentiles.get(type))
 
     const [mainYRange, setMainYRange] = useState(chartMainData.yDisplayRange)
 
@@ -142,7 +137,6 @@ export const PlanChart = React.memo(
           ...regionCSSStyle(targetSizing.region),
         }}
       >
-
         <PlanChartMainCard
           layout={layout}
           yRange={mainYRange}
@@ -154,6 +148,7 @@ export const PlanChart = React.memo(
           layout={layout}
           sizing={sizing}
           transition={transition}
+          section={section}
         />
         <div
           className="absolute"
@@ -176,7 +171,7 @@ export const PlanChart = React.memo(
         <Link href={getSectionURL('results')} shallow>
           <a
             ref={helpRef}
-            className="absolute text-gray-50  font-semibold flex items-center"
+            className="absolute text-gray-50  font-semibold flex items-center  text-base sm:text-lg"
             style={{
               transitionProperty: 'opacity, transform, left, bottom',
               transitionDuration,

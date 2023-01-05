@@ -140,10 +140,7 @@ export const PlanChartMainCard = React.memo(
     )
 
     const allChartData = useChartData()
-    const chartMainData =
-      type === 'reward-risk-ratio-comparison'
-        ? fGet(allChartData.rewardRiskRatio)
-        : fGet(allChartData.byYearsFromNowPercentiles.get(type))
+    const chartMainData = fGet(allChartData.byYearsFromNowPercentiles.get(type))
 
     useEffect(() => {
       const chart = chartRef.current

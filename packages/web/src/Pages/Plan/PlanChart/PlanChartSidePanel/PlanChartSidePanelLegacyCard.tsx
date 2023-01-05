@@ -19,10 +19,9 @@ export const PlanChartSidePanelLegacyCard = React.memo(
 
     return (
       <div className={`${className} `} style={style}>
-        <h2 className="font-bold text-[16px] sm:text-[22px]">
-          Legacy
-        </h2>
-        {maxLegacy > 0 || params.legacy.tpawAndSPAW.total > 0 ? (
+        <h2 className="font-bold text-[16px] sm:text-[22px]">Legacy</h2>
+        {maxLegacy > 0 ||
+        params.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0 ? (
           <>
             <h2 className=" text-xs sm:text-sm border-b border-gray-300 mt-1 ">
               Percentiles
@@ -66,7 +65,9 @@ export function usePlanChartLegacyCardData() {
       endingBalanceOfSavingsPortfolioByPercentile
         .filter((x) => highlightPercentiles.includes(x.percentile))
         .map((x) => ({
-          amount: x.data + args.params.legacy.tpawAndSPAW.external,
+          amount:
+            x.data +
+            args.params.adjustmentsToSpending.tpawAndSPAW.legacy.external,
           percentile: x.percentile,
         })),
       (x) => -x.percentile,

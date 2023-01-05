@@ -34,6 +34,7 @@ const _Handle = React.memo(({ urlParamsStr }: { urlParamsStr: string }) => {
           window.localStorage.setItem('params', JSON.stringify(urlParams))
           urlUpdater.replace(cleanURL)
         },
+        isWarning: true,
       }}
       option2={{
         label: 'Ignore Link',
@@ -92,6 +93,6 @@ const useParamsFromStr = (paramsStr: string) => {
       `,
       { linkId: paramsStr },
     ).linkBasedPlan?.params
-    return fullStr? JSON.parse(fullStr) : null
+    return fullStr ? chain(json, planParamsGuard)(fullStr).force() : null
   }
 }

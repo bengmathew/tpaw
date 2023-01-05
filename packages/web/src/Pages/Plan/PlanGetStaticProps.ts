@@ -21,15 +21,18 @@ export type PlanContent = {
     essential: _FetchedInline
     discretionary: _FetchedInline
   }
-  'spending-ceiling-and-floor': _IntroAndGuide
   legacy: {
     introAmount: _FetchedInline
     introAssets: _FetchedInline
   }
-  'risk-level': _Intro
-  'stock-allocation': _IntroAndGuide
-  'spending-tilt': _IntroAndGuide
-  lmp: _IntroAndGuide
+  'spending-ceiling-and-floor': {
+    ceiling: _FetchedInline
+    floor: _FetchedInline
+  }
+  risk: _Intro
+  // 'stock-allocation': _IntroAndGuide
+  // 'spending-tilt': _IntroAndGuide
+  // lmp: _IntroAndGuide
   withdrawal: _IntroAndGuide
   strategy: _IntroAndGuide & {
     cardIntro: {
@@ -111,26 +114,26 @@ export const planGetStaticProps: GetStaticProps<PlanStaticProps> = async (
           introAssets: '5glA8ryQcNh7SHP9ZlkZ2y',
           // guide: ('5nCHpNy6ReAEtBQTvDTwBf'),
         },
+        'spending-ceiling-and-floor': {
+          ceiling: '5qYghkV44aNpw9ynVl6UBN',
+          floor: '19Llaw2GVZhEfBTfGzE7Ns',
+        },
 
-        'risk-level': {
+        risk: {
           intro: '5ROsQ76o7dv8rpmMCiuCMd',
         },
-        'stock-allocation': {
-          guide: '3ofgPmJFLgtJpjl26E7jpB',
-          intro: 'xWXcgVScUfdK1PaTNQeKz',
-        },
-        'spending-tilt': {
-          guide: '6Dv02w4fUuFQUjyWxnR7Vq',
-          intro: '4UwuCPjuTz3SbwUcZIrLEG',
-        },
-        'spending-ceiling-and-floor': {
-          intro: '19Llaw2GVZhEfBTfGzE7Ns',
-          guide: '6hEbQkY7ctTpMpGV6fBBu2',
-        },
-        lmp: {
-          guide: '3ofgPmJFLgtJpjl26E7jpB',
-          intro: '5FiPQS04F4uFngEMJium3B',
-        },
+        // 'stock-allocation': {
+        //   guide: '3ofgPmJFLgtJpjl26E7jpB',
+        //   intro: 'xWXcgVScUfdK1PaTNQeKz',
+        // },
+        // 'spending-tilt': {
+        //   guide: '6Dv02w4fUuFQUjyWxnR7Vq',
+        //   intro: '4UwuCPjuTz3SbwUcZIrLEG',
+        // },
+        // lmp: {
+        //   guide: '3ofgPmJFLgtJpjl26E7jpB',
+        //   intro: '5FiPQS04F4uFngEMJium3B',
+        // },
         withdrawal: {
           guide: '7eGRhX0KpxK2wKCzDTHLOs',
           intro: '3H8rgiVzmnyD6H3ZUjvgp8',

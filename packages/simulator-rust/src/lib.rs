@@ -30,7 +30,6 @@ pub struct RunResult {
     by_yfn_by_run_withdrawals_from_savings_portfolio_rate: Vec<f64>,
     by_yfn_by_run_after_withdrawals_allocation_stocks_savings: Vec<f64>,
     by_yfn_by_run_after_withdrawals_allocation_stocks_total: Vec<f64>,
-    by_yfn_by_run_excess_withdrawals_regular: Vec<f64>,
     by_run_ending_balance: Vec<f64>,
     by_run_num_insufficient_fund_years: Vec<i32>, // Test
                                                   // by_yfn_by_run_returns_stocks: Vec<f64>,
@@ -63,16 +62,13 @@ impl RunResult {
     pub fn by_yfn_by_run_after_withdrawals_allocation_stocks_total(&self) -> js_sys::Float64Array {
         to_js_arr(&self.by_yfn_by_run_after_withdrawals_allocation_stocks_total)
     }
-    pub fn by_yfn_by_run_excess_withdrawals_regular(&self) -> js_sys::Float64Array {
-        to_js_arr(&self.by_yfn_by_run_excess_withdrawals_regular)
-    }
     pub fn by_run_num_insufficient_fund_years(&self) -> js_sys::Int32Array {
         to_js_arr_i32(&self.by_run_num_insufficient_fund_years)
     }
     pub fn test(&self) -> f64 {
         return 3.5;
     }
-    pub fn by_run_ending_balancee(&self) -> js_sys::Float64Array {
+    pub fn by_run_ending_balance(&self) -> js_sys::Float64Array {
         to_js_arr(&self.by_run_ending_balance)
     }
 }
@@ -107,7 +103,7 @@ pub fn run(
     by_year_withdrawals_discretionary: Box<[f64]>,
     legacy_target: f64,
     legacy_external: f64,
-    spending_tilt: f64,
+    spending_tilt: Box<[f64]>,
     spending_ceiling: Option<f64>,
     spending_floor: Option<f64>,
     monte_carlo_sampling: bool,
@@ -181,7 +177,6 @@ pub fn run(
         by_yfn_by_run_withdrawals_from_savings_portfolio_rate: create_vec(),
         by_yfn_by_run_after_withdrawals_allocation_stocks_savings: create_vec(),
         by_yfn_by_run_after_withdrawals_allocation_stocks_total: create_vec(),
-        by_yfn_by_run_excess_withdrawals_regular: create_vec(),
         by_run_num_insufficient_fund_years: vec![0; (num_runs) as usize],
         by_run_ending_balance: vec![0.0; (num_runs) as usize],
         // Test

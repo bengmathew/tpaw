@@ -22,10 +22,7 @@ export const PlanChartRescale = React.memo(
   }) => {
     const { params } = useSimulation()
     const allChartData = useChartData()
-    const chartMainData =
-      type === 'reward-risk-ratio-comparison'
-        ? fGet(allChartData.rewardRiskRatio)
-        : fGet(allChartData.byYearsFromNowPercentiles.get(type))
+    const chartMainData = fGet(allChartData.byYearsFromNowPercentiles.get(type))
 
     const rescaleWarningLevel = _rescaleWarningLevel(
       mainYRange,

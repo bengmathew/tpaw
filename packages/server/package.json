@@ -29,6 +29,7 @@
     "commander": "^9.4.1",
     "compression": "^1.7.4",
     "crypto-random-string": "^5.0.0",
+    "date-fns": "^2.29.3",
     "dotenv": "^16.0.3",
     "firebase-admin": "^11.2.0",
     "fs-extra": "^10.1.0",
@@ -38,9 +39,11 @@
     "postmark": "^3.0.14",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
-    "source-map-support": "^0.5.20"
+    "source-map-support": "^0.5.20",
+    "table": "^6.8.1"
   },
   "devDependencies": {
+    "@types/date-fns": "^2.6.0",
     "@types/express": "^4.17.13",
     "@types/node": "^16.0.0",
     "@typescript-eslint/eslint-plugin": "^5.0.0",

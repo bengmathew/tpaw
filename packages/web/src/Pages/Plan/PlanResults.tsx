@@ -162,13 +162,13 @@ const _Collapsable = React.memo(
     return (
       <div className={`${className}`}>
         <button
-          className={`font-semibold  text-start flex items-center gap-x-2 ${
+          className={`font-semibold  text-start ${
             show ? 'mb-1' : 'mb-4'
           }`}
           onClick={() => setShow(!show)}
         >
           {heading}
-          <FontAwesomeIcon icon={show ? faCaretDown : faCaretRight} />
+          <FontAwesomeIcon className="ml-2 -mb-[1px]" icon={show ? faCaretDown : faCaretRight} />
         </button>
         {show && <_RichText className="mb-6" body={body} />}
       </div>
@@ -186,6 +186,7 @@ const _RichText = React.memo(
           ol="list-decimal ml-5"
           p="p-base mb-3"
           h2={([index]) => `font-bold text-2xl mb-3 mt-6`}
+          h3={`font-bold text-lg mb-2 mt-4`}
         />
       </div>
     )

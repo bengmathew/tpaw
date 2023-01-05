@@ -4,7 +4,8 @@ import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { Padding } from '../../../../Utils/Geometry'
 import { useSimulation } from '../../../App/WithSimulation'
-import { getTasksForThisYearProps } from '../../../TasksForThisYear/TasksForThisYear'
+import { getTasksForThisYearProps, setTasksForThisYearOnDoneSection } from '../../../TasksForThisYear/TasksForThisYear'
+import { PlanSectionName } from '../../PlanInput/Helpers/PlanSectionName'
 
 export const PlanChartSidePanelTasksCard = React.memo(
   ({
@@ -12,11 +13,13 @@ export const PlanChartSidePanelTasksCard = React.memo(
     style,
     cardPadding,
     layout,
+    section
   }: {
     className?: string
     style?: CSSProperties
     cardPadding: Padding
     layout: 'laptop' | 'desktop' | 'mobile'
+    section:PlanSectionName
   }) => {
     const { tpawResult } = useSimulation()
     const { contributionToOrWithdrawalFromSavingsPortfolio, afterWithdrawals } =
@@ -32,11 +35,15 @@ export const PlanChartSidePanelTasksCard = React.memo(
             amount: contributionToOrWithdrawalFromSavingsPortfolio.contribution,
           })()
     return (
-      <Link href="/plan/tasks-for-this-year">
-        <a className={`${className}  bg-orange-100 block overflow-hidden`} style={style}>
-          <h2 className="font-bold text-[16px] sm:text-[22px]">
-            Tasks
-          </h2>
+      <Link href="/plan/tasks-for-this-year" shallow>
+        <a
+          className={`${className}  bg-orange-100 block overflow-hidden`}
+          style={style}
+          onClick={() => {
+            setTasksForThisYearOnDoneSection(section)
+          }}
+        >
+          <h2 className="font-bold text-[16px] sm:text-[22px]">Tasks</h2>
 
           <h2 className="font-medium text-[13px] sm:text-[15px] mt-1">
             {withdrawOrContribute.text}

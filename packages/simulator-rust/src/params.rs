@@ -57,7 +57,7 @@ pub struct Params {
     pub by_year: ParamsByYear,
     pub legacy_target: f64,
     pub legacy_external: f64,
-    pub spending_tilt: f64,
+    pub spending_tilt: Box<[f64]>,
     pub spending_ceiling: Option<f64>,
     pub spending_floor: Option<f64>,
     pub monte_carlo_sampling: bool,

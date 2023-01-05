@@ -1,4 +1,5 @@
-import { fGet, PlanParams } from '@tpaw/common'
+import { fGet, planParamsGuard } from '@tpaw/common'
+import { chain, json } from 'json-guard'
 import React, { useState } from 'react'
 import { FirebaseUser } from '../../../App/WithFirebaseUser'
 import { useSimulation } from '../../../App/WithSimulation'
@@ -35,7 +36,8 @@ export const PlanSummarySaveLoadFromAccount = React.memo(
               label: 'Overwrite',
               onClose: () => {
                 closeMenu()
-                setParams(JSON.parse(fGet(user.plan).params) as PlanParams)
+                const paramsStr = fGet(user.plan).params
+                setParams(chain(json, planParamsGuard)(paramsStr).force())
                 setConfirm(false)
               },
             }}

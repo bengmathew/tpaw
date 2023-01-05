@@ -1,25 +1,26 @@
-import {faCircle as faCircleRegular} from '@fortawesome/pro-regular-svg-icons'
-import {faCircle as faCircleSelected} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import _ from 'lodash'
-import React from 'react'
+import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
+import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EXPECTED_RETURN_PRESETS,
   getDefaultPlanParams,
+  MANUAL_STOCKS_BONDS_RETURNS_VALUES,
+  PlanParams
 } from '@tpaw/common'
-import {PlanParams} from '@tpaw/common'
-import {processExpectedReturns} from '../../../TPAWSimulator/PlanParamsProcessed'
-import {Contentful} from '../../../Utils/Contentful'
-import {formatPercentage} from '../../../Utils/FormatPercentage'
-import {paddingCSSStyle} from '../../../Utils/Geometry'
-import {preciseRange} from '../../../Utils/PreciseRange'
-import {useMarketData} from '../../App/WithMarketData'
-import {useSimulation} from '../../App/WithSimulation'
-import {SliderInput} from '../../Common/Inputs/SliderInput/SliderInput'
-import {usePlanContent} from '../Plan'
+import _ from 'lodash'
+import React from 'react'
+import { processExpectedReturns } from '../../../TPAWSimulator/PlanParamsProcessed'
+import { Contentful } from '../../../Utils/Contentful'
+import { formatPercentage } from '../../../Utils/FormatPercentage'
+import { paddingCSSStyle } from '../../../Utils/Geometry'
+import { preciseRange } from '../../../Utils/PreciseRange'
+import { useMarketData } from '../../App/WithMarketData'
+import { useSimulation } from '../../App/WithSimulation'
+import { SliderInput } from '../../Common/Inputs/SliderInput/SliderInput'
+import { usePlanContent } from '../Plan'
 import {
   PlanInputBody,
-  PlanInputBodyPassThruProps,
+  PlanInputBodyPassThruProps
 } from './PlanInputBody/PlanInputBody'
 
 export const PlanInputExpectedReturns = React.memo(
@@ -29,7 +30,7 @@ export const PlanInputExpectedReturns = React.memo(
         <_ExpectedReturnsCard className="" props={props} />
       </PlanInputBody>
     )
-  }
+  },
 )
 
 export const _ExpectedReturnsCard = React.memo(
@@ -40,11 +41,11 @@ export const _ExpectedReturnsCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const {params, setParams} = useSimulation()
+    const { params, setParams } = useSimulation()
     const content = usePlanContent()
 
     const handleChange = (expected: PlanParams['returns']['expected']) => {
-      setParams(params => {
+      setParams((params) => {
         const clone = _.cloneDeep(params)
         clone.returns.expected = expected
         return clone
@@ -54,7 +55,7 @@ export const _ExpectedReturnsCard = React.memo(
     return (
       <div
         className={`${className} params-card`}
-        style={{...paddingCSSStyle(props.sizing.cardPadding)}}
+        style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
       >
         <div className="">
           <Contentful.RichText
@@ -73,7 +74,7 @@ export const _ExpectedReturnsCard = React.memo(
             onChange={handleChange}
           />
           <_Preset className="mt-4" type="historical" onChange={handleChange} />
-          <_Manual className="mt-4" onChange={handleChange} />
+          <_Manual className="mt-4" onChange={handleChange} props={props} />
         </div>
         <button
           className="mt-6 underline"
@@ -83,7 +84,7 @@ export const _ExpectedReturnsCard = React.memo(
         </button>
       </div>
     )
-  }
+  },
 )
 
 export const _Preset = React.memo(
@@ -96,14 +97,14 @@ export const _Preset = React.memo(
     type: Parameters<typeof EXPECTED_RETURN_PRESETS>[0]
     onChange: (expected: PlanParams['returns']['expected']) => void
   }) => {
-    const {params} = useSimulation()
+    const { params } = useSimulation()
     const marketData = useMarketData()
-    const {stocks, bonds} = EXPECTED_RETURN_PRESETS(type, marketData)
+    const { stocks, bonds } = EXPECTED_RETURN_PRESETS(type, marketData)
 
     return (
       <button
         className={`${className} flex gap-x-2`}
-        onClick={() => onChange({type})}
+        onClick={() => onChange({ type })}
       >
         <FontAwesomeIcon
           className="mt-1"
@@ -114,7 +115,7 @@ export const _Preset = React.memo(
           }
         />
         <div className="">
-          <h2 className="text-start">{expectedReturnTypeLabel({type})}</h2>
+          <h2 className="text-start">{expectedReturnTypeLabel({ type })}</h2>
           <h2 className="text-start lighten-2 text-sm">
             Stocks: {formatPercentage(1)(stocks)}, Bonds:{' '}
             {formatPercentage(1)(bonds)}
@@ -122,19 +123,21 @@ export const _Preset = React.memo(
         </div>
       </button>
     )
-  }
+  },
 )
 
 export const _Manual = React.memo(
   ({
     className = '',
     onChange,
+    props,
   }: {
     className?: string
     onChange: (expected: PlanParams['returns']['expected']) => void
+    props: PlanInputBodyPassThruProps
   }) => {
     const marketData = useMarketData()
-    const {params} = useSimulation()
+    const { params } = useSimulation()
     const sliderProps = {
       className: '',
       height: 60,
@@ -149,9 +152,9 @@ export const _Manual = React.memo(
             : ('none' as const),
       })),
     }
-    let {stocks, bonds} = processExpectedReturns(
+    let { stocks, bonds } = processExpectedReturns(
       params.returns.expected,
-      marketData
+      marketData,
     )
     stocks = _.round(stocks, 3)
     bonds = _.round(bonds, 3)
@@ -159,7 +162,7 @@ export const _Manual = React.memo(
       <div className={`${className}`}>
         <button
           className={`${className} flex gap-x-2`}
-          onClick={() => onChange({type: 'manual', stocks, bonds})}
+          onClick={() => onChange({ type: 'manual', stocks, bonds })}
         >
           <FontAwesomeIcon
             className="mt-1"
@@ -171,7 +174,7 @@ export const _Manual = React.memo(
           />
           <div className="">
             <h2 className="text-start">
-              {expectedReturnTypeLabel({type: 'manual'})}
+              {expectedReturnTypeLabel({ type: 'manual' })}
             </h2>
           </div>
         </button>
@@ -179,19 +182,38 @@ export const _Manual = React.memo(
           <div className="mt-4">
             <h2 className="ml-6 mt-2 ">Stocks</h2>
             <SliderInput
-              {...sliderProps}
-              pointers={[
-                {value: params.returns.expected.stocks, type: 'normal'},
-              ]}
-              onChange={([stocks]) => onChange({type: 'manual', stocks, bonds})}
+              className=""
+              height={60}
+              maxOverflowHorz={props.sizing.cardPadding}
+              format={formatPercentage(1)}
+              data={MANUAL_STOCKS_BONDS_RETURNS_VALUES}
+              value={params.returns.expected.stocks}
+              onChange={(stocks) => onChange({ type: 'manual', stocks, bonds })}
+              ticks={(value, i) =>
+                i % 10 === 0
+                  ? ('large' as const)
+                  : i % 2 === 0
+                  ? ('small' as const)
+                  : ('none' as const)
+              }
             />
+
             <h2 className="ml-6">Bonds</h2>
             <SliderInput
-              {...sliderProps}
-              pointers={[
-                {value: params.returns.expected.bonds, type: 'normal'},
-              ]}
-              onChange={([bonds]) => onChange({type: 'manual', stocks, bonds})}
+              className=""
+              height={60}
+              maxOverflowHorz={props.sizing.cardPadding}
+              format={formatPercentage(1)}
+              data={MANUAL_STOCKS_BONDS_RETURNS_VALUES}
+              value={params.returns.expected.bonds}
+              onChange={(bonds) => onChange({ type: 'manual', stocks, bonds })}
+              ticks={(value, i) =>
+                i % 10 === 0
+                  ? ('large' as const)
+                  : i % 2 === 0
+                  ? ('small' as const)
+                  : ('none' as const)
+              }
             />
             <p className="p-base ml-6">
               Remember to use real and not nominal returns.
@@ -200,7 +222,7 @@ export const _Manual = React.memo(
         )}
       </div>
     )
-  }
+  },
 )
 export const expectedReturnTypeLabel = ({
   type,

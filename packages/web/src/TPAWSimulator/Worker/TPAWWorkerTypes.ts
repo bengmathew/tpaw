@@ -1,15 +1,19 @@
-import {SimpleRange} from '../../Utils/SimpleRange'
-import {PlanParamsProcessed} from '../PlanParamsProcessed'
+import { SimpleRange } from '../../Utils/SimpleRange'
+import { PlanParamsProcessed } from '../PlanParamsProcessed'
 
 export type TPAWWorkerArgs =
   | {
       type: 'runSimulation'
       taskID: string
-      args: {params: PlanParamsProcessed; runs: SimpleRange}
+      args: { params: PlanParamsProcessed; runs: SimpleRange }
     }
-  | {type: 'sort'; taskID: string; args: {data: Float64Array[]}}
-  | {type: 'calculateOneOverCV'; taskID: string; args: {data: Float64Array[]}}
-  | {type: 'clearMemoizedRandom'; taskID: string}
+  | { type: 'sort'; taskID: string; args: { data: Float64Array[] } }
+  | {
+      type: 'calculateOneOverCV'
+      taskID: string
+      args: { data: Float64Array[] }
+    }
+  | { type: 'clearMemoizedRandom'; taskID: string }
 
 export type TPAWWorkerResult =
   | {
@@ -18,7 +22,7 @@ export type TPAWWorkerResult =
       result: {
         byYearsFromNowByRun: {
           savingsPortfolio: {
-            start: {balance: Float64Array[]}
+            start: { balance: Float64Array[] }
             withdrawals: {
               essential: Float64Array[]
               discretionary: Float64Array[]
@@ -26,16 +30,13 @@ export type TPAWWorkerResult =
               total: Float64Array[]
               fromSavingsPortfolioRate: Float64Array[]
             }
-            excessWithdrawals: {
-              regular: Float64Array[]
-            }
             afterWithdrawals: {
-              allocation: {stocks: Float64Array[]}
+              allocation: { stocks: Float64Array[] }
             }
           }
           totalPortfolio: {
             afterWithdrawals: {
-              allocation: {stocks: Float64Array[]}
+              allocation: { stocks: Float64Array[] }
             }
           }
         }
@@ -47,19 +48,19 @@ export type TPAWWorkerResult =
           ['runs', number],
           ['post', number],
           ['rest', number],
-          ['total', number]
+          ['total', number],
         ]
       }
     }
   | {
       type: 'sort'
       taskID: string
-      result: {data: Float64Array[]; perf: number}
+      result: { data: Float64Array[]; perf: number }
     }
   | {
       type: 'calculateOneOverCV'
       taskID: string
-      result: {data: Float64Array; perf: number}
+      result: { data: Float64Array; perf: number }
     }
   | {
       type: 'clearMemoizedRandom'
@@ -68,15 +69,15 @@ export type TPAWWorkerResult =
 
 export type TPAWWorkerRunSimulationResult = Extract<
   TPAWWorkerResult,
-  {type: 'runSimulation'}
+  { type: 'runSimulation' }
 >['result']
 
 export type TPAWWorkerSortResult = Extract<
   TPAWWorkerResult,
-  {type: 'sort'}
+  { type: 'sort' }
 >['result']
 
 export type TPAWWorkerCalculateOneOverCVResult = Extract<
   TPAWWorkerResult,
-  {type: 'calculateOneOverCV'}
+  { type: 'calculateOneOverCV' }
 >['result']

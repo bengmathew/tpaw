@@ -1,11 +1,11 @@
 import _ from 'lodash'
-import React, {useEffect, useRef, useState} from 'react'
-import {extendPlanParams} from '../TPAWSimulator/PlanParamsExt'
-import {processPlanParams} from '../TPAWSimulator/PlanParamsProcessed'
-import {TPAWRunInWorker} from '../TPAWSimulator/Worker/TPAWRunInWorker'
-import {fGet} from '../Utils/Utils'
-import {AppPage} from './App/AppPage'
-import {useMarketData} from './App/WithMarketData'
+import React, { useEffect, useRef, useState } from 'react'
+import { extendPlanParams } from '../TPAWSimulator/PlanParamsExt'
+import { processPlanParams } from '../TPAWSimulator/PlanParamsProcessed'
+import { TPAWRunInWorker } from '../TPAWSimulator/Worker/TPAWRunInWorker'
+import { fGet } from '../Utils/Utils'
+import { AppPage } from './App/AppPage'
+import { useMarketData } from './App/WithMarketData'
 
 const numRuns = 500
 const highlightPercentiles = [5, 25, 50, 75, 95]
@@ -32,11 +32,11 @@ export const Perf = React.memo(() => {
           className="rounded-full text-xl px-6 py-2 border-2 border-gray-700"
           onClick={async () => {
             const result = await fGet(workerRef.current).runSimulations(
-              {canceled: false},
+              { canceled: false },
               numRuns,
               processPlanParams(params, marketData),
               percentiles,
-              marketData
+              marketData,
             )
 
             const toLine = ([label, amount]: [string, number]) =>
@@ -65,7 +65,7 @@ export const Perf = React.memo(() => {
         >
           Test Performance
         </button>
-        <div className="grid" style={{grid: 'auto / auto'}}>
+        <div className="grid" style={{ grid: 'auto / auto' }}>
           {result.map((line, i) => {
             const cols = line.split(':')
             return cols.map((col, r) => (
@@ -87,65 +87,64 @@ export const Perf = React.memo(() => {
 })
 
 const params = extendPlanParams({
-  v: 14,
+  v: 15,
+  warnedAbout14to15Converstion: true,
   strategy: 'TPAW',
   dialogMode: true,
   people: {
     withPartner: false,
     person1: {
       displayName: null,
-      ages: {type: 'notRetired', current: 35, retirement: 65, max: 100},
+      ages: { type: 'notRetired', current: 35, retirement: 65, max: 100 },
     },
   },
   currentPortfolioBalance: 0,
   futureSavings: [],
   retirementIncome: [],
-  extraSpending: {
-    essential: [],
-    discretionary: [],
-  },
-  legacy: {
-    tpawAndSPAW: {
-      total: 0,
-      external: [],
-    },
-  },
-  risk: {
-    useTPAWPreset: false,
-    tpawPreset: 'riskLevel-2',
-    customTPAWPreset: null,
-    savedTPAWPreset: null,
-    tpaw: {
-      allocation: {
-        start: {stocks: 0.4},
-        intermediate: [],
-        end: {stocks: 0.3},
-      },
-      allocationForLegacy: {stocks: 0.7},
-    },
+  adjustmentsToSpending: {
     tpawAndSPAW: {
       spendingCeiling: null,
       spendingFloor: null,
-      spendingTilt: 0.01,
+      legacy: {
+        total: 0,
+        external: [],
+      },
+    },
+    extraSpending: {
+      essential: [],
+      discretionary: [],
+    },
+  },
+  risk: {
+    tpaw: {
+      riskTolerance: {
+        at20: 12,
+        deltaAtMaxAge: -2,
+        forLegacyAsDeltaFromAt20: 2,
+      },
+      timePreference: 0,
+    },
+    tpawAndSPAW: {
       lmp: 0,
     },
+    spaw: { spendingTilt: 0.01 },
     spawAndSWR: {
       allocation: {
-        start: {stocks: 0.5},
+        start: { stocks: 0.5 },
         intermediate: [],
-        end: {stocks: 0.5},
+        end: { stocks: 0.5 },
       },
     },
     swr: {
-      withdrawal: {type: 'default'},
+      withdrawal: { type: 'default' },
     },
   },
 
   returns: {
-    expected: {type: 'suggested'},
-    historical: {type: 'default', adjust: {type: 'toExpected'}},
+    expected: { type: 'suggested' },
+    historical: { type: 'default', adjust: { type: 'toExpected' } },
   },
-  inflation: {type: 'suggested'},
+  inflation: { type: 'suggested' },
   sampling: 'monteCarlo',
   display: {
     alwaysShowAllYears: false,

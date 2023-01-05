@@ -5,12 +5,8 @@ export const paramsInputTypes = [
   'income-during-retirement',
   'extra-spending',
   'legacy',
-  'risk-level',
-  'stock-allocation',
-  'spending-tilt',
+  'risk',
   'spending-ceiling-and-floor',
-  'lmp',
-  'withdrawal',
   'strategy',
   'expected-returns',
   'inflation',
@@ -20,6 +16,6 @@ export const paramsInputTypes = [
 export type PlanInputType = typeof paramsInputTypes[number]
 
 export const isPlanInputType = (
-  x: string | null | undefined
+  x: string | null | undefined,
 ): x is PlanInputType =>
   typeof x === 'string' && (paramsInputTypes as readonly string[]).includes(x)

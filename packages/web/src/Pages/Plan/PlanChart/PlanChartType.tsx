@@ -1,6 +1,6 @@
 // Embedding index into type instead of expanding to {type:..., index:number}
 
-import {PlanParams} from '@tpaw/common'
+import { PlanParams } from '@tpaw/common'
 
 // because it helps when adding to useEffect dep list.
 export type PlanChartType =
@@ -12,23 +12,22 @@ export type PlanChartType =
   | 'asset-allocation-savings-portfolio'
   | 'asset-allocation-total-portfolio'
   | 'withdrawal'
-  | 'reward-risk-ratio-comparison'
 
 export const isPlanChartSpendingEssentialType = (
-  x: PlanChartType
+  x: PlanChartType,
 ): x is `spending-essential-${number}` => x.startsWith('spending-essential-')
 
 export const planChartSpendingEssentialTypeID = (
-  x: `spending-essential-${number}`
+  x: `spending-essential-${number}`,
 ) => parseInt(x.substring('spending-essential-'.length))
 
 export const isPlanChartSpendingDiscretionaryType = (
-  x: PlanChartType
+  x: PlanChartType,
 ): x is `spending-discretionary-${number}` =>
   x.startsWith('spending-discretionary-')
 
 export const planChartSpendingDiscretionaryTypeID = (
-  x: `spending-discretionary-${number}`
+  x: `spending-discretionary-${number}`,
 ) => parseInt(x.substring('spending-discretionary-'.length))
 
 const _checkType = (x: string): x is PlanChartType =>
@@ -41,21 +40,27 @@ const _checkType = (x: string): x is PlanChartType =>
   x === 'portfolio' ||
   x === 'asset-allocation-savings-portfolio' ||
   x === 'asset-allocation-total-portfolio' ||
-  x === 'withdrawal' || x === 'reward-risk-ratio-comparison'
+  x === 'withdrawal'
 
 export const isPlanChartType = (
   params: PlanParams,
-  type: string
+  type: string,
 ): type is PlanChartType => {
   if (!_checkType(type)) return false
   if (isPlanChartSpendingEssentialType(type)) {
     const id = planChartSpendingEssentialTypeID(type)
-    return params.extraSpending.essential.find(x => x.id === id) !== undefined
+    return (
+      params.adjustmentsToSpending.extraSpending.essential.find(
+        (x) => x.id === id,
+      ) !== undefined
+    )
   }
   if (isPlanChartSpendingDiscretionaryType(type)) {
     const id = planChartSpendingDiscretionaryTypeID(type)
     return (
-      params.extraSpending.discretionary.find(x => x.id === id) !== undefined
+      params.adjustmentsToSpending.extraSpending.discretionary.find(
+        (x) => x.id === id,
+      ) !== undefined
     )
   }
   return true

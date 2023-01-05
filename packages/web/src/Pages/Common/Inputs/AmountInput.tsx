@@ -1,8 +1,7 @@
 import isMobile from 'is-mobile'
-import React, {CSSProperties, useEffect, useRef, useState} from 'react'
+import React, { CSSProperties, useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
-import {NumericFormat} from 'react-number-format'
-import {fGet} from '../../../Utils/Utils'
+import { NumericFormat } from 'react-number-format'
 
 type Props = {
   className?: string
@@ -17,7 +16,7 @@ type Props = {
 }
 
 export const AmountInput = React.memo(
-  ({modalLabel, ...props}: Props & {modalLabel: string | null}) => {
+  ({ modalLabel, ...props }: Props & { modalLabel: string | null }) => {
     const [showModal, setShowModal] = useState(false)
 
     const [internalValue, setInternalValue] = useState(props.value)
@@ -32,9 +31,6 @@ export const AmountInput = React.memo(
           value={props.value}
           onFocus={() => {
             if (isMobile()) setShowModal(true)
-          }}
-          onEnter={() => {
-            if(isMobile()) fGet(ref.current).blur()
           }}
         />
 
@@ -51,8 +47,8 @@ export const AmountInput = React.memo(
                       {...props}
                       value={internalValue}
                       onChange={setInternalValue}
-                      onEnter={value => {
-                        props.onChange(internalValue)
+                      onEnter={(value) => {
+                        props.onChange(value)
                         setShowModal(false)
                       }}
                       focusOnShow
@@ -81,11 +77,11 @@ export const AmountInput = React.memo(
                 </div>
               </div>
             </div>,
-            window.document.body
+            window.document.body,
           )}
       </>
     )
-  }
+  },
 )
 
 type _Props = Props & {
@@ -110,7 +106,7 @@ const _AmountInput = React.memo(
         focusOnShow = false,
         onTransitionEnd,
       }: _Props,
-      forwardRef
+      forwardRef,
     ) => {
       const [internalValue, setInternalValue] = useState<number | null>(value)
       useEffect(() => {
@@ -132,7 +128,7 @@ const _AmountInput = React.memo(
           value={internalValue}
           decimalScale={decimals}
           fixedDecimalScale
-          onValueChange={x => {
+          onValueChange={(x) => {
             setInternalValue(x.floatValue === undefined ? null : x.floatValue)
           }}
           onBlur={() => {
@@ -156,6 +152,6 @@ const _AmountInput = React.memo(
           }}
         />
       )
-    }
-  )
+    },
+  ),
 )
