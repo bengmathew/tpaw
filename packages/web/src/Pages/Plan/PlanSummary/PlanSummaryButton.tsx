@@ -316,7 +316,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
                     risk.tpaw.timePreference && (
                     <h2 className="ml-4">
                       Spending Tilt:{' '}
-                      {formatPercentage(1)(risk.tpaw.timePreference)}
+                      {formatPercentage(1)(-risk.tpaw.timePreference)}
                     </h2>
                   )}
                 </>
