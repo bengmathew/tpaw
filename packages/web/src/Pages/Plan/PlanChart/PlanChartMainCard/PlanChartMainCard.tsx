@@ -75,8 +75,8 @@ export const PlanChartMainCard = React.memo(
       yAxisDescription: number | null
     }>({
       menu: null,
-      // Hardcoding this because measuring was interfering with animation of
-      // chart for some reason.
+      // Hardcoding this because measuring interferes with transition animation.
+      // See not below.
       yAxisDescription: layout === 'mobile' ? 20 : 25,
     })
     const [handleMenuHeights] = useState(
@@ -84,7 +84,8 @@ export const PlanChartMainCard = React.memo(
         setHeights((x) => ({ ...x, menu: heights })),
     )
 
-    // This is interfering with animation of chart for some reason.
+    // NOTE: This interferes with transition animation because it will be
+    // fired at every frame. Avoid.
     //
     // useLayoutEffect(() => {
     //   const observer = new ResizeObserver(() => {
@@ -102,7 +103,7 @@ export const PlanChartMainCard = React.memo(
     const sizing = useMemo(() => {
       const _map = (
         state: _TransitionState,
-        dynamic: PlanChartMainCardSizing['dynamic']['hidden'],
+        dynamic: PlanChartMainCardSizing['dynamic']['dialogInput'],
         showSuccessRate: boolean,
       ) =>
         [
@@ -287,7 +288,7 @@ export const PlanChartMainCard = React.memo(
 )
 
 const _transformSizing = (
-  { mainCard }: PlanChartMainCardSizing['dynamic']['hidden'],
+  { mainCard }: PlanChartMainCardSizing['dynamic']['dialogInput'],
   { cardPadding }: PlanChartMainCardSizing['fixed'],
   heights: { menu: number; yAxisDescription: number },
   hasPartner: boolean,

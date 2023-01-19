@@ -172,10 +172,10 @@ const _TPAWRelativeRiskToleranceCard = React.memo(
               title="Why the percentile for future years?"
             >
               <p className="p-base mb-4">
-                Your stock allocation in the future is a range and not a single
+                Your stock allocation in the future may be a range and not a single
                 number because the optimal allocation will depend on the
                 relative sizes of competing spending goals and other resources
-                like pensions. This depends on market performance and so we get
+                like pensions. This depends on market performance and so we can get
                 a range of possible allocations from the simulations.
               </p>
             </_ExpandableNote>

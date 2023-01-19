@@ -1,12 +1,6 @@
 import { Document } from '@contentful/rich-text-types'
-import {
-  faCaretDown,
-  faCaretRight,
-  faLongArrowRight,
-} from '@fortawesome/pro-solid-svg-icons'
+import { faCaretDown, faCaretRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import _ from 'lodash'
-import Link from 'next/link'
 import React, { useMemo, useState } from 'react'
 import { Contentful } from '../../Utils/Contentful'
 import {
@@ -20,15 +14,15 @@ import {
 import { NoDisplayOnOpacity0Transition } from '../../Utils/NoDisplayOnOpacity0Transition'
 import { fGet } from '../../Utils/Utils'
 import { useSimulation } from '../App/WithSimulation'
-import { useGetSectionURL, usePlanContent } from './Plan'
+import { usePlanContent } from './Plan'
 import { PlanInputBodyHeader } from './PlanInput/PlanInputBody/PlanInputBodyHeader'
 import {
   PlanTransitionState,
-  simplifyPlanTransitionState3,
+  simplifyPlanTransitionState2,
 } from './PlanTransition'
 
-export type PlanResultsSizing = {
-  dynamic: Record<_PlanResultTransitionState, { origin: XY; opacity: number }>
+export type PlanHelpSizing = {
+  dynamic: Record<_PlanHelpTransitionState, { origin: XY; opacity: number }>
   fixed: {
     size: Size
     padding: ({ left: number; right: number } | { horz: number }) & {
@@ -37,29 +31,22 @@ export type PlanResultsSizing = {
   }
 }
 
-const _toPlanResultsTransitionState = simplifyPlanTransitionState3(
-  { label: 'in', sections: [{ name: 'results', dialogMode: 'any' }] },
-  { label: 'outDialogMode', sections: [{ name: 'rest', dialogMode: true }] },
-  {
-    label: 'outNotDialogMode',
-    sections: [{ name: 'rest', dialogMode: false }],
-  },
+const _toPlanHelpTransitionState = simplifyPlanTransitionState2(
+  { label: 'in', sections: [{ name: 'help', dialogMode: 'any' }] },
+  { label: 'out', sections: [{ name: 'rest', dialogMode: 'any' }] },
 )
-type _PlanResultTransitionState = ReturnType<
-  typeof _toPlanResultsTransitionState
->
+type _PlanHelpTransitionState = ReturnType<typeof _toPlanHelpTransitionState>
 
-export const PlanResults = React.memo(
+export const PlanHelp = React.memo(
   ({
     sizing,
     planTransition,
   }: {
-    sizing: PlanResultsSizing
+    sizing: PlanHelpSizing
     planTransition: { target: PlanTransitionState; duration: number }
   }) => {
     const targetSizing = useMemo(
-      () =>
-        sizing.dynamic[_toPlanResultsTransitionState(planTransition.target)],
+      () => sizing.dynamic[_toPlanHelpTransitionState(planTransition.target)],
       [planTransition.target, sizing],
     )
     return (
@@ -85,67 +72,22 @@ export const PlanResults = React.memo(
 )
 
 const _Body = React.memo(() => {
-  const { params, setParams } = useSimulation()
-  const [startingDialogMode] = useState(params.dialogMode)
-  const getSectionURL = useGetSectionURL()
+  const { params } = useSimulation()
 
-  // Use startingDialogMode and not params.dialogMode so content does not
-  // flash on exiting to summary.
   const content = Contentful.splitDocument(
-    usePlanContent().results[
-      startingDialogMode ? 'dialogMode' : 'notDialogMode'
-    ][params.strategy],
+    usePlanContent().help[params.strategy],
     'faq',
   )
 
-  // const [showFAQ, setShowFAQ] = useState(!startingDialogMode)
   return (
     <div className="pb-20">
-      {startingDialogMode ? (
-        <h2 className="font-bold text-xl sm:text-3xl">Preliminary Results</h2>
-      ) : (
-        <PlanInputBodyHeader type="results" />
-      )}
+      <PlanInputBodyHeader type="help" />
       <_RichText className="mt-6" body={fGet(content.intro)} />
-      {/* <button
-        className={`font-bold text-xl mb-4 mt-6`}
-        disabled={!startingDialogMode}
-        onClick={() => setShowFAQ(!showFAQ)}
-      > */}
-      {/* {startingDialogMode ? (
-          <>
-            Understanding the Graphs{' '}
-            <FontAwesomeIcon className="ml-3 text-lg" icon={faChevronDown} />
-          </>
-        ) : ( */}
-      {/* 'FAQ' */}
-      {/* )} */}
-      {/* </button> */}
       <div className="mt-6">
         {content.sections.map((section, i) => (
           <_Collapsable key={i} className="" section={section} />
         ))}
       </div>
-      {startingDialogMode && (
-        <div className="sticky bottom-5 flex justify-end mt-10">
-          <Link href={getSectionURL('summary')} shallow>
-            <a
-              className=" right-0 btn-lg btn-dark mt-2 flex items-center gap-x-3"
-              onClick={() => {
-                setParams((params) => {
-                  if (!params.dialogMode) return params
-                  const clone = _.cloneDeep(params)
-                  clone.dialogMode = false
-                  return clone
-                })
-              }}
-            >
-              Continue to Full Planner{' '}
-              <FontAwesomeIcon icon={faLongArrowRight} />
-            </a>
-          </Link>
-        </div>
-      )}
     </div>
   )
 })
@@ -162,13 +104,14 @@ const _Collapsable = React.memo(
     return (
       <div className={`${className}`}>
         <button
-          className={`font-semibold  text-start ${
-            show ? 'mb-1' : 'mb-4'
-          }`}
+          className={`font-semibold  text-start ${show ? 'mb-1' : 'mb-4'}`}
           onClick={() => setShow(!show)}
         >
           {heading}
-          <FontAwesomeIcon className="ml-2 -mb-[1px]" icon={show ? faCaretDown : faCaretRight} />
+          <FontAwesomeIcon
+            className="ml-2 -mb-[1px]"
+            icon={show ? faCaretDown : faCaretRight}
+          />
         </button>
         {show && <_RichText className="mb-6" body={body} />}
       </div>

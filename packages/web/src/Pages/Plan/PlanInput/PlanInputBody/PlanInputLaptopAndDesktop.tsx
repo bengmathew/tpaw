@@ -1,18 +1,23 @@
-import {Transition} from '@headlessui/react'
-import React, {ReactElement, ReactNode, useLayoutEffect, useRef, useState} from 'react'
+import { Transition } from '@headlessui/react'
+import React, {
+  ReactElement,
+  ReactNode,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import {
   newPaddingHorz,
   paddingCSS,
   paddingCSSStyleHorz,
 } from '../../../../Utils/Geometry'
-import {fGet} from '../../../../Utils/Utils'
-import {useSimulation} from '../../../App/WithSimulation'
-import {PlanInputType} from '../Helpers/PlanInputType'
-import {PlanInputSizing} from '../PlanInput'
-import {PlanInputBodyDialogNav} from './PlanInputBodyDialogNav'
-import {PlanInputBodyGuide} from './PlanInputBodyGuide/PlanInputBodyGuide'
-import {usePlanInputGuideContent} from './PlanInputBodyGuide/UsePlanInputGuideContent'
-import {PlanInputBodyHeader} from './PlanInputBodyHeader'
+import { fGet } from '../../../../Utils/Utils'
+import { useSimulation } from '../../../App/WithSimulation'
+import { PlanInputType } from '../Helpers/PlanInputType'
+import { PlanInputSizing } from '../PlanInput'
+import { PlanInputBodyGuide } from './PlanInputBodyGuide/PlanInputBodyGuide'
+import { usePlanInputGuideContent } from './PlanInputBodyGuide/UsePlanInputGuideContent'
+import { PlanInputBodyHeader } from './PlanInputBodyHeader'
 
 const duration = 500
 
@@ -35,23 +40,24 @@ export const PlanInputLaptopAndDesktop = React.memo(
     }
   }) => {
     const [state, setState] = useState<
-      {type: 'main'; onDone: (() => void) | null} | {type: 'input'}
-    >({type: 'main', onDone: null})
-    const {params} = useSimulation()
+      { type: 'main'; onDone: (() => void) | null } | { type: 'input' }
+    >({ type: 'main', onDone: null })
+    const { params } = useSimulation()
     const hasInput = children?.input !== undefined
     useLayoutEffect(() => {
       if (hasInput) {
-        setState({type: 'input'})
+        setState({ type: 'input' })
       }
     }, [hasInput])
 
     const mainScrollRef = useRef<HTMLDivElement>(null)
     const guideContent = usePlanInputGuideContent(type)
 
-    const {padding} = params.dialogMode
-      ? sizing.dialogMode
-      : sizing.notDialogMode
-    const {cardPadding} = sizing
+    const { padding } =
+      params.dialogPosition !== 'done'
+        ? sizing.dialogMode
+        : sizing.notDialogMode
+    const { cardPadding } = sizing
     return (
       <>
         {/*  Main container. Main and input needs separate scroll containers, 
@@ -71,7 +77,7 @@ export const PlanInputLaptopAndDesktop = React.memo(
           onTransitionEnd={() => {
             if (state.type === 'main' && state.onDone) {
               state.onDone()
-              setState({type: 'main', onDone: null})
+              setState({ type: 'main', onDone: null })
             }
           }}
         >
@@ -84,7 +90,7 @@ export const PlanInputLaptopAndDesktop = React.memo(
               paddingTop: `${padding.top}px`,
             }}
           >
-            <PlanInputBodyHeader className="mb-10 " type={type} />
+            <PlanInputBodyHeader className="mb-6 " type={type} />
             {guideContent && (
               <PlanInputBodyGuide
                 className="mb-10"
@@ -94,7 +100,6 @@ export const PlanInputLaptopAndDesktop = React.memo(
               />
             )}
             {children.content}
-            <PlanInputBodyDialogNav className="mt-10" type={type} />
             {children?.error && (
               <div className=" sticky bottom-0 pt-10">
                 <div className=" bg-red-100 rounded-lg p-2">
@@ -124,11 +129,11 @@ export const PlanInputLaptopAndDesktop = React.memo(
           >
             <div
               className={`my-20 bg-cardBG rounded-2xl border-gray-200 border`}
-              style={{padding: paddingCSS(cardPadding)}}
+              style={{ padding: paddingCSS(cardPadding) }}
             >
               <div className="">
-                {fGet(children.input)(onDone =>
-                  setState({type: 'main', onDone})
+                {fGet(children.input)((onDone) =>
+                  setState({ type: 'main', onDone }),
                 )}
               </div>
             </div>
@@ -136,5 +141,5 @@ export const PlanInputLaptopAndDesktop = React.memo(
         )}
       </>
     )
-  }
+  },
 )

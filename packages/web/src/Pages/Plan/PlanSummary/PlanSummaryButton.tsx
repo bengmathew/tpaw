@@ -12,7 +12,6 @@ import {
   ValueForYearRange,
 } from '@tpaw/common'
 import _ from 'lodash'
-import Link from 'next/link'
 import React, { useMemo } from 'react'
 import { PlanParamsExt } from '../../../TPAWSimulator/PlanParamsExt'
 import {
@@ -24,6 +23,7 @@ import { formatPercentage } from '../../../Utils/FormatPercentage'
 import { Padding, paddingCSSStyle } from '../../../Utils/Geometry'
 import { SimpleRange } from '../../../Utils/SimpleRange'
 import { trimAndNullify } from '../../../Utils/TrimAndNullify'
+import { useURLUpdater } from '../../../Utils/UseURLUpdater'
 import { noCase } from '../../../Utils/Utils'
 import { useMarketData } from '../../App/WithMarketData'
 import { useSimulation } from '../../App/WithSimulation'
@@ -32,50 +32,77 @@ import { ValueForYearRangeDisplay } from '../../Common/ValueForYearRangeDisplay'
 import { useGetSectionURL } from '../Plan'
 import { PlanInputModifiedBadge } from '../PlanInput/Helpers/PlanInputModifiedBadge'
 import { PlanInputType } from '../PlanInput/Helpers/PlanInputType'
+import {
+  isPlanSectionDialogInOverlayMode,
+  planSectionDialogOrder,
+} from '../PlanInput/Helpers/PlanSectionDialogPosition'
 import { planSectionLabel } from '../PlanInput/Helpers/PlanSectionLabel'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import { expectedReturnTypeLabel } from '../PlanInput/PlanInputExpectedReturns'
 import { inflationTypeLabel } from '../PlanInput/PlanInputInflation'
 
+type _Props = {
+  padding: Padding
+  type: PlanInputType
+  section: PlanSectionName
+  hideTitle?: boolean
+  warn?: boolean
+  flagAsModified?: boolean
+  empty?: boolean
+}
 export const PlanSummaryButton = React.memo(
-  ({
-    padding,
-    type,
-    section,
-    warn = false,
-    flagAsModified = false,
-    empty = false,
-    hideTitle = false,
-  }: {
-    padding: Padding
-    type: PlanInputType
-    section: PlanSectionName
-    hideTitle?: boolean
-    warn?: boolean
-    flagAsModified?: boolean
-    empty?: boolean
-  }) => {
-    const { params } = useSimulation()
-    const getSectionURL = useGetSectionURL()
-    const highlightColorDark = ChartUtils.color.gray[400]
-    const highlightColor =
-      section === type ? highlightColorDark : ChartUtils.color.gray[100]
+  React.forwardRef<HTMLButtonElement, _Props>(
+    (
+      {
+        padding,
+        type,
+        section,
+        warn = false,
+        flagAsModified = false,
+        empty = false,
+        hideTitle = false,
+      }: _Props,
+      ref,
+    ) => {
+      const { params } = useSimulation()
+      const getSectionURL = useGetSectionURL()
+      const urlUpdater = useURLUpdater()
+      const highlightColorDark = ChartUtils.color.gray[400]
+      const isDisabled = useShouldDisablePlanSummaryButton(type)
+      const highlightColor =
+        section === type
+          ? highlightColorDark
+          : params.dialogPosition === type
+          ? ChartUtils.color.orange[400]
+          : ChartUtils.color.gray[100]
 
-    if (hideTitle) assert(!warn)
-    return (
-      <Link href={getSectionURL(type)} shallow>
-        <a
-          className={`block rounded-2xl bg-cardBG text-left w-full border-[2px] overflow-hidden `}
+      if (hideTitle) assert(!warn)
+      return (
+        <button
+          className={`block rounded-2xl  text-left w-full border-[2px] overflow-hidden ${
+            isPlanSectionDialogInOverlayMode(params.dialogPosition)
+              ? ''
+              : 'disabled:opacity-20'
+          } 
+            ${params.dialogPosition === type ? 'bg-orange-50' : 'bg-cardBG'}`}
+          ref={ref}
           style={{
             transitionProperty: 'border-color',
             transitionDuration:
               highlightColor === highlightColorDark ? '500ms' : '1250ms',
             borderColor: highlightColor,
           }}
+          onClick={() => urlUpdater.push(getSectionURL(type))}
+          disabled={isDisabled}
         >
           {empty ? (
             <div
-              className="relative border-[4px] border-dotted border-gray-400 bg-gray-200/40  rounded-2xl -m-[2px] "
+              className={`relative  bg-gray-200/40  rounded-2xl -m-[2px] 
+              ${
+                params.dialogPosition === type
+                  ? 'border-[3px] border-gray-200'
+                  : 'border-[4px] border-dotted border-gray-400'
+              }`}
               style={{ ...paddingCSSStyle(padding) }}
             >
               <div className=" flex items-center gap-x-2 mb-1">
@@ -108,11 +135,37 @@ export const PlanSummaryButton = React.memo(
               </div>
             </div>
           )}
-        </a>
-      </Link>
-    )
-  },
+        </button>
+      )
+    },
+  ),
 )
+
+export const useShouldDisablePlanSummaryButton = (type: PlanInputType) => {
+  const { dialogPosition } = useSimulation().params
+  switch (type) {
+    case 'age':
+    case 'current-portfolio-balance':
+    case 'future-savings':
+    case 'income-during-retirement':
+      return (
+        planSectionDialogOrder.indexOf(dialogPosition) <
+        planSectionDialogOrder.indexOf(type)
+      )
+    case 'extra-spending':
+    case 'legacy':
+    case 'risk':
+    case 'spending-ceiling-and-floor':
+    case 'inflation':
+    case 'strategy':
+    case 'expected-returns':
+    case 'simulation':
+    case 'dev':
+      return dialogPosition !== 'done'
+    default:
+      noCase(type)
+  }
+}
 
 const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
   const { params, paramsProcessed, paramsExt } = useSimulation()
@@ -122,23 +175,46 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
   const defaultParams = useMemo(() => getDefaultPlanParams(), [])
   switch (type) {
     case 'age': {
-      const forPerson = ({ ages }: Person) =>
-        ages.type === 'retired'
-          ? `Retired, Current: ${ages.current}, Max: ${ages.max}`
-          : `Current: ${ages.current}, Retirement: ${ages.retirement}, Max: ${ages.max}`
-      if (params.people.withPartner) {
-        const withdrawalPerson = pickPerson(params.people.withdrawalStart)
+      if (params.dialogPosition === 'age') {
         return (
           <>
+            {/* <h2>Set your current, retirement, and max age</h2> */}
+            <h2>Current: </h2>
+            <h2>Retirement: </h2>
+            <h2>Max: </h2>
+          </>
+        )
+      }
+      if (params.people.withPartner) {
+        const withdrawalPerson = pickPerson(params.people.withdrawalStart)
+        const { person1, person2 } = params.people
+        const forPerson = (person: Person) => (
+          <>
+            <h2 className="">Current: {person1.ages.current}</h2>
             <h2 className="">
-              <span className=" ">You</span> –{' '}
-              {forPerson(params.people.person1)}
+              Retirement:{' '}
+              {person1.ages.type === 'retired'
+                ? '(retired)'
+                : `${person1.ages.retirement}`}
             </h2>
-            <h2 className="">
-              <span className=" ">Your Partner</span> –{' '}
-              {forPerson(params.people.person2)}
-            </h2>
-            <h2 className="">
+            <h2 className="text-start">Max: {person1.ages.max}</h2>
+          </>
+        )
+        return (
+          <>
+            <div
+              className="grid gap-x-3 text-right"
+              style={{ grid: 'auto/auto auto 1fr' }}
+            >
+              <h2 className="font-medium col-span-3 text-left">You</h2>
+              {forPerson(person1)}
+
+              <h2 className="mt-2 font-medium col-span-3 text-left">
+                Your Partner
+              </h2>
+              {forPerson(person2)}
+            </div>
+            <h2 className="mt-1">
               Withdrawals start{' '}
               {withdrawalPerson.ages.type === 'retired'
                 ? 'now.'
@@ -373,75 +449,6 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
           noCase(params.strategy)
       }
     }
-    // case 'stock-allocation': {
-    //   assert(!params.risk.useTPAWPreset)
-    //   return (
-    //     <>
-    //       {params.strategy === 'TPAW' ? (
-    //         <>
-    //           <h2 className="font-medium mt-2">Retirement Spending</h2>
-    //           <_GlidePath
-    //             className="ml-4"
-    //             glidePath={params.risk.tpaw.allocation}
-    //             format={(x) => x.toFixed(2)}
-    //           />
-    //           <h2 className="font-medium mt-2">Legacy</h2>
-    //           <div className={`ml-4 flex justify-between`}>
-    //             <h2 className="">Stock Allocation: </h2>
-    //             <h2 className="text-right">
-    //               {params.risk.tpaw.allocationForLegacy.stocks.toFixed(2)}
-    //             </h2>
-    //           </div>
-    //         </>
-    //       ) : (
-    // <>
-    //   <_GlidePath
-    //     className=""
-    //     glidePath={params.risk.spawAndSWR.allocation}
-    //     format={(x) => formatPercentage(0)(x)}
-    //   />
-    // </>
-    //       )}
-    //     </>
-    //   )
-    // }
-    // case 'spending-tilt': {
-    //   assert(!params.risk.useTPAWPreset)
-    //   return (
-    //     <h2>{formatPercentage(1)(params.risk.tpawAndSPAW.spendingTilt)}</h2>
-    //   )
-    // }
-
-    // case 'lmp': {
-    //   assert(!params.risk.useTPAWPreset)
-    //   return (
-    //     <h2>
-    //       {params.risk.tpawAndSPAW.lmp === 0
-    //         ? 'None'
-    //         : formatCurrency(params.risk.tpawAndSPAW.lmp)}
-    //     </h2>
-    //   )
-    // }
-    // case 'withdrawal': {
-    //   const { withdrawalsStarted } = paramsExt
-    //   const { withdrawal } = params.risk.swr
-    //   return (
-    // <h2>
-    //   {withdrawal.type === 'asPercent'
-    //     ? `${formatPercentage(1)(withdrawal.percent)} of ${
-    //         withdrawalsStarted
-    //           ? 'current portfolio balance'
-    //           : 'savings portfolio at retirement'
-    //       }`
-    //     : withdrawal.type === 'asAmount'
-    //     ? `${formatCurrency(withdrawal.amount)}`
-    //     : withdrawal.type === 'default'
-    //     ? // Default should have been changed to asPercent if we are showing this.
-    //       assertFalse()
-    //     : noCase(withdrawal)}
-    // </h2>
-    //   )
-    // }
     case 'expected-returns': {
       const format = formatPercentage(1)
       const { stocks, bonds } = processExpectedReturns(

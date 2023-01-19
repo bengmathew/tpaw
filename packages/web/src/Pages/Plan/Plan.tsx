@@ -12,21 +12,20 @@ import { useUserGQLArgs } from '../App/WithFirebaseUser'
 import { useSimulation, WithSimulation } from '../App/WithSimulation'
 import { useWindowSize } from '../App/WithWindowSize'
 import { Config } from '../Config'
-import { PlanChart } from './PlanChart/PlanChart'
 import { planChartLabel } from './PlanChart/PlanChartMainCard/PlanChartLabel'
 import { usePlanChartType } from './PlanChart/UsePlanChartType'
 import { PlanContent } from './PlanGetStaticProps'
+import { PlanHelp } from './PlanHelp'
 import {
   isPlanInputType,
   paramsInputTypes,
 } from './PlanInput/Helpers/PlanInputType'
+import { nextPlanSectionDialogPosition } from './PlanInput/Helpers/PlanSectionDialogPosition'
 import { planSectionLabel } from './PlanInput/Helpers/PlanSectionLabel'
 import { PlanSectionName } from './PlanInput/Helpers/PlanSectionName'
 import { PlanInput } from './PlanInput/PlanInput'
-import { PlanResults } from './PlanResults'
 import { planSizing } from './PlanSizing/PlanSizing'
 import { PlanSummary } from './PlanSummary/PlanSummary'
-import { PlanWelcome } from './PlanWelcome'
 import { PlanQuery } from './__generated__/PlanQuery.graphql'
 
 const [PlanContentContext, usePlanContent] =
@@ -39,9 +38,12 @@ const query = graphql`
   }
 `
 
+import { noCase, PlanParams } from '@tpaw/common'
 import { WithChartData } from '../App/WithChartData'
 import { ConfirmAlert } from '../Common/Modal/ConfirmAlert'
 import { WithUser } from '../QueryFragments/UserFragment'
+import { PlanChart } from './PlanChart/PlanChart'
+import { PlanDialogOverlay } from './PlanDialogOverlay'
 
 export const Plan = React.memo((planContent: PlanContent) => {
   const userGQLArgs = useUserGQLArgs()
@@ -82,27 +84,27 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
 
   const state = usePlanState()
 
-  const [transition, setTransition] = useState(() => ({
-    prev: state,
-    target: state,
-    duration: 0,
-  }))
+  const [transition, setTransition] = useState(() => {
+    const x = {
+      section: state.section,
+      dialogMode: _isDialogMode(state.dialogPosition),
+    }
+    return { prev: x, target: x, duration: 0 }
+  })
 
   useEffect(() => {
     setTransition((t) => {
       const prev = t.target
-      const target = state
-      const duration =
-        target.dialogMode && !prev.dialogMode
-          ? 10 // reset
-          : target.dialogMode || prev.dialogMode
-          ? 1000
-          : 300
-      return { prev, target: state, duration }
+      const target = {
+        section: state.section,
+        dialogMode: _isDialogMode(state.dialogPosition),
+      }
+      return { prev, target, duration: 300 }
     })
   }, [state, setParams])
   useAssertConst([setParams])
 
+  const [chartDiv, setChartDiv] = useState<HTMLElement | null>(null)
   const isIPhone = window.navigator.userAgent.match(/iPhone/i) !== null
 
   return (
@@ -127,14 +129,12 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
           ${
             state.section === 'summary'
               ? ''
-              : state.section === 'results' && state.dialogMode
-              ? ' - Preliminary Results'
               : ` - ${planSectionLabel(state.section)}`
           }
           - TPAW Planner`}
         curr="plan"
       >
-        <PlanWelcome sizing={_sizing.welcome} planTransition={transition} />
+        {/* <PlanWelcome sizing={_sizing.welcome} planTransition={transition} /> */}
         {paramsInputTypes.map((type) => (
           <PlanInput
             key={type}
@@ -144,8 +144,9 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
             planInputType={type}
           />
         ))}
-        <PlanResults sizing={_sizing.results} planTransition={transition} />
+        <PlanHelp sizing={_sizing.help} planTransition={transition} />
         <PlanChart
+          ref={setChartDiv}
           layout={layout}
           sizing={_sizing.chart}
           planTransition={transition}
@@ -179,13 +180,16 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
             </p>
           </ConfirmAlert>
         )}
+        <PlanDialogOverlay chartDiv={chartDiv} />
       </AppPage>
     </PlanContentContext.Provider>
   )
 })
 
 function usePlanState() {
-  const { params, setParams } = useSimulation()
+  const { params, setParams, paramsExt } = useSimulation()
+  const { asYFN, withdrawalStartYear } = paramsExt
+  const withdrawalStartYearAYFN = asYFN(withdrawalStartYear)
 
   const urlSection = useURLSection()
 
@@ -194,40 +198,53 @@ function usePlanState() {
   // we intend for there to be only one.
   const [state, setState] = useState({
     section: urlSection,
-    dialogMode: params.dialogMode && _isDialogInputStage(urlSection),
+    dialogPosition: params.dialogPosition,
   })
   useEffect(() => {
     setState((prev) => ({
       section: urlSection,
-      dialogMode:
-        urlSection === 'welcome' ||
-        (prev.dialogMode && _isDialogInputStage(urlSection)),
+      dialogPosition:
+        prev.dialogPosition !== 'done' &&
+        urlSection === 'summary' &&
+        prev.section === prev.dialogPosition
+          ? nextPlanSectionDialogPosition(
+              prev.dialogPosition,
+              withdrawalStartYearAYFN,
+            )
+          : prev.dialogPosition,
     }))
+    // ignore withdrawalStartYearAYFN
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlSection])
 
   useEffect(() => {
     setParams((params) => {
-      if (params.dialogMode === state.dialogMode) return params
+      if (params.dialogPosition === state.dialogPosition) return params
       const clone = _.cloneDeep(params)
-      clone.dialogMode = state.dialogMode
+      clone.dialogPosition = state.dialogPosition
       return clone
     })
-  }, [setParams, state.dialogMode])
+  }, [setParams, state.dialogPosition])
+
+  useEffect(() => {
+    setState((prev) =>
+      params.dialogPosition === prev.dialogPosition
+        ? prev
+        : { section: prev.section, dialogPosition: params.dialogPosition },
+    )
+  }, [params.dialogPosition])
 
   return state
 }
 
 function useURLSection() {
-  const { params } = useSimulation()
   const urlUpdater = useURLUpdater()
   const getSectionURL = useGetSectionURL()
 
   const urlSectionStr = useURLParam('section') ?? ''
   const urlSection: PlanSectionName =
-    isPlanInputType(urlSectionStr) || urlSectionStr === 'results'
+    isPlanInputType(urlSectionStr) || urlSectionStr === 'help'
       ? urlSectionStr
-      : params.dialogMode
-      ? 'welcome'
       : 'summary'
 
   // Keep the URL up to date with urlSection. This is
@@ -244,22 +261,25 @@ export const useGetSectionURL = () => {
   return useCallback(
     (section: PlanSectionName) => {
       const url = new URL(`${Config.client.urls.app()}${path}`)
-      url.pathname =
-        section === 'summary' || section === 'welcome'
-          ? '/plan'
-          : `/plan/${section}`
+      url.pathname = section === 'summary' ? '/plan' : `/plan/${section}`
       return url
     },
     [path],
   )
 }
 
-const _isDialogInputStage = (section: PlanSectionName | 'done') =>
-  [
-    'welcome',
-    'age',
-    'current-portfolio-balance',
-    'future-savings',
-    'income-during-retirement',
-    'results',
-  ].includes(section)
+const _isDialogMode = (dialogPosition: PlanParams['dialogPosition']) => {
+  switch (dialogPosition) {
+    case 'age':
+    case 'current-portfolio-balance':
+    case 'future-savings':
+    case 'income-during-retirement':
+      return true
+    case 'show-results':
+    case 'show-all-inputs':
+    case 'done':
+      return false
+    default:
+      noCase(dialogPosition)
+  }
+}

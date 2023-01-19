@@ -21,6 +21,7 @@ import { NumberInput } from '../../../Common/Inputs/NumberInput'
 import { ConfirmAlert } from '../../../Common/Modal/ConfirmAlert'
 import { ValueForYearRangeDisplay } from '../../../Common/ValueForYearRangeDisplay'
 import { analyzeYearsInParams } from '../Helpers/AnalyzeYearsInParams'
+import { nextPlanSectionDialogPosition } from '../Helpers/PlanSectionDialogPosition'
 
 export const PlanInputAgePerson = React.memo(
   ({
@@ -91,13 +92,24 @@ export const PlanInputAgePerson = React.memo(
         if (retirementRemovalWarning.length > 0) {
           setRetirementRemovalWarning(retirementRemovalWarning)
           return params
-        } else {
-          p.ages = {
-            type: 'retired',
-            current: p.ages.current,
-            max: p.ages.max,
+        }
+        if (clone.dialogPosition === 'future-savings') {
+          const withdrawalStartPerson = !clone.people.withPartner
+            ? 'person1'
+            : clone.people.withdrawalStart
+          if (type === withdrawalStartPerson) {
+            clone.dialogPosition = nextPlanSectionDialogPosition(
+              'future-savings',
+              1, // 0 throws the calculations off.
+            )
           }
         }
+        p.ages = {
+          type: 'retired',
+          current: p.ages.current,
+          max: p.ages.max,
+        }
+
         return _setXAxisDisplay(clone)
       })
     }

@@ -134,10 +134,10 @@ const excelSimulated = [
 const excel = excelSimulated
 
 const testParams = extendPlanParams({
-  v: 15,
+  v: 16,
   warnedAbout14to15Converstion: true,
   strategy: 'TPAW',
-  dialogMode: true,
+  dialogPosition: 'done',
   people: {
     withPartner: false,
     person1: {

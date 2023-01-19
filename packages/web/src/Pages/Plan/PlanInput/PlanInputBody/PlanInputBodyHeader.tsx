@@ -7,44 +7,36 @@ import { useGetSectionURL } from '../../Plan'
 import { PlanInputType } from '../Helpers/PlanInputType'
 import { planSectionLabel } from '../Helpers/PlanSectionLabel'
 import { PlanSectionName } from '../Helpers/PlanSectionName'
-import { getPlanDialogOrder } from './PlanInputBodyDialogNav'
 
 export const PlanInputBodyHeader = React.memo(
   ({
     type,
     className = '',
   }: {
-    type: PlanInputType | 'results'
+    type: PlanInputType | 'help'
     className?: string
   }) => {
     const { params, paramsExt } = useSimulation()
     const { withdrawalsStarted } = paramsExt
     const getSectionURL = useGetSectionURL()
-    const index = getPlanDialogOrder(withdrawalsStarted).indexOf(type) - 1
     const urlUpdater = useURLUpdater()
     const handleClick = () => {
       const section =
-        type !== 'results'
+        type !== 'help'
           ? ('summary' as const)
           : getPlanInputBodyHeaderOnDoneSection()
       urlUpdater.push(getSectionURL(section))
     }
     return (
-      <div className={`${className} flex justify-start `}>
-        <div className="flex  items-center gap-x-4 pr-4 bg-planBG bg-opacity-90 rounded-br-xl">
-          {params.dialogMode ? (
-            <div className="bg-gray-700 flex items-center justify-center text-white rounded-full w-[35px] h-[35px] font-bold">
-              {index + 1}
-            </div>
-          ) : (
-            <button
-              className="flex items-center gap-x-2 text-sm sm:text-base btn-dark px-4 py-1.5"
-              onClick={handleClick}
-            >
-              <FontAwesomeIcon className="" icon={faLeftLong} />
-              Done
-            </button>
-          )}
+      <div className={`${className} sticky top-0 flex justify-start `}>
+        <div className="flex  items-center gap-x-4 pr-4 py-4 bg-planBG bg-opacity- rounded-br-xl">
+          <button
+            className="flex items-center gap-x-2 text-sm sm:text-base btn-dark px-4 py-1.5"
+            onClick={handleClick}
+          >
+            <FontAwesomeIcon className="" icon={faLeftLong} />
+            Done
+          </button>
           <h2 className="text-xl sm:text-2xl font-bold text-start">
             {planSectionLabel(type)}
           </h2>

@@ -68,10 +68,7 @@ export type PlanContent = {
     withdrawalRate: _IntroAndGuideAndMenu
     rewardRiskRatio: _IntroAndGuide
   }
-  results: {
-    dialogMode: _FetchedInline
-    notDialogMode: _FetchedInline
-  }
+  help: _FetchedInline
 }
 
 export type PlanStaticProps = {
@@ -221,11 +218,7 @@ export const planGetStaticProps: GetStaticProps<PlanStaticProps> = async (
             guide: '79KDyYdPfxwl7BceHPECCe',
           },
         },
-        results: {
-          // guide: ('JdHXfmg0BQqhysScaWc3m'),
-          dialogMode: 'JdHXfmg0BQqhysScaWc3m',
-          notDialogMode: '1fLMnCI77Mz0WzvOaDTu2T',
-        },
+        help: '1fLMnCI77Mz0WzvOaDTu2T',
       }),
     },
   }

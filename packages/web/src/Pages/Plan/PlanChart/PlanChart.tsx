@@ -1,8 +1,5 @@
-import { faQuestion } from '@fortawesome/pro-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Power1, Power4 } from 'gsap'
-import Link from 'next/link'
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
   insetExt,
   originCSSStyle,
@@ -16,13 +13,13 @@ import { Record } from '../../../Utils/Record'
 import { fGet } from '../../../Utils/Utils'
 import { useChartData } from '../../App/WithChartData'
 import { ChartAnimation } from '../../Common/Chart/Chart'
-import { useGetSectionURL } from '../Plan'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
-import { setPlanInputBodyHeaderOnDoneSection } from '../PlanInput/PlanInputBody/PlanInputBodyHeader'
 import {
   PlanTransitionState,
   simplifyPlanTransitionState4,
 } from '../PlanTransition'
+import { PlanChartDialogCurtain } from './PlanChartDialogCurtain'
+import { PlanChartHelp } from './PlanChartHelp'
 import { PlanChartMainCard } from './PlanChartMainCard/PlanChartMainCard'
 import { PlanChartRescale } from './PlanChartRescale'
 import { PlanChartSidePanel } from './PlanChartSidePanel/PlanChartSidePanel'
@@ -48,10 +45,13 @@ export type PlanChartTransitionState = ReturnType<
 >
 
 const _toPlanChartTransitionState = simplifyPlanTransitionState4(
-  { label: 'results', sections: [{ name: 'results', dialogMode: 'any' }] },
-  { label: 'hidden', sections: [{ name: 'rest', dialogMode: true }] },
-  { label: 'summary', sections: [{ name: 'summary', dialogMode: false }] },
-  { label: 'input', sections: [{ name: 'rest', dialogMode: false }] },
+  { label: 'dialogSummary', sections: [{ name: 'summary', dialogMode: true }] },
+  { label: 'dialogInput', sections: [{ name: 'rest', dialogMode: true }] },
+  {
+    label: 'notDialogSummary',
+    sections: [{ name: 'summary', dialogMode: false }],
+  },
+  { label: 'notDialogInput', sections: [{ name: 'rest', dialogMode: false }] },
 )
 
 export type PlanChartSizing = {
@@ -69,36 +69,27 @@ export type PlanChartSizing = {
     cardPadding: Padding
   }
 }
-export const PlanChart = React.memo(
-  ({
-    layout,
-    sizing: sizingIn,
-    planTransition,
-    section,
-  }: {
-    layout: 'laptop' | 'desktop' | 'mobile'
-    sizing: PlanChartSizing
-    planTransition: { target: PlanTransitionState; duration: number }
-    section: PlanSectionName
-  }) => {
-    const getSectionURL = useGetSectionURL()
 
+type _Props = {
+  layout: 'laptop' | 'desktop' | 'mobile'
+  sizing: PlanChartSizing
+  planTransition: { target: PlanTransitionState; duration: number }
+  section: PlanSectionName
+}
+export const PlanChart = React.forwardRef<HTMLDivElement, _Props>(
+  ({ layout, sizing: sizingIn, planTransition, section }: _Props, ref) => {
     const type = usePlanChartType()
-    const helpRef = useRef<HTMLAnchorElement>(null)
 
     const allChartData = useChartData()
     const chartMainData = fGet(allChartData.byYearsFromNowPercentiles.get(type))
 
     const [mainYRange, setMainYRange] = useState(chartMainData.yDisplayRange)
 
-    const [measures, setMeasures] = useState({ help: { height: 0 } })
-    useLayoutEffect(() => {
-      const observer = new ResizeObserver(() => {
-        const help = fGet(helpRef.current).getBoundingClientRect()
-        setMeasures({ help: { height: help.height } })
-      })
-      observer.observe(fGet(helpRef.current))
-      return () => observer.disconnect()
+    const [measures, setMeasures] = useState({
+      help: { height: 0 },
+    })
+    const handleHelpHeight = useCallback((height: number) => {
+      setMeasures((x) => ({ help: { height } }))
     }, [])
 
     const maxLegacy = Math.max(
@@ -116,14 +107,19 @@ export const PlanChart = React.memo(
       }),
       [planTransition],
     )
+
     const targetSizing = useMemo(
       () => sizing.dynamic[transition.target],
       [sizing, transition.target],
     )
+    // console.dir(sizing)
+    // console.dir(transition.target)
+    // console.dir(targetSizing.region.height)
 
     const transitionDuration = `${planTransition.duration}ms`
     return (
       <NoDisplayOnOpacity0Transition
+        ref={ref}
         noDisplayMeans="visibility:hidden"
         className={`absolute z-10 bg-chartBG overflow-hidden
           ${layout == 'laptop' ? '' : ''}`}
@@ -137,6 +133,7 @@ export const PlanChart = React.memo(
           ...regionCSSStyle(targetSizing.region),
         }}
       >
+        <PlanChartDialogCurtain layout={layout} />
         <PlanChartMainCard
           layout={layout}
           yRange={mainYRange}
@@ -146,8 +143,9 @@ export const PlanChart = React.memo(
         />
         <PlanChartSidePanel
           layout={layout}
-          sizing={sizing}
-          transition={transition}
+          targetDynamicSizing={targetSizing.sidePanel}
+          duration={planTransition.duration}
+          fixedSizing={sizing.fixed}
           section={section}
         />
         <div
@@ -167,39 +165,13 @@ export const PlanChart = React.memo(
             setMainYRange={setMainYRange}
           />
         </div>
-
-        <Link href={getSectionURL('results')} shallow>
-          <a
-            ref={helpRef}
-            className="absolute text-gray-50  font-semibold flex items-center  text-base sm:text-lg"
-            style={{
-              transitionProperty: 'opacity, transform, left, bottom',
-              transitionDuration,
-              bottom: `${targetSizing.help.inset.bottom}px`,
-              left: `${targetSizing.help.inset.left}px`,
-              opacity: `${section === 'results' ? '0' : '1'}`,
-              pointerEvents: section === 'results' ? 'none' : 'auto',
-            }}
-            onClick={() => {
-              setPlanInputBodyHeaderOnDoneSection(section)
-            }}
-          >
-            <span
-              className={`flex items-center justify-center bg-gray-200 rounded-full  mr-2 ${
-                layout === 'mobile'
-                  ? 'w-[20px] h-[20px] text-[12px]'
-                  : 'w-[25px] h-[25px] text-[18px]'
-              }`}
-            >
-              <FontAwesomeIcon
-                className={` text-gray-700 
-                ${layout === 'mobile' ? 'text-sm' : 'text-lg'}`}
-                icon={faQuestion}
-              />
-            </span>
-            Help me understand this
-          </a>
-        </Link>
+        <PlanChartHelp
+          onHeight_const={handleHelpHeight}
+          layout={layout}
+          targetDynamicSizing={targetSizing.help}
+          duration={planTransition.duration}
+          section={section}
+        />
       </NoDisplayOnOpacity0Transition>
     )
   },
@@ -214,7 +186,7 @@ const _transformSizing = (
   const { cardPadding, intraGap } = sizingIn.fixed
   const _map = (
     state: PlanChartTransitionState,
-    orig: PlanChartSizing['dynamic']['hidden'],
+    orig: PlanChartSizing['dynamic']['dialogInput'],
   ) => {
     const { padding, region } = orig
     const legacyWidth = Math.max(

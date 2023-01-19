@@ -1,5 +1,4 @@
-import { planParamsTest } from '@tpaw/common'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useSimulation } from '../../../App/WithSimulation'
 import {
   PlanInputBody,
@@ -12,7 +11,6 @@ import { PlanInputRiskTPAW } from './PlanInputRiskTPAW'
 export const PlanInputRisk = React.memo((props: PlanInputBodyPassThruProps) => {
   const { params } = useSimulation()
 
-  
   return (
     <PlanInputBody {...props}>
       <>

@@ -1,20 +1,16 @@
-import {Size} from '../../../Utils/Geometry'
-import {noCase} from '../../../Utils/Utils'
-import {PlanInputSizing} from '../PlanInput/PlanInput'
-import {PlanChartSizing} from '../PlanChart/PlanChart'
-import {PlanResultsSizing} from '../PlanResults'
-import {PlanSummaySizing} from '../PlanSummary/PlanSummary'
-import {PlanWelcomeSizing} from '../PlanWelcome'
-import {planSizingDesktop} from './PlanSizingDesktop'
-import {planSizingLaptop} from './PlanSizingLaptop'
-import {planSizingMobile} from './PlanSizingMobile'
-import { SimulationInfo } from '../../App/WithSimulation'
-
+import { Size } from '../../../Utils/Geometry'
+import { noCase } from '../../../Utils/Utils'
+import { PlanChartSizing } from '../PlanChart/PlanChart'
+import { PlanHelpSizing } from '../PlanHelp'
+import { PlanInputSizing } from '../PlanInput/PlanInput'
+import { PlanSummaySizing } from '../PlanSummary/PlanSummary'
+import { planSizingDesktop } from './PlanSizingDesktop'
+import { planSizingLaptop } from './PlanSizingLaptop'
+import { planSizingMobile } from './PlanSizingMobile'
 
 export type PlanSizing = {
-  welcome: PlanWelcomeSizing
   input: PlanInputSizing
-  results: PlanResultsSizing
+  help: PlanHelpSizing
   chart: PlanChartSizing
   summary: PlanSummaySizing
 }
@@ -22,7 +18,7 @@ export type PlanSizing = {
 export function planSizing(
   layout: 'mobile' | 'laptop' | 'desktop',
   windowSize: Size,
-  isSWR:boolean
+  isSWR: boolean,
 ) {
   switch (layout) {
     case 'laptop':

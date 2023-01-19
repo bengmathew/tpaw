@@ -44,10 +44,10 @@ export const PlanChartRescale = React.memo(
 
     // This is so chart will be scaled when results are first shown.
     useEffect(() => {
-      if (params.dialogMode) handleRescale()
+      if (params.dialogPosition === 'show-results') handleRescale()
       // Additional section dep and ignore handleRescale.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [section, params.dialogMode])
+    }, [section, params.dialogPosition])
 
     return (
       <button

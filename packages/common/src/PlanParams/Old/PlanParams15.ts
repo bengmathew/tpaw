@@ -25,8 +25,8 @@ import {
   linearFnFromPointAndSlope,
   noCase,
   preciseRange,
-} from '../Utils'
-import { PlanParams14 } from './Old/PlanParams14'
+} from '../../Utils'
+import { PlanParams14 } from './PlanParams14'
 
 export namespace PlanParams15 {
   export const MAX_LABEL_LENGTH = 150

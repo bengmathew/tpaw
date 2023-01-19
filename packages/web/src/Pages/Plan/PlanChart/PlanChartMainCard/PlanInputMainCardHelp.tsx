@@ -5,7 +5,7 @@ import {useGetSectionURL} from '../../Plan'
 export const PlanInputMainCardHelp = React.memo(() => {
   const getSectionURL = useGetSectionURL()
   return (
-    <Link href={getSectionURL('results')} shallow>
+    <Link href={getSectionURL('help')} shallow>
       <a className="">Help me understand these results.</a>
     </Link>
   )

@@ -10,10 +10,9 @@ import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity
 import { noCase } from '../../../Utils/Utils'
 import {
   PlanTransitionState,
-  simplifyPlanTransitionState5,
+  simplifyPlanTransitionState4,
 } from '../PlanTransition'
 import { PlanInputType } from './Helpers/PlanInputType'
-import { planSectionNames } from './Helpers/PlanSectionName'
 import { PlanInputAge } from './PlanInputAge/PlanInputAge'
 import { PlanInputBodyPassThruProps } from './PlanInputBody/PlanInputBody'
 import { PlanInputCompareStrategies } from './PlanInputCompareStrategies'
@@ -29,36 +28,26 @@ import { PlanInputRisk } from './PlanInputRisk/PlanInputRisk'
 import { PlanInputSimulation } from './PlanInputSimulation'
 import { PlanInputSpendingCeilingAndFloor } from './PlanInputSpendingCeilingAndFloor'
 
+type _FixedSizingByMode = {
+  size: Size
+  padding: ({ left: number; right: number } | { horz: number }) & {
+    top: number
+  }
+}
 export type PlanInputSizing = {
   dynamic: Record<PlanInputTransitionState, { origin: XY; opacity: number }>
   fixed: {
-    dialogMode: {
-      size: Size
-      padding: ({ left: number; right: number } | { horz: number }) & {
-        top: number
-      }
-    }
-    notDialogMode: {
-      size: Size
-      padding: ({ left: number; right: number } | { horz: number }) & {
-        top: number
-      }
-    }
+    dialogMode: _FixedSizingByMode
+    notDialogMode: _FixedSizingByMode
     cardPadding: Padding
   }
 }
 
 export const toPlanInputTransitionStateByType = (type: PlanInputType) =>
-  simplifyPlanTransitionState5(
-    {
-      label: 'dialogModeOutRight',
-      sections: planSectionNames
-        .slice(0, planSectionNames.indexOf(type))
-        .map((x) => ({ name: x, dialogMode: true })),
-    },
+  simplifyPlanTransitionState4(
     { label: 'dialogModeIn', sections: [{ name: type, dialogMode: true }] },
     {
-      label: 'dialogModeOutLeft',
+      label: 'dialogModeOut',
       sections: [{ name: 'rest', dialogMode: true }],
     },
     { label: 'notDialogModeIn', sections: [{ name: type, dialogMode: false }] },

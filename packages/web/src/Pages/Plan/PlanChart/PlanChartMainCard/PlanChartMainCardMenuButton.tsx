@@ -2,7 +2,6 @@ import { faCaretDown, faChevronRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React from 'react'
 import { useSimulation } from '../../../App/WithSimulation'
-import { useGetSectionURL } from '../../Plan'
 import { PlanChartTransitionState } from '../PlanChart'
 import { usePlanChartType } from '../UsePlanChartType'
 import { planChartLabel } from './PlanChartLabel'
@@ -18,11 +17,8 @@ export const PlanChartMainCardMenuButton = React.memo(
     ({ className = '', onClick, style, transition }: Props, ref) => {
       const simulation = useSimulation()
       const { params } = simulation.tpawResult.args
-      const getSectionURL = useGetSectionURL()
       const type = usePlanChartType()
       const { label, subLabel } = planChartLabel(params.original, type, 'full')
-
-      const showHelp = transition.target === 'summary'
 
       return (
         <div

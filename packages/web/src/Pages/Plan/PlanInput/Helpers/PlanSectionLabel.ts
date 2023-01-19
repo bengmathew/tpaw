@@ -5,8 +5,6 @@ export function planSectionLabel(type: PlanSectionName): string {
   switch (type) {
     case 'summary':
       return 'Summary'
-    case 'welcome':
-      return 'Welcome'
     case 'age':
       return 'Age'
     case 'current-portfolio-balance':
@@ -15,7 +13,7 @@ export function planSectionLabel(type: PlanSectionName): string {
       return 'Future Savings'
     case 'income-during-retirement':
       return 'Income During Retirement'
-    case 'results':
+    case 'help':
       return 'Understanding these Results'
     case 'extra-spending':
       return 'Extra Spending'

@@ -18,7 +18,7 @@ export const PlanSummarySave = React.memo(
     const firebaseUser = useFirebaseUser()
     return (
       <BasicMenu align="right">
-        <div className="flex items-center gap-x-2 font-medium bg-gray-700 text-white rounded-lg px-4 py-2 mt-0.5">
+        <div className={`${className} flex items-center gap-x-2 font-medium bg-gray-700 text-white rounded-lg px-4 py-2 mt-0.5`}>
           Save / Reset
           <FontAwesomeIcon icon={faCaretDown} />
         </div>

@@ -1,4 +1,3 @@
-import { linearFnFomPoints } from '@tpaw/common'
 import { newPadding, rectExt, Size } from '../../../Utils/Geometry'
 import { PlanSizing } from './PlanSizing'
 
@@ -11,73 +10,37 @@ export function planSizingDesktop(
 ): PlanSizing {
   const contentWidth = 600
 
-  // ---- WELCOME ----
-  const welcome = ((): PlanSizing['welcome'] => {
-    const width = 500
-    const inOriginX = (windowSize.width - width) / 2
-    return {
-      dynamic: {
-        in: {
-          origin: { x: inOriginX, y: 0 },
-          opacity: 1,
-        },
-        out: {
-          origin: { x: inOriginX - 25, y: 0 },
-          opacity: 0,
-        },
-      },
-      fixed: {
-        size: { width, height: windowSize.height },
-      },
-    }
-  })()
-
   // ---- CHART ----
   const chart = ((): PlanSizing['chart'] => {
-    type Dynamic = PlanSizing['chart']['dynamic']['hidden']
-    const summaryState: Dynamic = {
-      region: rectExt({
-        x: 0,
-        y: 0,
-        width: windowSize.width,
-        height:
-          windowSize.width < 800
-            ? linearFnFomPoints(400, 300, 800, 550)(windowSize.width)
-            : 550,
-      }),
-      padding: newPadding({ vert: pad * 1.5, horz: pad }),
-      borderRadius: 0,
-      opacity: 1,
+    const dynamic = ({
+      dialog,
+      input,
+    }: {
+      dialog: boolean
+      input: boolean
+    }): PlanSizing['chart']['dynamic']['dialogInput'] => {
+      const baseHeight = 495 + 30
+      const height = baseHeight * (dialog ? 0.75 : 1) - (input ? 30 : 0)
+
+      const basePaddingVert = pad * 1.5
+      return {
+        region: rectExt({ x: 0, y: 0, width: windowSize.width, height }),
+        padding: newPadding({
+          top: basePaddingVert,
+          horz: pad,
+          bottom: basePaddingVert * (input ? 0.9 : 1),
+        }),
+        borderRadius: 0,
+        opacity: 1,
+      }
     }
 
-    const inputState = {
-      ...summaryState,
-      region: rectExt({
-        x: 0,
-        y: 0,
-        width: summaryState.region.width,
-        height: summaryState.region.height - 30,
-      }),
-      padding: newPadding({
-        horz: summaryState.padding.left,
-        top: summaryState.padding.top,
-        bottom: summaryState.padding.bottom * 0.9,
-      }),
-    }
-    const resultsState: Dynamic = {
-      ...inputState,
-    }
-    const hiddenState = {
-      ...resultsState,
-      region: rectExt.translate(resultsState.region, { x: 0, y: -30 }),
-      opacity: 0,
-    }
     return {
       dynamic: {
-        summary: summaryState,
-        input: inputState,
-        results: resultsState,
-        hidden: hiddenState,
+        dialogSummary: dynamic({ dialog: true, input: false }),
+        dialogInput: dynamic({ dialog: true, input: true }),
+        notDialogSummary: dynamic({ dialog: false, input: false }),
+        notDialogInput: dynamic({ dialog: false, input: true }),
       },
       fixed: {
         intraGap: pad / 2,
@@ -87,50 +50,38 @@ export function planSizingDesktop(
   })()
 
   // ---- INPUT ----
-
   const input = ((): PlanSizing['input'] => {
+    const dynamic = (
+      dialog: 'dialog' | 'notDialog',
+      section: 'Summary' | 'Input',
+    ): PlanSizing['input']['dynamic']['dialogModeIn'] => ({
+      origin: { x: 0, y: chart.dynamic[`${dialog}${section}`].region.bottom },
+      opacity: section === 'Input' ? 1 : 0,
+    })
+    const fixed = (
+      dialog: 'dialog' | 'notDialog',
+    ): PlanSizing['input']['fixed']['dialogMode'] => ({
+      size: {
+        width: windowSize.width,
+        height:
+          windowSize.height - chart.dynamic[`${dialog}Input`].region.bottom,
+      },
+      padding: {
+        left: pad,
+        right: windowSize.width - contentWidth - pad,
+        top: pad - 16, // -16 to account for py-4 on PlanInputBodyHeader
+      },
+    })
     return {
       dynamic: {
-        dialogModeIn: {
-          origin: { x: 0, y: 0 },
-          opacity: 1,
-        },
-        dialogModeOutRight: {
-          origin: { x: 25, y: 0 },
-          opacity: 0,
-        },
-        dialogModeOutLeft: {
-          origin: { x: -25, y: 0 },
-          opacity: 0,
-        },
-        notDialogModeIn: {
-          origin: { x: 0, y: chart.dynamic.input.region.bottom },
-          opacity: 1,
-        },
-        notDialogModeOut: {
-          origin: { x: 0, y: chart.dynamic.summary.region.bottom },
-          opacity: 0,
-        },
+        dialogModeIn: dynamic('dialog', 'Input'),
+        dialogModeOut: dynamic('dialog', 'Summary'),
+        notDialogModeIn: dynamic('notDialog', 'Input'),
+        notDialogModeOut: dynamic('notDialog', 'Summary'),
       },
       fixed: {
-        dialogMode: {
-          size: { ...windowSize },
-          padding: {
-            horz: (windowSize.width - contentWidth) / 2,
-            top: pad * 2,
-          },
-        },
-        notDialogMode: {
-          size: {
-            width: windowSize.width,
-            height: windowSize.height - chart.dynamic.input.region.bottom,
-          },
-          padding: {
-            left: pad,
-            right: windowSize.width - contentWidth - pad,
-            top: pad,
-          },
-        },
+        dialogMode: fixed('dialog'),
+        notDialogMode: fixed('notDialog'),
         cardPadding,
       },
     }
@@ -138,59 +89,54 @@ export function planSizingDesktop(
 
   // ---- SUMMARY ----
   const summary = ((): PlanSizing['summary'] => {
+    const dynamic = (
+      dialog: 'dialog' | 'notDialog',
+      section: 'Summary' | 'Input',
+    ): PlanSizing['summary']['dynamic']['dialogIn'] => ({
+      origin: { x: 0, y: chart.dynamic[`${dialog}${section}`].region.bottom },
+      opacity: section === 'Summary' ? 1 : 0,
+    })
+
+    const fixed = (
+      dialog: 'dialog' | 'notDialog',
+    ): PlanSizing['summary']['fixed']['dialogMode'] => ({
+      size: {
+        width: windowSize.width,
+        height:
+          windowSize.height - chart.dynamic[`${dialog}Summary`].region.height,
+      },
+      padding: newPadding({
+        left: pad,
+        right: windowSize.width - contentWidth - pad,
+        top: pad / 2,
+        bottom: 0,
+      }),
+    })
     return {
       dynamic: {
-        in: {
-          origin: { x: 0, y: chart.dynamic.summary.region.bottom },
-          opacity: 1,
-        },
-        out: {
-          origin: { x: 0, y: chart.dynamic.input.region.bottom },
-          opacity: 0,
-        },
+        dialogIn: dynamic('dialog', 'Summary'),
+        dialogOut: dynamic('dialog', 'Input'),
+        notDialogIn: dynamic('notDialog', 'Summary'),
+        notDialogOut: dynamic('notDialog', 'Input'),
       },
       fixed: {
-        size: {
-          width: windowSize.width,
-          height: windowSize.height - chart.dynamic.summary.region.height,
-        },
-        padding: newPadding({
-          left: pad,
-          right: windowSize.width - contentWidth - pad,
-          top: pad / 2,
-          bottom: 0,
-        }),
+        dialogMode: fixed('dialog'),
+        notDialogMode: fixed('notDialog'),
         cardPadding,
       },
     }
   })()
 
-  // ---- RESULTS ----
-  const results = ((): PlanSizing['results'] => {
+  // ---- HELP ----
+  const help = ((): PlanSizing['help'] => {
     return {
       dynamic: {
-        in: {
-          origin: { x: 0, y: chart.dynamic.results.region.bottom },
-          opacity: 1,
-        },
-        outDialogMode: {
-          origin: { x: 0, y: chart.dynamic.results.region.bottom + 30 },
-          opacity: 0,
-        },
-        outNotDialogMode: {
-          origin: { x: 0, y: chart.dynamic.summary.region.bottom },
-          opacity: 0,
-        },
+        in: input.dynamic.notDialogModeIn,
+        out: input.dynamic.notDialogModeOut,
       },
-      fixed: {
-        size: {
-          width: windowSize.width,
-          height: windowSize.height - chart.dynamic.results.region.bottom,
-        },
-        padding: input.fixed.notDialogMode.padding,
-      },
+      fixed: input.fixed.notDialogMode,
     }
   })()
 
-  return { welcome, chart, input, results, summary }
+  return { chart, input, help, summary }
 }

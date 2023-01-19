@@ -87,10 +87,10 @@ export const Perf = React.memo(() => {
 })
 
 const params = extendPlanParams({
-  v: 15,
+  v: 16,
   warnedAbout14to15Converstion: true,
   strategy: 'TPAW',
-  dialogMode: true,
+  dialogPosition: 'done',
   people: {
     withPartner: false,
     person1: {

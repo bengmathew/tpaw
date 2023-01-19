@@ -75,8 +75,10 @@ export const rectExt = (
     | { x: number; y: number; width: number; height: number }
     | { x: number; y: number; width: number; bottom: number }
     | { x: number; y: number; right: number; height: number }
-    | { x: number; y: number; right: number; bottom: number },
+    | { x: number; y: number; right: number; bottom: number }
+    | 0,
 ): RectExt => {
+  if (rect === 0) return rectExt({ x: 0, y: 0, width: 0, height: 0 })
   const width = 'width' in rect ? rect.width : rect.right - rect.x
   const height = 'height' in rect ? rect.height : rect.bottom - rect.y
   const right = 'right' in rect ? rect.right : rect.width + rect.x

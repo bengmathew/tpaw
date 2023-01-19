@@ -21,7 +21,7 @@ export const getStaticProps = planGetStaticProps
 export const getStaticPaths = () => ({
   paths: [
     ...paramsInputTypes.map((section) => ({ params: { section: [section] } })),
-    { params: { section: ['results'] } },
+    { params: { section: ['help'] } },
     { params: { section: null } },
   ],
   fallback: false,

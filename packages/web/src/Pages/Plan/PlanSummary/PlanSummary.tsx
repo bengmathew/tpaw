@@ -1,7 +1,7 @@
 import { faCaretDown, faCaretRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { getDefaultPlanParams, PlanParams } from '@tpaw/common'
-import React, { useMemo, useState } from 'react'
+import { getDefaultPlanParams, noCase, PlanParams } from '@tpaw/common'
+import React, { ReactNode, useMemo, useState } from 'react'
 import { PlanParamsExt } from '../../../TPAWSimulator/PlanParamsExt'
 import {
   newPaddingHorz,
@@ -10,41 +10,46 @@ import {
   paddingCSSStyleHorz,
   Size,
   sizeCSSStyle,
-  XY
+  XY,
 } from '../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity0Transition'
-import { noCase } from '../../../Utils/Utils'
 import { useSimulation } from '../../App/WithSimulation'
 import { Config } from '../../Config'
 import { analyzeYearsInParams } from '../PlanInput/Helpers/AnalyzeYearsInParams'
+import { PlanInputType } from '../PlanInput/Helpers/PlanInputType'
+import { isPlanSectionDialogInOverlayMode } from '../PlanInput/Helpers/PlanSectionDialogPosition'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import {
   PlanTransitionState,
-  simplifyPlanTransitionState2
+  simplifyPlanTransitionState4,
 } from '../PlanTransition'
-import { PlanSummaryButton } from './PlanSummaryButton'
+import {
+  PlanSummaryButton,
+  useShouldDisablePlanSummaryButton,
+} from './PlanSummaryButton'
+import { PlanSummaryDialog } from './PlanSummaryDialog'
 import { PlanSummarySave } from './PlanSummarySave/PlanSummarySave'
 
+type _FixedSizingByMode = {
+  size: Size
+  padding: ({ left: number; right: number } | { horz: number }) & {
+    top: number
+  }
+}
 export type PlanSummaySizing = {
-  dynamic: Record<
-    PlanSummaryTransitionState,
-    {
-      origin: XY
-      opacity: number
-    }
-  >
+  dynamic: Record<PlanSummaryTransitionState, { origin: XY; opacity: number }>
   fixed: {
-    size: Size
-    padding: ({ left: number; right: number } | { horz: number }) & {
-      top: number
-    }
+    dialogMode: _FixedSizingByMode
+    notDialogMode: _FixedSizingByMode
     cardPadding: Padding
   }
 }
 
-const _toPlanSummaryTransitionState = simplifyPlanTransitionState2(
-  { label: 'in', sections: [{ name: 'summary', dialogMode: 'any' }] },
-  { label: 'out', sections: [{ name: 'rest', dialogMode: 'any' }] },
+const _toPlanSummaryTransitionState = simplifyPlanTransitionState4(
+  { label: 'dialogIn', sections: [{ name: 'summary', dialogMode: true }] },
+  { label: 'dialogOut', sections: [{ name: 'rest', dialogMode: true }] },
+  { label: 'notDialogIn', sections: [{ name: 'summary', dialogMode: false }] },
+  { label: 'notDialogOut', sections: [{ name: 'rest', dialogMode: false }] },
 )
 export type PlanSummaryTransitionState = ReturnType<
   typeof _toPlanSummaryTransitionState
@@ -60,6 +65,18 @@ export const PlanSummary = React.memo(
     sizing: PlanSummaySizing
     planTransition: { target: PlanTransitionState; duration: number }
   }) => {
+    const [outerElement, setOuterElement] = useState<HTMLElement | null>(null)
+    const [bodyElement, setBodyElement] = useState<HTMLElement | null>(null)
+    const [ageElement, setAgeElement] = useState<HTMLElement | null>(null)
+    const [currentPortfolioBalanceElement, setCurrentPortfolioBalanceElement] =
+      useState<HTMLElement | null>(null)
+    const [futureSavingsElement, setFutureSavingsElement] =
+      useState<HTMLElement | null>(null)
+    const [incomeDuringRetirementElement, setIncomeDuringRetirementElement] =
+      useState<HTMLElement | null>(null)
+    const [adjustmentsToSpendingElement, setAdjustmentsToSpendingElement] =
+      useState<HTMLElement | null>(null)
+
     const { params, paramsExt } = useSimulation()
     const { asYFN, withdrawalStartYear } = paramsExt
     const isRetired = asYFN(withdrawalStartYear) <= 0
@@ -75,8 +92,15 @@ export const PlanSummary = React.memo(
       [planTransition.target, sizing],
     )
 
+    const fixedSizing = planTransition.target.dialogMode
+      ? sizing.fixed.dialogMode
+      : sizing.fixed.notDialogMode
+
+    const cardPadding = sizing.fixed.cardPadding
+
     return (
       <NoDisplayOnOpacity0Transition
+        ref={setOuterElement}
         // Don't destroy this because otherwise scroll position will be lost.
         noDisplayMeans="visibility:hidden"
         className={`absolute overflow-y-scroll`}
@@ -85,184 +109,240 @@ export const PlanSummary = React.memo(
           transitionDuration: `${planTransition.duration}ms`,
           transform: `translate(${targetSizing.origin.x}px,${targetSizing.origin.y}px)`,
           opacity: `${targetSizing.opacity}`,
-          ...sizeCSSStyle(sizing.fixed.size),
+          ...sizeCSSStyle(fixedSizing.size),
           ...originCSSStyle({ x: 0, y: 0 }),
-          ...paddingCSSStyleHorz(newPaddingHorz(sizing.fixed.padding)),
+          ...paddingCSSStyleHorz(newPaddingHorz(fixedSizing.padding)),
         }}
       >
-        <div
-          className="mb-4 w-full flex gap-x-4 justify-end items-center sticky top-0 z-10"
-          style={{
-            marginTop: `${sizing.fixed.padding.top}px`,
-          }}
-        >
-          {/* <PlanSummaryReset />
-          <PlanSummaryShare /> */}
-          <PlanSummarySave className="" />
-        </div>
-        <div
-          className={`flex flex-col gap-y-12 sm:gap-y-16 relative z-0 w-full mb-20`}
-        >
-          <div className="">
-            <h2
-              className="text-[20px] sm:text-[26px] font-bold mb-6"
-              style={{ ...paddingCSSStyleHorz(sizing.fixed.cardPadding) }}
-            >
-              Basic Inputs
-            </h2>
-            <div className="flex flex-col gap-y-6 ">
-              <PlanSummaryButton
-                type="age"
-                section={section}
-                padding={sizing.fixed.cardPadding}
-              />
-              <PlanSummaryButton
-                type="current-portfolio-balance"
-                section={section}
-                padding={sizing.fixed.cardPadding}
-              />
-              {!isRetired && (
-                <PlanSummaryButton
-                  type="future-savings"
-                  section={section}
-                  warn={!_paramsOk(paramsExt, 'future-savings')}
-                  padding={sizing.fixed.cardPadding}
-                  empty={params.futureSavings.length === 0}
-                />
-              )}
-              <PlanSummaryButton
-                type="income-during-retirement"
-                section={section}
-                warn={!_paramsOk(paramsExt, 'income-during-retirement')}
-                padding={sizing.fixed.cardPadding}
-                empty={params.retirementIncome.length === 0}
-              />
-            </div>
+        <div className="mt-0" ref={setBodyElement}>
+          {params.dialogPosition !== 'done' && (
+            <PlanSummaryDialog
+              elements={{
+                outer: outerElement,
+                body: bodyElement,
+                age: ageElement,
+                currentPortfolioBalance: currentPortfolioBalanceElement,
+                futureSavings: futureSavingsElement,
+                incomeDuringRetirement: incomeDuringRetirementElement,
+                adjustmentsToSpending: adjustmentsToSpendingElement,
+              }}
+              fixedSizing={fixedSizing}
+              dialogPosition={params.dialogPosition}
+            />
+          )}
+          <div
+            className="mb-4 w-full flex gap-x-4 justify-end items-center sticky top-0 z-20"
+            style={{ marginTop: `${fixedSizing.padding.top}px` }}
+          >
+            <PlanSummarySave className="" />
           </div>
-
-          <div className="">
-            <h2
-              className="text-[20px] sm:text-[26px] font-bold mb-6"
-              style={{ ...paddingCSSStyleHorz(sizing.fixed.cardPadding) }}
-            >
-              Adjustments To Spending
-            </h2>
-            <div className="flex flex-col gap-y-6 ">
-              <PlanSummaryButton
-                type="extra-spending"
-                section={section}
-                warn={!_paramsOk(paramsExt, 'extra-spending')}
-                padding={sizing.fixed.cardPadding}
-                empty={
-                  params.adjustmentsToSpending.extraSpending.discretionary
-                    .length === 0 &&
-                  params.adjustmentsToSpending.extraSpending.essential
-                    .length === 0
-                }
-              />
-
-              {params.strategy !== 'SWR' && (
+          <div
+            className={`flex flex-col gap-y-12 sm:gap-y-16 relative z-0 w-full mb-20`}
+          >
+            <div className="">
+              <_Heading cardPadding={cardPadding} firstItem="age">
+                Age
+              </_Heading>
+              <div className="flex flex-col gap-y-6 ">
                 <PlanSummaryButton
-                  type="legacy"
+                  ref={setAgeElement}
+                  type="age"
                   section={section}
-                  padding={sizing.fixed.cardPadding}
-                  empty={
-                    params.adjustmentsToSpending.tpawAndSPAW.legacy.external
-                      .length === 0 &&
-                    params.adjustmentsToSpending.tpawAndSPAW.legacy.total === 0
-                  }
-                />
-              )}
-              {params.strategy !== 'SWR' && (
-                <PlanSummaryButton
-                  type="spending-ceiling-and-floor"
-                  section={section}
-                  padding={sizing.fixed.cardPadding}
-                  empty={
-                    params.adjustmentsToSpending.tpawAndSPAW.spendingCeiling ===
-                    null
-                  }
-                />
-              )}
-            </div>
-          </div>
-
-          <div className="">
-            <h2
-              className="text-[20px] sm:text-[26px] font-bold mb-6"
-              style={{ ...paddingCSSStyleHorz(sizing.fixed.cardPadding) }}
-            >
-              Risk
-            </h2>
-            <div className="flex flex-col gap-y-6 ">
-              <PlanSummaryButton
-                type="risk"
-                section={section}
-                padding={sizing.fixed.cardPadding}
-                hideTitle
-              />
-            </div>
-          </div>
-
-          <div className="">
-            <button
-              className=""
-              style={{ ...paddingCSSStyleHorz(sizing.fixed.cardPadding) }}
-              onClick={() => setShowAdvanced(!showAdvanced)}
-            >
-              <div className="text-[20px] sm:text-[26px] font-bold text-left">
-                Advanced
-                <FontAwesomeIcon
-                  className="ml-2"
-                  icon={showAdvanced ? faCaretDown : faCaretRight}
+                  padding={cardPadding}
+                  hideTitle
                 />
               </div>
-              {!showAdvanced && (
-                <h2 className="text-left">
-                  {advancedModifiedCount === 0
-                    ? 'None'
-                    : `${advancedModifiedCount} modified`}
-                </h2>
-              )}
-            </button>
-            {showAdvanced && (
-              <div className="flex flex-col gap-y-6 mt-6">
+            </div>
+
+            <div className="">
+              <_Heading
+                cardPadding={cardPadding}
+                firstItem="current-portfolio-balance"
+              >
+                Wealth
+              </_Heading>
+              <div className="flex flex-col gap-y-6 ">
                 <PlanSummaryButton
-                  type="expected-returns"
+                  ref={setCurrentPortfolioBalanceElement}
+                  type="current-portfolio-balance"
                   section={section}
-                  padding={sizing.fixed.cardPadding}
-                  flagAsModified={_isModified('expected-returns', params)}
+                  padding={cardPadding}
                 />
-                <PlanSummaryButton
-                  type="inflation"
-                  section={section}
-                  padding={sizing.fixed.cardPadding}
-                  flagAsModified={_isModified('inflation', params)}
-                />
-                <PlanSummaryButton
-                  type="simulation"
-                  section={section}
-                  padding={sizing.fixed.cardPadding}
-                  flagAsModified={_isModified('simulation', params)}
-                />
-                <PlanSummaryButton
-                  type="strategy"
-                  section={section}
-                  padding={sizing.fixed.cardPadding}
-                  flagAsModified={_isModified('strategy', params)}
-                />
-                {!Config.client.production && (
+                {!isRetired && (
                   <PlanSummaryButton
-                    type="dev"
+                    ref={setFutureSavingsElement}
+                    type="future-savings"
                     section={section}
-                    padding={sizing.fixed.cardPadding}
+                    warn={!_paramsOk(paramsExt, 'future-savings')}
+                    padding={cardPadding}
+                    empty={params.futureSavings.length === 0}
                   />
                 )}
+                <PlanSummaryButton
+                  ref={setIncomeDuringRetirementElement}
+                  type="income-during-retirement"
+                  section={section}
+                  warn={!_paramsOk(paramsExt, 'income-during-retirement')}
+                  padding={cardPadding}
+                  empty={params.retirementIncome.length === 0}
+                />
               </div>
-            )}
+            </div>
+
+            <div
+              id="planSummaryInputsAfterDialog"
+              ref={setAdjustmentsToSpendingElement}
+              className="flex flex-col gap-y-12 sm:gap-y-16 "
+            >
+              <div className="">
+                <_Heading cardPadding={cardPadding} firstItem="extra-spending">
+                  Adjustments To Spending
+                </_Heading>
+                <div className="flex flex-col gap-y-6 ">
+                  <PlanSummaryButton
+                    type="extra-spending"
+                    section={section}
+                    warn={!_paramsOk(paramsExt, 'extra-spending')}
+                    padding={cardPadding}
+                    empty={
+                      params.adjustmentsToSpending.extraSpending.discretionary
+                        .length === 0 &&
+                      params.adjustmentsToSpending.extraSpending.essential
+                        .length === 0
+                    }
+                  />
+
+                  {params.strategy !== 'SWR' && (
+                    <PlanSummaryButton
+                      type="legacy"
+                      section={section}
+                      padding={cardPadding}
+                      empty={
+                        params.adjustmentsToSpending.tpawAndSPAW.legacy.external
+                          .length === 0 &&
+                        params.adjustmentsToSpending.tpawAndSPAW.legacy
+                          .total === 0
+                      }
+                    />
+                  )}
+                  {params.strategy !== 'SWR' && (
+                    <PlanSummaryButton
+                      type="spending-ceiling-and-floor"
+                      section={section}
+                      padding={cardPadding}
+                      empty={
+                        params.adjustmentsToSpending.tpawAndSPAW
+                          .spendingCeiling === null
+                      }
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="">
+                <_Heading cardPadding={cardPadding} firstItem="risk">
+                  Risk
+                </_Heading>
+                <div className="flex flex-col gap-y-6 ">
+                  <PlanSummaryButton
+                    type="risk"
+                    section={section}
+                    padding={cardPadding}
+                    hideTitle
+                  />
+                </div>
+              </div>
+
+              <div className="">
+                <button
+                  className="disabled:opacity-20"
+                  style={{ ...paddingCSSStyleHorz(cardPadding) }}
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  disabled={params.dialogPosition !== 'done'}
+                >
+                  <div className="text-[20px] sm:text-[26px] font-bold text-left">
+                    Advanced
+                    <FontAwesomeIcon
+                      className="ml-2"
+                      icon={showAdvanced ? faCaretDown : faCaretRight}
+                    />
+                  </div>
+                  {!showAdvanced && (
+                    <h2 className="text-left">
+                      {advancedModifiedCount === 0
+                        ? 'None'
+                        : `${advancedModifiedCount} modified`}
+                    </h2>
+                  )}
+                </button>
+                {showAdvanced && (
+                  <div className="flex flex-col gap-y-6 mt-6">
+                    <PlanSummaryButton
+                      type="expected-returns"
+                      section={section}
+                      padding={cardPadding}
+                      flagAsModified={_isModified('expected-returns', params)}
+                    />
+                    <PlanSummaryButton
+                      type="inflation"
+                      section={section}
+                      padding={cardPadding}
+                      flagAsModified={_isModified('inflation', params)}
+                    />
+                    <PlanSummaryButton
+                      type="simulation"
+                      section={section}
+                      padding={cardPadding}
+                      flagAsModified={_isModified('simulation', params)}
+                    />
+                    <PlanSummaryButton
+                      type="strategy"
+                      section={section}
+                      padding={cardPadding}
+                      flagAsModified={_isModified('strategy', params)}
+                    />
+                    {!Config.client.production && (
+                      <PlanSummaryButton
+                        type="dev"
+                        section={section}
+                        padding={cardPadding}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </NoDisplayOnOpacity0Transition>
+    )
+  },
+)
+
+const _Heading = React.memo(
+  ({
+    className = '',
+    cardPadding,
+    firstItem,
+    children,
+  }: {
+    className?: string
+    cardPadding: Padding
+    firstItem: PlanInputType
+    children: ReactNode
+  }) => {
+    const {params} = useSimulation()
+    const isDisabled =
+      useShouldDisablePlanSummaryButton(firstItem) &&
+      !isPlanSectionDialogInOverlayMode(params.dialogPosition)
+    return (
+      <h2
+        className={`${className} text-[20px] sm:text-[26px] font-bold mb-6  transition-opacity
+        ${isDisabled ? 'opacity-20' : ''}`}
+        style={{ ...paddingCSSStyleHorz(cardPadding) }}
+      >
+        {children}
+      </h2>
     )
   },
 )
