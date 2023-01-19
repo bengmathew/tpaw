@@ -190,14 +190,14 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
         const { person1, person2 } = params.people
         const forPerson = (person: Person) => (
           <>
-            <h2 className="">Current: {person1.ages.current}</h2>
+            <h2 className="">Current: {person.ages.current}</h2>
             <h2 className="">
               Retirement:{' '}
-              {person1.ages.type === 'retired'
+              {person.ages.type === 'retired'
                 ? '(retired)'
-                : `${person1.ages.retirement}`}
+                : `${person.ages.retirement}`}
             </h2>
-            <h2 className="text-start">Max: {person1.ages.max}</h2>
+            <h2 className="text-start">Max: {person.ages.max}</h2>
           </>
         )
         return (
