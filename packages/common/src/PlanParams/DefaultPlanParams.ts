@@ -53,8 +53,9 @@ export const DEFAULT_SWR_WITHDRAWAL_PERCENT = (retirementLength: number) => {
 
 export function getDefaultPlanParams() {
   const params: PlanParams = {
-    v: 16,
+    v: 17,
     warnedAbout14to15Converstion: true,
+    warnedAbout16to17Converstion: true,
     strategy: 'TPAW',
     dialogPosition: 'age',
     people: {

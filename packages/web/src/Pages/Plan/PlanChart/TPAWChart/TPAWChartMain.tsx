@@ -22,12 +22,14 @@ export const TPAWChartMain = React.memo(
     (
       {
         starting,
+        hidePointer = false,
       }: {
         starting: {
           data: TPAWChartDataMain
           xyRange: ChartXYRange
           sizing: ChartReactSizing
         }
+        hidePointer?: boolean
       },
       ref: React.ForwardedRef<ChartReactStatefull<TPAWChartDataMain>>,
     ) => {
@@ -35,14 +37,14 @@ export const TPAWChartMain = React.memo(
         <ChartReact<TPAWChartDataMain>
           ref={ref}
           starting={starting}
-          components={components}
+          components={components(hidePointer)}
         />
       )
     },
   ),
 )
 
-const components = () => {
+const components = (hidePointer: boolean) => () => {
   const minorLine = chartDrawDataLines<TPAWChartDataMain>({
     lineWidth: 0.5,
     strokeStyle: ChartUtils.color.gray[400],
@@ -107,83 +109,90 @@ const components = () => {
     },
   )
 
-  const pointer = new ChartPointer<TPAWChartDataMain>(
-    (data) => {
-      switch (data.series.type) {
-        case 'percentiles':
-          return data.series.percentiles
-            .filter((x) => x.isHighlighted)
-            .map((x) => ({ line: x.data, label: `${x.percentile}` }))
-        case 'labeledLines': {
-          const tpaw = {
-            line: data.series.lines[0].data,
-            label: data.series.lines[0].label,
-          }
-          const spaw = {
-            line: data.series.lines[1].data,
-            label: data.series.lines[1].label,
-          }
-          const swr = {
-            line: data.series.lines[2].data,
-            label: data.series.lines[2].label,
-          }
-          const ordered = _.sortBy([tpaw, spaw, swr], (x) =>
-            x.line(data.years.displayRange.start),
-          )
+  const pointer = hidePointer
+    ? null
+    : new ChartPointer<TPAWChartDataMain>(
+        (data) => {
+          switch (data.series.type) {
+            case 'percentiles':
+              return data.series.percentiles
+                .filter((x) => x.isHighlighted)
+                .map((x) => ({ line: x.data, label: `${x.percentile}` }))
+            case 'labeledLines': {
+              const tpaw = {
+                line: data.series.lines[0].data,
+                label: data.series.lines[0].label,
+              }
+              const spaw = {
+                line: data.series.lines[1].data,
+                label: data.series.lines[1].label,
+              }
+              const swr = {
+                line: data.series.lines[2].data,
+                label: data.series.lines[2].label,
+              }
+              const ordered = _.sortBy([tpaw, spaw, swr], (x) =>
+                x.line(data.years.displayRange.start),
+              )
 
-          return [
-            ordered[0],
-            ordered[1],
-            ..._.times(
-              data.series.highlightedPercentiles.length - ordered.length,
-            ).map(() => null),
-            ordered[2],
-          ]
-        }
-        default:
-          noCase(data.series)
-      }
-    },
-    ({ dataTransition, derivedState }) => {
-      const data = dataTransition.target
-      const { viewport } = derivedState.curr
-      const { pickPerson, asYFN, years } = data.paramsExt
-      const scaled = (at200: number, at500: number) =>
-        _.clamp(
-          linearFnFomPoints(200, at200, 500, at500)(viewport.width),
-          at200,
-          at500,
-        )
-      return {
-        subHeading: 'Percentiles',
-        formatX: (dataX: number) => {
-          const ageX = (person: 'person1' | 'person2') =>
-            pickPerson(person).ages.current + dataX
-          return dataX === data.years.max + 1
-            ? 'Legacy'
-            : data.params.people.withPartner
-            ? `Ages ${
-                dataX > asYFN(years.person1.max) ? '＿' : ageX('person1')
-              },${dataX > asYFN(years.person2.max) ? '＿' : ageX('person2')}`
-            : `Age ${ageX('person1')}`
+              return [
+                ordered[0],
+                ordered[1],
+                ..._.times(
+                  data.series.highlightedPercentiles.length - ordered.length,
+                ).map(() => null),
+                ordered[2],
+              ]
+            }
+            default:
+              noCase(data.series)
+          }
         },
-        formatY: data.yFormat,
-        showTh: true,
-        pad: {
-          vert: {
-            top: scaled(8, 10),
-            between: scaled(6, 9),
-            bottom: scaled(8, 10),
-          },
-          horz: {
-            edge: scaled(8, 10),
-            between: scaled(5, 20),
-            outside: { lineLength: 35 * scaled(0.3, 1), margin: scaled(0, 25) },
-          },
+        ({ dataTransition, derivedState }) => {
+          const data = dataTransition.target
+          const { viewport } = derivedState.curr
+          const { pickPerson, asYFN, years } = data.paramsExt
+          const scaled = (at200: number, at500: number) =>
+            _.clamp(
+              linearFnFomPoints(200, at200, 500, at500)(viewport.width),
+              at200,
+              at500,
+            )
+          return {
+            subHeading: 'Percentiles',
+            formatX: (dataX: number) => {
+              const ageX = (person: 'person1' | 'person2') =>
+                pickPerson(person).ages.current + dataX
+              return dataX === data.years.max + 1
+                ? 'Legacy'
+                : data.params.people.withPartner
+                ? `Ages ${
+                    dataX > asYFN(years.person1.max) ? '＿' : ageX('person1')
+                  },${
+                    dataX > asYFN(years.person2.max) ? '＿' : ageX('person2')
+                  }`
+                : `Age ${ageX('person1')}`
+            },
+            formatY: data.yFormat,
+            showTh: true,
+            pad: {
+              vert: {
+                top: scaled(8, 10),
+                between: scaled(6, 9),
+                bottom: scaled(8, 10),
+              },
+              horz: {
+                edge: scaled(8, 10),
+                between: scaled(5, 20),
+                outside: {
+                  lineLength: 35 * scaled(0.3, 1),
+                  margin: scaled(0, 25),
+                },
+              },
+            },
+          }
         },
-      }
-    },
-  )
+      )
 
   const colorCode = {
     person1: ChartUtils.color.theme1,
@@ -276,7 +285,7 @@ const components = () => {
     })
 
   const custom = new ChartDrawMain()
-  return [
+  return _.compact([
     minorLine,
     majorLine,
     minMaxYAxis,
@@ -284,7 +293,7 @@ const components = () => {
     xAxis('person1'),
     xAxis('person2'),
     pointer,
-  ]
+  ])
 }
 
 export const tpawChartMainXAxisSizing = (viewportWidth: number) => ({

@@ -178,7 +178,6 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
       if (params.dialogPosition === 'age') {
         return (
           <>
-            {/* <h2>Set your current, retirement, and max age</h2> */}
             <h2>Current: </h2>
             <h2>Retirement: </h2>
             <h2>Max: </h2>

@@ -9,7 +9,7 @@ import { useURLParam } from '../../Utils/UseURLParam'
 import { useURLUpdater } from '../../Utils/UseURLUpdater'
 import { AppPage } from '../App/AppPage'
 import { useUserGQLArgs } from '../App/WithFirebaseUser'
-import { useSimulation, WithSimulation } from '../App/WithSimulation'
+import { useSimulation } from '../App/WithSimulation'
 import { useWindowSize } from '../App/WithWindowSize'
 import { Config } from '../Config'
 import { planChartLabel } from './PlanChart/PlanChartMainCard/PlanChartLabel'
@@ -39,7 +39,7 @@ const query = graphql`
 `
 
 import { noCase, PlanParams } from '@tpaw/common'
-import { WithChartData } from '../App/WithChartData'
+import { useMarketData } from '../App/WithMarketData'
 import { ConfirmAlert } from '../Common/Modal/ConfirmAlert'
 import { WithUser } from '../QueryFragments/UserFragment'
 import { PlanChart } from './PlanChart/PlanChart'
@@ -48,14 +48,9 @@ import { PlanDialogOverlay } from './PlanDialogOverlay'
 export const Plan = React.memo((planContent: PlanContent) => {
   const userGQLArgs = useUserGQLArgs()
   const data = useLazyLoadQuery<PlanQuery>(query, { ...userGQLArgs })
-
   return (
     <WithUser value={data}>
-      <WithSimulation>
-        <WithChartData>
-          <_Plan planContent={planContent} />
-        </WithChartData>
-      </WithSimulation>
+      <_Plan planContent={planContent} />
     </WithUser>
   )
 })
@@ -157,7 +152,8 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
           sizing={_sizing.summary}
           planTransition={transition}
         />
-        {!params.warnedAbout14to15Converstion && (
+        {(!params.warnedAbout14to15Converstion ||
+          !params.warnedAbout16to17Converstion) && (
           <ConfirmAlert
             title={'Migration to New Risk Inputs'}
             option1={{
@@ -166,6 +162,7 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
                 setParams((params) => {
                   const clone = _.cloneDeep(params)
                   clone.warnedAbout14to15Converstion = true
+                  clone.warnedAbout16to17Converstion = true
                   return clone
                 })
               },

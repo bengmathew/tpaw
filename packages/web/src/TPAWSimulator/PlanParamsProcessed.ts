@@ -193,7 +193,7 @@ const _tpawGlidePath = (
   }
 }
 
-const _applyMerton = (
+export const _applyMerton = (
   returns: ReturnType<typeof _processReturnsParams>,
   riskTolerance: number,
   timePreference: number,
@@ -205,13 +205,9 @@ const _applyMerton = (
       stockAllocation: 0,
     }
   }
-  // Don't use historicalReturns.stocks.convertExpectedToLog() because we
-  // want to assume variance is 0 and not use the historical variance,
-  // unlike for stocks.
-  const r = Math.log(1 + returns.expected.bonds)
-  const mu = historicalReturns.stocks.convertExpectedToLog(
-    returns.expected.stocks,
-  )
+  
+  const r = returns.expected.bonds
+  const mu = returns.expected.stocks
   const sigmaPow2 = historicalReturns.stocks.log.variance
   const gamma = RISK_TOLERANCE_VALUES.riskToleranceToRRA(riskTolerance)
 
@@ -222,15 +218,14 @@ const _applyMerton = (
     (rho - (1 - gamma) * (Math.pow(mu - r, 2) / (2 * sigmaPow2 * gamma) + r)) /
     gamma
 
-  const logROfPortfolio = historicalReturns.statsFn(
+  const rOfPortfolio = historicalReturns.statsFn(
     returns.historicalAdjusted.map(
       ({ stocks }) =>
         stocks * stockAllocation +
         returns.expected.bonds * (1 - stockAllocation),
     ),
-  ).log.expectedValue
-  const gContinuous = logROfPortfolio - nu
-  const spendingTilt = Math.exp(gContinuous) - 1
+  ).expectedValue
+  const spendingTilt = rOfPortfolio - nu
 
   return { spendingTilt, stockAllocation }
 }

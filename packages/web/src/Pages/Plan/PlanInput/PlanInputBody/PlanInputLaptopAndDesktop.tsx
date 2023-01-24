@@ -90,15 +90,15 @@ export const PlanInputLaptopAndDesktop = React.memo(
               paddingTop: `${padding.top}px`,
             }}
           >
-            <PlanInputBodyHeader className="mb-6 " type={type} />
+            <PlanInputBodyHeader className="mb-6 z-10" type={type} />
             {guideContent && (
               <PlanInputBodyGuide
-                className="mb-10"
-                type={type}
-                padding={cardPadding}
-                customIntro={customGuideIntro}
+              className="mb-10"
+              type={type}
+              padding={cardPadding}
+              customIntro={customGuideIntro}
               />
-            )}
+              )}
             {children.content}
             {children?.error && (
               <div className=" sticky bottom-0 pt-10">
