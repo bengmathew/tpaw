@@ -217,15 +217,7 @@ export const _applyMerton = (
     (rho - (1 - gamma) * (Math.pow(mu - r, 2) / (2 * sigmaPow2 * gamma) + r)) /
     gamma
 
-  const rOfPortfolio1 = historicalReturns.statsFn(
-    returns.historicalAdjusted.map(
-      ({ stocks }) =>
-        stocks * stockAllocation +
-        returns.expected.bonds * (1 - stockAllocation),
-    ),
-  ).expectedValue
   const rOfPortfolio = mu * stockAllocation + r * (1-stockAllocation)
-  console.log(rOfPortfolio - rOfPortfolio1)
   const spendingTilt = rOfPortfolio - nu
 
   return { spendingTilt, stockAllocation }
