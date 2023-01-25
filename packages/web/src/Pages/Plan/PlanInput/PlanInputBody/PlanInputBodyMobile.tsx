@@ -57,7 +57,7 @@ export const PlanInputBodyMobile = React.memo(
             paddingTop: `${padding.top}px`,
           }}
         >
-          <PlanInputBodyHeader className="mb-6 " type={type} />
+          <PlanInputBodyHeader className="mb-6 z-10" type={type} />
           <div className="mb-20">
             {guideContent && (
               <PlanInputBodyGuide
