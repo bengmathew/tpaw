@@ -10,16 +10,15 @@ export function analyzeYearsInParams(
 ) {
   const { params } = paramsExt
   const {
-    futureSavings,
-    retirementIncome,
+    wealth,
     adjustmentsToSpending: { extraSpending },
     risk,
   } = params
   const valueForYearRange = [
-    ...futureSavings.map((x) =>
+    ...wealth.futureSavings.map((x) =>
       _analyzeValueForYearRange(x, 'future-savings', paramsExt, yearUpdater),
     ),
-    ...retirementIncome.map((x) =>
+    ...wealth.retirementIncome.map((x) =>
       _analyzeValueForYearRange(
         x,
         'income-during-retirement',

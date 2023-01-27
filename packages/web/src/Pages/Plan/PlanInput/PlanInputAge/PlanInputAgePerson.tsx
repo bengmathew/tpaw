@@ -271,7 +271,7 @@ export const PlanInputAgePerson = React.memo(
                 setFutureSavingsWarning([])
                 setParams((params) => {
                   const clone = _.cloneDeep(params)
-                  clone.futureSavings = []
+                  clone.wealth.futureSavings = []
                   return clone
                 })
                 handleRetired()
@@ -368,7 +368,8 @@ const _futureSavingsWarning = (
   person: 'person1' | 'person2',
 ) => {
   const result = [] as ReactNode[]
-  const { people, futureSavings } = paramsExt.params
+  const { people, wealth } = paramsExt.params
+  const { futureSavings } = wealth
   const otherPerson = people.withPartner
     ? person === 'person1'
       ? people.person2

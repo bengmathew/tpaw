@@ -53,7 +53,7 @@ export const DEFAULT_SWR_WITHDRAWAL_PERCENT = (retirementLength: number) => {
 
 export function getDefaultPlanParams() {
   const params: PlanParams = {
-    v: 17,
+    v: 18,
     warnedAbout14to15Converstion: true,
     warnedAbout16to17Converstion: true,
     strategy: 'TPAW',
@@ -65,9 +65,12 @@ export function getDefaultPlanParams() {
         ages: { type: 'notRetired', current: 35, retirement: 65, max: 100 },
       },
     },
-    currentPortfolioBalance: 0,
-    futureSavings: [],
-    retirementIncome: [],
+
+    wealth: {
+      currentPortfolioBalance: 0,
+      futureSavings: [],
+      retirementIncome: [],
+    },
 
     adjustmentsToSpending: {
       tpawAndSPAW: {
@@ -92,6 +95,7 @@ export function getDefaultPlanParams() {
           forLegacyAsDeltaFromAt20: 2,
         },
         timePreference: 0,
+        additionalSpendingTilt:0,
       },
       tpawAndSPAW: {
         lmp: 0,

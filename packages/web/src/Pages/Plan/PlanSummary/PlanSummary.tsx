@@ -82,6 +82,8 @@ export const PlanSummary = React.memo(
     const isRetired = asYFN(withdrawalStartYear) <= 0
 
     const [showAdvanced, setShowAdvanced] = useState(false)
+    const [showDev, setShowDev] = useState(!Config.client.production)
+    const [showDevClickCount, setShowDevClickCount] = useState(0)
     const advancedModifiedCount = _advancedInputs.filter((x) =>
       _isModified(x, params),
     ).length
@@ -175,7 +177,7 @@ export const PlanSummary = React.memo(
                     section={section}
                     warn={!_paramsOk(paramsExt, 'future-savings')}
                     padding={cardPadding}
-                    empty={params.futureSavings.length === 0}
+                    empty={params.wealth.futureSavings.length === 0}
                   />
                 )}
                 <PlanSummaryButton
@@ -184,7 +186,7 @@ export const PlanSummary = React.memo(
                   section={section}
                   warn={!_paramsOk(paramsExt, 'income-during-retirement')}
                   padding={cardPadding}
-                  empty={params.retirementIncome.length === 0}
+                  empty={params.wealth.retirementIncome.length === 0}
                 />
               </div>
             </div>
@@ -276,7 +278,21 @@ export const PlanSummary = React.memo(
                   )}
                 </button>
                 {showAdvanced && (
-                  <div className="flex flex-col gap-y-6 mt-6">
+                  <div
+                    className="flex flex-col gap-y-6 mt-6"
+                    onClick={() => {
+                      if (showDev) return
+                      setShowDevClickCount((prev) => {
+                        if (prev === 0) {
+                          window.setTimeout(() => setShowDevClickCount(0), 3000)
+                        }
+                        if (prev === 9) {
+                          setShowDev(true)
+                        }
+                        return prev + 1
+                      })
+                    }}
+                  >
                     <PlanSummaryButton
                       type="expected-returns"
                       section={section}
@@ -301,7 +317,7 @@ export const PlanSummary = React.memo(
                       padding={cardPadding}
                       flagAsModified={_isModified('strategy', params)}
                     />
-                    {!Config.client.production && (
+                    {showDev && (
                       <PlanSummaryButton
                         type="dev"
                         section={section}
@@ -331,7 +347,7 @@ const _Heading = React.memo(
     firstItem: PlanInputType
     children: ReactNode
   }) => {
-    const {params} = useSimulation()
+    const { params } = useSimulation()
     const isDisabled =
       useShouldDisablePlanSummaryButton(firstItem) &&
       !isPlanSectionDialogInOverlayMode(params.dialogPosition)

@@ -1,14 +1,14 @@
-import {faMinus, faPlus} from '@fortawesome/pro-regular-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import React from 'react'
-import {Contentful} from '../../../Utils/Contentful'
-import {paddingCSS} from '../../../Utils/Geometry'
-import {useSimulation} from '../../App/WithSimulation'
-import {AmountInput} from '../../Common/Inputs/AmountInput'
-import {smartDeltaFnForAmountInput} from '../../Common/Inputs/SmartDeltaFnForAmountInput'
-import {usePlanContent} from '../Plan'
-import {planSectionLabel} from './Helpers/PlanSectionLabel'
+import { Contentful } from '../../../Utils/Contentful'
+import { paddingCSS } from '../../../Utils/Geometry'
+import { useSimulation } from '../../App/WithSimulation'
+import { AmountInput } from '../../Common/Inputs/AmountInput'
+import { smartDeltaFnForAmountInput } from '../../Common/Inputs/SmartDeltaFnForAmountInput'
+import { usePlanContent } from '../Plan'
+import { planSectionLabel } from './Helpers/PlanSectionLabel'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
@@ -16,21 +16,21 @@ import {
 
 export const PlanInputCurrentPortfolioBalance = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const {params, setParams} = useSimulation()
+    const { params, setParams } = useSimulation()
     const content = usePlanContent()
     const handleChange = (amount: number) => {
       amount = Math.max(amount, 0)
-      if (amount === params.currentPortfolioBalance) return
-      const p = _.cloneDeep(params)
-      p.currentPortfolioBalance = amount
-      setParams(p)
+      if (amount === params.wealth.currentPortfolioBalance) return
+      const clone = _.cloneDeep(params)
+      clone.wealth.currentPortfolioBalance = amount
+      setParams(clone)
     }
     return (
       <PlanInputBody {...props}>
         <div className="">
           <div
             className="params-card"
-            style={{padding: paddingCSS(props.sizing.cardPadding)}}
+            style={{ padding: paddingCSS(props.sizing.cardPadding) }}
           >
             <Contentful.RichText
               body={content['current-portfolio-balance'].intro[params.strategy]}
@@ -40,7 +40,7 @@ export const PlanInputCurrentPortfolioBalance = React.memo(
               <AmountInput
                 className="text-input"
                 prefix="$"
-                value={params.currentPortfolioBalance}
+                value={params.wealth.currentPortfolioBalance}
                 onChange={handleChange}
                 decimals={0}
                 modalLabel={planSectionLabel('current-portfolio-balance')}
@@ -50,8 +50,8 @@ export const PlanInputCurrentPortfolioBalance = React.memo(
                 onClick={() =>
                   handleChange(
                     smartDeltaFnForAmountInput.increment(
-                      params.currentPortfolioBalance
-                    )
+                      params.wealth.currentPortfolioBalance,
+                    ),
                   )
                 }
               >
@@ -62,8 +62,8 @@ export const PlanInputCurrentPortfolioBalance = React.memo(
                 onClick={() =>
                   handleChange(
                     smartDeltaFnForAmountInput.decrement(
-                      params.currentPortfolioBalance
-                    )
+                      params.wealth.currentPortfolioBalance,
+                    ),
                   )
                 }
               >
@@ -74,5 +74,5 @@ export const PlanInputCurrentPortfolioBalance = React.memo(
         </div>
       </PlanInputBody>
     )
-  }
+  },
 )

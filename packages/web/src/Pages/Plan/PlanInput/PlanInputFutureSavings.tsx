@@ -1,25 +1,25 @@
-import {default as React, Dispatch, useEffect, useState} from 'react'
-import {Contentful} from '../../../Utils/Contentful'
-import {paddingCSS} from '../../../Utils/Geometry'
-import {useURLUpdater} from '../../../Utils/UseURLUpdater'
-import {useSimulation} from '../../App/WithSimulation'
-import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
-import {useGetSectionURL, usePlanContent} from '../Plan'
-import {ByYearSchedule} from './Helpers/ByYearSchedule'
+import { default as React, Dispatch, useEffect, useState } from 'react'
+import { Contentful } from '../../../Utils/Contentful'
+import { paddingCSS } from '../../../Utils/Geometry'
+import { useURLUpdater } from '../../../Utils/UseURLUpdater'
+import { useSimulation } from '../../App/WithSimulation'
+import { EditValueForYearRange } from '../../Common/Inputs/EditValueForYearRange'
+import { useGetSectionURL, usePlanContent } from '../Plan'
+import { ByYearSchedule } from './Helpers/ByYearSchedule'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 type _State =
-  | {type: 'main'}
-  | {type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean}
+  | { type: 'main' }
+  | { type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean }
 
 export const PlanInputFutureSavings = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const {paramsExt} = useSimulation()
-    const [state, setState] = useState<_State>({type: 'main'})
-    const {validYearRange, withdrawalsStarted} = paramsExt
+    const { paramsExt } = useSimulation()
+    const [state, setState] = useState<_State>({ type: 'main' })
+    const { validYearRange, withdrawalsStarted } = paramsExt
 
     const summarySectionURL = useGetSectionURL()('summary')
     const urlUpdater = useURLUpdater()
@@ -34,16 +34,16 @@ export const PlanInputFutureSavings = React.memo(
         {{
           input:
             state.type === 'edit'
-              ? transitionOut => (
+              ? (transitionOut) => (
                   <EditValueForYearRange
                     title={state.isAdd ? 'Add Savings' : 'Edit Savings'}
                     labelPlaceholder="E.g. From My Salary"
-                    setHideInMain={hideInMain =>
-                      setState({...state, hideInMain})
+                    setHideInMain={(hideInMain) =>
+                      setState({ ...state, hideInMain })
                     }
                     transitionOut={transitionOut}
-                    onDone={() => setState({type: 'main'})}
-                    entries={params => params.futureSavings}
+                    onDone={() => setState({ type: 'main' })}
+                    entries={(params) => params.wealth.futureSavings}
                     index={state.index}
                     allowableRange={validYearRange('future-savings')}
                     choices={{
@@ -56,7 +56,7 @@ export const PlanInputFutureSavings = React.memo(
         }}
       </PlanInputBody>
     )
-  }
+  },
 )
 
 const _FutureSavingsCard = React.memo(
@@ -71,8 +71,8 @@ const _FutureSavingsCard = React.memo(
     state: _State
     setState: Dispatch<_State>
   }) => {
-    const {params, paramsExt} = useSimulation()
-    const {validYearRange, years} = paramsExt
+    const { params, paramsExt } = useSimulation()
+    const { validYearRange, years } = paramsExt
 
     const content = usePlanContent()
 
@@ -80,7 +80,7 @@ const _FutureSavingsCard = React.memo(
       <div className={`${className}`}>
         <div
           className="params-card"
-          style={{padding: paddingCSS(props.sizing.cardPadding)}}
+          style={{ padding: paddingCSS(props.sizing.cardPadding) }}
         >
           <Contentful.RichText
             body={content['future-savings'].intro[params.strategy]}
@@ -90,13 +90,13 @@ const _FutureSavingsCard = React.memo(
             className="mt-6"
             heading={null}
             addButtonText="Add Savings"
-            entries={params => params.futureSavings}
+            entries={(params) => params.wealth.futureSavings}
             hideEntry={
               state.type === 'edit' && state.hideInMain ? state.index : null
             }
             allowableYearRange={validYearRange('future-savings')}
             onEdit={(index, isAdd) =>
-              setState({type: 'edit', isAdd, index, hideInMain: isAdd})
+              setState({ type: 'edit', isAdd, index, hideInMain: isAdd })
             }
             defaultYearRange={{
               type: 'startAndEnd',
@@ -110,5 +110,5 @@ const _FutureSavingsCard = React.memo(
         </div>
       </div>
     )
-  }
+  },
 )

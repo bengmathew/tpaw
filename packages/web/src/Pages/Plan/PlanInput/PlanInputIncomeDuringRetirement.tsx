@@ -1,11 +1,11 @@
 import _ from 'lodash'
-import React, {useState} from 'react'
-import {Contentful} from '../../../Utils/Contentful'
-import {paddingCSS} from '../../../Utils/Geometry'
-import {useSimulation} from '../../App/WithSimulation'
-import {EditValueForYearRange} from '../../Common/Inputs/EditValueForYearRange'
-import {usePlanContent} from '../Plan'
-import {ByYearSchedule} from './Helpers/ByYearSchedule'
+import React, { useState } from 'react'
+import { Contentful } from '../../../Utils/Contentful'
+import { paddingCSS } from '../../../Utils/Geometry'
+import { useSimulation } from '../../App/WithSimulation'
+import { EditValueForYearRange } from '../../Common/Inputs/EditValueForYearRange'
+import { usePlanContent } from '../Plan'
+import { ByYearSchedule } from './Helpers/ByYearSchedule'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
@@ -13,20 +13,20 @@ import {
 
 export const PlanInputIncomeDuringRetirement = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const {params, paramsExt} = useSimulation()
-    const {validYearRange, years} = paramsExt
+    const { params, paramsExt } = useSimulation()
+    const { validYearRange, years } = paramsExt
     const content = usePlanContent()
     const [state, setState] = useState<
-      | {type: 'main'}
-      | {type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean}
-    >({type: 'main'})
+      | { type: 'main' }
+      | { type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean }
+    >({ type: 'main' })
 
     return (
       <PlanInputBody {...props}>
         <div className="">
           <div
             className="params-card"
-            style={{padding: paddingCSS(props.sizing.cardPadding)}}
+            style={{ padding: paddingCSS(props.sizing.cardPadding) }}
           >
             <Contentful.RichText
               body={content['income-during-retirement'].intro[params.strategy]}
@@ -36,13 +36,13 @@ export const PlanInputIncomeDuringRetirement = React.memo(
               className="mt-6"
               heading={null}
               addButtonText="Add Retirement Income"
-              entries={params => params.retirementIncome}
+              entries={(params) => params.wealth.retirementIncome}
               hideEntry={
                 state.type === 'edit' && state.hideInMain ? state.index : null
               }
               allowableYearRange={validYearRange('income-during-retirement')}
               onEdit={(index, isAdd) =>
-                setState({type: 'edit', isAdd, index, hideInMain: isAdd})
+                setState({ type: 'edit', isAdd, index, hideInMain: isAdd })
               }
               defaultYearRange={{
                 type: 'startAndEnd',
@@ -58,7 +58,7 @@ export const PlanInputIncomeDuringRetirement = React.memo(
         {{
           input:
             state.type === 'edit'
-              ? transitionOut => (
+              ? (transitionOut) => (
                   <EditValueForYearRange
                     title={
                       state.isAdd
@@ -66,12 +66,12 @@ export const PlanInputIncomeDuringRetirement = React.memo(
                         : 'Edit Retirement Income'
                     }
                     labelPlaceholder="E.g. Social Security"
-                    setHideInMain={hideInMain =>
-                      setState({...state, hideInMain})
+                    setHideInMain={(hideInMain) =>
+                      setState({ ...state, hideInMain })
                     }
                     transitionOut={transitionOut}
-                    onDone={() => setState({type: 'main'})}
-                    entries={params => params.retirementIncome}
+                    onDone={() => setState({ type: 'main' })}
+                    entries={(params) => params.wealth.retirementIncome}
                     index={state.index}
                     allowableRange={validYearRange('income-during-retirement')}
                     choices={{
@@ -93,5 +93,5 @@ export const PlanInputIncomeDuringRetirement = React.memo(
         }}
       </PlanInputBody>
     )
-  }
+  },
 )

@@ -60,7 +60,7 @@ export function processPlanParams(
   const result = {
     strategy: params.strategy,
     people: params.people,
-    currentPortfolioBalance: params.currentPortfolioBalance,
+    currentPortfolioBalance: params.wealth.currentPortfolioBalance,
     byYear: _processByYearParams(paramsExt, marketData),
     adjustmentsToSpending: {
       tpawAndSPAW: (() => {
@@ -95,10 +95,11 @@ export function processPlanParams(
 
       const tpawGlidePath = _tpawGlidePath(paramsExt, returns)
 
-      const legacyStockAllocation = _applyMerton(
+      const legacyStockAllocation = _mertonsFormula(
         returns,
         tpaw.riskTolerance.at20 + tpaw.riskTolerance.forLegacyAsDeltaFromAt20,
-        0, // Does not matter
+        0, // Does not matter.
+        0, // Does not matter.
       ).stockAllocation
 
       return {
@@ -173,13 +174,18 @@ const _tpawGlidePath = (
 
   const deltaOverPlanningYears = riskTolerance.atMaxAge - riskTolerance.now
 
-  const _currMerton = (riskTolerance: number) =>
-    _applyMerton(returns, riskTolerance, params.risk.tpaw.timePreference)
+  const _currMertonFormula = (riskTolerance: number) =>
+    _mertonsFormula(
+      returns,
+      riskTolerance,
+      params.risk.tpaw.timePreference,
+      params.risk.tpaw.additionalSpendingTilt,
+    )
 
   const maxRiskTolerance =
     _.find(
       RISK_TOLERANCE_VALUES.DATA,
-      (x) => _currMerton(x).stockAllocation === 1,
+      (x) => _currMertonFormula(x).stockAllocation === 1,
     ) ?? fGet(_.last(RISK_TOLERANCE_VALUES.DATA))
 
   const riskToleranceAtMaxAge = Math.min(
@@ -188,23 +194,24 @@ const _tpawGlidePath = (
   )
 
   return {
-    now: _currMerton(riskToleranceAtMaxAge - deltaOverPlanningYears),
-    atMaxAge: _currMerton(riskToleranceAtMaxAge),
+    now: _currMertonFormula(riskToleranceAtMaxAge - deltaOverPlanningYears),
+    atMaxAge: _currMertonFormula(riskToleranceAtMaxAge),
   }
 }
 
-export const _applyMerton = (
+export const _mertonsFormula = (
   returns: ReturnType<typeof _processReturnsParams>,
   riskTolerance: number,
   timePreference: number,
+  additionalSpendingTilt: number,
 ) => {
   if (riskTolerance === 0) {
     return {
-      spendingTilt: 0,
+      spendingTilt: additionalSpendingTilt,
       stockAllocation: 0,
     }
   }
-  
+
   const r = returns.expected.bonds
   const mu = returns.expected.stocks
   const sigmaPow2 = historicalReturns.stocks.log.variance
@@ -217,8 +224,8 @@ export const _applyMerton = (
     (rho - (1 - gamma) * (Math.pow(mu - r, 2) / (2 * sigmaPow2 * gamma) + r)) /
     gamma
 
-  const rOfPortfolio = mu * stockAllocation + r * (1-stockAllocation)
-  const spendingTilt = rOfPortfolio - nu
+  const rOfPortfolio = mu * stockAllocation + r * (1 - stockAllocation)
+  const spendingTilt = rOfPortfolio - nu + additionalSpendingTilt
 
   return { spendingTilt, stockAllocation }
 }
@@ -229,8 +236,7 @@ function _processByYearParams(
 ) {
   const { asYFN, withdrawalStartYear, numYears, params } = paramsExt
   const {
-    futureSavings,
-    retirementIncome,
+    wealth,
     adjustmentsToSpending: { extraSpending },
   } = params
   const withdrawalStart = asYFN(withdrawalStartYear)
@@ -271,13 +277,13 @@ function _processByYearParams(
   }
 
   exec(
-    futureSavings,
+    wealth.futureSavings,
     0,
     lastWorkingYear,
     (t, v) => (t.futureSavingsAndRetirementIncome += v),
   )
   exec(
-    retirementIncome,
+    wealth.retirementIncome,
     withdrawalStart,
     endYear,
     (t, v) => (t.futureSavingsAndRetirementIncome += v),

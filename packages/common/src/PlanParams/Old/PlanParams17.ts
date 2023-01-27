@@ -19,9 +19,9 @@ import {
   union,
 } from 'json-guard'
 import _ from 'lodash'
-import { fGet, noCase, preciseRange } from '../Utils'
-import { PlanParams16 } from './Old/PlanParams16'
-import { TIME_PREFERENCE_VALUES } from './PlanParams'
+import { fGet, noCase, preciseRange } from '../../Utils'
+import { PlanParams16 } from './PlanParams16'
+import { TIME_PREFERENCE_VALUES } from '../PlanParams'
 
 export namespace PlanParams17 {
   export const MAX_LABEL_LENGTH = 150

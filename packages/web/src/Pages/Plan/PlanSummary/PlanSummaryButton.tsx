@@ -241,19 +241,19 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
       }
     }
     case 'current-portfolio-balance': {
-      return <h2>{formatCurrency(params.currentPortfolioBalance)}</h2>
+      return <h2>{formatCurrency(params.wealth.currentPortfolioBalance)}</h2>
     }
     case 'future-savings':
       return (
         <_EntriesSummary
-          entries={params.futureSavings}
+          entries={params.wealth.futureSavings}
           range={validYearRange(type)}
         />
       )
     case 'income-during-retirement':
       return (
         <_EntriesSummary
-          entries={params.retirementIncome}
+          entries={params.wealth.retirementIncome}
           range={validYearRange(type)}
         />
       )
