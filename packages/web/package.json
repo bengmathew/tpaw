@@ -25,7 +25,7 @@
     "@headlessui/react": "^1.4.1",
     "@mojotech/json-type-validation": "^3.1.0",
     "@sentry/nextjs": "^7.3.0",
-    "@tpaw/common": "^1.4.0",
+    "@tpaw/common": "^1.5.0",
     "@tpaw/simulator": "2.7.0",
     "@visx/event": "^2.1.2",
     "@visx/shape": "^2.2.2",
