@@ -1,5 +1,4 @@
 import { PlanParams } from '@tpaw/common'
-import _ from 'lodash'
 import { Dispatch, ReactNode, useMemo, useState } from 'react'
 import {
   extendPlanParams,
@@ -8,7 +7,7 @@ import {
 import {
   PlanParamsProcessed,
   processPlanParams,
-} from '../../TPAWSimulator/PlanParamsProcessed'
+} from '../../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import {
   useTPAWWorker,
   UseTPAWWorkerResult,
@@ -23,8 +22,7 @@ export type SimulationInfoPerParam = {
   paramsExt: PlanParamsExt
   tpawResult: UseTPAWWorkerResult | null
   numRuns: number
-  percentiles: number[]
-  highlightPercentiles: number[]
+  percentileRange: SimpleRange
 }
 
 export type SimulationInfo = {
@@ -36,15 +34,13 @@ export type SimulationInfo = {
 
 const [Context, useSimulation] = createContext<SimulationInfo>('Simulation')
 
-// const highlightPercentiles = [5, 25, 50, 75, 95]
-const highlightPercentiles = [5, 50, 95]
-// const percentiles = [5, 50, 95]
-const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
+const percentileRange = { start: 5, end: 95 }
 
 export { useSimulation }
 
 import React from 'react'
 import { WithURLPlanParams } from './WithURLPlanParams'
+import { SimpleRange } from '../../Utils/SimpleRange'
 
 export const WithSimulation = React.memo(
   ({ children }: { children: ReactNode }) => {
@@ -65,7 +61,7 @@ const _Body = ({ children }: { children: ReactNode }) => {
     () => processPlanParams(extendPlanParams(params), marketData),
     [params, marketData],
   )
-  const tpawResult = useTPAWWorker(paramsProcessed, numRuns, percentiles)
+  const tpawResult = useTPAWWorker(paramsProcessed, numRuns, percentileRange)
 
   const value = useMemo(() => {
     return {
@@ -75,8 +71,7 @@ const _Body = ({ children }: { children: ReactNode }) => {
       paramsProcessed,
       paramsExt: extendPlanParams(params),
       numRuns,
-      percentiles,
-      highlightPercentiles,
+      percentileRange,
       tpawResult, // // Note, tpawResult will lag params. To get the exact params for the
       // result, use the params object inside tpawResult.
     }

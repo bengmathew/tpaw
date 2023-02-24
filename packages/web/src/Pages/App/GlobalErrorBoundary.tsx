@@ -64,6 +64,7 @@ export const _ErrorFallback = React.memo(({ error }: { error: Error }) => {
                   className="btn-dark btn-sm mt-6"
                   onClick={() => {
                     window.localStorage.removeItem('params')
+                    window.location.href = `${Config.client.urls.app('/path')}`
                     window.location.reload()
                   }}
                 >

@@ -3,12 +3,12 @@ import {getMarketDataStaticProps} from '../../src/Pages/App/GetMarketDataStaticP
 import {WithMarketData} from '../../src/Pages/App/WithMarketData'
 import {WithSimulation} from '../../src/Pages/App/WithSimulation'
 import {MarketData} from '../../src/Pages/Common/GetMarketData'
-import {TasksForThisYear} from '../../src/Pages/TasksForThisYear/TasksForThisYear'
+import {TasksForThisMonth} from '../../src/Pages/TasksForThisMonth/TasksForThisMonth'
 
 export default React.memo((marketData: MarketData) => (
   <WithMarketData marketData={marketData}>
     <WithSimulation>
-      <TasksForThisYear />
+      <TasksForThisMonth />
     </WithSimulation>
   </WithMarketData>
 ))

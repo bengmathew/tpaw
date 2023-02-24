@@ -2,11 +2,11 @@ import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { faExclamationCircle } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import { joinWithCommaAnd } from '../../../../Utils/JoinWithAnd'
 import { useSimulation } from '../../../App/WithSimulation'
-import { analyzeYearsInParams } from '../Helpers/AnalyzeYearsInParams'
+import { analyzeMonthsInParams } from '../Helpers/AnalyzeMonthsInParams'
 import { planSectionLabel } from '../Helpers/PlanSectionLabel'
 import {
   PlanInputBody,
@@ -15,15 +15,21 @@ import {
 import { PlanInputAgePerson } from './PlanInputAgePerson'
 import { PlanInputAgeWithdrawalStart } from './PlanInputAgeWithdrawalStart'
 
+export type PlanInputAgeOpenableSection =
+  | `${'person1' | 'person2'}-${'current' | 'retirement' | 'max'}`
+  | 'none'
 export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
   const { params, setParams, paramsExt } = useSimulation()
-  const yearAnalysis = analyzeYearsInParams(paramsExt)
+  const contentDivRef = useRef<HTMLDivElement>(null)
+  const [openSection, setOpenSection] =
+    useState<PlanInputAgeOpenableSection>('none')
+  const monthAnalysis = analyzeMonthsInParams(paramsExt)
   const warnings = _.uniq(
     [
-      ...yearAnalysis.valueForYearRange.filter(
+      ...monthAnalysis.valueForMonthRange.filter(
         (x) => x.boundsCheck.start !== 'ok' || x.boundsCheck.end !== 'ok',
       ),
-      ...yearAnalysis.glidePath.filter((x) =>
+      ...monthAnalysis.glidePath.filter((x) =>
         x.analyzed.some((x) => x.issue !== 'none'),
       ),
     ]
@@ -33,19 +39,29 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
   )
 
   return (
-    <PlanInputBody {...props}>
-      <div className="">
+    <PlanInputBody {...props} onBackgroundClick={() => setOpenSection('none')}>
+      <div
+        ref={contentDivRef}
+        className=""
+        onClick={(e) => {
+          if (e.target === contentDivRef.current) setOpenSection('none')
+        }}
+      >
         <PlanInputAgePerson
           className="params-card"
-          type="person1"
+          personType="person1"
           style={{ padding: paddingCSS(props.sizing.cardPadding) }}
+          openSection={openSection}
+          setOpenSection={setOpenSection}
         />
         {params.people.withPartner ? (
           <>
             <PlanInputAgePerson
               className="mt-10 params-card"
-              type="person2"
+              personType="person2"
               style={{ padding: paddingCSS(props.sizing.cardPadding) }}
+              openSection={openSection}
+              setOpenSection={setOpenSection}
             />
             <PlanInputAgeWithdrawalStart
               className="mt-8 params-card"
@@ -62,9 +78,8 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
               clone.people = {
                 withPartner: true,
                 person1,
-                person2: { ..._.cloneDeep(person1), displayName: null },
+                person2: { ..._.cloneDeep(person1) },
                 withdrawalStart: 'person1',
-                xAxis: 'person1',
               }
               setParams(clone)
             }}
@@ -83,7 +98,7 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
                   className="mr-2 text-errorFG"
                   icon={faExclamationCircle}
                 />{' '}
-                {`Based on the ages set here, one or more years specified in the ${joinWithCommaAnd(
+                {`Based on the ages set here, one or more months specified in the ${joinWithCommaAnd(
                   warnings,
                 )} ${
                   warnings.length > 1 ? 'sections' : 'section'

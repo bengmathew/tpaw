@@ -19,7 +19,7 @@ export function usePlanInputGuideContent(type: PlanInputType) {
 
   const contentForType = usePlanContent()[type]
   if (!('guide' in contentForType)) return null
-  const content = contentForType.guide[params.strategy]
+  const content = contentForType.guide[params.advanced.strategy]
   const variables = {
     numRuns: `${numRuns}`,
     capeDate: formatDate(CAPE.date),

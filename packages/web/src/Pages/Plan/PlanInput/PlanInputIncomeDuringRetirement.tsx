@@ -3,9 +3,9 @@ import React, { useState } from 'react'
 import { Contentful } from '../../../Utils/Contentful'
 import { paddingCSS } from '../../../Utils/Geometry'
 import { useSimulation } from '../../App/WithSimulation'
-import { EditValueForYearRange } from '../../Common/Inputs/EditValueForYearRange'
+import { EditValueForMonthRange } from '../../Common/Inputs/EditValueForMonthRange'
 import { usePlanContent } from '../Plan'
-import { ByYearSchedule } from './Helpers/ByYearSchedule'
+import { ByMonthSchedule } from './Helpers/ByMonthSchedule'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
@@ -14,11 +14,11 @@ import {
 export const PlanInputIncomeDuringRetirement = React.memo(
   (props: PlanInputBodyPassThruProps) => {
     const { params, paramsExt } = useSimulation()
-    const { validYearRange, years } = paramsExt
+    const { validMonthRangeAsMFN, months } = paramsExt
     const content = usePlanContent()
     const [state, setState] = useState<
       | { type: 'main' }
-      | { type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean }
+      | { type: 'edit'; isAdd: boolean; entryId: number; hideInMain: boolean }
     >({ type: 'main' })
 
     return (
@@ -29,28 +29,34 @@ export const PlanInputIncomeDuringRetirement = React.memo(
             style={{ padding: paddingCSS(props.sizing.cardPadding) }}
           >
             <Contentful.RichText
-              body={content['income-during-retirement'].intro[params.strategy]}
+              body={
+                content['income-during-retirement'].intro[
+                  params.advanced.strategy
+                ]
+              }
               p="p-base mb-4"
             />
-            <ByYearSchedule
+            <ByMonthSchedule
               className="mt-6"
               heading={null}
-              addButtonText="Add Retirement Income"
+              addButtonText="Add"
               entries={(params) => params.wealth.retirementIncome}
-              hideEntry={
-                state.type === 'edit' && state.hideInMain ? state.index : null
+              hideEntryId={
+                state.type === 'edit' && state.hideInMain ? state.entryId : null
               }
-              allowableYearRange={validYearRange('income-during-retirement')}
-              onEdit={(index, isAdd) =>
-                setState({ type: 'edit', isAdd, index, hideInMain: isAdd })
+              allowableMonthRange={validMonthRangeAsMFN(
+                'income-during-retirement',
+              )}
+              onEdit={(entryId, isAdd) =>
+                setState({ type: 'edit', isAdd, entryId, hideInMain: isAdd })
               }
-              defaultYearRange={{
+              defaultMonthRange={{
                 type: 'startAndEnd',
                 start:
                   params.people.person1.ages.type === 'retired'
-                    ? years.now
-                    : years.person1.retirement,
-                end: years.person1.max,
+                    ? months.now
+                    : months.person1.retirement,
+                end: months.person1.max,
               }}
             />
           </div>
@@ -59,7 +65,9 @@ export const PlanInputIncomeDuringRetirement = React.memo(
           input:
             state.type === 'edit'
               ? (transitionOut) => (
-                  <EditValueForYearRange
+                  <EditValueForMonthRange
+                    hasMonthRange
+                    mode={state.isAdd ? 'add' : 'edit'}
                     title={
                       state.isAdd
                         ? 'Add Retirement Income'
@@ -71,22 +79,25 @@ export const PlanInputIncomeDuringRetirement = React.memo(
                     }
                     transitionOut={transitionOut}
                     onDone={() => setState({ type: 'main' })}
-                    entries={(params) => params.wealth.retirementIncome}
-                    index={state.index}
-                    allowableRange={validYearRange('income-during-retirement')}
+                    getEntries={(params) => params.wealth.retirementIncome}
+                    entryId={state.entryId}
+                    validRangeAsMFN={validMonthRangeAsMFN(
+                      'income-during-retirement',
+                    )}
                     choices={{
                       start: _.compact([
                         'retirement',
                         'numericAge',
-                        'forNumOfYears',
+                        'forNumOfMonths',
                         params.people.person1.ages.type === 'retired' ||
                         (params.people.withPartner &&
                           params.people.person2.ages.type === 'retired')
                           ? 'now'
                           : undefined,
                       ]),
-                      end: ['maxAge', 'numericAge', 'forNumOfYears'],
+                      end: ['maxAge', 'numericAge', 'forNumOfMonths'],
                     }}
+                    cardPadding={props.sizing.cardPadding}
                   />
                 )
               : undefined,

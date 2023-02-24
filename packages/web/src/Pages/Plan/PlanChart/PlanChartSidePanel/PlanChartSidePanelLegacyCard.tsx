@@ -47,8 +47,10 @@ export const PlanChartSidePanelLegacyCard = React.memo(
             </div>
           </>
         ) : (
-          <div className="mt-2 text-center ">
-            $0 <div className="lighten-2">No legacy target entered</div>
+          <div className="mt-1 text-sm">
+            <div className="lighten-">
+              $0 <div className="lighten-2">No legacy target entered</div>
+            </div>
           </div>
         )}
       </div>
@@ -59,11 +61,10 @@ export const PlanChartSidePanelLegacyCard = React.memo(
 export function usePlanChartLegacyCardData() {
   const simulation = useSimulation()
   return useMemo(() => {
-    const { tpawResult, highlightPercentiles } = simulation
+    const { tpawResult } = simulation
     const { endingBalanceOfSavingsPortfolioByPercentile, args } = tpawResult
     return _.sortBy(
       endingBalanceOfSavingsPortfolioByPercentile
-        .filter((x) => highlightPercentiles.includes(x.percentile))
         .map((x) => ({
           amount:
             x.data +

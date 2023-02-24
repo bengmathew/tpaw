@@ -19,8 +19,8 @@ import {
   union,
 } from 'json-guard'
 import _ from 'lodash'
-import { preciseRange } from '../Utils'
-import { PlanParams17 } from './Old/PlanParams17'
+import { preciseRange } from '../../Utils'
+import { PlanParams17 } from './PlanParams17'
 
 export namespace PlanParams18 {
   export const MAX_LABEL_LENGTH = 150

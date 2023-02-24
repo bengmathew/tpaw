@@ -23,7 +23,7 @@ export const RealOrNominalInput = React.memo(
     const [showExplanation, setShowRealDollarsExplanation] = useState(false)
 
     return (
-      <div className={`${className} flex flex-row items-center gap-x-2 mt-2`}>
+      <div className={`${className} flex flex-row items-center gap-x-2`}>
         <RadioGroup
           value={nominal ? ('nominal' as const) : ('real' as const)}
           onChange={(type: 'nominal' | 'real') => onChange(type === 'nominal')}
@@ -66,10 +66,15 @@ export const RealOrNominalInput = React.memo(
         {showExplanation && (
           <ModalBase onClose={() => setShowRealDollarsExplanation(false)}>
             {(transitionOut) => (
-              <div className="-mt-4">
+              <div className="">
+                <h2 className="font-bold">{`What does "adjusted for inflation" mean?`}</h2>
                 <Contentful.RichText
-                  body={planContent.misc.realDollarExplanation[params.strategy]}
-                  p={`p-base mt-4`}
+                  body={
+                    planContent.misc.realDollarExplanation[
+                      params.advanced.strategy
+                    ]
+                  }
+                  p={`p-base mt-3`}
                 />
               </div>
             )}

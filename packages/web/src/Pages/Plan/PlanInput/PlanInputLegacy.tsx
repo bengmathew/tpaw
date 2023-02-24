@@ -1,5 +1,5 @@
 import { faMinus, faPlus } from '@fortawesome/pro-light-svg-icons'
-import { faPen } from '@fortawesome/pro-solid-svg-icons'
+import { faPlus as faPlusThin } from '@fortawesome/pro-thin-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { PlanParams } from '@tpaw/common'
 import _ from 'lodash'
@@ -10,7 +10,7 @@ import { paddingCSSStyle } from '../../../Utils/Geometry'
 import { smartDeltaFn } from '../../../Utils/SmartDeltaFn'
 import { useSimulation } from '../../App/WithSimulation'
 import { AmountInput } from '../../Common/Inputs/AmountInput'
-import { EditLabeledAmount } from '../../Common/Inputs/EditLabeldAmount'
+import { EditValueForMonthRange } from '../../Common/Inputs/EditValueForMonthRange'
 import { usePlanContent } from '../Plan'
 import {
   PlanInputBody,
@@ -19,7 +19,7 @@ import {
 
 type _State =
   | { type: 'main' }
-  | { type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean }
+  | { type: 'edit'; isAdd: boolean; entryId: number; hideInMain: boolean }
 
 export const PlanInputLegacy = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -42,7 +42,25 @@ export const PlanInputLegacy = React.memo(
           input:
             state.type === 'edit'
               ? (transitionOut) => (
-                  <EditLabeledAmount
+                  // <EditLabeledAmount
+                  //   title={
+                  //     state.isAdd ? 'Add a Legacy Entry' : 'Edit Legacy Entry'
+                  //   }
+                  //   labelPlaceholder="E.g. Home Equity"
+                  //   setHideInMain={(hideInMain) =>
+                  //     setState({ ...state, hideInMain })
+                  //   }
+                  //   transitionOut={transitionOut}
+                  //   onDone={() => setState({ type: 'main' })}
+                  //   entries={(params) =>
+                  //     params.adjustmentsToSpending.tpawAndSPAW.legacy.external
+                  //   }
+                  //   index={state.index}
+                  //   cardPadding={props.sizing.cardPadding}
+                  // />
+                  <EditValueForMonthRange
+                    hasMonthRange={false}
+                    mode={state.isAdd ? 'add' : 'edit'}
                     title={
                       state.isAdd ? 'Add a Legacy Entry' : 'Edit Legacy Entry'
                     }
@@ -52,10 +70,11 @@ export const PlanInputLegacy = React.memo(
                     }
                     transitionOut={transitionOut}
                     onDone={() => setState({ type: 'main' })}
-                    entries={(params) =>
+                    getEntries={(params) =>
                       params.adjustmentsToSpending.tpawAndSPAW.legacy.external
                     }
-                    index={state.index}
+                    entryId={state.entryId}
+                    cardPadding={props.sizing.cardPadding}
                   />
                 )
               : undefined,
@@ -89,7 +108,7 @@ const _TotalTargetCard = React.memo(
       >
         <h2 className="font-bold text-lg mb-3">Total Legacy Target</h2>
         <Contentful.RichText
-          body={content.introAmount[params.strategy]}
+          body={content.introAmount[params.advanced.strategy]}
           p="p-base"
         />
         <div className={`flex items-center gap-x-2 mt-4`}>
@@ -145,6 +164,27 @@ const _NonPortfolioSourcesCard = React.memo(
   }) => {
     const { params, setParams } = useSimulation()
     const content = usePlanContent()['legacy']
+    const handleAdd = () => {
+      const entryId =
+        Math.max(
+          -1,
+          ...params.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
+            (x) => x.id,
+          ),
+        ) + 1
+
+      setParams((params) => {
+        const clone = _.cloneDeep(params)
+        clone.adjustmentsToSpending.tpawAndSPAW.legacy.external.push({
+          label: null,
+          value: 0,
+          nominal: false,
+          id: entryId,
+        })
+        return clone
+      })
+      setState({ type: 'edit', isAdd: true, hideInMain: true, entryId })
+    }
 
     return (
       <div
@@ -153,40 +193,28 @@ const _NonPortfolioSourcesCard = React.memo(
       >
         <h2 className="font-bold text-lg mb-3">Non-portfolio Sources</h2>
         <Contentful.RichText
-          body={content.introAssets[params.strategy]}
+          body={content.introAssets[params.advanced.strategy]}
           p="p-base mb-4"
         />
         <div className="flex justify-start gap-x-4 items-center  my-2 ">
           <button
-            className="flex items-center justify-center gap-x-2 py-1 pr-2  "
-            onClick={() => {
-              const index =
-                params.adjustmentsToSpending.tpawAndSPAW.legacy.external.length
-              setParams((params) => {
-                const clone = _.cloneDeep(params)
-                clone.adjustmentsToSpending.tpawAndSPAW.legacy.external.push({
-                  label: null,
-                  value: 0,
-                  nominal: false,
-                })
-                return clone
-              })
-              setState({ type: 'edit', isAdd: true, hideInMain: true, index })
-            }}
+            className="flex items-center justify-center gap-x-2 py-2 rounded-full border border-gray-200 px-4 "
+            onClick={handleAdd}
           >
-            <FontAwesomeIcon className="text-2xl" icon={faPlus} />
+            <FontAwesomeIcon className="text-3xl" icon={faPlusThin} />
+            Add
           </button>
         </div>
         <div className="flex flex-col gap-y-6 mt-4 ">
           {params.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
-            (entry, index) =>
+            (entry) =>
               !(
                 state.type === 'edit' &&
                 state.hideInMain &&
-                state.index === index
+                state.entryId === entry.id
               ) && (
                 <_Entry
-                  key={index}
+                  key={entry.id}
                   className=""
                   entry={entry}
                   onEdit={() => {
@@ -194,7 +222,7 @@ const _NonPortfolioSourcesCard = React.memo(
                       type: 'edit',
                       isAdd: false,
                       hideInMain: false,
-                      index,
+                      entryId: entry.id,
                     })
                   }}
                 />
@@ -216,8 +244,10 @@ const _Entry = React.memo(
     entry: PlanParams['adjustmentsToSpending']['tpawAndSPAW']['legacy']['external'][0]
     onEdit: () => void
   }) => (
-    <div
-      className={`${className} flex flex-row justify-between items-stretch rounded-lg `}
+    <button
+      // className={`${className} flex flex-row justify-between items-stretch rounded-lg `}
+      className={`${className} block text-start border border-gray-200 rounded-2xl p-3  `}
+      onClick={onEdit}
     >
       <div className="">
         <h2 className="font-medium">{entry.label ?? '<no label>'}</h2>
@@ -232,12 +262,7 @@ const _Entry = React.memo(
           </div>
         </div>
       </div>
-      <div className="flex flex-row justify-start items-stretch">
-        <button className="px-2 -mr-2" onClick={onEdit}>
-          <FontAwesomeIcon className="text-lg" icon={faPen} />
-        </button>
-      </div>
-    </div>
+    </button>
   ),
 )
 

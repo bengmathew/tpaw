@@ -1,4 +1,4 @@
-import { getDefaultPlanParams, SPAW_SPENDING_TILT_VALUES } from '@tpaw/common'
+import { getDefaultPlanParams, SPAW_ANNUAL_SPENDING_TILT_VALUES } from '@tpaw/common'
 import _ from 'lodash'
 import React from 'react'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
@@ -36,7 +36,7 @@ const _SpendingTiltCard = React.memo(
     const handleChange = (value: number) => {
       setParams((params) => {
         const clone = _.cloneDeep(params)
-        clone.risk.spaw.spendingTilt = value
+        clone.risk.spaw.annualSpendingTilt = value
         return clone
       })
     }
@@ -56,8 +56,8 @@ const _SpendingTiltCard = React.memo(
           className="-mx-3 mt-2"
           height={60}
           maxOverflowHorz={props.sizing.cardPadding}
-          data={SPAW_SPENDING_TILT_VALUES}
-          value={params.risk.spaw.spendingTilt}
+          data={SPAW_ANNUAL_SPENDING_TILT_VALUES}
+          value={params.risk.spaw.annualSpendingTilt}
           onChange={handleChange}
           format={formatPercentage(1)}
           ticks={(value, i) =>
@@ -67,7 +67,7 @@ const _SpendingTiltCard = React.memo(
         <button
           className="mt-4 underline"
           onClick={() =>
-            handleChange(getDefaultPlanParams().risk.spaw.spendingTilt)
+            handleChange(getDefaultPlanParams().risk.spaw.annualSpendingTilt)
           }
         >
           Reset to Default

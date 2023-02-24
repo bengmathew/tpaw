@@ -4,7 +4,7 @@ import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { Padding } from '../../../../Utils/Geometry'
 import { useSimulation } from '../../../App/WithSimulation'
-import { getTasksForThisYearProps, setTasksForThisYearOnDoneSection } from '../../../TasksForThisYear/TasksForThisYear'
+import { getTasksForThisMonthProps, setTasksForThisMonthOnDoneSection } from '../../../TasksForThisMonth/TasksForThisMonth'
 import { PlanSectionName } from '../../PlanInput/Helpers/PlanSectionName'
 
 export const PlanChartSidePanelTasksCard = React.memo(
@@ -23,7 +23,7 @@ export const PlanChartSidePanelTasksCard = React.memo(
   }) => {
     const { tpawResult } = useSimulation()
     const { contributionToOrWithdrawalFromSavingsPortfolio, afterWithdrawals } =
-      getTasksForThisYearProps(tpawResult)
+      getTasksForThisMonthProps(tpawResult)
     const withdrawOrContribute = (() =>
       contributionToOrWithdrawalFromSavingsPortfolio.type === 'withdrawal'
         ? {
@@ -35,17 +35,17 @@ export const PlanChartSidePanelTasksCard = React.memo(
             amount: contributionToOrWithdrawalFromSavingsPortfolio.contribution,
           })()
     return (
-      <Link href="/plan/tasks-for-this-year" shallow>
+      <Link href="/plan/tasks-for-this-month" shallow>
         <a
-          className={`${className}  bg-orange-100 block overflow-hidden`}
+          className={`${className} bg-cardBG block overflow-hidden`}
           style={style}
           onClick={() => {
-            setTasksForThisYearOnDoneSection(section)
+            setTasksForThisMonthOnDoneSection(section)
           }}
         >
           <h2 className="font-bold text-[16px] sm:text-[22px]">Tasks</h2>
 
-          <h2 className="font-medium text-[13px] sm:text-[15px] mt-1">
+          <h2 className="font- text-[13px] sm:text-[15px] mt-1">
             {withdrawOrContribute.text}
           </h2>
           <h2 className=" text-[13px]">
@@ -54,7 +54,7 @@ export const PlanChartSidePanelTasksCard = React.memo(
 
           {layout !== 'mobile' && (
             <>
-              <h2 className="font-medium text-[13px] sm:text-[15px] mt-1">
+              <h2 className="font- text-[13px] sm:text-[15px] mt-1">
                 Rebalance
               </h2>
               <div className="grid" style={{ grid: 'auto/auto auto' }}>

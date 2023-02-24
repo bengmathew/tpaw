@@ -23,7 +23,7 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx"
-, "sentry.client.config.js"  ],
+, "sentry.client.config.js", "src/Pages/Common/Inputs/MonthRangeEdgeInput"  ],
   "exclude": [
     "node_modules"
   ]

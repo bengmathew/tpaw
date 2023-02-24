@@ -15,7 +15,7 @@ import {
 import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity0Transition'
 import { useSimulation } from '../../App/WithSimulation'
 import { Config } from '../../Config'
-import { analyzeYearsInParams } from '../PlanInput/Helpers/AnalyzeYearsInParams'
+import { analyzeMonthsInParams } from '../PlanInput/Helpers/AnalyzeMonthsInParams'
 import { PlanInputType } from '../PlanInput/Helpers/PlanInputType'
 import { isPlanSectionDialogInOverlayMode } from '../PlanInput/Helpers/PlanSectionDialogPosition'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
@@ -78,8 +78,7 @@ export const PlanSummary = React.memo(
       useState<HTMLElement | null>(null)
 
     const { params, paramsExt } = useSimulation()
-    const { asYFN, withdrawalStartYear } = paramsExt
-    const isRetired = asYFN(withdrawalStartYear) <= 0
+    const { withdrawalsStarted } = paramsExt
 
     const [showAdvanced, setShowAdvanced] = useState(false)
     const [showDev, setShowDev] = useState(!Config.client.production)
@@ -170,7 +169,7 @@ export const PlanSummary = React.memo(
                   section={section}
                   padding={cardPadding}
                 />
-                {!isRetired && (
+                {!withdrawalsStarted && (
                   <PlanSummaryButton
                     ref={setFutureSavingsElement}
                     type="future-savings"
@@ -214,7 +213,7 @@ export const PlanSummary = React.memo(
                     }
                   />
 
-                  {params.strategy !== 'SWR' && (
+                  {params.advanced.strategy !== 'SWR' && (
                     <PlanSummaryButton
                       type="legacy"
                       section={section}
@@ -227,14 +226,16 @@ export const PlanSummary = React.memo(
                       }
                     />
                   )}
-                  {params.strategy !== 'SWR' && (
+                  {params.advanced.strategy !== 'SWR' && (
                     <PlanSummaryButton
                       type="spending-ceiling-and-floor"
                       section={section}
                       padding={cardPadding}
                       empty={
                         params.adjustmentsToSpending.tpawAndSPAW
-                          .spendingCeiling === null
+                          .monthlySpendingCeiling === null
+                        && params.adjustmentsToSpending.tpawAndSPAW
+                          .monthlySpendingFloor === null
                       }
                     />
                   )}
@@ -281,14 +282,10 @@ export const PlanSummary = React.memo(
                   <div
                     className="flex flex-col gap-y-6 mt-6"
                     onClick={() => {
-                      if (showDev) return
                       setShowDevClickCount((prev) => {
-                        if (prev === 0) {
+                        if (prev === 0)
                           window.setTimeout(() => setShowDevClickCount(0), 3000)
-                        }
-                        if (prev === 9) {
-                          setShowDev(true)
-                        }
+                        if (prev === 9) setShowDev((x) => !x)
                         return prev + 1
                       })
                     }}
@@ -369,9 +366,9 @@ type _Type =
   | 'extra-spending'
   | 'strategy'
 export const _paramsOk = (paramsExt: PlanParamsExt, type: _Type) => {
-  const { valueForYearRange, glidePath } = analyzeYearsInParams(paramsExt)
+  const { valueForMonthRange, glidePath } = analyzeMonthsInParams(paramsExt)
   return (
-    valueForYearRange
+    valueForMonthRange
       .filter((x) => x.section === type)
       .every(
         (x) => x.boundsCheck.start === 'ok' && x.boundsCheck.end === 'ok',
@@ -393,13 +390,18 @@ const _isModified = (type: _AdvancedParamInputType, params: PlanParams) => {
   const def = getDefaultPlanParams()
   switch (type) {
     case 'expected-returns':
-      return params.returns.expected.type !== 'suggested'
+      return params.advanced.annualReturns.expected.type !== 'suggested'
     case 'inflation':
-      return params.inflation.type !== 'suggested'
+      return params.advanced.annualInflation.type !== 'suggested'
     case 'strategy':
-      return params.strategy !== def.strategy
+      return params.advanced.strategy !== def.advanced.strategy
     case 'simulation':
-      return params.sampling !== def.sampling
+      return (
+        params.advanced.sampling !== def.advanced.sampling ||
+        (params.advanced.sampling === 'monteCarlo' &&
+          params.advanced.samplingBlockSizeForMonteCarlo !==
+            def.advanced.samplingBlockSizeForMonteCarlo)
+      )
     default:
       noCase(type)
   }

@@ -2,6 +2,7 @@ import { assert, fGet, noCase } from '@tpaw/common'
 import _ from 'lodash'
 import { Rect, rectExt } from '../../../../Utils/Geometry'
 import { interpolate } from '../../../../Utils/Interpolate'
+import { numFullYearsIn } from '../../../../Utils/NumFullYearsIn'
 import { transitionTransform } from '../../../../Utils/Transition'
 import { ChartStateDerived } from '../Chart'
 import { ChartContext } from '../ChartContext'
@@ -10,8 +11,15 @@ import { ChartComponent } from './ChartComponent'
 
 export type ChartPointerOpts = {
   subHeading: string
-  formatX: (dataX: number) => string
-  formatY: (dataY: number) => string
+  formatX: (dataY: number) =>
+    | { type: 'legacy' }
+    | { type: 'withoutPartner'; ageInMonths: number }
+    | {
+        type: 'withPartner'
+        ageInMonths: number | null
+        partnerAgeInMonths: number | null
+      }
+  formatY: (dataX: number) => string
   showTh: boolean
   pad: {
     vert: { top: number; between: number; bottom: number }
@@ -115,10 +123,6 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
     const pixelX = scale.x(currPointerInDataCoord.x)
     const pixelYs = currDataYs.map(scale.y)
 
-    canvasContext.save()
-    drawBox(this._boxInfoTransition.curr, pixelX, pixelYs)
-    canvasContext.restore()
-
     // Draw the vertical line.
     canvasContext.globalAlpha = 0.3
     canvasContext.lineWidth = 1.5
@@ -134,12 +138,16 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
     // Draw the target on the data line.
     canvasContext.globalAlpha = 0.7
     canvasContext.lineWidth = 2
-    canvasContext.fillStyle = ChartUtils.color.gray[900]
-    pixelYs.forEach((pixelY) => {
+    pixelYs.forEach((pixelY, i) => {
+      canvasContext.fillStyle = ChartUtils.color.gray[700]
       canvasContext.beginPath()
       canvasContext.ellipse(pixelX, pixelY, 4, 4, 0, 0, Math.PI * 4)
       canvasContext.fill()
     })
+
+    canvasContext.save()
+    drawBox(this._boxInfoTransition.curr, pixelX, pixelYs)
+    canvasContext.restore()
   }
 }
 
@@ -169,12 +177,81 @@ const _calculateBox = (
   }
   const defaultColor = ChartUtils.color.gray[200]
   const lineInfos = {
-    heading: getTextInfo(
-      formatX(dataXAtTarget),
-      ChartUtils.getMonoFont(13, 'bold'),
-      ChartUtils.color.teal[500],
-      'left',
-    ),
+    heading: (() => {
+      const displayInfo = formatX(dataXAtTarget)
+      const gti = (
+        text: string,
+        font: string = ChartUtils.getMonoFont(13, 'bold'),
+        color: string = ChartUtils.color.orange[400],
+      ) => getTextInfo(text, font, color, 'left')
+
+      const forPerson = (numMonths: number | null) => {
+        const years = gti(
+          numMonths === null ? '＿' : `${numFullYearsIn(numMonths)}`,
+        )
+        const months =
+          numMonths === null
+            ? null
+            : gti(
+                '' + `${numMonths % 12}`.padEnd(2, ' '),
+                ChartUtils.getMonoFont(10),
+                // ChartUtils.color.withOpacity(ChartUtils.color.orange[300], 0.8),
+              )
+        const width = years.width + (months?.width ?? 0) + 1
+        const draw = (x: number, y: number) => {
+          years.draw(x, y)
+          months?.draw(x + years.width + 1, y)
+        }
+        return { width, draw }
+      }
+
+      switch (displayInfo.type) {
+        case 'legacy': {
+          const label = gti('Legacy')
+          const width = label.width
+          const height = label.height
+          const draw = (x: number, y: number) => {
+            label.draw(x, y)
+          }
+          return { width, height, draw }
+        }
+        case 'withoutPartner': {
+          const label = gti('Age')
+          const gap1 = 10
+          const person1 = forPerson(displayInfo.ageInMonths)
+          const width = label.width + person1.width + gap1
+          const height = label.height
+          const draw = (x: number, y: number) => {
+            let currX = x
+            label.draw(currX, y)
+            currX += label.width + gap1
+            person1.draw(currX, y)
+          }
+          return { width, height, draw }
+        }
+        case 'withPartner':
+          const gap1 = 10
+          const gap2 = 4
+          const label = gti('Ages')
+          const person1 = forPerson(displayInfo.ageInMonths)
+          const person2 = forPerson(displayInfo.partnerAgeInMonths)
+          const width =
+            label.width + gap1 + person1.width + gap2 + person2.width
+          const height = label.height
+          const draw = (x: number, y: number) => {
+            let currX = x
+            label.draw(currX, y)
+            currX += label.width + gap1
+            person1.draw(currX, y)
+            currX += person1.width + gap2
+            person2.draw(currX, y)
+          }
+
+          return { draw, width, height } as const
+        default:
+          noCase(displayInfo)
+      }
+    })(),
     subHeading: getTextInfo(
       subHeading,
       ChartUtils.getMonoFont(12),
@@ -201,10 +278,10 @@ const _calculateBox = (
   let labelRelativePixelY =
     headingRelativePosition.y +
     lineInfos.heading.height +
-    pad.vert.between * .75 +
+    pad.vert.between * 0.75 +
     lineInfos.subHeading.height +
     pad.vert.between +
-    pad.vert.between 
+    pad.vert.between
 
   const labelRelativePixelYs = lineInfos.dataLines.map(({ label }) => {
     const result = labelRelativePixelY
@@ -221,7 +298,6 @@ const _calculateBox = (
   const dataYsMaxWidth = Math.max(
     ...lineInfos.dataLines.map((x) => x.dataY.width),
   )
-
   const width = Math.max(
     labelRight +
       (lineInfos.dataLines[0].th?.width ?? 0) +
@@ -238,7 +314,7 @@ const _calculateBox = (
   const pixelXAtTarget = scale.x(dataXAtTarget)
 
   const y = _.clamp(
-    _.mean(pixelYsAtTarget) - height * .75,
+    _.mean(pixelYsAtTarget) - height * 0.75,
     viewport.y,
     plotArea.y + plotArea.height - height - 10,
   )
@@ -309,20 +385,21 @@ const _calculateBox = (
     let currY = y + headingRelativePosition.y
 
     // Draw the heading.
-    lineInfos.heading.draw(x + headingRelativePosition.x, currY)
-    currY += lineInfos.heading.height + pad.vert.between 
+    let currX = x + headingRelativePosition.x
+    lineInfos.heading.draw(currX, currY)
+    currY += lineInfos.heading.height + pad.vert.between
 
     // Draw the subHeading.
     lineInfos.subHeading.draw(x + headingRelativePosition.x, currY)
-    currY += lineInfos.subHeading.height + pad.vert.between * .75
+    currY += lineInfos.subHeading.height + pad.vert.between * 0.75
     canvasContext.beginPath()
     canvasContext.moveTo(x + pad.horz.edge, currY)
-    canvasContext.lineTo(regionExt.right - pad.horz.edge , currY)
+    canvasContext.lineTo(regionExt.right - pad.horz.edge, currY)
     canvasContext.lineCap = 'round'
-    canvasContext.lineWidth = .5
+    canvasContext.lineWidth = 0.5
     canvasContext.strokeStyle = ChartUtils.color.gray[400]
     canvasContext.stroke()
-    currY += pad.vert.between  * .75
+    currY += pad.vert.between * 0.75
 
     // Draw the text lines.
     lineInfos.dataLines.forEach(({ label, th, dataY }, i) => {

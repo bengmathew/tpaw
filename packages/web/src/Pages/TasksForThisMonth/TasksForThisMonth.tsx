@@ -3,8 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { PlanParams } from '@tpaw/common'
 import React, { ReactNode } from 'react'
 import { extendPlanParams } from '../../TPAWSimulator/PlanParamsExt'
-import { FirstYearSavingsPortfolioDetail } from '../../TPAWSimulator/Worker/FirstYearSavingsPortfolioDetail'
-import { TPAWRunInWorkerByPercentileByYearsFromNow } from '../../TPAWSimulator/Worker/TPAWRunInWorker'
+import { FirstMonthSavingsPortfolioDetail } from '../../TPAWSimulator/Worker/FirstMonthSavingsPortfolioDetail'
+import { TPAWRunInWorkerByPercentileByMonthsFromNow } from '../../TPAWSimulator/Worker/TPAWRunInWorker'
 import { UseTPAWWorkerResult } from '../../TPAWSimulator/Worker/UseTPAWWorker'
 import { formatCurrency } from '../../Utils/FormatCurrency'
 import { formatPercentage } from '../../Utils/FormatPercentage'
@@ -15,30 +15,30 @@ import { useSimulation } from '../App/WithSimulation'
 import { useGetSectionURL } from '../Plan/Plan'
 import { PlanSectionName } from '../Plan/PlanInput/Helpers/PlanSectionName'
 
-export type TasksForThisYearProps = Omit<
-  FirstYearSavingsPortfolioDetail,
+export type TasksForThisMonthProps = Omit<
+  FirstMonthSavingsPortfolioDetail,
   'withdrawals'
 > & {
-  withdrawals: FirstYearSavingsPortfolioDetail['withdrawals'] & {
+  withdrawals: FirstMonthSavingsPortfolioDetail['withdrawals'] & {
     essentialByEntry: { id: number; label: string | null; amount: number }[]
     discretionaryByEntry: { id: number; label: string | null; amount: number }[]
   }
   withdrawalsStarted: boolean
-  strategy: PlanParams['strategy']
+  strategy: PlanParams['advanced']['strategy']
 }
 
-export const getTasksForThisYearProps = (
+export const getTasksForThisMonthProps = (
   tpawResult: UseTPAWWorkerResult,
-): TasksForThisYearProps => {
-  const original = tpawResult.firstYearOfSomeRun
+): TasksForThisMonthProps => {
+  const original = tpawResult.firstMonthOfSomeRun
   const { params } = tpawResult.args
 
   const { withdrawalsStarted } = extendPlanParams(params.original)
 
-  const firstYearOfAnyPercentile = (
+  const firstMonthOfAnyPercentile = (
     id: number,
-    { byId }: { byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow> },
-  ) => fGet(byId.get(id)).byPercentileByYearsFromNow[0].data[0]
+    { byId }: { byId: Map<number, TPAWRunInWorkerByPercentileByMonthsFromNow> },
+  ) => fGet(byId.get(id)).byPercentileByMonthsFromNow[0].data[0]
 
   return {
     ...original,
@@ -49,7 +49,7 @@ export const getTasksForThisYearProps = (
           ({ id, label }) => ({
             id,
             label,
-            amount: firstYearOfAnyPercentile(
+            amount: firstMonthOfAnyPercentile(
               id,
               tpawResult.savingsPortfolio.withdrawals.essential,
             ),
@@ -60,7 +60,7 @@ export const getTasksForThisYearProps = (
           ({ id, label }) => ({
             id,
             label,
-            amount: firstYearOfAnyPercentile(
+            amount: firstMonthOfAnyPercentile(
               id,
               tpawResult.savingsPortfolio.withdrawals.discretionary,
             ),
@@ -72,9 +72,9 @@ export const getTasksForThisYearProps = (
   }
 }
 
-export const TasksForThisYear = React.memo(() => {
+export const TasksForThisMonth = React.memo(() => {
   const { tpawResult } = useSimulation()
-  const props = getTasksForThisYearProps(tpawResult)
+  const props = getTasksForThisMonthProps(tpawResult)
   const { withdrawals, withdrawalsStarted } = props
 
   const getSectionURL = useGetSectionURL()
@@ -83,25 +83,25 @@ export const TasksForThisYear = React.memo(() => {
   return (
     <AppPage
       className="pt-header min-h-screen bg-gray-300"
-      title="Tasks for This Year - TPAW Planner"
+      title="Tasks for This Month - TPAW Planner"
       curr="plan"
     >
       <div className="flex flex-col items-center  mt-6 px-4 ">
-        <div className="w-full max-w-[650px] px-4 py-4 z-0 bg-orange-50 rounded-2xl mb-20 ">
+        <div className="w-full max-w-[650px] px-4 py-4 z-0 bg-cardBG rounded-2xl mb-20 ">
           <div className="">
             <div className=" flex flex-row items-center gap-x-4 gap-y-">
               <button
                 className="flex items-center gap-x-2 text-sm sm:text-base btn-dark px-4 py-1.5"
                 onClick={() =>
                   urlUpdater.push(
-                    getSectionURL(getTasksForThisYearOnDoneSection()),
+                    getSectionURL(getTasksForThisMonthOnDoneSection()),
                   )
                 }
               >
                 <FontAwesomeIcon className="" icon={faLeftLong} />
                 Done
               </button>
-              <h1 className="font-bold text-3xl">Tasks for This Year</h1>
+              <h1 className="font-bold text-3xl">Tasks for This Month</h1>
             </div>
 
             {withdrawals.total !== 0 || withdrawalsStarted ? (
@@ -124,7 +124,7 @@ export const TasksForThisYear = React.memo(() => {
 
 // -------- SUMMARY --------
 const _Summary = React.memo(
-  ({ className, ...props }: TasksForThisYearProps & { className: string }) => {
+  ({ className, ...props }: TasksForThisMonthProps & { className: string }) => {
     const { contributionToOrWithdrawalFromSavingsPortfolio } = props
     const withdrawalText =
       contributionToOrWithdrawalFromSavingsPortfolio.type === 'withdrawal'
@@ -154,7 +154,7 @@ const _Summary = React.memo(
 
 //  -------- DETAILS --------
 const _Details = React.memo(
-  ({ className, ...props }: TasksForThisYearProps & { className: string }) => {
+  ({ className, ...props }: TasksForThisMonthProps & { className: string }) => {
     const {
       withdrawals,
       contributionToOrWithdrawalFromSavingsPortfolio,
@@ -187,7 +187,7 @@ const _HowMuchYouHave = React.memo(
     contributions,
     className = '',
     ...props
-  }: TasksForThisYearProps & { className?: string }) => {
+  }: TasksForThisMonthProps & { className?: string }) => {
     return (
       <div className={className}>
         <_Heading>How Much You Have</_Heading>
@@ -204,9 +204,9 @@ const _HowMuchYouHave = React.memo(
               have <_Value>{contributions.total}</_Value> in retirement income
             </span>
           )}{' '}
-          this year. This gives you a total of{' '}
+          this month. This gives you a total of{' '}
           <_Value className="">{props.afterContributions.balance}</_Value> to
-          split between spending for this year and saving for the future.
+          split between spending for this month and saving for the future.
         </p>
       </div>
     )
@@ -219,7 +219,7 @@ const _HowMuchToSpend = React.memo(
     withdrawals,
     className = '',
     ...props
-  }: TasksForThisYearProps & { className?: string }) => {
+  }: TasksForThisMonthProps & { className?: string }) => {
     const needsBreakdown =
       withdrawals.essentialByEntry.length > 0 ||
       withdrawals.discretionaryByEntry.length > 0
@@ -229,7 +229,7 @@ const _HowMuchToSpend = React.memo(
         <_Heading>How Much To Spend</_Heading>
         <p className="p-base">
           Out of your <_Value>{props.start.balance}</_Value>, you plan to spend{' '}
-          <_Value className="">{withdrawals.total}</_Value> this year
+          <_Value className="">{withdrawals.total}</_Value> this month
           {needsBreakdown
             ? `,
           broken down as follows:`
@@ -316,7 +316,7 @@ const _HowToFundTheSpending = React.memo(
     withdrawals,
     withdrawalsStarted,
     className = '',
-  }: TasksForThisYearProps & { className?: string }) => {
+  }: TasksForThisMonthProps & { className?: string }) => {
     return (
       <div className={className}>
         <_Heading>How To Fund The Spending</_Heading>
@@ -351,7 +351,7 @@ const _Contribution = React.memo(
     contributionToOrWithdrawalFromSavingsPortfolio,
     withdrawalsStarted,
     className = '',
-  }: TasksForThisYearProps & { className?: string }) => {
+  }: TasksForThisMonthProps & { className?: string }) => {
     return (
       <div className={className}>
         <_Heading>How Much To Contribute To Your Portfolio</_Heading>
@@ -361,9 +361,9 @@ const _Contribution = React.memo(
             <p className="mb-3 p-base">
               Your{' '}
               {withdrawalsStarted ? 'retirement income' : 'planned savings'} for
-              this year is <_Value>{contributions.total}</_Value> You used{' '}
+              this month is <_Value>{contributions.total}</_Value> You used{' '}
               <_Value>{contributions.toWithdrawal}</_Value> of this to fund
-              spending for this year. Contribute the remaining{' '}
+              spending for this month. Contribute the remaining{' '}
               <_Value className="">{contributions.toSavingsPortfolio}</_Value>{' '}
               to your portfolio.{' '}
             </p>
@@ -371,14 +371,14 @@ const _Contribution = React.memo(
             <p className="mb-3 p-base">
               Your{' '}
               {withdrawalsStarted ? 'retirement income' : 'planned savings'} for
-              this year is <_Value>{contributions.total}</_Value>. Contribute
+              this month is <_Value>{contributions.total}</_Value>. Contribute
               all <_Value className="">{contributions.total}</_Value> to your
               portfolio.{' '}
             </p>
           )
         ) : (
           <p className="mb-3 p-base">
-            You do not have a contribution to your portfolio this year.
+            You do not have a contribution to your portfolio this month.
           </p>
         )}
       </div>
@@ -392,7 +392,7 @@ const _AssetAllocation = React.memo(
     className = '',
 
     ...props
-  }: TasksForThisYearProps & { className?: string }) => {
+  }: TasksForThisMonthProps & { className?: string }) => {
     const { contributionToOrWithdrawalFromSavingsPortfolio } = props
     return (
       <div className={className}>
@@ -438,7 +438,7 @@ const _AllocationTable = React.memo(
   ({
     className = '',
     ...props
-  }: TasksForThisYearProps & { className?: string }) => {
+  }: TasksForThisMonthProps & { className?: string }) => {
     const { allocation } = props.afterWithdrawals
     const stocks = props.afterWithdrawals.balance * allocation.stocks
     const bonds = props.afterWithdrawals.balance - stocks
@@ -472,14 +472,14 @@ const _Value = React.memo(
   ),
 )
 
-export const setTasksForThisYearOnDoneSection = (section: PlanSectionName) => {
-  window.localStorage.setItem('TasksForThisYearOnDoneSection', section)
+export const setTasksForThisMonthOnDoneSection = (section: PlanSectionName) => {
+  window.localStorage.setItem('TasksForThisMonthOnDoneSection', section)
 }
-const getTasksForThisYearOnDoneSection = (): PlanSectionName => {
+const getTasksForThisMonthOnDoneSection = (): PlanSectionName => {
   const result = window.localStorage.getItem(
-    'TasksForThisYearOnDoneSection',
+    'TasksForThisMonthOnDoneSection',
   ) as PlanSectionName | undefined
 
-  window.localStorage.removeItem('TasksForThisYearOnDoneSection')
+  window.localStorage.removeItem('TasksForThisMonthOnDoneSection')
   return result ?? ('summary' as PlanSectionName)
 }

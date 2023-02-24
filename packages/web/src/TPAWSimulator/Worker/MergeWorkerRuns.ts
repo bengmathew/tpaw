@@ -1,78 +1,79 @@
 import _ from 'lodash'
-import {fGet} from '../../Utils/Utils'
-import {TPAWWorkerRunSimulationResult} from './TPAWWorkerTypes'
+import { fGet } from '../../Utils/Utils'
+import { TPAWWorkerRunSimulationResult } from './TPAWWorkerAPI'
 
-const _mergeNumberByWorkerByYearsFromNowByRun = (
-  numberByWorkerByYearsFromNowByRun: Float64Array[][]
+const _mergeNumberByWorkerByMonthsFromNowByRun = (
+  numberByWorkerByMonthsFromNowByRun: Float64Array[][],
 ) => {
-  const numYears = numberByWorkerByYearsFromNowByRun[0].length
-  const numberByYearsFromNowByWorkerByRun = _.times(
-    numYears,
-    x => [] as Float64Array[]
+  const numMonths = numberByWorkerByMonthsFromNowByRun[0].length
+  const numberByMonthsFromNowByWorkerByRun = _.times(
+    numMonths,
+    (x) => [] as Float64Array[],
   )
 
-  for (const numberByYearsFromNowByRun of numberByWorkerByYearsFromNowByRun) {
-    numberByYearsFromNowByRun.forEach((x, i) =>
-      numberByYearsFromNowByWorkerByRun[i].push(x)
+  for (const numberByMonthsFromNowByRun of numberByWorkerByMonthsFromNowByRun) {
+    numberByMonthsFromNowByRun.forEach((x, i) =>
+      numberByMonthsFromNowByWorkerByRun[i].push(x),
     )
   }
 
-  const numberByYearsFromNowByRun =
-    numberByYearsFromNowByWorkerByRun.map(_flattenTyped)
+  const numberByMonthsFromNowByRun =
+    numberByMonthsFromNowByWorkerByRun.map(_flattenTyped)
 
-  return numberByYearsFromNowByRun
+  return numberByMonthsFromNowByRun
 }
 
 export const mergeWorkerRuns = (
-  runsByWorker: TPAWWorkerRunSimulationResult[]
+  runsByWorker: TPAWWorkerRunSimulationResult[],
 ): TPAWWorkerRunSimulationResult => {
-  const byYearsFromNowByRun = {
+  const byMonthsFromNowByRun = {
     savingsPortfolio: {
       start: {
-        balance: _mergeNumberByWorkerByYearsFromNowByRun(
+        balance: _mergeNumberByWorkerByMonthsFromNowByRun(
           runsByWorker.map(
-            x => x.byYearsFromNowByRun.savingsPortfolio.start.balance
-          )
+            (x) => x.byMonthsFromNowByRun.savingsPortfolio.start.balance,
+          ),
         ),
       },
       withdrawals: {
-        essential: _mergeNumberByWorkerByYearsFromNowByRun(
+        essential: _mergeNumberByWorkerByMonthsFromNowByRun(
           runsByWorker.map(
-            x => x.byYearsFromNowByRun.savingsPortfolio.withdrawals.essential
-          )
+            (x) =>
+              x.byMonthsFromNowByRun.savingsPortfolio.withdrawals.essential,
+          ),
         ),
-        discretionary: _mergeNumberByWorkerByYearsFromNowByRun(
+        discretionary: _mergeNumberByWorkerByMonthsFromNowByRun(
           runsByWorker.map(
-            x =>
-              x.byYearsFromNowByRun.savingsPortfolio.withdrawals.discretionary
-          )
+            (x) =>
+              x.byMonthsFromNowByRun.savingsPortfolio.withdrawals.discretionary,
+          ),
         ),
-        regular: _mergeNumberByWorkerByYearsFromNowByRun(
+        regular: _mergeNumberByWorkerByMonthsFromNowByRun(
           runsByWorker.map(
-            x => x.byYearsFromNowByRun.savingsPortfolio.withdrawals.regular
-          )
+            (x) => x.byMonthsFromNowByRun.savingsPortfolio.withdrawals.regular,
+          ),
         ),
-        total: _mergeNumberByWorkerByYearsFromNowByRun(
+        total: _mergeNumberByWorkerByMonthsFromNowByRun(
           runsByWorker.map(
-            x => x.byYearsFromNowByRun.savingsPortfolio.withdrawals.total
-          )
+            (x) => x.byMonthsFromNowByRun.savingsPortfolio.withdrawals.total,
+          ),
         ),
-        fromSavingsPortfolioRate: _mergeNumberByWorkerByYearsFromNowByRun(
+        fromSavingsPortfolioRate: _mergeNumberByWorkerByMonthsFromNowByRun(
           runsByWorker.map(
-            x =>
-              x.byYearsFromNowByRun.savingsPortfolio.withdrawals
-                .fromSavingsPortfolioRate
-          )
+            (x) =>
+              x.byMonthsFromNowByRun.savingsPortfolio.withdrawals
+                .fromSavingsPortfolioRate,
+          ),
         ),
       },
       afterWithdrawals: {
         allocation: {
-          stocks: _mergeNumberByWorkerByYearsFromNowByRun(
+          stocks: _mergeNumberByWorkerByMonthsFromNowByRun(
             runsByWorker.map(
-              x =>
-                x.byYearsFromNowByRun.savingsPortfolio.afterWithdrawals
-                  .allocation.stocks
-            )
+              (x) =>
+                x.byMonthsFromNowByRun.savingsPortfolio.afterWithdrawals
+                  .allocation.stocks,
+            ),
           ),
         },
       },
@@ -80,12 +81,12 @@ export const mergeWorkerRuns = (
     totalPortfolio: {
       afterWithdrawals: {
         allocation: {
-          stocks: _mergeNumberByWorkerByYearsFromNowByRun(
+          stocks: _mergeNumberByWorkerByMonthsFromNowByRun(
             runsByWorker.map(
-              x =>
-                x.byYearsFromNowByRun.totalPortfolio.afterWithdrawals
-                  .allocation.stocks
-            )
+              (x) =>
+                x.byMonthsFromNowByRun.totalPortfolio.afterWithdrawals
+                  .allocation.stocks,
+            ),
           ),
         },
       },
@@ -93,26 +94,33 @@ export const mergeWorkerRuns = (
   }
 
   const byRun = {
-    numInsufficientFundYears: _flattenTypedI32(
-      runsByWorker.map(s => s.byRun.numInsufficientFundYears)
+    numInsufficientFundMonths: _flattenTypedI32(
+      runsByWorker.map((s) => s.byRun.numInsufficientFundMonths),
     ),
     endingBalanceOfSavingsPortfolio: _flattenTyped(
-      runsByWorker.map(s => s.byRun.endingBalanceOfSavingsPortfolio)
+      runsByWorker.map((s) => s.byRun.endingBalanceOfSavingsPortfolio),
     ),
   }
+  const averageAnnualReturns = {
+    stocks: _.mean(runsByWorker.map((x) => x.averageAnnualReturns.stocks)),
+    bonds: _.mean(runsByWorker.map((x) => x.averageAnnualReturns.bonds)),
+  }
 
-  const worstPerf = fGet(_.last(_.sortBy(runsByWorker, x => x.perf[3][1]))).perf
+  const worstPerf = fGet(
+    _.last(_.sortBy(runsByWorker, (x) => x.perf[3][1])),
+  ).perf
   return {
-    byYearsFromNowByRun,
+    byMonthsFromNowByRun,
     byRun,
+    averageAnnualReturns,
     perf: worstPerf,
   }
 }
 
 const _flattenTyped = (arr: Float64Array[]) => {
   let offset = 0
-  const result = new Float64Array(_.sumBy(arr, x => x.length))
-  arr.forEach(x => {
+  const result = new Float64Array(_.sumBy(arr, (x) => x.length))
+  arr.forEach((x) => {
     result.set(x, offset)
     offset += x.length
   })
@@ -120,8 +128,8 @@ const _flattenTyped = (arr: Float64Array[]) => {
 }
 const _flattenTypedI32 = (arr: Int32Array[]) => {
   let offset = 0
-  const result = new Int32Array(_.sumBy(arr, x => x.length))
-  arr.forEach(x => {
+  const result = new Int32Array(_.sumBy(arr, (x) => x.length))
+  arr.forEach((x) => {
     result.set(x, offset)
     offset += x.length
   })

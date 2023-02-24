@@ -37,7 +37,7 @@ export const PlanInputRiskTPAW = React.memo(
     const [showAdvanced, setShowAdvanced] = useState(false)
     return (
       <div className="">
-        <_TPAWRelativeRiskToleranceCard className="" props={props} />
+        <_TPAWRiskToleranceCard className="" props={props} />
         <button
           className="mt-6 text-start"
           onClick={() => setShowAdvanced((x) => !x)}
@@ -64,7 +64,7 @@ export const PlanInputRiskTPAW = React.memo(
   },
 )
 
-const _TPAWRelativeRiskToleranceCard = React.memo(
+const _TPAWRiskToleranceCard = React.memo(
   ({
     className = '',
     props,
@@ -74,7 +74,7 @@ const _TPAWRelativeRiskToleranceCard = React.memo(
   }) => {
     const { params, paramsExt, setParams, tpawResult } = useSimulation()
     const defaultRisk = getDefaultPlanParams().risk.tpaw
-    const { asYFN, withdrawalStartYear, withdrawalsStarted, maxMaxAge } =
+    const { asMFN, withdrawalStartMonth, withdrawalsStarted, maxMaxAge } =
       paramsExt
 
     const handleChange = (value: number) =>
@@ -84,20 +84,20 @@ const _TPAWRelativeRiskToleranceCard = React.memo(
         return clone
       })
 
-    const get50thStockAllocation = (yfn: number) =>
+    const get50thStockAllocation = (mfn: number) =>
       fGet(
-        tpawResult.savingsPortfolio.afterWithdrawals.allocation.stocks.byPercentileByYearsFromNow.find(
+        tpawResult.savingsPortfolio.afterWithdrawals.allocation.stocks.byPercentileByMonthsFromNow.find(
           (x) => x.percentile === 50,
         ),
-      ).data[yfn]
+      ).data[mfn]
 
-    const effectiveMaxAgeAYFN =
-      asYFN(maxMaxAge) +
+    const effectiveMaxAgeAsMFN =
+      asMFN(maxMaxAge) +
       (params.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0 ? 0 : -1)
     const stockAllocations = {
       now: get50thStockAllocation(0),
-      atRetirement: get50thStockAllocation(asYFN(withdrawalStartYear)),
-      atMaxAge: get50thStockAllocation(effectiveMaxAgeAYFN),
+      atRetirement: get50thStockAllocation(asMFN(withdrawalStartMonth)),
+      atMaxAge: get50thStockAllocation(effectiveMaxAgeAsMFN),
     }
 
     return (
@@ -172,11 +172,11 @@ const _TPAWRelativeRiskToleranceCard = React.memo(
               title="Why the percentile for future years?"
             >
               <p className="p-base mb-4">
-                Your stock allocation in the future may be a range and not a single
-                number because the optimal allocation will depend on the
+                Your stock allocation in the future may be a range and not a
+                single number because the optimal allocation will depend on the
                 relative sizes of competing spending goals and other resources
-                like pensions. This depends on market performance and so we can get
-                a range of possible allocations from the simulations.
+                like pensions. This depends on market performance and so we can
+                get a range of possible allocations from the simulations.
               </p>
             </_ExpandableNote>
             {stockAllocations.atMaxAge > stockAllocations.atRetirement && (

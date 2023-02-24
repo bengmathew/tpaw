@@ -1,27 +1,29 @@
-import { PlanParams18 } from './PlanParams18'
+import { PlanParams19 } from './PlanParams19'
 
-export type PlanParams = PlanParams18.Params
-export type Person = PlanParams18.Person
-export type People = PlanParams18.People
-export type Year = PlanParams18.Year
-export type YearRange = PlanParams18.YearRange
-export type ValueForYearRange = PlanParams18.ValueForYearRange
-export type LabeledAmount = PlanParams18.LabeledAmount
-export type GlidePath = PlanParams18.GlidePath
+export type PlanParams = PlanParams19.Params
+export type Person = PlanParams19.Person
+export type People = PlanParams19.People
+export type Month = PlanParams19.Month
+export type MonthRange = PlanParams19.MonthRange
+export type ValueForMonthRange = PlanParams19.ValueForMonthRange
+export type LabeledAmount = PlanParams19.LabeledAmount
+export type GlidePath = PlanParams19.GlidePath
 
-export const planParamsGuard = PlanParams18.guard
-export const MAX_AGE = PlanParams18.MAX_AGE
-export const MAX_LABEL_LENGTH = PlanParams18.MAX_LABEL_LENGTH
-export const MAX_NUM_YEARS_IN_GLIDE_PATH =
-  PlanParams18.MAX_NUM_YEARS_IN_GLIDE_PATH
-export const MAX_VALUE_FOR_YEAR_RANGE = PlanParams18.MAX_VALUE_FOR_YEAR_RANGE
+export const planParamsGuard = PlanParams19.guard
+export const MAX_AGE_IN_MONTHS = PlanParams19.MAX_AGE_IN_MONTHS
+export const MAX_LABEL_LENGTH = PlanParams19.MAX_LABEL_LENGTH
+export const MAX_SIZE_FOR_GLIDE_PATH_INTERMEDIATE_ARRAY =
+  PlanParams19.MAX_SIZE_FOR_GLIDE_PATH_INTERMEDIATE_ARRAY
+export const MAX_SIZE_FOR_MONTH_RANGE_ARR =
+  PlanParams19.MAX_SIZE_FOR_MONTH_RANGE_ARR
 export const MAX_EXTERNAL_LEGACY_SOURCES =
-  PlanParams18.MAX_EXTERNAL_LEGACY_SOURCES
-export const RISK_TOLERANCE_VALUES = PlanParams18.RISK_TOLERANCE_VALUES
-export const TIME_PREFERENCE_VALUES = PlanParams18.TIME_PREFERENCE_VALUES
-export const ADDITIONAL_SPENDING_TILT_VALUES =
-  PlanParams18.ADDITIONAL_SPENDING_TILT_VALUES
-export const SPAW_SPENDING_TILT_VALUES = PlanParams18.SPAW_SPENDING_TILT_VALUES
-export const MANUAL_INFLATION_VALUES = PlanParams18.MANUAL_INFLATION_VALUES
+  PlanParams19.MAX_EXTERNAL_LEGACY_SOURCES
+export const RISK_TOLERANCE_VALUES = PlanParams19.RISK_TOLERANCE_VALUES
+export const TIME_PREFERENCE_VALUES = PlanParams19.TIME_PREFERENCE_VALUES
+export const ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES =
+  PlanParams19.ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES
+export const SPAW_ANNUAL_SPENDING_TILT_VALUES =
+  PlanParams19.SPAW_ANNUAL_SPENDING_TILT_VALUES
+export const MANUAL_INFLATION_VALUES = PlanParams19.MANUAL_INFLATION_VALUES
 export const MANUAL_STOCKS_BONDS_RETURNS_VALUES =
-  PlanParams18.MANUAL_STOCKS_BONDS_RETURNS_VALUES
+  PlanParams19.MANUAL_STOCKS_BONDS_RETURNS_VALUES

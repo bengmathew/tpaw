@@ -96,7 +96,7 @@ export const PlanChartMainCard = React.memo(
     //   return () => observer.disconnect()
     // }, [])
 
-    const showSuccessRate = params.strategy === 'SWR'
+    const showSuccessRate = params.advanced.strategy === 'SWR'
     const yAxisDescriptionType = getYAxisDescriptionType(type)
     const hasPartner = tpawResult.args.params.people.withPartner
 
@@ -151,7 +151,7 @@ export const PlanChartMainCard = React.memo(
       if (type === prevState.data.type) {
         chart.setState(
           data,
-          { x: data.years.displayRange, y: prevState.xyRange.y },
+          { x: data.months.displayRange, y: prevState.xyRange.y },
           planChartNormalAnimation,
         )
       } else {
@@ -162,7 +162,7 @@ export const PlanChartMainCard = React.memo(
         )
         chart.setState(
           data,
-          { x: data.years.displayRange, y: data.yDisplayRange },
+          { x: data.months.displayRange, y: data.yDisplayRange },
           planChartMorphAnimation,
         )
       }
@@ -248,7 +248,7 @@ export const PlanChartMainCard = React.memo(
           starting={{
             data: chartMainData,
             xyRange: {
-              x: chartMainData.years.displayRange,
+              x: chartMainData.months.displayRange,
               y: chartMainData.yDisplayRange,
             },
             sizing: targetSizing.chart,
@@ -275,7 +275,7 @@ export const PlanChartMainCard = React.memo(
             {(transitionOut) => (
               <div className="-mt-4">
                 <Contentful.RichText
-                  body={planContent.chart.realBlurb[params.strategy]}
+                  body={planContent.chart.realBlurb[params.advanced.strategy]}
                   p={`p-base mt-4`}
                 />
               </div>
@@ -331,7 +331,8 @@ const _transformSizing = (
         right: cardPadding.right,
         top: 20, // 20 is needed for the max y label.
         bottom:
-          4 + // line at bottom of plotarea.
+          2 + // gap below plotArea.
+          4 + // line at bottom of plotArea.
           xAxisSizing.height +
           (hasPartner
             ? +3 * xAxisSizing.gap + xAxisSizing.height

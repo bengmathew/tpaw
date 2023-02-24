@@ -1,3 +1,4 @@
+import { noCase } from '@tpaw/common'
 import React from 'react'
 import { useSimulation } from '../../../App/WithSimulation'
 import {
@@ -14,12 +15,14 @@ export const PlanInputRisk = React.memo((props: PlanInputBodyPassThruProps) => {
   return (
     <PlanInputBody {...props}>
       <>
-        {params.strategy === 'TPAW' ? (
+        {params.advanced.strategy === 'TPAW' ? (
           <PlanInputRiskTPAW props={props} />
-        ) : params.strategy === 'SPAW' ? (
+        ) : params.advanced.strategy === 'SPAW' ? (
           <PlanInputRiskSPAW props={props} />
-        ) : (
+        ) : params.advanced.strategy === 'SWR' ? (
           <PlanInputRiskSWR props={props} />
+        ) : (
+          noCase(params.advanced.strategy)
         )}
       </>
     </PlanInputBody>

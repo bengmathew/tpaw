@@ -1,8 +1,8 @@
-import {PlanParamsProcessed} from '../PlanParamsProcessed'
-import {TPAWWorkerRunSimulationResult} from './TPAWWorkerTypes'
+import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
+import { TPAWWorkerRunSimulationResult } from './TPAWWorkerAPI'
 
-export type FirstYearSavingsPortfolioDetail = {
-  start: {balance: number}
+export type FirstMonthSavingsPortfolioDetail = {
+  start: { balance: number }
   contributions: {
     total: number
     toWithdrawal: number
@@ -20,29 +20,29 @@ export type FirstYearSavingsPortfolioDetail = {
     fromContributions: number
   }
   afterWithdrawals: {
-    allocation: {stocks: number}
+    allocation: { stocks: number }
     balance: number
   }
   contributionToOrWithdrawalFromSavingsPortfolio:
-    | {type: 'contribution'; contribution: number}
-    | {type: 'withdrawal'; withdrawal: number}
+    | { type: 'contribution'; contribution: number }
+    | { type: 'withdrawal'; withdrawal: number }
 }
 
-export const firstYearSavingsPortfolioDetail = (
-  byYearsFromNowByRun: TPAWWorkerRunSimulationResult['byYearsFromNowByRun']['savingsPortfolio'],
-  params: PlanParamsProcessed
-): FirstYearSavingsPortfolioDetail => {
+export const firstMonthSavingsPortfolioDetail = (
+  byMonthsFromNowByRun: TPAWWorkerRunSimulationResult['byMonthsFromNowByRun']['savingsPortfolio'],
+  params: PlanParamsProcessed,
+): FirstMonthSavingsPortfolioDetail => {
   const start = {
-    balance: byYearsFromNowByRun.start.balance[0][0],
+    balance: byMonthsFromNowByRun.start.balance[0][0],
   }
-  const contributionsTotal = params.byYear[0].futureSavingsAndRetirementIncome
+  const contributionsTotal = params.byMonth[0].futureSavingsAndRetirementIncome
   const afterContributions = {
     balance: start.balance + contributionsTotal,
   }
   const withdrawals = (() => {
-    const regular = byYearsFromNowByRun.withdrawals.regular[0][0]
-    const essential = byYearsFromNowByRun.withdrawals.essential[0][0]
-    const discretionary = byYearsFromNowByRun.withdrawals.discretionary[0][0]
+    const regular = byMonthsFromNowByRun.withdrawals.regular[0][0]
+    const essential = byMonthsFromNowByRun.withdrawals.essential[0][0]
+    const discretionary = byMonthsFromNowByRun.withdrawals.discretionary[0][0]
     const total = regular + essential + discretionary
 
     const fromContributions = Math.min(total, contributionsTotal)
@@ -65,7 +65,7 @@ export const firstYearSavingsPortfolioDetail = (
 
   const afterWithdrawals = {
     allocation: {
-      stocks: byYearsFromNowByRun.afterWithdrawals.allocation.stocks[0][0],
+      stocks: byMonthsFromNowByRun.afterWithdrawals.allocation.stocks[0][0],
     },
     balance: afterContributions.balance - withdrawals.total,
   }

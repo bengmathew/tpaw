@@ -1,5 +1,5 @@
 import { SimpleRange } from '../../Utils/SimpleRange'
-import { PlanParamsProcessed } from '../PlanParamsProcessed'
+import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 
 export type TPAWWorkerArgs =
   | {
@@ -9,9 +9,13 @@ export type TPAWWorkerArgs =
     }
   | { type: 'sort'; taskID: string; args: { data: Float64Array[] } }
   | {
-      type: 'calculateOneOverCV'
+      type: 'getSampledReturnStats'
       taskID: string
-      args: { data: Float64Array[] }
+      args: {
+        monthlyReturns: number[]
+        blockSize: number
+        numMonths: number
+      }
     }
   | { type: 'clearMemoizedRandom'; taskID: string }
 
@@ -20,7 +24,7 @@ export type TPAWWorkerResult =
       type: 'runSimulation'
       taskID: string
       result: {
-        byYearsFromNowByRun: {
+        byMonthsFromNowByRun: {
           savingsPortfolio: {
             start: { balance: Float64Array[] }
             withdrawals: {
@@ -41,8 +45,12 @@ export type TPAWWorkerResult =
           }
         }
         byRun: {
-          numInsufficientFundYears: Int32Array
+          numInsufficientFundMonths: Int32Array
           endingBalanceOfSavingsPortfolio: Float64Array
+        }
+        averageAnnualReturns: {
+          stocks: number
+          bonds: number
         }
         perf: [
           ['runs', number],
@@ -58,14 +66,31 @@ export type TPAWWorkerResult =
       result: { data: Float64Array[]; perf: number }
     }
   | {
-      type: 'calculateOneOverCV'
+      type: 'getSampledReturnStats'
       taskID: string
-      result: { data: Float64Array; perf: number }
+      result: {
+        oneYear:SampleReturnsStatsForWindowSize
+        fiveYear:SampleReturnsStatsForWindowSize
+        tenYear:SampleReturnsStatsForWindowSize
+        thirtyYear:SampleReturnsStatsForWindowSize
+        perf: number
+      }
     }
   | {
       type: 'clearMemoizedRandom'
       taskID: string
     }
+
+type SampleReturnsStatsForWindowSize = {
+  n: number
+  mean: number
+  ofLog: {
+    mean: number
+    variance: number
+    standardDeviation: number
+    n: number
+  }
+}
 
 export type TPAWWorkerRunSimulationResult = Extract<
   TPAWWorkerResult,
@@ -77,7 +102,7 @@ export type TPAWWorkerSortResult = Extract<
   { type: 'sort' }
 >['result']
 
-export type TPAWWorkerCalculateOneOverCVResult = Extract<
+export type TPAWWorkerCalculateSampledAnnualReturn = Extract<
   TPAWWorkerResult,
-  { type: 'calculateOneOverCV' }
+  { type: 'getSampledReturnStats' }
 >['result']

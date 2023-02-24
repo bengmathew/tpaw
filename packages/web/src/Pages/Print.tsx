@@ -1,10 +1,8 @@
 import { fGet } from '@tpaw/common'
 import React, { useLayoutEffect, useRef, useState } from 'react'
-import { newPadding, rectExt } from '../Utils/Geometry'
 import { useChartData } from './App/WithChartData'
 import { ChartReactStatefull } from './Common/Chart/ChartReact'
 import { TPAWChartDataMain } from './Plan/PlanChart/TPAWChart/TPAWChartDataMain'
-import { TPAWChartMain } from './Plan/PlanChart/TPAWChart/TPAWChartMain'
 
 export const Print = React.memo(
   ({ className = '' }: { className?: string }) => {
@@ -43,23 +41,7 @@ export const Print = React.memo(
         ref={setContainerDiv}
       >
         <h1 className="font-bold text-4xl"> TPAW</h1>
-        <div className="relative" style={{ height: '500px' }}>
-          <TPAWChartMain
-            ref={chartRef}
-            hidePointer
-            starting={{
-              data: chartMainData,
-              xyRange: {
-                x: chartMainData.years.displayRange,
-                y: chartMainData.yDisplayRange,
-              },
-              sizing: {
-                position: rectExt({ x: 10, y: 10, width, height: 500 }),
-                padding: newPadding({ horz: 10, vert: 10 }),
-              },
-            }}
-          />
-        </div>
+        <div className="relative" style={{ height: '500px' }}></div>
       </div>
     )
   },

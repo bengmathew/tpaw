@@ -2,13 +2,7 @@ import { faChevronRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
 import Link from 'next/link'
-import React, {
-  CSSProperties,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import React, { CSSProperties, useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { Contentful } from '../../../../Utils/Contentful'
 import {
@@ -17,11 +11,12 @@ import {
   rectExt,
   RectExt,
 } from '../../../../Utils/Geometry'
-import { assert, fGet, noCase } from '../../../../Utils/Utils'
+import { fGet, noCase } from '../../../../Utils/Utils'
 import { useChartData } from '../../../App/WithChartData'
 import { useSimulation } from '../../../App/WithSimulation'
 import { useWindowSize } from '../../../App/WithWindowSize'
 import { chartDrawDataLines } from '../../../Common/Chart/ChartComponent/ChartDrawDataLines'
+import { chartDrawDataRangeBand } from '../../../Common/Chart/ChartComponent/ChartDrawRangeBand'
 import {
   ChartReact,
   ChartReactStatefull,
@@ -302,47 +297,12 @@ const _Chart = React.memo(
       ref.current.setState(
         data,
         {
-          x: data.years.displayRange,
+          x: data.months.displayRange,
           y: data.yDisplayRange,
         },
         null,
       )
     }, [data, drawKey])
-
-    const components = useCallback(
-      () => [
-        chartDrawDataLines<TPAWChartDataMain>({
-          lineWidth: 0.5 * 0.8,
-          strokeStyle: isCurrent
-            ? ChartUtils.color.gray[400]
-            : ChartUtils.color.gray[400],
-          dataFn: (data: TPAWChartDataMain) => {
-            assert(data.series.type === 'percentiles')
-            return {
-              lines: data.series.percentiles
-                .filter((x) => !x.isHighlighted)
-                .map((x) => x.data),
-            }
-          },
-        }),
-
-        chartDrawDataLines<TPAWChartDataMain>({
-          lineWidth: 1.2 * 0.8,
-          strokeStyle: isCurrent
-            ? ChartUtils.color.gray[500]
-            : ChartUtils.color.gray[500],
-          dataFn: (data: TPAWChartDataMain) => {
-            assert(data.series.type === 'percentiles')
-            return {
-              lines: data.series.percentiles
-                .filter((x) => x.isHighlighted)
-                .map((x) => x.data),
-            }
-          },
-        }),
-      ],
-      [isCurrent],
-    )
 
     return (
       <ChartReact<TPAWChartDataMain>
@@ -350,7 +310,7 @@ const _Chart = React.memo(
         starting={{
           data,
           xyRange: {
-            x: data.years.displayRange,
+            x: data.months.displayRange,
             y: data.yDisplayRange,
           },
           sizing: startingSizing,
@@ -360,3 +320,25 @@ const _Chart = React.memo(
     )
   },
 )
+
+const components = () => [
+  // chartDrawDataRangeBand<TPAWChartDataMain>({
+  //   fillStyle: ChartUtils.color.withOpacity(ChartUtils.color.gray[400], 0.5),
+  //   dataFn: (data: TPAWChartDataMain) => ({
+  //     min: fGet(_.first(data.percentiles)).data,
+  //     max: fGet(_.last(data.percentiles)).data,
+  //   }),
+  // }),
+
+  chartDrawDataLines<TPAWChartDataMain>({
+    lineWidth: 1.2 * 0.8,
+    strokeStyle: ChartUtils.color.gray[500],
+    dataFn: (data: TPAWChartDataMain) => {
+      return {
+        lines: data.percentiles
+          .filter((x) => x.percentile === 50)
+          .map((x) => x.data),
+      }
+    },
+  }),
+]

@@ -1,10 +1,10 @@
-import { YearRange } from '@tpaw/common'
+import { MonthRange } from '@tpaw/common'
 import React, { useState } from 'react'
 import { Contentful } from '../../../Utils/Contentful'
 import { paddingCSS, paddingCSSStyleHorz } from '../../../Utils/Geometry'
 import { useURLUpdater } from '../../../Utils/UseURLUpdater'
 import { useSimulation } from '../../App/WithSimulation'
-import { EditValueForYearRange } from '../../Common/Inputs/EditValueForYearRange'
+import { EditValueForMonthRange } from '../../Common/Inputs/EditValueForMonthRange'
 import { usePlanContent } from '../Plan'
 import {
   isPlanChartSpendingDiscretionaryType,
@@ -14,7 +14,7 @@ import {
 } from '../PlanChart/PlanChartType'
 import { useGetPlanChartURL } from '../PlanChart/UseGetPlanChartURL'
 import { usePlanChartType } from '../PlanChart/UsePlanChartType'
-import { ByYearSchedule } from './Helpers/ByYearSchedule'
+import { ByMonthSchedule } from './Helpers/ByMonthSchedule'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
@@ -26,7 +26,7 @@ export const PlanInputExtraSpending = React.memo(
     const getPlanChartURL = useGetPlanChartURL()
     const chartType = usePlanChartType()
     const urlUpdater = useURLUpdater()
-    const { years, validYearRange, maxMaxAge, asYFN } = paramsExt
+    const { months, validMonthRangeAsMFN, maxMaxAge, asMFN } = paramsExt
     const content = usePlanContent()
     const [state, setState] = useState<
       | { type: 'main' }
@@ -34,26 +34,26 @@ export const PlanInputExtraSpending = React.memo(
           type: 'edit'
           isEssential: boolean
           isAdd: boolean
-          index: number
+          entryId: number
           hideInMain: boolean
         }
     >({ type: 'main' })
 
-    const allowableRange = validYearRange('extra-spending')
-    const defaultRange: YearRange = {
-      type: 'startAndNumYears',
+    const allowableRange = validMonthRangeAsMFN('extra-spending')
+    const defaultRange: MonthRange = {
+      type: 'startAndNumMonths',
       start:
         params.people.person1.ages.type === 'retired'
-          ? years.now
-          : years.person1.retirement,
-      numYears: Math.min(
-        5,
-        asYFN(maxMaxAge) + 1 - asYFN(years.person1.retirement),
+          ? months.now
+          : months.person1.retirement,
+      numMonths: Math.min(
+        5 * 12,
+        asMFN(maxMaxAge) + 1 - asMFN(months.person1.retirement),
       ),
     }
 
     const showDiscretionary =
-      params.strategy !== 'SWR' ||
+      params.advanced.strategy !== 'SWR' ||
       params.adjustmentsToSpending.extraSpending.discretionary.length > 0
 
     return (
@@ -66,10 +66,10 @@ export const PlanInputExtraSpending = React.memo(
             }}
           >
             <Contentful.RichText
-              body={content['extra-spending'].intro[params.strategy]}
+              body={content['extra-spending'].intro[params.advanced.strategy]}
               p="p-base"
             />
-            {showDiscretionary && params.strategy === 'SWR' && (
+            {showDiscretionary && params.advanced.strategy === 'SWR' && (
               <div className="p-base mt-2">
                 <span className="bg-gray-300 px-2 rounded-lg ">Note</span> You
                 have selected the SWR strategy. This strategy treats essential
@@ -85,32 +85,34 @@ export const PlanInputExtraSpending = React.memo(
               <h2 className="font-bold text-lg mb-2">Essential Expenses</h2>
             )}
             <Contentful.RichText
-              body={content['extra-spending'].essential[params.strategy]}
+              body={
+                content['extra-spending'].essential[params.advanced.strategy]
+              }
               p="p-base"
             />
-            <ByYearSchedule
+            <ByMonthSchedule
               className="mt-6"
               heading={null}
               addButtonText="Add an Essential Expense"
               entries={(params) =>
                 params.adjustmentsToSpending.extraSpending.essential
               }
-              hideEntry={
+              hideEntryId={
                 state.type === 'edit' && state.isEssential && state.hideInMain
-                  ? state.index
+                  ? state.entryId
                   : null
               }
-              allowableYearRange={allowableRange}
-              onEdit={(index, isAdd) =>
+              allowableMonthRange={allowableRange}
+              onEdit={(entryId, isAdd) =>
                 setState({
                   type: 'edit',
                   isEssential: true,
                   isAdd,
-                  index,
+                  entryId,
                   hideInMain: isAdd,
                 })
               }
-              defaultYearRange={defaultRange}
+              defaultMonthRange={defaultRange}
             />
           </div>
           {showDiscretionary && (
@@ -120,34 +122,38 @@ export const PlanInputExtraSpending = React.memo(
             >
               <h2 className="font-bold text-lg mb-2">Discretionary Expenses</h2>
               <Contentful.RichText
-                body={content['extra-spending'].discretionary[params.strategy]}
+                body={
+                  content['extra-spending'].discretionary[
+                    params.advanced.strategy
+                  ]
+                }
                 p="p-base"
               />
-              <ByYearSchedule
+              <ByMonthSchedule
                 className="mt-6"
                 heading={null}
                 addButtonText="Add a Discretionary Expense"
                 entries={(params) =>
                   params.adjustmentsToSpending.extraSpending.discretionary
                 }
-                hideEntry={
+                hideEntryId={
                   state.type === 'edit' &&
                   !state.isEssential &&
                   state.hideInMain
-                    ? state.index
+                    ? state.entryId
                     : null
                 }
-                allowableYearRange={allowableRange}
-                onEdit={(index, isAdd) =>
+                allowableMonthRange={allowableRange}
+                onEdit={(entryId, isAdd) =>
                   setState({
                     type: 'edit',
                     isEssential: false,
                     isAdd,
-                    index,
+                    entryId,
                     hideInMain: isAdd,
                   })
                 }
-                defaultYearRange={defaultRange}
+                defaultMonthRange={defaultRange}
               />
             </div>
           )}
@@ -156,7 +162,9 @@ export const PlanInputExtraSpending = React.memo(
           input:
             state.type === 'edit'
               ? (transitionOut) => (
-                  <EditValueForYearRange
+                  <EditValueForMonthRange
+                    hasMonthRange
+                    mode={state.isAdd ? 'add' : 'edit'}
                     title={
                       state.isAdd
                         ? `Add ${
@@ -199,28 +207,29 @@ export const PlanInputExtraSpending = React.memo(
                         }
                       }
                     }}
-                    entries={(params) =>
+                    getEntries={(params) =>
                       state.isEssential
                         ? params.adjustmentsToSpending.extraSpending.essential
                         : params.adjustmentsToSpending.extraSpending
                             .discretionary
                     }
-                    index={state.index}
-                    allowableRange={allowableRange}
+                    entryId={state.entryId}
+                    validRangeAsMFN={allowableRange}
                     choices={{
                       start: [
                         'now',
                         'retirement',
-                        'forNumOfYears',
+                        'forNumOfMonths',
                         'numericAge',
                       ],
                       end: [
                         'retirement',
                         'maxAge',
                         'numericAge',
-                        'forNumOfYears',
+                        'forNumOfMonths',
                       ],
                     }}
+                    cardPadding={props.sizing.cardPadding}
                   />
                 )
               : undefined,

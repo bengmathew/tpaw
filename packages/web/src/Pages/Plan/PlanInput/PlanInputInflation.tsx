@@ -5,18 +5,19 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   getDefaultPlanParams,
   MANUAL_INFLATION_VALUES,
+  noCase,
   PlanParams,
+  SUGGESTED_ANNUAL_INFLATION,
 } from '@tpaw/common'
 import _ from 'lodash'
 import React from 'react'
-import { processInflation } from '../../../TPAWSimulator/PlanParamsProcessed'
-import { Contentful } from '../../../Utils/Contentful'
 import { formatPercentage } from '../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../Utils/Geometry'
 import { useMarketData } from '../../App/WithMarketData'
 import { useSimulation } from '../../App/WithSimulation'
 import { SliderInput } from '../../Common/Inputs/SliderInput/SliderInput'
 import { usePlanContent } from '../Plan'
+import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
@@ -42,21 +43,31 @@ export const _InflationCard = React.memo(
   }) => {
     const { params, setParams } = useSimulation()
     const marketData = useMarketData()
-    const content = usePlanContent().inflation.intro[params.strategy]
+    const content = usePlanContent().inflation.intro[params.advanced.strategy]
 
-    const handleChange = (inflation: PlanParams['inflation']) => {
+    const handleChange = (
+      annualInflation: PlanParams['advanced']['annualInflation'],
+    ) => {
       setParams((params) => {
         const clone = _.cloneDeep(params)
-        clone.inflation = inflation
+        clone.advanced.annualInflation = annualInflation
         return clone
       })
     }
+
+    const defaultValue = getDefaultPlanParams().advanced.annualInflation
+    const isModified = !_.isEqual(defaultValue, params.advanced.annualInflation)
+
     return (
       <div
-        className={`${className} params-card`}
+        className={`${className} params-card relative`}
         style={{ padding: paddingCSS(props.sizing.cardPadding) }}
       >
-        <Contentful.RichText body={content} p="col-span-2 mb-2 p-base" />
+        <PlanInputModifiedBadge show={isModified} mainPage={false} />
+
+        <p className="mb-2 p-base mt-1">
+          {`Enter your estimate for the annual inflation rate. The "suggested" option will be automatically updated periodically based on new data.`}
+        </p>
 
         <button
           className={`${className} flex gap-x-2 mt-4`}
@@ -65,7 +76,7 @@ export const _InflationCard = React.memo(
           <FontAwesomeIcon
             className="mt-1"
             icon={
-              params.inflation.type === 'suggested'
+              params.advanced.annualInflation.type === 'suggested'
                 ? faCircleSelected
                 : faCircleRegular
             }
@@ -75,26 +86,32 @@ export const _InflationCard = React.memo(
               {inflationTypeLabel({ type: 'suggested' })}
             </h2>
             <h2 className="text-left text-sm lighten-2">
-              {formatPercentage(1)(
-                processInflation({ type: 'suggested' }, marketData),
-              )}
+              {formatPercentage(1)(SUGGESTED_ANNUAL_INFLATION(marketData))}
             </h2>
           </div>
         </button>
 
         <button
           className={`${className} flex gap-x-2 mt-3`}
-          onClick={() =>
-            handleChange({
-              type: 'manual',
-              value: processInflation(params.inflation, marketData),
-            })
-          }
+          onClick={() => {
+            switch (params.advanced.annualInflation.type) {
+              case 'suggested':
+                handleChange({
+                  type: 'manual',
+                  value: SUGGESTED_ANNUAL_INFLATION(marketData),
+                })
+                break
+              case 'manual':
+                return
+              default:
+                noCase(params.advanced.annualInflation)
+            }
+          }}
         >
           <FontAwesomeIcon
             className="mt-1"
             icon={
-              params.inflation.type === 'manual'
+              params.advanced.annualInflation.type === 'manual'
                 ? faCircleSelected
                 : faCircleRegular
             }
@@ -105,14 +122,14 @@ export const _InflationCard = React.memo(
             </h2>
           </div>
         </button>
-        {params.inflation.type === 'manual' && (
+        {params.advanced.annualInflation.type === 'manual' && (
           <SliderInput
             className=""
             height={60}
             maxOverflowHorz={props.sizing.cardPadding}
             format={formatPercentage(1)}
             data={MANUAL_INFLATION_VALUES}
-            value={params.inflation.value}
+            value={params.advanced.annualInflation.value}
             onChange={(value) => handleChange({ type: 'manual', value })}
             ticks={(value, i) =>
               i % 10 === 0
@@ -124,8 +141,9 @@ export const _InflationCard = React.memo(
           />
         )}
         <button
-          className="mt-6 underline"
-          onClick={() => handleChange(getDefaultPlanParams().inflation)}
+          className="mt-6 underline disabled:lighten-2"
+          onClick={() => handleChange(defaultValue)}
+          disabled={!isModified}
         >
           Reset to Default
         </button>
@@ -137,7 +155,7 @@ export const _InflationCard = React.memo(
 export const inflationTypeLabel = ({
   type,
 }: {
-  type: PlanParams['inflation']['type']
+  type: PlanParams['advanced']['annualInflation']['type']
 }) => {
   switch (type) {
     case 'suggested':

@@ -46,9 +46,6 @@ export type PlanContent = {
   inflation: _IntroAndGuide
   simulation: {
     guide: _FetchedInline
-    introSampling: _FetchedInline
-    introSamplingMonteCarlo: _FetchedInline
-    introSamplingHistorical: _FetchedInline
   }
   dev: { guide: _FetchedInline }
   misc: {
@@ -155,9 +152,6 @@ export const planGetStaticProps: GetStaticProps<PlanStaticProps> = async (
         },
         simulation: {
           guide: '5alyO5geIHnQsw8ZMpbyf5',
-          introSampling: '6EwnBJaN5FYISgyPdSQe7U',
-          introSamplingMonteCarlo: '4ysOynT6PPgYFnY1BaLuy5',
-          introSamplingHistorical: '19JANDD3uLnVdh52HBMj6U',
         },
         misc: {
           realDollarExplanation: '3Xp6QN75C8mEljylz013Ek',

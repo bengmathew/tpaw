@@ -3,6 +3,7 @@ import React, {
   ReactNode,
   useEffect,
   useLayoutEffect,
+  useRef,
   useState,
 } from 'react'
 import { newPaddingHorz, paddingCSSStyleHorz } from '../../../../Utils/Geometry'
@@ -21,10 +22,12 @@ export const PlanInputBodyMobile = React.memo(
     type,
     children,
     customGuideIntro,
+    onBackgroundClick,
   }: {
     sizing: PlanInputSizing['fixed']
     type: PlanInputType
     customGuideIntro?: ReactNode
+    onBackgroundClick?: () => void
     children: {
       content: ReactElement
       error?: ReactElement
@@ -37,6 +40,7 @@ export const PlanInputBodyMobile = React.memo(
         ? sizing.dialogMode
         : sizing.notDialogMode
 
+    const outerRef = useRef<HTMLDivElement>(null)
     const [showInput, setShowInput] = useState(false)
     const [showError, setShowError] = useState(false)
     const hasInput = children.input !== undefined
@@ -51,13 +55,21 @@ export const PlanInputBodyMobile = React.memo(
     return (
       <div className="absolute inset-0 overflow-y-scroll">
         <div
+          ref={outerRef}
           className=""
           style={{
             ...paddingCSSStyleHorz(newPaddingHorz(padding)),
             paddingTop: `${padding.top}px`,
           }}
+          onClick={(e) => {
+            if (e.target === outerRef.current) onBackgroundClick?.()
+          }}
         >
-          <PlanInputBodyHeader className="mb-6 z-10" type={type} />
+          <PlanInputBodyHeader
+            className="mb-6 z-10"
+            type={type}
+            onBackgroundClick={onBackgroundClick}
+          />
           <div className="mb-20">
             {guideContent && (
               <PlanInputBodyGuide
@@ -80,7 +92,7 @@ export const PlanInputBodyMobile = React.memo(
           )}
         </div>
         {showInput && (
-          <ModalBase>
+          <ModalBase maxHeight='90vh'>
             {(transitionOut) => (
               <div className="px-2 pb-4">
                 {fGet(children.input)((onDone) =>

@@ -33,7 +33,11 @@ export const PlanInputCurrentPortfolioBalance = React.memo(
             style={{ padding: paddingCSS(props.sizing.cardPadding) }}
           >
             <Contentful.RichText
-              body={content['current-portfolio-balance'].intro[params.strategy]}
+              body={
+                content['current-portfolio-balance'].intro[
+                  params.advanced.strategy
+                ]
+              }
               p="p-base"
             />
             <div className="mt-4 flex">

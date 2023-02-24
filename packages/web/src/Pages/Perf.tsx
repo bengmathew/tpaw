@@ -1,17 +1,17 @@
 import _ from 'lodash'
 import React, { useEffect, useRef, useState } from 'react'
 import { extendPlanParams } from '../TPAWSimulator/PlanParamsExt'
-import { processPlanParams } from '../TPAWSimulator/PlanParamsProcessed'
+import { processPlanParams } from '../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import { TPAWRunInWorker } from '../TPAWSimulator/Worker/TPAWRunInWorker'
 import { fGet } from '../Utils/Utils'
 import { AppPage } from './App/AppPage'
 import { useMarketData } from './App/WithMarketData'
-
-const numRuns = 500
-const highlightPercentiles = [5, 25, 50, 75, 95]
-const percentiles = _.sortBy(_.union(_.range(5, 95, 2), highlightPercentiles))
+import { AmountInput } from './Common/Inputs/AmountInput'
 
 export const Perf = React.memo(() => {
+  const [numRuns, setNumRuns] = useState(500)
+  const [numPercentiles, setNumPercentiles] = useState(3)
+  const percentiles = _.times(numPercentiles, (i) => i + 1)
   const marketData = useMarketData()
   const workerRef = useRef<TPAWRunInWorker | null>(null)
   useEffect(() => {
@@ -36,7 +36,6 @@ export const Perf = React.memo(() => {
               numRuns,
               processPlanParams(params, marketData),
               percentiles,
-              marketData,
             )
 
             const toLine = ([label, amount]: [string, number]) =>
@@ -65,6 +64,26 @@ export const Perf = React.memo(() => {
         >
           Test Performance
         </button>
+        <div className="flex items-center justify-center">
+          <h2 className=""># Runs: </h2>
+          <AmountInput
+            className="text-input mt-2"
+            value={numRuns}
+            onChange={setNumRuns}
+            decimals={0}
+            modalLabel="Number of Simulations"
+          />
+        </div>
+        <div className="flex items-center justify-center">
+          <h2 className=""># Percentiles:</h2>
+          <AmountInput
+            className="text-input mt-2"
+            value={numPercentiles}
+            onChange={setNumPercentiles}
+            decimals={0}
+            modalLabel="Number of Simulations"
+          />
+        </div>
         <div className="grid" style={{ grid: 'auto / auto' }}>
           {result.map((line, i) => {
             const cols = line.split(':')
@@ -87,16 +106,19 @@ export const Perf = React.memo(() => {
 })
 
 const params = extendPlanParams({
-  v: 18,
+  v: 19,
   warnedAbout14to15Converstion: true,
   warnedAbout16to17Converstion: true,
-  strategy: 'TPAW',
   dialogPosition: 'done',
   people: {
     withPartner: false,
     person1: {
-      displayName: null,
-      ages: { type: 'notRetired', current: 35, retirement: 65, max: 100 },
+      ages: {
+        type: 'notRetired',
+        currentMonth: 35 * 12,
+        retirementMonth: 65 * 12,
+        maxMonth: 100 * 12,
+      },
     },
   },
   wealth: {
@@ -106,8 +128,8 @@ const params = extendPlanParams({
   },
   adjustmentsToSpending: {
     tpawAndSPAW: {
-      spendingCeiling: null,
-      spendingFloor: null,
+      monthlySpendingCeiling: null,
+      monthlySpendingFloor: null,
       legacy: {
         total: 0,
         external: [],
@@ -126,12 +148,12 @@ const params = extendPlanParams({
         forLegacyAsDeltaFromAt20: 2,
       },
       timePreference: 0,
-      additionalSpendingTilt: 0,
+      additionalAnnualSpendingTilt: 0,
     },
     tpawAndSPAW: {
       lmp: 0,
     },
-    spaw: { spendingTilt: 0.01 },
+    spaw: { annualSpendingTilt: 0.01 },
     spawAndSWR: {
       allocation: {
         start: { stocks: 0.5 },
@@ -144,13 +166,21 @@ const params = extendPlanParams({
     },
   },
 
-  returns: {
-    expected: { type: 'suggested' },
-    historical: { type: 'default', adjust: { type: 'toExpected' } },
+  advanced: {
+    annualReturns: {
+      expected: { type: 'suggested' },
+      historical: {
+        type: 'adjusted',
+        adjustment: { type: 'toExpected' },
+        correctForBlockSampling: true,
+      },
+    },
+    annualInflation: { type: 'suggested' },
+    sampling: 'monteCarlo',
+    samplingBlockSizeForMonteCarlo: 12 * 5,
+    strategy: 'TPAW',
   },
-  inflation: { type: 'suggested' },
-  sampling: 'monteCarlo',
-  display: {
-    alwaysShowAllYears: false,
+  dev: {
+    alwaysShowAllMonths: false,
   },
 })

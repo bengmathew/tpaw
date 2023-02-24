@@ -1,30 +1,60 @@
 import { faCircle } from '@fortawesome/pro-light-svg-icons'
 import { faCircle as faCircleSolid } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { RadioGroup } from '@headlessui/react'
+import { getDefaultPlanParams, MAX_AGE_IN_MONTHS } from '@tpaw/common'
 import _ from 'lodash'
-import React from 'react'
-import { getDefaultPlanParams } from '@tpaw/common'
-import { Contentful } from '../../../Utils/Contentful'
-import { paddingCSSStyle } from '../../../Utils/Geometry'
+import React, { useMemo } from 'react'
+import { paddingCSSStyle, paddingCSSStyleHorz } from '../../../Utils/Geometry'
 import { useSimulation } from '../../App/WithSimulation'
-import { usePlanContent } from '../Plan'
+import { NumMonthsInput } from '../../Common/Inputs/NumMonthsInput'
+import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
   PlanInputBody,
-  PlanInputBodyPassThruProps
+  PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 export const PlanInputSimulation = React.memo(
   (props: PlanInputBodyPassThruProps) => {
+    const { params, setParams } = useSimulation()
+
     return (
       <PlanInputBody {...props}>
-        <_SamplingCard className="" props={props} />
+        <>
+          <p
+            className="p-base"
+            style={{
+              ...paddingCSSStyleHorz(props.sizing.cardPadding, { scale: 0.5 }),
+            }}
+          >
+            How should we pick sequences of returns for the simulations?
+          </p>
+          <_MonteCarloCard className="mt-8" props={props} />
+          <_HistoricalCard className="mt-8" props={props} />
+          <button
+            className="mt-8 underline"
+            onClick={() => {
+              setParams((params) => {
+                const clone = _.cloneDeep(params)
+                const defaultParams = getDefaultPlanParams()
+                clone.advanced.sampling = defaultParams.advanced.sampling
+                clone.advanced.samplingBlockSizeForMonteCarlo =
+                  defaultParams.advanced.samplingBlockSizeForMonteCarlo
+                return clone
+              })
+            }}
+            style={{
+              ...paddingCSSStyleHorz(props.sizing.cardPadding, { scale: 0.5 }),
+            }}
+          >
+            Reset to Default
+          </button>
+        </>
       </PlanInputBody>
     )
-  }
+  },
 )
 
-const _SamplingCard = React.memo(
+const _MonteCarloCard = React.memo(
   ({
     className = '',
     props,
@@ -32,82 +62,138 @@ const _SamplingCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const {params, setParams} = useSimulation()
-    const content = usePlanContent().simulation
-    const handleChange = (x: 'monteCarlo' | 'historical') =>
-      setParams(params => {
+    const { params, setParams } = useSimulation()
+    const defaultNumBlocks = useMemo(
+      () => getDefaultPlanParams().advanced.samplingBlockSizeForMonteCarlo,
+      [],
+    )
+    const isEnabled = params.advanced.sampling === 'monteCarlo'
+    const handleBlockSize = (x: number) => {
+      setParams((params) => {
         const clone = _.cloneDeep(params)
-        clone.sampling = x
+        clone.advanced.samplingBlockSizeForMonteCarlo = x
         return clone
       })
-    return (
-      <div
-        className={`${className} params-card`}
-        style={{...paddingCSSStyle(props.sizing.cardPadding)}}
-      >
-        <div className="mt-2">
-          <Contentful.RichText
-            body={content.introSampling[params.strategy]}
-            p="col-span-2 mb-2 p-base"
+    }
+    const body = (
+      <div className="">
+        <PlanInputModifiedBadge
+          show={
+            isEnabled &&
+            params.advanced.samplingBlockSizeForMonteCarlo !== defaultNumBlocks
+          }
+          mainPage={false}
+        />
+        <div className="flex items-start gap-x-2 py-0.5 font-bold text-lg">
+          <FontAwesomeIcon
+            className="mt-1"
+            icon={isEnabled ? faCircleSolid : faCircle}
           />
+          <h2 className="">Monte Carlo Sequence</h2>
         </div>
-        <RadioGroup<'div', 'monteCarlo' | 'historical'>
-          value={params.sampling}
-          onChange={handleChange}
-        >
-          <div className="mt-4">
-            <RadioGroup.Option<'div', 'monteCarlo' | 'historical'>
-              value={'monteCarlo'}
-              className="cursor-pointer"
-            >
-              {({checked}) => (
-                <>
-                  <div className="flex items-start gap-x-2 py-0.5 ">
-                    <FontAwesomeIcon
-                      className="mt-1"
-                      icon={checked ? faCircleSolid : faCircle}
-                    />
-                    <RadioGroup.Description as="h2" className={`font-medium`}>
-                      Monte Carlo sequence
-                    </RadioGroup.Description>
-                  </div>
-                  <Contentful.RichText
-                    body={content.introSamplingMonteCarlo[params.strategy]}
-                    p="col-span-2 ml-6 p-base"
-                  />
-                </>
-              )}
-            </RadioGroup.Option>
-            <RadioGroup.Option<'div', 'monteCarlo' | 'historical'>
-              value={'historical'}
-              className="cursor-pointer mt-4"
-            >
-              {({checked}) => (
-                <>
-                  <div className="flex items-center gap-x-2 ">
-                    <FontAwesomeIcon
-                      icon={checked ? faCircleSolid : faCircle}
-                    />
-                    <RadioGroup.Description as="h2" className={`font-medium `}>
-                      Historical sequence
-                    </RadioGroup.Description>
-                  </div>
-                  <Contentful.RichText
-                    body={content.introSamplingHistorical[params.strategy]}
-                    p="col-span-2 ml-6 p-base"
-                  />
-                </>
-              )}
-            </RadioGroup.Option>
-          </div>
-        </RadioGroup>
-        <button
-          className="mt-6 underline"
-          onClick={() => handleChange(getDefaultPlanParams().sampling)}
-        >
-          Reset to Default
-        </button>
+        <p className="mt-2 p-base">
+          Construct sequences by randomly drawing returns from the historical
+          data.
+        </p>
+        <div className={`${isEnabled ? '' : 'lighten-2'} mt-2`}>
+          <h2 className="p-base mb-2">Pick returns in blocks of:</h2>
+          <NumMonthsInput
+            className={` ml-8`}
+            modalLabel="Sampling Block Size"
+            value={params.advanced.samplingBlockSizeForMonteCarlo}
+            onChange={handleBlockSize}
+            range={{ start: 1, end: MAX_AGE_IN_MONTHS }}
+            disabled={!isEnabled}
+          />
+          <button
+            className="mt-4 underline disabled:lighten-2"
+            disabled={
+              params.advanced.samplingBlockSizeForMonteCarlo ===
+              defaultNumBlocks
+            }
+            onClick={() => {
+              handleBlockSize(defaultNumBlocks)
+            }}
+          >
+            Reset to Default
+          </button>
+        </div>
       </div>
     )
-  }
+
+    return isEnabled ? (
+      <div
+        className={`${className} params-card relative`}
+        style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
+      >
+        {body}
+      </div>
+    ) : (
+      <button
+        className={`${className} params-card w-full text-start relative`}
+        style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
+        onClick={() => {
+          setParams((params) => {
+            const clone = _.cloneDeep(params)
+            clone.advanced.sampling = 'monteCarlo'
+            return clone
+          })
+        }}
+      >
+        {body}
+      </button>
+    )
+  },
+)
+
+const _HistoricalCard = React.memo(
+  ({
+    className = '',
+    props,
+  }: {
+    className?: string
+    props: PlanInputBodyPassThruProps
+  }) => {
+    const { params, setParams } = useSimulation()
+
+    const isEnabled = params.advanced.sampling === 'historical'
+    const body = (
+      <div className="">
+        <PlanInputModifiedBadge show={isEnabled} mainPage={false} />
+        <div className="flex items-start gap-x-2 py-0.5 font-bold text-lg">
+          <FontAwesomeIcon
+            className="mt-1"
+            icon={isEnabled ? faCircleSolid : faCircle}
+          />
+          <h2 className="">Historical Sequence</h2>
+        </div>
+        <p className="p-base mt-2">
+          Use only actual sequences from the historical data.
+        </p>
+      </div>
+    )
+
+    return isEnabled ? (
+      <div
+        className={`${className} params-card relative`}
+        style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
+      >
+        {body}
+      </div>
+    ) : (
+      <button
+        className={`${className} params-card w-full text-start relative`}
+        style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
+        onClick={() => {
+          setParams((params) => {
+            const clone = _.cloneDeep(params)
+            clone.advanced.sampling = 'historical'
+            return clone
+          })
+        }}
+      >
+        {body}
+      </button>
+    )
+  },
 )

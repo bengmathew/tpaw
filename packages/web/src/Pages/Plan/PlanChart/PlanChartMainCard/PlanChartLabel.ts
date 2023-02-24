@@ -36,7 +36,7 @@ export const planChartLabel = (
     default:
       const { essential, discretionary } =
         params.adjustmentsToSpending.extraSpending
-      const showLabel = params.strategy !== 'SWR'
+      const showLabel = params.advanced.strategy !== 'SWR'
       if (isPlanChartSpendingEssentialType(panelType)) {
         const id = planChartSpendingEssentialTypeID(panelType)
         const index = essential.findIndex((x) => x.id === id)

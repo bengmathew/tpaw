@@ -38,8 +38,13 @@ const query = graphql`
   }
 `
 
-import { noCase, PlanParams } from '@tpaw/common'
-import { useMarketData } from '../App/WithMarketData'
+import {
+  getLogReturns,
+  getStats,
+  historicalReturns,
+  noCase,
+  PlanParams,
+} from '@tpaw/common'
 import { ConfirmAlert } from '../Common/Modal/ConfirmAlert'
 import { WithUser } from '../QueryFragments/UserFragment'
 import { PlanChart } from './PlanChart/PlanChart'
@@ -59,7 +64,7 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
   const simulation = useSimulation()
   const { params, setParams } = simulation
 
-  const isSWR = params.strategy === 'SWR'
+  const isSWR = params.advanced.strategy === 'SWR'
   const windowSize = useWindowSize()
   const aspectRatio = windowSize.width / windowSize.height
   const layout =
@@ -185,8 +190,8 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
 
 function usePlanState() {
   const { params, setParams, paramsExt } = useSimulation()
-  const { asYFN, withdrawalStartYear } = paramsExt
-  const withdrawalStartYearAYFN = asYFN(withdrawalStartYear)
+  const { asMFN, withdrawalStartMonth } = paramsExt
+  const withdrawalStartMonthAMFN = asMFN(withdrawalStartMonth)
 
   const urlSection = useURLSection()
 
@@ -206,11 +211,11 @@ function usePlanState() {
         prev.section === prev.dialogPosition
           ? nextPlanSectionDialogPosition(
               prev.dialogPosition,
-              withdrawalStartYearAYFN,
+              withdrawalStartMonthAMFN,
             )
           : prev.dialogPosition,
     }))
-    // ignore withdrawalStartYearAYFN
+    // ignore withdrawalStartMonthAMFN
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlSection])
 

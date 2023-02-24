@@ -43,43 +43,85 @@ impl AccountForWithdrawal {
     }
 }
 
+struct Store {
+    data: Vec<Vec<usize>>,
+    max_num_months: usize,
+    block_size: usize,
+    max_value: usize,
+}
+
 lazy_static! {
-    static ref RANDOM_STORE: Mutex<Vec<Vec<usize>>> = Mutex::new(Vec::new());
+    static ref RANDOM_STORE: Mutex<Store> = Mutex::new(Store {
+        data: Vec::new(),
+        max_num_months: 0,
+        block_size: 0,
+        max_value: 0,
+    });
 }
 
 pub fn clear_memoized_random_store() {
     let mut store = RANDOM_STORE.lock().unwrap();
-    store.clear()
+    store.data.clear()
 }
 
 use rand::distributions::{Distribution, Uniform};
 
+pub fn generate_random_index_sequences(
+    num_sequences: usize,
+    max_num_months: usize,
+    block_size: usize,
+    max_value: usize,
+) -> Vec<Vec<usize>> {
+    let uniform = Uniform::from(0..(max_value));
+    let mut rng = rand::thread_rng();
+    let num_blocks = max_num_months / block_size + 1 + 1; // Extra +1 to account for staggering.
+
+    return (0..num_sequences)
+        .map(|run_index| {
+            let block_starting_month: Vec<usize> =
+                uniform.sample_iter(&mut rng).take(num_blocks).collect();
+            return (0..max_num_months)
+                .map(|i| {
+                    // Staggering the i's so that block don't change at the same month
+                    // accross different runs.
+                    let staggered_i = i + (run_index % block_size);
+                    let block_index = staggered_i / block_size;
+                    (block_starting_month[block_index] + staggered_i % block_size) % max_value
+                })
+                .collect();
+        })
+        .collect();
+}
+
 pub fn memoized_random(
     num_runs: usize,
-    num_years: usize,
+    max_num_months: usize,
+    block_size: usize,
     max_value: usize,
-    run_index: usize,
-) -> &'static Vec<usize> {
-    let mut rng = rand::thread_rng();
-    let uniform = Uniform::from(0..max_value);
+) -> &'static Vec<Vec<usize>> {
     let mut store = RANDOM_STORE.lock().unwrap();
-    if store.len() < num_runs {
-        store.clear();
-        let mut tail = (0..num_runs)
-            .map(|_| uniform.sample_iter(&mut rng).take(num_years).collect())
-            .collect();
-        store.append(&mut tail);
-    } else if store[0].len() < num_years {
-        let shortfall = num_years - store[0].len();
-        store.iter_mut().for_each(|x| {
-            let mut tail = uniform.sample_iter(&mut rng).take(shortfall).collect();
-            x.append(&mut tail);
-        })
+
+    if store.data.len() < num_runs
+        || store.block_size != block_size
+        || store.max_num_months != max_num_months
+        || store.max_value != max_value
+    {
+        store.max_num_months = max_num_months;
+        store.max_value = max_value;
+        store.block_size = block_size;
+        store.data.clear();
+
+        let mut tail =
+            generate_random_index_sequences(num_runs, max_num_months, block_size, max_value);
+
+        // web_sys::console::log_1(&wasm_bindgen::JsValue::from_serde(&(&tail)).unwrap());
+        store.data.append(&mut tail);
     }
 
-    let result = &store[run_index];
-    unsafe { std::mem::transmute(result) }
+    // let result = &store.data[run_index];
+    unsafe { std::mem::transmute(&store.data) }
 }
+
 
 #[wasm_bindgen]
 #[derive(Copy, Clone, Serialize, Deserialize)]
@@ -89,9 +131,9 @@ pub struct Stats {
     pub standard_deviation: f64,
     pub n: usize,
 }
-pub fn stats(data: Box<[f64]>) -> Stats {
+pub fn get_stats(data: &Vec<f64>) -> Stats {
     let n = data.len();
-    let mean = data.iter().sum::<f64>() / n as f64;
+    let mean = get_mean(&data);
     let variance = data
         .iter()
         .map(|value| {
@@ -106,5 +148,43 @@ pub fn stats(data: Box<[f64]>) -> Stats {
         variance,
         standard_deviation,
         n,
+    };
+}
+pub fn get_mean(data: &Vec<f64>) -> f64 {
+    data.iter().sum::<f64>() / (data.len() as f64)
+}
+
+pub fn get_log_returns(returns: &Vec<f64>) -> Vec<f64> {
+    returns.iter().map(|x| (1.0 + x).ln()).collect()
+}
+
+#[wasm_bindgen]
+#[derive(Copy, Clone, Serialize, Deserialize)]
+pub struct StatsForWindowSize {
+    pub n: usize,
+    pub mean: f64,
+    pub of_log: Stats,
+}
+
+pub fn get_stats_for_window_size_from_log_returns(
+    ln_returns: &Vec<f64>,
+    window_size: usize,
+) -> StatsForWindowSize {
+    let mut prev = 0.0;
+    let mut prev_gross = ln_returns[0..(window_size - 1)].iter().sum::<f64>();
+    let n = ln_returns.len() - window_size - 1;
+    let gross: Vec<f64> = ln_returns[0..n]
+        .iter()
+        .enumerate()
+        .map(|(i, curr)| {
+            prev_gross = prev_gross - prev + ln_returns[i + window_size - 1];
+            prev = *curr;
+            return prev_gross;
+        })
+        .collect();
+    return StatsForWindowSize {
+        n: gross.len(),
+        mean: get_mean(&gross.iter().map(|x| x.exp() - 1.0).collect()),
+        of_log: get_stats(&gross),
     };
 }

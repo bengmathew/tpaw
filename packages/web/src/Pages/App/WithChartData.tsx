@@ -3,7 +3,7 @@ import { createContext } from '../../Utils/CreateContext'
 import { PlanChartType } from '../Plan/PlanChart/PlanChartType'
 import {
   TPAWChartDataMain,
-  tpawChartDataMainPercentiles,
+  tpawChartDataMain,
 } from '../Plan/PlanChart/TPAWChart/TPAWChartDataMain'
 import { useSimulation } from './WithSimulation'
 
@@ -17,7 +17,7 @@ export { useChartData }
 
 export const WithChartData = ({ children }: { children: ReactNode }) => {
   const simulation = useSimulation()
-  const { tpawResult, highlightPercentiles } = simulation
+  const { tpawResult } = simulation
   const value = useMemo(() => {
     const { params } = tpawResult.args
     const byYearsFromNowPercentiles = new Map<
@@ -25,10 +25,7 @@ export const WithChartData = ({ children }: { children: ReactNode }) => {
       TPAWChartDataMain
     >()
     const _add = (type: PlanChartType) => {
-      byYearsFromNowPercentiles.set(
-        type,
-        tpawChartDataMainPercentiles(type, tpawResult, highlightPercentiles),
-      )
+      byYearsFromNowPercentiles.set(type, tpawChartDataMain(type, tpawResult))
     }
 
     _add('spending-total')
@@ -45,7 +42,7 @@ export const WithChartData = ({ children }: { children: ReactNode }) => {
     _add('withdrawal')
 
     return { byYearsFromNowPercentiles }
-  }, [highlightPercentiles, tpawResult])
+  }, [tpawResult])
 
   return <Context.Provider value={value}>{children}</Context.Provider>
 }

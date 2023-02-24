@@ -2,9 +2,7 @@ import React from 'react'
 import {
   insetCSSStyle,
   InsetExt,
-  newPadding,
   paddingCSSStyle,
-  rectExt,
 } from '../../../../Utils/Geometry'
 import { PlanSectionName } from '../../PlanInput/Helpers/PlanSectionName'
 import { PlanChartSizing } from '../PlanChart'
@@ -31,11 +29,16 @@ export const PlanChartSidePanel = React.memo(
       <div
         className="absolute overflow-hidden"
         style={{
-          transitionProperty: 'right, bottom, top, left',
+          transitionProperty: 'right, top, width, height',
           transitionDuration: `${duration}ms`,
           // Don't use transform: translate(x, y) here because right edge
           // movement is not linear.
-          ...insetCSSStyle(targetDynamicSizing.inset),
+          right: `${targetDynamicSizing.inset.right}px`,
+          top: `${targetDynamicSizing.inset.top}px`,
+          // Use width and height and not left and bottom to
+          // keep size constant through transition.
+          width: `${targetDynamicSizing.inset.width}px`,
+          height: `${targetDynamicSizing.inset.height}px`,
         }}
       >
         <PlanChartSidePanelLegacyCard

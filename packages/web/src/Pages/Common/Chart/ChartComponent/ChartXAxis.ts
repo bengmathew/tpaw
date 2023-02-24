@@ -6,7 +6,7 @@ import { ChartContext } from '../ChartContext'
 import { ChartUtils } from '../ChartUtils/ChartUtils'
 import { ChartComponent } from './ChartComponent'
 
-export type ChartXAxisTickType = 'large' | 'medium' | 'small'
+export type ChartXAxisTickType = 'large' | 'medium' | 'small' | 'none'
 export type ChartXAxisTickStyle = {
   length: number
   gap: number
@@ -16,7 +16,7 @@ export type ChartXAxisTickStyle = {
 
 export type ChartXAxisOpts = {
   type: (transformedDataX: number) => ChartXAxisTickType
-  tickStyle: (type: ChartXAxisTickType) => ChartXAxisTickStyle
+  tickStyle: (type: Exclude<ChartXAxisTickType, 'none'>) => ChartXAxisTickStyle
   padding: Padding
   style: {
     background: { retired: string; notRetired: string }
@@ -32,7 +32,7 @@ export type ChartXAxisOpts = {
   yOffset: number
   shouldLabel: (
     pixelsPerTick: number,
-    type: 'large' | 'medium' | 'small',
+    type: Exclude<ChartXAxisTickType, 'none'>,
   ) => boolean
   visible: boolean
   maxDataX: number
@@ -66,7 +66,7 @@ export class ChartXAxis<Data> implements ChartComponent<Data> {
       style,
       label,
       height,
-      tickStyle,
+      type: getType,
       labelStyle,
     } = opts
     if (!visible) return
@@ -164,43 +164,45 @@ export class ChartXAxis<Data> implements ChartComponent<Data> {
         { start: pixelRight - 25, end: pixelRight },
       ]
       dataXs.forEach((dataX) => {
-        canvasContext.save()
         _drawTick(
           dataX,
-          'normal',
           noLabelPixelZones,
-          'center',
-          false, // forceDraw
+          null, // special
           chartContext,
           opts,
         )
-        canvasContext.restore()
       })
     }
     // ---- MIN/MAX ----
     {
-      const _draw = (dataX: number, align: 'left' | 'right' | 'center') =>
+      const _draw = (dataX: number, asDataX?: number) =>
         _drawTick(
           dataX,
-          'normal',
           [],
-          align,
-          true, // forceDraw
+          { forceLabel: true, asDataX: asDataX ?? null },
           chartContext,
           opts,
         )
-      _draw(fGet(_.first(dataXs)), 'left')
-      _draw(fGet(_.last(dataXs)), 'right')
+
+      const findFirstTick = (dataX: number): number =>
+        getType(opts.dataXTransform(dataX)) !== 'none'
+          ? dataX
+          : findFirstTick(dataX - 1)
+      let firstPhantomTick = findFirstTick(dataXs[0])
+      _draw(dataXs[0], firstPhantomTick)
+
+      const lastVisibleTick = _.reverse([...dataXs]).find(
+        (x) => getType(opts.dataXTransform(x)) !== 'none',
+      )
+      if (lastVisibleTick !== undefined) _draw(lastVisibleTick)
     }
   }
 }
 
 function _drawTick<Data>(
   dataX: number,
-  reason: 'normal' | 'pointer' | 'mark',
   noLabelPixelZones: SimpleRange[],
-  textAlign: 'center' | 'right' | 'left',
-  forceDraw: boolean,
+  special: { forceLabel: boolean; asDataX: number | null } | null,
   { derivedState, canvasContext }: ChartContext<Data>,
   {
     dataXTransform,
@@ -214,18 +216,19 @@ function _drawTick<Data>(
   }: ChartXAxisOpts,
 ) {
   if (dataX > maxDataX) return
-  const transformedDataX = dataXTransform(dataX)
+  const transformedDataX = dataXTransform(special?.asDataX ?? dataX)
   const { scale, plotArea } = derivedState.curr
   const label = formatLabel(transformedDataX)
   const type = getType(transformedDataX)
-  let { length, color, font, gap } = tickStyle(type)
-  if (reason === 'pointer') color = ChartUtils.color.gray[100]
+  if (type === 'none') return
+  const { length, color, font, gap } = tickStyle(type)
   const pixelY = plotArea.bottom + yOffset + padding.top
   const pixelX = scale.x(dataX)
   const labelPixelY = pixelY + length + gap
 
   // Draw the tick line.
-  if (reason !== 'mark') {
+  if (!special || special.asDataX === null || special.asDataX === dataX) {
+    canvasContext.save()
     canvasContext.beginPath()
     canvasContext.moveTo(pixelX, pixelY)
     canvasContext.lineTo(pixelX, pixelY + length)
@@ -238,16 +241,23 @@ function _drawTick<Data>(
   const targetScale = derivedState.target.scale
   const pixelsPerTickAtTarget = targetScale.x(1) - targetScale.x(0)
   if (
-    forceDraw ||
+    special?.forceLabel ||
     (shouldLabel(pixelsPerTickAtTarget, type) &&
       noLabelPixelZones.every(
         ({ start, end }) => pixelX < start || pixelX > end,
       ))
   ) {
     canvasContext.font = font
-    canvasContext.textAlign = textAlign
+    const width = canvasContext.measureText(label).width
+    const adjustedPixelX = _.clamp(
+      pixelX,
+      plotArea.x + width / 2,
+      plotArea.right - width / 2,
+    )
+    canvasContext.textAlign = 'center'
     canvasContext.textBaseline = 'top'
     canvasContext.fillStyle = color
-    canvasContext.fillText(label, pixelX, labelPixelY)
+    canvasContext.fillText(label, adjustedPixelX, labelPixelY)
   }
+  canvasContext.restore()
 }

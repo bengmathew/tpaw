@@ -2,8 +2,8 @@ use crate::params::*;
 use crate::utils::*;
 
 pub struct NetPresentValueOfSequence {
-    pub with_current_year: Vec<f64>,
-    pub without_current_year: Vec<f64>,
+    pub with_current_month: Vec<f64>,
+    pub without_current_month: Vec<f64>,
 }
 
 pub struct NetPresentValueForWithdrawals {
@@ -45,10 +45,10 @@ pub fn do_pre_calculations(params: &Params) -> PreCalculations {
     }
 }
 fn pre_calculations_for_tpaw(params: &Params) -> PreCalculationsForTPAW {
-    let num_years = params.num_years;
-    let expected_returns = blend_returns(&params.expected_returns);
+    let num_months = params.num_months;
+    let expected_returns = blend_returns(&params.expected_monthly_returns);
 
-    let bonds_rate = vec![expected_returns(0.0); num_years];
+    let bonds_rate = vec![expected_returns(0.0); num_months];
 
     let regular_rate: Vec<f64> = params
         .target_allocation
@@ -58,11 +58,11 @@ fn pre_calculations_for_tpaw(params: &Params) -> PreCalculationsForTPAW {
         .map(|x| expected_returns(*x))
         .collect();
 
-    let savings = get_net_present_value(&bonds_rate, &params.by_year.savings);
+    let savings = get_net_present_value(&bonds_rate, &params.by_month.savings);
     let lmp = get_net_present_value(&bonds_rate, &params.lmp);
-    let essential = get_net_present_value(&bonds_rate, &params.by_year.withdrawals_essential);
+    let essential = get_net_present_value(&bonds_rate, &params.by_month.withdrawals_essential);
     let discretionary =
-        get_net_present_value(&regular_rate, &params.by_year.withdrawals_discretionary);
+        get_net_present_value(&regular_rate, &params.by_month.withdrawals_discretionary);
 
     let result = PreCalculationsForTPAW {
         net_present_value: TPAWNetPresentValue {
@@ -82,7 +82,7 @@ fn pre_calculations_for_tpaw(params: &Params) -> PreCalculationsForTPAW {
 }
 
 fn pre_calculations_for_spaw(params: &Params) -> PreCalculationsForSPAW {
-    let expected_returns = blend_returns(&params.expected_returns);
+    let expected_returns = blend_returns(&params.expected_monthly_returns);
     let rate: Vec<f64> = params
         .target_allocation
         .regular_portfolio
@@ -91,13 +91,13 @@ fn pre_calculations_for_spaw(params: &Params) -> PreCalculationsForSPAW {
         .map(|x| expected_returns(*x))
         .collect();
     let n = rate.len();
-    let savings = get_net_present_value(&rate, &params.by_year.savings);
+    let savings = get_net_present_value(&rate, &params.by_month.savings);
     let lmp = get_net_present_value(&rate, &params.lmp);
-    let essential = get_net_present_value(&rate, &params.by_year.withdrawals_essential);
-    let discretionary = get_net_present_value(&rate, &params.by_year.withdrawals_discretionary);
-    let mut legacy_amount_by_year = vec![0.0; n];
-    legacy_amount_by_year[n - 1] = params.legacy_target / (1.0 + rate[n - 1]);
-    let legacy = get_net_present_value(&rate, &legacy_amount_by_year);
+    let essential = get_net_present_value(&rate, &params.by_month.withdrawals_essential);
+    let discretionary = get_net_present_value(&rate, &params.by_month.withdrawals_discretionary);
+    let mut legacy_amount_by_month = vec![0.0; n];
+    legacy_amount_by_month[n - 1] = params.legacy_target / (1.0 + rate[n - 1]);
+    let legacy = get_net_present_value(&rate, &legacy_amount_by_month);
 
     PreCalculationsForSPAW {
         net_present_value: SPAWNetPresentValue {
@@ -119,21 +119,21 @@ fn pre_calculations_for_spaw(params: &Params) -> PreCalculationsForSPAW {
 fn get_net_present_value(r: &[f64], amounts: &[f64]) -> NetPresentValueOfSequence {
     let n = amounts.len();
     assert!(r.len() == n);
-    let mut with_current_year = vec![0.0; n];
-    let mut without_current_year = vec![0.0; n];
+    let mut with_current_month = vec![0.0; n];
+    let mut without_current_month = vec![0.0; n];
 
     for i in (0..n).rev() {
-        without_current_year[i] = if i == n - 1 {
+        without_current_month[i] = if i == n - 1 {
             0.0
         } else {
-            with_current_year[i + 1] / (1.0 + r[i])
+            with_current_month[i + 1] / (1.0 + r[i])
         };
-        with_current_year[i] = amounts[i] + without_current_year[i];
+        with_current_month[i] = amounts[i] + without_current_month[i];
     }
 
     NetPresentValueOfSequence {
-        with_current_year,
-        without_current_year,
+        with_current_month,
+        without_current_month,
     }
 }
 

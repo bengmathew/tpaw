@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { historicalReturns } from '../HistoricalReturns'
+import { historicalReturns } from '../HistoricalReturns/HistoricalReturns'
 import { noCase } from '../Utils'
 import { PlanParams } from './PlanParams'
 
@@ -13,8 +13,11 @@ type MarketData = {
   inflation: { value: number }
 }
 
-export const EXPECTED_RETURN_PRESETS = (
-  type: Exclude<PlanParams['returns']['expected']['type'], 'manual'>,
+export const EXPECTED_ANNUAL_RETURN_PRESETS = (
+  type: Exclude<
+    PlanParams['advanced']['annualReturns']['expected']['type'],
+    'manual'
+  >,
   { CAPE, bondRates }: MarketData,
 ) => {
   const suggested = {
@@ -35,34 +38,40 @@ export const EXPECTED_RETURN_PRESETS = (
         bonds: suggested.bonds,
       }
     case 'historical':
+      // Intentionally not rounding here.
       return {
-        stocks: historicalReturns.stocks.expectedValue,
-        bonds: historicalReturns.bonds.expectedValue,
+        stocks: historicalReturns.monthly.annualStats.stocks.mean,
+        bonds: historicalReturns.monthly.annualStats.bonds.mean,
       }
     default:
       noCase(type)
   }
 }
 
-export const SUGGESTED_INFLATION = (marketData: MarketData) =>
+export const SUGGESTED_ANNUAL_INFLATION = (marketData: MarketData) =>
   _.round(marketData.inflation.value, 3)
 
-export const DEFAULT_SWR_WITHDRAWAL_PERCENT = (retirementLength: number) => {
-  return _.round(0.7125 * Math.pow(retirementLength, -0.859), 3)
+export const DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT = (
+  retirementLengthInMonths: number,
+) => {
+  return _.round(0.7125 * Math.pow(retirementLengthInMonths / 12, -0.859), 3)
 }
 
 export function getDefaultPlanParams() {
   const params: PlanParams = {
-    v: 18,
+    v: 19,
     warnedAbout14to15Converstion: true,
     warnedAbout16to17Converstion: true,
-    strategy: 'TPAW',
     dialogPosition: 'age',
     people: {
       withPartner: false,
       person1: {
-        displayName: null,
-        ages: { type: 'notRetired', current: 35, retirement: 65, max: 100 },
+        ages: {
+          type: 'notRetired',
+          currentMonth: 35 * 12,
+          retirementMonth: 65 * 12,
+          maxMonth: 100 * 12,
+        },
       },
     },
 
@@ -74,8 +83,8 @@ export function getDefaultPlanParams() {
 
     adjustmentsToSpending: {
       tpawAndSPAW: {
-        spendingCeiling: null,
-        spendingFloor: null,
+        monthlySpendingCeiling: null,
+        monthlySpendingFloor: null,
         legacy: {
           total: 0,
           external: [],
@@ -95,13 +104,13 @@ export function getDefaultPlanParams() {
           forLegacyAsDeltaFromAt20: 2,
         },
         timePreference: 0,
-        additionalSpendingTilt:0,
+        additionalAnnualSpendingTilt: 0,
       },
       tpawAndSPAW: {
         lmp: 0,
       },
       spaw: {
-        spendingTilt: 0.008,
+        annualSpendingTilt: 0.008,
       },
 
       spawAndSWR: {
@@ -116,14 +125,22 @@ export function getDefaultPlanParams() {
       },
     },
 
-    returns: {
-      expected: { type: 'suggested' },
-      historical: { type: 'default', adjust: { type: 'toExpected' } },
+    advanced: {
+      annualReturns: {
+        expected: { type: 'suggested' },
+        historical: {
+          type: 'adjusted',
+          adjustment: { type: 'toExpected' },
+          correctForBlockSampling: true,
+        },
+      },
+      annualInflation: { type: 'suggested' },
+      sampling: 'monteCarlo',
+      samplingBlockSizeForMonteCarlo: 12 * 5,
+      strategy: 'TPAW',
     },
-    inflation: { type: 'suggested' },
-    sampling: 'monteCarlo',
-    display: {
-      alwaysShowAllYears: false,
+    dev: {
+      alwaysShowAllMonths: false,
     },
   }
 

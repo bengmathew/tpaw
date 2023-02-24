@@ -60,28 +60,32 @@ export const PlanHelp = React.memo(
           ...sizeCSSStyle(sizing.fixed.size),
           ...originCSSStyle({ x: 0, y: 0 }),
           ...paddingCSSStyleHorz(newPaddingHorz(sizing.fixed.padding)),
-          paddingTop: `${sizing.fixed.padding.top}px`,
         }}
       >
         {/* Moved to separate component to force recreation after every transition
          reset. */}
-        <_Body />
+        <_Body sizing={sizing} />
       </NoDisplayOnOpacity0Transition>
     )
   },
 )
 
-const _Body = React.memo(() => {
+const _Body = React.memo(({ sizing }: { sizing: PlanHelpSizing }) => {
   const { params } = useSimulation()
 
   const content = Contentful.splitDocument(
-    usePlanContent().help[params.strategy],
+    usePlanContent().help[params.advanced.strategy],
     'faq',
   )
 
   return (
-    <div className="pb-20">
-      <PlanInputBodyHeader type="help" />
+    <div
+      className="mb-20"
+      style={{
+        paddingTop: `${sizing.fixed.padding.top}px`,
+      }}
+    >
+      <PlanInputBodyHeader className="" type="help" />
       <_RichText className="mt-6" body={fGet(content.intro)} />
       <div className="mt-6">
         {content.sections.map((section, i) => (

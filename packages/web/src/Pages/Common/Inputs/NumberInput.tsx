@@ -1,7 +1,7 @@
-import {faMinus, faPlus} from '@fortawesome/pro-regular-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import React, {useState} from 'react'
-import {AmountInput} from './AmountInput'
+import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import React, { useState } from 'react'
+import { AmountInput } from './AmountInput'
 
 export const NumberInput = React.memo(
   ({
@@ -11,9 +11,9 @@ export const NumberInput = React.memo(
     clamp,
     className = '',
     buttonClassName = 'pl-3 pr-3',
-    showPlusMinus,
     width = 45,
     modalLabel,
+    disabled = false,
   }: {
     value: number
     label?: string
@@ -21,9 +21,9 @@ export const NumberInput = React.memo(
     clamp: (x: number) => number
     buttonClassName?: string
     className?: string
-    showPlusMinus: boolean
     width?: number
     modalLabel: string | null
+    disabled?: boolean
   }) => {
     const [error, setError] = useState(false)
 
@@ -43,12 +43,13 @@ export const NumberInput = React.memo(
         <AmountInput
           className={` rounded-lg py-0.5 px-2 mr-3 text-center transition-all duration-1000
           ${error ? 'bg-errorBlockBG' : 'bg-gray-200'}`}
-          style={{width: `${width}px`}}
+          style={{ width: `${width}px` }}
           modalLabel={modalLabel}
           onTransitionEnd={() => setError(false)}
           value={value}
           onChange={handleAccept}
           decimals={0}
+          disabled={disabled}
         />
 
         {label && (
@@ -56,23 +57,21 @@ export const NumberInput = React.memo(
             <h2 className="-ml-1">{label}</h2>
           </div>
         )}
-        {showPlusMinus && (
-          <button
-            className={buttonClassName}
-            onClick={() => handleAccept(value + 1)}
-          >
-            <FontAwesomeIcon icon={faPlus} />
-          </button>
-        )}
-        {showPlusMinus && (
-          <button
-            className={buttonClassName}
-            onClick={() => handleAccept(value - 1)}
-          >
-            <FontAwesomeIcon icon={faMinus} />
-          </button>
-        )}
+        <button
+          className={buttonClassName}
+          onClick={() => handleAccept(value + 1)}
+          disabled={disabled}
+        >
+          <FontAwesomeIcon icon={faPlus} />
+        </button>
+        <button
+          disabled={disabled}
+          className={buttonClassName}
+          onClick={() => handleAccept(value - 1)}
+        >
+          <FontAwesomeIcon icon={faMinus} />
+        </button>
       </div>
     )
-  }
+  },
 )

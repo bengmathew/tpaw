@@ -10,7 +10,7 @@ import { Config } from '../../../Config'
 import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
 
 // TODO:
-// spendingCeiling should be >= lmp. Which should be enforced by the PlanParams guard.
+// monthlySpendingCeiling should be >= lmp. Which should be enforced by the PlanParams guard.
 // in the same way spendingFloor is.
 
 export const PlanInputRiskLMPCard = React.memo(

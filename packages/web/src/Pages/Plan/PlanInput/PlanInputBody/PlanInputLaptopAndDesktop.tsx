@@ -1,5 +1,6 @@
 import { Transition } from '@headlessui/react'
 import React, {
+  MouseEvent,
   ReactElement,
   ReactNode,
   useLayoutEffect,
@@ -27,12 +28,14 @@ export const PlanInputLaptopAndDesktop = React.memo(
     sizing,
     children,
     type,
+    onBackgroundClick,
     customGuideIntro,
   }: {
     layout: 'laptop' | 'desktop'
     sizing: PlanInputSizing['fixed']
     type: PlanInputType
     customGuideIntro?: ReactNode
+    onBackgroundClick?: () => void
     children: {
       content: ReactElement
       error?: ReactElement
@@ -51,7 +54,9 @@ export const PlanInputLaptopAndDesktop = React.memo(
     }, [hasInput])
 
     const mainScrollRef = useRef<HTMLDivElement>(null)
+    const backgroundDivRef = useRef<HTMLDivElement>(null)
     const guideContent = usePlanInputGuideContent(type)
+    const inputScrollRef = useRef<HTMLDivElement>(null)
 
     const { padding } =
       params.dialogPosition !== 'done'
@@ -63,6 +68,7 @@ export const PlanInputLaptopAndDesktop = React.memo(
         {/*  Main container. Main and input needs separate scroll containers, 
         so they don't interfere with each other's scroll. */}
         <Transition
+          ref={mainScrollRef}
           show={state.type === 'main'}
           className="absolute inset-0 overflow-y-scroll"
           enterFrom="opacity-0  translate-x-[-15px]"
@@ -73,15 +79,18 @@ export const PlanInputLaptopAndDesktop = React.memo(
             transitionProperty: 'opacity, transform',
             transitionDuration: `${duration}ms`,
           }}
-          ref={mainScrollRef}
           onTransitionEnd={() => {
             if (state.type === 'main' && state.onDone) {
               state.onDone()
               setState({ type: 'main', onDone: null })
             }
           }}
+          onClick={(e: MouseEvent) => {
+            if (e.target === mainScrollRef?.current) onBackgroundClick?.()
+          }}
         >
           <div
+            ref={backgroundDivRef}
             className="mb-20 "
             // Padding should be inside scroll container to place scrollbar at
             // edge.
@@ -89,16 +98,23 @@ export const PlanInputLaptopAndDesktop = React.memo(
               ...paddingCSSStyleHorz(newPaddingHorz(padding)),
               paddingTop: `${padding.top}px`,
             }}
+            onClick={(e) => {
+              if (e.target === backgroundDivRef.current) onBackgroundClick?.()
+            }}
           >
-            <PlanInputBodyHeader className="mb-6 z-10" type={type} />
+            <PlanInputBodyHeader
+              className="mb-6 z-10"
+              type={type}
+              onBackgroundClick={onBackgroundClick}
+            />
             {guideContent && (
               <PlanInputBodyGuide
-              className="mb-10"
-              type={type}
-              padding={cardPadding}
-              customIntro={customGuideIntro}
+                className="mb-10"
+                type={type}
+                padding={cardPadding}
+                customIntro={customGuideIntro}
               />
-              )}
+            )}
             {children.content}
             {children?.error && (
               <div className=" sticky bottom-0 pt-10">
@@ -113,6 +129,7 @@ export const PlanInputLaptopAndDesktop = React.memo(
           // Scroll container. Main and input needs separate scroll containers,
           // so they don't interfere with each other's scroll.
           <Transition
+            ref={inputScrollRef}
             show={state.type === 'input'}
             className={`absolute inset-0  overflow-y-scroll`}
             enterFrom="opacity-0  translate-x-[15px]"
@@ -125,6 +142,9 @@ export const PlanInputLaptopAndDesktop = React.memo(
               // Padding should be inside scroll container to place scrollbar at
               // edge.
               ...paddingCSSStyleHorz(newPaddingHorz(padding)),
+            }}
+            onClick={(e: MouseEvent) => {
+              if (e.target === inputScrollRef?.current) onBackgroundClick?.()
             }}
           >
             <div

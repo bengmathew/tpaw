@@ -1,10 +1,11 @@
+import { annualToMonthlyReturnRate, MAX_AGE_IN_MONTHS } from '@tpaw/common'
 import _ from 'lodash'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { noCase } from '../../Utils/Utils'
-import { getNumYears, getWithdrawalStartAsYFN } from '../PlanParamsExt'
-import { PlanParamsProcessed } from '../PlanParamsProcessed'
+import { getNumMonths, getWithdrawalStartAsMFN } from '../PlanParamsExt'
+import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 import { getWASM } from './GetWASM'
-import { TPAWWorkerRunSimulationResult } from './TPAWWorkerTypes'
+import { TPAWWorkerRunSimulationResult } from './TPAWWorkerAPI'
 
 export async function runSimulationInWASM(
   params: PlanParamsProcessed,
@@ -12,7 +13,7 @@ export async function runSimulationInWASM(
   test?: { truth: number[]; indexIntoHistoricalReturns: number[] },
 ): Promise<TPAWWorkerRunSimulationResult> {
   let start0 = performance.now()
-  const numYears = getNumYears(params.original)
+  const numMonths = getNumMonths(params.original)
   const wasm = await getWASM()
 
   let start = performance.now()
@@ -20,38 +21,45 @@ export async function runSimulationInWASM(
     params.strategy,
     runsSpec.start,
     runsSpec.end,
-    numYears,
-    getWithdrawalStartAsYFN(params.original),
-    params.returns.expected.stocks,
-    params.returns.expected.bonds,
-    Float64Array.from(params.returns.historicalAdjusted.map((x) => x.stocks)),
-    Float64Array.from(params.returns.historicalAdjusted.map((x) => x.bonds)),
+    numMonths,
+    getWithdrawalStartAsMFN(params.original),
+    annualToMonthlyReturnRate(params.returns.expectedAnnualReturns.stocks),
+    annualToMonthlyReturnRate(params.returns.expectedAnnualReturns.bonds),
+    Float64Array.from(
+      params.returns.historicalMonthlyAdjusted.map((x) => x.stocks),
+    ),
+    Float64Array.from(
+      params.returns.historicalMonthlyAdjusted.map((x) => x.bonds),
+    ),
     params.currentPortfolioBalance,
     Float64Array.from(params.risk.tpaw.allocation),
     Float64Array.from(params.risk.spawAndSWR.allocation),
     params.risk.tpaw.allocationForLegacy.stocks,
-    params.risk.swr.withdrawal.type,
-    params.risk.swr.withdrawal.type === 'asAmount'
-      ? params.risk.swr.withdrawal.amount
-      : params.risk.swr.withdrawal.type === 'asPercent'
-      ? params.risk.swr.withdrawal.percent
-      : noCase(params.risk.swr.withdrawal),
-    Float64Array.from(params.byYear.map((x) => x.tpawAndSPAW.risk.lmp)),
+    params.risk.swr.monthlyWithdrawal.type,
+    params.risk.swr.monthlyWithdrawal.type === 'asAmount'
+      ? params.risk.swr.monthlyWithdrawal.amount
+      : params.risk.swr.monthlyWithdrawal.type === 'asPercent'
+      ? params.risk.swr.monthlyWithdrawal.percent
+      : noCase(params.risk.swr.monthlyWithdrawal),
+    Float64Array.from(params.byMonth.map((x) => x.tpawAndSPAW.risk.lmp)),
     Float64Array.from(
-      params.byYear.map((x) => x.futureSavingsAndRetirementIncome),
+      params.byMonth.map((x) => x.futureSavingsAndRetirementIncome),
     ),
-    Float64Array.from(params.byYear.map((x) => x.extraSpending.essential)),
-    Float64Array.from(params.byYear.map((x) => x.extraSpending.discretionary)),
+    Float64Array.from(params.byMonth.map((x) => x.extraSpending.essential)),
+    Float64Array.from(params.byMonth.map((x) => x.extraSpending.discretionary)),
     params.adjustmentsToSpending.tpawAndSPAW.legacy.target,
     params.adjustmentsToSpending.tpawAndSPAW.legacy.external,
-    Float64Array.from(params.risk.tpawAndSPAW.spendingTilt),
-    params.adjustmentsToSpending.tpawAndSPAW.spendingCeiling ?? undefined,
-    params.adjustmentsToSpending.tpawAndSPAW.spendingFloor ?? undefined,
+    Float64Array.from(params.risk.tpawAndSPAW.monthlySpendingTilt),
+    params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling ??
+      undefined,
+    params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor ?? undefined,
     params.sampling === 'monteCarlo'
       ? true
       : params.sampling === 'historical'
       ? false
       : noCase(params.sampling),
+    params.samplingBlockSizeForMonteCarlo,
+    MAX_AGE_IN_MONTHS,
     test?.truth ? Float64Array.from(test.truth) : undefined,
     test?.indexIntoHistoricalReturns
       ? Uint32Array.from(test.indexIntoHistoricalReturns)
@@ -60,37 +68,37 @@ export async function runSimulationInWASM(
   const perfRuns = performance.now() - start
 
   const numRuns = runsSpec.end - runsSpec.start
-  const yearIndexes = _.range(0, numYears)
+  const monthIndexes = _.range(0, numMonths)
   const splitArray = (x: Float64Array) => {
     const copy = x.slice()
-    return yearIndexes.map((year) =>
-      copy.subarray(year * numRuns, (year + 1) * numRuns),
+    return monthIndexes.map((month) =>
+      copy.subarray(month * numRuns, (month + 1) * numRuns),
     )
   }
 
   start = performance.now()
 
   const result: Omit<TPAWWorkerRunSimulationResult, 'perf'> = {
-    byYearsFromNowByRun: {
+    byMonthsFromNowByRun: {
       savingsPortfolio: {
         start: {
-          balance: splitArray(runs.by_yfn_by_run_balance_start()),
+          balance: splitArray(runs.by_mfn_by_run_balance_start()),
         },
         withdrawals: {
-          essential: splitArray(runs.by_yfn_by_run_withdrawals_essential()),
+          essential: splitArray(runs.by_mfn_by_run_withdrawals_essential()),
           discretionary: splitArray(
-            runs.by_yfn_by_run_withdrawals_discretionary(),
+            runs.by_mfn_by_run_withdrawals_discretionary(),
           ),
-          regular: splitArray(runs.by_yfn_by_run_withdrawals_regular()),
-          total: splitArray(runs.by_yfn_by_run_withdrawals_total()),
+          regular: splitArray(runs.by_mfn_by_run_withdrawals_regular()),
+          total: splitArray(runs.by_mfn_by_run_withdrawals_total()),
           fromSavingsPortfolioRate: splitArray(
-            runs.by_yfn_by_run_withdrawals_from_savings_portfolio_rate(),
+            runs.by_mfn_by_run_withdrawals_from_savings_portfolio_rate(),
           ),
         },
         afterWithdrawals: {
           allocation: {
             stocks: splitArray(
-              runs.by_yfn_by_run_after_withdrawals_allocation_stocks_savings(),
+              runs.by_mfn_by_run_after_withdrawals_allocation_stocks_savings(),
             ),
           },
         },
@@ -99,21 +107,24 @@ export async function runSimulationInWASM(
         afterWithdrawals: {
           allocation: {
             stocks: splitArray(
-              runs.by_yfn_by_run_after_withdrawals_allocation_stocks_total(),
+              runs.by_mfn_by_run_after_withdrawals_allocation_stocks_total(),
             ),
           },
         },
       },
     },
     byRun: {
-      numInsufficientFundYears: runs
-        .by_run_num_insufficient_fund_years()
+      numInsufficientFundMonths: runs
+        .by_run_num_insufficient_fund_months()
         .slice(),
       endingBalanceOfSavingsPortfolio: runs.by_run_ending_balance().slice(),
     },
+    averageAnnualReturns: {
+      stocks: runs.average_annual_returns_stocks(),
+      bonds: runs.average_annual_returns_bonds(),
+    },
   }
   runs.free()
-
   const perfPost = performance.now() - start
   const perfTotal = performance.now() - start0
   const perfRest = perfTotal - perfRuns - perfPost
@@ -127,3 +138,13 @@ export async function runSimulationInWASM(
     ],
   }
 }
+
+// const getAnnualMeanFromMonthlyReturns = (monthlyReturns: Float64Array) =>
+//   _.mean(
+//     _.range(0, monthlyReturns.length - 12)
+//       .map((i) => monthlyReturns.slice(i, i + 12))
+//       .map(monthArrToYear),
+//   )
+
+// const monthArrToYear = (year: Float64Array) =>
+//   year.map((x) => 1 + x).reduce(_.multiply, 1) - 1

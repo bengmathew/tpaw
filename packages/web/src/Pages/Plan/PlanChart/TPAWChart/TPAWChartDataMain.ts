@@ -8,13 +8,12 @@ import {
   extendPlanParams,
   PlanParamsExt,
 } from '../../../../TPAWSimulator/PlanParamsExt'
-import { TPAWRunInWorkerByPercentileByYearsFromNow } from '../../../../TPAWSimulator/Worker/TPAWRunInWorker'
+import { TPAWRunInWorkerByPercentileByMonthsFromNow } from '../../../../TPAWSimulator/Worker/TPAWRunInWorker'
 import { UseTPAWWorkerResult } from '../../../../TPAWSimulator/Worker/UseTPAWWorker'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { SimpleRange } from '../../../../Utils/SimpleRange'
 import { assert, fGet, noCase } from '../../../../Utils/Utils'
-import { SimulationInfo } from '../../../App/WithSimulation'
 import {
   isPlanChartSpendingDiscretionaryType,
   isPlanChartSpendingEssentialType,
@@ -28,27 +27,14 @@ export type TPAWChartDataMain = {
   paramsExt: PlanParamsExt
   label: string
   type: PlanChartType
-  series:
-    | {
-        type: 'percentiles'
-        percentiles: {
-          data: (x: number) => number
-          percentile: number
-          isHighlighted: boolean
-        }[]
-      }
-    | {
-        type: 'labeledLines'
-        percentiles: readonly number[]
-        highlightedPercentiles: readonly number[]
-        lines: {
-          data: (x: number) => number
-          label: string
-        }[]
-      }
+  percentiles: {
+    data: (x: number) => number
+    percentile: number
+  }[]
+
   min: { x: number; y: number }
   max: { x: number; y: number }
-  years: {
+  months: {
     displayRange: SimpleRange
     retirement: number
     max: number
@@ -68,77 +54,55 @@ export const tpawChartDataScaled = (
     curr.yDisplayRange.end,
     targetYRange.end,
   )
-  const series: TPAWChartDataMain['series'] = (() => {
-    switch (curr.series.type) {
-      case 'percentiles':
-        return {
-          type: curr.series.type,
-          percentiles: curr.series.percentiles.map(
-            ({ data, percentile, isHighlighted }) => ({
-              data: (x: number) => scaleY(data(x)),
-              percentile,
-              isHighlighted,
-            }),
-          ),
-        }
-      case 'labeledLines':
-        return {
-          type: curr.series.type,
-          percentiles: curr.series.percentiles,
-          highlightedPercentiles: curr.series.highlightedPercentiles,
-          lines: curr.series.lines.map(({ data, label }) => ({
-            data: (x: number) => scaleY(data(x)),
-            label,
-          })),
-        }
-      default:
-        noCase(curr.series)
-    }
-  })()
+
   return {
     params: curr.params,
     paramsExt: curr.paramsExt,
     label: `${curr.label} scaled.`,
     type: curr.type,
-    series,
+    percentiles: curr.percentiles.map(({ data, percentile }) => ({
+      data: (x: number) => scaleY(data(x)),
+      percentile,
+    })),
     min: { x: curr.min.x, y: scaleY(curr.min.y) },
     max: { x: curr.max.x, y: scaleY(curr.max.y) },
     yDisplayRange: {
       start: scaleY(curr.yDisplayRange.start),
       end: scaleY(curr.yDisplayRange.end),
     },
-    years: curr.years,
+    months: curr.months,
     yFormat: curr.yFormat,
     successRate: curr.successRate,
   }
 }
 
-const _spendingYears = ({
+const _spendingMonths = ({
   params,
-  asYFN,
-  withdrawalStartYear,
+  asMFN,
+  withdrawalStartMonth,
 }: PlanParamsExt) => {
-  const withdrawalStart = asYFN(withdrawalStartYear)
-  return params.display.alwaysShowAllYears
-    ? 'allYears'
+  const withdrawalStart = asMFN(withdrawalStartMonth)
+
+  return params.dev.alwaysShowAllMonths
+    ? 'allMonths'
     : [
         ...params.adjustmentsToSpending.extraSpending.essential,
         ...params.adjustmentsToSpending.extraSpending.discretionary,
-      ].some((x) => asYFN(x.yearRange).start < withdrawalStart)
-    ? ('allYears' as const)
-    : ('retirementYears' as const)
+      ].some((x) => asMFN(x.monthRange).start < withdrawalStart)
+    ? ('allMonths' as const)
+    : ('retirementMonths' as const)
 }
-export const tpawChartDataMainPercentiles = (
+
+export const tpawChartDataMain = (
   type: Exclude<PlanChartType, 'reward-risk-ratio-comparison'>,
   tpawResult: UseTPAWWorkerResult,
-  highlightPercentiles: SimulationInfo['highlightPercentiles'],
 ): TPAWChartDataMain => {
   const { params } = tpawResult.args
   const paramsExt = extendPlanParams(params.original)
   const hasLegacy =
     params.adjustmentsToSpending.tpawAndSPAW.legacy.total !== 0 ||
-    params.adjustmentsToSpending.tpawAndSPAW.spendingCeiling !== null
-  const spendingYears = _spendingYears(paramsExt)
+    params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling !== null
+  const spendingYears = _spendingMonths(paramsExt)
   switch (type) {
     case 'spending-total':
       return _dataPercentiles(
@@ -148,7 +112,6 @@ export const tpawChartDataMainPercentiles = (
         (x) => formatCurrency(x),
         spendingYears,
         0,
-        highlightPercentiles,
         'auto',
       )
     case 'spending-general':
@@ -159,7 +122,6 @@ export const tpawChartDataMainPercentiles = (
         (x) => formatCurrency(x),
         spendingYears,
         0,
-        highlightPercentiles,
         'auto',
       )
 
@@ -168,14 +130,13 @@ export const tpawChartDataMainPercentiles = (
         type,
         tpawResult,
         (x) =>
-          _addYear(
+          _addMonth(
             x.savingsPortfolio.start.balance,
             x.endingBalanceOfSavingsPortfolioByPercentile,
           ),
         (x) => formatCurrency(x),
-        'allYears',
+        'allMonths',
         1,
-        highlightPercentiles,
         'auto',
       )
     case 'asset-allocation-savings-portfolio':
@@ -184,9 +145,8 @@ export const tpawChartDataMainPercentiles = (
         tpawResult,
         (x) => x.savingsPortfolio.afterWithdrawals.allocation.stocks,
         formatPercentage(0),
-        'allYears',
+        'allMonths',
         hasLegacy ? 0 : -1,
-        highlightPercentiles,
         { start: 0, end: 1 },
       )
     case 'asset-allocation-total-portfolio':
@@ -195,9 +155,8 @@ export const tpawChartDataMainPercentiles = (
         tpawResult,
         (x) => x.totalPortfolio.afterWithdrawals.allocation.stocks,
         formatPercentage(0),
-        'allYears',
+        'allMonths',
         hasLegacy ? 0 : -1,
-        highlightPercentiles,
         { start: 0, end: 1 },
       )
     case 'withdrawal':
@@ -208,7 +167,6 @@ export const tpawChartDataMainPercentiles = (
         formatPercentage(1),
         spendingYears,
         0,
-        highlightPercentiles,
         'auto',
       )
     default:
@@ -226,7 +184,6 @@ export const tpawChartDataMainPercentiles = (
           (x) => formatCurrency(x),
           spendingYears,
           0,
-          highlightPercentiles,
           'auto',
         )
       }
@@ -245,7 +202,6 @@ export const tpawChartDataMainPercentiles = (
           (x) => formatCurrency(x),
           spendingYears,
           0,
-          highlightPercentiles,
           'auto',
         )
       }
@@ -253,13 +209,13 @@ export const tpawChartDataMainPercentiles = (
   }
 }
 
-const _addYear = (
+const _addMonth = (
   {
-    byPercentileByYearsFromNow,
+    byPercentileByMonthsFromNow,
   }: ReturnType<Parameters<typeof _dataPercentiles>[2]>,
   numberByPercentile: { data: number; percentile: number }[],
 ) => ({
-  byPercentileByYearsFromNow: byPercentileByYearsFromNow.map(
+  byPercentileByMonthsFromNow: byPercentileByMonthsFromNow.map(
     ({ data, percentile }, p) => ({
       data: [...data, numberByPercentile[p].data],
       percentile,
@@ -272,38 +228,35 @@ const _dataPercentiles = (
   tpawResult: UseTPAWWorkerResult,
   dataFn: (
     tpawResult: UseTPAWWorkerResult,
-  ) => TPAWRunInWorkerByPercentileByYearsFromNow,
+  ) => TPAWRunInWorkerByPercentileByMonthsFromNow,
   yFormat: (x: number) => string,
-  yearRange: 'retirementYears' | 'allYears',
-  yearEndDelta: number,
-  highlightPercentiles: number[],
+  monthRange: 'retirementMonths' | 'allMonths',
+  monthEndDelta: number,
   yDisplayRangeIn: 'auto' | SimpleRange,
 ): TPAWChartDataMain => {
   const { args } = tpawResult
   const { params } = args
   const paramsExt = extendPlanParams(params.original)
-  const { asYFN, withdrawalStartYear, maxMaxAge } = paramsExt
-  const retirement = asYFN(withdrawalStartYear)
-  const maxYear = asYFN(maxMaxAge)
-  const years: TPAWChartDataMain['years'] = {
+  const { asMFN, withdrawalStartMonth, maxMaxAge } = paramsExt
+  const retirement = asMFN(withdrawalStartMonth)
+  const maxMonth = asMFN(maxMaxAge)
+  const months: TPAWChartDataMain['months'] = {
     displayRange: {
-      start: yearRange === 'retirementYears' ? retirement : 0,
-      end: maxYear + yearEndDelta,
+      start: monthRange === 'retirementMonths' ? retirement : 0,
+      end: maxMonth + monthEndDelta,
     },
     retirement,
-    max: maxYear,
+    max: maxMonth,
   }
-  const { byPercentileByYearsFromNow } = dataFn(tpawResult)
+  const { byPercentileByMonthsFromNow } = dataFn(tpawResult)
 
   const percentiles = _addPercentileInfo(
-    _interpolate(byPercentileByYearsFromNow, years.displayRange),
-    args.percentiles,
-    highlightPercentiles,
+    _interpolate(byPercentileByMonthsFromNow, months.displayRange),
+    [args.percentileRange.start, 50, args.percentileRange.end],
   )
-  const series = { type: 'percentiles' as const, percentiles }
 
-  const last = fGet(_.last(byPercentileByYearsFromNow)).data
-  const first = fGet(_.first(byPercentileByYearsFromNow)).data
+  const last = fGet(_.last(byPercentileByMonthsFromNow)).data
+  const first = fGet(_.first(byPercentileByMonthsFromNow)).data
   const maxY = Math.max(...last)
   const minY = Math.min(...first)
 
@@ -320,8 +273,8 @@ const _dataPercentiles = (
     paramsExt,
     type,
     label: type,
-    years,
-    series,
+    months,
+    percentiles,
     min,
     max,
     yFormat,
@@ -330,15 +283,10 @@ const _dataPercentiles = (
   }
 }
 
-const _addPercentileInfo = <T>(
-  ys: T[],
-  percentiles: number[],
-  highlightedPercentiles: number[],
-) => {
+const _addPercentileInfo = <T>(ys: T[], percentiles: number[]) => {
   return ys.map((data, i) => ({
     data,
     percentile: percentiles[i],
-    isHighlighted: highlightedPercentiles.includes(percentiles[i]),
   }))
 }
 

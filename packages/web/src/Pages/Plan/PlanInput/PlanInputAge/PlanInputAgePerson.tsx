@@ -1,56 +1,61 @@
-import { faTrash } from '@fortawesome/pro-solid-svg-icons'
+import {
+  faCaretDown,
+  faCaretRight,
+  faTrash,
+} from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Switch } from '@headlessui/react'
 import {
   getDefaultPlanParams,
-  MAX_AGE,
+  MAX_AGE_IN_MONTHS,
+  Month,
   Person,
   PlanParams,
-  Year,
 } from '@tpaw/common'
 import _ from 'lodash'
-import React, { ReactNode, useState } from 'react'
+import React, { ReactNode, useRef, useState } from 'react'
 import {
   extendPlanParams,
   PlanParamsExt,
 } from '../../../../TPAWSimulator/PlanParamsExt'
+import { numMonthsStr } from '../../../../Utils/NumMonthsStr'
+import { SimpleRange } from '../../../../Utils/SimpleRange'
 import { assert, noCase } from '../../../../Utils/Utils'
+import { yourOrYourPartners } from '../../../../Utils/YourOrYourPartners'
 import { useSimulation } from '../../../App/WithSimulation'
 import { CheckBox } from '../../../Common/Inputs/CheckBox'
-import { NumberInput } from '../../../Common/Inputs/NumberInput'
+import { NumMonthsInput } from '../../../Common/Inputs/NumMonthsInput'
 import { ConfirmAlert } from '../../../Common/Modal/ConfirmAlert'
-import { ValueForYearRangeDisplay } from '../../../Common/ValueForYearRangeDisplay'
-import { analyzeYearsInParams } from '../Helpers/AnalyzeYearsInParams'
+import { ValueForMonthRangeDisplay } from '../../../Common/ValueForMonthRangeDisplay'
+import { analyzeMonthsInParams } from '../Helpers/AnalyzeMonthsInParams'
 import { nextPlanSectionDialogPosition } from '../Helpers/PlanSectionDialogPosition'
+import { PlanInputAgeOpenableSection } from './PlanInputAge'
 
 export const PlanInputAgePerson = React.memo(
   ({
-    type,
+    personType,
     className = '',
     style,
+    openSection,
+    setOpenSection,
   }: {
-    type: 'person1' | 'person2'
+    personType: 'person1' | 'person2'
     className?: string
     style?: React.CSSProperties
+    openSection: PlanInputAgeOpenableSection
+    setOpenSection: (x: PlanInputAgeOpenableSection) => void
   }) => {
     const { params, paramsExt, setParams } = useSimulation()
-    const setPersonInParams = (params: PlanParams, person: Person) => {
-      if (type === 'person1') {
-        params.people.person1 = person
-      } else {
-        assert(params.people.withPartner)
-        params.people.person2 = person
-      }
-    }
+    const divRef = useRef<HTMLDivElement>(null)
+
     const getPersonInParams = (params: PlanParams) => {
-      if (type === 'person1') return params.people.person1
+      if (personType === 'person1') return params.people.person1
       assert(params.people.withPartner)
       return params.people.person2
     }
-
-    const person = getPersonInParams(params)
+    const ages = getPersonInParams(params).ages
     const handleDeletePerson =
-      type === 'person1'
+      personType === 'person1'
         ? null
         : () => {
             const errMessage = _person2RequiredMessage(paramsExt)
@@ -66,12 +71,12 @@ export const PlanInputAgePerson = React.memo(
               // entires here.
               clone.risk.spawAndSWR.allocation.intermediate =
                 clone.risk.spawAndSWR.allocation.intermediate.filter(
-                  ({ year }) =>
-                    year.type === 'now' || year.person === 'person1',
+                  ({ month }) =>
+                    month.type === 'now' || month.person === 'person1',
                 )
               clone.people = { withPartner: false, person1 }
 
-              return _setXAxisDisplay(clone)
+              return clone
             })
           }
 
@@ -80,14 +85,17 @@ export const PlanInputAgePerson = React.memo(
         const paramsExt = extendPlanParams(params)
         const clone = _.cloneDeep(params)
         const p = getPersonInParams(clone)
-        const futureSavingsWarning = _futureSavingsWarning(paramsExt, type)
+        const futureSavingsWarning = _futureSavingsWarning(
+          paramsExt,
+          personType,
+        )
         if (futureSavingsWarning.length > 0) {
           setFutureSavingsWarning(futureSavingsWarning)
           return params
         }
         const retirementRemovalWarning = _retirementReferenceWarning(
           paramsExt,
-          type,
+          personType,
         )
         if (retirementRemovalWarning.length > 0) {
           setRetirementRemovalWarning(retirementRemovalWarning)
@@ -97,7 +105,7 @@ export const PlanInputAgePerson = React.memo(
           const withdrawalStartPerson = !clone.people.withPartner
             ? 'person1'
             : clone.people.withdrawalStart
-          if (type === withdrawalStartPerson) {
+          if (personType === withdrawalStartPerson) {
             clone.dialogPosition = nextPlanSectionDialogPosition(
               'future-savings',
               1, // 0 throws the calculations off.
@@ -106,11 +114,11 @@ export const PlanInputAgePerson = React.memo(
         }
         p.ages = {
           type: 'retired',
-          current: p.ages.current,
-          max: p.ages.max,
+          currentMonth: p.ages.currentMonth,
+          maxMonth: p.ages.maxMonth,
         }
 
-        return _setXAxisDisplay(clone)
+        return clone
       })
     }
     const [person2DeleteError, setPerson2DeleteError] = useState<ReactNode[]>(
@@ -123,10 +131,20 @@ export const PlanInputAgePerson = React.memo(
       ReactNode[]
     >([])
     return (
-      <div className={`${className} `} style={style}>
-        <div className="flex justify-between">
+      <div
+        className={`${className} `}
+        style={style}
+        ref={divRef}
+        onClick={(e) => {
+          if (e.target === divRef.current) setOpenSection(`none`)
+        }}
+      >
+        <div
+          className="flex justify-between"
+          onClick={() => setOpenSection('none')}
+        >
           <h2 className="font-bold text-lg">
-            {type === 'person1' ? 'You' : 'Your Partner'}
+            {personType === 'person1' ? 'You' : 'Your Partner'}
           </h2>
           {handleDeletePerson && (
             <button className="" onClick={handleDeletePerson}>
@@ -134,16 +152,19 @@ export const PlanInputAgePerson = React.memo(
             </button>
           )}
         </div>
-        <div className="flex items-center col-span-2 gap-x-4 mt-4 mb-3">
+        <div
+          className="flex items-center col-span-2 gap-x-4 mt-4 mb-2"
+          onClick={() => setOpenSection('none')}
+        >
           <Switch.Group>
             <Switch.Label className="">
-              {type === 'person1'
+              {personType === 'person1'
                 ? 'Are you retired?'
                 : 'Is your partner retired?'}
             </Switch.Label>
             <CheckBox
               className=""
-              enabled={person.ages.type === 'retired'}
+              enabled={ages.type === 'retired'}
               setEnabled={(retired) => {
                 if (retired) {
                   handleRetired()
@@ -151,21 +172,25 @@ export const PlanInputAgePerson = React.memo(
                 }
                 setParams((params) => {
                   const clone = _.cloneDeep(params)
-                  const p = getPersonInParams(clone)
-                  const defaultPerson1 = getDefaultPlanParams().people.person1
-                  assert(defaultPerson1.ages.type === 'notRetired')
-                  const defaultRetirementAge = defaultPerson1.ages.retirement
-                  const retirement =
-                    defaultRetirementAge <= p.ages.current
-                      ? Math.floor((p.ages.max + p.ages.current) / 2)
-                      : defaultRetirementAge
-                  p.ages = {
+                  const currPerson = getPersonInParams(clone)
+                  const defaultPerson = getDefaultPlanParams().people.person1
+                  assert(defaultPerson.ages.type === 'notRetired')
+                  const retirementMonth =
+                    defaultPerson.ages.retirementMonth <=
+                    currPerson.ages.currentMonth
+                      ? Math.floor(
+                          (currPerson.ages.maxMonth +
+                            currPerson.ages.currentMonth) /
+                            2,
+                        )
+                      : defaultPerson.ages.retirementMonth
+                  currPerson.ages = {
                     type: 'notRetired',
-                    current: p.ages.current,
-                    max: p.ages.max,
-                    retirement,
+                    currentMonth: currPerson.ages.currentMonth,
+                    maxMonth: currPerson.ages.maxMonth,
+                    retirementMonth,
                   }
-                  return _setXAxisDisplay(clone)
+                  return clone
                 })
               }}
             />
@@ -173,81 +198,64 @@ export const PlanInputAgePerson = React.memo(
         </div>
 
         <div
-          className="grid gap-y-2 items-center gap-x-4"
+          className="grid items-center "
           style={{ grid: 'auto / 145px 1fr' }}
         >
-          <h2 className="">Current Age</h2>
-          <NumberInput
-            value={person.ages.current}
-            setValue={(value) =>
-              setParams((params) => {
-                const clone = _.cloneDeep(params)
-                setPersonInParams(clone, _.cloneDeep(person))
-                getPersonInParams(clone).ages.current = value
-                return _setXAxisDisplay(clone)
-              })
-            }
-            clamp={(value) =>
-              _.clamp(
-                value,
-                0,
-                person.ages.type === 'retired'
-                  ? person.ages.max - 1
-                  : person.ages.retirement - 1,
-              )
-            }
-            showPlusMinus
-            modalLabel="Current Age"
+          <_AgeInput
+            label="Current Age"
+            getPersonInParams={getPersonInParams}
+            numMonths={ages.currentMonth}
+            setOnAges={(n, ages) => (ages.currentMonth = n)}
+            range={{
+              start: 0,
+              end:
+                ages.type === 'retired'
+                  ? ages.maxMonth - 2
+                  : ages.retirementMonth - 1,
+            }}
+            type={`${personType}-current`}
+            openSection={openSection}
+            setOpenSection={setOpenSection}
           />
-
-          {person.ages.type === 'notRetired' && (
-            <>
-              <h2 className="">Retirement Age</h2>
-              <NumberInput
-                value={person.ages.retirement}
-                setValue={(value) =>
-                  setParams((params) => {
-                    const clone = _.cloneDeep(params)
-                    setPersonInParams(clone, _.cloneDeep(person))
-                    const p = getPersonInParams(clone)
-                    assert(p.ages.type === 'notRetired')
-                    p.ages.retirement = value
-                    return _setXAxisDisplay(clone)
-                  })
-                }
-                clamp={(value) =>
-                  _.clamp(value, person.ages.current + 1, person.ages.max - 1)
-                }
-                showPlusMinus
-                modalLabel="Retirement Age"
-              />
-            </>
+          {ages.type === 'notRetired' && (
+            <_AgeInput
+              label="Retirement Age"
+              getPersonInParams={getPersonInParams}
+              numMonths={ages.retirementMonth}
+              setOnAges={(n, ages) => {
+                assert(ages.type === 'notRetired')
+                ages.retirementMonth = n
+              }}
+              range={{
+                start: ages.currentMonth + 1,
+                end: ages.maxMonth - 1,
+              }}
+              type={`${personType}-retirement`}
+              openSection={openSection}
+              setOpenSection={setOpenSection}
+            />
           )}
-
-          <h2 className="">Max Age</h2>
-          <NumberInput
-            value={person.ages.max}
-            setValue={(value) =>
-              setParams((params) => {
-                const clone = _.cloneDeep(params)
-                setPersonInParams(clone, _.cloneDeep(person))
-                getPersonInParams(clone).ages.max = value
-                return _setXAxisDisplay(clone)
-              })
-            }
-            clamp={(value) =>
-              _.clamp(
-                value,
-                person.ages.type === 'retired'
-                  ? person.ages.current + 1
-                  : person.ages.retirement + 1,
-                MAX_AGE,
-              )
-            }
-            showPlusMinus
-            modalLabel="Max Age"
+          <_AgeInput
+            label="Max Age"
+            getPersonInParams={getPersonInParams}
+            numMonths={ages.maxMonth}
+            setOnAges={(n, ages) => (ages.maxMonth = n)}
+            range={{
+              start:
+                ages.type === 'retired'
+                  ? ages.currentMonth + 2
+                  : ages.retirementMonth + 1,
+              end: MAX_AGE_IN_MONTHS,
+            }}
+            type={`${personType}-max`}
+            openSection={openSection}
+            setOpenSection={setOpenSection}
           />
         </div>
+        <div
+          className="grid gap-y-2 items-center gap-x-4"
+          style={{ grid: 'auto / 145px 1fr' }}
+        ></div>
         {person2DeleteError.length > 0 && (
           <ConfirmAlert
             title={'Error Removing Partner'}
@@ -294,18 +302,18 @@ export const PlanInputAgePerson = React.memo(
                 setRetirementRemovalWarning([])
                 setParams((params) => {
                   const clone = _.cloneDeep(params)
-                  analyzeYearsInParams(
+                  analyzeMonthsInParams(
                     extendPlanParams(clone),
-                    (year: Year): Year => {
+                    (month: Month): Month => {
                       if (
-                        year.type === 'namedAge' &&
-                        year.person === type &&
-                        (year.age === 'retirement' ||
-                          year.age === 'lastWorkingYear')
+                        month.type === 'namedAge' &&
+                        month.person === personType &&
+                        (month.age === 'retirement' ||
+                          month.age === 'lastWorkingMonth')
                       ) {
                         return { type: 'now' }
                       } else {
-                        return year
+                        return month
                       }
                     },
                   )
@@ -313,8 +321,8 @@ export const PlanInputAgePerson = React.memo(
                   const p = getPersonInParams(clone)
                   p.ages = {
                     type: 'retired',
-                    current: p.ages.current,
-                    max: p.ages.max,
+                    currentMonth: p.ages.currentMonth,
+                    maxMonth: p.ages.maxMonth,
                   }
                   return clone
                 })
@@ -331,21 +339,95 @@ export const PlanInputAgePerson = React.memo(
   },
 )
 
-const _person2RequiredMessage = (params: PlanParamsExt) => {
-  const analysis = analyzeYearsInParams(params)
-  const fromRanges = analysis.valueForYearRange.filter((x) => x.usesPerson2)
+export const _AgeInput = React.memo(
+  ({
+    label,
+    getPersonInParams,
+    numMonths,
+    setOnAges,
+    range,
+    type,
+    openSection,
+    setOpenSection,
+  }: {
+    label: string
+    getPersonInParams: (params: PlanParams) => Person
+    numMonths: number
+    setOnAges: (numMonths: number, ages: Person['ages']) => void
+    range: SimpleRange
+    type: Exclude<PlanInputAgeOpenableSection, 'none'>
+    openSection: PlanInputAgeOpenableSection
+    setOpenSection: (open: PlanInputAgeOpenableSection) => void
+  }) => {
+    const { setParams } = useSimulation()
+    const buttonDivRef = useRef<HTMLDivElement>(null)
 
+    return openSection !== type ? (
+      <>
+        <button
+          className="text-start py-1.5 self-start whitespace-nowrap"
+          onClick={() => setOpenSection(type)}
+        >
+          <FontAwesomeIcon className="text-xs mr-2" icon={faCaretRight} />
+          {label}
+        </button>
+        <div
+          className=""
+          ref={buttonDivRef}
+          onClick={(e) => {
+            if (e.target === buttonDivRef.current) setOpenSection('none')
+          }}
+        >
+          <button
+            className="text-start pl-2 py-1.5"
+            onClick={() => setOpenSection(type)}
+          >
+            {numMonthsStr(numMonths)}
+          </button>
+        </div>
+      </>
+    ) : (
+      <div className={`col-span-2 bg-gray-100 rounded-xl p-2 my-2`}>
+        <button
+          className="py-1.5 text-start "
+          onClick={() => setOpenSection('none')}
+        >
+          <FontAwesomeIcon className="text-xs mr-2" icon={faCaretDown} />
+          {label}
+        </button>
+        <NumMonthsInput
+          className="mt-2 mb-4 ml-4"
+          modalLabel={label}
+          value={numMonths}
+          onChange={(numMonths) =>
+            setParams((params) => {
+              const clone = _.cloneDeep(params)
+              const ages = getPersonInParams(clone).ages
+              setOnAges(numMonths, ages)
+              return clone
+            })
+          }
+          range={range}
+        />
+      </div>
+    )
+  },
+)
+
+const _person2RequiredMessage = (params: PlanParamsExt) => {
+  const analysis = analyzeMonthsInParams(params)
+  const fromRanges = analysis.valueForMonthRange.filter((x) => x.usesPerson2)
   const fromGlidePath = analysis.glidePath.filter((x) => x.usesPerson2)
 
-  if (fromRanges.length === 0 || fromGlidePath.length === 0) return []
+  if (fromRanges.length === 0 && fromGlidePath.length === 0) return []
   const result = [
     `The following are specified in terms of your partner's age:`,
   ] as ReactNode[]
   result.push(
-    <ol className=" list-disc list-outside ml-10">
+    <ol className=" list-disc list-outside ml-10" key={_.uniqueId()}>
       {fromRanges.map((x, i) => (
         <li key={`range-${i}`} className="list-item">
-          <ValueForYearRangeDisplay entry={x.entry} range={null} />
+          <ValueForMonthRangeDisplay entry={x.entry} range={null} skipLength/>
         </li>
       ))}
       {fromGlidePath.map((x, i) => (
@@ -384,10 +466,10 @@ const _futureSavingsWarning = (
     } are retired but has the following ${
       futureSavings.length === 1 ? 'entry' : `${futureSavings.length} entries`
     }:`,
-    <ol className=" list-decimal list-outside ml-10 ">
+    <ol className=" list-decimal list-outside ml-10 " key={_.uniqueId()}>
       {futureSavings.map((x, i) => (
         <li key={i} className="list-item">
-          <ValueForYearRangeDisplay entry={x} range={null} />
+          <ValueForMonthRangeDisplay entry={x} range={null}  skipLength/>
         </li>
       ))}
     </ol>,
@@ -400,8 +482,8 @@ const _retirementReferenceWarning = (
   paramsExt: PlanParamsExt,
   person: 'person1' | 'person2',
 ) => {
-  const analysis = analyzeYearsInParams(paramsExt)
-  const fromRanges = analysis.valueForYearRange.filter((x) =>
+  const analysis = analyzeMonthsInParams(paramsExt)
+  const fromRanges = analysis.valueForMonthRange.filter((x) =>
     x.useRetirement(person),
   )
   const fromGlidePath = analysis.glidePath.filter((x) =>
@@ -411,15 +493,15 @@ const _retirementReferenceWarning = (
   if (fromRanges.length === 0 && fromGlidePath.length === 0) return []
 
   const result = [
-    `The following are specified in terms of ${
-      person === 'person1' ? 'your' : "your partner's"
-    } retirement age:`,
+    `The following are specified in terms of ${yourOrYourPartners(
+      person,
+    )} retirement age:`,
   ] as ReactNode[]
   result.push(
-    <ul className="list-disc list-outside ml-10">
+    <ul className="list-disc list-outside ml-10" key={_.uniqueId()}>
       {fromRanges.map((x, i) => (
         <li key={`ranges-${i}`} className="list-item">
-          <ValueForYearRangeDisplay entry={x.entry} range={null} />
+          <ValueForMonthRangeDisplay entry={x.entry} range={null}  skipLength/>
         </li>
       ))}
       {fromGlidePath.map((x, i) => (
@@ -432,17 +514,9 @@ const _retirementReferenceWarning = (
         </li>
       ))}
     </ul>,
-    `Would your like to convert these references to ${
-      person === 'person1' ? 'your' : "your partner's"
-    } retirement to "now"?`,
+    `Would your like to convert these references to ${yourOrYourPartners(
+      person,
+    )} retirement to "now"?`,
   )
   return result
-}
-
-const _setXAxisDisplay = (params: PlanParams) => {
-  if (!params.people.withPartner) return params
-  const { asYFN, years } = extendPlanParams(params)
-  params.people.xAxis =
-    asYFN(years.person1.max) >= asYFN(years.person2.max) ? 'person1' : 'person2'
-  return params
 }

@@ -1,10 +1,12 @@
 mod params;
-mod portfolio_over_year;
+mod portfolio_over_month;
 mod pre_calculations;
 mod run_spaw;
 mod run_swr;
 mod run_tpaw;
 mod utils;
+
+use serde::{Deserialize, Serialize};
 
 use std::cmp::Ordering;
 
@@ -22,54 +24,78 @@ fn to_js_arr_i32(x: &Vec<i32>) -> js_sys::Int32Array {
 
 #[wasm_bindgen]
 pub struct RunResult {
-    by_yfn_by_run_balance_start: Vec<f64>,
-    by_yfn_by_run_withdrawals_essential: Vec<f64>,
-    by_yfn_by_run_withdrawals_discretionary: Vec<f64>,
-    by_yfn_by_run_withdrawals_regular: Vec<f64>,
-    by_yfn_by_run_withdrawals_total: Vec<f64>,
-    by_yfn_by_run_withdrawals_from_savings_portfolio_rate: Vec<f64>,
-    by_yfn_by_run_after_withdrawals_allocation_stocks_savings: Vec<f64>,
-    by_yfn_by_run_after_withdrawals_allocation_stocks_total: Vec<f64>,
+    by_mfn_by_run_balance_start: Vec<f64>,
+    by_mfn_by_run_withdrawals_essential: Vec<f64>,
+    by_mfn_by_run_withdrawals_discretionary: Vec<f64>,
+    by_mfn_by_run_withdrawals_regular: Vec<f64>,
+    by_mfn_by_run_withdrawals_total: Vec<f64>,
+    by_mfn_by_run_withdrawals_from_savings_portfolio_rate: Vec<f64>,
+    by_mfn_by_run_after_withdrawals_allocation_stocks_savings: Vec<f64>,
+    by_mfn_by_run_after_withdrawals_allocation_stocks_total: Vec<f64>,
     by_run_ending_balance: Vec<f64>,
-    by_run_num_insufficient_fund_years: Vec<i32>, // Test
-                                                  // by_yfn_by_run_returns_stocks: Vec<f64>,
-                                                  // by_yfn_by_run_returns_bonds: Vec<f64>,
+    by_run_num_insufficient_fund_months: Vec<i32>,
+    // Needed only for testing, but does not impact performance by much,
+    // so ok to leave it in.
+    by_run_by_mfn_returns_stocks: Vec<f64>,
+    by_run_by_mfn_returns_bonds: Vec<f64>,
 }
 
 #[wasm_bindgen]
 impl RunResult {
-    pub fn by_yfn_by_run_balance_start(&self) -> js_sys::Float64Array {
-        to_js_arr(&self.by_yfn_by_run_balance_start)
+    pub fn by_mfn_by_run_balance_start(&self) -> js_sys::Float64Array {
+        to_js_arr(&self.by_mfn_by_run_balance_start)
     }
-    pub fn by_yfn_by_run_withdrawals_essential(&self) -> js_sys::Float64Array {
-        to_js_arr(&self.by_yfn_by_run_withdrawals_essential)
+    pub fn by_mfn_by_run_withdrawals_essential(&self) -> js_sys::Float64Array {
+        to_js_arr(&self.by_mfn_by_run_withdrawals_essential)
     }
-    pub fn by_yfn_by_run_withdrawals_discretionary(&self) -> js_sys::Float64Array {
-        to_js_arr(&self.by_yfn_by_run_withdrawals_discretionary)
+    pub fn by_mfn_by_run_withdrawals_discretionary(&self) -> js_sys::Float64Array {
+        to_js_arr(&self.by_mfn_by_run_withdrawals_discretionary)
     }
-    pub fn by_yfn_by_run_withdrawals_regular(&self) -> js_sys::Float64Array {
-        to_js_arr(&self.by_yfn_by_run_withdrawals_regular)
+    pub fn by_mfn_by_run_withdrawals_regular(&self) -> js_sys::Float64Array {
+        to_js_arr(&self.by_mfn_by_run_withdrawals_regular)
     }
-    pub fn by_yfn_by_run_withdrawals_total(&self) -> js_sys::Float64Array {
-        to_js_arr(&self.by_yfn_by_run_withdrawals_total)
+    pub fn by_mfn_by_run_withdrawals_total(&self) -> js_sys::Float64Array {
+        to_js_arr(&self.by_mfn_by_run_withdrawals_total)
     }
-    pub fn by_yfn_by_run_withdrawals_from_savings_portfolio_rate(&self) -> js_sys::Float64Array {
-        to_js_arr(&self.by_yfn_by_run_withdrawals_from_savings_portfolio_rate)
+    pub fn by_mfn_by_run_withdrawals_from_savings_portfolio_rate(&self) -> js_sys::Float64Array {
+        to_js_arr(&self.by_mfn_by_run_withdrawals_from_savings_portfolio_rate)
     }
-    pub fn by_yfn_by_run_after_withdrawals_allocation_stocks_savings(&self) -> js_sys::Float64Array {
-        to_js_arr(&self.by_yfn_by_run_after_withdrawals_allocation_stocks_savings)
+    pub fn by_mfn_by_run_after_withdrawals_allocation_stocks_savings(
+        &self,
+    ) -> js_sys::Float64Array {
+        to_js_arr(&self.by_mfn_by_run_after_withdrawals_allocation_stocks_savings)
     }
-    pub fn by_yfn_by_run_after_withdrawals_allocation_stocks_total(&self) -> js_sys::Float64Array {
-        to_js_arr(&self.by_yfn_by_run_after_withdrawals_allocation_stocks_total)
+    pub fn by_mfn_by_run_after_withdrawals_allocation_stocks_total(&self) -> js_sys::Float64Array {
+        to_js_arr(&self.by_mfn_by_run_after_withdrawals_allocation_stocks_total)
     }
-    pub fn by_run_num_insufficient_fund_years(&self) -> js_sys::Int32Array {
-        to_js_arr_i32(&self.by_run_num_insufficient_fund_years)
+    pub fn by_run_num_insufficient_fund_months(&self) -> js_sys::Int32Array {
+        to_js_arr_i32(&self.by_run_num_insufficient_fund_months)
     }
     pub fn test(&self) -> f64 {
         return 3.5;
     }
     pub fn by_run_ending_balance(&self) -> js_sys::Float64Array {
         to_js_arr(&self.by_run_ending_balance)
+    }
+    pub fn by_run_by_mfn_returns_stocks(&self) -> js_sys::Float64Array {
+        to_js_arr(&self.by_run_by_mfn_returns_stocks)
+    }
+    pub fn by_run_by_mfn_returns_bonds(&self) -> js_sys::Float64Array {
+        to_js_arr(&self.by_run_by_mfn_returns_bonds)
+    }
+    pub fn average_annual_returns_stocks(&self) -> f64 {
+        get_stats_for_window_size_from_log_returns(
+            &get_log_returns(&self.by_run_by_mfn_returns_stocks),
+            12,
+        )
+        .mean
+    }
+    pub fn average_annual_returns_bonds(&self) -> f64 {
+        get_stats_for_window_size_from_log_returns(
+            &get_log_returns(&self.by_run_by_mfn_returns_bonds),
+            12,
+        )
+        .mean
     }
 }
 
@@ -85,8 +111,8 @@ pub fn run(
     strategy: ParamsStrategy,
     start_run: usize,
     end_run: usize,
-    num_years: usize,
-    withdrawal_start_year: usize,
+    num_months: usize,
+    withdrawal_start_month: usize,
     expected_returns_stocks: f64,
     expected_returns_bonds: f64,
     historical_returns_stocks: Box<[f64]>,
@@ -98,19 +124,21 @@ pub fn run(
     swr_withdrawal_type: ParamsSWRWithdrawalType,
     swr_withdrawal_value: f64,
     lmp: Box<[f64]>,
-    by_year_savings: Box<[f64]>,
-    by_year_withdrawals_essential: Box<[f64]>,
-    by_year_withdrawals_discretionary: Box<[f64]>,
+    by_month_savings: Box<[f64]>,
+    by_month_withdrawals_essential: Box<[f64]>,
+    by_month_withdrawals_discretionary: Box<[f64]>,
     legacy_target: f64,
     legacy_external: f64,
     spending_tilt: Box<[f64]>,
     spending_ceiling: Option<f64>,
     spending_floor: Option<f64>,
     monte_carlo_sampling: bool,
+    monte_carlo_block_size: usize,
+    max_num_months: usize,
     test_truth: Option<Box<[f64]>>,
     test_index_into_historical_returns: Option<Box<[usize]>>,
 ) -> RunResult {
-    let expected_returns = ReturnsAtPointInTime {
+    let expected_monthly_returns = ReturnsAtPointInTime {
         stocks: expected_returns_stocks,
         bonds: expected_returns_bonds,
     };
@@ -118,10 +146,10 @@ pub fn run(
         strategy,
         start_run,
         end_run,
-        num_years,
-        withdrawal_start_year,
+        num_months,
+        withdrawal_start_month,
         current_savings,
-        expected_returns,
+        expected_monthly_returns,
         historical_returns: (0..historical_returns_stocks.len())
             .map(|i| ReturnsAtPointInTime {
                 stocks: historical_returns_stocks[i],
@@ -145,10 +173,10 @@ pub fn run(
             _ => panic!(),
         },
         lmp,
-        by_year: ParamsByYear {
-            savings: by_year_savings,
-            withdrawals_essential: by_year_withdrawals_essential,
-            withdrawals_discretionary: by_year_withdrawals_discretionary,
+        by_month: ParamsByMonth {
+            savings: by_month_savings,
+            withdrawals_essential: by_month_withdrawals_essential,
+            withdrawals_discretionary: by_month_withdrawals_discretionary,
         },
         legacy_target,
         legacy_external,
@@ -156,6 +184,8 @@ pub fn run(
         spending_ceiling,
         spending_floor,
         monte_carlo_sampling,
+        monte_carlo_block_size,
+        max_num_months,
         test: if let Some(truth) = test_truth {
             Some(ParamsTest {
                 truth,
@@ -167,21 +197,21 @@ pub fn run(
     };
     let num_runs = end_run - start_run;
 
-    let create_vec = || vec![0.0; (num_runs * num_years) as usize];
+    let create_vec = || vec![0.0; (num_runs * num_months) as usize];
     let mut result = RunResult {
-        by_yfn_by_run_balance_start: create_vec(),
-        by_yfn_by_run_withdrawals_essential: create_vec(),
-        by_yfn_by_run_withdrawals_discretionary: create_vec(),
-        by_yfn_by_run_withdrawals_regular: create_vec(),
-        by_yfn_by_run_withdrawals_total: create_vec(),
-        by_yfn_by_run_withdrawals_from_savings_portfolio_rate: create_vec(),
-        by_yfn_by_run_after_withdrawals_allocation_stocks_savings: create_vec(),
-        by_yfn_by_run_after_withdrawals_allocation_stocks_total: create_vec(),
-        by_run_num_insufficient_fund_years: vec![0; (num_runs) as usize],
+        by_mfn_by_run_balance_start: create_vec(),
+        by_mfn_by_run_withdrawals_essential: create_vec(),
+        by_mfn_by_run_withdrawals_discretionary: create_vec(),
+        by_mfn_by_run_withdrawals_regular: create_vec(),
+        by_mfn_by_run_withdrawals_total: create_vec(),
+        by_mfn_by_run_withdrawals_from_savings_portfolio_rate: create_vec(),
+        by_mfn_by_run_after_withdrawals_allocation_stocks_savings: create_vec(),
+        by_mfn_by_run_after_withdrawals_allocation_stocks_total: create_vec(),
+        by_run_num_insufficient_fund_months: vec![0; (num_runs) as usize],
         by_run_ending_balance: vec![0.0; (num_runs) as usize],
         // Test
-        // by_yfn_by_run_returns_stocks: create_vec(),
-        // by_yfn_by_run_returns_bonds: create_vec(),
+        by_run_by_mfn_returns_stocks: create_vec(),
+        by_run_by_mfn_returns_bonds: create_vec(),
     };
 
     match strategy {
@@ -190,12 +220,6 @@ pub fn run(
         params::ParamsStrategy::SWR => run_swr::run(&params, &mut result),
         _ => panic!(),
     };
-    // console::log_1(
-    //     &JsValue::from_serde(&stats(
-    //         (result.by_yfn_by_run_returns_stocks.clone()).into_boxed_slice(),
-    //     ))
-    //     .unwrap(),
-    // );
     return result;
 }
 
@@ -216,20 +240,35 @@ pub fn sort(data: Box<[f64]>) -> Box<[f64]> {
 }
 
 #[wasm_bindgen]
-pub fn one_over_cv(data: Box<[f64]>, n: i32) -> f64 {
-    if n == 0 {
-        return 0.0;
-    }
-    let Stats {
-        mean,
-        standard_deviation,
-        ..
-    } = stats(data);
-    let result = mean / standard_deviation;
-    return if result.is_nan() || result.is_infinite() || result < 0.0 {
-        0.0
-    } else {
-        result
+#[derive(Copy, Clone, Serialize, Deserialize)]
+pub struct SampledReturnStats {
+    pub one_year: StatsForWindowSize,
+    pub five_year: StatsForWindowSize,
+    pub ten_year: StatsForWindowSize,
+    pub thirty_year: StatsForWindowSize,
+    pub n: usize,
+}
+
+#[wasm_bindgen]
+pub fn get_sampled_returns_stats(
+    monthly_returns: Box<[f64]>,
+    block_size: usize,
+    num_months: usize,
+) -> SampledReturnStats {
+    // let indexes = &memoized_random(1, num_months, block_size, monthly_returns.len())[0];
+    let indexes =
+        &generate_random_index_sequences(1, num_months, block_size, monthly_returns.len())[0];
+    let ln_one_plus_monthly: Vec<f64> = indexes
+        .iter()
+        .map(|i| (monthly_returns[*i] + 1.0).ln())
+        .collect();
+
+    return SampledReturnStats {
+        one_year: get_stats_for_window_size_from_log_returns(&ln_one_plus_monthly, 12 * 1),
+        five_year: get_stats_for_window_size_from_log_returns(&ln_one_plus_monthly, 12 * 5),
+        ten_year: get_stats_for_window_size_from_log_returns(&ln_one_plus_monthly, 12 * 10),
+        thirty_year: get_stats_for_window_size_from_log_returns(&ln_one_plus_monthly, 12 * 30),
+        n: 3,
     };
 }
 

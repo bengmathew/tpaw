@@ -1,12 +1,12 @@
-import {default as React, ReactElement, ReactNode} from 'react'
-import {PlanInputType} from '../Helpers/PlanInputType'
-import {PlanInputSizing} from '../PlanInput'
-import {PlanInputBodyMobile} from './PlanInputBodyMobile'
-import {PlanInputLaptopAndDesktop} from './PlanInputLaptopAndDesktop'
+import { default as React, ReactElement, ReactNode } from 'react'
+import { PlanInputType } from '../Helpers/PlanInputType'
+import { PlanInputSizing } from '../PlanInput'
+import { PlanInputBodyMobile } from './PlanInputBodyMobile'
+import { PlanInputLaptopAndDesktop } from './PlanInputLaptopAndDesktop'
 
 export type PlanInputBodyPassThruProps = Omit<
   React.ComponentProps<typeof PlanInputBody>,
-  'children'
+  'children' | 'onBackgroundClick'
 >
 
 export const PlanInputBody = React.memo(
@@ -16,11 +16,13 @@ export const PlanInputBody = React.memo(
     children: childrenIn,
     type,
     customGuideIntro,
+    onBackgroundClick,
   }: {
     layout: 'mobile' | 'laptop' | 'desktop'
     sizing: PlanInputSizing['fixed']
     type: PlanInputType
     customGuideIntro?: ReactNode
+    onBackgroundClick?: () => void
     children:
       | ReactElement
       | [
@@ -28,21 +30,22 @@ export const PlanInputBody = React.memo(
           {
             error?: ReactElement
             input?: (
-              transitionOut: (onDone: () => void) => void
+              transitionOut: (onDone: () => void) => void,
             ) => ReactElement
-          }
+          },
         ]
   }) => {
     const [content, children] =
       childrenIn instanceof Array ? childrenIn : ([childrenIn, null] as const)
 
-    const child = {...children, content}
+    const child = { ...children, content }
 
     return layout === 'mobile' ? (
       <PlanInputBodyMobile
         sizing={sizing}
         type={type}
         customGuideIntro={customGuideIntro}
+        onBackgroundClick={onBackgroundClick}
       >
         {child}
       </PlanInputBodyMobile>
@@ -52,9 +55,10 @@ export const PlanInputBody = React.memo(
         layout={layout}
         type={type}
         customGuideIntro={customGuideIntro}
+        onBackgroundClick={onBackgroundClick}
       >
         {child}
       </PlanInputLaptopAndDesktop>
     )
-  }
+  },
 )

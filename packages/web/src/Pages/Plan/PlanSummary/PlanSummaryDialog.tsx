@@ -25,7 +25,7 @@ export const PlanSummaryDialog = React.memo(
     fixedSizing: { padding: { top: number } }
   }) => {
     const { setParams, paramsExt } = useSimulation()
-    const { withdrawalStartYear, asYFN } = paramsExt
+    const { withdrawalStartMonth, asMFN } = paramsExt
 
     const [measures, setMeasures] = useState({
       age: rectExt(0),
@@ -200,7 +200,7 @@ export const PlanSummaryDialog = React.memo(
                         const clone = _.cloneDeep(params)
                         clone.dialogPosition = nextPlanSectionDialogPosition(
                           dialogPosition,
-                          asYFN(withdrawalStartYear),
+                          asMFN(withdrawalStartMonth),
                         )
                         return clone
                       })

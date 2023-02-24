@@ -1,27 +1,26 @@
-import { historicalReturns, ValueForYearRange } from '@tpaw/common'
+import { historicalReturns, ValueForMonthRange } from '@tpaw/common'
 import _ from 'lodash'
-import { MarketData } from '../../Pages/Common/GetMarketData'
 import { nominalToReal } from '../../Utils/NominalToReal'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { assert, fGet, noCase } from '../../Utils/Utils'
 import { extendPlanParams, PlanParamsExt } from '../PlanParamsExt'
-import { PlanParamsProcessed, processInflation } from '../PlanParamsProcessed'
+import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 import { StatsTools } from '../StatsTools'
 import {
-  FirstYearSavingsPortfolioDetail,
-  firstYearSavingsPortfolioDetail,
-} from './FirstYearSavingsPortfolioDetail'
+  firstMonthSavingsPortfolioDetail,
+  FirstMonthSavingsPortfolioDetail,
+} from './FirstMonthSavingsPortfolioDetail'
 import { mergeWorkerRuns } from './MergeWorkerRuns'
 import {
   TPAWWorkerArgs,
-  TPAWWorkerCalculateOneOverCVResult,
+  TPAWWorkerCalculateSampledAnnualReturn,
   TPAWWorkerResult,
   TPAWWorkerRunSimulationResult,
   TPAWWorkerSortResult,
-} from './TPAWWorkerTypes'
+} from './TPAWWorkerAPI'
 
-export type TPAWRunInWorkerByPercentileByYearsFromNow = {
-  byPercentileByYearsFromNow: { data: number[]; percentile: number }[]
+export type TPAWRunInWorkerByPercentileByMonthsFromNow = {
+  byPercentileByMonthsFromNow: { data: number[]; percentile: number }[]
 }
 
 const MULTI_THREADED = true
@@ -31,36 +30,31 @@ export type TPAWRunInWorkerResult = {
   percentageOfRunsWithInsufficientFunds: number
   savingsPortfolio: {
     start: {
-      balance: TPAWRunInWorkerByPercentileByYearsFromNow
+      balance: TPAWRunInWorkerByPercentileByMonthsFromNow
     }
     withdrawals: {
       essential: {
-        total: TPAWRunInWorkerByPercentileByYearsFromNow
-        byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>
+        total: TPAWRunInWorkerByPercentileByMonthsFromNow
+        byId: Map<number, TPAWRunInWorkerByPercentileByMonthsFromNow>
       }
       discretionary: {
-        total: TPAWRunInWorkerByPercentileByYearsFromNow
-        byId: Map<number, TPAWRunInWorkerByPercentileByYearsFromNow>
+        total: TPAWRunInWorkerByPercentileByMonthsFromNow
+        byId: Map<number, TPAWRunInWorkerByPercentileByMonthsFromNow>
       }
-      regular: TPAWRunInWorkerByPercentileByYearsFromNow
-      total: TPAWRunInWorkerByPercentileByYearsFromNow
-      fromSavingsPortfolioRate: TPAWRunInWorkerByPercentileByYearsFromNow
+      regular: TPAWRunInWorkerByPercentileByMonthsFromNow
+      total: TPAWRunInWorkerByPercentileByMonthsFromNow
+      fromSavingsPortfolioRate: TPAWRunInWorkerByPercentileByMonthsFromNow
     }
-    // rewardRiskRatio: {
-    //   withdrawals: {
-    //     regular: Float64Array
-    //   }
-    // }
     afterWithdrawals: {
       allocation: {
-        stocks: TPAWRunInWorkerByPercentileByYearsFromNow
+        stocks: TPAWRunInWorkerByPercentileByMonthsFromNow
       }
     }
   }
   totalPortfolio: {
     afterWithdrawals: {
       allocation: {
-        stocks: TPAWRunInWorkerByPercentileByYearsFromNow
+        stocks: TPAWRunInWorkerByPercentileByMonthsFromNow
       }
     }
   }
@@ -68,7 +62,8 @@ export type TPAWRunInWorkerResult = {
     data: number
     percentile: number
   }[]
-  firstYearOfSomeRun: FirstYearSavingsPortfolioDetail
+  firstMonthOfSomeRun: FirstMonthSavingsPortfolioDetail
+  averageAnnualReturns: { stocks: number; bonds: number }
   perf: {
     main: [
       ['num-workers', number],
@@ -105,9 +100,9 @@ export class TPAWRunInWorker {
       (value: TPAWWorkerRunSimulationResult) => void
     >(),
     sort: new Map<string, (value: TPAWWorkerSortResult) => void>(),
-    calculateOneOverCV: new Map<
+    getSampledReturnStats: new Map<
       string,
-      (value: TPAWWorkerCalculateOneOverCVResult) => void
+      (value: TPAWWorkerCalculateSampledAnnualReturn) => void
     >(),
     clearMemoizedRandom: new Map<string, () => void>(),
   }
@@ -135,11 +130,11 @@ export class TPAWRunInWorker {
               resolve(data.result)
               break
             }
-            case 'calculateOneOverCV': {
+            case 'getSampledReturnStats': {
               const resolve = fGet(
-                this._resolvers.calculateOneOverCV.get(taskID),
+                this._resolvers.getSampledReturnStats.get(taskID),
               )
-              this._resolvers.calculateOneOverCV.delete(taskID)
+              this._resolvers.getSampledReturnStats.delete(taskID)
               resolve(data.result)
               break
             }
@@ -191,20 +186,22 @@ export class TPAWRunInWorker {
     )
   }
 
-  private _calculateOneOverCV(
+  private _getSampledReturnStats(
     worker: Worker,
-    data: Float64Array[],
-  ): Promise<TPAWWorkerCalculateOneOverCVResult> {
+    monthlyReturns: number[],
+    blockSize: number,
+    numMonths: number,
+  ): Promise<TPAWWorkerCalculateSampledAnnualReturn> {
     const taskID = _.uniqueId()
-    const transferables: Transferable[] = data.map((x) => x.buffer)
-    const message: Extract<TPAWWorkerArgs, { type: 'calculateOneOverCV' }> = {
-      taskID,
-      type: 'calculateOneOverCV',
-      args: { data },
-    }
-    worker.postMessage(message, transferables)
-    return new Promise<TPAWWorkerCalculateOneOverCVResult>((resolve) =>
-      this._resolvers.calculateOneOverCV.set(taskID, resolve),
+    const message: Extract<TPAWWorkerArgs, { type: 'getSampledReturnStats' }> =
+      {
+        taskID,
+        type: 'getSampledReturnStats',
+        args: { monthlyReturns, blockSize, numMonths },
+      }
+    worker.postMessage(message)
+    return new Promise<TPAWWorkerCalculateSampledAnnualReturn>((resolve) =>
+      this._resolvers.getSampledReturnStats.set(taskID, resolve),
     )
   }
 
@@ -224,6 +221,43 @@ export class TPAWRunInWorker {
     await Promise.all(
       this._workers.map((worker) => this._clearMemoizedRandom(worker)),
     )
+  }
+
+  async getSampledReturnStats(
+    monthlyReturns: number[],
+    blockSize: number,
+    numMonths: number,
+  ) {
+    const byWorker = await Promise.all(
+      this._workers.map((worker, i) =>
+        this._getSampledReturnStats(
+          worker,
+          monthlyReturns,
+          blockSize,
+          _loadBalance(i, numMonths, this._workers.length).length,
+        ),
+      ),
+    )
+
+    const merge = (yearsByWorker: typeof byWorker[0]['oneYear'][]) => {
+      const totalN = _.sumBy(yearsByWorker, (x) => x.n)
+      return {
+        n: totalN,
+        mean: _.sumBy(yearsByWorker, (x) => x.mean * x.n) / totalN,
+        ofLog: {
+          mean: _.sumBy(yearsByWorker, (x) => x.ofLog.mean * x.n) / totalN,
+          varianceAveragedOverThread:
+            _.sumBy(yearsByWorker, (x) => x.ofLog.variance) / byWorker.length,
+        },
+      }
+    }
+
+    return {
+      oneYear: merge(byWorker.map((x) => x.oneYear)),
+      fiveYear: merge(byWorker.map((x) => x.fiveYear)),
+      tenYear: merge(byWorker.map((x) => x.tenYear)),
+      thirtyYear: merge(byWorker.map((x) => x.thirtyYear)),
+    }
   }
 
   // async hasLiquidityProblem(
@@ -250,12 +284,11 @@ export class TPAWRunInWorker {
     numRuns: number,
     params: PlanParamsProcessed,
     percentiles: number[],
-    marketData: MarketData,
   ): Promise<TPAWRunInWorkerResult | null> {
     const start0 = performance.now()
     let start = performance.now()
     const paramsExt = extendPlanParams(params.original)
-    numRuns = _numRuns(paramsExt, numRuns)
+    numRuns = _getNumRuns(paramsExt, numRuns)
 
     const runsByWorker = await Promise.all(
       this._workers.map((worker, i) =>
@@ -272,8 +305,9 @@ export class TPAWRunInWorker {
 
     if (status.canceled) return null
     const {
-      byYearsFromNowByRun,
+      byMonthsFromNowByRun,
       byRun,
+      averageAnnualReturns,
       perf: perfSlowestSimulationWorker,
     } = mergeWorkerRuns(runsByWorker)
 
@@ -292,17 +326,18 @@ export class TPAWRunInWorker {
         totalPortfolioStockAllocation,
       ],
       perf: perfSortAndPickPercentilesYearly,
-    } = await this._sortAndPickPercentilesForByYearsFromNowByRun(
+    } = await this._sortAndPickPercentilesForByMonthsFromNowByRun(
       [
-        byYearsFromNowByRun.savingsPortfolio.start.balance,
-        byYearsFromNowByRun.savingsPortfolio.withdrawals.essential,
-        byYearsFromNowByRun.savingsPortfolio.withdrawals.discretionary,
-        byYearsFromNowByRun.savingsPortfolio.withdrawals.regular,
-        byYearsFromNowByRun.savingsPortfolio.withdrawals.total,
-        byYearsFromNowByRun.savingsPortfolio.withdrawals
+        byMonthsFromNowByRun.savingsPortfolio.start.balance,
+        byMonthsFromNowByRun.savingsPortfolio.withdrawals.essential,
+        byMonthsFromNowByRun.savingsPortfolio.withdrawals.discretionary,
+        byMonthsFromNowByRun.savingsPortfolio.withdrawals.regular,
+        byMonthsFromNowByRun.savingsPortfolio.withdrawals.total,
+        byMonthsFromNowByRun.savingsPortfolio.withdrawals
           .fromSavingsPortfolioRate,
-        byYearsFromNowByRun.savingsPortfolio.afterWithdrawals.allocation.stocks,
-        byYearsFromNowByRun.totalPortfolio.afterWithdrawals.allocation.stocks,
+        byMonthsFromNowByRun.savingsPortfolio.afterWithdrawals.allocation
+          .stocks,
+        byMonthsFromNowByRun.totalPortfolio.afterWithdrawals.allocation.stocks,
       ],
       percentiles,
     )
@@ -319,20 +354,14 @@ export class TPAWRunInWorker {
     const perfSortAndPickPercentiles = performance.now() - start
     start = performance.now()
 
-    const firstYearOfSomeRun = firstYearSavingsPortfolioDetail(
-      runsByWorker[0].byYearsFromNowByRun.savingsPortfolio,
+    const firstMonthOfSomeRun = firstMonthSavingsPortfolioDetail(
+      runsByWorker[0].byMonthsFromNowByRun.savingsPortfolio,
       params,
     )
     const withdrawlsEssentialById = new Map(
       params.original.adjustmentsToSpending.extraSpending.essential.map((x) => [
         x.id,
-        _separateExtraWithdrawal(
-          x,
-          params,
-          withdrawalsEssential,
-          'essential',
-          marketData,
-        ),
+        _separateExtraWithdrawal(x, params, withdrawalsEssential, 'essential'),
       ]),
     )
     const withdrawlsDiscretionaryById = new Map(
@@ -344,14 +373,13 @@ export class TPAWRunInWorker {
             params,
             withdrawalsDiscretionary,
             'discretionary',
-            marketData,
           ),
         ],
       ),
     )
 
     const percentageOfRunsWithInsufficientFunds =
-      byRun.numInsufficientFundYears.filter((x) => x > 0).length / numRuns
+      byRun.numInsufficientFundMonths.filter((x) => x > 0).length / numRuns
 
     const perfPost = performance.now() - start
     start = performance.now()
@@ -382,16 +410,11 @@ export class TPAWRunInWorker {
           },
           regular: withdrawalsRegular,
           total: withdrawalsTotal,
-          fromSavingsPortfolioRate: _mapByPercentileByYearsFromNow(
+          fromSavingsPortfolioRate: _mapByPercentileByMonthsFromNow(
             withdrawalFromSavingsRate,
             (x) => Math.max(0, x),
           ),
         },
-
-        // rewardRiskRatio: {
-        //   withdrawals: { regular: rewardRiskRatioWithdrawalsRegular },
-        // },
-
         afterWithdrawals: {
           allocation: {
             stocks: savingsPortfolioStockAllocation,
@@ -405,8 +428,9 @@ export class TPAWRunInWorker {
           },
         },
       },
-      firstYearOfSomeRun,
+      firstMonthOfSomeRun,
       endingBalanceOfSavingsPortfolioByPercentile,
+      averageAnnualReturns,
       perf: {
         main: [
           ['num-workers', this._workers.length],
@@ -435,8 +459,8 @@ export class TPAWRunInWorker {
     return status.canceled ? null : result
   }
 
-  private _sortAndPickPercentilesForByYearsFromNowByRun = async (
-    numberByTypeByYearsFromNowByRun: Float64Array[][],
+  private _sortAndPickPercentilesForByMonthsFromNowByRun = async (
+    numberByTypeByMonthsFromNowByRun: Float64Array[][],
     percentiles: number[],
   ) => {
     const perf = {
@@ -450,57 +474,62 @@ export class TPAWRunInWorker {
     }
     const start0 = performance.now()
     let start = performance.now()
-    const numYearsArr = _.uniq(
-      numberByTypeByYearsFromNowByRun.map((x) => x.length),
+    const numMonthsArr = _.uniq(
+      numberByTypeByMonthsFromNowByRun.map((x) => x.length),
     )
-    assert(numYearsArr.length === 1)
-    const numYears = numYearsArr[0]
-    const numberByYearsFromNowByRun = _.flatten(numberByTypeByYearsFromNowByRun)
+    assert(numMonthsArr.length === 1)
+    const numMonths = numMonthsArr[0]
+    const numberByMonthsFromNowByRun = _.flatten(
+      numberByTypeByMonthsFromNowByRun,
+    )
     perf.pre = performance.now() - start
     start = performance.now()
-    const numberByWorkerByYearsFromNowByRunSorted = await Promise.all(
+    const numberByWorkerByMonthsFromNowByRunSorted = await Promise.all(
       this._workers.map((worker, i) => {
         const { start, length } = _loadBalance(
           i,
-          numberByYearsFromNowByRun.length,
+          numberByMonthsFromNowByRun.length,
           this._workers.length,
         )
         return this._sort(
           worker,
-          numberByYearsFromNowByRun.slice(start, start + length),
+          numberByMonthsFromNowByRun.slice(start, start + length),
         )
       }),
     )
     perf.slowestSortWorker = Math.max(
-      ...numberByWorkerByYearsFromNowByRunSorted.map((x) => x.perf),
+      ...numberByWorkerByMonthsFromNowByRunSorted.map((x) => x.perf),
     )
     perf.sort = performance.now() - start
     start = performance.now()
 
-    const numberByYearsFromNowByRunSorted = _.flatten(
-      numberByWorkerByYearsFromNowByRunSorted.map((x) => x.data),
+    const numberByMonthsFromNowByRunSorted = _.flatten(
+      numberByWorkerByMonthsFromNowByRunSorted.map((x) => x.data),
     )
 
     perf.post = performance.now() - start
     start = performance.now()
 
-    const numberByTypeByYearsFromNowByRunSorted =
-      numberByTypeByYearsFromNowByRun.map((x, i) =>
-        numberByYearsFromNowByRunSorted.slice(i * numYears, (i + 1) * numYears),
+    const numberByTypeByMonthsFromNowByRunSorted =
+      numberByTypeByMonthsFromNowByRun.map((x, i) =>
+        numberByMonthsFromNowByRunSorted.slice(
+          i * numMonths,
+          (i + 1) * numMonths,
+        ),
       )
-    const result = numberByTypeByYearsFromNowByRunSorted.map(
-      (numberByYearsFromNowByRunSorted) => {
-        const numberByYearsFromNowByPercentile =
+    const result = numberByTypeByMonthsFromNowByRunSorted.map(
+      (numberByMonthsFromNowByRunSorted) => {
+        const numberByMonthsFromNowByPercentile =
           StatsTools.pickPercentilesFromSorted(
-            numberByYearsFromNowByRunSorted,
+            numberByMonthsFromNowByRunSorted,
             percentiles,
           )
 
-        const byPercentileByYearsFromNow = StatsTools.pivot(
-          numberByYearsFromNowByPercentile,
+        const byPercentileByMonthsFromNow = StatsTools.pivot(
+          numberByMonthsFromNowByPercentile,
         ).map((data, i) => ({ data, percentile: percentiles[i] }))
 
-        return { byPercentileByYearsFromNow }
+        return { byPercentileByMonthsFromNow }
       },
     )
 
@@ -538,57 +567,58 @@ const _loadBalance = (worker: number, numJobs: number, numWorkers: number) => {
 }
 
 const _separateExtraWithdrawal = (
-  discretionaryWithdrawal: ValueForYearRange,
+  discretionaryWithdrawal: ValueForMonthRange,
   params: PlanParamsProcessed,
-  x: TPAWRunInWorkerByPercentileByYearsFromNow,
+  x: TPAWRunInWorkerByPercentileByMonthsFromNow,
   type: 'discretionary' | 'essential',
-  marketData: MarketData,
-): TPAWRunInWorkerByPercentileByYearsFromNow => {
-  const yearRange = extendPlanParams(params.original).asYFN(
-    discretionaryWithdrawal.yearRange,
+): TPAWRunInWorkerByPercentileByMonthsFromNow => {
+  const monthRange = extendPlanParams(params.original).asMFN(
+    discretionaryWithdrawal.monthRange,
   )
 
-  return _mapByPercentileByYearsFromNow(x, (value, yearFromNow) => {
-    if (yearFromNow < yearRange.start || yearFromNow > yearRange.end) {
+  return _mapByPercentileByMonthsFromNow(x, (value, monthsFromNow) => {
+    if (monthsFromNow < monthRange.start || monthsFromNow > monthRange.end) {
       return 0
     }
-    const currYearParams = params.byYear[yearFromNow].extraSpending
-    const withdrawalTargetForThisYear = nominalToReal(
-      discretionaryWithdrawal,
-      processInflation(params.original.inflation, marketData),
-      yearFromNow,
-    )
-    if (withdrawalTargetForThisYear === 0) return 0
+    const currMonthParams = params.byMonth[monthsFromNow].extraSpending
+    const withdrawalTargetForThisMonth = nominalToReal({
+      value: discretionaryWithdrawal,
+      monthlyInflation: params.monthlyInflation,
+      monthsFromNow,
+    })
+    if (withdrawalTargetForThisMonth === 0) return 0
     const ratio =
-      withdrawalTargetForThisYear /
+      withdrawalTargetForThisMonth /
       (type === 'discretionary'
-        ? currYearParams.discretionary
-        : currYearParams.essential)
-    assert(!isNaN(ratio)) // withdrawalTargetForThisYear ?>0 imples denominator is not 0.
+        ? currMonthParams.discretionary
+        : currMonthParams.essential)
+    assert(!isNaN(ratio)) // withdrawalTargetForThisMonth ?>0 imples denominator is not 0.
     return value * ratio
   })
 }
 
-const _mapByPercentileByYearsFromNow = (
-  x: TPAWRunInWorkerByPercentileByYearsFromNow,
+const _mapByPercentileByMonthsFromNow = (
+  x: TPAWRunInWorkerByPercentileByMonthsFromNow,
   fn: (x: number, i: number) => number,
-): TPAWRunInWorkerByPercentileByYearsFromNow => {
-  const byPercentileByYearsFromNow = x.byPercentileByYearsFromNow.map((x) => ({
-    data: x.data.map(fn),
-    percentile: x.percentile,
-  }))
-  return { byPercentileByYearsFromNow }
+): TPAWRunInWorkerByPercentileByMonthsFromNow => {
+  const byPercentileByMonthsFromNow = x.byPercentileByMonthsFromNow.map(
+    (x) => ({
+      data: x.data.map(fn),
+      percentile: x.percentile,
+    }),
+  )
+  return { byPercentileByMonthsFromNow }
 }
 
-const _numRuns = (paramsExt: PlanParamsExt, numRuns: number) => {
-  const { params, numYears } = paramsExt
-  switch (params.sampling) {
+const _getNumRuns = (paramsExt: PlanParamsExt, numRuns: number) => {
+  const { params, numMonths } = paramsExt
+  switch (params.advanced.sampling) {
     case 'monteCarlo':
       return numRuns
     case 'historical': {
-      return historicalReturns.raw.length - numYears + 1
+      return historicalReturns.monthly.stocks.returns.length - numMonths + 1
     }
     default:
-      noCase(params.sampling)
+      noCase(params.advanced.sampling)
   }
 }

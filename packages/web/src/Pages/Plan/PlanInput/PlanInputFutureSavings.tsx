@@ -1,11 +1,14 @@
-import { default as React, Dispatch, useEffect, useState } from 'react'
+import { default as React, Dispatch, useEffect, useRef, useState } from 'react'
 import { Contentful } from '../../../Utils/Contentful'
 import { paddingCSS } from '../../../Utils/Geometry'
 import { useURLUpdater } from '../../../Utils/UseURLUpdater'
 import { useSimulation } from '../../App/WithSimulation'
-import { EditValueForYearRange } from '../../Common/Inputs/EditValueForYearRange'
+import {
+  EditValueForMonthRange,
+  EditValueForMonthRangeStateful,
+} from '../../Common/Inputs/EditValueForMonthRange'
 import { useGetSectionURL, usePlanContent } from '../Plan'
-import { ByYearSchedule } from './Helpers/ByYearSchedule'
+import { ByMonthSchedule } from './Helpers/ByMonthSchedule'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
@@ -13,13 +16,14 @@ import {
 
 type _State =
   | { type: 'main' }
-  | { type: 'edit'; isAdd: boolean; index: number; hideInMain: boolean }
+  | { type: 'edit'; isAdd: boolean; entryId: number; hideInMain: boolean }
 
 export const PlanInputFutureSavings = React.memo(
   (props: PlanInputBodyPassThruProps) => {
     const { paramsExt } = useSimulation()
     const [state, setState] = useState<_State>({ type: 'main' })
-    const { validYearRange, withdrawalsStarted } = paramsExt
+    const editRef = useRef<EditValueForMonthRangeStateful>(null)
+    const { validMonthRangeAsMFN, withdrawalsStarted } = paramsExt
 
     const summarySectionURL = useGetSectionURL()('summary')
     const urlUpdater = useURLUpdater()
@@ -29,13 +33,19 @@ export const PlanInputFutureSavings = React.memo(
     if (withdrawalsStarted) return <></>
 
     return (
-      <PlanInputBody {...props}>
+      <PlanInputBody
+        {...props}
+        onBackgroundClick={() => editRef.current?.closeSections()}
+      >
         <_FutureSavingsCard props={props} state={state} setState={setState} />
         {{
           input:
             state.type === 'edit'
               ? (transitionOut) => (
-                  <EditValueForYearRange
+                  <EditValueForMonthRange
+                    ref={editRef}
+                    hasMonthRange
+                    mode={state.isAdd ? 'add' : 'edit'}
                     title={state.isAdd ? 'Add Savings' : 'Edit Savings'}
                     labelPlaceholder="E.g. From My Salary"
                     setHideInMain={(hideInMain) =>
@@ -43,13 +53,14 @@ export const PlanInputFutureSavings = React.memo(
                     }
                     transitionOut={transitionOut}
                     onDone={() => setState({ type: 'main' })}
-                    entries={(params) => params.wealth.futureSavings}
-                    index={state.index}
-                    allowableRange={validYearRange('future-savings')}
+                    getEntries={(params) => params.wealth.futureSavings}
+                    entryId={state.entryId}
+                    validRangeAsMFN={validMonthRangeAsMFN('future-savings')}
                     choices={{
                       start: ['now', 'numericAge'],
-                      end: ['lastWorkingYear', 'numericAge', 'forNumOfYears'],
+                      end: ['lastWorkingMonth', 'numericAge', 'forNumOfMonths'],
                     }}
+                    cardPadding={props.sizing.cardPadding}
                   />
                 )
               : undefined,
@@ -72,7 +83,7 @@ const _FutureSavingsCard = React.memo(
     setState: Dispatch<_State>
   }) => {
     const { params, paramsExt } = useSimulation()
-    const { validYearRange, years } = paramsExt
+    const { validMonthRangeAsMFN, months } = paramsExt
 
     const content = usePlanContent()
 
@@ -83,28 +94,28 @@ const _FutureSavingsCard = React.memo(
           style={{ padding: paddingCSS(props.sizing.cardPadding) }}
         >
           <Contentful.RichText
-            body={content['future-savings'].intro[params.strategy]}
+            body={content['future-savings'].intro[params.advanced.strategy]}
             p="p-base"
           />
-          <ByYearSchedule
+          <ByMonthSchedule
             className="mt-6"
             heading={null}
-            addButtonText="Add Savings"
+            addButtonText="Add"
             entries={(params) => params.wealth.futureSavings}
-            hideEntry={
-              state.type === 'edit' && state.hideInMain ? state.index : null
+            hideEntryId={
+              state.type === 'edit' && state.hideInMain ? state.entryId : null
             }
-            allowableYearRange={validYearRange('future-savings')}
-            onEdit={(index, isAdd) =>
-              setState({ type: 'edit', isAdd, index, hideInMain: isAdd })
+            allowableMonthRange={validMonthRangeAsMFN('future-savings')}
+            onEdit={(entryId, isAdd) =>
+              setState({ type: 'edit', isAdd, entryId, hideInMain: isAdd })
             }
-            defaultYearRange={{
+            defaultMonthRange={{
               type: 'startAndEnd',
-              start: years.now,
+              start: months.now,
               end:
                 params.people.person1.ages.type === 'notRetired'
-                  ? years.person1.lastWorkingYear
-                  : years.person2.lastWorkingYear,
+                  ? months.person1.lastWorkingMonth
+                  : months.person2.lastWorkingMonth,
             }}
           />
         </div>

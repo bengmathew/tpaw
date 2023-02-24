@@ -1,10 +1,11 @@
-import { linearFnFomPoints } from '@tpaw/common'
+import { linearFnFomPoints, noCase } from '@tpaw/common'
 import _ from 'lodash'
 import React from 'react'
 import { newPadding } from '../../../../Utils/Geometry'
-import { fGet, noCase } from '../../../../Utils/Utils'
+import { fGet } from '../../../../Utils/Utils'
 import { ChartXYRange } from '../../../Common/Chart/Chart'
 import { chartDrawDataLines } from '../../../Common/Chart/ChartComponent/ChartDrawDataLines'
+import { chartDrawDataRangeBand } from '../../../Common/Chart/ChartComponent/ChartDrawRangeBand'
 import { ChartMinMaxYAxis } from '../../../Common/Chart/ChartComponent/ChartMinMaxYAxis'
 import { ChartPointer } from '../../../Common/Chart/ChartComponent/ChartPointer'
 import { ChartXAxis } from '../../../Common/Chart/ChartComponent/ChartXAxis'
@@ -45,113 +46,46 @@ export const TPAWChartMain = React.memo(
 )
 
 const components = (hidePointer: boolean) => () => {
-  const minorLine = chartDrawDataLines<TPAWChartDataMain>({
-    lineWidth: 0.5,
-    strokeStyle: ChartUtils.color.gray[400],
-    dataFn: (data: TPAWChartDataMain) =>
-      data.series.type === 'percentiles'
-        ? {
-            lines: data.series.percentiles
-              .filter((x) => !x.isHighlighted)
-              .map((x) => x.data),
-          }
-        : data.series.type === 'labeledLines'
-        ? {
-            lines: _.times(
-              data.series.percentiles.length -
-                data.series.highlightedPercentiles.length,
-            ).map(() => null),
-          }
-        : noCase(data.series),
-  })
-  const majorLine = chartDrawDataLines<TPAWChartDataMain>({
+  const medianLine = chartDrawDataLines<TPAWChartDataMain>({
     lineWidth: 1.2,
-    strokeStyle: ChartUtils.color.gray[500],
-    dataFn: (data: TPAWChartDataMain) =>
-      data.series.type === 'percentiles'
-        ? {
-            lines: data.series.percentiles
-              .filter((x) => x.isHighlighted)
-              .map((x) => x.data),
-          }
-        : {
-            lines: [
-              data.series.lines[0].data,
-              ..._.times(data.series.highlightedPercentiles.length - 3).map(
-                () => null,
-              ),
-              data.series.lines[1].data,
-              data.series.lines[2].data,
-            ],
-          },
+    strokeStyle: ChartUtils.color.orange[400],
+    dataFn: (data: TPAWChartDataMain) => ({
+      lines: data.percentiles
+        .filter((x) => x.percentile === 50)
+        .map((x) => x.data),
+    }),
+  })
+  const rangeBand = chartDrawDataRangeBand<TPAWChartDataMain>({
+    fillStyle: ChartUtils.color.orange[100],
+    dataFn: (data: TPAWChartDataMain) => ({
+      min: fGet(_.first(data.percentiles)).data,
+      max: fGet(_.last(data.percentiles)).data,
+    }),
   })
 
   const minMaxYAxis = new ChartMinMaxYAxis<TPAWChartDataMain>(
     (data, x) => data.yFormat(x),
     ChartUtils.color.gray[800],
     (data) => data.max.x,
-    (data, x) => {
-      switch (data.series.type) {
-        case 'percentiles':
-          return {
-            min: data.series.percentiles[0].data(x),
-            max: fGet(_.last(data.series.percentiles)).data(x),
-          }
-        case 'labeledLines':
-          const ys = data.series.lines.map(({ data }) => data(x))
-          return {
-            min: Math.min(...ys),
-            max: Math.max(...ys),
-          }
-        default:
-          noCase(data.series)
-      }
-    },
+    (data, x) => ({
+      min: data.percentiles[0].data(x),
+      max: fGet(_.last(data.percentiles)).data(x),
+    }),
   )
 
   const pointer = hidePointer
     ? null
     : new ChartPointer<TPAWChartDataMain>(
         (data) => {
-          switch (data.series.type) {
-            case 'percentiles':
-              return data.series.percentiles
-                .filter((x) => x.isHighlighted)
-                .map((x) => ({ line: x.data, label: `${x.percentile}` }))
-            case 'labeledLines': {
-              const tpaw = {
-                line: data.series.lines[0].data,
-                label: data.series.lines[0].label,
-              }
-              const spaw = {
-                line: data.series.lines[1].data,
-                label: data.series.lines[1].label,
-              }
-              const swr = {
-                line: data.series.lines[2].data,
-                label: data.series.lines[2].label,
-              }
-              const ordered = _.sortBy([tpaw, spaw, swr], (x) =>
-                x.line(data.years.displayRange.start),
-              )
-
-              return [
-                ordered[0],
-                ordered[1],
-                ..._.times(
-                  data.series.highlightedPercentiles.length - ordered.length,
-                ).map(() => null),
-                ordered[2],
-              ]
-            }
-            default:
-              noCase(data.series)
-          }
+          return data.percentiles.map((x) => ({
+            line: x.data,
+            label: `${x.percentile}`,
+          }))
         },
         ({ dataTransition, derivedState }) => {
           const data = dataTransition.target
           const { viewport } = derivedState.curr
-          const { pickPerson, asYFN, years } = data.paramsExt
+          const { pickPerson, asMFN, months } = data.paramsExt
           const scaled = (at200: number, at500: number) =>
             _.clamp(
               linearFnFomPoints(200, at200, 500, at500)(viewport.width),
@@ -162,16 +96,22 @@ const components = (hidePointer: boolean) => () => {
             subHeading: 'Percentiles',
             formatX: (dataX: number) => {
               const ageX = (person: 'person1' | 'person2') =>
-                pickPerson(person).ages.current + dataX
-              return dataX === data.years.max + 1
-                ? 'Legacy'
+                pickPerson(person).ages.currentMonth + dataX
+              return dataX === data.months.max + 1
+                ? { type: 'legacy' }
                 : data.params.people.withPartner
-                ? `Ages ${
-                    dataX > asYFN(years.person1.max) ? '＿' : ageX('person1')
-                  },${
-                    dataX > asYFN(years.person2.max) ? '＿' : ageX('person2')
-                  }`
-                : `Age ${ageX('person1')}`
+                ? {
+                    type: 'withPartner',
+                    ageInMonths:
+                      dataX > asMFN(months.person1.max)
+                        ? null
+                        : ageX('person1'),
+                    partnerAgeInMonths:
+                      dataX > asMFN(months.person2.max)
+                        ? null
+                        : ageX('person2'),
+                  }
+                : { type: 'withoutPartner', ageInMonths: ageX('person1') }
             },
             formatY: data.yFormat,
             showTh: true,
@@ -202,21 +142,28 @@ const components = (hidePointer: boolean) => () => {
     new ChartXAxis<TPAWChartDataMain>(({ dataTransition, derivedState }) => {
       let person = personIn
       const { viewport } = derivedState.curr
-      const { params, pickPerson, years, asYFN } =
+      const { params, pickPerson, months, asMFN } =
         dataTransition.target.paramsExt
       if (person === 'person2' && !params.people.withPartner) {
-        // We are invisible anyway, so it does not matter, but this will preven
+        // We are invisible anyway, so it does not matter, but this will prevent
         // asserts. Hacky, I know.
         person = 'person1'
       }
       const dataXTransform = (dataX: number) =>
-        dataX + pickPerson(person).ages.current
+        dataX + pickPerson(person).ages.currentMonth
       const sizing = tpawChartMainXAxisSizing(viewport.width)
       const dyn = _dynSizing(viewport.width)
 
       return {
-        type: (x) =>
-          x % 10 === 0 ? 'large' : x % 5 === 0 ? 'medium' : 'small',
+        type: (monthFromNow) => {
+          if (monthFromNow % 12 !== 0) return 'none'
+          const yearFromNow = Math.round(monthFromNow / 12)
+          return yearFromNow % 10 === 0
+            ? 'large'
+            : yearFromNow % 5 === 0
+            ? 'medium'
+            : 'small'
+        },
         tickStyle: (type) => {
           const result = (length: number, color: string, font: string) => ({
             length,
@@ -234,7 +181,7 @@ const components = (hidePointer: boolean) => () => {
               )
             : type === 'medium'
             ? result(dyn(3, 4), color['600'], ChartUtils.getFont(dyn(8, 9)))
-            : result(dyn(1, 2), color['600'], ChartUtils.getFont(dyn(8, 9)))
+            : result(dyn(1, 2), color['500'], ChartUtils.getFont(dyn(8, 9)))
         },
         style: {
           background: {
@@ -250,26 +197,29 @@ const components = (hidePointer: boolean) => () => {
         },
         padding: newPadding({ horz: 1, vert: 1 }),
         dataXTransform,
-        formatLabel: (transformedDataX) => `${transformedDataX}`,
+        formatLabel: (transformedDataX) => `${transformedDataX / 12}`,
         shouldLabel: (pixelsPerTick, type) => {
+          const pixelsPerYear = pixelsPerTick * 12
           switch (type) {
             case 'small':
               return false
             case 'medium':
-              return pixelsPerTick > 15
+              return pixelsPerYear > 15
             case 'large':
               return true
+            default:
+              noCase(type)
           }
         },
         visible: person === 'person1' ? true : params.people.withPartner,
         yOffset:
-          4 +
+          6 +
           (params.people.withPartner
             ? +sizing.gap +
               (person === 'person1' ? 0 : sizing.height + sizing.gap)
             : sizing.gap),
-        maxDataX: asYFN(years[person].max),
-        retirementDataX: asYFN(years[person].retirement),
+        maxDataX: asMFN(months[person].max),
+        retirementDataX: asMFN(months[person].retirement),
         label: person === 'person1' ? 'Your Age' : `Partner's Age`,
         tempPerson: person,
         height: sizing.height,
@@ -286,8 +236,9 @@ const components = (hidePointer: boolean) => () => {
 
   const custom = new ChartDrawMain()
   return _.compact([
-    minorLine,
-    majorLine,
+    // minorLine,
+    rangeBand,
+    medianLine,
     minMaxYAxis,
     custom,
     xAxis('person1'),

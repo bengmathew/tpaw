@@ -3,10 +3,10 @@ use crate::pre_calculations::PreCalculations;
 use crate::utils::*;
 use serde::{Deserialize, Serialize};
 
-pub struct SingleYearContext<'a> {
+pub struct SingleMonthContext<'a> {
     pub params: &'a Params,
     pub pre_calculations: &'a PreCalculations,
-    pub year_index: usize,
+    pub month_index: usize,
     pub returns: &'a ReturnsAtPointInTime,
     pub balance_starting: f64,
 }
@@ -68,7 +68,7 @@ pub fn apply_contributions(contributions: f64, balance_starting: f64) -> AfterCo
 #[inline(always)]
 fn get_actual_withdrawals(
     target: &TargetWithdrawals,
-    context: &SingleYearContext,
+    context: &SingleMonthContext,
     after_contributions: &AfterContributions,
 ) -> ActualWithdrawals {
     // ---- Apply ceiling and floor, but not for SWR ----
@@ -76,16 +76,16 @@ fn get_actual_withdrawals(
         *target
     } else {
         let params = context.params;
-        let year_index = context.year_index;
+        let month_index = context.month_index;
         let mut discretionary = target.discretionary;
 
-        let withdrawal_started = year_index >= params.withdrawal_start_year;
+        let withdrawal_started = month_index >= params.withdrawal_start_month;
         let mut regular_with_lmp = target.lmp + target.regular_without_lmp;
 
         if let Some(spending_ceiling) = params.spending_ceiling {
             discretionary = f64::min(
                 discretionary,
-                params.by_year.withdrawals_discretionary[year_index],
+                params.by_month.withdrawals_discretionary[month_index],
             );
             regular_with_lmp = f64::min(regular_with_lmp, spending_ceiling);
         };
@@ -93,7 +93,7 @@ fn get_actual_withdrawals(
         if let Some(spending_floor) = params.spending_floor {
             discretionary = f64::max(
                 discretionary,
-                params.by_year.withdrawals_discretionary[year_index],
+                params.by_month.withdrawals_discretionary[month_index],
             );
             if withdrawal_started {
                 regular_with_lmp = f64::max(regular_with_lmp, spending_floor);
@@ -125,7 +125,7 @@ fn get_actual_withdrawals(
 #[inline(always)]
 pub fn apply_target_withdrawals(
     target: &TargetWithdrawals,
-    context: &SingleYearContext,
+    context: &SingleMonthContext,
     after_contributions: &AfterContributions,
 ) -> AfterWithdrawals {
     let balance_starting = context.balance_starting;

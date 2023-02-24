@@ -59,9 +59,86 @@ export const preciseRange = (
   start: number,
   end: number,
   stepSize: number,
-  precision: number
+  precision: number,
 ) => {
-  return _.range(_.round((end - start) / stepSize + 1)).map(x =>
-    _.round(x * stepSize + start, precision)
+  return _.range(_.round((end - start) / stepSize + 1)).map((x) =>
+    _.round(x * stepSize + start, precision),
   )
 }
+
+export function annualToMonthlyReturnRate(
+  annual: number,
+  // correction: number,
+): number
+export function annualToMonthlyReturnRate(
+  annual: {
+    stocks: number
+    bonds: number
+  },
+  // correction: number,
+): { stocks: number; bonds: number }
+export function annualToMonthlyReturnRate(
+  annual: number | { stocks: number; bonds: number },
+  // correction: number,
+): number | { stocks: number; bonds: number } {
+  return typeof annual === 'number'
+    ? Math.pow(1 + annual, 1 / 12) - 1
+    : {
+        stocks: annualToMonthlyReturnRate(annual.stocks),
+        bonds: annualToMonthlyReturnRate(annual.bonds),
+      }
+}
+
+export function monthlyToAnnualReturnRate(monthly: number): number
+export function monthlyToAnnualReturnRate(monthly: {
+  stocks: number
+  bonds: number
+}): { stocks: number; bonds: number }
+export function monthlyToAnnualReturnRate(
+  monthly: number | { stocks: number; bonds: number },
+): number | { stocks: number; bonds: number } {
+  return typeof monthly === 'number'
+    ? Math.pow(1 + monthly, 12) - 1
+    : {
+        stocks: monthlyToAnnualReturnRate(monthly.stocks),
+        bonds: monthlyToAnnualReturnRate(monthly.bonds),
+      }
+}
+
+export const getLogReturns = (returns: number[]) =>
+  returns.map((x) => Math.log(1 + x))
+
+export function getStats<T extends Float64Array | number[]>(returns: T) {
+  const expectedValue = _.mean(returns)
+  const variance =
+    _.sumBy(returns, (x) => Math.pow(x - expectedValue, 2)) /
+    (returns.length - 1)
+  const standardDeviation = Math.sqrt(variance)
+
+  return {
+    returns,
+    expectedValue,
+    mean: expectedValue,
+    variance,
+    standardDeviation,
+  }
+}
+
+export function getStatsWithLog(x: number[]) {
+  return {
+    ...getStats(x),
+    ofLog: getStats(getLogReturns(x)),
+  }
+}
+
+export const sequentialAnnualReturnsFromMonthly = (monthly: number[]) =>
+  blockify(monthly, 12).map(monthRateArrToYear)
+
+export const blockify = (x: number[], blockSize: number) => {
+  const numBlocks = x.length + 1 - blockSize
+  assert(numBlocks > 0)
+  return _.range(0, numBlocks).map((i) => x.slice(i, i + blockSize))
+}
+
+export const monthRateArrToYear = (year: number[]) =>
+  year.map((x) => 1 + x).reduce((x, y) => x * y, 1) - 1

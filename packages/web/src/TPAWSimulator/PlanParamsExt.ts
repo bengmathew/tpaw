@@ -1,12 +1,12 @@
-import { GlidePath, Person, PlanParams, Year, YearRange } from '@tpaw/common'
+import { GlidePath, Month, MonthRange, Person, PlanParams } from '@tpaw/common'
 import _ from 'lodash'
-import { pluralize } from '../Utils/Pluralize'
 import { SimpleRange } from '../Utils/SimpleRange'
 import { assert, noCase } from '../Utils/Utils'
+import { yourOrYourPartners } from '../Utils/YourOrYourPartners'
 
 export type PlanParamsExt = ReturnType<typeof extendPlanParams>
 export const extendPlanParams = (params: PlanParams) => {
-  const { years, yearRangeEdge } = extendPlanParams
+  const { months, monthRangeEdge } = extendPlanParams
 
   const pickPerson = (person: 'person1' | 'person2') => {
     if (person === 'person1') return params.people.person1
@@ -14,98 +14,106 @@ export const extendPlanParams = (params: PlanParams) => {
     return params.people.person2
   }
 
-  const asYearsFromNow_Year = (year: Year): number => {
-    if (year.type === 'now') return 0
-    const person = pickPerson(year.person)
-    const { age: ageIn } = year
-    const age = (() => {
-      const effectiveRetirement =
-        person.ages.type === 'retired'
-          ? person.ages.current
-          : person.ages.retirement
-      if (ageIn === 'lastWorkingYear') {
-        return effectiveRetirement - 1
-      }
-      if (ageIn === 'retirement') {
-        return effectiveRetirement
-      }
-      if (ageIn === 'max') return person.ages.max
-      return ageIn
-    })()
-    return age - person.ages.current
+  const asMonthsFromNow_Month = (month: Month): number => {
+    if (month.type === 'now') return 0
+    const person = pickPerson(month.person)
+    const fromAgeInMonths = (ageInMonths: number) =>
+      ageInMonths - person.ages.currentMonth
+
+    switch (month.type) {
+      case 'numericAge':
+        return fromAgeInMonths(month.ageInMonths)
+      case 'namedAge':
+        const effectiveRetirementMonth =
+          person.ages.type === 'retired'
+            ? person.ages.currentMonth
+            : person.ages.retirementMonth
+        switch (month.age) {
+          case 'lastWorkingMonth':
+            return fromAgeInMonths(effectiveRetirementMonth - 1)
+          case 'retirement':
+            return fromAgeInMonths(effectiveRetirementMonth)
+          case 'max':
+            return fromAgeInMonths(person.ages.maxMonth)
+          default:
+            noCase(month.age)
+        }
+      default:
+        noCase(month)
+    }
   }
 
-  const asYearsFromNow_YearRange = (
-    yearRange: YearRange,
+  const asMonthsFromNow_MonthRange = (
+    monthRange: MonthRange,
   ): { start: number; end: number } => {
     const start =
-      yearRange.type !== 'endAndNumYears'
-        ? asYFN(yearRange.start)
-        : asYFN(yearRange.end) - (yearRange.numYears - 1)
+      monthRange.type !== 'endAndNumMonths'
+        ? asMFN(monthRange.start)
+        : asMFN(monthRange.end) - (monthRange.numMonths - 1)
     const end =
-      yearRange.type !== 'startAndNumYears'
-        ? asYFN(yearRange.end)
-        : asYFN(yearRange.start) + (yearRange.numYears - 1)
+      monthRange.type !== 'startAndNumMonths'
+        ? asMFN(monthRange.end)
+        : asMFN(monthRange.start) + (monthRange.numMonths - 1)
     return { start, end }
   }
-  function asYearsFromNow(year: Year): number
-  function asYearsFromNow(year: YearRange | { start: Year; end: Year }): {
+  function asMonthsFromNow(month: Month): number
+  function asMonthsFromNow(month: MonthRange | { start: Month; end: Month }): {
     start: number
     end: number
   }
-  function asYearsFromNow(
-    x: Year | YearRange | { start: Year; end: Year },
+  function asMonthsFromNow(
+    x: Month | MonthRange | { start: Month; end: Month },
   ): number | { start: number; end: number } {
     if (!('type' in x))
-      return asYearsFromNow_YearRange({ type: 'startAndEnd', ...x })
+      return asMonthsFromNow_MonthRange({ type: 'startAndEnd', ...x })
     switch (x.type) {
       case 'namedAge':
       case 'numericAge':
       case 'now':
-        return asYearsFromNow_Year(x)
+        return asMonthsFromNow_Month(x)
       default:
-        return asYearsFromNow_YearRange(x)
+        return asMonthsFromNow_MonthRange(x)
     }
   }
-  const asYFN = asYearsFromNow
+  const asMFN = asMonthsFromNow
 
   const longerLivedPerson = ((): 'person1' | 'person2' => {
     const { person1 } = params.people
     if (!params.people.withPartner) return 'person1'
     const { person2 } = params.people
-    const person1LifeSpan = person1.ages.max - person1.ages.current
-    const person2LifeSpan = person2.ages.max - person2.ages.current
+    const person1LifeSpan = person1.ages.maxMonth - person1.ages.currentMonth
+    const person2LifeSpan = person2.ages.maxMonth - person2.ages.currentMonth
     return person2LifeSpan > person1LifeSpan ? 'person2' : 'person1'
   })()
 
-  const maxYear = (x: Year, y?: Year) => {
+  const maxMonth = (x: Month, y?: Month) => {
     if (!y) return x
-    return asYFN(x) >= asYFN(y) ? x : y
+    return asMFN(x) >= asMFN(y) ? x : y
   }
-  const minYear = (x: Year, y?: Year) => {
+  const minMonth = (x: Month, y?: Month) => {
     if (!y) return x
-    return asYFN(x) <= asYFN(y) ? x : y
+    return asMFN(x) <= asMFN(y) ? x : y
   }
 
-  const maxLastWorkingYear = params.people.withPartner
-    ? maxYear(years.person1.lastWorkingYear, years.person2.lastWorkingYear)
-    : years.person1.lastWorkingYear
+  const maxLastWorkingMonth = params.people.withPartner
+    ? maxMonth(months.person1.lastWorkingMonth, months.person2.lastWorkingMonth)
+    : months.person1.lastWorkingMonth
 
   const minRetirement = params.people.withPartner
-    ? minYear(years.person1.retirement, years.person2.retirement)
-    : years.person1.retirement
+    ? minMonth(months.person1.retirement, months.person2.retirement)
+    : months.person1.retirement
 
   const maxMaxAge = params.people.withPartner
-    ? maxYear(years.person1.max, years.person2.max)
-    : years.person1.max
-  const numYears = getNumYears(params)
+    ? maxMonth(months.person1.max, months.person2.max)
+    : months.person1.max
+  const numMonths = getNumMonths(params)
 
-  const yearRangeBoundsCheck = (x: YearRange, bounds: SimpleRange) => {
+  const monthRangeBoundsCheck = (x: MonthRange, bounds: SimpleRange) => {
     const inRange = (edge: 'start' | 'end') =>
-      _.inRange(asYFN(x)[edge], bounds.start, bounds.end + 1)
+      _.inRange(asMFN(x)[edge], bounds.start, bounds.end + 1)
     const start = inRange('start') ? ('ok' as const) : ('outOfBounds' as const)
     const end = inRange('end')
-      ? asYFN(x).end < asYFN(x).start
+      ? asMFN(x).end < asMFN(x).start
         ? ('endBeforeStart' as const)
         : ('ok' as const)
       : ('outOfBounds' as const)
@@ -115,7 +123,7 @@ export const extendPlanParams = (params: PlanParams) => {
       case 'ok':
         break
       case 'outOfBounds':
-        errorMsgs.push('Start year is out of range.')
+        errorMsgs.push('Start month is out of range.')
         break
       default:
         noCase(start)
@@ -124,10 +132,10 @@ export const extendPlanParams = (params: PlanParams) => {
       case 'ok':
         break
       case 'endBeforeStart':
-        errorMsgs.push('End year is before start.')
+        errorMsgs.push('End month is before start.')
         break
       case 'outOfBounds':
-        errorMsgs.push('End year is out of range.')
+        errorMsgs.push('End month is out of range.')
         break
       default:
         noCase(end)
@@ -139,18 +147,19 @@ export const extendPlanParams = (params: PlanParams) => {
     intermediateIn: GlidePath['intermediate'],
   ) => {
     const withoutIssues = _.sortBy(
-      intermediateIn.map((x) => ({ ...x, yearAsYFN: asYFN(x.year) })),
-      (x) => x.yearAsYFN,
+      intermediateIn.map((x) => ({ ...x, monthAsMFN: asMFN(x.month) })),
+      (x) => x.monthAsMFN,
     )
 
     const intermediate = withoutIssues.map((x, i) => ({
-      ...x,
+      month: x.month,
+      stocks: x.stocks,
       issue:
-        x.yearAsYFN <= 0
+        x.monthAsMFN <= 0
           ? ('before' as const)
-          : x.yearAsYFN >= numYears - 1
+          : x.monthAsMFN >= numMonths - 1
           ? ('after' as const)
-          : i !== 0 && withoutIssues[i - 1].yearAsYFN === x.yearAsYFN
+          : i !== 0 && withoutIssues[i - 1].monthAsMFN === x.monthAsMFN
           ? ('duplicate' as const)
           : ('none' as const),
     }))
@@ -158,53 +167,53 @@ export const extendPlanParams = (params: PlanParams) => {
     return intermediate
   }
 
-  const validYearRange = (
+  const validMonthRangeAsMFN = (
     type: 'future-savings' | 'income-during-retirement' | 'extra-spending',
   ) =>
     type === 'future-savings'
-      ? asYFN({ start: years.now, end: maxLastWorkingYear })
+      ? asMFN({ start: months.now, end: maxLastWorkingMonth })
       : type === 'income-during-retirement'
-      ? asYFN({ start: minRetirement, end: maxMaxAge })
+      ? asMFN({ start: minRetirement, end: maxMaxAge })
       : type === 'extra-spending'
-      ? asYFN({ start: years.now, end: maxMaxAge })
+      ? asMFN({ start: months.now, end: maxMaxAge })
       : noCase(type)
 
-  const yearRangeLength = (yearRange: YearRange) =>
-    yearRange.type === 'startAndEnd'
-      ? asYFN(yearRange.end) - asYFN(yearRange.start) + 1
-      : yearRange.numYears
+  const monthRangeLength = (monthRange: MonthRange) =>
+    monthRange.type === 'startAndEnd'
+      ? asMFN(monthRange.end) - asMFN(monthRange.start) + 1
+      : monthRange.numMonths
 
-  const yearRangeClamp = (
-    bounds: { start: Year; end: Year },
-    range: YearRange,
-  ): YearRange => {
+  const monthRangeClamp = (
+    bounds: { start: Month; end: Month },
+    range: MonthRange,
+  ): MonthRange => {
     switch (range.type) {
       case 'startAndEnd': {
         return {
           type: 'startAndEnd',
-          start: maxYear(range.start, bounds.start),
-          end: minYear(range.end, bounds.end),
+          start: maxMonth(range.start, bounds.start),
+          end: minMonth(range.end, bounds.end),
         }
       }
-      case 'startAndNumYears': {
-        const start = maxYear(range.start, bounds.start)
+      case 'startAndNumMonths': {
+        const start = maxMonth(range.start, bounds.start)
         return {
-          type: 'startAndNumYears',
+          type: 'startAndNumMonths',
           start,
-          numYears: Math.min(
-            asYFN(bounds.end) + 1 - asYFN(start),
-            range.numYears,
+          numMonths: Math.min(
+            asMFN(bounds.end) + 1 - asMFN(start),
+            range.numMonths,
           ),
         }
       }
-      case 'endAndNumYears': {
-        const end = minYear(range.end, bounds.end)
+      case 'endAndNumMonths': {
+        const end = minMonth(range.end, bounds.end)
         return {
-          type: 'endAndNumYears',
+          type: 'endAndNumMonths',
           end,
-          numYears: Math.min(
-            asYFN(end) + 1 - asYFN(bounds.start),
-            range.numYears,
+          numMonths: Math.min(
+            asMFN(end) + 1 - asMFN(bounds.start),
+            range.numMonths,
           ),
         }
       }
@@ -213,269 +222,89 @@ export const extendPlanParams = (params: PlanParams) => {
     }
   }
 
-  const withdrawalStartYear = (() => {
+  const withdrawalStartMonth = (() => {
     const person = params.people.withPartner
       ? params.people.withdrawalStart
       : 'person1'
     const { ages } = pickPerson(person)
-    return ages.type === 'retired' ? years.now : years.person(person).retirement
+    return ages.type === 'retired' ? months.now : months[person].retirement
   })()
 
-  const numRetirementYears = numYears - asYFN(withdrawalStartYear)
-  const withdrawalsStarted = asYFN(withdrawalStartYear) === 0
-
-  const yourOrYourPartners = (person: 'person1' | 'person2') =>
-    person === 'person1' ? 'your' : "your partner's"
-
-  const yearToStr = (year: Year) => {
-    const withPrefix = (
-      { person }: { person: 'person1' | 'person2' },
-      x: string,
-    ) => (params.people.withPartner ? `${yourOrYourPartners(person)} ${x}` : x)
-    switch (year.type) {
-      case 'now':
-        return 'now'
-      case 'numericAge':
-        return withPrefix(year, `age ${year.age}`)
-      case 'namedAge': {
-        switch (year.age) {
-          case 'lastWorkingYear':
-            return withPrefix(year, 'last working year')
-          case 'retirement':
-            return withPrefix(year, 'retirement')
-          case 'max':
-            return withPrefix(year, 'max age')
-          default:
-            noCase(year)
-        }
-      }
-      default:
-        noCase(year)
-    }
-  }
-
-  // ----------------------
-  // YEAR RANGE  TO STRING
-  // -----------------
-  const yearRangeToStr = (
-    value: YearRange,
-    {
-      capitalize = true,
-      lengthInBrackets = true,
-    }: { capitalize?: boolean; lengthInBrackets?: boolean } = {},
-  ) => {
-    const { withPartner } = params.people
-
-    const result: { type: 'start' | 'end' | 'other'; value: string }[] = []
-    let type: 'start' | 'end' | 'other' = 'other'
-    const push = (value: string) => {
-      const last = _.last(result)
-      if (!last || last.type !== type) {
-        result.push({ type, value })
-      } else {
-        last.value = `${last.value}${value.startsWith('.') ? '' : ' '}${value}`
-      }
-    }
-
-    const yourOrYourPartners = ({
-      person,
-    }: {
-      person: 'person1' | 'person2'
-    }) => push(person === 'person1' ? 'your' : "your partner's")
-    const youAreOrYourPartnerIs = ({
-      person,
-    }: {
-      person: 'person1' | 'person2'
-    }) => push(person === 'person1' ? 'you are' : 'your partner is')
-
-    const namedAge = (year: Extract<Year, { type: 'namedAge' }>) => {
-      switch (year.age) {
-        case 'lastWorkingYear':
-          yourOrYourPartners(year)
-          push('last working year')
-          break
-        case 'retirement':
-          if (withPartner) yourOrYourPartners(year)
-          push('retirement')
-          break
-        case 'max':
-          yourOrYourPartners(year)
-          push('max age')
-          break
-      }
-      push(`(age ${asYFN(year) + pickPerson(year.person).ages.current})`)
-    }
-
-    const yearForDuration = (year: Year) => {
-      switch (year.type) {
-        case 'now':
-          push('now')
-          break
-        case 'namedAge':
-          push('at')
-          namedAge(year)
-          break
-        case 'numericAge':
-          if (withPartner) {
-            push('when')
-            youAreOrYourPartnerIs(year)
-            push(`${year.age}`)
-          } else {
-            push(`at age ${year.age}`)
-          }
-          break
-        default:
-          noCase(year)
-      }
-    }
-
-    switch (value.type) {
-      case 'startAndEnd':
-        type = 'other'
-        push(capitalize ? 'From' : 'from')
-        type = 'start'
-        switch (value.start.type) {
-          case 'now':
-            push('now')
-            break
-          case 'namedAge':
-            namedAge(value.start)
-            break
-          case 'numericAge':
-            if (withPartner) {
-              push('when')
-              youAreOrYourPartnerIs(value.start)
-              push(`${value.start.age}`)
-            } else {
-              push(`age ${value.start.age}`)
-            }
-            break
-          default:
-            noCase(value.start)
-        }
-        type = 'other'
-        push('until')
-        type = 'end'
-        switch (value.end.type) {
-          case 'now':
-            push('now')
-            break
-          case 'namedAge':
-            namedAge(value.end)
-            break
-          case 'numericAge':
-            if (withPartner) {
-              youAreOrYourPartnerIs(value.end)
-              push(`${value.end.age}`)
-            } else {
-              push(`age ${value.end.age}`)
-            }
-            break
-          default:
-            noCase(value.end)
-        }
-        type = 'other'
-        push(
-          lengthInBrackets
-            ? `(${pluralize(yearRangeLength(value), 'year')})`
-            : `. That's ${pluralize(yearRangeLength(value), 'year')}`,
-        )
-        break
-      case 'startAndNumYears':
-        type = 'other'
-        push(capitalize ? 'For' : 'for')
-        type = 'end'
-        push(`${pluralize(value.numYears, 'year')}`)
-        type = 'other'
-        push('starting')
-        type = 'start'
-        yearForDuration(value.start)
-        break
-      case 'endAndNumYears':
-        type = 'other'
-        push(capitalize ? 'For' : 'for')
-        type = 'start'
-        push(`${pluralize(value.numYears, 'year')}`)
-        type = 'other'
-        push('ending')
-        type = 'end'
-        yearForDuration(value.end)
-        break
-      default:
-        noCase(value)
-    }
-    type = 'other'
-    push('.')
-    return result
-  }
+  const numRetirementMonths = numMonths - asMFN(withdrawalStartMonth)
+  const withdrawalsStarted = asMFN(withdrawalStartMonth) === 0
 
   return {
-    numYears,
+    numMonths,
     pickPerson,
-    asYearsFromNow,
-    asYFN,
-    minYear,
-    maxYear,
-    maxLastWorkingYear,
+    asMonthsFromNow,
+    asMFN,
+    minMonth,
+    maxMonth,
+    maxLastWorkingMonth,
     minRetirement,
     maxMaxAge,
-    validYearRange,
+    validMonthRangeAsMFN,
     glidePathIntermediateValidated,
-    years,
-    yearRangeLength,
-    yearRangeClamp,
-    yearRangeEdge,
-    yearRangeToStr,
-    yearToStr,
-    yearRangeBoundsCheck,
-    withdrawalStartYear,
+    months,
+    monthRangeLength,
+    monthRangeClamp,
+    monthRangeEdge,
+    monthRangeBoundsCheck,
+    withdrawalStartMonth,
     withdrawalsStarted,
-    numRetirementYears,
+    numRetirementMonths,
     yourOrYourPartners,
     params,
     longerLivedPerson,
   }
 }
 
-extendPlanParams.yearRangeEdge = (
-  yearRange: YearRange,
+extendPlanParams.monthRangeEdge = (
+  monthRange: MonthRange,
   edge: 'start' | 'end',
 ) =>
-  'start' in yearRange && edge === 'start'
-    ? yearRange.start
-    : 'end' in yearRange && edge === 'end'
-    ? yearRange.end
+  'start' in monthRange && edge === 'start'
+    ? monthRange.start
+    : 'end' in monthRange && edge === 'end'
+    ? monthRange.end
     : null
 
-extendPlanParams.years = (() => {
+extendPlanParams.months = (() => {
   const person = (person: 'person1' | 'person2') => ({
-    lastWorkingYear: {
-      type: 'namedAge',
+    lastWorkingMonth: {
+      type: 'namedAge' as const,
       person,
-      age: 'lastWorkingYear',
-    } as Year,
-    retirement: { type: 'namedAge', person, age: 'retirement' } as Year,
-    max: { type: 'namedAge', person, age: 'max' } as Year,
-    numericAge: (age: number) => ({ type: 'numericAge', person, age } as Year),
+      age: 'lastWorkingMonth' as const,
+    },
+    retirement: {
+      type: 'namedAge' as const,
+      person,
+      age: 'retirement' as const,
+    },
+    max: { type: 'namedAge' as const, person, age: 'max' as const },
+    numericAge: (ageInMonths: number) => ({
+      type: 'numericAge' as const,
+      person,
+      ageInMonths,
+    }),
   })
   return {
-    now: { type: 'now' } as Year,
-    person,
+    now: { type: 'now' as const },
     person1: person('person1'),
     person2: person('person2'),
   }
 })()
 
-export const getNumYears = (params: PlanParams) => {
+export const getNumMonths = (params: PlanParams) => {
   const forPerson = (person: Person) =>
-    person.ages.max - person.ages.current + 1
+    person.ages.maxMonth - person.ages.currentMonth + 1
   return Math.max(
     forPerson(params.people.person1),
     params.people.withPartner ? forPerson(params.people.person2) : 0,
   )
 }
 
-export const getWithdrawalStartAsYFN = (params: PlanParams) => {
+export const getWithdrawalStartAsMFN = (params: PlanParams) => {
   const person = params.people.withPartner
     ? params.people.withdrawalStart
     : 'person1'
@@ -484,5 +313,5 @@ export const getWithdrawalStartAsYFN = (params: PlanParams) => {
     assert(params.people.withPartner)
     return params.people.person2
   })()
-  return ages.type === 'retired' ? 0 : ages.retirement - ages.current
+  return ages.type === 'retired' ? 0 : ages.retirementMonth - ages.currentMonth
 }

@@ -41,42 +41,46 @@ export const _SpendingCeilingCard = React.memo(
   }) => {
     const content = usePlanContent()['spending-ceiling-and-floor']
     const { params, setParams, tpawResult } = useSimulation()
-    const { asYFN, withdrawalStartYear } = extendPlanParams(
+    const { asMFN, withdrawalStartMonth } = extendPlanParams(
       tpawResult.args.params.original,
     )
-    const withdrawalStartAsYFN = asYFN(withdrawalStartYear)
+    const withdrawalStartAsMFN = asMFN(withdrawalStartMonth)
 
     const { minWithdrawal, maxWithdrawal } = useMemo(() => {
       const last = fGet(
         _.last(
           tpawResult.savingsPortfolio.withdrawals.total
-            .byPercentileByYearsFromNow,
+            .byPercentileByMonthsFromNow,
         ),
       ).data
       const first = fGet(
         _.first(
           tpawResult.savingsPortfolio.withdrawals.total
-            .byPercentileByYearsFromNow,
+            .byPercentileByMonthsFromNow,
         ),
       ).data
-      const maxWithdrawal = Math.max(...last.slice(withdrawalStartAsYFN))
-      const minWithdrawal = Math.min(...first.slice(withdrawalStartAsYFN))
+      const maxWithdrawal = Math.max(...last.slice(withdrawalStartAsMFN))
+      const minWithdrawal = Math.min(...first.slice(withdrawalStartAsMFN))
       return { minWithdrawal, maxWithdrawal }
-    }, [tpawResult, withdrawalStartAsYFN])
+    }, [tpawResult, withdrawalStartAsMFN])
 
     const [entryOnEnabled, setEntryOnEnabled] = useState(
-      params.adjustmentsToSpending.tpawAndSPAW.spendingCeiling ??
-        _roundUp(minWithdrawal + (maxWithdrawal - minWithdrawal) / 2, 10000),
+      params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling ??
+        _roundUp(minWithdrawal + (maxWithdrawal - minWithdrawal) / 2, 1000),
     )
 
     const handleAmount = (amount: number | null) => {
       const clone = _.cloneDeep(params)
-      if (amount === clone.adjustmentsToSpending.tpawAndSPAW.spendingCeiling)
+      if (
+        amount ===
+        clone.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling
+      )
         return
       amount = (() => {
         if (amount === null) return null
         if (amount < 0) return 0
-        const floor = clone.adjustmentsToSpending.tpawAndSPAW.spendingFloor
+        const floor =
+          clone.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor
         if (floor !== null && amount < floor) {
           errorToast('Spending ceiling cannot be lower that spending floor.')
           return floor
@@ -85,11 +89,12 @@ export const _SpendingCeilingCard = React.memo(
       })()
 
       if (amount !== null) setEntryOnEnabled(amount)
-      clone.adjustmentsToSpending.tpawAndSPAW.spendingCeiling = amount
+      clone.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling = amount
       setParams(clone)
     }
 
-    const value = params.adjustmentsToSpending.tpawAndSPAW.spendingCeiling
+    const value =
+      params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling
 
     return (
       <div
@@ -99,7 +104,7 @@ export const _SpendingCeilingCard = React.memo(
         <h2 className="font-bold text-lg mb-2">Spending Ceiling</h2>
         <div className="">
           <Contentful.RichText
-            body={content.ceiling[params.strategy]}
+            body={content.ceiling[params.advanced.strategy]}
             p=" p-base"
           />
         </div>
@@ -170,31 +175,37 @@ export const _SpendingFloorCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const content = usePlanContent()['spending-ceiling-and-floor']
-    const { params, setParams, tpawResult, highlightPercentiles } =
+    const { params, setParams, tpawResult } =
       useSimulation()
-    const { asYFN, withdrawalStartYear } = extendPlanParams(
+    const { asMFN, withdrawalStartMonth } = extendPlanParams(
       tpawResult.args.params.original,
     )
-    const withdrawalStartAsYFN = asYFN(withdrawalStartYear)
+    const withdrawalStartAsYFN = asMFN(withdrawalStartMonth)
 
-    const firstWithdrawalOfFirstHighlightPercentile =
-      tpawResult.savingsPortfolio.withdrawals.total.byPercentileByYearsFromNow[
-        tpawResult.args.percentiles.indexOf(highlightPercentiles[0])
-      ].data[withdrawalStartAsYFN]
+    const firstWithdrawalOfMinPercentile =
+      tpawResult.savingsPortfolio.withdrawals.total
+        .byPercentileByMonthsFromNow[0].data[withdrawalStartAsYFN]
 
     const [entryOnEnabled, setEntryOnEnabled] = useState(
-      params.adjustmentsToSpending.tpawAndSPAW.spendingFloor ??
-        _roundUp(firstWithdrawalOfFirstHighlightPercentile, 10000),
+      params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor ??
+        Math.min(
+          _roundUp(firstWithdrawalOfMinPercentile, 500),
+          params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling ??
+            Number.MAX_SAFE_INTEGER,
+        ),
     )
 
     const handleAmount = (amount: number | null) => {
       const clone = _.cloneDeep(params)
-      if (amount === clone.adjustmentsToSpending.tpawAndSPAW.spendingFloor)
+      if (
+        amount === clone.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor
+      )
         return
       amount = (() => {
         if (amount === null) return null
         if (amount < 0) return 0
-        const ceiling = clone.adjustmentsToSpending.tpawAndSPAW.spendingCeiling
+        const ceiling =
+          clone.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling
         if (ceiling !== null && amount > ceiling) {
           errorToast('Spending floor cannot be higher that spending ceiling.')
           return ceiling
@@ -203,11 +214,11 @@ export const _SpendingFloorCard = React.memo(
       })()
 
       if (amount !== null) setEntryOnEnabled(amount)
-      clone.adjustmentsToSpending.tpawAndSPAW.spendingFloor = amount
+      clone.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor = amount
       setParams(clone)
     }
 
-    const value = params.adjustmentsToSpending.tpawAndSPAW.spendingFloor
+    const value = params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor
 
     return (
       <div
@@ -217,7 +228,7 @@ export const _SpendingFloorCard = React.memo(
         <h2 className="font-bold text-lg mb-2">Spending Floor</h2>
         <div className="">
           <Contentful.RichText
-            body={content.floor[params.strategy]}
+            body={content.floor[params.advanced.strategy]}
             p=" p-base mt-2"
           />
         </div>

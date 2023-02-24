@@ -15,7 +15,7 @@ import {
 import { PlanInputType } from './Helpers/PlanInputType'
 import { PlanInputAge } from './PlanInputAge/PlanInputAge'
 import { PlanInputBodyPassThruProps } from './PlanInputBody/PlanInputBody'
-import { PlanInputCompareStrategies } from './PlanInputCompareStrategies'
+import { PlanInputStrategy } from './PlanInputStrategy'
 import { PlanInputCurrentPortfolioBalance } from './PlanInputCurrentPortfolioBalance'
 import { PlanInputDev } from './PlanInputDev'
 import { PlanInputExpectedReturns } from './PlanInputExpectedReturns'
@@ -123,7 +123,7 @@ export const PlanInput = React.memo(
             case 'risk':
               return <PlanInputRisk {...props} />
             case 'strategy':
-              return <PlanInputCompareStrategies {...props} />
+              return <PlanInputStrategy {...props} />
             case 'expected-returns':
               return <PlanInputExpectedReturns {...props} />
             case 'inflation':

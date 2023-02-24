@@ -1,7 +1,7 @@
 import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
 import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { DEFAULT_SWR_WITHDRAWAL_PERCENT, PlanParams } from '@tpaw/common'
+import { DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT, PlanParams } from '@tpaw/common'
 import _ from 'lodash'
 import React from 'react'
 import { PlanParamsExt } from '../../../TPAWSimulator/PlanParamsExt'
@@ -15,13 +15,13 @@ import {
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
-export const PlanInputCompareStrategies = React.memo(
+export const PlanInputStrategy = React.memo(
   (props: PlanInputBodyPassThruProps) => {
     const { params, setParams, paramsExt } = useSimulation()
 
     const content = usePlanContent()['strategy']
-    const handleStrategy = (strategy: PlanParams['strategy']) => {
-      if (params.strategy === strategy) return
+    const handleStrategy = (strategy: PlanParams['advanced']['strategy']) => {
+      if (params.advanced.strategy === strategy) return
       setParams(cloneWithNewStrategy(paramsExt, strategy))
     }
     return (
@@ -34,7 +34,7 @@ export const PlanInputCompareStrategies = React.memo(
             }}
           >
             <Contentful.RichText
-              body={content.intro[params.strategy]}
+              body={content.intro[params.advanced.strategy]}
               p="p-base"
             />
           </div>
@@ -78,8 +78,8 @@ const _StrategyCard = React.memo(
   }: {
     className?: string
     props: PlanInputBodyPassThruProps
-    strategy: PlanParams['strategy']
-    handleStrategy: (strategy: PlanParams['strategy']) => void
+    strategy: PlanParams['advanced']['strategy']
+    handleStrategy: (strategy: PlanParams['advanced']['strategy']) => void
   }) => {
     const { params } = useSimulation()
     const content = usePlanContent()['strategy']
@@ -109,7 +109,7 @@ const _StrategyCard = React.memo(
             <FontAwesomeIcon
               className="mr-2"
               icon={
-                params.strategy === strategy
+                params.advanced.strategy === strategy
                   ? faCircleSelected
                   : faCircleRegular
               }
@@ -118,7 +118,7 @@ const _StrategyCard = React.memo(
           </h2>
           <div className="mt-2">
             <Contentful.RichText
-              body={content.cardIntro[strategy][params.strategy]}
+              body={content.cardIntro[strategy][params.advanced.strategy]}
               p="p-base"
             />
           </div>
@@ -130,16 +130,21 @@ const _StrategyCard = React.memo(
 
 export function cloneWithNewStrategy(
   paramsExt: PlanParamsExt,
-  strategy: PlanParams['strategy'],
+  strategy: PlanParams['advanced']['strategy'],
 ) {
   const { params } = paramsExt
-  assert(params.strategy !== strategy)
+  assert(params.advanced.strategy !== strategy)
   const clone = _.cloneDeep(params)
-  clone.strategy = strategy
-  if (strategy === 'SWR' && clone.risk.swr.withdrawal.type === 'default') {
+  clone.advanced.strategy = strategy
+  if (
+    strategy === 'SWR' &&
+    clone.risk.swr.withdrawal.type === 'default'
+  ) {
     clone.risk.swr.withdrawal = {
-      type: 'asPercent',
-      percent: DEFAULT_SWR_WITHDRAWAL_PERCENT(paramsExt.numRetirementYears),
+      type: 'asPercentPerYear',
+      percentPerYear: DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT(
+        paramsExt.numRetirementMonths,
+      ),
     }
   }
   return clone
