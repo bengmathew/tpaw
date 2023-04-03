@@ -187,7 +187,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
       if (params.plan.dialogPosition === 'age') {
         return (
           <>
-            <h2>Current: </h2>
+            <h2>Month of Birth: </h2>
             <h2>Retirement: </h2>
             <h2>Max: </h2>
           </>
@@ -197,7 +197,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
         const { ages } = pickPerson(person)
         return isAgesNotRetired(ages) ? (
           <>
-            <h2 className={`${className}`}>Current</h2>
+            <h2 className={`${className}`}>Month of Birth</h2>
             <h2> {calendarMonthStr(ages.monthOfBirth)}</h2>
             <h2 className={`${className}`}>Retirement</h2>
             <h2> {numMonthsStr(ages.retirementAge.inMonths)}</h2>
@@ -207,7 +207,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
         ) : (
           <>
             <h2 className={`${className} col-span-2`}>Retired</h2>
-            <h2 className={`${className}`}>Current</h2>
+            <h2 className={`${className}`}>Month of Birth</h2>
             <h2> {calendarMonthStr(ages.monthOfBirth)}</h2>
             <h2 className={`${className}`}>Max</h2>
             <h2> {numMonthsStr(ages.maxAge.inMonths)}</h2>

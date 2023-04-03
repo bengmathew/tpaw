@@ -116,7 +116,7 @@ export const PlanInputCurrentPortfolioBalance = React.memo(
                         className="underline block"
                         onClick={() => setShowExplanation(true)}
                       >
-                        View estimation steps.
+                        View estimation steps
                       </button>
                     </h2>
                   </div>
