@@ -13,6 +13,7 @@ export type MonthType =
   | 'retirement'
   | 'maxAge'
   | 'numericAge'
+  | 'calendarMonth'
   | 'forNumOfMonths'
 
 export const MonthInput = React.memo(
@@ -23,7 +24,7 @@ export const MonthInput = React.memo(
     className?: string
     classNameForNumberInput?: string
     location: 'rangeStart' | 'rangeEnd' | 'standalone'
-    value: Month | { numMonths: number }
+    valueClamped: Month | { numMonths: number }
     onChange: (month: Month | { numMonths: number }) => void
     toMFN: (value: Month | { numMonths: number }) => number
     range: SimpleRange

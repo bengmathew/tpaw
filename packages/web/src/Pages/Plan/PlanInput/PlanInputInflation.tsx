@@ -3,7 +3,6 @@ import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  getDefaultPlanParams,
   MANUAL_INFLATION_VALUES,
   noCase,
   PlanParams,
@@ -16,7 +15,6 @@ import { paddingCSS } from '../../../Utils/Geometry'
 import { useMarketData } from '../../App/WithMarketData'
 import { useSimulation } from '../../App/WithSimulation'
 import { SliderInput } from '../../Common/Inputs/SliderInput/SliderInput'
-import { usePlanContent } from '../Plan'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
   PlanInputBody,
@@ -41,22 +39,24 @@ export const _InflationCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { params, setParams } = useSimulation()
+    const { params, setPlanParams, defaultParams } = useSimulation()
     const marketData = useMarketData()
-    const content = usePlanContent().inflation.intro[params.advanced.strategy]
 
     const handleChange = (
       annualInflation: PlanParams['advanced']['annualInflation'],
     ) => {
-      setParams((params) => {
-        const clone = _.cloneDeep(params)
+      setPlanParams((plan) => {
+        const clone = _.cloneDeep(plan)
         clone.advanced.annualInflation = annualInflation
         return clone
       })
     }
 
-    const defaultValue = getDefaultPlanParams().advanced.annualInflation
-    const isModified = !_.isEqual(defaultValue, params.advanced.annualInflation)
+    const defaultValue = defaultParams.plan.advanced.annualInflation
+    const isModified = !_.isEqual(
+      defaultValue,
+      params.plan.advanced.annualInflation,
+    )
 
     return (
       <div
@@ -76,7 +76,7 @@ export const _InflationCard = React.memo(
           <FontAwesomeIcon
             className="mt-1"
             icon={
-              params.advanced.annualInflation.type === 'suggested'
+              params.plan.advanced.annualInflation.type === 'suggested'
                 ? faCircleSelected
                 : faCircleRegular
             }
@@ -86,7 +86,9 @@ export const _InflationCard = React.memo(
               {inflationTypeLabel({ type: 'suggested' })}
             </h2>
             <h2 className="text-left text-sm lighten-2">
-              {formatPercentage(1)(SUGGESTED_ANNUAL_INFLATION(marketData))}
+              {formatPercentage(1)(
+                SUGGESTED_ANNUAL_INFLATION(marketData.latest),
+              )}
             </h2>
           </div>
         </button>
@@ -94,24 +96,24 @@ export const _InflationCard = React.memo(
         <button
           className={`${className} flex gap-x-2 mt-3`}
           onClick={() => {
-            switch (params.advanced.annualInflation.type) {
+            switch (params.plan.advanced.annualInflation.type) {
               case 'suggested':
                 handleChange({
                   type: 'manual',
-                  value: SUGGESTED_ANNUAL_INFLATION(marketData),
+                  value: SUGGESTED_ANNUAL_INFLATION(marketData.latest),
                 })
                 break
               case 'manual':
                 return
               default:
-                noCase(params.advanced.annualInflation)
+                noCase(params.plan.advanced.annualInflation)
             }
           }}
         >
           <FontAwesomeIcon
             className="mt-1"
             icon={
-              params.advanced.annualInflation.type === 'manual'
+              params.plan.advanced.annualInflation.type === 'manual'
                 ? faCircleSelected
                 : faCircleRegular
             }
@@ -122,14 +124,14 @@ export const _InflationCard = React.memo(
             </h2>
           </div>
         </button>
-        {params.advanced.annualInflation.type === 'manual' && (
+        {params.plan.advanced.annualInflation.type === 'manual' && (
           <SliderInput
             className=""
             height={60}
             maxOverflowHorz={props.sizing.cardPadding}
             format={formatPercentage(1)}
             data={MANUAL_INFLATION_VALUES}
-            value={params.advanced.annualInflation.value}
+            value={params.plan.advanced.annualInflation.value}
             onChange={(value) => handleChange({ type: 'manual', value })}
             ticks={(value, i) =>
               i % 10 === 0

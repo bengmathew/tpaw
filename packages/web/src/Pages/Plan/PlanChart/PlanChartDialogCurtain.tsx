@@ -1,4 +1,4 @@
-import { noCase, PlanParams } from '@tpaw/common'
+import { NonPlanParams, PlanParams, noCase } from '@tpaw/common'
 import React from 'react'
 import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity0Transition'
 import { useSimulation } from '../../App/WithSimulation'
@@ -22,7 +22,7 @@ const _state = (dialogPosition: PlanParams['dialogPosition']) => {
 export const PlanChartDialogCurtain = React.memo(
   ({ layout }: { layout: 'mobile' | 'laptop' | 'desktop' }) => {
     const { params } = useSimulation()
-    const state = _state(params.dialogPosition)
+    const state = _state(params.plan.dialogPosition)
 
     return (
       <NoDisplayOnOpacity0Transition

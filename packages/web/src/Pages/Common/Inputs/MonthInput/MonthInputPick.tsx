@@ -1,6 +1,6 @@
 import { faCheck } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Month } from '@tpaw/common'
+import { assert, Month } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useState } from 'react'
 import { useSimulation } from '../../../App/WithSimulation'
@@ -10,7 +10,7 @@ import { MonthInputProps } from './MonthInput'
 export const MonthInputPick = React.memo(
   ({
     location,
-    value,
+    valueClamped,
     onChange: setValueIn,
     referenceElement,
     onClose,
@@ -23,45 +23,59 @@ export const MonthInputPick = React.memo(
     onClose: () => void
   } & MonthInputProps) => {
     const { params, paramsExt } = useSimulation()
-    const { asMFN, pickPerson, months } = paramsExt
+    const {
+      asMFN,
+      pickPerson,
+      months,
+      isPersonRetired,
+      getCurrentAgeOfPerson,
+      monthsFromNowToCalendarMonth,
+    } = paramsExt
+    assert(range.start >= 0)
 
-    const [startingValue] = useState(value)
-    const [person, setPerson] = useState(() =>
-      'numMonths' in value || value.type === 'now' ? 'person1' : value.person,
-    )
-    const { ages: personAges } = pickPerson(person)
+    const [startingValue] = useState(valueClamped)
 
     const nullIfNotInRange = (month: Month) =>
       _.inRange(asMFN(month), range.start, range.end + 1) ? month : null
 
-    const choicesForPerson = (person: 'person1' | 'person2') => ({
-      lastWorkingMonth: choices.includes('lastWorkingMonth')
-        ? nullIfNotInRange(months[person].lastWorkingMonth)
-        : null,
-      retirement:
-        personAges.type !== 'retired' && choices.includes('retirement')
-          ? nullIfNotInRange(months[person].retirement)
+    const choicesForPerson = (person: 'person1' | 'person2') => {
+      const currentAge = getCurrentAgeOfPerson(person)
+      return {
+        lastWorkingMonth: choices.includes('lastWorkingMonth')
+          ? nullIfNotInRange(months[person].lastWorkingMonth)
+          : null,
+        retirement:
+          !isPersonRetired(person) && choices.includes('retirement')
+            ? nullIfNotInRange(months[person].retirement)
+            : null,
+
+        max: choices.includes('maxAge')
+          ? nullIfNotInRange(months[person].max)
           : null,
 
-      max: choices.includes('maxAge')
-        ? nullIfNotInRange(months[person].max)
-        : null,
-
-      age: choices.includes('numericAge')
-        ? months[person].numericAge(
-            _.clamp(
-              personAges.currentMonth +
-                _.clamp(toMFN(value), range.start, range.end),
-              personAges.currentMonth,
-              personAges.maxMonth,
-            ),
-          )
-        : null,
-    })
+        age: choices.includes('numericAge')
+          ? months[person].numericAge({
+              inMonths: _.clamp(
+                currentAge.inMonths +
+                  _.clamp(toMFN(valueClamped), range.start, range.end),
+                currentAge.inMonths,
+                pickPerson(person).ages.maxAge.inMonths,
+              ),
+            })
+          : null,
+      }
+    }
     const choice = {
       now: choices.includes('now') ? nullIfNotInRange(months.now) : null,
       person1: choicesForPerson('person1'),
-      person2: params.people.withPartner ? choicesForPerson('person2') : null,
+      person2: params.plan.people.withPartner ? choicesForPerson('person2') : null,
+      calendarMonth: choices.includes('calendarMonth')
+        ? months.calendarMonth(
+            monthsFromNowToCalendarMonth(
+              _.clamp(toMFN(valueClamped), range.start, range.end),
+            ),
+          )
+        : null,
       // Expect MonthRangeInput to override the actual value here.
       numMonths:
         choices.includes('forNumOfMonths') && location !== 'standalone'
@@ -69,7 +83,9 @@ export const MonthInputPick = React.memo(
           : null,
     } as const
 
+    getMonthLabel(months.now).split(' ')[0]
     const title = getMonthLabel(months.now).split(' ')[0]
+
     const removeTitle = (x: string) => _.capitalize(x.replace(title, '').trim())
 
     return (
@@ -86,7 +102,7 @@ export const MonthInputPick = React.memo(
           }
           const button = (
             value: Month | { numMonths: number } | null,
-            numeric: 'numeric' | 'notNumeric',
+            dash: 'includeDash' | 'noDash',
             current: boolean,
           ) =>
             value && (
@@ -98,11 +114,14 @@ export const MonthInputPick = React.memo(
               >
                 {current && (
                   <span className="inline-block -ml-6 w-6">
-                    <FontAwesomeIcon className="ml-1 text-sm lighten" icon={faCheck} />
+                    <FontAwesomeIcon
+                      className="ml-1 text-sm lighten"
+                      icon={faCheck}
+                    />
                   </span>
                 )}
                 {removeTitle(getMonthLabel(value))}
-                {numeric === 'numeric' && (
+                {dash === 'includeDash' && (
                   <span className="inline-block border-b border-gray-700 w-[25px] ml-2" />
                 )}
               </button>
@@ -116,17 +135,13 @@ export const MonthInputPick = React.memo(
               <div className="flex flex-col">
                 {button(
                   choice.now,
-                  'notNumeric',
-                  'type' in startingValue && startingValue.type === 'now',
+                  'noDash',
+                  'type' in startingValue &&
+                    startingValue.type === 'calendarMonthAsNow',
                 )}
-                {/* {params.people.withPartner && (
-                  <h2 className="font-bold mx-3 uppercase lighten-2 text-xs  py-2">
-                    You
-                  </h2>
-                )} */}
                 {button(
                   choice.person1.lastWorkingMonth,
-                  'notNumeric',
+                  'noDash',
                   'type' in startingValue &&
                     startingValue.type === 'namedAge' &&
                     startingValue.person === 'person1' &&
@@ -134,7 +149,7 @@ export const MonthInputPick = React.memo(
                 )}
                 {button(
                   choice.person1.retirement,
-                  'notNumeric',
+                  'noDash',
                   'type' in startingValue &&
                     startingValue.type === 'namedAge' &&
                     startingValue.person === 'person1' &&
@@ -142,7 +157,7 @@ export const MonthInputPick = React.memo(
                 )}
                 {button(
                   choice.person1.max,
-                  'notNumeric',
+                  'noDash',
                   'type' in startingValue &&
                     startingValue.type === 'namedAge' &&
                     startingValue.person === 'person1' &&
@@ -150,12 +165,12 @@ export const MonthInputPick = React.memo(
                 )}
                 {button(
                   choice.person1.age,
-                  'numeric',
+                  'includeDash',
                   'type' in startingValue &&
                     startingValue.type === 'numericAge' &&
                     startingValue.person === 'person1',
                 )}
-                {/* {params.people.withPartner && (
+                {/* {params.plan.people.withPartner && (
                   <h2 className="font-bold mx-3 uppercase lighten-2 text-xs py-2">
                     Your Partner
                   </h2>
@@ -164,7 +179,7 @@ export const MonthInputPick = React.memo(
                   <>
                     {button(
                       choice.person2.lastWorkingMonth,
-                      'notNumeric',
+                      'noDash',
                       'type' in startingValue &&
                         startingValue.type === 'namedAge' &&
                         startingValue.person === 'person2' &&
@@ -172,7 +187,7 @@ export const MonthInputPick = React.memo(
                     )}
                     {button(
                       choice.person2.retirement,
-                      'notNumeric',
+                      'noDash',
                       'type' in startingValue &&
                         startingValue.type === 'namedAge' &&
                         startingValue.person === 'person2' &&
@@ -180,7 +195,7 @@ export const MonthInputPick = React.memo(
                     )}
                     {button(
                       choice.person2.max,
-                      'notNumeric',
+                      'noDash',
                       'type' in startingValue &&
                         startingValue.type === 'namedAge' &&
                         startingValue.person === 'person2' &&
@@ -188,18 +203,29 @@ export const MonthInputPick = React.memo(
                     )}
                     {button(
                       choice.person2.age,
-                      'numeric',
+                      'includeDash',
                       'type' in startingValue &&
                         startingValue.type === 'numericAge' &&
                         startingValue.person === 'person2',
                     )}
                   </>
                 )}
+                {choice.calendarMonth &&
+                  button(
+                    choice.calendarMonth,
+                    'includeDash',
+                    'type' in startingValue &&
+                      startingValue.type === 'calendarMonth',
+                  )}
                 {choice.numMonths && (
                   <h2 className="px-3 font-bold py-2">Or</h2>
                 )}
 
-                {button(choice.numMonths, 'numeric', 'numMonths' in value)}
+                {button(
+                  choice.numMonths,
+                  'includeDash',
+                  'numMonths' in valueClamped,
+                )}
 
                 {/* <div className="flex flex-col">
                   {people.withPartner && (

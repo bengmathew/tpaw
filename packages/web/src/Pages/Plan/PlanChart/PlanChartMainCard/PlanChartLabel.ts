@@ -1,4 +1,4 @@
-import { PlanParams } from '@tpaw/common'
+import { Params } from '@tpaw/common'
 import _ from 'lodash'
 import { trimAndNullify } from '../../../../Utils/TrimAndNullify'
 import { assert, noCase } from '../../../../Utils/Utils'
@@ -11,7 +11,7 @@ import {
 } from '../PlanChartType'
 
 export const planChartLabel = (
-  params: PlanParams,
+  params: Params,
   panelType: PlanChartType,
   type: 'full' | 'short',
 ) => {
@@ -31,12 +31,10 @@ export const planChartLabel = (
       return { label: ['Asset Allocation of Total Portfolio'], subLabel: null }
     case 'withdrawal':
       return { label: ['Withdrawal Rate'], subLabel: null }
-    case 'reward-risk-ratio-comparison':
-      return { label: ['Reward/Risk Ratio Comparison'], subLabel: null }
     default:
       const { essential, discretionary } =
-        params.adjustmentsToSpending.extraSpending
-      const showLabel = params.advanced.strategy !== 'SWR'
+        params.plan.adjustmentsToSpending.extraSpending
+      const showLabel = params.plan.advanced.strategy !== 'SWR'
       if (isPlanChartSpendingEssentialType(panelType)) {
         const id = planChartSpendingEssentialTypeID(panelType)
         const index = essential.findIndex((x) => x.id === id)

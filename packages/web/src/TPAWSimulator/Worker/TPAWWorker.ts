@@ -9,9 +9,10 @@ addEventListener('message', async (event) => {
   switch (eventData.type) {
     case 'runSimulation':
       {
-        const result = await runSimulationInWASM(
+        const result = runSimulationInWASM(
           eventData.args.params,
           eventData.args.runs,
+          await getWASM(),
         )
         const reply: TPAWWorkerResult = {
           type: 'runSimulation',

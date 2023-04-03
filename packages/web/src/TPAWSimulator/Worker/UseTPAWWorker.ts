@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { asyncEffect } from '../../Utils/AsyncEffect'
-import { SimpleRange } from '../../Utils/SimpleRange'
 import { fGet } from '../../Utils/Utils'
+import { ParamsExtended } from '../ExtentParams'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 import { TPAWRunInWorker, TPAWRunInWorkerResult } from './TPAWRunInWorker'
 
@@ -14,37 +14,29 @@ export const getTPAWRunInWorkerSingleton = () => {
 }
 
 export type UseTPAWWorkerResult = TPAWRunInWorkerResult & {
-  args: {
-    numRuns: number
-    params: PlanParamsProcessed
-    percentileRange:SimpleRange
-  }
+  params: PlanParamsProcessed
+  paramsExt: ParamsExtended
 }
 
 export function useTPAWWorker(
-  params: PlanParamsProcessed | null,
-  numRuns: number,
-  percentileRange: SimpleRange,
+  params: PlanParamsProcessed,
+  paramsExt: ParamsExtended,
 ) {
   const [result, setResult] = useState<UseTPAWWorkerResult | null>(null)
 
   useEffect(() => {
-    if (!params) {
-      setResult(null)
-    } else {
-      return asyncEffect(async (status) => {
-        const args = { numRuns, params, percentileRange }
-        const data = await getTPAWRunInWorkerSingleton().runSimulations(
-          status,
-          numRuns,
-          params,
-          [percentileRange.start, 50, percentileRange.end],
-        )
-        if (status.canceled) return
-        setResult({ ...fGet(data), args })
-      })
-    }
-  }, [numRuns, params, percentileRange])
+    return asyncEffect(async (status) => {
+      
+
+      const data = await getTPAWRunInWorkerSingleton().runSimulations(
+        status,
+        params,
+        paramsExt,
+      )
+      if (status.canceled) return
+      setResult({ ...fGet(data), params, paramsExt })
+    })
+  }, [params, paramsExt])
 
   return result
 }

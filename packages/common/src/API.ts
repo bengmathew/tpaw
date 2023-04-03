@@ -8,7 +8,7 @@ import {
   string,
   success,
 } from 'json-guard'
-import { planParamsGuard } from './PlanParams/PlanParams'
+import { planParamsGuard } from './PlanParams/Params'
 
 export namespace API {
   const trimmed: JSONGuard<string, string> = (x) =>

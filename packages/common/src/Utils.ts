@@ -131,6 +131,8 @@ export function getStatsWithLog(x: number[]) {
   }
 }
 
+
+
 export const sequentialAnnualReturnsFromMonthly = (monthly: number[]) =>
   blockify(monthly, 12).map(monthRateArrToYear)
 

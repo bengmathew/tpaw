@@ -59,7 +59,7 @@ export const PlanInputLaptopAndDesktop = React.memo(
     const inputScrollRef = useRef<HTMLDivElement>(null)
 
     const { padding } =
-      params.dialogPosition !== 'done'
+      params.plan.dialogPosition !== 'done'
         ? sizing.dialogMode
         : sizing.notDialogMode
     const { cardPadding } = sizing

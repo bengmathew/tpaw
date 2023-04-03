@@ -3,25 +3,33 @@ import {
   EXPECTED_ANNUAL_RETURN_PRESETS,
   historicalReturns,
   noCase,
+  Params,
   PlanParams,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { MarketData } from '../../Pages/Common/GetMarketData'
 import { getAnnualToMonthlyRateConvertionCorrection } from './GetAnnualToMonthlyRateConvertionCorrection'
 
-export function planParamsProcessAnnualReturnsParams(
-  params: PlanParams,
-  marketData: MarketData,
-) {
-  const { annualReturns } = params.advanced
-  const expectedAnnualReturns =
-    annualReturns.expected.type === 'manual'
-      ? {
-          stocks: annualReturns.expected.stocks,
-          bonds: annualReturns.expected.bonds,
-        }
-      : EXPECTED_ANNUAL_RETURN_PRESETS(annualReturns.expected.type, marketData)
+export const planParamsProcessExpectedAnnualReturns = (
+  annualReturns: PlanParams['advanced']['annualReturns'],
+  marketData: MarketData['latest'],
+) =>
+  annualReturns.expected.type === 'manual'
+    ? {
+        stocks: annualReturns.expected.stocks,
+        bonds: annualReturns.expected.bonds,
+      }
+    : EXPECTED_ANNUAL_RETURN_PRESETS(annualReturns.expected.type, marketData)
 
+export function planParamsProcessAnnualReturnsParams(
+  params: Params,
+  marketData: MarketData['latest'],
+) {
+  const { annualReturns } = params.plan.advanced
+  const expectedAnnualReturns = planParamsProcessExpectedAnnualReturns(
+    annualReturns,
+    marketData,
+  )
   const historicalMonthlyAdjusted = (() => {
     switch (annualReturns.historical.type) {
       case 'adjusted': {
@@ -33,11 +41,12 @@ export function planParamsProcessAnnualReturnsParams(
               : adjustment.type === 'toExpected'
               ? expectedAnnualReturns[type]
               : adjustment.type === 'by'
-              ? historicalReturns.monthly.annualStats[type].mean - adjustment[type]
+              ? historicalReturns.monthly.annualStats[type].mean -
+                adjustment[type]
               : noCase(adjustment)
 
           const correction = (() => {
-            switch (params.advanced.sampling) {
+            switch (params.plan.advanced.sampling) {
               case 'historical':
                 return getAnnualToMonthlyRateConvertionCorrection.forHistoricalSequence(
                   type,
@@ -45,12 +54,12 @@ export function planParamsProcessAnnualReturnsParams(
               case 'monteCarlo':
                 return correctForBlockSampling
                   ? getAnnualToMonthlyRateConvertionCorrection.forMonteCarlo(
-                      params.advanced.samplingBlockSizeForMonteCarlo,
+                      params.plan.advanced.monteCarloSampling.blockSize,
                       type,
                     )
                   : 0
               default:
-                noCase(params.advanced.sampling)
+                noCase(params.plan.advanced.sampling)
             }
           })()
 

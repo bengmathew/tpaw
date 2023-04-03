@@ -19,7 +19,7 @@ export const WithChartData = ({ children }: { children: ReactNode }) => {
   const simulation = useSimulation()
   const { tpawResult } = simulation
   const value = useMemo(() => {
-    const { params } = tpawResult.args
+    const { params } = tpawResult
     const byYearsFromNowPercentiles = new Map<
       PlanChartType,
       TPAWChartDataMain
@@ -30,10 +30,10 @@ export const WithChartData = ({ children }: { children: ReactNode }) => {
 
     _add('spending-total')
     _add('spending-general')
-    params.original.adjustmentsToSpending.extraSpending.essential.forEach(
+    params.original.plan.adjustmentsToSpending.extraSpending.essential.forEach(
       (x) => [x.id, _add(`spending-essential-${x.id}`)],
     )
-    params.original.adjustmentsToSpending.extraSpending.discretionary.forEach(
+    params.original.plan.adjustmentsToSpending.extraSpending.discretionary.forEach(
       (x) => [x.id, _add(`spending-discretionary-${x.id}`)],
     )
     _add('portfolio')

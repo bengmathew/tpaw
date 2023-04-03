@@ -1,19 +1,25 @@
+import { PlanParams, noCase } from '@tpaw/common'
 import _ from 'lodash'
 import { useRouter } from 'next/router'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLazyLoadQuery } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { createContext } from '../../Utils/CreateContext'
-import { useAssertConst } from '../../Utils/UseAssertConst'
 import { useURLParam } from '../../Utils/UseURLParam'
 import { useURLUpdater } from '../../Utils/UseURLUpdater'
 import { AppPage } from '../App/AppPage'
+import { WithChartData } from '../App/WithChartData'
 import { useUserGQLArgs } from '../App/WithFirebaseUser'
-import { useSimulation } from '../App/WithSimulation'
-import { useWindowSize } from '../App/WithWindowSize'
+import { WithSimulation, useSimulation } from '../App/WithSimulation'
+import { WithWindowSize, useWindowSize } from '../App/WithWindowSize'
+import { MarketData } from '../Common/GetMarketData'
+import { ConfirmAlert } from '../Common/Modal/ConfirmAlert'
 import { Config } from '../Config'
+import { WithUser } from '../QueryFragments/UserFragment'
+import { PlanChart } from './PlanChart/PlanChart'
 import { planChartLabel } from './PlanChart/PlanChartMainCard/PlanChartLabel'
 import { usePlanChartType } from './PlanChart/UsePlanChartType'
+import { PlanDialogOverlay } from './PlanDialogOverlay'
 import { PlanContent } from './PlanGetStaticProps'
 import { PlanHelp } from './PlanHelp'
 import {
@@ -38,33 +44,36 @@ const query = graphql`
   }
 `
 
-import {
-  getLogReturns,
-  getStats,
-  historicalReturns,
-  noCase,
-  PlanParams,
-} from '@tpaw/common'
-import { ConfirmAlert } from '../Common/Modal/ConfirmAlert'
-import { WithUser } from '../QueryFragments/UserFragment'
-import { PlanChart } from './PlanChart/PlanChart'
-import { PlanDialogOverlay } from './PlanDialogOverlay'
-
-export const Plan = React.memo((planContent: PlanContent) => {
-  const userGQLArgs = useUserGQLArgs()
-  const data = useLazyLoadQuery<PlanQuery>(query, { ...userGQLArgs })
-  return (
-    <WithUser value={data}>
-      <_Plan planContent={planContent} />
-    </WithUser>
-  )
-})
+export const Plan = React.memo(
+  ({
+    planContent,
+    marketData,
+  }: {
+    planContent: PlanContent
+    marketData: MarketData
+  }) => {
+    const userGQLArgs = useUserGQLArgs()
+    const data = useLazyLoadQuery<PlanQuery>(query, { ...userGQLArgs })
+    return (
+      <WithWindowSize>
+        <WithSimulation marketData={marketData}>
+          <WithChartData>
+            <WithUser value={data}>
+              <_Plan planContent={planContent} />
+            </WithUser>
+          </WithChartData>
+        </WithSimulation>
+      </WithWindowSize>
+    )
+  },
+)
 
 const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
+  useEffect(() => {}, [])
   const simulation = useSimulation()
-  const { params, setParams } = simulation
+  const { params, setNonPlanParams } = simulation
 
-  const isSWR = params.advanced.strategy === 'SWR'
+  const isSWR = params.plan.advanced.strategy === 'SWR'
   const windowSize = useWindowSize()
   const aspectRatio = windowSize.width / windowSize.height
   const layout =
@@ -101,8 +110,7 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
       }
       return { prev, target, duration: 300 }
     })
-  }, [state, setParams])
-  useAssertConst([setParams])
+  }, [state])
 
   const [chartDiv, setChartDiv] = useState<HTMLElement | null>(null)
   const isIPhone = window.navigator.userAgent.match(/iPhone/i) !== null
@@ -157,17 +165,17 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
           sizing={_sizing.summary}
           planTransition={transition}
         />
-        {(!params.warnedAbout14to15Converstion ||
-          !params.warnedAbout16to17Converstion) && (
+        {!params.nonPlan.migrationWarnings.v14tov15 ||
+        !params.nonPlan.migrationWarnings.v16tov17 ? (
           <ConfirmAlert
             title={'Migration to New Risk Inputs'}
             option1={{
               label: 'Close',
               onClose: () => {
-                setParams((params) => {
-                  const clone = _.cloneDeep(params)
-                  clone.warnedAbout14to15Converstion = true
-                  clone.warnedAbout16to17Converstion = true
+                setNonPlanParams((nonPlan) => {
+                  const clone = _.cloneDeep(nonPlan)
+                  clone.migrationWarnings.v14tov15 = true
+                  clone.migrationWarnings.v16tov17 = true
                   return clone
                 })
               },
@@ -181,6 +189,31 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
               section.
             </p>
           </ConfirmAlert>
+        ) : !params.nonPlan.migrationWarnings.v19tov20 ? (
+          <ConfirmAlert
+            title={'Migration to Calendar Inputs'}
+            option1={{
+              label: 'Close',
+              onClose: () => {
+                setNonPlanParams((nonPlan) => {
+                  const clone = _.cloneDeep(nonPlan)
+                  clone.migrationWarnings.v19tov20 = true
+                  return clone
+                })
+              },
+            }}
+            onCancel={null}
+          >
+            <p className="p-base">
+              The planner now uses calendar dates for time based inputs. Your
+              inputs have been migrated as needed. As part of the migration,
+              some dates were approximated. Please review all the time based
+              entries (age, pension start dates, etc.) to make sure that it is
+              correct.
+            </p>
+          </ConfirmAlert>
+        ) : (
+          <></>
         )}
         <PlanDialogOverlay chartDiv={chartDiv} />
       </AppPage>
@@ -189,7 +222,7 @@ const _Plan = React.memo(({ planContent }: { planContent: PlanContent }) => {
 })
 
 function usePlanState() {
-  const { params, setParams, paramsExt } = useSimulation()
+  const { params, setPlanParams, paramsExt } = useSimulation()
   const { asMFN, withdrawalStartMonth } = paramsExt
   const withdrawalStartMonthAMFN = asMFN(withdrawalStartMonth)
 
@@ -200,7 +233,7 @@ function usePlanState() {
   // we intend for there to be only one.
   const [state, setState] = useState({
     section: urlSection,
-    dialogPosition: params.dialogPosition,
+    dialogPosition: params.plan.dialogPosition,
   })
   useEffect(() => {
     setState((prev) => ({
@@ -220,21 +253,23 @@ function usePlanState() {
   }, [urlSection])
 
   useEffect(() => {
-    setParams((params) => {
-      if (params.dialogPosition === state.dialogPosition) return params
-      const clone = _.cloneDeep(params)
+    setPlanParams((plan) => {
+      if (plan.dialogPosition === state.dialogPosition) return plan
+      const clone = _.cloneDeep(plan)
       clone.dialogPosition = state.dialogPosition
       return clone
     })
-  }, [setParams, state.dialogPosition])
+    // ignore setPlanParams
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.dialogPosition])
 
   useEffect(() => {
     setState((prev) =>
-      params.dialogPosition === prev.dialogPosition
+      params.plan.dialogPosition === prev.dialogPosition
         ? prev
-        : { section: prev.section, dialogPosition: params.dialogPosition },
+        : { section: prev.section, dialogPosition: params.plan.dialogPosition },
     )
-  }, [params.dialogPosition])
+  }, [params.plan.dialogPosition])
 
   return state
 }

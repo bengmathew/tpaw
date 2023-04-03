@@ -1,16 +1,23 @@
-import { fGet, MAX_AGE_IN_MONTHS, ValueForMonthRange } from '@tpaw/common'
+import {
+  MAX_AGE_IN_MONTHS,
+  ValueForMonthRange,
+  assert,
+  calendarMonthFromTime,
+} from '@tpaw/common'
 import _ from 'lodash'
+import { DateTime } from 'luxon'
 import React, { useState } from 'react'
-import { extendPlanParams } from '../TPAWSimulator/PlanParamsExt'
+import { extendParams } from '../TPAWSimulator/ExtentParams'
 import { processPlanParams } from '../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessed'
+import { getWASM } from '../TPAWSimulator/Worker/GetWASM'
 import { runSimulationInWASM } from '../TPAWSimulator/Worker/RunSimulationInWASM'
-import { getTPAWRunInWorkerSingleton } from '../TPAWSimulator/Worker/UseTPAWWorker'
 import { useMarketData } from './App/WithMarketData'
 import { MarketData } from './Common/GetMarketData'
 import { Config } from './Config'
-1
+
 export const Test = React.memo(() => {
   const marketData = useMarketData()
+  const [currentTime] = useState(DateTime.local)
   if (Config.client.production) throw new Error()
 
   const [rows, setRows] = useState<string[][]>([])
@@ -90,7 +97,10 @@ export const Test = React.memo(() => {
 
   return (
     <div className="">
-      <button className="btn-dark btn-lg" onClick={handleExact(marketData)}>
+      <button
+        className="btn-dark btn-lg"
+        onClick={handleExact(marketData, currentTime)}
+      >
         Test
       </button>
       <div
@@ -118,95 +128,27 @@ export const Test = React.memo(() => {
   )
 })
 
-const handleExact = (marketData: MarketData) => async () => {
-  const params = processPlanParams(testParams, marketData)
-  console.dir('------------------------------')
-  console.dir('------------------------------')
-  console.dir('------------------------------')
-  const url = new URL('https://dev.tpawplanner.com/plan')
-  url.searchParams.set('params', JSON.stringify(params.original))
-  console.dir(url.toString())
-  const wasm = await runSimulationInWASM(
-    params,
-    { start: 0, end: 1 },
-    {
-      truth,
-      indexIntoHistoricalReturns,
-    },
-  )
-}
-
-const handleStochastic = (marketData: MarketData) => async () => {
-  const params = processPlanParams(testParams, marketData)
-  const url = new URL('https://dev.tpawplanner.com/plan')
-  url.searchParams.set('params', JSON.stringify(params.original))
-  console.dir(url.toString())
-
-  type Result = { 5: number[]; 50: number[]; 95: number[] }
-  function mapResult<T>(
-    x: Result,
-    fn: (x: number[], percentile: 5 | 50 | 95) => T,
-  ) {
-    return { 5: fn(x[5], 5), 50: fn(x[50], 50), 95: fn(x[95], 95) }
-  }
-
-  let cumulative = null as null | Result
-  const start = performance.now()
-  const numIters = 1
-  for (const i of _.range(0, numIters)) {
-    const numRuns = 50000
-    const percentiles = [5, 50, 95]
-    const currFull = fGet(
-      await getTPAWRunInWorkerSingleton().runSimulations(
-        { canceled: false },
-        numRuns,
-        params,
-        percentiles,
-      ),
+const handleExact =
+  (marketData: MarketData, currentTime: DateTime) => async () => {
+    const testParams = getTestParams(currentTime)
+    assert(testParams.params.plan.wealth.portfolioBalance.isLastPlanChange)
+    const params = processPlanParams(
+      testParams,
+      testParams.params.plan.wealth.portfolioBalance.amount,
+      marketData.latest,
     )
-    await getTPAWRunInWorkerSingleton().clearMemoizedRandom()
-    const curr = {
-      5: currFull.savingsPortfolio.start.balance.byPercentileByMonthsFromNow[0]
-        .data,
-      50: currFull.savingsPortfolio.start.balance.byPercentileByMonthsFromNow[1]
-        .data,
-      95: currFull.savingsPortfolio.start.balance.byPercentileByMonthsFromNow[2]
-        .data,
-    }
-    if (!cumulative) {
-      cumulative = curr
-    } else {
-      const next = mapResult(cumulative, (x, p) => _.zipWith(x, curr[p], _.add))
-
-      const cumAvg = mapResult(cumulative, (x) => x.map((x) => x / i))
-      const nextAvg = mapResult(next, (x) => x.map((x) => x / (i + 1)))
-
-      const diff = (x: number[], y: number[]) =>
-        _.zipWith(x, y, (x, y) => Math.abs(x - y))
-      const maxDiff = fGet(
-        _.max(
-          diff(
-            [...cumAvg[5], ...cumAvg[50], ...cumAvg[95]],
-            [...nextAvg[5], ...nextAvg[50], ...nextAvg[95]],
-          ),
-        ),
-      )
-      console.dir(`Max Diff: ${maxDiff}`)
-      cumulative = next
-    }
-
-    console.dir(`Completed: ${(i + 1) * numRuns}`)
+    const url = new URL('https://dev.tpawplanner.com/plan')
+    url.searchParams.set('params', JSON.stringify(params.original))
+    const wasm = runSimulationInWASM(
+      params,
+      { start: 0, end: 1 },
+      await getWASM(),
+      {
+        truth,
+        indexIntoHistoricalReturns,
+      },
+    )
   }
-
-  const avgAnnual = mapResult(fGet(cumulative), (x) =>
-    _.chunk(
-      x.map((x) => x / numIters),
-      12,
-    ).map((x) => x[0]),
-  )
-  console.dir(mapResult(avgAnnual, _.last))
-  console.dir(`Time: ${performance.now() - start}`)
-}
 
 const truth = _.flatten(
   [
@@ -252,7 +194,11 @@ const _convertByMonth = ({
       label,
       monthRange: {
         type: 'startAndNumMonths',
-        start: { type: 'numericAge', person: 'person1', ageInMonths: age * 12 },
+        start: {
+          type: 'numericAge',
+          person: 'person1',
+          age: { inMonths: age * 12 },
+        },
         numMonths: 1,
       },
       value,
@@ -261,131 +207,162 @@ const _convertByMonth = ({
     }),
   )
 
-const testParams = extendPlanParams({
-  v: 19,
-  warnedAbout14to15Converstion: true,
-  warnedAbout16to17Converstion: true,
-  dialogPosition: 'done',
-  people: {
-    withPartner: false,
-    person1: {
-      ages: {
-        type: 'notRetired',
-        currentMonth: 35 * 12,
-        retirementMonth: 65 * 12,
-        maxMonth: 100 * 12,
-      },
-    },
-  },
-  wealth: {
-    currentPortfolioBalance: 100000,
-    futureSavings: [
-      ..._convertByMonth({
-        label: null,
-        yearRange: {
-          type: 'startAndEnd',
-          start: { type: 'numericAge', person: 'person1', age: 37 },
-          end: { type: 'numericAge', person: 'person1', age: 38 },
-        },
-        value: 12000,
-        nominal: true,
-        id: 1,
-      }),
-    ],
-    retirementIncome: [
-      ..._convertByMonth({
-        label: null,
-        yearRange: {
-          type: 'startAndEnd',
-          start: { type: 'numericAge', person: 'person1', age: 67 },
-          end: { type: 'numericAge', person: 'person1', age: 68 },
-        },
-        value: 12000,
-        nominal: true,
-        id: 1,
-      }),
-    ],
-  },
-  adjustmentsToSpending: {
-    tpawAndSPAW: {
-      monthlySpendingCeiling: null,
-      monthlySpendingFloor: null,
-      legacy: {
-        total: 1000000000,
-        external: [],
-      },
-    },
-    extraSpending: {
-      essential: [
-        ..._convertByMonth({
-          label: null,
-          yearRange: {
-            type: 'startAndEnd',
-            start: { type: 'numericAge', person: 'person1', age: 47 },
-            end: { type: 'numericAge', person: 'person1', age: 48 },
+const getTestParams = (currentTime: DateTime) =>
+  extendParams(
+    {
+      v: 20,
+      plan: {
+        timestamp: currentTime.valueOf(),
+        dialogPosition: 'done',
+        people: {
+          withPartner: false,
+          person1: {
+            ages: {
+              type: 'retirementDateSpecified',
+              monthOfBirth: calendarMonthFromTime(
+                currentTime.minus({ month: 35 * 12 }),
+              ),
+              retirementAge: { inMonths: 65 * 12 },
+              maxAge: { inMonths: 100 * 12 },
+            },
           },
-          value: 12000,
-          nominal: true,
-          id: 1,
-        }),
-        ..._convertByMonth({
-          label: null,
-          yearRange: {
-            type: 'startAndEnd',
-            start: { type: 'numericAge', person: 'person1', age: 47 },
-            end: { type: 'numericAge', person: 'person1', age: 53 },
+        },
+        wealth: {
+          portfolioBalance: {
+            isLastPlanChange: true,
+            amount: 100000,
+            timestamp: currentTime.valueOf(),
           },
-          value: 12000,
-          nominal: true,
-          id: 2,
-        }),
-      ],
-      discretionary: [],
-    },
-  },
-  risk: {
-    tpaw: {
-      riskTolerance: {
-        at20: 0,
-        deltaAtMaxAge: 0,
-        forLegacyAsDeltaFromAt20: 0,
-      },
-      timePreference: 0,
-      additionalAnnualSpendingTilt: 0,
-    },
-    tpawAndSPAW: {
-      lmp: 0,
-    },
-    spaw: { annualSpendingTilt: 0.0 },
-    spawAndSWR: {
-      allocation: {
-        start: { stocks: 0.5 },
-        intermediate: [],
-        end: { stocks: 0.5 },
-      },
-    },
-    swr: {
-      withdrawal: { type: 'default' },
-    },
-  },
+          futureSavings: [
+            ..._convertByMonth({
+              label: null,
+              yearRange: {
+                type: 'startAndEnd',
+                start: { type: 'numericAge', person: 'person1', age: 37 },
+                end: { type: 'numericAge', person: 'person1', age: 38 },
+              },
+              value: 12000,
+              nominal: true,
+              id: 1,
+            }),
+          ],
+          retirementIncome: [
+            ..._convertByMonth({
+              label: null,
+              yearRange: {
+                type: 'startAndEnd',
+                start: { type: 'numericAge', person: 'person1', age: 67 },
+                end: { type: 'numericAge', person: 'person1', age: 68 },
+              },
+              value: 12000,
+              nominal: true,
+              id: 1,
+            }),
+          ],
+        },
+        adjustmentsToSpending: {
+          tpawAndSPAW: {
+            monthlySpendingCeiling: null,
+            monthlySpendingFloor: null,
+            legacy: {
+              total: 1000000000,
+              external: [],
+            },
+          },
+          extraSpending: {
+            essential: [
+              ..._convertByMonth({
+                label: null,
+                yearRange: {
+                  type: 'startAndEnd',
+                  start: { type: 'numericAge', person: 'person1', age: 47 },
+                  end: { type: 'numericAge', person: 'person1', age: 48 },
+                },
+                value: 12000,
+                nominal: true,
+                id: 1,
+              }),
+              ..._convertByMonth({
+                label: null,
+                yearRange: {
+                  type: 'startAndEnd',
+                  start: { type: 'numericAge', person: 'person1', age: 47 },
+                  end: { type: 'numericAge', person: 'person1', age: 53 },
+                },
+                value: 12000,
+                nominal: true,
+                id: 2,
+              }),
+            ],
+            discretionary: [],
+          },
+        },
+        risk: {
+          tpaw: {
+            riskTolerance: {
+              at20: 0,
+              deltaAtMaxAge: 0,
+              forLegacyAsDeltaFromAt20: 0,
+            },
+            timePreference: 0,
+            additionalAnnualSpendingTilt: 0,
+          },
+          tpawAndSPAW: {
+            lmp: 0,
+          },
+          spaw: { annualSpendingTilt: 0.0 },
+          spawAndSWR: {
+            allocation: {
+              start: {
+                month: calendarMonthFromTime(currentTime),
+                stocks: 0.5,
+              },
+              intermediate: [],
+              end: { stocks: 0.5 },
+            },
+          },
+          swr: {
+            withdrawal: { type: 'default' },
+          },
+        },
 
-  advanced: {
-    annualReturns: {
-      expected: { type: 'manual', stocks: 0.04, bonds: 0.02 },
-      // historical: {
-      //   type: 'adjusted',
-      //   adjustment: { type: 'toExpected' },
-      //   correctForBlockSampling: true,
-      // },
-      historical: { type: 'unadjusted' },
+        advanced: {
+          annualReturns: {
+            expected: { type: 'manual', stocks: 0.04, bonds: 0.02 },
+            // historical: {
+            //   type: 'adjusted',
+            //   adjustment: { type: 'toExpected' },
+            //   correctForBlockSampling: true,
+            // },
+            historical: { type: 'unadjusted' },
+          },
+          annualInflation: { type: 'manual', value: 0.02 },
+          sampling: 'monteCarlo',
+          monteCarloSampling: {
+            blockSize: 12 * 5,
+            numOfSimulations: 500,
+          },
+          strategy: 'TPAW',
+        },
+      },
+      nonPlan: {
+        migrationWarnings: {
+          v14tov15: false,
+          v16tov17: false,
+          v19tov20: false,
+        },
+
+        percentileRange: { start: 5, end: 95 },
+        defaultTimezone: {
+          type: 'auto',
+          ianaTimezoneName: currentTime.zoneName,
+        },
+        dev: {
+          alwaysShowAllMonths: false,
+          currentTimeFastForward: { shouldFastForward: false },
+        },
+      },
     },
-    annualInflation: { type: 'manual', value: 0.02 },
-    sampling: 'monteCarlo',
-    samplingBlockSizeForMonteCarlo: 12 * 1,
-    strategy: 'TPAW',
-  },
-  dev: {
-    alwaysShowAllMonths: false,
-  },
-})
+    currentTime,
+  )
 const indexIntoHistoricalReturns = _.range(0, MAX_AGE_IN_MONTHS)

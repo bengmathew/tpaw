@@ -171,8 +171,8 @@ const _LoginInput = React.memo(
         <div className="mt-10 flex justify-end">
           <h2 className="">
             Read our{' '}
-            <Link href="/privacy">
-              <a className=" border-b border-gray-500">privacy policy</a>
+            <Link className=" border-b border-gray-500" href="/privacy">
+              privacy policy
             </Link>
           </h2>
         </div>

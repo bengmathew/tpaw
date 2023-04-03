@@ -1,4 +1,4 @@
-import { noCase, PlanParams } from '@tpaw/common'
+import { PlanParams, noCase } from '@tpaw/common'
 
 export const planSectionDialogOrder: PlanParams['dialogPosition'][] = [
   'age',

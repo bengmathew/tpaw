@@ -1,25 +1,25 @@
-import {documentToReactComponents} from '@contentful/rich-text-react-renderer'
-import {BLOCKS} from '@contentful/rich-text-types'
-import {faLongArrowAltRight} from '@fortawesome/pro-regular-svg-icons'
-import {faCircle} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {GetStaticProps, InferGetStaticPropsType} from 'next'
+import { documentToReactComponents } from '@contentful/rich-text-react-renderer'
+import { BLOCKS } from '@contentful/rich-text-types'
+import { faLongArrowAltRight } from '@fortawesome/pro-solid-svg-icons'
+import { faCircle } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { GetStaticProps, InferGetStaticPropsType } from 'next'
 import Head from 'next/head'
 import Link from 'next/link'
 import React from 'react'
-import {Contentful} from '../../Utils/Contentful'
-import {Footer} from '../App/Footer'
+import { Contentful } from '../../Utils/Contentful'
+import { Footer } from '../App/Footer'
 
 export const indexGetStaticProps: GetStaticProps<{
   detail: Awaited<ReturnType<typeof Contentful.fetchInline>>
-}> = async context => ({
+}> = async (context) => ({
   props: {
     detail: await Contentful.fetchInline('6Gv05DQzOKaPAE4QgCqdqh'),
   },
 })
 
 export const Index = React.memo(
-  ({detail}: InferGetStaticPropsType<typeof indexGetStaticProps>) => {
+  ({ detail }: InferGetStaticPropsType<typeof indexGetStaticProps>) => {
     return (
       <div className="font-font1  text-gray-800 pl-4 pr-4 sm:pl-20 sm:pr-4">
         <Head>
@@ -27,14 +27,12 @@ export const Index = React.memo(
         </Head>
         <div className="flex justify-end sticky top-0 ">
           <div className="flex items-center gap-x-6 pt-4 pb-2 pl-6 bg-pageBG  rounded-bl-2xl bg-opacity-100 ">
-            <Link href="/learn">
-              <a className=" block text-lg  font-bold">Learn</a>
+            <Link className=" block text-lg  font-bold" href="/learn">
+              Learn
             </Link>
-            <Link href="/plan">
-              <a className="btn-dark btn-lg ">
-                Create Your Plan{' '}
-                <FontAwesomeIcon className="ml-2" icon={faLongArrowAltRight} />{' '}
-              </a>
+            <Link className="btn-dark btn-lg " href="/plan">
+              Create Your Plan{' '}
+              <FontAwesomeIcon className="ml-2" icon={faLongArrowAltRight} />{' '}
             </Link>
           </div>
         </div>
@@ -74,5 +72,5 @@ export const Index = React.memo(
         <Footer />
       </div>
     )
-  }
+  },
 )

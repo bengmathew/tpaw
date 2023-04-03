@@ -1,7 +1,9 @@
-import React, {ReactNode, useEffect, useState} from 'react'
+import React, { ReactNode, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 
-type _State = {show: true} | {show: false; onTransitionEnd: (() => void) | null}
+type _State =
+  | { show: true }
+  | { show: false; onTransitionEnd: (() => void) | null }
 export const ModalBase = React.memo(
   ({
     children,
@@ -11,7 +13,7 @@ export const ModalBase = React.memo(
     maxWidth = '700px',
   }: {
     children: (
-      transitionOut: (onTransitionEnd: () => void) => void
+      transitionOut: (onTransitionEnd: () => void) => void,
     ) => ReactNode
     onClose?: () => void
     bg?: string
@@ -24,16 +26,16 @@ export const ModalBase = React.memo(
     })
 
     useEffect(() => {
-      // Set Timeout makes it more robust in getting the css transition to work.
+      // setTimeout makes it more robust in getting the css transition to work.
       // It was not animating in some cases without it.
-      window.setTimeout(() => setState({show: true}), 0)
+      window.setTimeout(() => setState({ show: true }), 0)
     }, [])
     return ReactDOM.createPortal(
       <div className="modal-base">
         <div
           className={`fixed z-0 inset-0 bg-black 
           ${state.show ? 'opacity-60' : 'opacity-0'}`}
-          style={{transition: 'opacity .25s ease'}}
+          style={{ transition: 'opacity .25s ease' }}
           // Note, if there are multiple tansitions, this will be fired multiple times.
           onTransitionEnd={() => {
             if (!state.show && state.onTransitionEnd) {
@@ -42,7 +44,7 @@ export const ModalBase = React.memo(
           }}
           onClick={() => {
             if (onClose && state.show) {
-              setState({show: false, onTransitionEnd: onClose})
+              setState({ show: false, onTransitionEnd: onClose })
             }
           }}
         />
@@ -61,14 +63,14 @@ export const ModalBase = React.memo(
             boxShadow: 'rgba(0, 0, 0, 0.35) 0px 5px 15px',
           }}
         >
-          {children(onTransitionEnd => {
+          {children((onTransitionEnd) => {
             if (state.show) {
-              setState({show: false, onTransitionEnd})
+              setState({ show: false, onTransitionEnd })
             }
           })}
         </div>
       </div>,
-      window.document.body
+      window.document.body,
     )
-  }
+  },
 )

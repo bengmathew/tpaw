@@ -1,9 +1,9 @@
 import { faCircle } from '@fortawesome/pro-light-svg-icons'
 import { faCircle as faCircleSolid } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { getDefaultPlanParams, MAX_AGE_IN_MONTHS } from '@tpaw/common'
+import { MAX_AGE_IN_MONTHS } from '@tpaw/common'
 import _ from 'lodash'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { paddingCSSStyle, paddingCSSStyleHorz } from '../../../Utils/Geometry'
 import { useSimulation } from '../../App/WithSimulation'
 import { NumMonthsInput } from '../../Common/Inputs/NumMonthsInput'
@@ -15,7 +15,7 @@ import {
 
 export const PlanInputSimulation = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const { params, setParams } = useSimulation()
+    const { setPlanParams, defaultParams } = useSimulation()
 
     return (
       <PlanInputBody {...props}>
@@ -33,12 +33,11 @@ export const PlanInputSimulation = React.memo(
           <button
             className="mt-8 underline"
             onClick={() => {
-              setParams((params) => {
-                const clone = _.cloneDeep(params)
-                const defaultParams = getDefaultPlanParams()
-                clone.advanced.sampling = defaultParams.advanced.sampling
-                clone.advanced.samplingBlockSizeForMonteCarlo =
-                  defaultParams.advanced.samplingBlockSizeForMonteCarlo
+              setPlanParams((plan) => {
+                const clone = _.cloneDeep(plan)
+                clone.advanced.sampling = defaultParams.plan.advanced.sampling
+                clone.advanced.monteCarloSampling.blockSize =
+                  defaultParams.plan.advanced.monteCarloSampling.blockSize
                 return clone
               })
             }}
@@ -62,16 +61,14 @@ const _MonteCarloCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { params, setParams } = useSimulation()
-    const defaultNumBlocks = useMemo(
-      () => getDefaultPlanParams().advanced.samplingBlockSizeForMonteCarlo,
-      [],
-    )
-    const isEnabled = params.advanced.sampling === 'monteCarlo'
+    const { params, setPlanParams, defaultParams } = useSimulation()
+    const defaultNumBlocks =
+      defaultParams.plan.advanced.monteCarloSampling.blockSize
+    const isEnabled = params.plan.advanced.sampling === 'monteCarlo'
     const handleBlockSize = (x: number) => {
-      setParams((params) => {
-        const clone = _.cloneDeep(params)
-        clone.advanced.samplingBlockSizeForMonteCarlo = x
+      setPlanParams((plan) => {
+        const clone = _.cloneDeep(plan)
+        clone.advanced.monteCarloSampling.blockSize = x
         return clone
       })
     }
@@ -80,7 +77,8 @@ const _MonteCarloCard = React.memo(
         <PlanInputModifiedBadge
           show={
             isEnabled &&
-            params.advanced.samplingBlockSizeForMonteCarlo !== defaultNumBlocks
+            params.plan.advanced.monteCarloSampling.blockSize !==
+              defaultNumBlocks
           }
           mainPage={false}
         />
@@ -100,15 +98,15 @@ const _MonteCarloCard = React.memo(
           <NumMonthsInput
             className={` ml-8`}
             modalLabel="Sampling Block Size"
-            value={params.advanced.samplingBlockSizeForMonteCarlo}
+            value={params.plan.advanced.monteCarloSampling.blockSize}
             onChange={handleBlockSize}
-            range={{ start: 1, end: MAX_AGE_IN_MONTHS }}
+            rangeAsMFN={{ start: 1, end: MAX_AGE_IN_MONTHS }}
             disabled={!isEnabled}
           />
           <button
             className="mt-4 underline disabled:lighten-2"
             disabled={
-              params.advanced.samplingBlockSizeForMonteCarlo ===
+              params.plan.advanced.monteCarloSampling.blockSize ===
               defaultNumBlocks
             }
             onClick={() => {
@@ -133,8 +131,8 @@ const _MonteCarloCard = React.memo(
         className={`${className} params-card w-full text-start relative`}
         style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
         onClick={() => {
-          setParams((params) => {
-            const clone = _.cloneDeep(params)
+          setPlanParams((plan) => {
+            const clone = _.cloneDeep(plan)
             clone.advanced.sampling = 'monteCarlo'
             return clone
           })
@@ -154,9 +152,9 @@ const _HistoricalCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { params, setParams } = useSimulation()
+    const { params, setPlanParams } = useSimulation()
 
-    const isEnabled = params.advanced.sampling === 'historical'
+    const isEnabled = params.plan.advanced.sampling === 'historical'
     const body = (
       <div className="">
         <PlanInputModifiedBadge show={isEnabled} mainPage={false} />
@@ -185,8 +183,8 @@ const _HistoricalCard = React.memo(
         className={`${className} params-card w-full text-start relative`}
         style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
         onClick={() => {
-          setParams((params) => {
-            const clone = _.cloneDeep(params)
+          setPlanParams((plan) => {
+            const clone = _.cloneDeep(plan)
             clone.advanced.sampling = 'historical'
             return clone
           })

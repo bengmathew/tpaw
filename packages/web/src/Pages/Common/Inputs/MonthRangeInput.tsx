@@ -1,10 +1,10 @@
-import { Month, MonthRange } from '@tpaw/common'
+import { assert, Month, MonthRange } from '@tpaw/common'
 import React from 'react'
 import { numMonthsStr } from '../../../Utils/NumMonthsStr'
 import { SimpleRange } from '../../../Utils/SimpleRange'
-import { assert, noCase } from '../../../Utils/Utils'
+import { noCase } from '../../../Utils/Utils'
 import { useSimulation } from '../../App/WithSimulation'
-import { monthRangeToString } from '../MonthRangeDisplay'
+import { monthRangeWithStartClampedToNowToString } from '../MonthRangeDisplay'
 import { MonthInput, MonthType } from './MonthInput/MonthInput'
 
 export type MonthRangeInputProps = React.ComponentProps<typeof MonthRangeInput>
@@ -12,118 +12,134 @@ export type MonthRangeInputProps = React.ComponentProps<typeof MonthRangeInput>
 export const MonthRangeInput = React.memo(
   ({
     className = '',
-    value,
+    valueClamped,
     setValue,
-    range,
+    rangeAsMFN: rangeAsMFNIn,
     choices,
     modalTextInputOnMobile,
   }: {
     className?: string
-    value: MonthRange
+    valueClamped: MonthRange
     setValue: (month: MonthRange) => void
-    range: SimpleRange
+    rangeAsMFN: SimpleRange
     choices: { start: MonthType[]; end: MonthType[] }
     modalTextInputOnMobile: boolean
   }) => {
-    const { params, paramsExt } = useSimulation()
-    const { people } = params
-    const { monthRangeBoundsCheck, monthRangeLength, asMFN, months } = paramsExt
-    const { errorMsgs } = monthRangeBoundsCheck(value, range)
+    const { paramsExt } = useSimulation()
+    const {
+      monthRangeBoundsCheck,
+      monthRangeLength,
+      asMFN,
+      monthsFromNowToNumericAge,
+      getIsMonthPastMaxAge,
+    } = paramsExt
+    const rangeAsMFN = {
+      start: Math.max(0, rangeAsMFNIn.start),
+      end: rangeAsMFNIn.end,
+    }
+    assert(rangeAsMFN.end >= rangeAsMFN.start)
+
+    const { errorMsgs } = monthRangeBoundsCheck(valueClamped, rangeAsMFN)
 
     const mfnToNumericAge = (mfn: number): Month => {
-      if (
-        mfn >
-        people.person1.ages.maxMonth - people.person1.ages.currentMonth
-      ) {
-        assert(people.withPartner)
-        return months.person2.numericAge(mfn + people.person2.ages.currentMonth)
-      } else {
-        return months.person1.numericAge(mfn + people.person1.ages.currentMonth)
-      }
+      const asPerson1 = monthsFromNowToNumericAge(mfn, 'person1')
+      return getIsMonthPastMaxAge(asPerson1)
+        ? monthsFromNowToNumericAge(mfn, 'person2')
+        : asPerson1
     }
+
     const rangeFromStart = (
       start: Month | { numMonths: number },
     ): MonthRange => {
       if ('numMonths' in start) {
-        switch (value.type) {
+        switch (valueClamped.type) {
           case 'endAndNumMonths':
-            return { ...value, numMonths: start.numMonths }
+            return { ...valueClamped, numMonths: start.numMonths }
           case 'startAndEnd':
             return {
               type: 'endAndNumMonths',
-              end: value.end,
-              numMonths: monthRangeLength(value),
+              end: valueClamped.end,
+              numMonths: monthRangeLength(valueClamped),
             }
           case 'startAndNumMonths':
             return {
               type: 'endAndNumMonths',
-              end: mfnToNumericAge(asMFN(value).end),
-              numMonths: monthRangeLength(value),
+              end: mfnToNumericAge(asMFN(valueClamped).end),
+              numMonths: monthRangeLength(valueClamped),
             }
           default:
-            noCase(value)
+            noCase(valueClamped)
         }
       } else {
-        if (value.type === 'startAndNumMonths') {
-          return { ...value, start }
+        if (valueClamped.type === 'startAndNumMonths') {
+          return { ...valueClamped, start }
         } else {
-          return { type: 'startAndEnd', start, end: value.end }
+          return { type: 'startAndEnd', start, end: valueClamped.end }
         }
       }
     }
     const rangeFromEnd = (end: Month | { numMonths: number }): MonthRange => {
       if ('numMonths' in end) {
-        switch (value.type) {
+        switch (valueClamped.type) {
           case 'startAndNumMonths':
-            return { ...value, numMonths: end.numMonths }
+            return { ...valueClamped, numMonths: end.numMonths }
           case 'startAndEnd':
             return {
               type: 'startAndNumMonths',
-              start: value.start,
-              numMonths: monthRangeLength(value),
+              start: valueClamped.start,
+              numMonths: monthRangeLength(valueClamped),
             }
           case 'endAndNumMonths':
             return {
               type: 'startAndNumMonths',
-              start: mfnToNumericAge(asMFN(value).start),
-              numMonths: monthRangeLength(value),
+              start: mfnToNumericAge(asMFN(valueClamped).start),
+              numMonths: monthRangeLength(valueClamped),
             }
           default:
-            noCase(value)
+            noCase(valueClamped)
         }
       } else {
-        if (value.type === 'endAndNumMonths') {
-          return { ...value, end }
+        if (valueClamped.type === 'endAndNumMonths') {
+          return { ...valueClamped, end }
         } else {
-          return { type: 'startAndEnd', end, start: value.start }
+          return { type: 'startAndEnd', end, start: valueClamped.start }
         }
       }
     }
-    const toString = (value: MonthRange) => monthRangeToString(value, paramsExt)
+    const toString = (value: MonthRange) =>
+      monthRangeWithStartClampedToNowToString(value, paramsExt)
     return (
       <div className={`${className}`}>
         <MonthInput
           className=""
           classNameForNumberInput="mb-4"
-          value={value.type === 'endAndNumMonths' ? value : value.start}
+          valueClamped={
+            valueClamped.type === 'endAndNumMonths'
+              ? valueClamped
+              : valueClamped.start
+          }
           onChange={(x) => setValue(rangeFromStart(x))}
           toMFN={(x) => asMFN(rangeFromStart(x)).start}
           location="rangeStart"
-          range={range}
+          range={rangeAsMFN}
           choices={choices.start}
           modalTextInputOnMobile={modalTextInputOnMobile}
           getMonthLabel={(x) => toString(rangeFromStart(x)).from.start}
         />
         <MonthInput
           classNameForNumberInput="mb-4"
-          value={value.type === 'startAndNumMonths' ? value : value.end}
+          valueClamped={
+            valueClamped.type === 'startAndNumMonths'
+              ? valueClamped
+              : valueClamped.end
+          }
           onChange={(x) => setValue(rangeFromEnd(x))}
           toMFN={(x) => asMFN(rangeFromEnd(x)).end}
           location="rangeEnd"
           range={
-            value.type === 'endAndNumMonths'
-              ? range
-              : { start: asMFN(value.start), end: range.end }
+            valueClamped.type === 'endAndNumMonths'
+              ? rangeAsMFN
+              : { start: asMFN(valueClamped.start), end: rangeAsMFN.end }
           }
           choices={choices.end}
           modalTextInputOnMobile={modalTextInputOnMobile}
@@ -137,7 +153,7 @@ export const MonthRangeInput = React.memo(
           </div>
         ) : (
           <h2 className="mt-2 ">
-            {`That's ${numMonthsStr(monthRangeLength(value))}`}
+            {`That's ${numMonthsStr(monthRangeLength(valueClamped))}`}
           </h2>
         )}
       </div>

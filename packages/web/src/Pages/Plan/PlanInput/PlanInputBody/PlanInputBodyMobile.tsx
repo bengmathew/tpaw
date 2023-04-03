@@ -36,7 +36,7 @@ export const PlanInputBodyMobile = React.memo(
   }) => {
     const { params } = useSimulation()
     const { padding } =
-      params.dialogPosition !== 'done'
+      params.plan.dialogPosition !== 'done'
         ? sizing.dialogMode
         : sizing.notDialogMode
 

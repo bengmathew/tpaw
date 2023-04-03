@@ -15,22 +15,19 @@ export const PlanInputAgeWithdrawalStart = React.memo(
     className?: string
     style?: React.CSSProperties
   }) => {
-    const {params, setParams} = useSimulation()
-    const {people} = params
-    if (
-      !people.withPartner ||
-      (people.person1.ages.type === 'retired' &&
-        people.person2.ages.type === 'retired')
-    )
-      return <></>
+    const { params, setPlanParams, paramsExt } = useSimulation()
+    const { people } = params.plan
+    const { isPersonRetired } = paramsExt
+    if (!people.withPartner) return <></>
+    if (isPersonRetired('person1') && isPersonRetired('person2')) return <></>
 
     return (
       <div className={`${className}`} style={style}>
         <RadioGroup<'div', 'person1' | 'person2'>
           value={people.withdrawalStart}
           onChange={(x: 'person1' | 'person2') =>
-            setParams(params => {
-              const clone = _.cloneDeep(params)
+            setPlanParams((plan) => {
+              const clone = _.cloneDeep(plan)
               assert(clone.people.withPartner)
               clone.people.withdrawalStart = x
               return clone
@@ -45,13 +42,11 @@ export const PlanInputAgeWithdrawalStart = React.memo(
               value={'person1'}
               className="flex items-center gap-x-2 py-0.5 cursor-pointer"
             >
-              {({checked}) => (
+              {({ checked }) => (
                 <>
                   <FontAwesomeIcon icon={checked ? faCircleSolid : faCircle} />
                   <RadioGroup.Description as="h2" className={`py-1`}>
-                    {people.person1.ages.type === 'retired'
-                      ? 'Now'
-                      : 'Your retirement'}
+                    {isPersonRetired('person1') ? 'Now' : 'Your retirement'}
                   </RadioGroup.Description>
                 </>
               )}
@@ -60,11 +55,11 @@ export const PlanInputAgeWithdrawalStart = React.memo(
               value={'person2'}
               className="flex items-center gap-x-2 py-0.5 cursor-pointer"
             >
-              {({checked}) => (
+              {({ checked }) => (
                 <>
                   <FontAwesomeIcon icon={checked ? faCircleSolid : faCircle} />
                   <RadioGroup.Description as="h2" className={`py-1`}>
-                    {people.person2.ages.type === 'retired'
+                    {isPersonRetired('person2')
                       ? 'Now'
                       : `Your partner's retirement`}
                   </RadioGroup.Description>
@@ -79,5 +74,5 @@ export const PlanInputAgeWithdrawalStart = React.memo(
         </RadioGroup>
       </div>
     )
-  }
+  },
 )

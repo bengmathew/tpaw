@@ -1,4 +1,3 @@
-import { getDefaultPlanParams } from '@tpaw/common'
 import _ from 'lodash'
 import React from 'react'
 import { paddingCSSStyle } from '../../../../Utils/Geometry'
@@ -15,22 +14,20 @@ export const PlanInputRiskSPAWAndSWRStockAllocationCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { params, setParams } = useSimulation()
+    const { params, setPlanParams, defaultParams } = useSimulation()
 
     return (
       <div
         className={`${className} params-card`}
         style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
       >
-        <h2 className="font-bold text-lg">
-          Stock Allocation
-        </h2>
+        <h2 className="font-bold text-lg">Stock Allocation</h2>
         <GlidePathInput
           className="mt-4 border border-gray-300 p-2 rounded-lg"
-          value={params.risk.spawAndSWR.allocation}
+          value={params.plan.risk.spawAndSWR.allocation}
           onChange={(x) =>
-            setParams((params) => {
-              const clone = _.cloneDeep(params)
+            setPlanParams((plan) => {
+              const clone = _.cloneDeep(plan)
               clone.risk.spawAndSWR.allocation = x
               return clone
             })
@@ -44,10 +41,10 @@ export const PlanInputRiskSPAWAndSWRStockAllocationCard = React.memo(
         <button
           className="mt-6 underline"
           onClick={() => {
-            setParams((params) => {
-              const clone = _.cloneDeep(params)
+            setPlanParams((plan) => {
+              const clone = _.cloneDeep(plan)
               clone.risk.spawAndSWR.allocation =
-                getDefaultPlanParams().risk.spawAndSWR.allocation
+                defaultParams.plan.risk.spawAndSWR.allocation
               return clone
             })
           }}

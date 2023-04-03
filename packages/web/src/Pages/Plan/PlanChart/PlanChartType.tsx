@@ -1,6 +1,6 @@
 // Embedding index into type instead of expanding to {type:..., index:number}
 
-import { PlanParams } from '@tpaw/common'
+import { Params } from '@tpaw/common'
 
 // because it helps when adding to useEffect dep list.
 export type PlanChartType =
@@ -43,14 +43,14 @@ const _checkType = (x: string): x is PlanChartType =>
   x === 'withdrawal'
 
 export const isPlanChartType = (
-  params: PlanParams,
+  params: Params,
   type: string,
 ): type is PlanChartType => {
   if (!_checkType(type)) return false
   if (isPlanChartSpendingEssentialType(type)) {
     const id = planChartSpendingEssentialTypeID(type)
     return (
-      params.adjustmentsToSpending.extraSpending.essential.find(
+      params.plan.adjustmentsToSpending.extraSpending.essential.find(
         (x) => x.id === id,
       ) !== undefined
     )
@@ -58,7 +58,7 @@ export const isPlanChartType = (
   if (isPlanChartSpendingDiscretionaryType(type)) {
     const id = planChartSpendingDiscretionaryTypeID(type)
     return (
-      params.adjustmentsToSpending.extraSpending.discretionary.find(
+      params.plan.adjustmentsToSpending.extraSpending.discretionary.find(
         (x) => x.id === id,
       ) !== undefined
     )

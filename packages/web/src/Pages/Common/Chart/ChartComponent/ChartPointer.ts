@@ -1,4 +1,4 @@
-import { assert, fGet, noCase } from '@tpaw/common'
+import { assert, fGet, InMonths, noCase } from '@tpaw/common'
 import _ from 'lodash'
 import { Rect, rectExt } from '../../../../Utils/Geometry'
 import { interpolate } from '../../../../Utils/Interpolate'
@@ -13,11 +13,11 @@ export type ChartPointerOpts = {
   subHeading: string
   formatX: (dataY: number) =>
     | { type: 'legacy' }
-    | { type: 'withoutPartner'; ageInMonths: number }
+    | { type: 'withoutPartner'; age: InMonths }
     | {
         type: 'withPartner'
-        ageInMonths: number | null
-        partnerAgeInMonths: number | null
+        age: InMonths | null
+        partnerAge: InMonths | null
       }
   formatY: (dataX: number) => string
   showTh: boolean
@@ -218,7 +218,7 @@ const _calculateBox = (
         case 'withoutPartner': {
           const label = gti('Age')
           const gap1 = 10
-          const person1 = forPerson(displayInfo.ageInMonths)
+          const person1 = forPerson(displayInfo.age.inMonths)
           const width = label.width + person1.width + gap1
           const height = label.height
           const draw = (x: number, y: number) => {
@@ -233,8 +233,8 @@ const _calculateBox = (
           const gap1 = 10
           const gap2 = 4
           const label = gti('Ages')
-          const person1 = forPerson(displayInfo.ageInMonths)
-          const person2 = forPerson(displayInfo.partnerAgeInMonths)
+          const person1 = forPerson(displayInfo.age?.inMonths ?? null)
+          const person2 = forPerson(displayInfo.partnerAge?.inMonths ?? null)
           const width =
             label.width + gap1 + person1.width + gap2 + person2.width
           const height = label.height

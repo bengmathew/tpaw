@@ -1,6 +1,7 @@
-import _ from 'lodash'
+import { assert, calendarMonthFromTime } from '@tpaw/common'
+import { DateTime } from 'luxon'
 import React, { useEffect, useRef, useState } from 'react'
-import { extendPlanParams } from '../TPAWSimulator/PlanParamsExt'
+import { extendParams } from '../TPAWSimulator/ExtentParams'
 import { processPlanParams } from '../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import { TPAWRunInWorker } from '../TPAWSimulator/Worker/TPAWRunInWorker'
 import { fGet } from '../Utils/Utils'
@@ -9,10 +10,9 @@ import { useMarketData } from './App/WithMarketData'
 import { AmountInput } from './Common/Inputs/AmountInput'
 
 export const Perf = React.memo(() => {
-  const [numRuns, setNumRuns] = useState(500)
-  const [numPercentiles, setNumPercentiles] = useState(3)
-  const percentiles = _.times(numPercentiles, (i) => i + 1)
+  const [numOfSimulations, setNumOfSimulations] = useState(500)
   const marketData = useMarketData()
+  const [currentTime] = useState(DateTime.local())
   const workerRef = useRef<TPAWRunInWorker | null>(null)
   useEffect(() => {
     workerRef.current = new TPAWRunInWorker()
@@ -31,11 +31,16 @@ export const Perf = React.memo(() => {
         <button
           className="rounded-full text-xl px-6 py-2 border-2 border-gray-700"
           onClick={async () => {
+            const params = getParams(currentTime, numOfSimulations)
+            assert(params.params.plan.wealth.portfolioBalance.isLastPlanChange)
             const result = await fGet(workerRef.current).runSimulations(
               { canceled: false },
-              numRuns,
-              processPlanParams(params, marketData),
-              percentiles,
+              processPlanParams(
+                params,
+                params.params.plan.wealth.portfolioBalance.amount,
+                marketData.latest,
+              ),
+              params,
             )
 
             const toLine = ([label, amount]: [string, number]) =>
@@ -68,22 +73,13 @@ export const Perf = React.memo(() => {
           <h2 className=""># Runs: </h2>
           <AmountInput
             className="text-input mt-2"
-            value={numRuns}
-            onChange={setNumRuns}
+            value={numOfSimulations}
+            onChange={setNumOfSimulations}
             decimals={0}
             modalLabel="Number of Simulations"
           />
         </div>
-        <div className="flex items-center justify-center">
-          <h2 className=""># Percentiles:</h2>
-          <AmountInput
-            className="text-input mt-2"
-            value={numPercentiles}
-            onChange={setNumPercentiles}
-            decimals={0}
-            modalLabel="Number of Simulations"
-          />
-        </div>
+
         <div className="grid" style={{ grid: 'auto / auto' }}>
           {result.map((line, i) => {
             const cols = line.split(':')
@@ -105,82 +101,114 @@ export const Perf = React.memo(() => {
   )
 })
 
-const params = extendPlanParams({
-  v: 19,
-  warnedAbout14to15Converstion: true,
-  warnedAbout16to17Converstion: true,
-  dialogPosition: 'done',
-  people: {
-    withPartner: false,
-    person1: {
-      ages: {
-        type: 'notRetired',
-        currentMonth: 35 * 12,
-        retirementMonth: 65 * 12,
-        maxMonth: 100 * 12,
-      },
-    },
-  },
-  wealth: {
-    currentPortfolioBalance: 0,
-    futureSavings: [],
-    retirementIncome: [],
-  },
-  adjustmentsToSpending: {
-    tpawAndSPAW: {
-      monthlySpendingCeiling: null,
-      monthlySpendingFloor: null,
-      legacy: {
-        total: 0,
-        external: [],
-      },
-    },
-    extraSpending: {
-      essential: [],
-      discretionary: [],
-    },
-  },
-  risk: {
-    tpaw: {
-      riskTolerance: {
-        at20: 12,
-        deltaAtMaxAge: -2,
-        forLegacyAsDeltaFromAt20: 2,
-      },
-      timePreference: 0,
-      additionalAnnualSpendingTilt: 0,
-    },
-    tpawAndSPAW: {
-      lmp: 0,
-    },
-    spaw: { annualSpendingTilt: 0.01 },
-    spawAndSWR: {
-      allocation: {
-        start: { stocks: 0.5 },
-        intermediate: [],
-        end: { stocks: 0.5 },
-      },
-    },
-    swr: {
-      withdrawal: { type: 'default' },
-    },
-  },
+const getParams = (currentTime: DateTime, numOfSimulations: number) =>
+  extendParams(
+    {
+      v: 20,
+      plan: {
+        timestamp: currentTime.valueOf(),
+        dialogPosition: 'done',
+        people: {
+          withPartner: false,
+          person1: {
+            ages: {
+              type: 'retirementDateSpecified',
+              monthOfBirth: calendarMonthFromTime(
+                currentTime.minus({ month: 35 * 12 }),
+              ),
+              retirementAge: { inMonths: 65 * 12 },
+              maxAge: { inMonths: 100 * 12 },
+            },
+          },
+        },
+        wealth: {
+          portfolioBalance: {
+            isLastPlanChange: true,
+            amount: 100000,
+            timestamp: currentTime.valueOf(),
+          },
+          futureSavings: [],
+          retirementIncome: [],
+        },
+        adjustmentsToSpending: {
+          tpawAndSPAW: {
+            monthlySpendingCeiling: null,
+            monthlySpendingFloor: null,
+            legacy: {
+              total: 1000000000,
+              external: [],
+            },
+          },
+          extraSpending: {
+            essential: [],
+            discretionary: [],
+          },
+        },
+        risk: {
+          tpaw: {
+            riskTolerance: {
+              at20: 0,
+              deltaAtMaxAge: 0,
+              forLegacyAsDeltaFromAt20: 0,
+            },
+            timePreference: 0,
+            additionalAnnualSpendingTilt: 0,
+          },
+          tpawAndSPAW: {
+            lmp: 0,
+          },
+          spaw: { annualSpendingTilt: 0.0 },
+          spawAndSWR: {
+            allocation: {
+              start: {
+                month: calendarMonthFromTime(currentTime),
+                stocks: 0.5,
+              },
+              intermediate: [],
+              end: { stocks: 0.5 },
+            },
+          },
+          swr: {
+            withdrawal: { type: 'default' },
+          },
+        },
 
-  advanced: {
-    annualReturns: {
-      expected: { type: 'suggested' },
-      historical: {
-        type: 'adjusted',
-        adjustment: { type: 'toExpected' },
-        correctForBlockSampling: true,
+        advanced: {
+          annualReturns: {
+            expected: { type: 'manual', stocks: 0.04, bonds: 0.02 },
+            // historical: {
+            //   type: 'adjusted',
+            //   adjustment: { type: 'toExpected' },
+            //   correctForBlockSampling: true,
+            // },
+            historical: { type: 'unadjusted' },
+          },
+          annualInflation: { type: 'manual', value: 0.02 },
+          sampling: 'monteCarlo',
+          monteCarloSampling: {
+            blockSize: 12 * 5,
+            numOfSimulations,
+          },
+
+          strategy: 'TPAW',
+        },
+      },
+      nonPlan: {
+        migrationWarnings: {
+          v14tov15: false,
+          v16tov17: false,
+          v19tov20: false,
+        },
+        percentileRange: { start: 5, end: 95 },
+        defaultTimezone: {
+          type: 'auto',
+          ianaTimezoneName: currentTime.zoneName,
+        },
+        dev: {
+          alwaysShowAllMonths: false,
+          currentTimeFastForward: { shouldFastForward: false },
+        },
       },
     },
-    annualInflation: { type: 'suggested' },
-    sampling: 'monteCarlo',
-    samplingBlockSizeForMonteCarlo: 12 * 5,
-    strategy: 'TPAW',
-  },
-  dev: {
-    alwaysShowAllMonths: false,
-  },
-})
+    currentTime,
+  )

@@ -112,9 +112,6 @@ export const PlanChart = React.forwardRef<HTMLDivElement, _Props>(
       () => sizing.dynamic[transition.target],
       [sizing, transition.target],
     )
-    // console.dir(sizing)
-    // console.dir(transition.target)
-    // console.dir(targetSizing.region.height)
 
     const transitionDuration = `${planTransition.duration}ms`
     return (

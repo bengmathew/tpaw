@@ -1,7 +1,8 @@
 import _ from 'lodash'
+import { DateTime } from 'luxon'
 import { historicalReturns } from '../HistoricalReturns/HistoricalReturns'
 import { noCase } from '../Utils'
-import { PlanParams } from './PlanParams'
+import { calendarMonthFromTime, Params, PlanParams } from './Params'
 
 type MarketData = {
   CAPE: {
@@ -57,90 +58,117 @@ export const DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT = (
   return _.round(0.7125 * Math.pow(retirementLengthInMonths / 12, -0.859), 3)
 }
 
-export function getDefaultPlanParams() {
-  const params: PlanParams = {
-    v: 19,
-    warnedAbout14to15Converstion: true,
-    warnedAbout16to17Converstion: true,
-    dialogPosition: 'age',
-    people: {
-      withPartner: false,
-      person1: {
-        ages: {
-          type: 'notRetired',
-          currentMonth: 35 * 12,
-          retirementMonth: 65 * 12,
-          maxMonth: 100 * 12,
+export function getDefaultPlanParams(currentTime: DateTime) {
+  // const { getMonthOfBirth, currentMonth } =
+  //   getCurrentTimeFnsExt(currentTimeInfo)
+
+  const params: Params = {
+    v: 20,
+    plan: {
+      timestamp: currentTime.valueOf(),
+      dialogPosition: 'age',
+      people: {
+        withPartner: false,
+        person1: {
+          ages: {
+            type: 'retirementDateSpecified',
+            monthOfBirth: calendarMonthFromTime(
+              currentTime.minus({ month: 35 * 12 }),
+            ),
+            retirementAge: { inMonths: 65 * 12 },
+            maxAge: { inMonths: 100 * 12 },
+          },
         },
       },
-    },
 
-    wealth: {
-      currentPortfolioBalance: 0,
-      futureSavings: [],
-      retirementIncome: [],
-    },
+      wealth: {
+        portfolioBalance: {
+          isLastPlanChange: true,
+          amount: 0,
+          timestamp: currentTime.valueOf(),
+        },
+        futureSavings: [],
+        retirementIncome: [],
+      },
 
-    adjustmentsToSpending: {
-      tpawAndSPAW: {
-        monthlySpendingCeiling: null,
-        monthlySpendingFloor: null,
-        legacy: {
-          total: 0,
-          external: [],
+      adjustmentsToSpending: {
+        tpawAndSPAW: {
+          monthlySpendingCeiling: null,
+          monthlySpendingFloor: null,
+          legacy: {
+            total: 0,
+            external: [],
+          },
+        },
+        extraSpending: {
+          essential: [],
+          discretionary: [],
         },
       },
-      extraSpending: {
-        essential: [],
-        discretionary: [],
-      },
-    },
 
-    risk: {
-      tpaw: {
-        riskTolerance: {
-          at20: 12,
-          deltaAtMaxAge: -2,
-          forLegacyAsDeltaFromAt20: 2,
+      risk: {
+        tpaw: {
+          riskTolerance: {
+            at20: 12,
+            deltaAtMaxAge: -2,
+            forLegacyAsDeltaFromAt20: 2,
+          },
+          timePreference: 0,
+          additionalAnnualSpendingTilt: 0,
         },
-        timePreference: 0,
-        additionalAnnualSpendingTilt: 0,
-      },
-      tpawAndSPAW: {
-        lmp: 0,
-      },
-      spaw: {
-        annualSpendingTilt: 0.008,
-      },
-
-      spawAndSWR: {
-        allocation: {
-          start: { stocks: 0.5 },
-          intermediate: [],
-          end: { stocks: 0.5 },
+        tpawAndSPAW: {
+          lmp: 0,
         },
-      },
-      swr: {
-        withdrawal: { type: 'default' },
-      },
-    },
+        spaw: {
+          annualSpendingTilt: 0.008,
+        },
 
-    advanced: {
-      annualReturns: {
-        expected: { type: 'suggested' },
-        historical: {
-          type: 'adjusted',
-          adjustment: { type: 'toExpected' },
-          correctForBlockSampling: true,
+        spawAndSWR: {
+          allocation: {
+            start: { month: calendarMonthFromTime(currentTime), stocks: 0.5 },
+            intermediate: [],
+            end: { stocks: 0.5 },
+          },
+        },
+        swr: {
+          withdrawal: { type: 'default' },
         },
       },
-      annualInflation: { type: 'suggested' },
-      sampling: 'monteCarlo',
-      samplingBlockSizeForMonteCarlo: 12 * 5,
-      strategy: 'TPAW',
+
+      advanced: {
+        annualReturns: {
+          expected: { type: 'suggested' },
+          historical: {
+            type: 'adjusted',
+            adjustment: { type: 'toExpected' },
+            correctForBlockSampling: true,
+          },
+        },
+        annualInflation: { type: 'suggested' },
+        sampling: 'monteCarlo',
+        monteCarloSampling: {
+          blockSize: 12 * 5,
+          numOfSimulations: 500,
+        },
+
+        strategy: 'TPAW',
+      },
     },
-    dev: {
-      alwaysShowAllMonths: false,
+    nonPlan: {
+      migrationWarnings: {
+        v14tov15: true,
+        v16tov17: true,
+        v19tov20: true,
+      },
+      percentileRange: { start: 5, end: 95 },
+      defaultTimezone: {
+        type: 'auto',
+        ianaTimezoneName: currentTime.zoneName,
+      },
+      dev: {
+        alwaysShowAllMonths: false,
+        currentTimeFastForward: { shouldFastForward: false },
+      },
     },
   }
 

@@ -1,24 +1,24 @@
 import _ from 'lodash'
 import { nominalToReal } from '../../Utils/NominalToReal'
-import { PlanParamsExt } from '../PlanParamsExt'
+import { ParamsExtended } from '../ExtentParams'
 
 export function planParamsProcessAdjustmentsToSpending(
-  paramsExt: PlanParamsExt,
+  paramsExt: ParamsExtended,
   monthlyInflation: number,
 ) {
   const { params, numMonths } = paramsExt
   return {
     tpawAndSPAW: (() => {
       const { monthlySpendingCeiling, monthlySpendingFloor, legacy } =
-        params.adjustmentsToSpending.tpawAndSPAW
+        params.plan.adjustmentsToSpending.tpawAndSPAW
       return {
         monthlySpendingCeiling:
           monthlySpendingCeiling === null
             ? null
-            : Math.max(monthlySpendingCeiling, params.risk.tpawAndSPAW.lmp),
+            : Math.max(monthlySpendingCeiling, params.plan.risk.tpawAndSPAW.lmp),
         monthlySpendingFloor,
         legacy: (() => {
-          const { total } = params.adjustmentsToSpending.tpawAndSPAW.legacy
+          const { total } = params.plan.adjustmentsToSpending.tpawAndSPAW.legacy
           const external = _.sum(
             legacy.external.map((x) =>
               nominalToReal({

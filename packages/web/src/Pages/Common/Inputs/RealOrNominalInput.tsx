@@ -71,7 +71,7 @@ export const RealOrNominalInput = React.memo(
                 <Contentful.RichText
                   body={
                     planContent.misc.realDollarExplanation[
-                      params.advanced.strategy
+                      params.plan.advanced.strategy
                     ]
                   }
                   p={`p-base mt-3`}

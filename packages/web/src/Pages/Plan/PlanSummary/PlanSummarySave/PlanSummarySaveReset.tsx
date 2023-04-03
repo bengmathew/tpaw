@@ -1,4 +1,3 @@
-import { getDefaultPlanParams } from '@tpaw/common'
 import React, { useState } from 'react'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
 import { useSimulation } from '../../../App/WithSimulation'
@@ -13,7 +12,7 @@ export const PlanSummarySaveReset = React.memo(
     className?: string
     closeMenu: () => void
   }) => {
-    const { setParams } = useSimulation()
+    const { resetParams, defaultParams } = useSimulation()
     const [showConfirm, setShowConfirm] = useState(false)
     const urlUpdater = useURLUpdater()
     const getPlanChartURL = useGetPlanChartURL()
@@ -29,7 +28,7 @@ export const PlanSummarySaveReset = React.memo(
               label: 'Reset',
               onClose: () => {
                 setShowConfirm(false)
-                setParams(getDefaultPlanParams())
+                resetParams(defaultParams)
                 closeMenu()
                 urlUpdater.push(getPlanChartURL('spending-total'))
               },

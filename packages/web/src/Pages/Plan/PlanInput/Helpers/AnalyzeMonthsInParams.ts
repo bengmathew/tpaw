@@ -1,125 +1,146 @@
-import { GlidePath, Month, MonthRange, ValueForMonthRange } from '@tpaw/common'
+import {
+  GlidePath,
+  Month,
+  PlanParams,
+  ValueForMonthRange,
+} from '@tpaw/common'
 import _ from 'lodash'
-import { PlanParamsExt } from '../../../../TPAWSimulator/PlanParamsExt'
+import { ParamsExtended } from '../../../../TPAWSimulator/ExtentParams'
 import { noCase } from '../../../../Utils/Utils'
 import { planSectionLabel } from './PlanSectionLabel'
 
 export function analyzeMonthsInParams(
-  paramsExt: PlanParamsExt,
-  monthUpdater?: (month: Month) => Month,
+  plan: PlanParams,
+  paramsExtended: ParamsExtended,
+  opts:
+    | { type: 'asVisible' }
+    | {
+        type: 'raw'
+        monthInRangeUpdater?: (month: Month) => Month
+        glidePathUpdater?: (x: GlidePath) => GlidePath
+      },
 ) {
-  const { params } = paramsExt
   const {
     wealth,
-    adjustmentsToSpending: { extraSpending },
     risk,
-  } = params
+    adjustmentsToSpending: { extraSpending },
+  } = plan
   const valueForMonthRange = [
     ...wealth.futureSavings.map((x) =>
-      _analyzeValueForMonthRange(x, 'future-savings', paramsExt, monthUpdater),
+      _analyzeValueForMonthRange(x, 'future-savings', paramsExtended, opts),
     ),
     ...wealth.retirementIncome.map((x) =>
       _analyzeValueForMonthRange(
         x,
         'income-during-retirement',
-        paramsExt,
-        monthUpdater,
+        paramsExtended,
+        opts,
       ),
     ),
     ...extraSpending.essential.map((x) =>
-      _analyzeValueForMonthRange(x, 'extra-spending', paramsExt, monthUpdater),
+      _analyzeValueForMonthRange(x, 'extra-spending', paramsExtended, opts),
     ),
     ...extraSpending.discretionary.map((x) =>
-      _analyzeValueForMonthRange(x, 'extra-spending', paramsExt, monthUpdater),
+      _analyzeValueForMonthRange(x, 'extra-spending', paramsExtended, opts),
     ),
   ]
 
-  const spawGlidePath = _analyzeGlidePath(
-    risk.spawAndSWR.allocation,
-    'strategy',
-    'assetAllocationForSPAW',
-    paramsExt,
-    monthUpdater,
-  )
+  if (opts.type === 'raw' && opts.glidePathUpdater) {
+    risk.spawAndSWR.allocation = opts.glidePathUpdater(
+      risk.spawAndSWR.allocation,
+    )
+  }
 
   const glidePath = _.compact([
-    // Condition only on returning the results, not on running the month updater.
-    params.advanced.strategy === 'SPAW' ? spawGlidePath : undefined,
+    opts.type === 'raw' ||
+    plan.advanced.strategy === 'SPAW' ||
+    plan.advanced.strategy === 'SWR'
+      ? _analyzeGlidePath(
+          risk.spawAndSWR.allocation,
+          'risk',
+          paramsExtended,
+          opts.type,
+        )
+      : undefined,
   ])
   return { valueForMonthRange, glidePath }
 }
 
 const _analyzeGlidePath = (
   glidePath: GlidePath,
-  section: 'strategy',
-  location: 'assetAllocationForSPAW',
-  paramsExt: PlanParamsExt,
-  monthUpdater?: (month: Month) => Month,
+  section: 'risk',
+  paramsExt: ParamsExtended,
+  type: 'asVisible' | 'raw',
 ) => {
   const { glidePathIntermediateValidated } = paramsExt
-  if (monthUpdater) {
-    glidePath.intermediate.forEach((x) => (x.month = monthUpdater(x.month)))
-  }
-  const analyzed = glidePathIntermediateValidated(glidePath.intermediate)
+
+  const analyzed = glidePathIntermediateValidated(
+    glidePath.intermediate,
+  ).filter((x) => (type === 'raw' ? true : x.issue !== 'before'))
 
   const sectionLabel = planSectionLabel(section)
-  const usesPerson2 = glidePath.intermediate.some((x) => _usesPerson2(x.month))
+  const usesPerson2 = analyzed.some((x) => _usesPerson2(x.month))
   return {
     section,
     sectionLabel,
     glidePath,
     analyzed,
-    location,
     usesPerson2,
     usesRetirement: (person: 'person1' | 'person2') =>
-      glidePath.intermediate.some((x) => _usesRetirement(x.month, person)),
+      analyzed.some((x) => _usesRetirement(x.month, person)),
   }
 }
 
 const _analyzeValueForMonthRange = (
   entry: ValueForMonthRange,
   section: 'future-savings' | 'income-during-retirement' | 'extra-spending',
-  paramsExt: PlanParamsExt,
-  monthUpdater?: (month: Month) => Month,
+  paramsExt: ParamsExtended,
+  opts:
+    | { type: 'asVisible' }
+    | { type: 'raw'; monthInRangeUpdater?: (month: Month) => Month },
 ) => {
-  const { monthRange, label } = entry
-  const { validMonthRangeAsMFN, monthRangeBoundsCheck, params } = paramsExt
+  const { monthRange: rangeUnclamped } = entry
+  const { validMonthRangeAsMFN, monthRangeBoundsCheck, clampMonthRangeToNow } =
+    paramsExt
 
-  const sectionLabel = planSectionLabel(section)
-  if (monthUpdater) {
-    switch (monthRange.type) {
+  if (opts.type === 'raw' && opts.monthInRangeUpdater) {
+    switch (rangeUnclamped.type) {
       case 'startAndEnd':
-        monthRange.start = monthUpdater(monthRange.start)
-        monthRange.end = monthUpdater(monthRange.end)
+        rangeUnclamped.start = opts.monthInRangeUpdater(rangeUnclamped.start)
+        rangeUnclamped.end = opts.monthInRangeUpdater(rangeUnclamped.end)
         break
       case 'startAndNumMonths':
-        monthRange.start = monthUpdater(monthRange.start)
+        rangeUnclamped.start = opts.monthInRangeUpdater(rangeUnclamped.start)
         break
       case 'endAndNumMonths':
-        monthRange.end = monthUpdater(monthRange.end)
+        rangeUnclamped.end = opts.monthInRangeUpdater(rangeUnclamped.end)
         break
       default:
-        noCase(monthRange)
+        noCase(rangeUnclamped)
     }
   }
-  const boundsCheck = monthRangeBoundsCheck(
-    monthRange,
-    validMonthRangeAsMFN(section),
-  )
 
-  const doesSomeEdgeMonth = (
-    fn: (x: Month) => boolean,
-    monthRange: MonthRange,
-  ) => {
-    switch (monthRange.type) {
+  const sectionLabel = planSectionLabel(section)
+  const range =
+    opts.type === 'asVisible'
+      ? clampMonthRangeToNow(rangeUnclamped)
+      : rangeUnclamped
+
+  const boundsCheck = range
+    ? monthRangeBoundsCheck(range, validMonthRangeAsMFN(section))
+    : null
+
+  const doesSomeEdgeMonth = (fn: (x: Month) => boolean) => {
+    if (!range) return false
+    switch (range.type) {
       case 'startAndEnd':
-        return fn(monthRange.start) || fn(monthRange.end)
+        return fn(range.start) || fn(range.end)
       case 'startAndNumMonths':
-        return fn(monthRange.start)
+        return fn(range.start)
       case 'endAndNumMonths':
-        return fn(monthRange.end)
+        return fn(range.end)
       default:
-        noCase(monthRange)
+        noCase(range)
     }
   }
   return {
@@ -127,9 +148,9 @@ const _analyzeValueForMonthRange = (
     section,
     sectionLabel,
     entry,
-    usesPerson2: doesSomeEdgeMonth(_usesPerson2, monthRange),
+    usesPerson2: doesSomeEdgeMonth(_usesPerson2),
     useRetirement: (person: 'person1' | 'person2') =>
-      doesSomeEdgeMonth((x) => _usesRetirement(x, person), monthRange),
+      doesSomeEdgeMonth((x) => _usesRetirement(x, person)),
   }
 }
 

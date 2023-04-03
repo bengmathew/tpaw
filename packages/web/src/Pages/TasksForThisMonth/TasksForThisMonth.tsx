@@ -1,8 +1,6 @@
 import { faLeftLong } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { PlanParams } from '@tpaw/common'
 import React, { ReactNode } from 'react'
-import { extendPlanParams } from '../../TPAWSimulator/PlanParamsExt'
 import { FirstMonthSavingsPortfolioDetail } from '../../TPAWSimulator/Worker/FirstMonthSavingsPortfolioDetail'
 import { TPAWRunInWorkerByPercentileByMonthsFromNow } from '../../TPAWSimulator/Worker/TPAWRunInWorker'
 import { UseTPAWWorkerResult } from '../../TPAWSimulator/Worker/UseTPAWWorker'
@@ -14,6 +12,7 @@ import { AppPage } from '../App/AppPage'
 import { useSimulation } from '../App/WithSimulation'
 import { useGetSectionURL } from '../Plan/Plan'
 import { PlanSectionName } from '../Plan/PlanInput/Helpers/PlanSectionName'
+import { PlanParams } from '@tpaw/common'
 
 export type TasksForThisMonthProps = Omit<
   FirstMonthSavingsPortfolioDetail,
@@ -31,9 +30,9 @@ export const getTasksForThisMonthProps = (
   tpawResult: UseTPAWWorkerResult,
 ): TasksForThisMonthProps => {
   const original = tpawResult.firstMonthOfSomeRun
-  const { params } = tpawResult.args
+  const { params, paramsExt } = tpawResult
 
-  const { withdrawalsStarted } = extendPlanParams(params.original)
+  const { withdrawalsStarted } = paramsExt
 
   const firstMonthOfAnyPercentile = (
     id: number,
@@ -45,7 +44,7 @@ export const getTasksForThisMonthProps = (
     withdrawals: {
       ...original.withdrawals,
       essentialByEntry:
-        params.original.adjustmentsToSpending.extraSpending.essential.map(
+        params.original.plan.adjustmentsToSpending.extraSpending.essential.map(
           ({ id, label }) => ({
             id,
             label,
@@ -56,7 +55,7 @@ export const getTasksForThisMonthProps = (
           }),
         ),
       discretionaryByEntry:
-        params.original.adjustmentsToSpending.extraSpending.discretionary.map(
+        params.original.plan.adjustmentsToSpending.extraSpending.discretionary.map(
           ({ id, label }) => ({
             id,
             label,

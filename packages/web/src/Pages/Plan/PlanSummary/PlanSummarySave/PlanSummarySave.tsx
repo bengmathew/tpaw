@@ -1,9 +1,10 @@
 import { faCaretDown, faSpinnerThird } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { formatDistance } from 'date-fns'
+import { DateTime } from 'luxon'
 import Link from 'next/link'
-import React, { Suspense, useEffect, useState } from 'react'
+import React, { Suspense } from 'react'
 import { FirebaseUser, useFirebaseUser } from '../../../App/WithFirebaseUser'
+import { useSimulation } from '../../../App/WithSimulation'
 import { BasicMenu } from '../../../Common/Modal/BasicMenu'
 import { loginPath } from '../../../Login'
 import { useUser } from '../../../QueryFragments/UserFragment'
@@ -12,13 +13,16 @@ import { PlanSummarySaveLongLink } from './PlanSummarySaveLongLink'
 import { PlanSummarySaveReset } from './PlanSummarySaveReset'
 import { PlanSummarySaveShortLink } from './PlanSummarySaveShortLink'
 import { PlanSummarySaveToAccount } from './PlanSummarySaveToAccount'
+import { formatDistance } from 'date-fns'
 
 export const PlanSummarySave = React.memo(
   ({ className = '' }: { className?: string }) => {
     const firebaseUser = useFirebaseUser()
     return (
       <BasicMenu align="right">
-        <div className={`${className} flex items-center gap-x-2 font-medium bg-gray-700 text-white rounded-lg px-4 py-2 mt-0.5`}>
+        <div
+          className={`${className} flex items-center gap-x-2 font-medium bg-gray-700 text-white rounded-lg px-4 py-2 mt-0.5`}
+        >
           Save / Reset
           <FontAwesomeIcon icon={faCaretDown} />
         </div>
@@ -55,8 +59,12 @@ export const PlanSummarySave = React.memo(
                 />
               </Suspense>
             ) : (
-              <Link href={loginPath()} shallow>
-                <a className="w-full text-start py-2 px-4">Login or Sign Up</a>
+              <Link
+                className="w-full text-start py-2 px-4"
+                href={loginPath()}
+                shallow
+              >
+                Login or Sign Up
               </Link>
             )}
             <h2 className=" px-4 text-base font-bold mt-4 mb-2">Get a Link</h2>
@@ -88,19 +96,13 @@ const _LastSavedTime = React.memo(
     className?: string
     firebaseUser: FirebaseUser
   }) => {
+    const { currentTime } = useSimulation()
     const user = useUser(firebaseUser)
-    const [now, setNow] = useState(new Date())
-
-    // Refresh "now" every minute.
-    useEffect(() => {
-      const interval = window.setInterval(() => setNow(new Date()), 1000)
-      return () => window.clearInterval(interval)
-    })
 
     if (!user.plan) return <></>
     return (
       <h2 className={`${className} `}>
-        Saved {formatDistance(user.plan.modifiedAt, now)} ago
+        Saved {formatDistance(user.plan.modifiedAt, currentTime.valueOf())} ago
       </h2>
     )
   },

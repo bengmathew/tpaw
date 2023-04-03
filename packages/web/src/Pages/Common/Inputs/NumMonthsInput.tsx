@@ -10,14 +10,14 @@ export const NumMonthsInput = React.memo(
     modalLabel,
     value,
     onChange,
-    range,
+    rangeAsMFN,
     disabled = false,
   }: {
     className?: string
     modalLabel: string | null
     value: number
     onChange: (value: number) => void
-    range: SimpleRange
+    rangeAsMFN: SimpleRange
     disabled?: boolean
   }) => {
     const numFullYears = numFullYearsIn(value)
@@ -26,14 +26,14 @@ export const NumMonthsInput = React.memo(
       numYears * 12 + numRemainingMonths
     const fromNumMonths = (numMonths: number) => numFullYears * 12 + numMonths
 
-    const monthRange = {
-      start: range.start - numFullYears * 12,
-      end: range.end - numFullYears * 12,
-    }
-
-    const yearRange = {
-      start: Math.ceil((range.start - numRemainingMonths) / 12),
-      end: numFullYearsIn(range.end - numRemainingMonths),
+    const handleChange = (x: number) => {
+      if (_.inRange(x, rangeAsMFN.start, rangeAsMFN.end + 1)) {
+        onChange(x)
+        return false
+      } else {
+        onChange(_.clamp(x, rangeAsMFN.start, rangeAsMFN.end))
+        return true
+      }
     }
 
     return (
@@ -44,16 +44,14 @@ export const NumMonthsInput = React.memo(
         <h2 className="">Years</h2>
         <NumberInput
           value={numFullYears}
-          setValue={(numYears) => onChange(fromNumYears(numYears))}
-          clamp={(x) => _.clamp(x, yearRange.start, yearRange.end)}
+          setValue={(numYears) => handleChange(fromNumYears(numYears))}
           modalLabel={modalLabel ? `${modalLabel} - Years` : null}
           disabled={disabled}
         />
         <h2 className="">Months</h2>
         <NumberInput
           value={value % 12}
-          setValue={(numMonths) => onChange(fromNumMonths(numMonths))}
-          clamp={(x) => _.clamp(x, monthRange.start, monthRange.end)}
+          setValue={(numMonths) => handleChange(fromNumMonths(numMonths))}
           modalLabel={modalLabel ? `${modalLabel} - Months` : null}
           disabled={disabled}
         />

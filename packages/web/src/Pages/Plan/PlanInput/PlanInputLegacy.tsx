@@ -1,7 +1,6 @@
 import { faMinus, faPlus } from '@fortawesome/pro-light-svg-icons'
 import { faPlus as faPlusThin } from '@fortawesome/pro-thin-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { PlanParams } from '@tpaw/common'
 import _ from 'lodash'
 import React, { Dispatch, useState } from 'react'
 import { Contentful } from '../../../Utils/Contentful'
@@ -16,6 +15,7 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
+import { PlanParams } from '@tpaw/common'
 
 type _State =
   | { type: 'main' }
@@ -42,22 +42,6 @@ export const PlanInputLegacy = React.memo(
           input:
             state.type === 'edit'
               ? (transitionOut) => (
-                  // <EditLabeledAmount
-                  //   title={
-                  //     state.isAdd ? 'Add a Legacy Entry' : 'Edit Legacy Entry'
-                  //   }
-                  //   labelPlaceholder="E.g. Home Equity"
-                  //   setHideInMain={(hideInMain) =>
-                  //     setState({ ...state, hideInMain })
-                  //   }
-                  //   transitionOut={transitionOut}
-                  //   onDone={() => setState({ type: 'main' })}
-                  //   entries={(params) =>
-                  //     params.adjustmentsToSpending.tpawAndSPAW.legacy.external
-                  //   }
-                  //   index={state.index}
-                  //   cardPadding={props.sizing.cardPadding}
-                  // />
                   <EditValueForMonthRange
                     hasMonthRange={false}
                     mode={state.isAdd ? 'add' : 'edit'}
@@ -92,14 +76,16 @@ const _TotalTargetCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { params, setParams } = useSimulation()
-    const handleAmount = (amount: number) => {
-      if (amount === params.adjustmentsToSpending.tpawAndSPAW.legacy.total)
-        return
-      const clone = _.cloneDeep(params)
-      clone.adjustmentsToSpending.tpawAndSPAW.legacy.total = amount
-      setParams(clone)
-    }
+    const { params, setPlanParams } = useSimulation()
+    const handleAmount = (amount: number) =>
+      setPlanParams((plan) => {
+        if (amount === plan.adjustmentsToSpending.tpawAndSPAW.legacy.total)
+          return plan
+        const clone = _.cloneDeep(plan)
+        clone.adjustmentsToSpending.tpawAndSPAW.legacy.total = amount
+        return clone
+      })
+
     const content = usePlanContent()['legacy']
     return (
       <div
@@ -108,14 +94,14 @@ const _TotalTargetCard = React.memo(
       >
         <h2 className="font-bold text-lg mb-3">Total Legacy Target</h2>
         <Contentful.RichText
-          body={content.introAmount[params.advanced.strategy]}
+          body={content.introAmount[params.plan.advanced.strategy]}
           p="p-base"
         />
         <div className={`flex items-center gap-x-2 mt-4`}>
           <AmountInput
             className=" text-input"
             prefix="$"
-            value={params.adjustmentsToSpending.tpawAndSPAW.legacy.total}
+            value={params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.total}
             onChange={handleAmount}
             decimals={0}
             modalLabel="Total Legacy Target"
@@ -125,7 +111,7 @@ const _TotalTargetCard = React.memo(
             onClick={() =>
               handleAmount(
                 increment(
-                  params.adjustmentsToSpending.tpawAndSPAW.legacy.total,
+                  params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.total,
                 ),
               )
             }
@@ -137,7 +123,7 @@ const _TotalTargetCard = React.memo(
             onClick={() =>
               handleAmount(
                 decrement(
-                  params.adjustmentsToSpending.tpawAndSPAW.legacy.total,
+                  params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.total,
                 ),
               )
             }
@@ -162,19 +148,19 @@ const _NonPortfolioSourcesCard = React.memo(
     state: _State
     setState: Dispatch<_State>
   }) => {
-    const { params, setParams } = useSimulation()
+    const { params, setPlanParams } = useSimulation()
     const content = usePlanContent()['legacy']
     const handleAdd = () => {
       const entryId =
         Math.max(
           -1,
-          ...params.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
+          ...params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
             (x) => x.id,
           ),
         ) + 1
 
-      setParams((params) => {
-        const clone = _.cloneDeep(params)
+      setPlanParams((plan) => {
+        const clone = _.cloneDeep(plan)
         clone.adjustmentsToSpending.tpawAndSPAW.legacy.external.push({
           label: null,
           value: 0,
@@ -193,7 +179,7 @@ const _NonPortfolioSourcesCard = React.memo(
       >
         <h2 className="font-bold text-lg mb-3">Non-portfolio Sources</h2>
         <Contentful.RichText
-          body={content.introAssets[params.advanced.strategy]}
+          body={content.introAssets[params.plan.advanced.strategy]}
           p="p-base mb-4"
         />
         <div className="flex justify-start gap-x-4 items-center  my-2 ">
@@ -206,7 +192,7 @@ const _NonPortfolioSourcesCard = React.memo(
           </button>
         </div>
         <div className="flex flex-col gap-y-6 mt-4 ">
-          {params.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
+          {params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
             (entry) =>
               !(
                 state.type === 'edit' &&

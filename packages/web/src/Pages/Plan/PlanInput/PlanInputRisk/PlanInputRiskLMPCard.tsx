@@ -21,15 +21,16 @@ export const PlanInputRiskLMPCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { params, setParams } = useSimulation()
-    const currLMP = params.risk.tpawAndSPAW.lmp
+    const { params, setPlanParams } = useSimulation()
+    const currLMP = params.plan.risk.tpawAndSPAW.lmp
 
-    const handleAmount = (amount: number) => {
-      if (amount === currLMP) return
-      const p = _.cloneDeep(params)
-      p.risk.tpawAndSPAW.lmp = amount
-      setParams(p)
-    }
+    const handleAmount = (amount: number) =>
+      setPlanParams((plan) => {
+        if (amount === params.plan.risk.tpawAndSPAW.lmp) return plan
+        const clone = _.cloneDeep(plan)
+        clone.risk.tpawAndSPAW.lmp = amount
+        return clone
+      })
 
     if (Config.client.production) return <></>
 

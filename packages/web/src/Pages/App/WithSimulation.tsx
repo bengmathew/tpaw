@@ -1,83 +1,163 @@
-import { PlanParams } from '@tpaw/common'
-import { Dispatch, ReactNode, useMemo, useState } from 'react'
-import {
-  extendPlanParams,
-  PlanParamsExt,
-} from '../../TPAWSimulator/PlanParamsExt'
+import { Params, getDefaultPlanParams } from '@tpaw/common'
+import _ from 'lodash'
+import { DateTime } from 'luxon'
+import React, { ReactNode, useMemo } from 'react'
+import { ParamsExtended, extendParams } from '../../TPAWSimulator/ExtentParams'
 import {
   PlanParamsProcessed,
   processPlanParams,
 } from '../../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import {
-  useTPAWWorker,
   UseTPAWWorkerResult,
+  useTPAWWorker,
 } from '../../TPAWSimulator/Worker/UseTPAWWorker'
 import { createContext } from '../../Utils/CreateContext'
-import { usePlanParams } from './UsePlanParams'
-import { useMarketData } from './WithMarketData'
-
-export type SimulationInfoPerParam = {
-  params: PlanParams
-  paramsProcessed: PlanParamsProcessed
-  paramsExt: PlanParamsExt
-  tpawResult: UseTPAWWorkerResult | null
-  numRuns: number
-  percentileRange: SimpleRange
-}
+import { useAssertConst } from '../../Utils/UseAssertConst'
+import {
+  MarketData,
+  synthesizeMarketDataForTesting,
+} from '../Common/GetMarketData'
+import {
+  estimateCurrentPortfolioBalance,
+  getHistoryForPortfolioBalanceEstimate,
+} from './EstimateCurrentPortfolioBalance'
+import { SetNonPlanParams, SetPlanParams, useParams } from './UseParams'
+import { WithMarketData } from './WithMarketData'
+import { WithURLPlanParams } from './WithURLPlanParams'
+import { WithWASM, useWASM } from './WithWASM'
 
 export type SimulationInfo = {
-  setNumRuns: Dispatch<number>
-  setParams: (params: PlanParams | ((params: PlanParams) => PlanParams)) => void
-} & Omit<SimulationInfoPerParam, 'tpawResult'> & {
-    tpawResult: UseTPAWWorkerResult
-  }
+  currentTime: DateTime
+  defaultParams: Params
+  params: Params
+  paramsProcessed: PlanParamsProcessed
+  paramsExt: ParamsExtended
+  currentPortfolioBalanceEstimate: ReturnType<
+    typeof estimateCurrentPortfolioBalance
+  >
+  setPlanParams: SetPlanParams
+  resetParams: (params: Params) => void
+  setNonPlanParams: SetNonPlanParams
+  setCurrentPortfolioBalance: (amount: number) => void
+  tpawResult: UseTPAWWorkerResult
+}
 
 const [Context, useSimulation] = createContext<SimulationInfo>('Simulation')
-
-const percentileRange = { start: 5, end: 95 }
-
 export { useSimulation }
 
-import React from 'react'
-import { WithURLPlanParams } from './WithURLPlanParams'
-import { SimpleRange } from '../../Utils/SimpleRange'
-
 export const WithSimulation = React.memo(
-  ({ children }: { children: ReactNode }) => {
+  ({
+    children,
+    marketData,
+  }: {
+    children: ReactNode
+    marketData: MarketData
+  }) => {
     return (
       <WithURLPlanParams>
-        <_Body>{children}</_Body>
+        <WithWASM>
+          <_Body marketData={marketData}>{children}</_Body>
+        </WithWASM>
       </WithURLPlanParams>
     )
   },
 )
 
-const _Body = ({ children }: { children: ReactNode }) => {
-  const [numRuns, setNumRuns] = useState(500)
-  const { params, setParams } = usePlanParams()
-  const marketData = useMarketData()
+const _Body = ({
+  children,
+  marketData: marketDataIn,
+}: {
+  children: ReactNode
+  marketData: MarketData
+}) => {
+  const paramInfo = useParams()
+  const wasm = useWASM()
 
-  const paramsProcessed = useMemo(
-    () => processPlanParams(extendPlanParams(params), marketData),
-    [params, marketData],
-  )
-  const tpawResult = useTPAWWorker(paramsProcessed, numRuns, percentileRange)
+  const local = useMemo(() => {
+    const { currentTime, params, setPlanParams: setPlanParamsIn } = paramInfo
+    const marketData = params.nonPlan.dev.currentTimeFastForward
+      .shouldFastForward
+      ? synthesizeMarketDataForTesting(
+          marketDataIn,
+          currentTime.valueOf(),
+          params.nonPlan.dev.currentTimeFastForward.marketDataExtensionStrategy,
+          params.plan.advanced.annualReturns,
+        )
+      : marketDataIn
+    const currentPortfolioBalanceEstimate = estimateCurrentPortfolioBalance(
+      params,
+      currentTime,
+      marketData,
+      wasm,
+    )
+    const paramsExt = extendParams(params, currentTime)
+    const paramsProcessed = processPlanParams(
+      paramsExt,
+      currentPortfolioBalanceEstimate.value,
+      marketData.latest,
+    )
+
+    const setPlanParams: SetPlanParams = (args) => {
+      setPlanParamsIn((plan, params) => {
+        const newPlan = typeof args === 'function' ? args(plan, params) : args
+        if (newPlan === plan) return plan
+        const { entered } = currentPortfolioBalanceEstimate
+        newPlan.wealth.portfolioBalance = {
+          isLastPlanChange: false,
+          history: getHistoryForPortfolioBalanceEstimate(
+            currentPortfolioBalanceEstimate,
+            paramsExt.getDateTimeInCurrentTimezone,
+          ),
+          original: {
+            amount: entered.amount,
+            timestamp: entered.timestamp,
+          },
+        }
+        return newPlan
+      })
+    }
+
+    const setCurrentPortfolioBalance = (amount: number) =>
+      setPlanParamsIn((plan) => {
+        const clone = _.cloneDeep(plan)
+        clone.wealth.portfolioBalance = {
+          isLastPlanChange: true,
+          amount,
+          timestamp: currentTime.valueOf(),
+        }
+        return clone
+      })
+
+    return {
+      paramsExt,
+      paramsProcessed,
+      currentPortfolioBalanceEstimate,
+      marketData,
+      setPlanParams,
+      setCurrentPortfolioBalance,
+    }
+  }, [paramInfo, marketDataIn, wasm])
+  useAssertConst([marketDataIn, wasm])
+
+  const tpawResult = useTPAWWorker(local.paramsProcessed, local.paramsExt)
 
   const value = useMemo(() => {
     return {
-      setNumRuns,
-      setParams,
-      params,
-      paramsProcessed,
-      paramsExt: extendPlanParams(params),
-      numRuns,
-      percentileRange,
-      tpawResult, // // Note, tpawResult will lag params. To get the exact params for the
+      ...paramInfo,
+      ...local,
+      defaultParams: getDefaultPlanParams(paramInfo.currentTime),
+      params: local.paramsProcessed.original,
+      // Note, tpawResult will lag params. To get the exact params for the
       // result, use the params object inside tpawResult.
+      tpawResult,
     }
-  }, [numRuns, params, paramsProcessed, setParams, tpawResult])
+  }, [paramInfo, local, tpawResult])
   if (!_hasValue(value)) return <></>
-  return <Context.Provider value={value}>{children}</Context.Provider>
+  return (
+    <WithMarketData marketData={local.marketData}>
+      <Context.Provider value={value}>{children}</Context.Provider>
+    </WithMarketData>
+  )
 }
 
 const _hasValue = (x: {

@@ -1,16 +1,16 @@
 import { faCaretDown, faCaretRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { getDefaultPlanParams, noCase, PlanParams } from '@tpaw/common'
+import { Params, noCase } from '@tpaw/common'
 import React, { ReactNode, useMemo, useState } from 'react'
-import { PlanParamsExt } from '../../../TPAWSimulator/PlanParamsExt'
+import { ParamsExtended } from '../../../TPAWSimulator/ExtentParams'
 import {
+  Padding,
+  Size,
+  XY,
   newPaddingHorz,
   originCSSStyle,
-  Padding,
   paddingCSSStyleHorz,
-  Size,
   sizeCSSStyle,
-  XY,
 } from '../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity0Transition'
 import { useSimulation } from '../../App/WithSimulation'
@@ -77,14 +77,14 @@ export const PlanSummary = React.memo(
     const [adjustmentsToSpendingElement, setAdjustmentsToSpendingElement] =
       useState<HTMLElement | null>(null)
 
-    const { params, paramsExt } = useSimulation()
-    const { withdrawalsStarted } = paramsExt
+    const { params, paramsExt, defaultParams } = useSimulation()
+    const { allowFutureSavingsEntries } = paramsExt
 
     const [showAdvanced, setShowAdvanced] = useState(false)
     const [showDev, setShowDev] = useState(!Config.client.production)
     const [showDevClickCount, setShowDevClickCount] = useState(0)
     const advancedModifiedCount = _advancedInputs.filter((x) =>
-      _isModified(x, params),
+      _isModified(x, params, defaultParams),
     ).length
 
     const targetSizing = useMemo(
@@ -116,7 +116,7 @@ export const PlanSummary = React.memo(
         }}
       >
         <div className="mt-0" ref={setBodyElement}>
-          {params.dialogPosition !== 'done' && (
+          {params.plan.dialogPosition !== 'done' && (
             <PlanSummaryDialog
               elements={{
                 outer: outerElement,
@@ -128,7 +128,7 @@ export const PlanSummary = React.memo(
                 adjustmentsToSpending: adjustmentsToSpendingElement,
               }}
               fixedSizing={fixedSizing}
-              dialogPosition={params.dialogPosition}
+              dialogPosition={params.plan.dialogPosition}
             />
           )}
           <div
@@ -169,14 +169,15 @@ export const PlanSummary = React.memo(
                   section={section}
                   padding={cardPadding}
                 />
-                {!withdrawalsStarted && (
+                {(allowFutureSavingsEntries ||
+                  params.plan.wealth.futureSavings.length > 0) && (
                   <PlanSummaryButton
                     ref={setFutureSavingsElement}
                     type="future-savings"
                     section={section}
                     warn={!_paramsOk(paramsExt, 'future-savings')}
                     padding={cardPadding}
-                    empty={params.wealth.futureSavings.length === 0}
+                    empty={params.plan.wealth.futureSavings.length === 0}
                   />
                 )}
                 <PlanSummaryButton
@@ -185,7 +186,7 @@ export const PlanSummary = React.memo(
                   section={section}
                   warn={!_paramsOk(paramsExt, 'income-during-retirement')}
                   padding={cardPadding}
-                  empty={params.wealth.retirementIncome.length === 0}
+                  empty={params.plan.wealth.retirementIncome.length === 0}
                 />
               </div>
             </div>
@@ -206,35 +207,35 @@ export const PlanSummary = React.memo(
                     warn={!_paramsOk(paramsExt, 'extra-spending')}
                     padding={cardPadding}
                     empty={
-                      params.adjustmentsToSpending.extraSpending.discretionary
-                        .length === 0 &&
-                      params.adjustmentsToSpending.extraSpending.essential
+                      params.plan.adjustmentsToSpending.extraSpending
+                        .discretionary.length === 0 &&
+                      params.plan.adjustmentsToSpending.extraSpending.essential
                         .length === 0
                     }
                   />
 
-                  {params.advanced.strategy !== 'SWR' && (
+                  {params.plan.advanced.strategy !== 'SWR' && (
                     <PlanSummaryButton
                       type="legacy"
                       section={section}
                       padding={cardPadding}
                       empty={
-                        params.adjustmentsToSpending.tpawAndSPAW.legacy.external
-                          .length === 0 &&
-                        params.adjustmentsToSpending.tpawAndSPAW.legacy
+                        params.plan.adjustmentsToSpending.tpawAndSPAW.legacy
+                          .external.length === 0 &&
+                        params.plan.adjustmentsToSpending.tpawAndSPAW.legacy
                           .total === 0
                       }
                     />
                   )}
-                  {params.advanced.strategy !== 'SWR' && (
+                  {params.plan.advanced.strategy !== 'SWR' && (
                     <PlanSummaryButton
                       type="spending-ceiling-and-floor"
                       section={section}
                       padding={cardPadding}
                       empty={
-                        params.adjustmentsToSpending.tpawAndSPAW
-                          .monthlySpendingCeiling === null
-                        && params.adjustmentsToSpending.tpawAndSPAW
+                        params.plan.adjustmentsToSpending.tpawAndSPAW
+                          .monthlySpendingCeiling === null &&
+                        params.plan.adjustmentsToSpending.tpawAndSPAW
                           .monthlySpendingFloor === null
                       }
                     />
@@ -251,6 +252,7 @@ export const PlanSummary = React.memo(
                     type="risk"
                     section={section}
                     padding={cardPadding}
+                    warn={!_paramsOk(paramsExt, 'risk')}
                     hideTitle
                   />
                 </div>
@@ -261,7 +263,7 @@ export const PlanSummary = React.memo(
                   className="disabled:opacity-20"
                   style={{ ...paddingCSSStyleHorz(cardPadding) }}
                   onClick={() => setShowAdvanced(!showAdvanced)}
-                  disabled={params.dialogPosition !== 'done'}
+                  disabled={params.plan.dialogPosition !== 'done'}
                 >
                   <div className="text-[20px] sm:text-[26px] font-bold text-left">
                     Advanced
@@ -294,25 +296,41 @@ export const PlanSummary = React.memo(
                       type="expected-returns"
                       section={section}
                       padding={cardPadding}
-                      flagAsModified={_isModified('expected-returns', params)}
+                      flagAsModified={_isModified(
+                        'expected-returns',
+                        params,
+                        defaultParams,
+                      )}
                     />
                     <PlanSummaryButton
                       type="inflation"
                       section={section}
                       padding={cardPadding}
-                      flagAsModified={_isModified('inflation', params)}
+                      flagAsModified={_isModified(
+                        'inflation',
+                        params,
+                        defaultParams,
+                      )}
                     />
                     <PlanSummaryButton
                       type="simulation"
                       section={section}
                       padding={cardPadding}
-                      flagAsModified={_isModified('simulation', params)}
+                      flagAsModified={_isModified(
+                        'simulation',
+                        params,
+                        defaultParams,
+                      )}
                     />
                     <PlanSummaryButton
                       type="strategy"
                       section={section}
                       padding={cardPadding}
-                      flagAsModified={_isModified('strategy', params)}
+                      flagAsModified={_isModified(
+                        'strategy',
+                        params,
+                        defaultParams,
+                      )}
                     />
                     {showDev && (
                       <PlanSummaryButton
@@ -347,7 +365,7 @@ const _Heading = React.memo(
     const { params } = useSimulation()
     const isDisabled =
       useShouldDisablePlanSummaryButton(firstItem) &&
-      !isPlanSectionDialogInOverlayMode(params.dialogPosition)
+      !isPlanSectionDialogInOverlayMode(params.plan.dialogPosition)
     return (
       <h2
         className={`${className} text-[20px] sm:text-[26px] font-bold mb-6  transition-opacity
@@ -364,14 +382,22 @@ type _Type =
   | 'future-savings'
   | 'income-during-retirement'
   | 'extra-spending'
-  | 'strategy'
-export const _paramsOk = (paramsExt: PlanParamsExt, type: _Type) => {
-  const { valueForMonthRange, glidePath } = analyzeMonthsInParams(paramsExt)
+  | 'risk'
+export const _paramsOk = (paramsExt: ParamsExtended, type: _Type) => {
+  const { valueForMonthRange, glidePath } = analyzeMonthsInParams(
+    paramsExt.params.plan,
+    paramsExt,
+    {
+      type: 'asVisible',
+    },
+  )
   return (
     valueForMonthRange
       .filter((x) => x.section === type)
-      .every(
-        (x) => x.boundsCheck.start === 'ok' && x.boundsCheck.end === 'ok',
+      .every((x) =>
+        x.boundsCheck
+          ? x.boundsCheck.start === 'ok' && x.boundsCheck.end === 'ok'
+          : true,
       ) &&
     glidePath
       .filter((x) => x.section === type)
@@ -385,22 +411,25 @@ const _advancedInputs = [
   'strategy',
   'simulation',
 ] as const
-type _AdvancedParamInputType = typeof _advancedInputs[number]
-const _isModified = (type: _AdvancedParamInputType, params: PlanParams) => {
-  const def = getDefaultPlanParams()
+type _AdvancedParamInputType = (typeof _advancedInputs)[number]
+const _isModified = (
+  type: _AdvancedParamInputType,
+  params: Params,
+  def: Params,
+) => {
   switch (type) {
     case 'expected-returns':
-      return params.advanced.annualReturns.expected.type !== 'suggested'
+      return params.plan.advanced.annualReturns.expected.type !== 'suggested'
     case 'inflation':
-      return params.advanced.annualInflation.type !== 'suggested'
+      return params.plan.advanced.annualInflation.type !== 'suggested'
     case 'strategy':
-      return params.advanced.strategy !== def.advanced.strategy
+      return params.plan.advanced.strategy !== def.plan.advanced.strategy
     case 'simulation':
       return (
-        params.advanced.sampling !== def.advanced.sampling ||
-        (params.advanced.sampling === 'monteCarlo' &&
-          params.advanced.samplingBlockSizeForMonteCarlo !==
-            def.advanced.samplingBlockSizeForMonteCarlo)
+        params.plan.advanced.sampling !== def.plan.advanced.sampling ||
+        (params.plan.advanced.sampling === 'monteCarlo' &&
+          params.plan.advanced.monteCarloSampling.blockSize !==
+            def.plan.advanced.monteCarloSampling.blockSize)
       )
     default:
       noCase(type)

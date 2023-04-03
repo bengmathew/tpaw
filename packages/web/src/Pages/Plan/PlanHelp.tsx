@@ -74,7 +74,7 @@ const _Body = React.memo(({ sizing }: { sizing: PlanHelpSizing }) => {
   const { params } = useSimulation()
 
   const content = Contentful.splitDocument(
-    usePlanContent().help[params.advanced.strategy],
+    usePlanContent().help[params.plan.advanced.strategy],
     'faq',
   )
 

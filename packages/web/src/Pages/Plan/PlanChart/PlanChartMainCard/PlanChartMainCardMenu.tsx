@@ -54,7 +54,7 @@ export const PlanChartMainCardMenu = React.memo(
     const windowSize = useWindowSize()
     const width = Math.min(windowSize.width, maxWidth)
     const simulation = useSimulation()
-    const { params } = simulation.tpawResult.args
+    const { params } = simulation.tpawResult
     const type = usePlanChartType()
 
     const referenceElementRef = useRef<HTMLDivElement | null>(null)
@@ -124,9 +124,9 @@ export const PlanChartMainCardMenu = React.memo(
               }}
             >
               <_Link type="spending-total" {...buttonProps} />
-              {(params.original.adjustmentsToSpending.extraSpending.essential
-                .length > 0 ||
-                params.original.adjustmentsToSpending.extraSpending
+              {(params.original.plan.adjustmentsToSpending.extraSpending
+                .essential.length > 0 ||
+                params.original.plan.adjustmentsToSpending.extraSpending
                   .discretionary.length > 0) && (
                 <div className=" flex flex-col border- border-gray-400 ">
                   <_Link
@@ -134,7 +134,7 @@ export const PlanChartMainCardMenu = React.memo(
                     type="spending-general"
                     {...buttonProps}
                   />
-                  {params.original.adjustmentsToSpending.extraSpending.essential.map(
+                  {params.original.plan.adjustmentsToSpending.extraSpending.essential.map(
                     (x) => (
                       <_Link
                         className="pl-10"
@@ -144,7 +144,7 @@ export const PlanChartMainCardMenu = React.memo(
                       />
                     ),
                   )}
-                  {params.original.adjustmentsToSpending.extraSpending.discretionary.map(
+                  {params.original.plan.adjustmentsToSpending.extraSpending.discretionary.map(
                     (x) => (
                       <_Link
                         className="pl-10"
@@ -186,7 +186,7 @@ const _Link = React.memo(
     drawKey: number
   }) => {
     const { tpawResult } = useSimulation()
-    const { params } = tpawResult.args
+    const { params } = tpawResult
     const getPlanChartURL = useGetPlanChartURL()
     const chartData = fGet(useChartData().byYearsFromNowPercentiles.get(type))
     const [description] = useInfo(type)
@@ -196,57 +196,57 @@ const _Link = React.memo(
     const width = windowSize.width < 640 ? 120 : 145
     const height = windowSize.width < 640 ? 50 : 55
     return (
-      <Link href={getPlanChartURL(type)} shallow>
-        <a
-          className={`${className} text-left px-4 py-2  grid  gap-x-4 items-center
-          ${isCurrent ? 'bg-gray-200 ' : ''} `}
-          onClick={() => onHide()}
-          style={{ grid: 'auto / 1fr auto' }}
-        >
-          <div className="">
-            <h2 className="text-base sm:text-lg font-bold">
-              {label.map((x, i) => (
-                <React.Fragment key={i}>
-                  <span>{x}</span>
-                  {i !== label.length - 1 && (
-                    <FontAwesomeIcon
-                      className="mx-2 text-xs sm:text-sm lighten-2"
-                      icon={faChevronRight}
-                    />
-                  )}
-                </React.Fragment>
-              ))}
+      <Link
+        className={`${className} text-left px-4 py-2  grid  gap-x-4 items-center
+      ${isCurrent ? 'bg-gray-200 ' : ''} `}
+        onClick={() => onHide()}
+        style={{ grid: 'auto / 1fr auto' }}
+        href={getPlanChartURL(type)}
+        shallow
+      >
+        <div className="">
+          <h2 className="text-base sm:text-lg font-bold">
+            {label.map((x, i) => (
+              <React.Fragment key={i}>
+                <span>{x}</span>
+                {i !== label.length - 1 && (
+                  <FontAwesomeIcon
+                    className="mx-2 text-xs sm:text-sm lighten-2"
+                    icon={faChevronRight}
+                  />
+                )}
+              </React.Fragment>
+            ))}
+          </h2>
+          {subLabel && (
+            <h2 className="text-sm sm:text-base font-semibold -mt-1">
+              {subLabel}
             </h2>
-            {subLabel && (
-              <h2 className="text-sm sm:text-base font-semibold -mt-1">
-                {subLabel}
-              </h2>
-            )}
-            <Contentful.RichText
-              body={description[params.strategy]}
-              p={`${isCurrent ? '' : 'lighten-2'} text-sm -mt-1`}
-            />
-          </div>
-          <div
-            className={`relative  border rounded-xl  flex flex-col justify-center
+          )}
+          <Contentful.RichText
+            body={description[params.strategy]}
+            p={`${isCurrent ? '' : 'lighten-2'} text-sm -mt-1`}
+          />
+        </div>
+        <div
+          className={`relative  border rounded-xl  flex flex-col justify-center
             ${
               isCurrent
                 ? 'bg-gray-300 border-gray-300 '
                 : 'bg-gray-200 border-gray-300 '
             }`}
-            style={{ width: `${width}px`, height: `${height}px` }}
-          >
-            <_Chart
-              data={chartData}
-              isCurrent={isCurrent}
-              drawKey={drawKey}
-              startingSizing={{
-                position: rectExt({ x: 0, y: 0, width, height }),
-                padding: { left: 10, right: 10, top: 5, bottom: 5 },
-              }}
-            />
-          </div>
-        </a>
+          style={{ width: `${width}px`, height: `${height}px` }}
+        >
+          <_Chart
+            data={chartData}
+            isCurrent={isCurrent}
+            drawKey={drawKey}
+            startingSizing={{
+              position: rectExt({ x: 0, y: 0, width, height }),
+              padding: { left: 10, right: 10, top: 5, bottom: 5 },
+            }}
+          />
+        </div>
       </Link>
     )
   },

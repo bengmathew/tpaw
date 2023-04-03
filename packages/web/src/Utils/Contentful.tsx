@@ -13,9 +13,9 @@ import {
 import * as contentful from 'contentful'
 import _ from 'lodash'
 import Link from 'next/link'
-import React, {cloneElement, isValidElement, ReactNode} from 'react'
-import {Config} from '../Pages/Config'
-import {assert, fGet} from './Utils'
+import React, { cloneElement, isValidElement, ReactNode } from 'react'
+import { Config } from '../Pages/Config'
+import { assert, fGet } from './Utils'
 
 export namespace Contentful {
   export type InlineEntry = {
@@ -44,9 +44,9 @@ export namespace Contentful {
     body: Document
   }
 
-  export type FetchedInline = {TPAW: Document; SPAW: Document; SWR: Document}
+  export type FetchedInline = { TPAW: Document; SPAW: Document; SWR: Document }
   export const fetchInline = async (id: string) =>
-    (await fetchInlineMultiple({x: id})).x
+    (await fetchInlineMultiple({ x: id })).x
 
   // Thanks: https://stackoverflow.com/a/47842314
   type _IndirectIdObj<X> = Record<string, string | X>
@@ -60,31 +60,31 @@ export namespace Contentful {
       : never
   }
   export const fetchInlineMultiple = async <X extends _IdObj>(
-    idObj: X
+    idObj: X,
   ): Promise<_MapIdObj<X>> => {
     const getIdArr = (idObj: _IdObj): string[] => {
       const values = _.values(idObj)
       return _.flatten(
-        values.map(x => (typeof x === 'string' ? [x] : getIdArr(x)))
+        values.map((x) => (typeof x === 'string' ? [x] : getIdArr(x))),
       )
     }
     const idArr = getIdArr(idObj)
 
-    const {items} = await _client().getEntries<InlineEntry>({
+    const { items } = await _client().getEntries<InlineEntry>({
       content_type: 'inline',
       'sys.id[in]': idArr.join(','),
     })
     const idMap = new Map<string, FetchedInline>()
-    items.forEach(item => {
+    items.forEach((item) => {
       const TPAW = item.fields.tpawBody
       const SPAW = item.fields.spawBody ?? TPAW
       const SWR = item.fields.swrBody ?? TPAW
-      idMap.set(item.sys.id, {TPAW, SPAW, SWR})
+      idMap.set(item.sys.id, { TPAW, SPAW, SWR })
     })
 
     const getResultObj = <X extends _IdObj>(idObj: X): _MapIdObj<X> =>
-      _.mapValues(idObj, x =>
-        typeof x === 'string' ? fGet(idMap.get(x)) : getResultObj(x)
+      _.mapValues(idObj, (x) =>
+        typeof x === 'string' ? fGet(idMap.get(x)) : getResultObj(x),
       ) as unknown as _MapIdObj<X>
 
     return getResultObj(idObj)
@@ -94,7 +94,7 @@ export namespace Contentful {
     ReturnType<typeof Contentful.fetchStandalone>
   >
   export const fetchStandalone = async (slug: string) => {
-    const {items} = await _client().getEntries<StandaloneEntry>({
+    const { items } = await _client().getEntries<StandaloneEntry>({
       content_type: 'standalone',
       'fields.slug': slug,
     })
@@ -105,7 +105,7 @@ export namespace Contentful {
     ReturnType<typeof Contentful.fetchKnowledgeBaseOutline>
   >
   export const fetchKnowledgeBaseOutline = async (id: string) => {
-    const {items} = await _client().getEntries<KnowledgeBaseOutlineEntry>({
+    const { items } = await _client().getEntries<KnowledgeBaseOutlineEntry>({
       content_type: 'knowledgeBaseOutline',
       'sys.id': id,
       include: 10,
@@ -116,7 +116,7 @@ export namespace Contentful {
     ReturnType<typeof Contentful.fetchKnowledgeBaseArticle>
   >
   export const fetchKnowledgeBaseArticle = async (slug: string) => {
-    const {items} = await _client().getEntries<KnowledgeBaseArticleEntry>({
+    const { items } = await _client().getEntries<KnowledgeBaseArticleEntry>({
       content_type: 'knowledgeBaseArticle',
       'fields.slug': slug,
     })
@@ -133,15 +133,15 @@ export namespace Contentful {
         }
       }
     }`
-    const {items, total} = (
+    const { items, total } = (
       (await _graphql(query, {})) as {
         data: {
-          standaloneCollection: {total: number; items: {slug: string}[]}
+          standaloneCollection: { total: number; items: { slug: string }[] }
         }
       }
     ).data.standaloneCollection
     assert(total === items.length)
-    return items.map(x => x.slug)
+    return items.map((x) => x.slug)
   }
 
   export const getKnowledgeBaseArticleSlugs = async () => {
@@ -154,29 +154,29 @@ export namespace Contentful {
         }
       }
     }`
-    const {items, total} = (
+    const { items, total } = (
       (await _graphql(query, {})) as {
         data: {
           knowledgeBaseArticleCollection: {
             total: number
-            items: {slug: string}[]
+            items: { slug: string }[]
           }
         }
       }
     ).data.knowledgeBaseArticleCollection
     assert(total === items.length)
-    return items.map(x => x.slug)
+    return items.map((x) => x.slug)
   }
 
   export const replaceVariables = <T extends Text | Block | Inline>(
     variables: Record<string, string>,
-    node: T
+    node: T,
   ): T => {
     if (helpers.isText(node)) {
       const keys = _.keys(variables)
       const replace = (x: string) =>
         keys.reduce((a, c) => a.replace(`{{${c}}}`, variables[c]), x)
-      return {...node, value: replace(node.value)}
+      return { ...node, value: replace(node.value) }
     } else {
       return {
         ...node,
@@ -186,13 +186,13 @@ export namespace Contentful {
   }
   export const splitDocument = (
     document: Document,
-    marker: string
+    marker: string,
   ): {
     intro: null | Document
-    sections: {heading: string; body: Document}[]
+    sections: { heading: string; body: Document }[]
   } => {
-    const contentWithMarkerFlag = document.content.map(x =>
-      _markerAnalysis(x, marker)
+    const contentWithMarkerFlag = document.content.map((x) =>
+      _markerAnalysis(x, marker),
     )
     const takeNodes = () => {
       const result: TopLevelBlock[] = []
@@ -206,19 +206,19 @@ export namespace Contentful {
     }
     const introContent = takeNodes()
     let intro =
-      introContent.length > 0 ? {...document, content: introContent} : null
+      introContent.length > 0 ? { ...document, content: introContent } : null
 
-    const sections: {heading: string; body: Document}[] = []
+    const sections: { heading: string; body: Document }[] = []
     while (contentWithMarkerFlag.length > 0) {
       const first = fGet(contentWithMarkerFlag.shift())
       assert(first.isMarker)
       sections.push({
         heading: first.heading,
-        body: {...document, content: takeNodes()},
+        body: { ...document, content: takeNodes() },
       })
     }
-    assert(sections.every(x => x.body.content.length > 0))
-    return {intro, sections}
+    assert(sections.every((x) => x.body.content.length > 0))
+    return { intro, sections }
   }
 
   type ClassNameSpec = string | ((path: number[]) => string)
@@ -255,13 +255,13 @@ export namespace Contentful {
       italic?: string
     }) => {
       const href = (node: Block | Inline) => {
-        const {target} = node.data as {
+        const { target } = node.data as {
           target: contentful.Entry<StandaloneEntry>
         }
 
         return `/${target.fields.type}/${target.fields.slug}`
       }
-      const linkStyle: React.CSSProperties = {overflowWrap: 'anywhere'}
+      const linkStyle: React.CSSProperties = { overflowWrap: 'anywhere' }
 
       const className = (x: ClassNameSpec, path: number[]) =>
         typeof x === 'string' ? x : x(path)
@@ -302,10 +302,8 @@ export namespace Contentful {
               [INLINES.HYPERLINK]: (node, children) => {
                 const href = node.data.uri as string
                 return href.startsWith('/') ? (
-                  <Link href={href}>
-                    <a className={a} style={linkStyle}>
-                      {children}
-                    </a>
+                  <Link className={a} href={href} style={linkStyle}>
+                    {children}
                   </Link>
                 ) : (
                   <a
@@ -320,39 +318,37 @@ export namespace Contentful {
                 )
               },
               [INLINES.ENTRY_HYPERLINK]: (node, children) => (
-                <Link href={href(node)}>
-                  <a className={`${a}`} style={linkStyle}>
-                    {children}
-                  </a>
+                <Link className={`${a}`} style={linkStyle} href={href(node)}>
+                  {children}
                 </Link>
               ),
             },
             markRenderers: {
-              [MARKS.ITALIC]: children => {
+              [MARKS.ITALIC]: (children) => {
                 return <span className={italic}>{children}</span>
               },
-              [MARKS.BOLD]: children => {
+              [MARKS.BOLD]: (children) => {
                 return <span className={bold}>{children}</span>
               },
             },
           })}
         </>
       )
-    }
+    },
   )
 }
 const _markerAnalysis = (
   node: TopLevelBlock,
-  marker: string
+  marker: string,
 ):
-  | {isMarker: false; node: TopLevelBlock}
-  | {isMarker: true; heading: string} => {
+  | { isMarker: false; node: TopLevelBlock }
+  | { isMarker: true; heading: string } => {
   const fullMarker = `[[${marker}]]`
-  if (node.nodeType !== BLOCKS.HEADING_2) return {isMarker: false, node}
-  if (node.content.length === 0) return {isMarker: false, node}
+  if (node.nodeType !== BLOCKS.HEADING_2) return { isMarker: false, node }
+  if (node.content.length === 0) return { isMarker: false, node }
   const firstChild = node.content[0]
-  if (!helpers.isText(firstChild)) return {isMarker: false, node}
-  if (!firstChild.value.startsWith(fullMarker)) return {isMarker: false, node}
+  if (!helpers.isText(firstChild)) return { isMarker: false, node }
+  if (!firstChild.value.startsWith(fullMarker)) return { isMarker: false, node }
   return {
     isMarker: true,
     heading: firstChild.value.substring(fullMarker.length),
@@ -374,8 +370,8 @@ const _graphql = async (query: string, variables: any) => {
         Authorization: `Bearer ${Config.server.contentful.accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({query, variables}),
-    }
+      body: JSON.stringify({ query, variables }),
+    },
   )
   const result = await response.json()
   return result
@@ -384,7 +380,7 @@ const _graphql = async (query: string, variables: any) => {
 type NodeRenderer = (
   node: Block | Inline,
   children: ReactNode,
-  path: number[]
+  path: number[],
 ) => ReactNode
 type MarkRenderer = (children: ReactNode) => ReactNode
 type NodeRenderers = Record<string, NodeRenderer>
@@ -395,9 +391,9 @@ function _nodeToReactComponent(
     nodeRenderers: NodeRenderers
     markRenderers: MarkRenderers
   },
-  path: number[] = []
+  path: number[] = [],
 ): ReactNode {
-  const {nodeRenderers, markRenderers} = options
+  const { nodeRenderers, markRenderers } = options
   if (helpers.isText(node)) {
     return node.marks.reduce((value: ReactNode, mark: Mark): ReactNode => {
       const renderer = markRenderers?.[mark.type]
@@ -409,12 +405,12 @@ function _nodeToReactComponent(
   } else {
     const children: ReactNode = node.content
       .map((node, index) =>
-        _nodeToReactComponent(node, options, [index, ...path])
+        _nodeToReactComponent(node, options, [index, ...path]),
       )
       .map((element, index) =>
         isValidElement(element) && element.key === null
-          ? cloneElement(element, {key: index})
-          : element
+          ? cloneElement(element, { key: index })
+          : element,
       )
     if (node.nodeType === 'document') {
       return <>{children}</>

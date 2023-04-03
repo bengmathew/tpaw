@@ -2,20 +2,19 @@ import { faCheck, faExclamation } from '@fortawesome/pro-solid-svg-icons'
 import { faPlus } from '@fortawesome/pro-thin-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  assert,
-  assertFalse,
   EXPECTED_ANNUAL_RETURN_PRESETS,
-  fGet,
-  getDefaultPlanParams,
   GlidePath,
-  Person,
   RISK_TOLERANCE_VALUES,
   SUGGESTED_ANNUAL_INFLATION,
   ValueForMonthRange,
+  assertFalse,
+  fGet,
 } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useMemo } from 'react'
-import { PlanParamsExt } from '../../../TPAWSimulator/PlanParamsExt'
+import { ParamsExtended } from '../../../TPAWSimulator/ExtentParams'
+import { normalizeGlidePath } from '../../../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessRisk'
+import { calendarMonthStr } from '../../../Utils/CalendarMonthStr'
 import { formatCurrency } from '../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../Utils/FormatPercentage'
 import { Padding, paddingCSSStyle } from '../../../Utils/Geometry'
@@ -40,6 +39,7 @@ import { planSectionLabel } from '../PlanInput/Helpers/PlanSectionLabel'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import { expectedReturnTypeLabel } from '../PlanInput/PlanInputExpectedReturns'
 import { inflationTypeLabel } from '../PlanInput/PlanInputInflation'
+import { CurrentPortfolioBalanceSummary } from '../PlanInput/PlanInputCurrentPortfolioBalance'
 
 type _Props = {
   padding: Padding
@@ -72,19 +72,20 @@ export const PlanSummaryButton = React.memo(
       const highlightColor =
         section === type
           ? highlightColorDark
-          : params.dialogPosition === type
+          : params.plan.dialogPosition === type
           ? ChartUtils.color.orange[400]
           : ChartUtils.color.gray[100]
 
-      if (hideTitle) assert(!warn)
       return (
         <button
           className={`block rounded-2xl  text-left w-full border-[2px] overflow-hidden ${
-            isPlanSectionDialogInOverlayMode(params.dialogPosition)
+            isPlanSectionDialogInOverlayMode(params.plan.dialogPosition)
               ? ''
               : 'disabled:opacity-20'
           } 
-            ${params.dialogPosition === type ? 'bg-orange-50' : 'bg-cardBG'}`}
+            ${
+              params.plan.dialogPosition === type ? 'bg-orange-50' : 'bg-cardBG'
+            }`}
           ref={ref}
           style={{
             transitionProperty: 'border-color',
@@ -99,7 +100,7 @@ export const PlanSummaryButton = React.memo(
             <div
               className={`relative  bg-gray-200/40  rounded-2xl -m-[2px] 
               ${
-                params.dialogPosition === type
+                params.plan.dialogPosition === type
                   ? 'border-[3px] border-gray-200'
                   : 'border-[4px] border-dotted border-gray-400'
               }`}
@@ -118,11 +119,13 @@ export const PlanSummaryButton = React.memo(
               style={{ ...paddingCSSStyle(padding) }}
             >
               <PlanInputModifiedBadge show={flagAsModified} mainPage />
-              {!hideTitle && (
-                <div className=" flex  items-center mb-1">
-                  <h2 className="font-semibold mr-2 flex">
-                    <span className="">{planSectionLabel(type)}</span>
-                  </h2>
+              {(!hideTitle || warn) && (
+                <div className="flex  items-center mb-1">
+                  {!hideTitle && (
+                    <h2 className="font-semibold mr-2 flex">
+                      <span className="">{planSectionLabel(type)}</span>
+                    </h2>
+                  )}
                   {warn && (
                     <div className="h-[18px] w-[18px] flex items-center justify-center text-[13px] font-bold rounded-full bg-errorBlockBG text-errorBlockFG">
                       <FontAwesomeIcon icon={faExclamation} />
@@ -142,7 +145,7 @@ export const PlanSummaryButton = React.memo(
 )
 
 export const useShouldDisablePlanSummaryButton = (type: PlanInputType) => {
-  const { dialogPosition } = useSimulation().params
+  const { dialogPosition } = useSimulation().params.plan
   switch (type) {
     case 'age':
     case 'current-portfolio-balance':
@@ -168,18 +171,20 @@ export const useShouldDisablePlanSummaryButton = (type: PlanInputType) => {
 }
 
 const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
-  const { params, paramsProcessed, paramsExt, numRuns } = useSimulation()
+  const { params, paramsProcessed, paramsExt, defaultParams } = useSimulation()
   const marketData = useMarketData()
   const {
     validMonthRangeAsMFN,
     pickPerson,
     yourOrYourPartners,
     withdrawalsStarted,
+    isAgesNotRetired,
+    getCurrentAgeOfPerson,
+    isPersonRetired,
   } = paramsExt
-  const defaultParams = useMemo(() => getDefaultPlanParams(), [])
   switch (type) {
     case 'age': {
-      if (params.dialogPosition === 'age') {
+      if (params.plan.dialogPosition === 'age') {
         return (
           <>
             <h2>Current: </h2>
@@ -188,46 +193,45 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
           </>
         )
       }
-      const forPerson = ({ ages }: Person, className = '') =>
-        ages.type === 'retired' ? (
+      const forPerson = (person: 'person1' | 'person2', className = '') => {
+        const { ages } = pickPerson(person)
+        return isAgesNotRetired(ages) ? (
           <>
-            <h2 className={`${className} col-span-2`}>Retired</h2>
             <h2 className={`${className}`}>Current</h2>
-            <h2> {numMonthsStr(ages.currentMonth)}</h2>
+            <h2> {calendarMonthStr(ages.monthOfBirth)}</h2>
+            <h2 className={`${className}`}>Retirement</h2>
+            <h2> {numMonthsStr(ages.retirementAge.inMonths)}</h2>
             <h2 className={`${className}`}>Max</h2>
-            <h2> {numMonthsStr(ages.maxMonth)}</h2>
+            <h2> {numMonthsStr(ages.maxAge.inMonths)}</h2>
           </>
         ) : (
           <>
+            <h2 className={`${className} col-span-2`}>Retired</h2>
             <h2 className={`${className}`}>Current</h2>
-            <h2> {numMonthsStr(ages.currentMonth)}</h2>
-            <h2 className={`${className}`}>Retirement</h2>
-            <h2> {numMonthsStr(ages.retirementMonth)}</h2>
+            <h2> {calendarMonthStr(ages.monthOfBirth)}</h2>
             <h2 className={`${className}`}>Max</h2>
-            <h2> {numMonthsStr(ages.maxMonth)}</h2>
+            <h2> {numMonthsStr(ages.maxAge.inMonths)}</h2>
           </>
         )
-      if (params.people.withPartner) {
-        const withdrawalPerson = pickPerson(params.people.withdrawalStart)
-        const { person1, person2 } = params.people
+      }
+      if (params.plan.people.withPartner) {
+        const withdrawalPerson = pickPerson(params.plan.people.withdrawalStart)
         return (
           <div
             className={`grid gap-x-3 gap-y-1`}
             style={{ grid: 'auto/auto 1fr' }}
           >
             <h2 className="font-medium col-span-2">You</h2>
-            {forPerson(person1, 'ml-4')}
+            {forPerson('person1', 'ml-4')}
             <h2 className="mt-2 font-medium  col-span-2">Your Partner</h2>
-            {forPerson(person2, 'ml-4')}
-            {!(
-              person1.ages.type === 'retired' && person2.ages.type === 'retired'
-            ) && (
+            {forPerson('person2', 'ml-4')}
+            {!(isPersonRetired('person1') && isPersonRetired('person2')) && (
               <h2 className="mt-2  col-span-2">
                 Withdrawals start{' '}
-                {withdrawalPerson.ages.type === 'retired'
+                {isPersonRetired(withdrawalPerson)
                   ? 'now.'
                   : `at ${yourOrYourPartners(
-                      params.people.withdrawalStart,
+                      params.plan.people.withdrawalStart,
                     )} retirement.`}
               </h2>
             )}
@@ -239,32 +243,32 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
             className={`grid gap-x-3 gap-y-1`}
             style={{ grid: 'auto/auto 1fr' }}
           >
-            {forPerson(params.people.person1)}
+            {forPerson('person1')}
           </div>
         )
       }
     }
     case 'current-portfolio-balance': {
-      return <h2>{formatCurrency(params.wealth.currentPortfolioBalance)}</h2>
+      return <CurrentPortfolioBalanceSummary/>
     }
     case 'future-savings':
       return (
         <_EntriesSummary
-          entries={params.wealth.futureSavings}
+          entries={params.plan.wealth.futureSavings}
           range={validMonthRangeAsMFN(type)}
         />
       )
     case 'income-during-retirement':
       return (
         <_EntriesSummary
-          entries={params.wealth.retirementIncome}
+          entries={params.plan.wealth.retirementIncome}
           range={validMonthRangeAsMFN(type)}
         />
       )
     case 'extra-spending': {
       const { essential, discretionary } =
-        params.adjustmentsToSpending.extraSpending
-      const showLabels = params.advanced.strategy !== 'SWR'
+        params.plan.adjustmentsToSpending.extraSpending
+      const showLabels = params.plan.advanced.strategy !== 'SWR'
       return (
         <>
           {essential.length === 0 && discretionary.length === 0 && (
@@ -295,7 +299,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
     }
     case 'legacy': {
       const { total, external } =
-        params.adjustmentsToSpending.tpawAndSPAW.legacy
+        params.plan.adjustmentsToSpending.tpawAndSPAW.legacy
       if (total === 0 && external.length === 0) {
         return <h2>None</h2>
       } else {
@@ -339,7 +343,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
     }
     case 'spending-ceiling-and-floor': {
       const { monthlySpendingCeiling, monthlySpendingFloor } =
-        params.adjustmentsToSpending.tpawAndSPAW
+        params.plan.adjustmentsToSpending.tpawAndSPAW
       return (
         <>
           <h2>
@@ -359,9 +363,9 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
     }
 
     case 'risk': {
-      const { risk } = params
-      const defaultRisk = defaultParams.risk
-      switch (params.advanced.strategy) {
+      const { risk } = params.plan
+      const defaultRisk = defaultParams.plan.risk
+      switch (params.plan.advanced.strategy) {
         case 'TPAW': {
           const advancedCount = _.filter([
             risk.tpaw.riskTolerance.deltaAtMaxAge !==
@@ -459,22 +463,24 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
           )
         }
         default:
-          noCase(params.advanced.strategy)
+          noCase(params.plan.advanced.strategy)
       }
     }
     case 'expected-returns': {
       const format = formatPercentage(1)
       const { stocks, bonds } =
-        params.advanced.annualReturns.expected.type === 'manual'
-          ? params.advanced.annualReturns.expected
+        params.plan.advanced.annualReturns.expected.type === 'manual'
+          ? params.plan.advanced.annualReturns.expected
           : EXPECTED_ANNUAL_RETURN_PRESETS(
-              params.advanced.annualReturns.expected.type,
-              marketData,
+              params.plan.advanced.annualReturns.expected.type,
+              marketData.latest,
             )
       return (
         <>
           <h2>
-            {expectedReturnTypeLabel(params.advanced.annualReturns.expected)}
+            {expectedReturnTypeLabel(
+              params.plan.advanced.annualReturns.expected,
+            )}
           </h2>
           <h2>Stocks: {format(stocks)}</h2>
           <h2>Bonds: {format(bonds)}</h2>
@@ -485,11 +491,11 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
       const format = formatPercentage(1)
       return (
         <h2>
-          {inflationTypeLabel(params.advanced.annualInflation)}:{' '}
+          {inflationTypeLabel(params.plan.advanced.annualInflation)}:{' '}
           {format(
-            params.advanced.annualInflation.type === 'suggested'
-              ? SUGGESTED_ANNUAL_INFLATION(marketData)
-              : params.advanced.annualInflation.value,
+            params.plan.advanced.annualInflation.type === 'suggested'
+              ? SUGGESTED_ANNUAL_INFLATION(marketData.latest)
+              : params.plan.advanced.annualInflation.value,
           )}
         </h2>
       )
@@ -501,7 +507,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
             <_ChoiceItem
               key={value}
               value={value}
-              selected={(x) => params.advanced.strategy === x}
+              selected={(x) => params.plan.advanced.strategy === x}
               label={(x) => x}
             />
           ))}
@@ -509,12 +515,12 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
       )
     }
     case 'simulation': {
-      return params.advanced.sampling === 'monteCarlo' ? (
+      return params.plan.advanced.sampling === 'monteCarlo' ? (
         <>
           <h2>Monte Carlo Sequence</h2>
           <h2>
             Block Size:{' '}
-            {numMonthsStr(params.advanced.samplingBlockSizeForMonteCarlo)}
+            {numMonthsStr(params.plan.advanced.monteCarloSampling.blockSize)}
           </h2>
         </>
       ) : (
@@ -524,11 +530,12 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
     case 'dev':
       return (
         <div className="grid gap-y-1">
-          {params.advanced.annualReturns.historical.type !== 'adjusted' && (
+          {params.plan.advanced.annualReturns.historical.type !==
+            'adjusted' && (
             <>
               <h2 className="font-medium">Historical Returns</h2>
               {(() => {
-                switch (params.advanced.annualReturns.historical.type) {
+                switch (params.plan.advanced.annualReturns.historical.type) {
                   case 'unadjusted':
                     return <h2 className="ml-4">Unadjusted</h2>
                   case 'fixed':
@@ -538,36 +545,58 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
                         <h2 className="ml-8">
                           Stocks:{' '}
                           {formatPercentage(1)(
-                            params.advanced.annualReturns.historical.stocks,
+                            params.plan.advanced.annualReturns.historical
+                              .stocks,
                           )}
                         </h2>
                         <h2 className="ml-8">
                           Bonds:{' '}
                           {formatPercentage(1)(
-                            params.advanced.annualReturns.historical.bonds,
+                            params.plan.advanced.annualReturns.historical.bonds,
                           )}
                         </h2>
                       </>
                     )
                   default:
-                    noCase(params.advanced.annualReturns.historical)
+                    noCase(params.plan.advanced.annualReturns.historical)
                 }
               })()}
             </>
           )}
           <h2 className="font-semibold">Misc</h2>
-          {params.dev.alwaysShowAllMonths && (
+          {params.nonPlan.dev.alwaysShowAllMonths && (
             <h2 className="ml-4">Always Show All Months</h2>
           )}
-          {numRuns !== 500 && (
-            <h2 className="ml-4">Num Simulations: {numRuns}</h2>
+          {params.plan.advanced.monteCarloSampling.numOfSimulations !==
+            defaultParams.plan.advanced.monteCarloSampling.numOfSimulations && (
+            <h2 className="ml-4">
+              Num Simulations:{' '}
+              {params.plan.advanced.monteCarloSampling.numOfSimulations}
+            </h2>
           )}
-          {params.risk.tpaw.additionalAnnualSpendingTilt !== 0 && (
+          {params.nonPlan.dev.currentTimeFastForward.shouldFastForward && (
+            <div>
+              Current Time Offset:{' '}
+              <h2 className="ml-4">
+                years: {params.nonPlan.dev.currentTimeFastForward.years}
+              </h2>
+              <h2 className="ml-4">
+                months: {params.nonPlan.dev.currentTimeFastForward.months}
+              </h2>
+              <h2 className="ml-4">
+                days: {params.nonPlan.dev.currentTimeFastForward.days}
+              </h2>
+              <h2 className="ml-4">
+                hours: {params.nonPlan.dev.currentTimeFastForward.hours}
+              </h2>
+            </div>
+          )}
+          {params.plan.risk.tpaw.additionalAnnualSpendingTilt !== 0 && (
             <>
               <h2 className="font-medium">Additional Spending Tilt</h2>
               <h2 className="ml-4">
                 {formatPercentage(1)(
-                  params.risk.tpaw.additionalAnnualSpendingTilt,
+                  params.plan.risk.tpaw.additionalAnnualSpendingTilt,
                 )}
               </h2>
             </>
@@ -594,7 +623,7 @@ export const _EntriesSummary = React.memo(
           <li key={i} className="">
             <ValueForMonthRangeDisplay
               entry={x}
-              range={range}
+              rangeAsMFN={range}
               skipLength={false}
             />
           </li>
@@ -609,7 +638,7 @@ const _GlidePathIntermediate = React.memo(
     intermediate,
     format,
   }: {
-    intermediate: ReturnType<PlanParamsExt['glidePathIntermediateValidated']>
+    intermediate: ReturnType<ParamsExtended['glidePathIntermediateValidated']>
     format: (x: number) => string
   }) => {
     const { paramsExt } = useSimulation()
@@ -639,8 +668,14 @@ const _GlidePath = React.memo(
     format: (x: number) => string
   }) => {
     const { paramsExt } = useSimulation()
-    const intermediate = paramsExt.glidePathIntermediateValidated(
-      glidePath.intermediate,
+    const { intermediate, starting } = useMemo(
+      () => ({
+        intermediate: paramsExt.glidePathIntermediateValidated(
+          glidePath.intermediate,
+        ),
+        starting: normalizeGlidePath(glidePath, paramsExt)[0],
+      }),
+      [glidePath, paramsExt],
     )
 
     return (
@@ -648,12 +683,8 @@ const _GlidePath = React.memo(
         className={`${className} inline-grid gap-x-10 items-center`}
         style={{ grid: 'auto/auto auto' }}
       >
-        <_GlidePathIntermediate
-          intermediate={intermediate.filter((x) => x.issue === 'before')}
-          format={format}
-        />
         <h2>Now</h2>
-        <h2 className="text-right">{format(glidePath.start.stocks)}</h2>
+        <h2 className="text-right">{format(starting)}</h2>
         <_GlidePathIntermediate
           intermediate={intermediate.filter(
             (x) => x.issue !== 'before' && x.issue !== 'after',

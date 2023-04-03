@@ -13,71 +13,84 @@ export const ByMonthSchedule = React.memo(
     style,
     entries,
     hideEntryId,
-    allowableMonthRange,
-    defaultMonthRange,
+    allowableMonthRangeAsMFN,
+    editProps: editPropsIn,
     heading,
-    addButtonText,
-    onEdit,
   }: {
     className?: string
     style?: React.CSSProperties
     entries: (params: PlanParams) => ValueForMonthRange[]
     hideEntryId: number | null
-    defaultMonthRange: MonthRange
-    allowableMonthRange: SimpleRange
+    allowableMonthRangeAsMFN: SimpleRange
     heading: string | null
-    addButtonText: string
-    onEdit: (entryId: number, isAdd: boolean) => void
-  }) => {
-    const { params, setParams } = useSimulation()
-    const handleAdd = () => {
-      const entryId = Math.max(-1, ...entries(params).map((x) => x.id)) + 1
-      setParams((params) => {
-        const clone = _.cloneDeep(params)
-        entries(clone).push({
-          id: entryId,
-          label: null,
-          value: 0,
-          nominal: false,
-          monthRange: defaultMonthRange,
-        })
-        return clone
-      })
-      onEdit(entryId, true)
+    editProps: null | {
+      defaultMonthRange: MonthRange
+      addButtonText: string
+      onEdit: (entryId: number, isAdd: boolean) => void
     }
+  }) => {
+    const { params, setPlanParams } = useSimulation()
+
+    const editProps = editPropsIn
+      ? {
+          ...editPropsIn,
+          handleAdd: () => {
+            const entryId =
+              Math.max(-1, ...entries(params.plan).map((x) => x.id)) + 1
+            setPlanParams((plan) => {
+              const clone = _.cloneDeep(plan)
+              entries(clone).push({
+                id: entryId,
+                label: null,
+                value: 0,
+                nominal: false,
+                monthRange: editPropsIn.defaultMonthRange,
+              })
+              return clone
+            })
+            editPropsIn.onEdit(entryId, true)
+          },
+        }
+      : null
     return (
       <div className={`${className}`} style={style}>
         {heading ? (
           <div className="flex justify-between gap-x-4 items-center h-[40px]">
             <h2 className={'font-bold text-lg'}>{heading}</h2>
-            <button
-              className="flex items-center justify-center gap-x-2 py-1 pl-2  "
-              onClick={handleAdd}
-            >
-              <FontAwesomeIcon className="text-2xl" icon={faPlusThin} />
-            </button>
+            {editProps?.handleAdd && (
+              <button
+                className="flex items-center justify-center gap-x-2 py-1 pl-2  "
+                onClick={editProps.handleAdd}
+              >
+                <FontAwesomeIcon className="text-2xl" icon={faPlusThin} />
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex justify-start gap-x-4 items-center  ">
-            <button
-              className="flex items-center justify-center gap-x-2 py-2 rounded-full border border-gray-200 px-4 "
-              onClick={handleAdd}
-            >
-              <FontAwesomeIcon className="text-3xl" icon={faPlusThin} />
-              {addButtonText}
-            </button>
+            {editProps?.handleAdd && (
+              <button
+                className="flex items-center justify-center gap-x-2 py-2 rounded-full border border-gray-200 px-4 "
+                onClick={editProps.handleAdd}
+              >
+                <FontAwesomeIcon className="text-3xl" icon={faPlusThin} />
+                {editProps.addButtonText}
+              </button>
+            )}
           </div>
         )}
         <div className="flex flex-col">
-          {entries(params).map(
+          {entries(params.plan).map(
             (entry, i) =>
               entry.id !== hideEntryId && (
                 <_Entry
                   key={entry.id}
                   className="mt-6"
-                  allowableMonthRange={allowableMonthRange}
+                  rangeAsMFN={allowableMonthRangeAsMFN}
                   entry={entry}
-                  onEdit={() => onEdit(entry.id, false)}
+                  onEdit={
+                    editProps ? () => editProps.onEdit(entry.id, false) : null
+                  }
                 />
               ),
           )}
@@ -90,25 +103,26 @@ export const ByMonthSchedule = React.memo(
 const _Entry = React.memo(
   ({
     className = '',
-    allowableMonthRange,
+    rangeAsMFN,
     entry,
     onEdit,
   }: {
     className?: string
-    allowableMonthRange: SimpleRange
+    rangeAsMFN: SimpleRange
     entry: ValueForMonthRange
-    onEdit: () => void
+    onEdit: (() => void) | null
   }) => {
     return (
       <button
         className={`${className} block text-start border border-gray-200 rounded-2xl p-3  `}
-        onClick={onEdit}
+        disabled={onEdit === null}
+        onClick={() => onEdit?.()}
       >
         <ValueForMonthRangeDisplay
           className=""
           labelClassName="font-medium"
           entry={entry}
-          range={allowableMonthRange}
+          rangeAsMFN={rangeAsMFN}
           skipLength={false}
         />
       </button>

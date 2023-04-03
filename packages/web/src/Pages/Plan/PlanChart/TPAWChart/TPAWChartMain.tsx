@@ -85,7 +85,7 @@ const components = (hidePointer: boolean) => () => {
         ({ dataTransition, derivedState }) => {
           const data = dataTransition.target
           const { viewport } = derivedState.curr
-          const { pickPerson, asMFN, months } = data.paramsExt
+          const { asMFN, months, getCurrentAgeOfPerson } = data.paramsExt
           const scaled = (at200: number, at500: number) =>
             _.clamp(
               linearFnFomPoints(200, at200, 500, at500)(viewport.width),
@@ -95,23 +95,24 @@ const components = (hidePointer: boolean) => () => {
           return {
             subHeading: 'Percentiles',
             formatX: (dataX: number) => {
-              const ageX = (person: 'person1' | 'person2') =>
-                pickPerson(person).ages.currentMonth + dataX
+              const ageX = (person: 'person1' | 'person2') => ({
+                inMonths: getCurrentAgeOfPerson(person).inMonths + dataX,
+              })
               return dataX === data.months.max + 1
                 ? { type: 'legacy' }
-                : data.params.people.withPartner
+                : data.params.plan.people.withPartner
                 ? {
                     type: 'withPartner',
-                    ageInMonths:
+                    age:
                       dataX > asMFN(months.person1.max)
                         ? null
                         : ageX('person1'),
-                    partnerAgeInMonths:
+                    partnerAge:
                       dataX > asMFN(months.person2.max)
                         ? null
                         : ageX('person2'),
                   }
-                : { type: 'withoutPartner', ageInMonths: ageX('person1') }
+                : { type: 'withoutPartner', age: ageX('person1') }
             },
             formatY: data.yFormat,
             showTh: true,
@@ -142,15 +143,16 @@ const components = (hidePointer: boolean) => () => {
     new ChartXAxis<TPAWChartDataMain>(({ dataTransition, derivedState }) => {
       let person = personIn
       const { viewport } = derivedState.curr
-      const { params, pickPerson, months, asMFN } =
+      const { params, months, asMFN, getCurrentAgeOfPerson } =
         dataTransition.target.paramsExt
-      if (person === 'person2' && !params.people.withPartner) {
+      if (person === 'person2' && !params.plan.people.withPartner) {
         // We are invisible anyway, so it does not matter, but this will prevent
         // asserts. Hacky, I know.
         person = 'person1'
       }
       const dataXTransform = (dataX: number) =>
-        dataX + pickPerson(person).ages.currentMonth
+        dataX + getCurrentAgeOfPerson(person).inMonths
+      // + getCurrentAge(pickPerson(person).ages.monthOfBirth).inMonths
       const sizing = tpawChartMainXAxisSizing(viewport.width)
       const dyn = _dynSizing(viewport.width)
 
@@ -211,10 +213,10 @@ const components = (hidePointer: boolean) => () => {
               noCase(type)
           }
         },
-        visible: person === 'person1' ? true : params.people.withPartner,
+        visible: person === 'person1' ? true : params.plan.people.withPartner,
         yOffset:
           6 +
-          (params.people.withPartner
+          (params.plan.people.withPartner
             ? +sizing.gap +
               (person === 'person1' ? 0 : sizing.height + sizing.gap)
             : sizing.gap),

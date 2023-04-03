@@ -3,9 +3,9 @@ import _ from 'lodash'
 import { nominalToReal } from '../../Utils/NominalToReal'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { assert, fGet, noCase } from '../../Utils/Utils'
-import { extendPlanParams, PlanParamsExt } from '../PlanParamsExt'
+import { ParamsExtended } from '../ExtentParams'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
-import { StatsTools } from '../StatsTools'
+import { StatsTools } from '../../Utils/StatsTools'
 import {
   firstMonthSavingsPortfolioDetail,
   FirstMonthSavingsPortfolioDetail,
@@ -26,7 +26,7 @@ export type TPAWRunInWorkerByPercentileByMonthsFromNow = {
 const MULTI_THREADED = true
 
 export type TPAWRunInWorkerResult = {
-  numRuns: number
+  numSimulationsActual: number
   percentageOfRunsWithInsufficientFunds: number
   savingsPortfolio: {
     start: {
@@ -239,7 +239,7 @@ export class TPAWRunInWorker {
       ),
     )
 
-    const merge = (yearsByWorker: typeof byWorker[0]['oneYear'][]) => {
+    const merge = (yearsByWorker: (typeof byWorker)[0]['oneYear'][]) => {
       const totalN = _.sumBy(yearsByWorker, (x) => x.n)
       return {
         n: totalN,
@@ -264,7 +264,6 @@ export class TPAWRunInWorker {
   //   numRuns: number,
   //   params: PlanParamsProcessed
   // ): Promise<boolean> {
-  //   const paramsExt = extendPlanParams(params.original)
 
   //   numRuns = _numRuns(paramsExt, numRuns)
   //   const runsByWorker = await Promise.all(
@@ -281,20 +280,23 @@ export class TPAWRunInWorker {
 
   async runSimulations(
     status: { canceled: boolean },
-    numRuns: number,
     params: PlanParamsProcessed,
-    percentiles: number[],
+    paramsExt: ParamsExtended,
   ): Promise<TPAWRunInWorkerResult | null> {
     const start0 = performance.now()
     let start = performance.now()
-    const paramsExt = extendPlanParams(params.original)
-    numRuns = _getNumRuns(paramsExt, numRuns)
+    const numSimulationsActual = _getNumSimulationsActual(paramsExt)
+    const percentiles = [
+      params.original.nonPlan.percentileRange.start,
+      50,
+      params.original.nonPlan.percentileRange.end,
+    ]
 
     const runsByWorker = await Promise.all(
       this._workers.map((worker, i) =>
         this._runSimulation(
           worker,
-          _loadBalance(i, numRuns, this._workers.length),
+          _loadBalance(i, numSimulationsActual, this._workers.length),
           params,
         ),
       ),
@@ -359,18 +361,25 @@ export class TPAWRunInWorker {
       params,
     )
     const withdrawlsEssentialById = new Map(
-      params.original.adjustmentsToSpending.extraSpending.essential.map((x) => [
+      params.original.plan.adjustmentsToSpending.extraSpending.essential.map((x) => [
         x.id,
-        _separateExtraWithdrawal(x, params, withdrawalsEssential, 'essential'),
+        _separateExtraWithdrawal(
+          x,
+          params,
+          paramsExt,
+          withdrawalsEssential,
+          'essential',
+        ),
       ]),
     )
     const withdrawlsDiscretionaryById = new Map(
-      params.original.adjustmentsToSpending.extraSpending.discretionary.map(
+      params.original.plan.adjustmentsToSpending.extraSpending.discretionary.map(
         (x) => [
           x.id,
           _separateExtraWithdrawal(
             x,
             params,
+            paramsExt,
             withdrawalsDiscretionary,
             'discretionary',
           ),
@@ -379,7 +388,8 @@ export class TPAWRunInWorker {
     )
 
     const percentageOfRunsWithInsufficientFunds =
-      byRun.numInsufficientFundMonths.filter((x) => x > 0).length / numRuns
+      byRun.numInsufficientFundMonths.filter((x) => x > 0).length /
+      numSimulationsActual
 
     const perfPost = performance.now() - start
     start = performance.now()
@@ -393,7 +403,7 @@ export class TPAWRunInWorker {
       perfPost
 
     const result: TPAWRunInWorkerResult = {
-      numRuns,
+      numSimulationsActual,
       percentageOfRunsWithInsufficientFunds,
       savingsPortfolio: {
         start: {
@@ -569,12 +579,11 @@ const _loadBalance = (worker: number, numJobs: number, numWorkers: number) => {
 const _separateExtraWithdrawal = (
   discretionaryWithdrawal: ValueForMonthRange,
   params: PlanParamsProcessed,
+  paramsExt: ParamsExtended,
   x: TPAWRunInWorkerByPercentileByMonthsFromNow,
   type: 'discretionary' | 'essential',
 ): TPAWRunInWorkerByPercentileByMonthsFromNow => {
-  const monthRange = extendPlanParams(params.original).asMFN(
-    discretionaryWithdrawal.monthRange,
-  )
+  const monthRange = paramsExt.asMFN(discretionaryWithdrawal.monthRange)
 
   return _mapByPercentileByMonthsFromNow(x, (value, monthsFromNow) => {
     if (monthsFromNow < monthRange.start || monthsFromNow > monthRange.end) {
@@ -610,15 +619,15 @@ const _mapByPercentileByMonthsFromNow = (
   return { byPercentileByMonthsFromNow }
 }
 
-const _getNumRuns = (paramsExt: PlanParamsExt, numRuns: number) => {
+const _getNumSimulationsActual = (paramsExt: ParamsExtended) => {
   const { params, numMonths } = paramsExt
-  switch (params.advanced.sampling) {
+  switch (params.plan.advanced.sampling) {
     case 'monteCarlo':
-      return numRuns
+      return params.plan.advanced.monteCarloSampling.numOfSimulations
     case 'historical': {
       return historicalReturns.monthly.stocks.returns.length - numMonths + 1
     }
     default:
-      noCase(params.advanced.sampling)
+      noCase(params.plan.advanced.sampling)
   }
 }

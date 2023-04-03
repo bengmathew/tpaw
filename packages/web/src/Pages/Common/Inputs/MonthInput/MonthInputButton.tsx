@@ -3,8 +3,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { linearFnFomPoints, Month } from '@tpaw/common'
 import _ from 'lodash'
 import React from 'react'
+import { SimpleRange } from '../../../../Utils/SimpleRange'
 import { noCase } from '../../../../Utils/Utils'
 import { useSimulation } from '../../../App/WithSimulation'
+import { CalendarMonthInput } from '../CalendarMonthInput'
 import { NumMonthsInput } from '../NumMonthsInput'
 import { MonthInputProps } from './MonthInput'
 
@@ -19,18 +21,19 @@ export const MonthInputButton = React.memo(
     onOpenPicker: () => void
     setRef: (x: HTMLDivElement) => void
   } & MonthInputProps) => {
-    const { value, range, toMFN, getMonthLabel } = props
-    const label = getMonthLabel(value)
-    const numericalComponent = useNumericalComponent(value)
+    const { valueClamped, range, toMFN, getMonthLabel, onChange } = props
+    const label = getMonthLabel(valueClamped)
+    const numMonthsProps = useNumMonthsProps(valueClamped)
     const inRange =
-      _.inRange(toMFN(value), range.start, range.end + 1) &&
-      (numericalComponent
+      _.inRange(toMFN(valueClamped), range.start, range.end + 1) &&
+      (numMonthsProps
         ? _.inRange(
-            numericalComponent.asNumber,
-            numericalComponent.range.start,
-            numericalComponent.range.end,
+            numMonthsProps.asNumber,
+            numMonthsProps.range.start,
+            numMonthsProps.range.end + 1,
           )
         : true)
+
     return (
       <div
         className={`${className} 
@@ -44,11 +47,21 @@ export const MonthInputButton = React.memo(
           <h2 className="inline-block text-left">{label}</h2>
           <FontAwesomeIcon icon={faCaretDown} />
         </button>
-        {numericalComponent && (
-          <_Number
+        {numMonthsProps && (
+          <_NumMonths
             className={`${classNameForNumberInput} ml-6 mt-2`}
             {...props}
-            numericalComponent={numericalComponent}
+            numericalComponent={numMonthsProps}
+          />
+        )}
+        {'type' in valueClamped && valueClamped.type === 'calendarMonth' && (
+          <CalendarMonthInput
+            className={`${classNameForNumberInput} ml-6 mt-2`}
+            value={valueClamped.calendarMonth}
+            onChange={(calendarMonth) =>
+              onChange({ type: 'calendarMonth', calendarMonth })
+            }
+            rangeAsMFN={range}
           />
         )}
       </div>
@@ -56,7 +69,7 @@ export const MonthInputButton = React.memo(
   },
 )
 
-const _Number = React.memo(
+const _NumMonths = React.memo(
   ({
     className = '',
     onChange,
@@ -65,7 +78,7 @@ const _Number = React.memo(
     numericalComponent,
     modalTextInputOnMobile,
   }: MonthInputProps & {
-    numericalComponent: Exclude<ReturnType<typeof useNumericalComponent>, null>
+    numericalComponent: Exclude<ReturnType<typeof useNumMonthsProps>, null>
   }) => {
     const { asNumber, fromNumber, modalLabel } = numericalComponent
     const numMonthRange = (() => {
@@ -93,16 +106,23 @@ const _Number = React.memo(
         className={className}
         value={asNumber}
         onChange={(x) => onChange(fromNumber(x))}
-        range={numMonthRange}
+        rangeAsMFN={numMonthRange}
         modalLabel={modalTextInputOnMobile ? modalLabel : null}
       />
     )
   },
 )
 
-const useNumericalComponent = (value: Month | { numMonths: number }) => {
+const useNumMonthsProps = (
+  value: Month | { numMonths: number },
+): {
+  asNumber: number
+  fromNumber: (x: number) => Month | { numMonths: number }
+  range: SimpleRange
+  modalLabel: string
+} | null => {
   const { paramsExt } = useSimulation()
-  const { pickPerson } = paramsExt
+  const { pickPerson, getCurrentAgeOfPerson } = paramsExt
 
   if ('numMonths' in value) {
     return {
@@ -113,18 +133,22 @@ const useNumericalComponent = (value: Month | { numMonths: number }) => {
     }
   } else {
     switch (value.type) {
-      case 'now':
+      case 'calendarMonthAsNow':
+      case 'calendarMonth':
       case 'namedAge':
         return null
       case 'numericAge':
         const { ages } = pickPerson(value.person)
         return {
-          asNumber: value.ageInMonths,
-          fromNumber: (ageInMonths: number): Month => ({
+          asNumber: value.age.inMonths,
+          fromNumber: (inMonths: number): Month => ({
             ...value,
-            ageInMonths,
+            age: { inMonths },
           }),
-          range: { start: ages.currentMonth, end: ages.maxMonth },
+          range: {
+            start: getCurrentAgeOfPerson(value.person).inMonths,
+            end: ages.maxAge.inMonths,
+          },
           modalLabel: `${
             value.person === 'person1' ? 'Your' : "Your Partner's"
           } Age`,

@@ -1,4 +1,4 @@
-import { API, PlanParams } from '@tpaw/common'
+import { API, Params } from '@tpaw/common'
 import { JSONGuard } from 'json-guard'
 import { Clients } from '../../Clients.js'
 import { builder } from '../builder.js'
@@ -13,9 +13,8 @@ builder.mutationField('setUserPlan', (t) =>
     authScopes: (_, args, ctx) => ctx.user?.id === args.input.userId,
     args: { input: t.arg({ type: Input }) },
     resolve: async (query, _, { input }) => {
-      let guard: JSONGuard<
-        Omit<typeof input, 'params'> & { params: PlanParams }
-      > = API.SetUserPlan.check
+      let guard: JSONGuard<Omit<typeof input, 'params'> & { params: Params }> =
+        API.SetUserPlan.check
       const { userId, params } = API.SetUserPlan.check(input).force()
 
       const now = new Date()

@@ -8,13 +8,20 @@ export class Config {
         space: fGet(process.env.CONTENTFUL_SPACE_ID),
         accessToken: fGet(process.env.CONTENTFUL_ACCESS_TOKEN),
       },
+      eod: {
+        apiKey: fGet(process.env.EOD_API_KEY),
+      },
+      stLouisFed: {
+        apiKey: fGet(process.env.ST_LOUIS_FED_API_KEY),
+      },
     }
   }
 
   static get client() {
     return {
       urls: {
-        app: (path = '') => `${fGet(process.env.NEXT_PUBLIC_URL_WEBSITE)}${path}`,
+        app: (path = '') =>
+          `${fGet(process.env.NEXT_PUBLIC_URL_WEBSITE)}${path}`,
         backend: fGet(process.env.NEXT_PUBLIC_URL_BACKEND),
       },
       production: process.env.NODE_ENV === 'production',

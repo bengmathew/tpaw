@@ -36,40 +36,40 @@ export const PlanChartHelp = React.memo(
     useAssertConst([onHeight_const])
     return (
       <>
-        <Link href={getSectionURL('help')} shallow>
-          <a
-            id="planChartHelp"
-            ref={setElement}
-            className="absolute  flex items-center text-gray-50  "
-            style={{
-              transitionProperty: 'opacity, transform, left, bottom',
-              transitionDuration: `${duration}ms`,
-              bottom: `${targetDynamicSizing.inset.bottom}px`,
-              left: `${targetDynamicSizing.inset.left}px`,
-              opacity: `${section === 'help' ? '0' : '1'}`,
-              pointerEvents: section === 'help' ? 'none' : 'auto',
-            }}
-            onClick={() => {
-              setPlanInputBodyHeaderOnDoneSection(section)
-            }}
+        <Link
+          id="planChartHelp"
+          ref={setElement}
+          className="absolute  flex items-center text-gray-50  "
+          style={{
+            transitionProperty: 'opacity, transform, left, bottom',
+            transitionDuration: `${duration}ms`,
+            bottom: `${targetDynamicSizing.inset.bottom}px`,
+            left: `${targetDynamicSizing.inset.left}px`,
+            opacity: `${section === 'help' ? '0' : '1'}`,
+            pointerEvents: section === 'help' ? 'none' : 'auto',
+          }}
+          onClick={() => {
+            setPlanInputBodyHeaderOnDoneSection(section)
+          }}
+          href={getSectionURL('help')}
+          shallow
+        >
+          <span
+            className={`flex items-center justify-center bg-gray-200 rounded-full  mr-2 ${
+              layout === 'mobile'
+                ? 'w-[20px] h-[20px] text-[12px]'
+                : 'w-[25px] h-[25px] text-[18px]'
+            }`}
           >
-            <span
-              className={`flex items-center justify-center bg-gray-200 rounded-full  mr-2 ${
-                layout === 'mobile'
-                  ? 'w-[20px] h-[20px] text-[12px]'
-                  : 'w-[25px] h-[25px] text-[18px]'
-              }`}
-            >
-              <FontAwesomeIcon
-                className={` text-gray-700 
+            <FontAwesomeIcon
+              className={` text-gray-700 
         ${layout === 'mobile' ? 'text-sm' : 'text-lg'}`}
-                icon={faQuestion}
-              />
-            </span>
-            <span className="font-semibold  text-base sm:text-lg1">
-              Help me understand this
-            </span>
-          </a>
+              icon={faQuestion}
+            />
+          </span>
+          <span className="font-semibold  text-base sm:text-lg1">
+            Help me understand this
+          </span>
         </Link>
       </>
     )

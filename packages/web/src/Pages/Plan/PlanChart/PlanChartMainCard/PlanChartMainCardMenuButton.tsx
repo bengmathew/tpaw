@@ -16,7 +16,7 @@ export const PlanChartMainCardMenuButton = React.memo(
   React.forwardRef<HTMLDivElement, Props>(
     ({ className = '', onClick, style, transition }: Props, ref) => {
       const simulation = useSimulation()
-      const { params } = simulation.tpawResult.args
+      const { params } = simulation.tpawResult
       const type = usePlanChartType()
       const { label, subLabel } = planChartLabel(params.original, type, 'full')
 

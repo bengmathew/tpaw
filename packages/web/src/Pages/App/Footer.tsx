@@ -9,19 +9,19 @@ export const Footer = React.memo(
   }) => {
     return (
       <div className={`${className}`}>
-        <Link href="/about">
-          <a className="">About</a>
+        <Link className="" href="/about">
+          About
         </Link>
-        <Link href="/license">
-          <a className="">License</a>
+        <Link className="" href="/license">
+          License
         </Link>
-        <Link href="/disclaimer">
-          <a className="">Disclaimer</a>
+        <Link className="" href="/disclaimer">
+          Disclaimer
         </Link>
-        <Link href="/privacy">
-          <a className="">Privacy</a>
+        <Link className="" href="/privacy">
+          Privacy
         </Link>
       </div>
     )
-  }
+  },
 )

@@ -15,14 +15,14 @@ export const PlanInputRisk = React.memo((props: PlanInputBodyPassThruProps) => {
   return (
     <PlanInputBody {...props}>
       <>
-        {params.advanced.strategy === 'TPAW' ? (
+        {params.plan.advanced.strategy === 'TPAW' ? (
           <PlanInputRiskTPAW props={props} />
-        ) : params.advanced.strategy === 'SPAW' ? (
+        ) : params.plan.advanced.strategy === 'SPAW' ? (
           <PlanInputRiskSPAW props={props} />
-        ) : params.advanced.strategy === 'SWR' ? (
+        ) : params.plan.advanced.strategy === 'SWR' ? (
           <PlanInputRiskSWR props={props} />
         ) : (
-          noCase(params.advanced.strategy)
+          noCase(params.plan.advanced.strategy)
         )}
       </>
     </PlanInputBody>

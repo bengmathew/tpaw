@@ -1,4 +1,5 @@
 import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
+
 import {
   faCircle as faCircleSelected,
   faMinus,
@@ -7,26 +8,27 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES,
-  annualToMonthlyReturnRate,
+  Params,
+  PlanParams,
   assert,
   getDefaultPlanParams,
-  getStats,
-  historicalReturns,
-  PlanParams,
-  sequentialAnnualReturnsFromMonthly,
+  planParamsGuard,
 } from '@tpaw/common'
-import _ from 'lodash'
+import _, { capitalize } from 'lodash'
+import { DateTime, Duration } from 'luxon'
 import Link from 'next/link'
 import React, { useEffect, useMemo, useState } from 'react'
-import {
-  generateSampledAnnualReturnStatsTable,
-  getAnnualToMonthlyRateConvertionCorrection,
-} from '../../../TPAWSimulator/PlanParamsProcessed/GetAnnualToMonthlyRateConvertionCorrection'
+// import {
+//   generateSampledAnnualReturnStatsTable,
+//   getAnnualToMonthlyRateConvertionCorrection,
+// } from '../../../TPAWSimulator/PlanParamsProcessed/GetAnnualToMonthlyRateConvertionCorrection'
+import { RadioGroup } from '@headlessui/react'
 import { clearMemoizedRandom } from '../../../TPAWSimulator/Worker/UseTPAWWorker'
 import { formatPercentage } from '../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../Utils/Geometry'
 import { useSimulation } from '../../App/WithSimulation'
 import { AmountInput } from '../../Common/Inputs/AmountInput'
+import { NumberInput } from '../../Common/Inputs/NumberInput'
 import { SliderInput } from '../../Common/Inputs/SliderInput/SliderInput'
 import { ToggleSwitch } from '../../Common/Inputs/ToggleSwitch'
 import { useGetPlanChartURL } from '../PlanChart/UseGetPlanChartURL'
@@ -42,6 +44,7 @@ export const PlanInputDev = React.memo((props: PlanInputBodyPassThruProps) => {
       <div className="">
         <_HistoricalCReturnsCard className="" props={props} />
         <_MiscCard className="mt-10" props={props} />
+        <_TimeCard className="mt-10" props={props} />
         <_AdditionalSpendingTiltCard className="mt-10" props={props} />
       </div>
     </PlanInputBody>
@@ -56,22 +59,21 @@ const _HistoricalCReturnsCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { params, setParams, paramsProcessed } = useSimulation()
+    const { params, setPlanParams, defaultParams, paramsProcessed } =
+      useSimulation()
 
-    const defaultHistorical = useMemo(
-      () => getDefaultPlanParams().advanced.annualReturns.historical,
-      [],
-    )
+    const defaultHistorical =
+      defaultParams.plan.advanced.annualReturns.historical
     const isModified = !_.isEqual(
       defaultHistorical,
-      params.advanced.annualReturns.historical,
+      params.plan.advanced.annualReturns.historical,
     )
 
     const handleChange = (
       historical: PlanParams['advanced']['annualReturns']['historical'],
     ) => {
-      setParams((params) => {
-        const clone = _.cloneDeep(params)
+      setPlanParams((plan) => {
+        const clone = _.cloneDeep(plan)
         clone.advanced.annualReturns.historical = historical
         return clone
       })
@@ -98,17 +100,19 @@ const _HistoricalCReturnsCard = React.memo(
             <FontAwesomeIcon
               className="mr-2"
               icon={
-                params.advanced.annualReturns.historical.type === 'adjusted'
+                params.plan.advanced.annualReturns.historical.type ===
+                'adjusted'
                   ? faCircleSelected
                   : faCircleRegular
               }
             />{' '}
             Adjusted to Expected
           </h2>
-          {params.advanced.annualReturns.historical.type === 'adjusted' && (
+          {params.plan.advanced.annualReturns.historical.type ===
+            'adjusted' && (
             <_HistoricalAdjustedDetails
               className="ml-[28px] mt-2"
-              historical={params.advanced.annualReturns.historical}
+              historical={params.plan.advanced.annualReturns.historical}
             />
           )}
         </div>
@@ -120,7 +124,8 @@ const _HistoricalCReturnsCard = React.memo(
             <FontAwesomeIcon
               className="mr-2"
               icon={
-                params.advanced.annualReturns.historical.type === 'unadjusted'
+                params.plan.advanced.annualReturns.historical.type ===
+                'unadjusted'
                   ? faCircleSelected
                   : faCircleRegular
               }
@@ -142,14 +147,14 @@ const _HistoricalCReturnsCard = React.memo(
             <FontAwesomeIcon
               className="mr-2"
               icon={
-                params.advanced.annualReturns.historical.type === 'fixed'
+                params.plan.advanced.annualReturns.historical.type === 'fixed'
                   ? faCircleSelected
                   : faCircleRegular
               }
             />{' '}
             Fixed
           </h2>
-          {params.advanced.annualReturns.historical.type === 'fixed' && (
+          {params.plan.advanced.annualReturns.historical.type === 'fixed' && (
             <_HistoricalFixedDetails className="ml-[28px] mt-2" />
           )}
         </div>
@@ -161,9 +166,9 @@ const _HistoricalCReturnsCard = React.memo(
         <div className="ml-4 flex gap-x-4">
           <button
             className="mt-4 underline"
-            onClick={async () =>
-              console.dir(await generateSampledAnnualReturnStatsTable())
-            }
+            onClick={async () => {
+              // console.dir(await generateSampledAnnualReturnStatsTable())
+            }}
           >
             Generate
           </button>
@@ -251,7 +256,7 @@ const _HistoricalAdjustedDetails = React.memo(
       { type: 'adjusted' }
     >
   }) => {
-    const { setParams } = useSimulation()
+    const { setPlanParams } = useSimulation()
     const { adjustment, correctForBlockSampling } = historical
     assert(adjustment.type === 'toExpected')
     return (
@@ -262,8 +267,8 @@ const _HistoricalAdjustedDetails = React.memo(
             className=""
             enabled={correctForBlockSampling}
             setEnabled={(x) =>
-              setParams((p) => {
-                const clone = _.cloneDeep(p)
+              setPlanParams((plan) => {
+                const clone = _.cloneDeep(plan)
                 const historicalClone = _.cloneDeep(historical)
                 historicalClone.correctForBlockSampling = x
                 clone.advanced.annualReturns.historical = historicalClone
@@ -279,9 +284,9 @@ const _HistoricalAdjustedDetails = React.memo(
 const _HistoricalFixedDetails = React.memo(
   ({ className = '' }: { className?: string }) => {
     const _delta = 0.1
-    const { params, setParams } = useSimulation()
-    assert(params.advanced.annualReturns.historical.type === 'fixed')
-    const { stocks, bonds } = params.advanced.annualReturns.historical
+    const { params, setPlanParams } = useSimulation()
+    assert(params.plan.advanced.annualReturns.historical.type === 'fixed')
+    const { stocks, bonds } = params.plan.advanced.annualReturns.historical
     const [stocksStr, setStocksStr] = useState((stocks * 100).toFixed(1))
     const [bondsStr, setBondsStr] = useState((bonds * 100).toFixed(1))
     useEffect(() => {
@@ -292,8 +297,8 @@ const _HistoricalFixedDetails = React.memo(
     }, [bonds])
     const handleStockAmount = (x: number) => {
       if (isNaN(x)) return
-      setParams((p) => {
-        const clone = _.cloneDeep(p)
+      setPlanParams((plan) => {
+        const clone = _.cloneDeep(plan)
         assert(clone.advanced.annualReturns.historical.type === 'fixed')
         clone.advanced.annualReturns.historical.stocks = x / 100
         return clone
@@ -301,8 +306,8 @@ const _HistoricalFixedDetails = React.memo(
     }
     const handleBondAmount = (x: number) => {
       if (isNaN(x)) return
-      setParams((p) => {
-        const clone = _.cloneDeep(p)
+      setPlanParams((plan) => {
+        const clone = _.cloneDeep(plan)
         assert(clone.advanced.annualReturns.historical.type === 'fixed')
         clone.advanced.annualReturns.historical.bonds = x / 100
         return clone
@@ -378,19 +383,21 @@ const _MiscCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { params, setParams, numRuns, setNumRuns, tpawResult } =
-      useSimulation()
+    const {
+      params,
+      setNonPlanParams,
+      setPlanParams,
+      tpawResult,
+      defaultParams,
+    } = useSimulation()
     const getPlanChartURL = useGetPlanChartURL()
-    const defaultShowAllMonths = useMemo(
-      () => getDefaultPlanParams().dev.alwaysShowAllMonths,
-      [],
-    )
+    const defaultShowAllMonths = defaultParams.nonPlan.dev.alwaysShowAllMonths
     const isShowAllMonthsModified =
-      params.dev.alwaysShowAllMonths !== defaultShowAllMonths
+      params.nonPlan.dev.alwaysShowAllMonths !== defaultShowAllMonths
 
     const handleChangeShowAllMonths = (x: boolean) =>
-      setParams((p) => {
-        const clone = _.cloneDeep(p)
+      setNonPlanParams((nonPlan) => {
+        const clone = _.cloneDeep(nonPlan)
         clone.dev.alwaysShowAllMonths = x
         return clone
       })
@@ -409,7 +416,7 @@ const _MiscCard = React.memo(
           <h2 className=""> Show All Months</h2>
           <ToggleSwitch
             className=""
-            enabled={params.dev.alwaysShowAllMonths}
+            enabled={params.nonPlan.dev.alwaysShowAllMonths}
             setEnabled={(x) => handleChangeShowAllMonths(x)}
           />
         </div>
@@ -418,8 +425,15 @@ const _MiscCard = React.memo(
           <h2 className="">Number of simulations</h2>
           <AmountInput
             className="text-input"
-            value={numRuns}
-            onChange={setNumRuns}
+            value={params.plan.advanced.monteCarloSampling.numOfSimulations}
+            onChange={(numOfSimulations) =>
+              setPlanParams((plan) => {
+                const clone = _.cloneDeep(plan)
+                clone.advanced.monteCarloSampling.numOfSimulations =
+                  numOfSimulations
+                return clone
+              })
+            }
             decimals={0}
             modalLabel="Number of Simulations"
           />
@@ -448,70 +462,23 @@ const _MiscCard = React.memo(
         </div>
 
         <Link
+          className="block underline pt-4"
           href={getPlanChartURL('asset-allocation-total-portfolio')}
           shallow
         >
-          <a className="block underline pt-4">
-            Show Asset Allocation of Total Portfolio Graph
-          </a>
+          Show Asset Allocation of Total Portfolio Graph
         </Link>
 
         <button
           className="underline pt-4"
           onClick={async () => {
             await clearMemoizedRandom()
-            setParams((x) => _.cloneDeep(x))
+            setPlanParams((plan) => _.cloneDeep(plan))
           }}
         >
           Reset random draws
         </button>
-        <button
-          className="block btn-sm btn-outline mt-4"
-          onClick={() => {
-            const stocks = historicalReturns.monthly.stocks
-
-            const getAnnualMean = (monthly: number[]) =>
-              getStats(sequentialAnnualReturnsFromMonthly(monthly)).mean
-
-            const targetAnnual = getAnnualMean(stocks.returns)
-            const targetMonthly = annualToMonthlyReturnRate(targetAnnual)
-            const meanWithoutCorrection = getAnnualMean(
-              stocks.adjust(targetMonthly),
-            )
-            const meanWithCorrection = getAnnualMean(
-              stocks.adjust(
-                targetMonthly -
-                  getAnnualToMonthlyRateConvertionCorrection.forHistoricalSequence(
-                    'stocks',
-                  ),
-              ),
-            )
-            const meanWithCorrection2 = getAnnualMean(
-              stocks.adjust(
-                targetMonthly -
-                  getAnnualToMonthlyRateConvertionCorrection.forMonteCarlo(
-                    12,
-                    'stocks',
-                  ),
-              ),
-            )
-            console.dir(
-              `Mean without correction: ${Math.abs(
-                targetAnnual - meanWithoutCorrection,
-              )}`,
-            )
-            console.dir(
-              `   Mean with correction: ${Math.abs(
-                targetAnnual - meanWithCorrection,
-              )}`,
-            )
-            console.dir(
-              `  Mean with correction2: ${Math.abs(
-                targetAnnual - meanWithCorrection2,
-              )}`,
-            )
-          }}
-        >
+        <button className="block btn-sm btn-outline mt-4" onClick={() => {}}>
           Test
         </button>
         <button
@@ -534,15 +501,15 @@ const _AdditionalSpendingTiltCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { params, setParams } = useSimulation()
-    const defaultRisk = useMemo(() => getDefaultPlanParams().risk.tpaw, [])
+    const { params, setPlanParams, defaultParams } = useSimulation()
+    const defaultRisk = defaultParams.plan.risk.tpaw
     const isModified =
       defaultRisk.additionalAnnualSpendingTilt !==
-      params.risk.tpaw.additionalAnnualSpendingTilt
+      params.plan.risk.tpaw.additionalAnnualSpendingTilt
 
     const handleChange = (value: number) =>
-      setParams((params) => {
-        const clone = _.cloneDeep(params)
+      setPlanParams((plan) => {
+        const clone = _.cloneDeep(plan)
         clone.risk.tpaw.additionalAnnualSpendingTilt = value
         return clone
       })
@@ -565,7 +532,7 @@ const _AdditionalSpendingTiltCard = React.memo(
           height={60}
           maxOverflowHorz={props.sizing.cardPadding}
           data={ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES}
-          value={params.risk.tpaw.additionalAnnualSpendingTilt}
+          value={params.plan.risk.tpaw.additionalAnnualSpendingTilt}
           onChange={(x) => handleChange(x)}
           format={(x) => formatPercentage(1)(x)}
           ticks={(value, i) => (i % 10 === 0 ? 'large' : 'small')}
@@ -581,3 +548,266 @@ const _AdditionalSpendingTiltCard = React.memo(
     )
   },
 )
+
+const _TimeCard = React.memo(
+  ({
+    className = '',
+    props,
+  }: {
+    className?: string
+    props: PlanInputBodyPassThruProps
+  }) => {
+    const { currentTime, params, setNonPlanParams, paramsExt, resetParams } =
+      useSimulation()
+    const { getDateTimeInCurrentTimezone } = paramsExt
+    const { portfolioBalance } = params.plan.wealth
+    const portfolioBalanceTimestamp = portfolioBalance.isLastPlanChange
+      ? portfolioBalance.timestamp
+      : portfolioBalance.original.timestamp
+
+    const defaultParams = useMemo(
+      () => getDefaultPlanParams(currentTime),
+      [currentTime],
+    )
+
+    const isModified = _isTimeCardModified(params, defaultParams)
+
+    // const handleChange = (x: number) =>
+    //   setParams((params) => {
+    //     const clone = _.cloneDeep(params)
+    //     clone.dev.currentTimeMonthOffset = x
+    //     return clone
+    //   })
+
+    const formatDateTime = (x: DateTime) => x.toFormat('LL/d/yyyy - HH:mm EEE')
+    const formatDistanceFromNow = (x: DateTime | number) => {
+      const diff = currentTime.diff(DateTime.fromMillis(x.valueOf()), [
+        'years',
+        'months',
+        'days',
+        'hours',
+      ])
+      return Duration.fromObject(
+        _.mapValues(diff.toObject(), (x) => Math.round(x as number)),
+      )
+        .rescale()
+        .toHuman()
+    }
+
+    return (
+      <div
+        className={`${className} params-card relative`}
+        style={{ padding: paddingCSS(props.sizing.cardPadding) }}
+      >
+        <PlanInputModifiedBadge show={isModified} mainPage={false} />
+        <h2 className="font-bold text-lg">Time</h2>
+        <h2 className="-mt-2 text-sm text-right">
+          Zone: {currentTime.toFormat('ZZZZ')}
+        </h2>
+        <div
+          className="grid mt-2 gap-x-4 gap-y-2"
+          style={{ grid: 'auto/auto 1fr' }}
+        >
+          <h2 className="text-right">Current</h2>
+          <h2 className="font-mono text-sm">{formatDateTime(currentTime)}</h2>
+          <h2 className="text-right">Params</h2>
+          <div className="">
+            <h2 className="font-mono text-sm">
+              {formatDateTime(
+                getDateTimeInCurrentTimezone.fromMillis(params.plan.timestamp),
+              )}
+            </h2>
+            <h2 className="text-sm font-font1 lighten">
+              {formatDistanceFromNow(params.plan.timestamp)} ago
+            </h2>
+          </div>
+          <h2 className="text-right">Portfolio</h2>
+          <div className="">
+            <h2 className="font-mono text-sm">
+              {formatDateTime(
+                getDateTimeInCurrentTimezone.fromMillis(
+                  portfolioBalanceTimestamp,
+                ),
+              )}
+            </h2>
+            <h2 className="text-sm font-font1 lighten">
+              {formatDistanceFromNow(portfolioBalanceTimestamp)} ago
+            </h2>
+          </div>
+        </div>
+        <div className=" flex justify-start gap-x-4 items-center mt-4">
+          <h2 className="font-semibold"> Fast Forward</h2>
+          <ToggleSwitch
+            className=""
+            enabled={
+              params.nonPlan.dev.currentTimeFastForward.shouldFastForward
+            }
+            setEnabled={(enabled) => {
+              if (enabled) {
+                setNonPlanParams((nonPlan) => {
+                  const clone = _.cloneDeep(nonPlan)
+                  clone.dev.currentTimeFastForward = {
+                    shouldFastForward: true,
+                    restoreTo: JSON.stringify(params),
+                    years: 0,
+                    months: 0,
+                    days: 0,
+                    hours: 0,
+                    marketDataExtensionStrategy: {
+                      dailyStockMarketPerformance: 'roundRobinPastValues',
+                    },
+                  }
+                  return clone
+                })
+              } else {
+                assert(
+                  params.nonPlan.dev.currentTimeFastForward.shouldFastForward,
+                )
+                const clone = planParamsGuard(
+                  JSON.parse(
+                    params.nonPlan.dev.currentTimeFastForward.restoreTo,
+                  ),
+                ).force()
+                assert(
+                  !clone.nonPlan.dev.currentTimeFastForward.shouldFastForward,
+                )
+                resetParams(clone)
+              }
+            }}
+          />
+        </div>
+        {params.nonPlan.dev.currentTimeFastForward.shouldFastForward && (
+          <div className="ml-4">
+            <div
+              className="items-center grid gap-x-2 gap-y-2 mt-4 "
+              style={{ grid: 'auto/auto 1fr' }}
+            >
+              <_FastForwardInput type="years" />
+              <_FastForwardInput type="months" />
+              <_FastForwardInput type="days" />
+              <_FastForwardInput type="hours" />
+            </div>
+            <h2 className="mt-4 font-semibold">
+              How to synthesize market data?
+            </h2>
+            <h2 className="font-medium mt-2">
+              CAPE, Bond Rates, and Inflation:{' '}
+            </h2>
+            <div className="flex items-start gap-x-2 cursor-pointer mt-2">
+              <FontAwesomeIcon
+                className="text-sm mt-1.5"
+                icon={faCircleSelected}
+              />
+              <h2 className="">
+                Round robin of last 30 days before fast forward.
+              </h2>
+            </div>
+            <h2 className="font-medium mt-4 mb-2">
+              Daily VT and BND Performance{' '}
+            </h2>
+            <RadioGroup
+              value={
+                params.nonPlan.dev.currentTimeFastForward
+                  .marketDataExtensionStrategy.dailyStockMarketPerformance
+              }
+              onChange={(type) =>
+                setNonPlanParams((nonPlan) => {
+                  const clone = _.cloneDeep(nonPlan)
+                  assert(clone.dev.currentTimeFastForward.shouldFastForward)
+                  clone.dev.currentTimeFastForward.marketDataExtensionStrategy.dailyStockMarketPerformance =
+                    type
+                  return clone
+                })
+              }
+              className="grid gap-y-2"
+            >
+              <RadioGroup.Option value="latestExpected">
+                {({ checked }) => (
+                  <div className="flex items-start gap-x-2 cursor-pointer">
+                    <FontAwesomeIcon
+                      className="text-sm mt-1.5"
+                      icon={checked ? faCircleSelected : faCircleRegular}
+                    />
+                    <div className="">
+                      <h2 className="">Latest expected value</h2>
+                      {checked ? (
+                        params.plan.advanced.annualReturns.expected.type ===
+                        'manual' ? (
+                          <h2 className="">Expected return is manual.</h2>
+                        ) : (
+                          <h2 className="text-errorFG">
+                            Expected return is NOT manual.
+                          </h2>
+                        )
+                      ) : (
+                        false
+                      )}
+                    </div>
+                  </div>
+                )}
+              </RadioGroup.Option>
+              <RadioGroup.Option value="roundRobinPastValues">
+                {({ checked }) => (
+                  <div className="flex items-start gap-x-2 cursor-pointer">
+                    <FontAwesomeIcon
+                      className="text-sm mt-1.5"
+                      icon={checked ? faCircleSelected : faCircleRegular}
+                    />
+                    <h2 className="">
+                      Round robin of last 30 days before fast forward.
+                    </h2>
+                  </div>
+                )}
+              </RadioGroup.Option>
+              <RadioGroup.Option value="repeatGrowShrinkZero">
+                {({ checked }) => (
+                  <div className="flex items-start gap-x-2 cursor-pointer">
+                    <FontAwesomeIcon
+                      className="text-sm mt-1.5"
+                      icon={checked ? faCircleSelected : faCircleRegular}
+                    />
+                    <h2 className="">Cycle through grow (5%), shrink, flat</h2>
+                  </div>
+                )}
+              </RadioGroup.Option>
+            </RadioGroup>
+          </div>
+        )}
+      </div>
+    )
+  },
+)
+
+const _FastForwardInput = React.memo(
+  ({ type }: { type: 'years' | 'months' | 'days' | 'hours' }) => {
+    const { params, setNonPlanParams } = useSimulation()
+    assert(params.nonPlan.dev.currentTimeFastForward.shouldFastForward)
+    return (
+      <>
+        <h2 className="">{capitalize(type)}</h2>
+        <NumberInput
+          className=""
+          showDecrement={false}
+          value={params.nonPlan.dev.currentTimeFastForward[type]}
+          setValue={(x: number) => {
+            const clone = _.cloneDeep(params.nonPlan)
+            assert(clone.dev.currentTimeFastForward.shouldFastForward)
+            const clamped = Math.max(x, clone.dev.currentTimeFastForward[type])
+            clone.dev.currentTimeFastForward[type] = clamped
+            setNonPlanParams(clone)
+            return clamped !== x
+          }}
+          buttonClassName="px-2 py-1"
+          // width?: number
+          modalLabel={'Years'}
+        />
+      </>
+    )
+  },
+)
+
+const _isTimeCardModified = (params: Params, defaultParams: Params) =>
+  !_.isEqual(
+    params.nonPlan.dev.currentTimeFastForward,
+    defaultParams.nonPlan.dev.currentTimeFastForward,
+  )

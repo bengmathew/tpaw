@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Switch } from '@headlessui/react'
 import _ from 'lodash'
 import React, { useMemo, useState } from 'react'
-import { extendPlanParams } from '../../../TPAWSimulator/PlanParamsExt'
 import { Contentful } from '../../../Utils/Contentful'
 import { errorToast } from '../../../Utils/CustomToasts'
 import { paddingCSSStyle } from '../../../Utils/Geometry'
@@ -40,10 +39,9 @@ export const _SpendingCeilingCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const content = usePlanContent()['spending-ceiling-and-floor']
-    const { params, setParams, tpawResult } = useSimulation()
-    const { asMFN, withdrawalStartMonth } = extendPlanParams(
-      tpawResult.args.params.original,
-    )
+    const { params, setPlanParams, tpawResult } = useSimulation()
+    // paramsExt from result.
+    const { asMFN, withdrawalStartMonth } = tpawResult.paramsExt
     const withdrawalStartAsMFN = asMFN(withdrawalStartMonth)
 
     const { minWithdrawal, maxWithdrawal } = useMemo(() => {
@@ -65,12 +63,12 @@ export const _SpendingCeilingCard = React.memo(
     }, [tpawResult, withdrawalStartAsMFN])
 
     const [entryOnEnabled, setEntryOnEnabled] = useState(
-      params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling ??
+      params.plan.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling ??
         _roundUp(minWithdrawal + (maxWithdrawal - minWithdrawal) / 2, 1000),
     )
 
     const handleAmount = (amount: number | null) => {
-      const clone = _.cloneDeep(params)
+      const clone = _.cloneDeep(params.plan)
       if (
         amount ===
         clone.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling
@@ -90,11 +88,11 @@ export const _SpendingCeilingCard = React.memo(
 
       if (amount !== null) setEntryOnEnabled(amount)
       clone.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling = amount
-      setParams(clone)
+      setPlanParams(clone)
     }
 
     const value =
-      params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling
+      params.plan.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling
 
     return (
       <div
@@ -104,7 +102,7 @@ export const _SpendingCeilingCard = React.memo(
         <h2 className="font-bold text-lg mb-2">Spending Ceiling</h2>
         <div className="">
           <Contentful.RichText
-            body={content.ceiling[params.advanced.strategy]}
+            body={content.ceiling[params.plan.advanced.strategy]}
             p=" p-base"
           />
         </div>
@@ -175,11 +173,9 @@ export const _SpendingFloorCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const content = usePlanContent()['spending-ceiling-and-floor']
-    const { params, setParams, tpawResult } =
-      useSimulation()
-    const { asMFN, withdrawalStartMonth } = extendPlanParams(
-      tpawResult.args.params.original,
-    )
+    const { params, setPlanParams, tpawResult } = useSimulation()
+    // paramsExt from result.
+    const { asMFN, withdrawalStartMonth } = tpawResult.paramsExt
     const withdrawalStartAsYFN = asMFN(withdrawalStartMonth)
 
     const firstWithdrawalOfMinPercentile =
@@ -187,16 +183,16 @@ export const _SpendingFloorCard = React.memo(
         .byPercentileByMonthsFromNow[0].data[withdrawalStartAsYFN]
 
     const [entryOnEnabled, setEntryOnEnabled] = useState(
-      params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor ??
+      params.plan.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor ??
         Math.min(
           _roundUp(firstWithdrawalOfMinPercentile, 500),
-          params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling ??
-            Number.MAX_SAFE_INTEGER,
+          params.plan.adjustmentsToSpending.tpawAndSPAW
+            .monthlySpendingCeiling ?? Number.MAX_SAFE_INTEGER,
         ),
     )
 
     const handleAmount = (amount: number | null) => {
-      const clone = _.cloneDeep(params)
+      const clone = _.cloneDeep(params.plan)
       if (
         amount === clone.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor
       )
@@ -215,10 +211,11 @@ export const _SpendingFloorCard = React.memo(
 
       if (amount !== null) setEntryOnEnabled(amount)
       clone.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor = amount
-      setParams(clone)
+      setPlanParams(clone)
     }
 
-    const value = params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor
+    const value =
+      params.plan.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor
 
     return (
       <div
@@ -228,7 +225,7 @@ export const _SpendingFloorCard = React.memo(
         <h2 className="font-bold text-lg mb-2">Spending Floor</h2>
         <div className="">
           <Contentful.RichText
-            body={content.floor[params.advanced.strategy]}
+            body={content.floor[params.plan.advanced.strategy]}
             p=" p-base mt-2"
           />
         </div>

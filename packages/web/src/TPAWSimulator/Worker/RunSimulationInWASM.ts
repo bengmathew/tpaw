@@ -1,20 +1,26 @@
 import { annualToMonthlyReturnRate, MAX_AGE_IN_MONTHS } from '@tpaw/common'
 import _ from 'lodash'
+import { DateTime } from 'luxon'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { noCase } from '../../Utils/Utils'
-import { getNumMonths, getWithdrawalStartAsMFN } from '../PlanParamsExt'
+import { extendParams } from '../ExtentParams'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
-import { getWASM } from './GetWASM'
+import { WASM } from './GetWASM'
 import { TPAWWorkerRunSimulationResult } from './TPAWWorkerAPI'
 
-export async function runSimulationInWASM(
+export function runSimulationInWASM(
   params: PlanParamsProcessed,
   runsSpec: SimpleRange,
+  wasm: WASM,
   test?: { truth: number[]; indexIntoHistoricalReturns: number[] },
-): Promise<TPAWWorkerRunSimulationResult> {
+): TPAWWorkerRunSimulationResult {
   let start0 = performance.now()
-  const numMonths = getNumMonths(params.original)
-  const wasm = await getWASM()
+  const { numMonths, asMFN, withdrawalStartMonth } = extendParams(
+    params.original,
+    DateTime.fromMillis(params.currentTime.epoch, {
+      zone: params.currentTime.zoneName,
+    }),
+  )
 
   let start = performance.now()
   let runs = wasm.run(
@@ -22,7 +28,7 @@ export async function runSimulationInWASM(
     runsSpec.start,
     runsSpec.end,
     numMonths,
-    getWithdrawalStartAsMFN(params.original),
+    asMFN(withdrawalStartMonth),
     annualToMonthlyReturnRate(params.returns.expectedAnnualReturns.stocks),
     annualToMonthlyReturnRate(params.returns.expectedAnnualReturns.bonds),
     Float64Array.from(
@@ -31,7 +37,7 @@ export async function runSimulationInWASM(
     Float64Array.from(
       params.returns.historicalMonthlyAdjusted.map((x) => x.bonds),
     ),
-    params.currentPortfolioBalance,
+    params.estimatedCurrentPortfolioBalance,
     Float64Array.from(params.risk.tpaw.allocation),
     Float64Array.from(params.risk.spawAndSWR.allocation),
     params.risk.tpaw.allocationForLegacy.stocks,

@@ -1,17 +1,17 @@
 import { ValueForMonthRange } from '@tpaw/common'
 import _ from 'lodash'
 import { nominalToReal } from '../../Utils/NominalToReal'
-import { extendPlanParams, PlanParamsExt } from '../PlanParamsExt'
+import { ParamsExtended } from '../ExtentParams'
 
 export function planParamsProcessByMonthParams(
-  paramsExt: PlanParamsExt,
+  paramsExt: ParamsExtended,
   monthlyInflation: number,
 ) {
   const { asMFN, withdrawalStartMonth, numMonths, params } = paramsExt
   const {
     wealth,
     adjustmentsToSpending: { extraSpending },
-  } = params
+  } = params.plan
   const withdrawalStart = asMFN(withdrawalStartMonth)
   const lastWorkingMonth = withdrawalStart > 0 ? withdrawalStart - 1 : 0
   const endMonth = numMonths - 1
@@ -22,7 +22,7 @@ export function planParamsProcessByMonthParams(
       discretionary: 0,
     },
     tpawAndSPAW: {
-      risk: { lmp: month < withdrawalStart ? 0 : params.risk.tpawAndSPAW.lmp },
+      risk: { lmp: month < withdrawalStart ? 0 : params.plan.risk.tpawAndSPAW.lmp },
     },
   }))
 
@@ -33,9 +33,10 @@ export function planParamsProcessByMonthParams(
     updater: (target: typeof byMonth[0], value: number) => void,
   ) => {
     values.forEach(({ monthRange, value, nominal }) => {
-      const normMonthRange = extendPlanParams(params).asMFN(monthRange)
+      const normMonthRange = asMFN(monthRange)
       const start = _.clamp(normMonthRange.start, minMonth, maxMonth)
-      const end = _.clamp(normMonthRange.end, start, maxMonth)
+      if (normMonthRange.end < start) return
+      const end = Math.min(normMonthRange.end, maxMonth)
       _.range(start, end + 1).forEach((monthsFromNow) => {
         updater(
           byMonth[monthsFromNow],

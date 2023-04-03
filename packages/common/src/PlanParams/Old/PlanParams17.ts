@@ -21,7 +21,7 @@ import {
 import _ from 'lodash'
 import { fGet, noCase, preciseRange } from '../../Utils'
 import { PlanParams16 } from './PlanParams16'
-import { TIME_PREFERENCE_VALUES } from '../PlanParams'
+import { TIME_PREFERENCE_VALUES } from '../Params'
 
 export namespace PlanParams17 {
   export const MAX_LABEL_LENGTH = 150

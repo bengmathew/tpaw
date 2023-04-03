@@ -9,7 +9,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GlidePath, Month } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useMemo, useState } from 'react'
-import { PlanParamsExt } from '../../../TPAWSimulator/PlanParamsExt'
+import { ParamsExtended } from '../../../TPAWSimulator/ExtentParams'
+import { normalizeGlidePath } from '../../../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessRisk'
+import { calendarMonthStr } from '../../../Utils/CalendarMonthStr'
 import { numMonthsStr } from '../../../Utils/NumMonthsStr'
 import { assert, noCase } from '../../../Utils/Utils'
 import { useSimulation } from '../../App/WithSimulation'
@@ -26,8 +28,10 @@ export const GlidePathInput = React.memo(
     value: GlidePath
     onChange: (glidePath: GlidePath) => void
   }) => {
-    const { params, paramsExt } = useSimulation()
+    const { paramsExt, paramsProcessed } = useSimulation()
     const [newEntry, setNewEntry] = useState<null | _MonthAndStock>(null)
+
+    const { getCurrentAgeOfPerson, currentMonth } = paramsExt
 
     const intermediate = useMemo(
       () => paramsExt.glidePathIntermediateValidated(value.intermediate),
@@ -41,6 +45,10 @@ export const GlidePathInput = React.memo(
       clone.intermediate = intermediate
       onChange(clone)
     }
+    const effectiveStart = useMemo(
+      () => normalizeGlidePath(value, paramsExt)[0],
+      [paramsExt, value],
+    )
 
     return (
       <div className={`${className}`}>
@@ -53,18 +61,13 @@ export const GlidePathInput = React.memo(
           className="grid gap-y-2 gap-x-2 items-center "
           style={{ grid: 'auto/1fr auto auto' }}
         >
-          <_Intermediate
-            value={intermediate}
-            onChange={handleIntermediateChanged}
-            filter={(x) => x === 'before'}
-          />
           <h2 className="">Now</h2>
           <_Percent
             className=""
-            value={value.start.stocks}
+            value={effectiveStart}
             onChange={(stocks) => {
               const clone = _.cloneDeep(value)
-              clone.start.stocks = stocks
+              clone.start = { month: currentMonth, stocks }
               onChange(clone)
             }}
             modalLabel="Stock Allocation Now"
@@ -86,13 +89,13 @@ export const GlidePathInput = React.memo(
             }}
             modalLabel="Stock Allocation at Max Age"
           />
+
+          <h2 className=""></h2>
           <_Intermediate
             value={intermediate}
             onChange={handleIntermediateChanged}
             filter={(x) => x === 'after'}
           />
-
-          <h2 className=""></h2>
         </div>
         {newEntry ? (
           <div className="border-t border-gray-300 rounded-x pt-4 mt-4">
@@ -130,7 +133,9 @@ export const GlidePathInput = React.memo(
                 month: {
                   type: 'numericAge',
                   person: 'person1',
-                  ageInMonths: params.people.person1.ages.currentMonth + 1,
+                  age: {
+                    inMonths: getCurrentAgeOfPerson('person1').inMonths + 1,
+                  },
                 },
                 stocks: 0.5,
               })
@@ -146,7 +151,7 @@ export const GlidePathInput = React.memo(
 )
 
 type _ProcessedIntermediate = ReturnType<
-  PlanParamsExt['glidePathIntermediateValidated']
+  ParamsExtended['glidePathIntermediateValidated']
 >
 
 const _Intermediate = React.memo(
@@ -168,6 +173,7 @@ const _Intermediate = React.memo(
                 <_MonthAndStocksInput
                   value={x}
                   onChange={(x) => {
+                    // Don't use _.cloneDeep because value is _ProcessedIntermediate.
                     const result = value.map(({ month, stocks }) => ({
                       month,
                       stocks,
@@ -242,7 +248,7 @@ const _MonthAndStocksInput = React.memo(
           <div className={`${alwaysOpen ? '' : 'bg-gray-100 rounded-xl p-2'}`}>
             <MonthInput
               location={'standalone'}
-              value={value.month}
+              valueClamped={value.month}
               onChange={(month) => {
                 assert(!('numMonths' in month))
                 onChange({ month, stocks: value.stocks })
@@ -255,7 +261,7 @@ const _MonthAndStocksInput = React.memo(
                 start: asMFN(months.now) + 1,
                 end: asMFN(maxMaxAge) - 1,
               }}
-              choices={['retirement', 'numericAge']}
+              choices={['retirement', 'numericAge', 'calendarMonth']}
               modalTextInputOnMobile
               getMonthLabel={(value) => {
                 assert('type' in value)
@@ -332,7 +338,7 @@ const _Percent = React.memo(
 
 export const monthToStringForGlidePath = (
   month: Month,
-  paramsExt: PlanParamsExt,
+  paramsExt: ParamsExtended,
 ) => {
   const { params } = paramsExt
 
@@ -345,16 +351,18 @@ export const monthToStringForGlidePath = (
     }
   }
   switch (month.type) {
-    case 'now':
+    case 'calendarMonthAsNow':
       return result('now', null)
+    case 'calendarMonth':
+      return result('calendar month', calendarMonthStr(month.calendarMonth))
     case 'numericAge':
       return result(
         `when ${month.person === 'person1' ? 'you are' : 'your partner is'}`,
-        numMonthsStr(month.ageInMonths),
+        numMonthsStr(month.age.inMonths),
       )
     case 'namedAge': {
       const withPerson = (x: string) =>
-        params.people.withPartner
+        params.plan.people.withPartner
           ? `${month.person === 'person1' ? 'your' : `your partner's`} ${x}`
           : x
 
@@ -366,7 +374,7 @@ export const monthToStringForGlidePath = (
         case 'max':
           return result(`at ${withPerson('max age')}`, null)
         default:
-          noCase(month.age)
+          noCase(month)
       }
     }
     default:

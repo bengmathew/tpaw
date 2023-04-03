@@ -2,7 +2,7 @@ import { fGet } from '@tpaw/common'
 import _ from 'lodash'
 import React, { ReactNode, useEffect, useLayoutEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
-import { newPadding, rectExt, RectExt, Size } from '../../Utils/Geometry'
+import { RectExt, Size, newPadding, rectExt } from '../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../Utils/NoDisplayOnOpacity0Transition'
 import { useSimulation } from '../App/WithSimulation'
 import { ChartUtils } from '../Common/Chart/ChartUtils/ChartUtils'
@@ -19,8 +19,8 @@ export const PlanDialogOverlay = React.memo(
     // Because this resizes with animation on window resizing.
     chartDiv: HTMLElement | null
   }) => {
-    const { params, setParams } = useSimulation()
-    const { dialogPosition } = params
+    const { params, setPlanParams } = useSimulation()
+    const { dialogPosition } = params.plan
     // if (dialogPosition === 'done') return <></>
     if (
       !(
@@ -31,8 +31,8 @@ export const PlanDialogOverlay = React.memo(
       return <></>
     const handleNext = () => {
       if (dialogPosition === 'done') return
-      setParams((params) => {
-        const clone = _.cloneDeep(params)
+      setPlanParams((plan) => {
+        const clone = _.cloneDeep(plan)
         clone.dialogPosition = nextPlanSectionDialogPosition(dialogPosition)
         return clone
       })

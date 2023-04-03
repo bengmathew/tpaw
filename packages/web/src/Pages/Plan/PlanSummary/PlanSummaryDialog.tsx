@@ -1,4 +1,4 @@
-import { fGet, PlanParams } from '@tpaw/common'
+import { PlanParams, fGet } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { RectExt, rectExt } from '../../../Utils/Geometry'
@@ -24,7 +24,7 @@ export const PlanSummaryDialog = React.memo(
     dialogPosition: Exclude<PlanParams['dialogPosition'], 'done'>
     fixedSizing: { padding: { top: number } }
   }) => {
-    const { setParams, paramsExt } = useSimulation()
+    const { setPlanParams, paramsExt } = useSimulation()
     const { withdrawalStartMonth, asMFN } = paramsExt
 
     const [measures, setMeasures] = useState({
@@ -196,8 +196,8 @@ export const PlanSummaryDialog = React.memo(
                   <button
                     className="btn-sm bg-orange-200  rounded-full text-base"
                     onClick={() => {
-                      setParams((params) => {
-                        const clone = _.cloneDeep(params)
+                      setPlanParams((plan) => {
+                        const clone = _.cloneDeep(plan)
                         clone.dialogPosition = nextPlanSectionDialogPosition(
                           dialogPosition,
                           asMFN(withdrawalStartMonth),

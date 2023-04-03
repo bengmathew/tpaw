@@ -4,7 +4,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EXPECTED_ANNUAL_RETURN_PRESETS,
   fGet,
-  getDefaultPlanParams,
   MANUAL_STOCKS_BONDS_RETURNS_VALUES,
   PlanParams,
 } from '@tpaw/common'
@@ -15,7 +14,6 @@ import { paddingCSSStyle } from '../../../Utils/Geometry'
 import { useMarketData } from '../../App/WithMarketData'
 import { useSimulation } from '../../App/WithSimulation'
 import { SliderInput } from '../../Common/Inputs/SliderInput/SliderInput'
-import { usePlanContent } from '../Plan'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
   PlanInputBody,
@@ -40,23 +38,21 @@ export const _ExpectedReturnsCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { params, setParams } = useSimulation()
-    const content = usePlanContent()
+    const { params, setPlanParams, defaultParams } = useSimulation()
 
     const handleChange = (
       expected: PlanParams['advanced']['annualReturns']['expected'],
     ) => {
-      setParams((params) => {
-        const clone = _.cloneDeep(params)
+      setPlanParams((plan) => {
+        const clone = _.cloneDeep(plan)
         clone.advanced.annualReturns.expected = expected
         return clone
       })
     }
-    const defaultValue =
-      getDefaultPlanParams().advanced.annualReturns.expected
+    const defaultValue = defaultParams.plan.advanced.annualReturns.expected
     const isModified = !_.isEqual(
       defaultValue,
-      params.advanced.annualReturns.expected,
+      params.plan.advanced.annualReturns.expected,
     )
 
     return (
@@ -109,7 +105,10 @@ export const _Preset = React.memo(
   }) => {
     const { params } = useSimulation()
     const marketData = useMarketData()
-    const { stocks, bonds } = EXPECTED_ANNUAL_RETURN_PRESETS(type, marketData)
+    const { stocks, bonds } = EXPECTED_ANNUAL_RETURN_PRESETS(
+      type,
+      marketData.latest,
+    )
 
     return (
       <button
@@ -119,7 +118,7 @@ export const _Preset = React.memo(
         <FontAwesomeIcon
           className="mt-1"
           icon={
-            params.advanced.annualReturns.expected.type === type
+            params.plan.advanced.annualReturns.expected.type === type
               ? faCircleSelected
               : faCircleRegular
           }
@@ -152,11 +151,11 @@ export const _Manual = React.memo(
 
     const marketData = useMarketData()
     const curr =
-      params.advanced.annualReturns.expected.type === 'manual'
-        ? { ...params.advanced.annualReturns.expected }
+      params.plan.advanced.annualReturns.expected.type === 'manual'
+        ? { ...params.plan.advanced.annualReturns.expected }
         : EXPECTED_ANNUAL_RETURN_PRESETS(
-            params.advanced.annualReturns.expected.type,
-            marketData,
+            params.plan.advanced.annualReturns.expected.type,
+            marketData.latest,
           )
 
     const findClosest = (curr: number) =>
@@ -179,7 +178,7 @@ export const _Manual = React.memo(
           <FontAwesomeIcon
             className="mt-1"
             icon={
-              params.advanced.annualReturns.expected.type === 'manual'
+              params.plan.advanced.annualReturns.expected.type === 'manual'
                 ? faCircleSelected
                 : faCircleRegular
             }
@@ -190,7 +189,7 @@ export const _Manual = React.memo(
             </h2>
           </div>
         </button>
-        {params.advanced.annualReturns.expected.type === 'manual' && (
+        {params.plan.advanced.annualReturns.expected.type === 'manual' && (
           <div className="mt-4">
             <h2 className="ml-6 mt-2 ">Stocks</h2>
             <SliderInput
@@ -199,7 +198,7 @@ export const _Manual = React.memo(
               maxOverflowHorz={props.sizing.cardPadding}
               format={formatPercentage(1)}
               data={MANUAL_STOCKS_BONDS_RETURNS_VALUES}
-              value={params.advanced.annualReturns.expected.stocks}
+              value={params.plan.advanced.annualReturns.expected.stocks}
               onChange={(stocks) =>
                 onChange({
                   type: 'manual',
@@ -223,7 +222,7 @@ export const _Manual = React.memo(
               maxOverflowHorz={props.sizing.cardPadding}
               format={formatPercentage(1)}
               data={MANUAL_STOCKS_BONDS_RETURNS_VALUES}
-              value={params.advanced.annualReturns.expected.bonds}
+              value={params.plan.advanced.annualReturns.expected.bonds}
               onChange={(bonds) =>
                 onChange({
                   type: 'manual',

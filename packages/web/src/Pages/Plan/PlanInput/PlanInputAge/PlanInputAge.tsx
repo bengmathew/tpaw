@@ -16,18 +16,23 @@ import { PlanInputAgePerson } from './PlanInputAgePerson'
 import { PlanInputAgeWithdrawalStart } from './PlanInputAgeWithdrawalStart'
 
 export type PlanInputAgeOpenableSection =
-  | `${'person1' | 'person2'}-${'current' | 'retirement' | 'max'}`
+  | `${'person1' | 'person2'}-${'monthOfBirth' | 'retirementAge' | 'maxAge'}`
   | 'none'
 export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
-  const { params, setParams, paramsExt } = useSimulation()
+  const { params, setPlanParams, paramsExt } = useSimulation()
   const contentDivRef = useRef<HTMLDivElement>(null)
   const [openSection, setOpenSection] =
     useState<PlanInputAgeOpenableSection>('none')
-  const monthAnalysis = analyzeMonthsInParams(paramsExt)
+
+  const monthAnalysis = analyzeMonthsInParams(params.plan, paramsExt, {
+    type: 'asVisible',
+  })
   const warnings = _.uniq(
     [
       ...monthAnalysis.valueForMonthRange.filter(
-        (x) => x.boundsCheck.start !== 'ok' || x.boundsCheck.end !== 'ok',
+        (x) =>
+          x.boundsCheck &&
+          (x.boundsCheck.start !== 'ok' || x.boundsCheck.end !== 'ok'),
       ),
       ...monthAnalysis.glidePath.filter((x) =>
         x.analyzed.some((x) => x.issue !== 'none'),
@@ -54,7 +59,7 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
           openSection={openSection}
           setOpenSection={setOpenSection}
         />
-        {params.people.withPartner ? (
+        {params.plan.people.withPartner ? (
           <>
             <PlanInputAgePerson
               className="mt-10 params-card"
@@ -73,7 +78,7 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
             className="params-card font-bold text-lg mt-10 flex items-center gap-x-2 w-full"
             style={{ padding: paddingCSS(props.sizing.cardPadding) }}
             onClick={() => {
-              const clone = _.cloneDeep(params)
+              const clone = _.cloneDeep(params.plan)
               const { person1 } = clone.people
               clone.people = {
                 withPartner: true,
@@ -81,7 +86,7 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
                 person2: { ..._.cloneDeep(person1) },
                 withdrawalStart: 'person1',
               }
-              setParams(clone)
+              setPlanParams(clone)
             }}
           >
             <h2 className="">Add a Partner</h2>

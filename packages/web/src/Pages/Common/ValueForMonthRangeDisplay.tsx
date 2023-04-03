@@ -3,6 +3,7 @@ import React from 'react'
 import { formatCurrency } from '../../Utils/FormatCurrency'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { trimAndNullify } from '../../Utils/TrimAndNullify'
+import { useSimulation } from '../App/WithSimulation'
 import { MonthRangeDisplay } from './MonthRangeDisplay'
 
 export const ValueForMonthRangeDisplay = React.memo(
@@ -10,15 +11,17 @@ export const ValueForMonthRangeDisplay = React.memo(
     className = '',
     labelClassName = '',
     entry,
-    range,
+    rangeAsMFN,
     skipLength,
   }: {
     className?: string
     labelClassName?: string
     entry: ValueForMonthRange
-    range: SimpleRange | null
+    rangeAsMFN: SimpleRange | null
     skipLength: boolean
   }) => {
+    const { paramsExt } = useSimulation()
+    const { clampMonthRangeToNow } = paramsExt
     return (
       <div className={`${className}`}>
         <h2 className={`${labelClassName}`}>
@@ -29,8 +32,8 @@ export const ValueForMonthRangeDisplay = React.memo(
         }`}</h2>
         <MonthRangeDisplay
           className=""
-          value={entry.monthRange}
-          range={range}
+          valueClamped={clampMonthRangeToNow(entry.monthRange)}
+          range={rangeAsMFN}
           skipLength={skipLength}
         />
       </div>

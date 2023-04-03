@@ -14,7 +14,7 @@ import {
 export const PlanInputIncomeDuringRetirement = React.memo(
   (props: PlanInputBodyPassThruProps) => {
     const { params, paramsExt } = useSimulation()
-    const { validMonthRangeAsMFN, months } = paramsExt
+    const { validMonthRangeAsMFN, months, isPersonRetired } = paramsExt
     const content = usePlanContent()
     const [state, setState] = useState<
       | { type: 'main' }
@@ -31,7 +31,7 @@ export const PlanInputIncomeDuringRetirement = React.memo(
             <Contentful.RichText
               body={
                 content['income-during-retirement'].intro[
-                  params.advanced.strategy
+                  params.plan.advanced.strategy
                 ]
               }
               p="p-base mb-4"
@@ -39,25 +39,25 @@ export const PlanInputIncomeDuringRetirement = React.memo(
             <ByMonthSchedule
               className="mt-6"
               heading={null}
-              addButtonText="Add"
+              editProps={{
+                defaultMonthRange: {
+                  type: 'startAndEnd',
+                  start: isPersonRetired('person1')
+                    ? months.now
+                    : months.person1.retirement,
+                  end: months.person1.max,
+                },
+                onEdit: (entryId, isAdd) =>
+                  setState({ type: 'edit', isAdd, entryId, hideInMain: isAdd }),
+                addButtonText: 'Add',
+              }}
               entries={(params) => params.wealth.retirementIncome}
               hideEntryId={
                 state.type === 'edit' && state.hideInMain ? state.entryId : null
               }
-              allowableMonthRange={validMonthRangeAsMFN(
+              allowableMonthRangeAsMFN={validMonthRangeAsMFN(
                 'income-during-retirement',
               )}
-              onEdit={(entryId, isAdd) =>
-                setState({ type: 'edit', isAdd, entryId, hideInMain: isAdd })
-              }
-              defaultMonthRange={{
-                type: 'startAndEnd',
-                start:
-                  params.people.person1.ages.type === 'retired'
-                    ? months.now
-                    : months.person1.retirement,
-                end: months.person1.max,
-              }}
             />
           </div>
         </div>
@@ -86,16 +86,26 @@ export const PlanInputIncomeDuringRetirement = React.memo(
                     )}
                     choices={{
                       start: _.compact([
-                        'retirement',
+                        !isPersonRetired('person1') ||
+                        (params.plan.people.withPartner &&
+                          !isPersonRetired('person2'))
+                          ? 'retirement'
+                          : undefined,
                         'numericAge',
+                        'calendarMonth',
                         'forNumOfMonths',
-                        params.people.person1.ages.type === 'retired' ||
-                        (params.people.withPartner &&
-                          params.people.person2.ages.type === 'retired')
+                        isPersonRetired('person1') ||
+                        (params.plan.people.withPartner &&
+                          isPersonRetired('person2'))
                           ? 'now'
                           : undefined,
                       ]),
-                      end: ['maxAge', 'numericAge', 'forNumOfMonths'],
+                      end: [
+                        'maxAge',
+                        'numericAge',
+                        'calendarMonth',
+                        'forNumOfMonths',
+                      ],
                     }}
                     cardPadding={props.sizing.cardPadding}
                   />

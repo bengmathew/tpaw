@@ -1,13 +1,10 @@
 import {
+  Params,
   linearFnFomPoints,
   linearFnFromPointAndSlope,
-  PlanParams,
 } from '@tpaw/common'
 import _ from 'lodash'
-import {
-  extendPlanParams,
-  PlanParamsExt,
-} from '../../../../TPAWSimulator/PlanParamsExt'
+import { ParamsExtended } from '../../../../TPAWSimulator/ExtentParams'
 import { TPAWRunInWorkerByPercentileByMonthsFromNow } from '../../../../TPAWSimulator/Worker/TPAWRunInWorker'
 import { UseTPAWWorkerResult } from '../../../../TPAWSimulator/Worker/UseTPAWWorker'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
@@ -15,16 +12,16 @@ import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { SimpleRange } from '../../../../Utils/SimpleRange'
 import { assert, fGet, noCase } from '../../../../Utils/Utils'
 import {
+  PlanChartType,
   isPlanChartSpendingDiscretionaryType,
   isPlanChartSpendingEssentialType,
   planChartSpendingDiscretionaryTypeID,
   planChartSpendingEssentialTypeID,
-  PlanChartType,
 } from '../PlanChartType'
 
 export type TPAWChartDataMain = {
-  params: PlanParams
-  paramsExt: PlanParamsExt
+  params: Params
+  paramsExt: ParamsExtended
   label: string
   type: PlanChartType
   percentiles: {
@@ -80,14 +77,14 @@ const _spendingMonths = ({
   params,
   asMFN,
   withdrawalStartMonth,
-}: PlanParamsExt) => {
+}: ParamsExtended) => {
   const withdrawalStart = asMFN(withdrawalStartMonth)
 
-  return params.dev.alwaysShowAllMonths
+  return params.nonPlan.dev.alwaysShowAllMonths
     ? 'allMonths'
     : [
-        ...params.adjustmentsToSpending.extraSpending.essential,
-        ...params.adjustmentsToSpending.extraSpending.discretionary,
+        ...params.plan.adjustmentsToSpending.extraSpending.essential,
+        ...params.plan.adjustmentsToSpending.extraSpending.discretionary,
       ].some((x) => asMFN(x.monthRange).start < withdrawalStart)
     ? ('allMonths' as const)
     : ('retirementMonths' as const)
@@ -97,8 +94,7 @@ export const tpawChartDataMain = (
   type: Exclude<PlanChartType, 'reward-risk-ratio-comparison'>,
   tpawResult: UseTPAWWorkerResult,
 ): TPAWChartDataMain => {
-  const { params } = tpawResult.args
-  const paramsExt = extendPlanParams(params.original)
+  const { params, paramsExt } = tpawResult
   const hasLegacy =
     params.adjustmentsToSpending.tpawAndSPAW.legacy.total !== 0 ||
     params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling !== null
@@ -173,7 +169,7 @@ export const tpawChartDataMain = (
       if (isPlanChartSpendingEssentialType(type)) {
         const id = planChartSpendingEssentialTypeID(type)
         assert(
-          params.original.adjustmentsToSpending.extraSpending.essential.find(
+          params.original.plan.adjustmentsToSpending.extraSpending.essential.find(
             (x) => x.id === id,
           ),
         )
@@ -190,7 +186,7 @@ export const tpawChartDataMain = (
       if (isPlanChartSpendingDiscretionaryType(type)) {
         const id = planChartSpendingDiscretionaryTypeID(type)
         assert(
-          params.original.adjustmentsToSpending.extraSpending.discretionary.find(
+          params.original.plan.adjustmentsToSpending.extraSpending.discretionary.find(
             (x) => x.id === id,
           ),
         )
@@ -234,11 +230,11 @@ const _dataPercentiles = (
   monthEndDelta: number,
   yDisplayRangeIn: 'auto' | SimpleRange,
 ): TPAWChartDataMain => {
-  const { args } = tpawResult
-  const { params } = args
-  const paramsExt = extendPlanParams(params.original)
+  const { params, paramsExt } = tpawResult
   const { asMFN, withdrawalStartMonth, maxMaxAge } = paramsExt
+
   const retirement = asMFN(withdrawalStartMonth)
+
   const maxMonth = asMFN(maxMaxAge)
   const months: TPAWChartDataMain['months'] = {
     displayRange: {
@@ -252,7 +248,11 @@ const _dataPercentiles = (
 
   const percentiles = _addPercentileInfo(
     _interpolate(byPercentileByMonthsFromNow, months.displayRange),
-    [args.percentileRange.start, 50, args.percentileRange.end],
+    [
+      params.original.nonPlan.percentileRange.start,
+      50,
+      params.original.nonPlan.percentileRange.end,
+    ],
   )
 
   const last = fGet(_.last(byPercentileByMonthsFromNow)).data

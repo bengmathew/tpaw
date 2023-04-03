@@ -21,13 +21,13 @@ export const Header = React.memo(
           rounded-bl-lg  border-gray-700 text-lg sm:text-base z-50`}
         style={{ height: `${headerHeight}px` }}
       >
-        <Link href={'/plan'} shallow>
-          <a
-            className={`pl-4 pr-2 flex items-center font-bold 
+        <Link
+          className={`pl-4 pr-2 flex items-center font-bold 
           ${curr === 'plan' ? 'text-gray-100' : 'text-stone-900'} `}
-          >
-            <FontAwesomeIcon icon={faHouse} />
-          </a>
+          href={'/plan'}
+          shallow
+        >
+          <FontAwesomeIcon icon={faHouse} />
         </Link>
         <div className="flex ">
           <_Button href="/learn" label="Learn" isCurrent={curr === 'learn'} />
@@ -71,27 +71,27 @@ export const Header = React.memo(
                   {firebaseUser ? (
                     <>
                       <h2 className="px-4 py-2">{firebaseUser.email}</h2>
-                      <Link href="/logout">
-                        <a className="block px-4 py-2">Logout</a>
+                      <Link className="block px-4 py-2" href="/logout">
+                        Logout
                       </Link>
                     </>
                   ) : (
-                    <Link href={loginPath()}>
-                      <a className="block px-4 py-2">Login or Sign Up</a>
+                    <Link className="block px-4 py-2" href={loginPath()}>
+                      Login or Sign Up
                     </Link>
                   )}
                 </div>
-                <Link href="/about" shallow>
-                  <a className="block px-4 py-2">About</a>
+                <Link className="block px-4 py-2" href="/about" shallow>
+                  About
                 </Link>
-                <Link href="/license" shallow>
-                  <a className="block px-4 py-2">License</a>
+                <Link className="block px-4 py-2" href="/license" shallow>
+                  License
                 </Link>
-                <Link href="/privacy" shallow>
-                  <a className="block px-4 py-2">Privacy</a>
+                <Link className="block px-4 py-2" href="/privacy" shallow>
+                  Privacy
                 </Link>
-                <Link href="/disclaimer" shallow>
-                  <a className="block px-4 py-2">Disclaimer</a>
+                <Link className="block px-4 py-2" href="/disclaimer" shallow>
+                  Disclaimer
                 </Link>
               </Transition.Child>
             </div>
@@ -114,13 +114,12 @@ const _Button = React.memo(
     isCurrent: boolean
   }) => {
     return (
-      <Link href={href}>
-        <a
-          className={`flex items-center font-bold px-2  
-          ${isCurrent ? 'text-gray-100' : 'text-stone-900'}`}
-        >
-          {label}
-        </a>
+      <Link
+        className={`flex items-center font-bold px-2  
+      ${isCurrent ? 'text-gray-100' : 'text-stone-900'}`}
+        href={href}
+      >
+        {label}
       </Link>
     )
   },

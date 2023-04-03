@@ -12,7 +12,7 @@ export function usePlanChartType() {
   const getPlanChartURL = useGetPlanChartURL()
 
   const typeStr = useURLParam('graph') ?? ''
-  let type = isPlanChartType(tpawResult.args.params.original, typeStr)
+  let type = isPlanChartType(tpawResult.params.original, typeStr)
     ? typeStr
     : 'spending-total'
   if (typeStr.length > 0 && typeStr !== type)

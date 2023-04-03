@@ -2,12 +2,12 @@ import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { faCaretDown, faCaretRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  assert,
-  fGet,
   LabeledAmount,
-  noCase,
   PlanParams,
   ValueForMonthRange,
+  assert,
+  fGet,
+  noCase,
 } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useImperativeHandle, useRef, useState } from 'react'
@@ -83,7 +83,7 @@ export const EditValueForMonthRange = React.forwardRef(
     }: _Props,
     forwardedRef: React.ForwardedRef<EditValueForMonthRangeStateful>,
   ) => {
-    const { params, setParams } = useSimulation()
+    const { params, setPlanParams } = useSimulation()
     const outerDivRef = useRef<HTMLDivElement>(null)
     const buttonDivRef = useRef<HTMLDivElement>(null)
 
@@ -104,10 +104,10 @@ export const EditValueForMonthRange = React.forwardRef(
     function processGetEntries<T extends { id: number }>(
       getEntries: (params: PlanParams) => T[],
     ) {
-      const entry = fGet(getEntries(params).find((x) => x.id === entryId))
+      const entry = fGet(getEntries(params.plan).find((x) => x.id === entryId))
       const setEntry = (editEntry: (entry: T) => void) => {
-        setParams((params) => {
-          const clone = _.cloneDeep(params)
+        setPlanParams((plan) => {
+          const clone = _.cloneDeep(plan)
           const entryClone = _.cloneDeep(entry)
           editEntry(entryClone)
           const index = getEntries(clone).findIndex((x) => x.id === entryId)
@@ -152,12 +152,12 @@ export const EditValueForMonthRange = React.forwardRef(
       onBeforeDelete?.(sectionProps.entry.id)
       transitionOut(() => {
         onDone()
-        setParams((params) => {
-          const clone = _.cloneDeep(params)
+        setPlanParams((plan) => {
+          const clone = _.cloneDeep(plan)
           const entries = props.getEntries(clone)
           const index = entries.findIndex((x) => x.id === entryId)
           // Needed because transitionOut seems to be called multiple times.
-          if (index === -1) return params
+          if (index === -1) return plan
           props.getEntries(clone).splice(index, 1)
           return clone
         })
@@ -178,6 +178,7 @@ export const EditValueForMonthRange = React.forwardRef(
         >
           {title}
         </h2>
+
         <_LabelSection
           className="mt-8"
           {...sectionProps}
@@ -189,23 +190,25 @@ export const EditValueForMonthRange = React.forwardRef(
         )}
         <div
           ref={buttonDivRef}
-          className={`mt-10 flex gap-x-4 justify-between`}
+          className={`mt-10 flex gap-x-4 ${
+            mode === 'add' ? 'justify-between' : 'justify-end'
+          }`}
           onClick={(e) => {
             if (e.target === buttonDivRef?.current) setCurrSection('none')
           }}
         >
-          <button
-            className="text-errorFG px-4 text-lg border rounded-full border-errorFG"
-            onClick={() => {
-              if (mode === 'edit') {
-                setConfirmDelete(true)
-              } else {
-                handleDelete()
-              }
-            }}
-          >
-            {mode === 'add' ? 'Cancel' : 'Delete'}
-          </button>
+          {mode === 'add' ? (
+            <button className="btn-md btn-md btn-outline" onClick={handleDelete}>
+              Cancel
+            </button>
+          ) : (
+            <button
+              className="text-errorFG btn-md"
+              onClick={() => setConfirmDelete(true)}
+            >
+              Delete
+            </button>
+          )}
           {!dialogMode && (
             <button
               className="btn-dark btn-md"
@@ -349,7 +352,11 @@ const _MonthRangeSection = React.memo(
     validRangeAsMFN: SimpleRange
     choices: MonthRangeInputProps['choices']
   }) => {
+    const { paramsExt } = useSimulation()
+    const { clampMonthRangeToNow, months } = paramsExt
     const { entry, setEntry } = props
+    const monthRangeClamped = clampMonthRangeToNow(entry.monthRange)
+
     return (
       <_Section
         {...props}
@@ -358,23 +365,54 @@ const _MonthRangeSection = React.memo(
       >
         <MonthRangeDisplay
           className=""
-          value={entry.monthRange}
+          valueClamped={monthRangeClamped}
           range={validRangeAsMFN}
           skipLength={false}
         />
         <>
-          <MonthRangeInput
-            className=""
-            value={entry.monthRange}
-            setValue={(monthRange) =>
-              setEntry((entry) => (entry.monthRange = monthRange))
-            }
-            range={validRangeAsMFN}
-            choices={choices}
-            modalTextInputOnMobile={false}
-          />
+          {monthRangeClamped ? (
+            <MonthRangeInput
+              className=""
+              valueClamped={monthRangeClamped}
+              setValue={(monthRange) =>
+                setEntry((entry) => (entry.monthRange = monthRange))
+              }
+              rangeAsMFN={validRangeAsMFN}
+              choices={choices}
+              modalTextInputOnMobile={false}
+            />
+          ) : (
+            <div>
+              <MonthRangeDisplay
+                className=""
+                valueClamped={monthRangeClamped}
+                range={validRangeAsMFN}
+                skipLength={false}
+              />
+              <button
+                className="underline pt-2"
+                onClick={() => {
+                  setEntry(
+                    (entry) =>
+                      (entry.monthRange = {
+                        type: 'startAndNumMonths',
+                        start: months.now,
+                        numMonths: 1,
+                      }),
+                  )
+                }}
+              >
+                Edit dates
+              </button>
+            </div>
+          )}
         </>
       </_Section>
+      // ) : (
+      // <div className={`${props.className ?? ''}`}>
+      //   <h2 className="inline bg-gray-300 px-2 py-0.5 rounded-lg ">Completed</h2>
+      //   <h2 className="mt-2">The duration for this entry is in the past.</h2>
+      // </div>
     )
   },
 )
@@ -387,10 +425,10 @@ const _Section = React.memo(
     currSection,
     setCurrSection,
     cardPadding,
-    children: [summaryChild, editChild],
     dialogMode,
     endDialogMode,
     hasMonthRange,
+    children: [summaryChild, editChild],
   }: {
     sectionType: Exclude<_Section, 'none'>
     sectionName: string

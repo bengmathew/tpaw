@@ -1,6 +1,6 @@
 import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { AmountInput } from './AmountInput'
 
 export const NumberInput = React.memo(
@@ -8,34 +8,31 @@ export const NumberInput = React.memo(
     value,
     label,
     setValue,
-    clamp,
     className = '',
     buttonClassName = 'pl-3 pr-3',
     width = 45,
     modalLabel,
     disabled = false,
+    showDecrement = true,
   }: {
     value: number
     label?: string
-    setValue: (value: number) => void
-    clamp: (x: number) => number
+    setValue: (value: number) => boolean
     buttonClassName?: string
     className?: string
     width?: number
     modalLabel: string | null
     disabled?: boolean
+    showDecrement?: boolean
   }) => {
     const [error, setError] = useState(false)
+    useEffect(() => {
+      const timeout = window.setTimeout(() => setError(false), 1000)
+      return () => window.clearTimeout(timeout)
+    }, [error])
 
     const handleAccept = (newValue: number) => {
-      const clamped = clamp(newValue)
-      if (clamped !== newValue) {
-        // Cannot rely on useEffect when external value changes set this, if
-        // value is already clamped, it might not actually change externally.
-        // and we will be out of sync.
-        setError(true)
-      }
-      setValue(clamped)
+      setError(setValue(newValue))
     }
 
     return (
@@ -45,7 +42,6 @@ export const NumberInput = React.memo(
           ${error ? 'bg-errorBlockBG' : 'bg-gray-200'}`}
           style={{ width: `${width}px` }}
           modalLabel={modalLabel}
-          onTransitionEnd={() => setError(false)}
           value={value}
           onChange={handleAccept}
           decimals={0}
@@ -64,13 +60,15 @@ export const NumberInput = React.memo(
         >
           <FontAwesomeIcon icon={faPlus} />
         </button>
-        <button
-          disabled={disabled}
-          className={buttonClassName}
-          onClick={() => handleAccept(value - 1)}
-        >
-          <FontAwesomeIcon icon={faMinus} />
-        </button>
+        {showDecrement && (
+          <button
+            disabled={disabled}
+            className={buttonClassName}
+            onClick={() => handleAccept(value - 1)}
+          >
+            <FontAwesomeIcon icon={faMinus} />
+          </button>
+        )}
       </div>
     )
   },

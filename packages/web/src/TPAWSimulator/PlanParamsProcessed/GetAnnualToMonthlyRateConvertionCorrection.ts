@@ -105,7 +105,6 @@ export async function generateSampledAnnualReturnStatsTable() {
         (currTime * remaining) / 60 / 60,
       )}`,
     )
-    console.dir(result)
   }
   return result
 }

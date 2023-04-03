@@ -60,8 +60,8 @@ const _WithdrawalCard = React.memo(
 )
 
 const _Rate = React.memo(({ className = '' }: { className?: string }) => {
-  const { params, setParams, paramsExt } = useSimulation()
-  const { withdrawal } = params.risk.swr
+  const { params, setPlanParams, paramsExt } = useSimulation()
+  const { withdrawal } = params.plan.risk.swr
   const { withdrawalsStarted } = paramsExt
 
   const { numRetirementMonths } = paramsExt
@@ -88,8 +88,8 @@ const _Rate = React.memo(({ className = '' }: { className?: string }) => {
       }
 
   const handleChange = (percentPerYear: number) =>
-    setParams((params) => {
-      const clone = _.cloneDeep(params)
+    setPlanParams((plan) => {
+      const clone = _.cloneDeep(plan)
       clone.risk.swr.withdrawal = {
         type: 'asPercentPerYear',
         percentPerYear: _.clamp(percentPerYear, 0, 1),
@@ -147,8 +147,8 @@ const _Rate = React.memo(({ className = '' }: { className?: string }) => {
   )
 })
 const _Amount = React.memo(({ className = '' }: { className?: string }) => {
-  const { params, setParams, tpawResult, paramsExt } = useSimulation()
-  const { withdrawal } = params.risk.swr
+  const { params, setPlanParams, tpawResult, paramsExt } = useSimulation()
+  const { withdrawal } = params.plan.risk.swr
   const { asMFN, withdrawalStartMonth } = paramsExt
 
   const [lastEntry, setLastEntry] = useState(
@@ -162,14 +162,14 @@ const _Amount = React.memo(({ className = '' }: { className?: string }) => {
     ),
   )
   useEffect(() => {
-    if (params.risk.swr.withdrawal.type === 'asAmountPerMonth') {
-      setLastEntry(params.risk.swr.withdrawal.amountPerMonth)
+    if (params.plan.risk.swr.withdrawal.type === 'asAmountPerMonth') {
+      setLastEntry(params.plan.risk.swr.withdrawal.amountPerMonth)
     }
   }, [params])
 
   const handleChange = (amountPerMonth: number) =>
-    setParams((params) => {
-      const clone = _.cloneDeep(params)
+    setPlanParams((plan) => {
+      const clone = _.cloneDeep(plan)
       clone.risk.swr.withdrawal = { type: 'asAmountPerMonth', amountPerMonth }
       return clone
     })
@@ -183,7 +183,7 @@ const _Amount = React.memo(({ className = '' }: { className?: string }) => {
         <FontAwesomeIcon
           className="mr-2"
           icon={
-            params.risk.swr.withdrawal.type === 'asAmountPerMonth'
+            params.plan.risk.swr.withdrawal.type === 'asAmountPerMonth'
               ? faCircleSelected
               : faCircleRegular
           }

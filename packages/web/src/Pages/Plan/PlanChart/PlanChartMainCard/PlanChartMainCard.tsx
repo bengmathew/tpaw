@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Contentful } from '../../../../Utils/Contentful'
 import { cssEaseAsGSAPEase } from '../../../../Utils/CSSEaseAsGSAPEase'
+import { Contentful } from '../../../../Utils/Contentful'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import {
-  insetCSSStyle,
   InsetExt,
   Padding,
+  insetCSSStyle,
   rectExt,
   regionCSSStyle,
 } from '../../../../Utils/Geometry'
@@ -19,14 +19,14 @@ import { ChartReactStatefull } from '../../../Common/Chart/ChartReact'
 import { ModalBase } from '../../../Common/Modal/ModalBase'
 import { usePlanContent } from '../../Plan'
 import {
+  PlanChartTransitionState,
   planChartMorphAnimation,
   planChartNormalAnimation,
-  PlanChartTransitionState,
 } from '../PlanChart'
 import {
+  PlanChartType,
   isPlanChartSpendingDiscretionaryType,
   isPlanChartSpendingEssentialType,
-  PlanChartType,
 } from '../PlanChartType'
 import {
   TPAWChartDataMain,
@@ -96,9 +96,9 @@ export const PlanChartMainCard = React.memo(
     //   return () => observer.disconnect()
     // }, [])
 
-    const showSuccessRate = params.advanced.strategy === 'SWR'
+    const showSuccessRate = params.plan.advanced.strategy === 'SWR'
     const yAxisDescriptionType = getYAxisDescriptionType(type)
-    const hasPartner = tpawResult.args.params.people.withPartner
+    const hasPartner = tpawResult.params.people.withPartner
 
     const sizing = useMemo(() => {
       const _map = (
@@ -275,7 +275,9 @@ export const PlanChartMainCard = React.memo(
             {(transitionOut) => (
               <div className="-mt-4">
                 <Contentful.RichText
-                  body={planContent.chart.realBlurb[params.advanced.strategy]}
+                  body={
+                    planContent.chart.realBlurb[params.plan.advanced.strategy]
+                  }
                   p={`p-base mt-4`}
                 />
               </div>
@@ -356,7 +358,6 @@ const getYAxisDescriptionType = (type: PlanChartType) => {
       return 'realDollarsExplanation' as const
     case 'asset-allocation-savings-portfolio':
       return 'assetAllocationExplanation' as const
-    case 'reward-risk-ratio-comparison':
     case 'asset-allocation-total-portfolio':
     case 'withdrawal':
       return 'none' as const

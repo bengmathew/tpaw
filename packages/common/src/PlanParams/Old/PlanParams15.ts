@@ -529,15 +529,8 @@ export namespace PlanParams15 {
 
   const v15Guard: JSONGuard<Params> = chain(params(null), (x) => params(x)(x))
 
-  export const test = () =>
-    // FOR14.stockAllocationAndSpendingTiltToRiskToleranceAndTimePreference
-    // FOR14.v14To15TPAWRisk
-    {
-      console.dir('OK----------------------------------')
-    }
 
   export const guard: JSONGuard<Params> = (x: unknown) => {
-    console.dir(x)
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
     if ((x as any).v === 15) {

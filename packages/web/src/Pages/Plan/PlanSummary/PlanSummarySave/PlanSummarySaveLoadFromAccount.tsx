@@ -17,7 +17,7 @@ export const PlanSummarySaveLoadFromAccount = React.memo(
     closeMenu: () => void
   }) => {
     const user = useUser(firebaseUser)
-    const { setParams } = useSimulation()
+    const { resetParams } = useSimulation()
     const [confirm, setConfirm] = useState(false)
     return (
       <>
@@ -37,7 +37,7 @@ export const PlanSummarySaveLoadFromAccount = React.memo(
               onClose: () => {
                 closeMenu()
                 const paramsStr = fGet(user.plan).params
-                setParams(chain(json, planParamsGuard)(paramsStr).force())
+                resetParams(chain(json, planParamsGuard)(paramsStr).force())
                 setConfirm(false)
               },
             }}
