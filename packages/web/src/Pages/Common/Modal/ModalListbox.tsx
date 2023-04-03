@@ -143,7 +143,7 @@ const __Options = <T extends string | number>({
     <>
       {ReactDOM.createPortal(
         <div
-          className=" page fixed inset-0"
+          className=" page fixed inset-0 z-50"
           style={{
             visibility: invisible ? 'hidden' : 'visible',
             transitionProperty: 'opacity',
