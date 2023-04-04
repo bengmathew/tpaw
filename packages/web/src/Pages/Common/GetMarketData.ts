@@ -36,12 +36,12 @@ export async function getMarketData() {
   console.log('Market Data')
   console.log('-------------------------------------')
   console.log(
-    `From: ${DateTime.fromMillis(largestFirstClosingTimes, {
+    `To: ${DateTime.fromMillis(smallestLastClosingTimes, {
       zone: NYTimeZone,
     }).toLocaleString(DateTime.DATETIME_FULL)}`,
   )
   console.log(
-    `  To: ${DateTime.fromMillis(smallestLastClosingTimes, {
+    `From: ${DateTime.fromMillis(largestFirstClosingTimes, {
       zone: NYTimeZone,
     }).toLocaleString(DateTime.DATETIME_FULL)}`,
   )
@@ -59,9 +59,24 @@ export async function getMarketData() {
   bondRates = filter(bondRates)
   dailyStockMarketPerformance = filter(dailyStockMarketPerformance)
 
-  assert(inflation.length === CAPE.length)
-  assert(inflation.length === bondRates.length)
-  assert(inflation.length === dailyStockMarketPerformance.length)
+  assert(
+    _.isEqual(
+      inflation.map((x) => x.closingTime),
+      CAPE.map((x) => x.closingTime),
+    ),
+  )
+  assert(
+    _.isEqual(
+      inflation.map((x) => x.closingTime),
+      bondRates.map((x) => x.closingTime),
+    ),
+  )
+  assert(
+    _.isEqual(
+      inflation.map((x) => x.closingTime),
+      dailyStockMarketPerformance.map((x) => x.closingTime),
+    ),
+  )
 
   const latest = {
     inflation: fGet(_.last(inflation)),

@@ -315,7 +315,7 @@ const _EstimatePopUp = React.memo(
           <div className="">
             <h2>
               Stocks{' — '}
-              <span className="">Vangaurd Total World Stock ETF (VT)</span>
+              <span className="">Vanguard Total World Stock ETF (VT)</span>
             </h2>
             <h2>Bonds — Vanguard Total Bond Market ETF (BND)</h2>
           </div>
