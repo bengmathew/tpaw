@@ -22,17 +22,16 @@ export async function getMarketData() {
       getBondRates(),
       getDailyStockMarketPerformance(),
     ])
-  const smallestLastClosingTimes = Math.min(
-    ...[inflation, CAPE, bondRates, dailyStockMarketPerformance].map(
-      (x) => x[x.length - 1].closingTime,
-    ),
-  )
+  // const smallestLastClosingTimes = Math.min(
+  //   ...[inflation, CAPE, bondRates, dailyStockMarketPerformance].map(
+  //     (x) => x[x.length - 1].closingTime,
+  //   ),
+  // )
   const largestFirstClosingTimes = Math.max(
     ...[inflation, CAPE, bondRates, dailyStockMarketPerformance].map(
       (x) => x[0].closingTime,
     ),
   )
-
   const formatToNY = (x: number) =>
     DateTime.fromMillis(x, {
       zone: NYTimeZone,
@@ -40,13 +39,13 @@ export async function getMarketData() {
   console.log('-------------------------------------')
   console.log('Market Data')
   console.log('-------------------------------------')
-  console.log(`To: ${formatToNY(smallestLastClosingTimes)}`)
   console.log(`From: ${formatToNY(largestFirstClosingTimes)}`)
-  console.log('Latest:')
+  console.log('To:')
   console.log(` inflation: ${formatToNY(fGet(_.last(inflation)).closingTime)}`)
   console.log(`      CAPE: ${formatToNY(fGet(_.last(CAPE)).closingTime)}`)
   console.log(` bondRates: ${formatToNY(fGet(_.last(bondRates)).closingTime)}`)
-  console.log(`VT and BND: ${formatToNY(
+  console.log(
+    `VT and BND: ${formatToNY(
       fGet(_.last(dailyStockMarketPerformance)).closingTime,
     )}`,
   )
@@ -54,32 +53,37 @@ export async function getMarketData() {
   const filter = <T extends { closingTime: number }>(x: T[]) => {
     return x.filter(
       (x) =>
-        x.closingTime <= smallestLastClosingTimes &&
+        // x.closingTime <= smallestLastClosingTimes &&
         x.closingTime >= largestFirstClosingTimes,
     )
   }
-
   inflation = filter(inflation)
   CAPE = filter(CAPE)
   bondRates = filter(bondRates)
   dailyStockMarketPerformance = filter(dailyStockMarketPerformance)
 
+  const lengths = [inflation, CAPE, bondRates, dailyStockMarketPerformance].map(
+    (x) => x.length,
+  )
+  const minLength = Math.min(...lengths)
+  const maxLength = Math.max(...lengths)
+  assert(maxLength <= minLength + 1)
   assert(
     _.isEqual(
-      inflation.map((x) => x.closingTime),
-      CAPE.map((x) => x.closingTime),
+      inflation.map((x) => x.closingTime).slice(0, minLength),
+      CAPE.map((x) => x.closingTime).slice(0, minLength),
     ),
   )
   assert(
     _.isEqual(
-      inflation.map((x) => x.closingTime),
-      bondRates.map((x) => x.closingTime),
+      inflation.map((x) => x.closingTime).slice(0, minLength),
+      bondRates.map((x) => x.closingTime).slice(0, minLength),
     ),
   )
   assert(
     _.isEqual(
-      inflation.map((x) => x.closingTime),
-      dailyStockMarketPerformance.map((x) => x.closingTime),
+      inflation.map((x) => x.closingTime).slice(0, minLength),
+      dailyStockMarketPerformance.map((x) => x.closingTime).slice(0, minLength),
     ),
   )
 
