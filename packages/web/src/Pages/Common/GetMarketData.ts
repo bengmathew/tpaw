@@ -32,18 +32,23 @@ export async function getMarketData() {
       (x) => x[0].closingTime,
     ),
   )
+
+  const formatToNY = (x: number) =>
+    DateTime.fromMillis(x, {
+      zone: NYTimeZone,
+    }).toLocaleString(DateTime.DATETIME_FULL)
   console.log('-------------------------------------')
   console.log('Market Data')
   console.log('-------------------------------------')
-  console.log(
-    `To: ${DateTime.fromMillis(smallestLastClosingTimes, {
-      zone: NYTimeZone,
-    }).toLocaleString(DateTime.DATETIME_FULL)}`,
-  )
-  console.log(
-    `From: ${DateTime.fromMillis(largestFirstClosingTimes, {
-      zone: NYTimeZone,
-    }).toLocaleString(DateTime.DATETIME_FULL)}`,
+  console.log(`To: ${formatToNY(smallestLastClosingTimes)}`)
+  console.log(`From: ${formatToNY(largestFirstClosingTimes)}`)
+  console.log('Latest:')
+  console.log(` inflation: ${formatToNY(fGet(_.last(inflation)).closingTime)}`)
+  console.log(`      CAPE: ${formatToNY(fGet(_.last(CAPE)).closingTime)}`)
+  console.log(` bondRates: ${formatToNY(fGet(_.last(bondRates)).closingTime)}`)
+  console.log(`VT and BND: ${formatToNY(
+      fGet(_.last(dailyStockMarketPerformance)).closingTime,
+    )}`,
   )
   console.log('-------------------------------------')
   const filter = <T extends { closingTime: number }>(x: T[]) => {
