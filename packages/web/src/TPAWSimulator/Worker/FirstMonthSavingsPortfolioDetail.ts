@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 import { TPAWWorkerRunSimulationResult } from './TPAWWorkerAPI'
 
@@ -65,7 +66,10 @@ export const firstMonthSavingsPortfolioDetail = (
 
   const afterWithdrawals = {
     allocation: {
-      stocks: byMonthsFromNowByRun.afterWithdrawals.allocation.stocks[0][0],
+      stocks: _.round(
+        byMonthsFromNowByRun.afterWithdrawals.allocation.stocks[0][0],
+        4,
+      ),
     },
     balance: afterContributions.balance - withdrawals.total,
   }

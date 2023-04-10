@@ -1,18 +1,20 @@
 import { faLeftLong } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { PlanParams } from '@tpaw/common'
+import _ from 'lodash'
 import React, { ReactNode } from 'react'
 import { FirstMonthSavingsPortfolioDetail } from '../../TPAWSimulator/Worker/FirstMonthSavingsPortfolioDetail'
 import { TPAWRunInWorkerByPercentileByMonthsFromNow } from '../../TPAWSimulator/Worker/TPAWRunInWorker'
 import { UseTPAWWorkerResult } from '../../TPAWSimulator/Worker/UseTPAWWorker'
 import { formatCurrency } from '../../Utils/FormatCurrency'
 import { formatPercentage } from '../../Utils/FormatPercentage'
+import { getPrecision } from '../../Utils/GetPrecision'
 import { useURLUpdater } from '../../Utils/UseURLUpdater'
 import { fGet } from '../../Utils/Utils'
 import { AppPage } from '../App/AppPage'
 import { useSimulation } from '../App/WithSimulation'
 import { useGetSectionURL } from '../Plan/Plan'
 import { PlanSectionName } from '../Plan/PlanInput/Helpers/PlanSectionName'
-import { PlanParams } from '@tpaw/common'
 
 export type TasksForThisMonthProps = Omit<
   FirstMonthSavingsPortfolioDetail,
@@ -441,21 +443,42 @@ const _AllocationTable = React.memo(
     const { allocation } = props.afterWithdrawals
     const stocks = props.afterWithdrawals.balance * allocation.stocks
     const bonds = props.afterWithdrawals.balance - stocks
+    // Using full precision in display because rounding should happen at the
+    // data level.
+    console.dir(allocation.stocks)
+    const stocksFullStr = formatPercentage('full')(allocation.stocks)
+    const bondsFullStr = formatPercentage('full')(
+      _.round(1 - allocation.stocks, getPrecision(allocation.stocks)),
+    )
     return (
       <div
-        className={`${className} grid justify-start gap-x-16`}
-        style={{ grid: 'auto/auto auto' }}
+        className={`${className} inline-grid justify-start gap-x-2`}
+        style={{ grid: 'auto/auto auto auto auto' }}
       >
-        <h2 className="">Stocks - {formatPercentage(0)(allocation.stocks)}</h2>
-        <h2 className="text-right">
+        <h2 className="">Stocks</h2>
+        <h2 className="ml-8 text-right">
           <_Value>{stocks}</_Value>
         </h2>
-        <h2 className="">
-          Bonds - {formatPercentage(0)(1 - allocation.stocks)}
+        <h2 className="text-right ml-4">
+          {formatPercentage(0)(allocation.stocks)}
         </h2>
-        <h2 className="text-right">
+        {stocksFullStr.indexOf('.') !== -1 ? (
+          <h2 className="text-right">({stocksFullStr})</h2>
+        ) : (
+          <h2></h2>
+        )}
+        <h2 className="">Bonds</h2>
+        <h2 className="ml-8 text-right">
           <_Value>{bonds}</_Value>
         </h2>
+        <h2 className="text-right ml-4">
+          {formatPercentage(0)(1 - allocation.stocks)}
+        </h2>
+        {bondsFullStr.indexOf('.') !== -1 ? (
+          <h2 className="text-right">({bondsFullStr})</h2>
+        ) : (
+          <h2></h2>
+        )}
       </div>
     )
   },

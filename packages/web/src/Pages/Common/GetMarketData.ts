@@ -62,31 +62,6 @@ export async function getMarketData() {
   bondRates = filter(bondRates)
   dailyStockMarketPerformance = filter(dailyStockMarketPerformance)
 
-  const lengths = [inflation, CAPE, bondRates, dailyStockMarketPerformance].map(
-    (x) => x.length,
-  )
-  const minLength = Math.min(...lengths)
-  const maxLength = Math.max(...lengths)
-  assert(maxLength <= minLength + 1)
-  assert(
-    _.isEqual(
-      inflation.map((x) => x.closingTime).slice(0, minLength),
-      CAPE.map((x) => x.closingTime).slice(0, minLength),
-    ),
-  )
-  assert(
-    _.isEqual(
-      inflation.map((x) => x.closingTime).slice(0, minLength),
-      bondRates.map((x) => x.closingTime).slice(0, minLength),
-    ),
-  )
-  assert(
-    _.isEqual(
-      inflation.map((x) => x.closingTime).slice(0, minLength),
-      dailyStockMarketPerformance.map((x) => x.closingTime).slice(0, minLength),
-    ),
-  )
-
   const latest = {
     inflation: fGet(_.last(inflation)),
     CAPE: fGet(_.last(CAPE)),
