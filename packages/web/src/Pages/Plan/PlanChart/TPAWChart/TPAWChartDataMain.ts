@@ -160,7 +160,7 @@ export const tpawChartDataMain = (
         type,
         tpawResult,
         (x) => x.savingsPortfolio.withdrawals.fromSavingsPortfolioRate,
-        formatPercentage(1),
+        formatPercentage(2),
         spendingYears,
         0,
         'auto',

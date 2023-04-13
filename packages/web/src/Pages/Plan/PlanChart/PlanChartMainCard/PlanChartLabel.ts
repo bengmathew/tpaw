@@ -17,10 +17,10 @@ export const planChartLabel = (
 ) => {
   switch (panelType) {
     case 'spending-total':
-      return { label: ['Spending During Retirement'], subLabel: null }
+      return { label: ['Monthly Spending During Retirement'], subLabel: null }
     case 'spending-general':
       return {
-        label: _.compact([type === 'full' ? 'Spending' : undefined, `General`]),
+        label: _.compact([type === 'full' ? 'Monthly Spending' : undefined, `General`]),
         subLabel: null,
       }
     case 'portfolio':
@@ -45,7 +45,7 @@ export const planChartLabel = (
         }`
 
         const label = _.compact([
-          type === 'full' ? 'Spending' : undefined,
+          type === 'full' ? 'Monthly Spending' : undefined,
           ...(showLabel
             ? ['Extra', showLabel ? 'Essential' : undefined]
             : [spendingLabel]),
@@ -63,7 +63,7 @@ export const planChartLabel = (
         }`
 
         const label = _.compact([
-          type === 'full' ? 'Spending' : undefined,
+          type === 'full' ? 'Monthly Spending' : undefined,
           ...(showLabel
             ? ['Extra', showLabel ? 'Discretionary' : undefined]
             : [spendingLabel]),
