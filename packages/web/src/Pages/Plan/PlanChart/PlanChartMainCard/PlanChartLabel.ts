@@ -30,7 +30,7 @@ export const planChartLabel = (
     case 'asset-allocation-total-portfolio':
       return { label: ['Asset Allocation of Total Portfolio'], subLabel: null }
     case 'withdrawal':
-      return { label: ['Withdrawal Rate'], subLabel: null }
+      return { label: ['Monthly Withdrawal Rate'], subLabel: null }
     default:
       const { essential, discretionary } =
         params.plan.adjustmentsToSpending.extraSpending
