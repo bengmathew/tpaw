@@ -238,8 +238,10 @@ export const PlanChartMainCard = React.memo(
                   adjusted for inflation
                 </span>
               </div>
-            ) : (
+            ) : yAxisDescriptionType === 'assetAllocationExplanation' ? (
               <>{`Percentage of portfolio in stocks`}</>
+            ) : (
+              noCase(yAxisDescriptionType)
             )}
           </div>
         )}
@@ -366,7 +368,7 @@ const getYAxisDescriptionType = (type: PlanChartType) => {
         isPlanChartSpendingEssentialType(type) ||
         isPlanChartSpendingDiscretionaryType(type)
       ) {
-        return true
+        return 'realDollarsExplanation' as const
       }
       noCase(type)
   }
