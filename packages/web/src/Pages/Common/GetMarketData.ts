@@ -166,10 +166,25 @@ async function getInflation() {
   )
   const json = (await response.json()) as { observations: ObType[] }
   guard(json.observations[0]).force()
-  const result = json.observations.map((x) => ({
-    closingTime: dateToMarketClosingTime(x.date),
-    value: fParsePercentString(x.value),
-  }))
+  const result = _.compact(
+    json.observations.map((x) => {
+      // This is because value for memorial day 2023-05-29 came back as "."
+      // which fails parsing.
+      const value = (() => {
+        try {
+          return fParsePercentString(x.value)
+        } catch (e) {
+          null
+        }
+      })()
+      return value
+        ? {
+            closingTime: dateToMarketClosingTime(x.date),
+            value,
+          }
+        : null
+    }),
+  )
   return result
 }
 
