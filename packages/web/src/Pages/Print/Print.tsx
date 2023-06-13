@@ -41,11 +41,18 @@ export const Print = React.memo(
           </div>
         </button>
         <PrintSection className="flex flex-col relative">
-          <div className=" ">
-            <h1 className="font-bold text-[50px]">Retirement Plan</h1>
-            <h2 className="font-bold text-[30px]">
-              {DateTime.now().toLocaleString(DateTime.DATE_FULL)}
+          <div className="">
+            <h2 className="font-bold text-[70px] leading-[75px]">
+              {DateTime.now().toFormat('yyyy')}
             </h2>
+            <h2 className="font-bold text-[30px] leading-[30px] ">
+              {DateTime.now().toFormat('MMMM dd')}
+            </h2>
+          </div>
+          <div className=" ">
+            <h1 className="font-bold text-[100px] mt-[75px] leading-[100px]">
+              Retirement <br /> Plan
+            </h1>
           </div>
           <div className="absolute bottom-[1.5cm] print:bottom-[.5cm] right-[1.5cm] flex flex-col items-end ">
             <h2 className="text-[25px] font-semibold ">TPAW Planner</h2>

@@ -198,7 +198,7 @@ export const PlanSummary = React.memo(
             >
               <div className="">
                 <_Heading cardPadding={cardPadding} firstItem="extra-spending">
-                  Adjustments To Spending
+                  Adjustments to Spending
                 </_Heading>
                 <div className="flex flex-col gap-y-6 ">
                   <PlanSummaryButton

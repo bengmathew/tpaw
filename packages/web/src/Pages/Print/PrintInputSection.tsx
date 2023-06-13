@@ -48,106 +48,116 @@ export const PrintInputSection = React.memo(() => {
       <PrintSection className="flex items-center justify-center">
         <h1 className="font-bold text-4xl text-center ">Your Inputs</h1>
       </PrintSection>
-      <PrintSection className=" ">
+      <PrintSection
+        className="grid gap-y-20 gap-x-5"
+        style={{ grid: 'auto / auto 1fr' }}
+      >
         {/* <h1 className="font-bold text-4xl text-center"> Your Inputs</h1> */}
-        <h2 className="font-bold text-3xl">Age</h2>
-        <div className="mt-4">
+        <h2 className="font-bold text-3xl text-right border-r-2 border-black px-5">Age</h2>
+        <div className="mt-1.5">
           <PlanInputAgePrintSummary />
         </div>
-        <h2 className="font-bold text-3xl mt-12">Wealth</h2>
-        <div className=" break-inside-avoid-page">
-          <h2 className="font-bold text-xl mt-8">Current Portfolio Balance</h2>
-          <div className="mt-4">
-            <PlanInputCurrentPortfolioBalanceSummary />
+        <h2 className="font-bold text-3xl text-right border-r-2 border-black px-5">Wealth</h2>
+        <div className="mt-1.5">
+          <div className=" break-inside-avoid-page">
+            <h2 className="font-bold text-xl">Current Portfolio Balance</h2>
+            <div className="mt-2">
+              <PlanInputCurrentPortfolioBalanceSummary />
+            </div>
           </div>
-        </div>
-        <div className=" ">
-          <h2 className="font-bold text-xl mt-8">Future Savings</h2>
-          <div className="mt-4">
-            {(allowFutureSavingsEntries ||
-              params.plan.wealth.futureSavings.length > 0) &&
-              (params.plan.wealth.futureSavings.length > 0 ? (
+          <div className=" ">
+            <h2 className="font-bold text-xl mt-10">Future Savings</h2>
+            <div className="mt-2">
+              {(allowFutureSavingsEntries ||
+                params.plan.wealth.futureSavings.length > 0) &&
+                (params.plan.wealth.futureSavings.length > 0 ? (
+                  <PlanInputValueForMonthRangeSummary
+                    entries={params.plan.wealth.futureSavings}
+                    range={validMonthRangeAsMFN('future-savings')}
+                  />
+                ) : (
+                  <_None />
+                ))}
+            </div>
+          </div>
+          <div className=" ">
+            <h2 className="font-bold text-xl mt-10">Income During Retirement</h2>
+            <div className="mt-2">
+              {params.plan.wealth.retirementIncome.length > 0 ? (
                 <PlanInputValueForMonthRangeSummary
-                  entries={params.plan.wealth.futureSavings}
-                  range={validMonthRangeAsMFN('future-savings')}
+                  entries={params.plan.wealth.retirementIncome}
+                  range={validMonthRangeAsMFN('income-during-retirement')}
                 />
               ) : (
                 <_None />
-              ))}
+              )}
+            </div>
           </div>
         </div>
-        <div className=" ">
-          <h2 className="font-bold text-xl mt-8">Income During Retirement</h2>
-          <div className="mt-4">
-            {params.plan.wealth.retirementIncome.length > 0 ? (
+
+        <h2 className="font-bold text-3xl text-right border-r-2 border-black px-5">
+          Adjustments <br /> to <br /> Spending
+        </h2>
+
+        <div className="mt-1.5">
+          <h2 className="font-bold text-xl">Extra Spending</h2>
+          <h2 className="font-medium text-[16px] mt-3">Essential Expenses</h2>
+          <div className="mt-2">
+            {params.plan.adjustmentsToSpending.extraSpending.essential.length >
+            0 ? (
               <PlanInputValueForMonthRangeSummary
-                entries={params.plan.wealth.retirementIncome}
-                range={validMonthRangeAsMFN('income-during-retirement')}
+                entries={
+                  params.plan.adjustmentsToSpending.extraSpending.essential
+                }
+                range={validMonthRangeAsMFN('extra-spending')}
               />
             ) : (
               <_None />
             )}
           </div>
-        </div>
-
-        <h2 className="font-bold text-3xl mt-12">Adjustments To Spending</h2>
-
-        <h2 className="font-bold text-xl mt-8">Extra Spending</h2>
-        <h2 className="font-medium text-lg mt-4">Essential Expenses</h2>
-        <div className="mt-4">
-          {params.plan.adjustmentsToSpending.extraSpending.essential.length >
-          0 ? (
-            <PlanInputValueForMonthRangeSummary
-              entries={
-                params.plan.adjustmentsToSpending.extraSpending.essential
-              }
-              range={validMonthRangeAsMFN('extra-spending')}
-            />
-          ) : (
-            <_None />
-          )}
-        </div>
-        <h2 className="font-medium text-lg mt-4">Discretionary Expenses</h2>
-        <div className="mt-4">
-          {params.plan.adjustmentsToSpending.extraSpending.discretionary
-            .length > 0 ? (
-            <PlanInputValueForMonthRangeSummary
-              entries={
-                params.plan.adjustmentsToSpending.extraSpending.discretionary
-              }
-              range={validMonthRangeAsMFN('extra-spending')}
-            />
-          ) : (
-            <_None />
-          )}
-        </div>
-        <h2 className="font-bold text-xl mt-8">Legacy</h2>
-        <div className="mt-4">
-          {params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.external
-            .length === 0 &&
-          params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.total === 0 ? (
-            <_None />
-          ) : (
-            <PlanInputLegacySummary />
-          )}
-        </div>
-
-        <h2 className="font-bold text-xl mt-8">Spending Ceiling And Floor</h2>
-        <div className="mt-4">
-          {params.plan.advanced.strategy !== 'SWR' &&
-            (params.plan.adjustmentsToSpending.tpawAndSPAW
-              .monthlySpendingCeiling === null &&
-            params.plan.adjustmentsToSpending.tpawAndSPAW
-              .monthlySpendingFloor === null ? (
+          <h2 className="font-medium text-[16px] mt-3">
+            Discretionary Expenses
+          </h2>
+          <div className="mt-2">
+            {params.plan.adjustmentsToSpending.extraSpending.discretionary
+              .length > 0 ? (
+              <PlanInputValueForMonthRangeSummary
+                entries={
+                  params.plan.adjustmentsToSpending.extraSpending.discretionary
+                }
+                range={validMonthRangeAsMFN('extra-spending')}
+              />
+            ) : (
+              <_None />
+            )}
+          </div>
+          <h2 className="font-bold text-xl mt-10">Legacy</h2>
+          <div className="mt-2">
+            {params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.external
+              .length === 0 &&
+            params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.total === 0 ? (
               <_None />
             ) : (
-              <PlanInputSpendingCeilingAndFloorSummary />
-            ))}
-        </div>
+              <PlanInputLegacySummary />
+            )}
+          </div>
 
-        <div className=" break-inside-avoid-page">
-          <h2 className="font-bold text-3xl mt-12">Risk</h2>
-          <div className="mt-4">
+          <h2 className="font-bold text-xl mt-10">Spending Ceiling And Floor</h2>
+          <div className="mt-2">
+            {params.plan.advanced.strategy !== 'SWR' &&
+              (params.plan.adjustmentsToSpending.tpawAndSPAW
+                .monthlySpendingCeiling === null &&
+              params.plan.adjustmentsToSpending.tpawAndSPAW
+                .monthlySpendingFloor === null ? (
+                <_None />
+              ) : (
+                <PlanInputSpendingCeilingAndFloorSummary />
+              ))}
+          </div>
+        </div>
+        <h2 className="font-bold text-3xl text-right border-r-2 border-black px-5">Risk</h2>
+        <div className=" break-inside-avoid-page mt-2">
+          <div className="">
             <PlanInputRiskSummary />
           </div>
         </div>
@@ -157,39 +167,41 @@ export const PrintInputSection = React.memo(() => {
           isAdvancedModified['simulation'] ||
           isAdvancedModified['strategy']) && (
           <>
-            <h2 className="font-bold text-3xl mt-12">Advanced</h2>
-            {isAdvancedModified['expected-returns'] && (
-              <>
-                <h2 className="font-bold text-3xl mt-12">Expected Returns</h2>
-                <div className="mt-4">
-                  <PlanInputExpectedReturnsSummary />
-                </div>
-              </>
-            )}
-            {isAdvancedModified['inflation'] && (
-              <>
-                <h2 className="font-bold text-3xl mt-12">Inflation</h2>
-                <div className="mt-4">
-                  <PlanInputInflationSummary />
-                </div>
-              </>
-            )}
-            {isAdvancedModified['simulation'] && (
-              <>
-                <h2 className="font-bold text-3xl mt-12">Simulation</h2>
-                <div className="mt-4">
-                  <PlanInputSimulationSummary />
-                </div>
-              </>
-            )}
-            {isAdvancedModified['strategy'] && (
-              <>
-                <h2 className="font-bold text-3xl mt-12">Strategy</h2>
-                <div className="mt-4">
-                  <PlanInputStrategySummary />
-                </div>
-              </>
-            )}
+            <h2 className="font-bold text-3xl text-right border-r-2 border-black px-5">Advanced</h2>
+            <div className="mt-1.5">
+              {isAdvancedModified['expected-returns'] && (
+                <>
+                  <h2 className="font-bold text-xl">Expected Returns</h2>
+                  <div className="mt-2">
+                    <PlanInputExpectedReturnsSummary />
+                  </div>
+                </>
+              )}
+              {isAdvancedModified['inflation'] && (
+                <>
+                  <h2 className="font-bold text-xl mt-10">Inflation</h2>
+                  <div className="mt-2">
+                    <PlanInputInflationSummary />
+                  </div>
+                </>
+              )}
+              {isAdvancedModified['simulation'] && (
+                <>
+                  <h2 className="font-bold text-xl mt-10">Simulation</h2>
+                  <div className="mt-2">
+                    <PlanInputSimulationSummary />
+                  </div>
+                </>
+              )}
+              {isAdvancedModified['strategy'] && (
+                <>
+                  <h2 className="font-bold text-xl mt-10">Strategy</h2>
+                  <div className="mt-2">
+                    <PlanInputStrategySummary />
+                  </div>
+                </>
+              )}
+            </div>
           </>
         )}
       </PrintSection>

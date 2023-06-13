@@ -7,7 +7,10 @@ import { ChartXYRange } from '../../../Common/Chart/Chart'
 import { chartDrawDataLines } from '../../../Common/Chart/ChartComponent/ChartDrawDataLines'
 import { chartDrawDataRangeBand } from '../../../Common/Chart/ChartComponent/ChartDrawRangeBand'
 import { ChartXAxis } from '../../../Common/Chart/ChartComponent/ChartXAxis'
-import { ChartYAxis } from '../../../Common/Chart/ChartComponent/ChartYAxis'
+import {
+  ChartYAxis,
+  getYAxisGridInfo,
+} from '../../../Common/Chart/ChartComponent/ChartYAxis'
 import {
   ChartReact,
   ChartReactSizing,
@@ -16,6 +19,10 @@ import {
 import { ChartUtils } from '../../../Common/Chart/ChartUtils/ChartUtils'
 import { ChartDrawMain } from '../CustomComponents/ChartDrawMain'
 import { TPAWChartDataMain } from './TPAWChartDataMain'
+import {
+  isPlanChartSpendingDiscretionaryType,
+  isPlanChartSpendingEssentialType,
+} from '../PlanChartType'
 
 export const TPAWChartMainPrint = React.memo(
   React.forwardRef(
@@ -163,7 +170,27 @@ const components = () => () => {
 
   const yAxis = new ChartYAxis<TPAWChartDataMain>(
     (data, x) => data.yFormat(x),
-    (data) => data.yDisplayRange.end,
+    (data) =>
+      getYAxisGridInfo({
+        max: data.yDisplayRange.end,
+        maxGridLine: (() => {
+          if (
+            data.type === 'asset-allocation-savings-portfolio' ||
+            data.type === 'asset-allocation-total-portfolio' ||
+            data.type === 'withdrawal'
+          )
+            return 1
+          if (
+            data.type === 'spending-total' ||
+            data.type === 'spending-general' ||
+            data.type === 'portfolio' ||
+            isPlanChartSpendingDiscretionaryType(data.type) ||
+            isPlanChartSpendingEssentialType(data.type)
+          )
+            return null
+          noCase(data.type)
+        })(),
+      }),
     {
       text: ChartUtils.color.gray[800],
       line: ChartUtils.color.gray[300],

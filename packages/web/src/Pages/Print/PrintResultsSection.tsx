@@ -7,7 +7,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { rectExt } from '../../Utils/Geometry'
 import { useChartData } from '../App/WithChartData'
 import { useSimulation } from '../App/WithSimulation'
-import { getYAxisGridSizeInfo } from '../Common/Chart/ChartComponent/ChartYAxis'
+import { getYAxisGridInfo } from '../Common/Chart/ChartComponent/ChartYAxis'
 import { ChartReactStatefull } from '../Common/Chart/ChartReact'
 import { planChartLabel } from '../Plan/PlanChart/PlanChartMainCard/PlanChartLabel'
 import {
@@ -111,7 +111,10 @@ const _Chart = React.memo(
     const outerDivRef = useRef<HTMLDivElement>(null)
 
     const hasPartner = tpawResult.params.people.withPartner
-    const { displayMax } = getYAxisGridSizeInfo(chartMainData.max.y)
+    const { displayMax } = getYAxisGridInfo({
+      max: chartMainData.yDisplayRange.end,
+      maxGridLine: null,
+    })
     const [chart, setChart] =
       useState<ChartReactStatefull<TPAWChartDataMain> | null>(null)
     useEffect(() => {}, [])
@@ -127,7 +130,7 @@ const _Chart = React.memo(
       return () => observer.disconnect()
     }, [chart, hasPartner])
 
-    const { label, subLabel, description, yAxisDescription } = planChartLabel(
+    const { label, subLabel, yAxisDescription } = planChartLabel(
       params,
       type,
       'full',
@@ -150,15 +153,22 @@ const _Chart = React.memo(
         </h2>
         {subLabel && <h2 className="text-xl font-bold">{subLabel}</h2>}
         {yAxisDescriptionStr && (
-          <h2 className="text-base">{yAxisDescriptionStr}</h2>
+          <h2 className="text-base">
+            {yAxisDescriptionStr}. The graph shows 5
+            <span className=" align-super text-[10px]">th</span> to 95
+            <span className=" align-super text-[10px]">th</span> percentiles
+            with the 50<span className=" align-super text-[10px]">th</span>{' '}
+            percentile in bold.
+          </h2>
         )}
+
         <div
           className={clsx(
             // The border is applied to the div outside the measured div.
             'relative  border-[2px] border-black rounded-lg mt-2',
           )}
         >
-          <div className="h-[350px]" ref={outerDivRef}>
+          <div className="h-[325px]" ref={outerDivRef}>
             <TPAWChartMainPrint
               starting={{
                 data: chartMainData,
@@ -199,7 +209,7 @@ const _sizingFromWidth = (width: number, hasPartner: boolean) => {
       x: 0,
       y: 0,
       width,
-      height: 350,
+      height: 325,
     }),
     padding,
   }

@@ -1,8 +1,16 @@
 import clsx from 'clsx'
-import React, { ReactNode } from 'react'
+import React, { CSSProperties, ReactNode } from 'react'
 
 export const PrintSection = React.memo(
-  ({ children, className }: { children: ReactNode; className?: string }) => {
+  ({
+    children,
+    className,
+    style,
+  }: {
+    children: ReactNode
+    className?: string
+    style?: CSSProperties
+  }) => {
     return (
       <div
         className={clsx(
@@ -26,7 +34,7 @@ export const PrintSection = React.memo(
           // 'bg-white',
           // 'text-[14px]',
         )}
-        style={{ pageBreakAfter: 'always' }}
+        style={{ ...style, pageBreakAfter: 'always' }}
       >
         {children}
       </div>
