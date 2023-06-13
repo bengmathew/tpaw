@@ -24,11 +24,6 @@ import {
   planChartNormalAnimation,
 } from '../PlanChart'
 import {
-  PlanChartType,
-  isPlanChartSpendingDiscretionaryType,
-  isPlanChartSpendingEssentialType,
-} from '../PlanChartType'
-import {
   TPAWChartDataMain,
   tpawChartDataScaled,
 } from '../TPAWChart/TPAWChartDataMain'
@@ -38,6 +33,7 @@ import {
 } from '../TPAWChart/TPAWChartMain'
 import { usePlanChartType } from '../UsePlanChartType'
 import { HeightsForWidths } from './HeightsForWidths'
+import { planChartLabel } from './PlanChartLabel'
 import { PlanChartMainCardMenu } from './PlanChartMainCardMenu'
 import { PlanChartMainCardMenuButton } from './PlanChartMainCardMenuButton'
 
@@ -67,6 +63,16 @@ export const PlanChartMainCard = React.memo(
   }) => {
     const { params, tpawResult } = useSimulation()
     const type = usePlanChartType()
+    const yAxisDescriptionByLayout = planChartLabel(
+      params,
+      type,
+      'full',
+    ).yAxisDescription
+    const yAxisDescription = yAxisDescriptionByLayout
+      ? layout === 'mobile'
+        ? yAxisDescriptionByLayout.mobile
+        : yAxisDescriptionByLayout.notMobile
+      : null
 
     const [showRealBlurbHelp, setShowRealBlurbHelp] = useState(false)
     const chartRef = useRef<ChartReactStatefull<TPAWChartDataMain> | null>(null)
@@ -97,7 +103,6 @@ export const PlanChartMainCard = React.memo(
     // }, [])
 
     const showSuccessRate = params.plan.advanced.strategy === 'SWR'
-    const yAxisDescriptionType = getYAxisDescriptionType(type)
     const hasPartner = tpawResult.params.people.withPartner
 
     const sizing = useMemo(() => {
@@ -117,7 +122,7 @@ export const PlanChartMainCard = React.memo(
             },
             hasPartner,
             showSuccessRate,
-            yAxisDescriptionType !== 'none',
+            yAxisDescription !== null,
           ),
         ] as const
 
@@ -129,7 +134,7 @@ export const PlanChartMainCard = React.memo(
           _map(`${state}WithoutSuccessRate`, dynamic, false),
         ),
       )
-    }, [heights, sizingIn, hasPartner, yAxisDescriptionType])
+    }, [heights, sizingIn, hasPartner, yAxisDescription])
     const targetSizing = useMemo(
       () =>
         sizing[
@@ -217,7 +222,7 @@ export const PlanChartMainCard = React.memo(
         >
           <PlanChartMainCardMenu transition={transition} />
         </div>
-        {yAxisDescriptionType !== 'none' && (
+        {yAxisDescription !== null && (
           <div
             className={`absolute  lighten
           ${layout === 'mobile' ? 'text-[13px]' : ' text-[16px]'}`}
@@ -227,7 +232,24 @@ export const PlanChartMainCard = React.memo(
               width: `${targetSizing.yAxisDescription.width}px`,
             }}
           >
-            {yAxisDescriptionType === 'realDollarsExplanation' ? (
+            <div>
+              {yAxisDescription.map((x, i) =>
+                x.type === 'plain' ? (
+                  <span key={i}>{x.value} </span>
+                ) : x.type === 'inflation' ? (
+                  <span
+                    key={i}
+                    className="underline cursor-pointer"
+                    onClick={() => setShowRealBlurbHelp(true)}
+                  >
+                    {x.value}{' '}
+                  </span>
+                ) : (
+                  noCase(x)
+                ),
+              )}
+            </div>
+            {/* {yAxisDescription === 'realDollarsExplanation' ? (
               <div>
                 {' '}
                 {layout === 'mobile' ? 'Dollars ' : 'These dollars are '}
@@ -238,11 +260,11 @@ export const PlanChartMainCard = React.memo(
                   adjusted for inflation
                 </span>
               </div>
-            ) : yAxisDescriptionType === 'assetAllocationExplanation' ? (
+            ) : yAxisDescription === 'assetAllocationExplanation' ? (
               <>{`Percentage of portfolio in stocks`}</>
             ) : (
-              noCase(yAxisDescriptionType)
-            )}
+              noCase(yAxisDescription)
+            )} */}
           </div>
         )}
 
@@ -350,26 +372,4 @@ const _transformSizing = (
   }
 
   return { menu, chart, yAxisDescription, successRate, inset }
-}
-
-const getYAxisDescriptionType = (type: PlanChartType) => {
-  switch (type) {
-    case 'spending-general':
-    case 'spending-total':
-    case 'portfolio':
-      return 'realDollarsExplanation' as const
-    case 'asset-allocation-savings-portfolio':
-      return 'assetAllocationExplanation' as const
-    case 'asset-allocation-total-portfolio':
-    case 'withdrawal':
-      return 'none' as const
-    default:
-      if (
-        isPlanChartSpendingEssentialType(type) ||
-        isPlanChartSpendingDiscretionaryType(type)
-      ) {
-        return 'realDollarsExplanation' as const
-      }
-      noCase(type)
-  }
 }

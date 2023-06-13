@@ -225,6 +225,7 @@ const components = (hidePointer: boolean) => () => {
         label: person === 'person1' ? 'Your Age' : `Partner's Age`,
         tempPerson: person,
         height: sizing.height,
+        hidePointer: false,
         labelStyle: {
           font: ChartUtils.getFont(dyn(12, 14), '600'),
           color: ChartUtils.color.gray[700],
@@ -236,7 +237,7 @@ const components = (hidePointer: boolean) => () => {
       }
     })
 
-  const custom = new ChartDrawMain()
+  const custom = new ChartDrawMain(ChartUtils.color.gray[500], 4)
   return _.compact([
     // minorLine,
     rangeBand,

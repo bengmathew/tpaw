@@ -39,6 +39,7 @@ export type ChartXAxisOpts = {
   retirementDataX: number
   label: string
   height: number
+  hidePointer: boolean
   labelStyle: {
     font: string
     color: string
@@ -64,6 +65,7 @@ export class ChartXAxis<Data> implements ChartComponent<Data> {
       padding,
       retirementDataX,
       style,
+      hidePointer,
       label,
       height,
       type: getType,
@@ -128,7 +130,7 @@ export class ChartXAxis<Data> implements ChartComponent<Data> {
     }
 
     // ---- POINTER  ----
-    {
+    if (!hidePointer) {
       canvasContext.save()
       // const pointerPixelS = tickStyle('large').length + padding.top
       const pixelX = scale.x(currPointerInDataCoord.x)
@@ -160,9 +162,10 @@ export class ChartXAxis<Data> implements ChartComponent<Data> {
     {
       const pixelRight = scale.x(fGet(_.last(dataXs)))
       const noLabelPixelZones = [
-        { start: plotArea.x, end: plotArea.x + labelPixelX + labelWidth + 5 },
+        { start: plotArea.x, end: labelPixelX + labelWidth + 5 },
         { start: pixelRight - 25, end: pixelRight },
       ]
+
       dataXs.forEach((dataX) => {
         _drawTick(
           dataX,

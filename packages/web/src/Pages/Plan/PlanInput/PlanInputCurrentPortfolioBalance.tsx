@@ -565,7 +565,7 @@ const _Action = React.memo(
   },
 )
 
-export const CurrentPortfolioBalanceSummary = React.memo(() => {
+export const PlanInputCurrentPortfolioBalanceSummary = React.memo(() => {
   const { currentPortfolioBalanceEstimate, paramsExt } = useSimulation()
   const { value, entered } = currentPortfolioBalanceEstimate
   const isEstimate = useMemo(
@@ -598,6 +598,7 @@ export const CurrentPortfolioBalanceSummary = React.memo(() => {
     </>
   )
 })
+
 
 const _isReallyEstimate = (
   currentPortfolioBalanceEstimate: ReturnType<

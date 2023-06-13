@@ -4,31 +4,24 @@ import _ from 'lodash'
 import Link from 'next/link'
 import React, { CSSProperties, useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
-import { Contentful } from '../../../../Utils/Contentful'
 import {
-  applyOriginToHTMLElement,
   Padding,
-  rectExt,
   RectExt,
+  applyOriginToHTMLElement,
+  rectExt,
 } from '../../../../Utils/Geometry'
-import { fGet, noCase } from '../../../../Utils/Utils'
+import { fGet } from '../../../../Utils/Utils'
 import { useChartData } from '../../../App/WithChartData'
 import { useSimulation } from '../../../App/WithSimulation'
 import { useWindowSize } from '../../../App/WithWindowSize'
 import { chartDrawDataLines } from '../../../Common/Chart/ChartComponent/ChartDrawDataLines'
-import { chartDrawDataRangeBand } from '../../../Common/Chart/ChartComponent/ChartDrawRangeBand'
 import {
   ChartReact,
   ChartReactStatefull,
 } from '../../../Common/Chart/ChartReact'
 import { ChartUtils } from '../../../Common/Chart/ChartUtils/ChartUtils'
-import { usePlanContent } from '../../Plan'
 import { PlanChartTransitionState } from '../PlanChart'
-import {
-  isPlanChartSpendingDiscretionaryType,
-  isPlanChartSpendingEssentialType,
-  PlanChartType,
-} from '../PlanChartType'
+import { PlanChartType } from '../PlanChartType'
 import { TPAWChartDataMain } from '../TPAWChart/TPAWChartDataMain'
 import { useGetPlanChartURL } from '../UseGetPlanChartURL'
 import { usePlanChartType } from '../UsePlanChartType'
@@ -189,8 +182,11 @@ const _Link = React.memo(
     const { params } = tpawResult
     const getPlanChartURL = useGetPlanChartURL()
     const chartData = fGet(useChartData().byYearsFromNowPercentiles.get(type))
-    const [description] = useInfo(type)
-    const { label, subLabel } = planChartLabel(params.original, type, 'short')
+    const { label, subLabel, description } = planChartLabel(
+      params.original,
+      type,
+      'short',
+    )
     const isCurrent = _.isEqual(currType, type)
     const windowSize = useWindowSize()
     const width = windowSize.width < 640 ? 120 : 145
@@ -223,10 +219,9 @@ const _Link = React.memo(
               {subLabel}
             </h2>
           )}
-          <Contentful.RichText
-            body={description[params.strategy]}
-            p={`${isCurrent ? '' : 'lighten-2'} text-sm -mt-1`}
-          />
+          <p className={`${isCurrent ? '' : 'lighten-2'} text-sm -mt-1`}>
+            {description}
+          </p>
         </div>
         <div
           className={`relative  border rounded-xl  flex flex-col justify-center
@@ -251,33 +246,6 @@ const _Link = React.memo(
     )
   },
 )
-
-const useInfo = (
-  panelType: Exclude<PlanChartType, 'reward-risk-ratio-comparison'>,
-) => {
-  const content = usePlanContent().chart
-  switch (panelType) {
-    case 'spending-total':
-      return [content.spending.total.menu] as const
-    case 'spending-general': {
-      return [content.spending.regular.menu] as const
-    }
-    case 'portfolio':
-    case 'asset-allocation-savings-portfolio':
-    case 'asset-allocation-total-portfolio':
-      return [content[panelType].menu] as const
-    case 'withdrawal':
-      return [content.withdrawalRate.menu] as const
-    default:
-      if (isPlanChartSpendingEssentialType(panelType)) {
-        return [content.spending.essential.menu] as const
-      }
-      if (isPlanChartSpendingDiscretionaryType(panelType)) {
-        return [content.spending.discretionary.menu] as const
-      }
-      noCase(panelType)
-  }
-}
 
 const _Chart = React.memo(
   ({

@@ -84,7 +84,7 @@ export const PlanSummary = React.memo(
     const [showDev, setShowDev] = useState(!Config.client.production)
     const [showDevClickCount, setShowDevClickCount] = useState(0)
     const advancedModifiedCount = _advancedInputs.filter((x) =>
-      _isModified(x, params, defaultParams),
+      isAdvancedInputModified(x, params, defaultParams),
     ).length
 
     const targetSizing = useMemo(
@@ -296,7 +296,7 @@ export const PlanSummary = React.memo(
                       type="expected-returns"
                       section={section}
                       padding={cardPadding}
-                      flagAsModified={_isModified(
+                      flagAsModified={isAdvancedInputModified(
                         'expected-returns',
                         params,
                         defaultParams,
@@ -306,7 +306,7 @@ export const PlanSummary = React.memo(
                       type="inflation"
                       section={section}
                       padding={cardPadding}
-                      flagAsModified={_isModified(
+                      flagAsModified={isAdvancedInputModified(
                         'inflation',
                         params,
                         defaultParams,
@@ -316,7 +316,7 @@ export const PlanSummary = React.memo(
                       type="simulation"
                       section={section}
                       padding={cardPadding}
-                      flagAsModified={_isModified(
+                      flagAsModified={isAdvancedInputModified(
                         'simulation',
                         params,
                         defaultParams,
@@ -326,7 +326,7 @@ export const PlanSummary = React.memo(
                       type="strategy"
                       section={section}
                       padding={cardPadding}
-                      flagAsModified={_isModified(
+                      flagAsModified={isAdvancedInputModified(
                         'strategy',
                         params,
                         defaultParams,
@@ -412,7 +412,7 @@ const _advancedInputs = [
   'simulation',
 ] as const
 type _AdvancedParamInputType = (typeof _advancedInputs)[number]
-const _isModified = (
+export const isAdvancedInputModified = (
   type: _AdvancedParamInputType,
   params: Params,
   def: Params,

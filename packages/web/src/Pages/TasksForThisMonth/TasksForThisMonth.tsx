@@ -1,6 +1,7 @@
 import { faLeftLong } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { PlanParams } from '@tpaw/common'
+import clsx from 'clsx'
 import _ from 'lodash'
 import React, { ReactNode } from 'react'
 import { FirstMonthSavingsPortfolioDetail } from '../../TPAWSimulator/Worker/FirstMonthSavingsPortfolioDetail'
@@ -74,10 +75,6 @@ export const getTasksForThisMonthProps = (
 }
 
 export const TasksForThisMonth = React.memo(() => {
-  const { tpawResult } = useSimulation()
-  const props = getTasksForThisMonthProps(tpawResult)
-  const { withdrawals, withdrawalsStarted } = props
-
   const getSectionURL = useGetSectionURL()
   const urlUpdater = useURLUpdater()
 
@@ -103,25 +100,38 @@ export const TasksForThisMonth = React.memo(() => {
                 Done
               </button>
               <h1 className="font-bold text-3xl">Tasks for This Month</h1>
+              <TasksForThisMonthContent className="mt-10" />
             </div>
-
-            {withdrawals.total !== 0 || withdrawalsStarted ? (
-              <>
-                <h2 className="font-bold text-2xl mt-10 mb-4">Summary</h2>
-                <_Summary className="" {...props} />
-
-                <h2 className="font-bold text-2xl mt-10 mb-6">Details</h2>
-                <_Details className="" {...props} />
-              </>
-            ) : (
-              <_Details className="mt-10" {...props} />
-            )}
           </div>
         </div>
       </div>
     </AppPage>
   )
 })
+
+export const TasksForThisMonthContent = React.memo(
+  ({ className }: { className?: string }) => {
+    const { tpawResult } = useSimulation()
+    const props = getTasksForThisMonthProps(tpawResult)
+
+    const { withdrawals, withdrawalsStarted } = props
+    return (
+      <div className={clsx(className)}>
+        {withdrawals.total !== 0 || withdrawalsStarted ? (
+          <>
+            <h2 className="font-bold text-2xl mb-4">Summary</h2>
+            <_Summary className="" {...props} />
+
+            <h2 className="font-bold text-2xl mt-10 mb-6">Details</h2>
+            <_Details className="" {...props} />
+          </>
+        ) : (
+          <_Details className="" {...props} />
+        )}
+      </div>
+    )
+  },
+)
 
 // -------- SUMMARY --------
 const _Summary = React.memo(
@@ -165,17 +175,26 @@ const _Details = React.memo(
       <div className={className}>
         {(withdrawals.total !== 0 || withdrawalsStarted) && (
           <>
-            <_HowMuchYouHave className="mb-8" {...props} />
-            <_HowMuchToSpend className="mb-8" {...props} />
+            <_HowMuchYouHave
+              className="mb-8 break-inside-avoid-page"
+              {...props}
+            />
+            <_HowMuchToSpend
+              className="mb-8  break-inside-avoid-page"
+              {...props}
+            />
             {withdrawals.total > 0 && (
-              <_HowToFundTheSpending className="mb-8" {...props} />
+              <_HowToFundTheSpending
+                className="mb-8  break-inside-avoid-page"
+                {...props}
+              />
             )}
           </>
         )}
         {(!withdrawalsStarted ||
           contributionToOrWithdrawalFromSavingsPortfolio.type ===
             'contribution') && <_Contribution className="mb-8" {...props} />}
-        <_AssetAllocation className="" {...props} />
+        <_AssetAllocation className=" break-inside-avoid-page" {...props} />
       </div>
     )
   },

@@ -29,6 +29,7 @@
     "@tpaw/simulator": "2.9.0",
     "@visx/event": "^2.1.2",
     "@visx/shape": "^2.2.2",
+    "clsx": "^1.2.1",
     "contentful": "^9.1.5",
     "cookie": "^0.5.0",
     "date-fns": "^2.29.3",

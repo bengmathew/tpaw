@@ -20,7 +20,6 @@ import { formatPercentage } from '../../../Utils/FormatPercentage'
 import { Padding, paddingCSSStyle } from '../../../Utils/Geometry'
 import { numMonthsStr } from '../../../Utils/NumMonthsStr'
 import { SimpleRange } from '../../../Utils/SimpleRange'
-import { trimAndNullify } from '../../../Utils/TrimAndNullify'
 import { useURLUpdater } from '../../../Utils/UseURLUpdater'
 import { noCase } from '../../../Utils/Utils'
 import { useMarketData } from '../../App/WithMarketData'
@@ -37,9 +36,10 @@ import {
 } from '../PlanInput/Helpers/PlanSectionDialogPosition'
 import { planSectionLabel } from '../PlanInput/Helpers/PlanSectionLabel'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
+import { PlanInputCurrentPortfolioBalanceSummary } from '../PlanInput/PlanInputCurrentPortfolioBalance'
 import { expectedReturnTypeLabel } from '../PlanInput/PlanInputExpectedReturns'
 import { inflationTypeLabel } from '../PlanInput/PlanInputInflation'
-import { CurrentPortfolioBalanceSummary } from '../PlanInput/PlanInputCurrentPortfolioBalance'
+import { trimAndNullify } from '../../../Utils/TrimAndNullify'
 
 type _Props = {
   padding: Padding
@@ -249,18 +249,18 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
       }
     }
     case 'current-portfolio-balance': {
-      return <CurrentPortfolioBalanceSummary/>
+      return <PlanInputCurrentPortfolioBalanceSummary />
     }
     case 'future-savings':
       return (
-        <_EntriesSummary
+        <PlanInputValueForMonthRangeSummary
           entries={params.plan.wealth.futureSavings}
           range={validMonthRangeAsMFN(type)}
         />
       )
     case 'income-during-retirement':
       return (
-        <_EntriesSummary
+        <PlanInputValueForMonthRangeSummary
           entries={params.plan.wealth.retirementIncome}
           range={validMonthRangeAsMFN(type)}
         />
@@ -277,7 +277,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
           {essential.length > 0 && (
             <>
               {showLabels && <h2 className="mt-1 font-medium ">Essential</h2>}
-              <_EntriesSummary
+              <PlanInputValueForMonthRangeSummary
                 entries={essential}
                 range={validMonthRangeAsMFN(type)}
               />
@@ -288,7 +288,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
               {showLabels && (
                 <h2 className="mt-1 font-medium ">Discretionary</h2>
               )}
-              <_EntriesSummary
+              <PlanInputValueForMonthRangeSummary
                 entries={discretionary}
                 range={validMonthRangeAsMFN(type)}
               />
@@ -300,46 +300,36 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
     case 'legacy': {
       const { total, external } =
         params.plan.adjustmentsToSpending.tpawAndSPAW.legacy
-      if (total === 0 && external.length === 0) {
-        return <h2>None</h2>
-      } else {
-        return external.length === 0 ? (
-          <h2>Target: {formatCurrency(total)} (real dollars)</h2>
-        ) : (
-          <>
-            <div
-              className="grid gap-x-2"
-              style={{ grid: 'auto/1fr auto auto' }}
-            >
-              <h2 className="mt-2">Total Target</h2>
-              <h2 className="text-right mt-2">{formatCurrency(total)}</h2>
-              <h2 className="mt-2">(real dollars)</h2>
-              <h2 className=" col-span-3 mt-2">Non-portfolio Sources</h2>
-              {external.map((x, i) => (
-                <React.Fragment key={i}>
-                  <h2 className="ml-4 mt-1">
-                    {trimAndNullify(x.label) ?? '<no label>'}
-                  </h2>
-                  <h2 className="mt-1 text-right">
-                    {formatCurrency(x.value)}{' '}
-                  </h2>
-                  <h2 className="mt-1">
-                    {x.nominal ? '(nominal dollars)' : '(real dollars)'}{' '}
-                  </h2>
-                </React.Fragment>
-              ))}
-              <h2 className="mt-2">Remaining Target</h2>
-              <h2 className="mt-2 text-right">
-                {formatCurrency(
-                  paramsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy
-                    .target,
-                )}{' '}
-              </h2>
-              <h2 className="mt-2">(real dollars)</h2>
-            </div>
-          </>
-        )
-      }
+      return external.length === 0 ? (
+        <h2>Target: {formatCurrency(total)} (real dollars)</h2>
+      ) : (
+        <>
+          <div className="grid gap-x-2" style={{ grid: 'auto/1fr auto auto' }}>
+            <h2 className="mt-2">Total Target</h2>
+            <h2 className="text-right mt-2">{formatCurrency(total)}</h2>
+            <h2 className="mt-2">(real dollars)</h2>
+            <h2 className=" col-span-3 mt-2">Non-portfolio Sources</h2>
+            {external.map((x, i) => (
+              <React.Fragment key={i}>
+                <h2 className="ml-4 mt-1">
+                  {trimAndNullify(x.label) ?? '<no label>'}
+                </h2>
+                <h2 className="mt-1 text-right">{formatCurrency(x.value)} </h2>
+                <h2 className="mt-1">
+                  {x.nominal ? '(nominal dollars)' : '(real dollars)'}{' '}
+                </h2>
+              </React.Fragment>
+            ))}
+            <h2 className="mt-2">Remaining Target</h2>
+            <h2 className="mt-2 text-right">
+              {formatCurrency(
+                paramsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.target,
+              )}{' '}
+            </h2>
+            <h2 className="mt-2">(real dollars)</h2>
+          </div>
+        </>
+      )
     }
     case 'spending-ceiling-and-floor': {
       const { monthlySpendingCeiling, monthlySpendingFloor } =
@@ -417,7 +407,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
             <>
               <h2>Stock Allocation</h2>
               <div className="ml-4">
-                <_GlidePath
+                <PlanInputGlidePathSummary
                   className=""
                   glidePath={risk.spawAndSWR.allocation}
                   format={(x) => formatPercentage(0)(x)}
@@ -434,7 +424,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
             <>
               <h2>Stock Allocation</h2>
               <div className="ml-4">
-                <_GlidePath
+                <PlanInputGlidePathSummary
                   className=""
                   glidePath={risk.spawAndSWR.allocation}
                   format={(x) => formatPercentage(0)(x)}
@@ -504,7 +494,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
       return (
         <>
           {(['TPAW', 'SPAW', 'SWR'] as const).map((value) => (
-            <_ChoiceItem
+            <PlanInputChoiceItemSummary
               key={value}
               value={value}
               selected={(x) => params.plan.advanced.strategy === x}
@@ -608,7 +598,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
   }
 })
 
-export const _EntriesSummary = React.memo(
+export const PlanInputValueForMonthRangeSummary = React.memo(
   ({
     entries,
     range,
@@ -620,7 +610,7 @@ export const _EntriesSummary = React.memo(
     return (
       <ol className={`list-outside list-disc ml-3 grid gap-y-2 mt-1`}>
         {entries.map((x, i) => (
-          <li key={i} className="">
+          <li key={i} className=" break-inside-avoid-page">
             <ValueForMonthRangeDisplay
               entry={x}
               rangeAsMFN={range}
@@ -657,7 +647,7 @@ const _GlidePathIntermediate = React.memo(
   },
 )
 
-const _GlidePath = React.memo(
+export const PlanInputGlidePathSummary = React.memo(
   ({
     className = '',
     glidePath,
@@ -702,7 +692,7 @@ const _GlidePath = React.memo(
   },
 )
 
-function _ChoiceItem<Value>({
+export function PlanInputChoiceItemSummary<Value>({
   value,
   label,
   selected,
