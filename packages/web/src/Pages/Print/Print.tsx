@@ -42,15 +42,15 @@ export const Print = React.memo(
         </button>
         <PrintSection className="flex flex-col relative">
           <div className="">
-            <h2 className="font-bold text-[70px] leading-[75px]">
+            <h2 className="font-bold text-[50px] leading-[50px]">
               {DateTime.now().toFormat('yyyy')}
             </h2>
-            <h2 className="font-bold text-[30px] leading-[30px] ">
+            <h2 className="font-bold text-[25px] leading-[25px] ">
               {DateTime.now().toFormat('MMMM dd')}
             </h2>
           </div>
           <div className=" ">
-            <h1 className="font-bold text-[100px] mt-[75px] leading-[100px]">
+            <h1 className="font-bold text-[65px] mt-[105px] leading-[65px]">
               Retirement <br /> Plan
             </h1>
           </div>
@@ -67,7 +67,7 @@ export const Print = React.memo(
           </h1>
         </PrintSection>
         <PrintSection>
-          <TasksForThisMonthContent className="mt-10" />
+          <TasksForThisMonthContent className="mt-10" forPrint />
         </PrintSection>
         <PrintTablesSection />
       </div>

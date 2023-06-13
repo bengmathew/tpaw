@@ -13,7 +13,7 @@ export class ChartDrawMain implements ChartComponent<TPAWChartDataMain> {
       x: viewport.x,
       y:
         plotArea.bottom +
-        2 + // gap at bottom of plotArea
+        5 + // gap at bottom of plotArea
         this.lineWidth / 2,
       width: viewport.width,
       height: viewport.bottom,

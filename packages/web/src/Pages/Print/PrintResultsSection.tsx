@@ -4,6 +4,7 @@ import { fGet } from '@tpaw/common'
 import clsx from 'clsx'
 import _ from 'lodash'
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { formatPercentage } from '../../Utils/FormatPercentage'
 import { rectExt } from '../../Utils/Geometry'
 import { useChartData } from '../App/WithChartData'
 import { useSimulation } from '../App/WithSimulation'
@@ -21,7 +22,7 @@ import { TPAWChartMainPrint } from '../Plan/PlanChart/TPAWChart/TPAWChartMainPri
 import { PrintSection } from './PrintSection'
 
 export const PrintResultsSection = React.memo(() => {
-  const { params } = useSimulation()
+  const { params, tpawResult } = useSimulation()
   const { extraSpending } = params.plan.adjustmentsToSpending
 
   const secondaryCharts: PlanChartType[][] = _.chunk(
@@ -40,7 +41,7 @@ export const PrintResultsSection = React.memo(() => {
       'asset-allocation-savings-portfolio' as const,
       'withdrawal' as const,
     ]),
-    2,
+    3,
   )
   return (
     <>
@@ -49,10 +50,26 @@ export const PrintResultsSection = React.memo(() => {
       </PrintSection>
       <PrintSection>
         <_Chart className="mt-8" type="spending-total" />
+        {params.plan.advanced.strategy === 'SWR' && (
+          <h2 className=" mt-4 text-right">
+            Success Rate:{' '}
+            <span className="text-xl">
+              {formatPercentage(0)(
+                1 - tpawResult.percentageOfRunsWithInsufficientFunds,
+              )}
+            </span>
+          </h2>
+        )}
         <_Legacy className="mt-12" />
       </PrintSection>
       {secondaryCharts.map((x, i) => (
-        <PrintSection key={i} className="flex flex-col justify-between">
+        <PrintSection
+          key={i}
+          className={clsx(
+            'flex flex-col',
+            x.length === 3 ? 'justify-between' : 'justify-start gap-y-10',
+          )}
+        >
           {x.map((y, i) => (
             <_Chart key={i} className="" type={y} />
           ))}
@@ -66,24 +83,29 @@ const _Legacy = React.memo(({ className }: { className?: string }) => {
   const { params } = useSimulation()
   const data = usePlanChartLegacyCardData()
   const maxLegacy = Math.max(...data.map((x) => x.amount))
+  const hasLegacy =
+    maxLegacy > 0 ||
+    params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0
   return (
     <div className={clsx(className)}>
-      <h2 className="text-2xl font-bold mb-2">Legacy</h2>
-      <div className="inline-block border-2 border-black rounded-lg p-2">
-        {maxLegacy > 0 ||
-        params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0 ? (
+      <h2 className="text-xl font-bold mb-2">Legacy</h2>
+      {hasLegacy && (
+        <h2 className=" mb-4">These dollars are adjusted for inflation.</h2>
+      )}
+      <div className="inline-block border border-black rounded-lg p-2">
+        {hasLegacy ? (
           <>
             <div
-              className="inline-grid text-[14px] mt-0.5 gap-x-4 items-center "
+              className="inline-grid  mt-0.5 gap-x-4 items-center text-[13px]"
               style={{ grid: 'auto/auto 1fr' }}
             >
               {data.map((x) => (
                 <React.Fragment key={x.percentile}>
-                  <h2 className="text-right text-lg">
+                  <h2 className="text-right">
                     {x.percentile}
                     <sup className="text-[10px]">th</sup> percentile
                   </h2>
-                  <h2 className="font-mono text-[16px]">
+                  <h2 className="font-mono ">
                     {planChartLegacyCardFormat(x.amount, 'desktop')}
                   </h2>
                 </React.Fragment>
@@ -147,28 +169,29 @@ const _Chart = React.memo(
               {i > 0 && (
                 <FontAwesomeIcon className="mx-3" icon={faChevronRight} />
               )}
-              <span className="text-2xl font-bold">{x}</span>
+              <span className="text-xl font-bold">{x}</span>
             </React.Fragment>
           ))}
         </h2>
         {subLabel && <h2 className="text-xl font-bold">{subLabel}</h2>}
-        {yAxisDescriptionStr && (
-          <h2 className="text-base">
-            {yAxisDescriptionStr}. The graph shows 5
-            <span className=" align-super text-[10px]">th</span> to 95
-            <span className=" align-super text-[10px]">th</span> percentiles
-            with the 50<span className=" align-super text-[10px]">th</span>{' '}
-            percentile in bold.
-          </h2>
-        )}
+        <h2 className="">
+          {yAxisDescriptionStr && (
+            <span className="">{yAxisDescriptionStr}. </span>
+          )}
+          The graph shows 5<span className=" align-super text-[10px]">th</span>{' '}
+          to 95
+          <span className=" align-super text-[10px]">th</span> percentiles with
+          the 50<span className=" align-super text-[10px]">th</span> percentile
+          in bold.
+        </h2>
 
         <div
           className={clsx(
             // The border is applied to the div outside the measured div.
-            'relative  border-[2px] border-black rounded-lg mt-2',
+            'relative  border-[1px] border-black rounded-lg mt-2',
           )}
         >
-          <div className="h-[325px]" ref={outerDivRef}>
+          <div className="h-[225px]" ref={outerDivRef}>
             <TPAWChartMainPrint
               starting={{
                 data: chartMainData,
@@ -195,12 +218,10 @@ const _sizingFromWidth = (width: number, hasPartner: boolean) => {
     right: 10,
     top: 20, // 20 is needed for the max y label.
     bottom:
-      2 + // gap below plotArea.
-      2 + // line at bottom of plotArea.
-      2 + // gap below x axis.
+      2 +
       xAxisSizing.height +
       (hasPartner
-        ? +3 * xAxisSizing.gap + xAxisSizing.height
+        ? 3 * xAxisSizing.gap + xAxisSizing.height
         : 2 * xAxisSizing.gap),
   }
 
@@ -209,7 +230,7 @@ const _sizingFromWidth = (width: number, hasPartner: boolean) => {
       x: 0,
       y: 0,
       width,
-      height: 325,
+      height: 225,
     }),
     padding,
   }

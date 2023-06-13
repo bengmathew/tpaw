@@ -25,7 +25,7 @@ export const PrintSection = React.memo(
           'px-[1.5cm] py-[1.5cm] print:py-[.5cm]',
           'my-10 print:my-0',
           'bg-white',
-          'text-[14px]',
+          'text-[12px]',
 
           // 'w-[21cm]',
           // 'min-h-[100vh]',

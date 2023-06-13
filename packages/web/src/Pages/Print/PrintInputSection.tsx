@@ -8,7 +8,7 @@ import {
 } from '@tpaw/common'
 import clsx from 'clsx'
 import _ from 'lodash'
-import React from 'react'
+import React, { ReactNode } from 'react'
 import { calendarMonthStr } from '../../Utils/CalendarMonthStr'
 import { formatCurrency } from '../../Utils/FormatCurrency'
 import { formatPercentage } from '../../Utils/FormatPercentage'
@@ -49,24 +49,26 @@ export const PrintInputSection = React.memo(() => {
         <h1 className="font-bold text-4xl text-center ">Your Inputs</h1>
       </PrintSection>
       <PrintSection
-        className="grid gap-y-20 gap-x-5"
+        className="grid gap-y-12 gap-x-5"
         style={{ grid: 'auto / auto 1fr' }}
       >
         {/* <h1 className="font-bold text-4xl text-center"> Your Inputs</h1> */}
-        <h2 className="font-bold text-3xl text-right border-r-2 border-black px-5">Age</h2>
+        <_SectionHeading className="">Age</_SectionHeading>
         <div className="mt-1.5">
-          <PlanInputAgePrintSummary />
+          <PlanInputAgeSummary />
         </div>
-        <h2 className="font-bold text-3xl text-right border-r-2 border-black px-5">Wealth</h2>
+        <_SectionHeading className="">Wealth</_SectionHeading>
         <div className="mt-1.5">
           <div className=" break-inside-avoid-page">
-            <h2 className="font-bold text-xl">Current Portfolio Balance</h2>
+            <_SubSectionHeading className="" isFirst>
+              Current Portfolio Balance
+            </_SubSectionHeading>
             <div className="mt-2">
               <PlanInputCurrentPortfolioBalanceSummary />
             </div>
           </div>
           <div className=" ">
-            <h2 className="font-bold text-xl mt-10">Future Savings</h2>
+            <_SubSectionHeading className="">Future Savings</_SubSectionHeading>
             <div className="mt-2">
               {(allowFutureSavingsEntries ||
                 params.plan.wealth.futureSavings.length > 0) &&
@@ -81,7 +83,9 @@ export const PrintInputSection = React.memo(() => {
             </div>
           </div>
           <div className=" ">
-            <h2 className="font-bold text-xl mt-10">Income During Retirement</h2>
+            <_SubSectionHeading className="">
+              Income During Retirement
+            </_SubSectionHeading>
             <div className="mt-2">
               {params.plan.wealth.retirementIncome.length > 0 ? (
                 <PlanInputValueForMonthRangeSummary
@@ -95,12 +99,14 @@ export const PrintInputSection = React.memo(() => {
           </div>
         </div>
 
-        <h2 className="font-bold text-3xl text-right border-r-2 border-black px-5">
+        <_SectionHeading className="">
           Adjustments <br /> to <br /> Spending
-        </h2>
+        </_SectionHeading>
 
         <div className="mt-1.5">
-          <h2 className="font-bold text-xl">Extra Spending</h2>
+          <_SubSectionHeading className="" isFirst>
+            Extra Spending
+          </_SubSectionHeading>
           <h2 className="font-medium text-[16px] mt-3">Essential Expenses</h2>
           <div className="mt-2">
             {params.plan.adjustmentsToSpending.extraSpending.essential.length >
@@ -131,7 +137,7 @@ export const PrintInputSection = React.memo(() => {
               <_None />
             )}
           </div>
-          <h2 className="font-bold text-xl mt-10">Legacy</h2>
+          <_SubSectionHeading className="">Legacy</_SubSectionHeading>
           <div className="mt-2">
             {params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.external
               .length === 0 &&
@@ -142,7 +148,9 @@ export const PrintInputSection = React.memo(() => {
             )}
           </div>
 
-          <h2 className="font-bold text-xl mt-10">Spending Ceiling And Floor</h2>
+          <_SubSectionHeading className="">
+            Spending Ceiling And Floor
+          </_SubSectionHeading>
           <div className="mt-2">
             {params.plan.advanced.strategy !== 'SWR' &&
               (params.plan.adjustmentsToSpending.tpawAndSPAW
@@ -155,69 +163,85 @@ export const PrintInputSection = React.memo(() => {
               ))}
           </div>
         </div>
-        <h2 className="font-bold text-3xl text-right border-r-2 border-black px-5">Risk</h2>
+        <_SectionHeading className="">Risk</_SectionHeading>
         <div className=" break-inside-avoid-page mt-2">
           <div className="">
             <PlanInputRiskSummary />
           </div>
         </div>
 
-        {(isAdvancedModified['expected-returns'] ||
-          isAdvancedModified['inflation'] ||
-          isAdvancedModified['simulation'] ||
-          isAdvancedModified['strategy']) && (
-          <>
-            <h2 className="font-bold text-3xl text-right border-r-2 border-black px-5">Advanced</h2>
-            <div className="mt-1.5">
-              {isAdvancedModified['expected-returns'] && (
-                <>
-                  <h2 className="font-bold text-xl">Expected Returns</h2>
-                  <div className="mt-2">
-                    <PlanInputExpectedReturnsSummary />
-                  </div>
-                </>
-              )}
-              {isAdvancedModified['inflation'] && (
-                <>
-                  <h2 className="font-bold text-xl mt-10">Inflation</h2>
-                  <div className="mt-2">
-                    <PlanInputInflationSummary />
-                  </div>
-                </>
-              )}
-              {isAdvancedModified['simulation'] && (
-                <>
-                  <h2 className="font-bold text-xl mt-10">Simulation</h2>
-                  <div className="mt-2">
-                    <PlanInputSimulationSummary />
-                  </div>
-                </>
-              )}
-              {isAdvancedModified['strategy'] && (
-                <>
-                  <h2 className="font-bold text-xl mt-10">Strategy</h2>
-                  <div className="mt-2">
-                    <PlanInputStrategySummary />
-                  </div>
-                </>
-              )}
-            </div>
-          </>
-        )}
+        <_SectionHeading className="">Advanced</_SectionHeading>
+        <div className="mt-1.5">
+          <_SubSectionHeading className="" isFirst>
+            Expected Returns
+          </_SubSectionHeading>
+          <div className="mt-2">
+            <PlanInputExpectedReturnsSummary />
+          </div>
+          <_SubSectionHeading className="">Inflation</_SubSectionHeading>
+          <div className="mt-2">
+            <PlanInputInflationSummary />
+          </div>
+          <_SubSectionHeading className="">Simulation</_SubSectionHeading>
+          <div className="mt-2">
+            <PlanInputSimulationSummary />
+          </div>
+          <_SubSectionHeading className="">Strategy</_SubSectionHeading>
+          <div className="mt-2">
+            <PlanInputStrategySummary />
+          </div>
+        </div>
       </PrintSection>
     </>
   )
 })
 
-export const _None = React.memo(() => (
+const _SectionHeading = React.memo(
+  ({ className, children }: { className?: string; children: ReactNode }) => {
+    return (
+      <h2
+        className={clsx(
+          className,
+          'font-bold text-3xl text-right border-r-2 border-black px-5',
+        )}
+      >
+        {children}
+      </h2>
+    )
+  },
+)
+const _SubSectionHeading = React.memo(
+  ({
+    className,
+    children,
+    isFirst = false,
+  }: {
+    className?: string
+    children: ReactNode
+    isFirst?: boolean
+  }) => {
+    return (
+      <h2 className={clsx(className, 'font-bold text-xl', !isFirst && 'mt-6')}>
+        {children}
+      </h2>
+    )
+  },
+)
+
+const _None = React.memo(() => (
   <div className="">
     <h2 className="">None</h2>
   </div>
 ))
 
-export const PlanInputAgePrintSummary = React.memo(() => {
+export const PlanInputAgeSummary = React.memo(() => {
   const { params, paramsExt } = useSimulation()
-  const { isAgesNotRetired, isPersonRetired, pickPerson } = paramsExt
+  const {
+    isAgesNotRetired,
+    isPersonRetired,
+    pickPerson,
+    getCurrentAgeOfPerson,
+  } = paramsExt
   if (params.plan.dialogPosition === 'age') {
     return (
       <>
@@ -232,7 +256,10 @@ export const PlanInputAgePrintSummary = React.memo(() => {
     return isAgesNotRetired(ages) ? (
       <>
         <h2 className={`${className}`}>Month of Birth</h2>
-        <h2> {calendarMonthStr(ages.monthOfBirth)}</h2>
+        <h2>
+          {calendarMonthStr(ages.monthOfBirth)} (Age:{' '}
+          {numMonthsStr(getCurrentAgeOfPerson(person).inMonths)})
+        </h2>
         <h2 className={`${className}`}>Retirement</h2>
         <h2> {numMonthsStr(ages.retirementAge.inMonths)}</h2>
         <h2 className={`${className}`}>Max</h2>

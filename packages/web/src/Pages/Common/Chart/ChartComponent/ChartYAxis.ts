@@ -24,13 +24,15 @@ export class ChartYAxis<Data> implements ChartComponent<Data> {
       .forEach((gridDataY, i) => {
         const gridGraphY = scale.y(gridDataY)
         if (gridGraphY < plotArea.y) return
-        ctx.strokeStyle = this.colors.line
-        ctx.beginPath()
-        ctx.moveTo(plotArea.x, gridGraphY)
-        ctx.lineTo(plotArea.right, gridGraphY)
-        ctx.stroke()
+        if (i !== 0) {
+          ctx.strokeStyle = this.colors.line
+          ctx.beginPath()
+          ctx.moveTo(plotArea.x, gridGraphY)
+          ctx.lineTo(plotArea.right, gridGraphY)
+          ctx.stroke()
+        }
         ctx.fillStyle = this.colors.text
-        ctx.textBaseline = i === 0 ? 'bottom' : 'middle'
+        ctx.textBaseline = i === 0 ? 'middle' : 'middle'
         ctx.fillText(
           this.format(dataTransition.target, gridDataY),
           plotArea.x - 10,

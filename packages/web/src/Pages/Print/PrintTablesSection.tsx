@@ -83,66 +83,64 @@ const _Table = React.memo(
               {i > 0 && (
                 <FontAwesomeIcon className="mx-3" icon={faChevronRight} />
               )}
-              <span className="text-2xl font-bold">{x}</span>
+              <span className="text-xl font-bold">{x}</span>
             </React.Fragment>
           ))}
         </h2>
         {subLabel && <h2 className="text-xl font-bold">{subLabel}</h2>}
-        {yAxisDescriptionStr && (
-          <h2 className="text-base">{yAxisDescriptionStr}</h2>
-        )}
-        <table className=" border-collapse mt-4 border-2 border-black">
+        {yAxisDescriptionStr && <h2 className="">{yAxisDescriptionStr}</h2>}
+        <table className=" border-collapse mt-4 border border-black">
           <thead className="">
             <tr className="">
               <th className="px-4" colSpan={2}>
                 Your Age
               </th>
               {person2Age !== null && (
-                <th className="px-4 border-l-2 border-black" colSpan={2}>
+                <th className="px-4 border-l border-black" colSpan={2}>
                   {`Partner's Age`}
                 </th>
               )}
-              <th className="px-4 border-l-2 border-black" colSpan={3}>
+              <th className="px-4 border-l border-black" colSpan={3}>
                 Percentiles
               </th>
             </tr>
-            <tr className="border-b-2 border-black">
+            <tr className="border-b border-black">
               <th className="px-4">Years</th>
               <th className="px-4">Months</th>
               {person2Age !== null && (
                 <>
-                  <th className="px-4 border-l-2 border-black">Years</th>
+                  <th className="px-4 border-l border-black">Years</th>
                   <th className="px-4">Months</th>
                 </>
               )}
-              <th className="px-4  border-l-2 border-black">
-                {chartMainData.percentiles[0].percentile}th
+              <th className="px-4  border-l border-black">
+                {chartMainData.percentiles[0].percentile}
+                <span className=" align-super text-[8px]">th</span>
               </th>
               <th className="px-4">
-                {chartMainData.percentiles[1].percentile}th
+                {chartMainData.percentiles[1].percentile}
+                <span className=" align-super text-[8px]">th</span>
               </th>
               <th className="px-4">
-                {chartMainData.percentiles[2].percentile}th
+                {chartMainData.percentiles[2].percentile}
+                <span className=" align-super text-[8px]">th</span>
               </th>
             </tr>
           </thead>
-          <tbody className="font-mono">
+          <tbody className="font-mono text-[10px]">
             {months.map((x, i) => {
               const month = (x + person1Age.inMonths) % 12
               if (!(month === 0 || i === months.length - 1 || i === 0))
                 return <></>
               return (
-                <tr
-                  key={i}
-                  className={clsx(month === 0 && 'border-t border-gray-400')}
-                >
+                <tr key={i} className={clsx('border-t border-gray-400')}>
                   <td className="px-4 text-center">
                     {`${Math.floor((x + person1Age.inMonths) / 12)}`}{' '}
                   </td>
                   <td className="px-4 text-center">{`${month}`} </td>
                   {person2Age !== null && (
                     <>
-                      <td className="px-4 text-center  border-l-2 border-black">
+                      <td className="px-4 text-center  border-l border-black">
                         {`${Math.floor((x + person2Age.inMonths) / 12)}`}{' '}
                       </td>
                       <td className="px-4 text-center">
@@ -150,7 +148,7 @@ const _Table = React.memo(
                       </td>
                     </>
                   )}
-                  <td className="px-4 text-right  border-l-2 border-black">
+                  <td className="px-4 text-right  border-l border-black">
                     {chartMainData.yFormat(
                       chartMainData.percentiles[0].data(x),
                     )}{' '}

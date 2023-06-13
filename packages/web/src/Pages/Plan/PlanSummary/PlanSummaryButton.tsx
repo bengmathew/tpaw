@@ -14,12 +14,12 @@ import _ from 'lodash'
 import React, { useMemo } from 'react'
 import { ParamsExtended } from '../../../TPAWSimulator/ExtentParams'
 import { normalizeGlidePath } from '../../../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessRisk'
-import { calendarMonthStr } from '../../../Utils/CalendarMonthStr'
 import { formatCurrency } from '../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../Utils/FormatPercentage'
 import { Padding, paddingCSSStyle } from '../../../Utils/Geometry'
 import { numMonthsStr } from '../../../Utils/NumMonthsStr'
 import { SimpleRange } from '../../../Utils/SimpleRange'
+import { trimAndNullify } from '../../../Utils/TrimAndNullify'
 import { useURLUpdater } from '../../../Utils/UseURLUpdater'
 import { noCase } from '../../../Utils/Utils'
 import { useMarketData } from '../../App/WithMarketData'
@@ -27,6 +27,7 @@ import { useSimulation } from '../../App/WithSimulation'
 import { ChartUtils } from '../../Common/Chart/ChartUtils/ChartUtils'
 import { monthToStringForGlidePath } from '../../Common/Inputs/GlidePathInput'
 import { ValueForMonthRangeDisplay } from '../../Common/ValueForMonthRangeDisplay'
+import { PlanInputAgeSummary } from '../../Print/PrintInputSection'
 import { useGetSectionURL } from '../Plan'
 import { PlanInputModifiedBadge } from '../PlanInput/Helpers/PlanInputModifiedBadge'
 import { PlanInputType } from '../PlanInput/Helpers/PlanInputType'
@@ -39,7 +40,6 @@ import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import { PlanInputCurrentPortfolioBalanceSummary } from '../PlanInput/PlanInputCurrentPortfolioBalance'
 import { expectedReturnTypeLabel } from '../PlanInput/PlanInputExpectedReturns'
 import { inflationTypeLabel } from '../PlanInput/PlanInputInflation'
-import { trimAndNullify } from '../../../Utils/TrimAndNullify'
 
 type _Props = {
   padding: Padding
@@ -173,80 +173,10 @@ export const useShouldDisablePlanSummaryButton = (type: PlanInputType) => {
 const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
   const { params, paramsProcessed, paramsExt, defaultParams } = useSimulation()
   const marketData = useMarketData()
-  const {
-    validMonthRangeAsMFN,
-    pickPerson,
-    yourOrYourPartners,
-    withdrawalsStarted,
-    isAgesNotRetired,
-    getCurrentAgeOfPerson,
-    isPersonRetired,
-  } = paramsExt
+  const { validMonthRangeAsMFN, withdrawalsStarted } = paramsExt
   switch (type) {
     case 'age': {
-      if (params.plan.dialogPosition === 'age') {
-        return (
-          <>
-            <h2>Month of Birth: </h2>
-            <h2>Retirement: </h2>
-            <h2>Max: </h2>
-          </>
-        )
-      }
-      const forPerson = (person: 'person1' | 'person2', className = '') => {
-        const { ages } = pickPerson(person)
-        return isAgesNotRetired(ages) ? (
-          <>
-            <h2 className={`${className}`}>Month of Birth</h2>
-            <h2> {calendarMonthStr(ages.monthOfBirth)}</h2>
-            <h2 className={`${className}`}>Retirement</h2>
-            <h2> {numMonthsStr(ages.retirementAge.inMonths)}</h2>
-            <h2 className={`${className}`}>Max</h2>
-            <h2> {numMonthsStr(ages.maxAge.inMonths)}</h2>
-          </>
-        ) : (
-          <>
-            <h2 className={`${className} col-span-2`}>Retired</h2>
-            <h2 className={`${className}`}>Month of Birth</h2>
-            <h2> {calendarMonthStr(ages.monthOfBirth)}</h2>
-            <h2 className={`${className}`}>Max</h2>
-            <h2> {numMonthsStr(ages.maxAge.inMonths)}</h2>
-          </>
-        )
-      }
-      if (params.plan.people.withPartner) {
-        const withdrawalPerson = pickPerson(params.plan.people.withdrawalStart)
-        return (
-          <div
-            className={`grid gap-x-3 gap-y-1`}
-            style={{ grid: 'auto/auto 1fr' }}
-          >
-            <h2 className="font-medium col-span-2">You</h2>
-            {forPerson('person1', 'ml-4')}
-            <h2 className="mt-2 font-medium  col-span-2">Your Partner</h2>
-            {forPerson('person2', 'ml-4')}
-            {!(isPersonRetired('person1') && isPersonRetired('person2')) && (
-              <h2 className="mt-2  col-span-2">
-                Withdrawals start{' '}
-                {isPersonRetired(withdrawalPerson)
-                  ? 'now.'
-                  : `at ${yourOrYourPartners(
-                      params.plan.people.withdrawalStart,
-                    )} retirement.`}
-              </h2>
-            )}
-          </div>
-        )
-      } else {
-        return (
-          <div
-            className={`grid gap-x-3 gap-y-1`}
-            style={{ grid: 'auto/auto 1fr' }}
-          >
-            {forPerson('person1')}
-          </div>
-        )
-      }
+      return <PlanInputAgeSummary />
     }
     case 'current-portfolio-balance': {
       return <PlanInputCurrentPortfolioBalanceSummary />

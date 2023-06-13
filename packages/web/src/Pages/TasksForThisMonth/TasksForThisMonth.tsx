@@ -100,8 +100,8 @@ export const TasksForThisMonth = React.memo(() => {
                 Done
               </button>
               <h1 className="font-bold text-3xl">Tasks for This Month</h1>
-              <TasksForThisMonthContent className="mt-10" />
             </div>
+            <TasksForThisMonthContent className="mt-10" />
           </div>
         </div>
       </div>
@@ -110,23 +110,43 @@ export const TasksForThisMonth = React.memo(() => {
 })
 
 export const TasksForThisMonthContent = React.memo(
-  ({ className }: { className?: string }) => {
+  ({
+    className,
+    forPrint = false,
+  }: {
+    className?: string
+    forPrint?: boolean
+  }) => {
     const { tpawResult } = useSimulation()
     const props = getTasksForThisMonthProps(tpawResult)
 
     const { withdrawals, withdrawalsStarted } = props
     return (
-      <div className={clsx(className)}>
+      <div className={clsx(className, forPrint ? '' : 'p-base')}>
         {withdrawals.total !== 0 || withdrawalsStarted ? (
           <>
-            <h2 className="font-bold text-2xl mb-4">Summary</h2>
-            <_Summary className="" {...props} />
+            <h2
+              className={clsx(
+                'font-bold text-2xl mb-4 font-font1 ',
+                forPrint ? 'text-black' : 'text-pageFG',
+              )}
+            >
+              Summary
+            </h2>
+            <_Summary className="" {...props} forPrint={forPrint} />
 
-            <h2 className="font-bold text-2xl mt-10 mb-6">Details</h2>
-            <_Details className="" {...props} />
+            <h2
+              className={clsx(
+                'font-bold text-2xl mt-10 mb-6  font-font1 ',
+                forPrint ? 'text-black' : 'text-pageFG',
+              )}
+            >
+              Details
+            </h2>
+            <_Details className="" {...props} forPrint={forPrint} />
           </>
         ) : (
-          <_Details className="" {...props} />
+          <_Details className="" {...props} forPrint={forPrint} />
         )}
       </div>
     )
@@ -135,7 +155,11 @@ export const TasksForThisMonthContent = React.memo(
 
 // -------- SUMMARY --------
 const _Summary = React.memo(
-  ({ className, ...props }: TasksForThisMonthProps & { className: string }) => {
+  ({
+    className,
+    forPrint,
+    ...props
+  }: TasksForThisMonthProps & { className: string; forPrint: boolean }) => {
     const { contributionToOrWithdrawalFromSavingsPortfolio } = props
     const withdrawalText =
       contributionToOrWithdrawalFromSavingsPortfolio.type === 'withdrawal'
@@ -150,7 +174,7 @@ const _Summary = React.memo(
 
     return (
       <div className={className}>
-        <div className="mt-2 p-base">
+        <div className="mt-2">
           <p className="mb-2">
             {withdrawalText} your portfolio and rebalance your remaining
             portfolio of <_Value>{props.afterWithdrawals.balance}</_Value> to
@@ -165,7 +189,11 @@ const _Summary = React.memo(
 
 //  -------- DETAILS --------
 const _Details = React.memo(
-  ({ className, ...props }: TasksForThisMonthProps & { className: string }) => {
+  ({
+    className,
+    forPrint,
+    ...props
+  }: TasksForThisMonthProps & { className: string; forPrint: boolean }) => {
     const {
       withdrawals,
       contributionToOrWithdrawalFromSavingsPortfolio,
@@ -177,14 +205,17 @@ const _Details = React.memo(
           <>
             <_HowMuchYouHave
               className="mb-8 break-inside-avoid-page"
+              forPrint={forPrint}
               {...props}
             />
             <_HowMuchToSpend
               className="mb-8  break-inside-avoid-page"
+              forPrint={forPrint}
               {...props}
             />
             {withdrawals.total > 0 && (
               <_HowToFundTheSpending
+                forPrint={forPrint}
                 className="mb-8  break-inside-avoid-page"
                 {...props}
               />
@@ -193,8 +224,14 @@ const _Details = React.memo(
         )}
         {(!withdrawalsStarted ||
           contributionToOrWithdrawalFromSavingsPortfolio.type ===
-            'contribution') && <_Contribution className="mb-8" {...props} />}
-        <_AssetAllocation className=" break-inside-avoid-page" {...props} />
+            'contribution') && (
+          <_Contribution className="mb-8" forPrint={forPrint} {...props} />
+        )}
+        <_AssetAllocation
+          className=" break-inside-avoid-page"
+          forPrint={forPrint}
+          {...props}
+        />
       </div>
     )
   },
@@ -206,12 +243,13 @@ const _HowMuchYouHave = React.memo(
     withdrawalsStarted,
     contributions,
     className = '',
+    forPrint,
     ...props
-  }: TasksForThisMonthProps & { className?: string }) => {
+  }: TasksForThisMonthProps & { className?: string; forPrint: boolean }) => {
     return (
       <div className={className}>
-        <_Heading>How Much You Have</_Heading>
-        <p className="mb-4 p-base">
+        <_Heading forPrint={forPrint}>How Much You Have</_Heading>
+        <p className="mb-4">
           Your current portfolio is <_Value>{props.start.balance}</_Value> and
           you{' '}
           {!withdrawalsStarted ? (
@@ -238,16 +276,17 @@ const _HowMuchToSpend = React.memo(
   ({
     withdrawals,
     className = '',
+    forPrint,
     ...props
-  }: TasksForThisMonthProps & { className?: string }) => {
+  }: TasksForThisMonthProps & { className?: string; forPrint: boolean }) => {
     const needsBreakdown =
       withdrawals.essentialByEntry.length > 0 ||
       withdrawals.discretionaryByEntry.length > 0
     const mergeBreakdown = props.strategy === 'SWR'
     return (
       <div className={className}>
-        <_Heading>How Much To Spend</_Heading>
-        <p className="p-base">
+        <_Heading forPrint={forPrint}>How Much To Spend</_Heading>
+        <p className="">
           Out of your <_Value>{props.start.balance}</_Value>, you plan to spend{' '}
           <_Value className="">{withdrawals.total}</_Value> this month
           {needsBreakdown
@@ -257,7 +296,7 @@ const _HowMuchToSpend = React.memo(
         </p>
         {needsBreakdown && (
           <div
-            className="grid justify-start gap-x-10 mt-2 p-base"
+            className="grid justify-start gap-x-10 mt-2 "
             style={{ grid: 'auto/auto auto' }}
           >
             <h2 className="">Regular</h2>
@@ -335,17 +374,18 @@ const _HowToFundTheSpending = React.memo(
   ({
     withdrawals,
     withdrawalsStarted,
+    forPrint,
     className = '',
-  }: TasksForThisMonthProps & { className?: string }) => {
+  }: TasksForThisMonthProps & { className?: string; forPrint: boolean }) => {
     return (
       <div className={className}>
-        <_Heading>How To Fund The Spending</_Heading>
-        <p className="mb-3 p-base">
+        <_Heading forPrint={forPrint}>How To Fund The Spending</_Heading>
+        <p className="mb-3">
           Fund your spending of <_Value>{withdrawals.total}</_Value> from the
           following sources:{' '}
         </p>
         <div
-          className="grid  justify-start gap-x-6 p-base"
+          className="grid  justify-start gap-x-6 "
           style={{ grid: 'auto/auto auto' }}
         >
           <h2 className="">Withdrawal from Portfolio</h2>
@@ -370,15 +410,18 @@ const _Contribution = React.memo(
     contributions,
     contributionToOrWithdrawalFromSavingsPortfolio,
     withdrawalsStarted,
+    forPrint,
     className = '',
-  }: TasksForThisMonthProps & { className?: string }) => {
+  }: TasksForThisMonthProps & { className?: string; forPrint: boolean }) => {
     return (
       <div className={className}>
-        <_Heading>How Much To Contribute To Your Portfolio</_Heading>
+        <_Heading forPrint={forPrint}>
+          How Much To Contribute To Your Portfolio
+        </_Heading>
         {contributionToOrWithdrawalFromSavingsPortfolio.type ===
         'contribution' ? (
           contributions.toWithdrawal > 0 ? (
-            <p className="mb-3 p-base">
+            <p className="mb-3 ">
               Your{' '}
               {withdrawalsStarted ? 'retirement income' : 'planned savings'} for
               this month is <_Value>{contributions.total}</_Value> You used{' '}
@@ -388,7 +431,7 @@ const _Contribution = React.memo(
               to your portfolio.{' '}
             </p>
           ) : (
-            <p className="mb-3 p-base">
+            <p className="mb-3 ">
               Your{' '}
               {withdrawalsStarted ? 'retirement income' : 'planned savings'} for
               this month is <_Value>{contributions.total}</_Value>. Contribute
@@ -397,7 +440,7 @@ const _Contribution = React.memo(
             </p>
           )
         ) : (
-          <p className="mb-3 p-base">
+          <p className="mb-3 ">
             You do not have a contribution to your portfolio this month.
           </p>
         )}
@@ -410,14 +453,14 @@ const _Contribution = React.memo(
 const _AssetAllocation = React.memo(
   ({
     className = '',
-
+    forPrint,
     ...props
-  }: TasksForThisMonthProps & { className?: string }) => {
+  }: TasksForThisMonthProps & { className?: string; forPrint: boolean }) => {
     const { contributionToOrWithdrawalFromSavingsPortfolio } = props
     return (
       <div className={className}>
-        <_Heading>What Asset Allocation To Use</_Heading>
-        <div className="mb-3 p-base">
+        <_Heading forPrint={forPrint}>What Asset Allocation To Use</_Heading>
+        <div className="mb-3 ">
           <p className="mb-3">
             You started with a portfolio of{' '}
             <_Value>{props.start.balance}</_Value> and{' '}
@@ -503,9 +546,18 @@ const _AllocationTable = React.memo(
   },
 )
 
-const _Heading = React.memo(({ children }: { children: ReactNode }) => (
-  <h2 className="font-bold text-lg mb-1">{children}</h2>
-))
+const _Heading = React.memo(
+  ({ children, forPrint }: { children: ReactNode; forPrint: boolean }) => (
+    <h2
+      className={clsx(
+        'font-bold text-lg mb-1 font-font1 ',
+        forPrint ? 'text-black' : 'text-pageFG',
+      )}
+    >
+      {children}
+    </h2>
+  ),
+)
 
 const _Value = React.memo(
   ({ children, className }: { children: number; className?: string }) => (

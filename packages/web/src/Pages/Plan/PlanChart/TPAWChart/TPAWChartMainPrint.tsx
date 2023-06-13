@@ -146,7 +146,7 @@ const components = () => () => {
         },
         visible: person === 'person1' ? true : params.plan.people.withPartner,
         yOffset:
-          6 +
+          4 +
           (params.plan.people.withPartner
             ? +sizing.gap +
               (person === 'person1' ? 0 : sizing.height + sizing.gap)
@@ -197,7 +197,7 @@ const components = () => () => {
     },
   )
 
-  const custom = new ChartDrawMain(ChartUtils.color.gray[700], 2)
+  const custom = new ChartDrawMain(ChartUtils.color.gray[700], 1)
   return _.compact([
     rangeBand,
     medianLine,
