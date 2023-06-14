@@ -35,7 +35,7 @@ export const planChartLabel = (
       }
     case 'portfolio':
       return {
-        label: ['Portfolio'],
+        label: ['Portfolio Balance'],
         subLabel: null,
         description: 'Savings portfolio balance',
         yAxisDescription: _yAxisDescriptionType.realDollarsExplanation,

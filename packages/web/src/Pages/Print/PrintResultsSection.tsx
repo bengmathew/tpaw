@@ -105,7 +105,7 @@ const _Legacy = React.memo(({ className }: { className?: string }) => {
                     {x.percentile}
                     <sup className="text-[10px]">th</sup> percentile
                   </h2>
-                  <h2 className="font-mono ">
+                  <h2 className="font-mono text-right">
                     {planChartLegacyCardFormat(x.amount, 'desktop')}
                   </h2>
                 </React.Fragment>
