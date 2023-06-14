@@ -307,9 +307,9 @@ const _AmountSection = React.memo((props: _SectionProps) => {
           grid: 'auto auto /  auto',
         }}
       >
-        <div className="grid" style={{ grid: 'auto / 1fr auto auto' }}>
+        <div className="flex " >
           <AmountInput
-            className="w-[100%] text-input"
+            className="w-[100px] text-input"
             prefix="$"
             value={entry.value}
             onChange={(value) => setEntry((entry) => (entry.value = value))}

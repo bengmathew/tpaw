@@ -120,42 +120,45 @@ export const _SpendingCeilingCard = React.memo(
             </div>
           </Switch.Group>
           {value !== null && (
-            <div className={`mt-4 flex ${value === null ? 'opacity-40' : ''}`}>
-              <AmountInput
-                className="text-input"
-                prefix="$"
-                disabled={value === null}
-                value={value ?? entryOnEnabled}
-                onChange={handleAmount}
-                decimals={0}
-                modalLabel="Spending Ceiling"
-              />
-              <button
-                className="ml-2 px-3"
-                disabled={value === null}
-                onClick={() =>
-                  handleAmount(
-                    smartDeltaFnForAmountInput.increment(
-                      value ?? entryOnEnabled,
-                    ),
-                  )
-                }
-              >
-                <FontAwesomeIcon icon={faPlus} />
-              </button>
-              <button
-                className="px-3"
-                disabled={value === null}
-                onClick={() =>
-                  handleAmount(
-                    smartDeltaFnForAmountInput.decrement(
-                      value ?? entryOnEnabled,
-                    ),
-                  )
-                }
-              >
-                <FontAwesomeIcon icon={faMinus} />
-              </button>
+            <div className="mt-4">
+              <div className={`flex items-center`}>
+                <AmountInput
+                  className="text-input w-[100px]"
+                  prefix="$"
+                  disabled={value === null}
+                  value={value ?? entryOnEnabled}
+                  onChange={handleAmount}
+                  decimals={0}
+                  modalLabel="Spending Ceiling"
+                />
+                <h2 className="pl-3">per month</h2>
+                <button
+                  className="ml-2 px-3"
+                  disabled={value === null}
+                  onClick={() =>
+                    handleAmount(
+                      smartDeltaFnForAmountInput.increment(
+                        value ?? entryOnEnabled,
+                      ),
+                    )
+                  }
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                </button>
+                <button
+                  className="px-3"
+                  disabled={value === null}
+                  onClick={() =>
+                    handleAmount(
+                      smartDeltaFnForAmountInput.decrement(
+                        value ?? entryOnEnabled,
+                      ),
+                    )
+                  }
+                >
+                  <FontAwesomeIcon icon={faMinus} />
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -243,15 +246,16 @@ export const _SpendingFloorCard = React.memo(
             </div>
           </Switch.Group>
           {value !== null && (
-            <div className="mt-4 flex">
+            <div className="mt-4 flex items-center">
               <AmountInput
-                className="text-input"
+                className="text-input w-[100px]"
                 prefix="$"
                 value={value}
                 onChange={handleAmount}
                 decimals={0}
                 modalLabel={'Spending Floor'}
               />
+              <h2 className="pl-3">per month</h2>
               <button
                 className="ml-2 px-3"
                 onClick={() =>

@@ -30,6 +30,7 @@ import { ValueForMonthRangeDisplay } from '../../Common/ValueForMonthRangeDispla
 import {
   PlanInputAgeSummary,
   PlanInputExtraSpendingSummary,
+  PlanInputSpendingCeilingAndFloorSummary,
 } from '../../Print/PrintInputSection'
 import { useGetSectionURL } from '../Plan'
 import { PlanInputModifiedBadge } from '../PlanInput/Helpers/PlanInputModifiedBadge'
@@ -236,24 +237,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
       )
     }
     case 'spending-ceiling-and-floor': {
-      const { monthlySpendingCeiling, monthlySpendingFloor } =
-        params.plan.adjustmentsToSpending.tpawAndSPAW
-      return (
-        <>
-          <h2>
-            Ceiling:{' '}
-            {monthlySpendingCeiling
-              ? formatCurrency(monthlySpendingCeiling)
-              : 'None'}
-          </h2>
-          <h2>
-            Floor:{' '}
-            {monthlySpendingFloor
-              ? formatCurrency(monthlySpendingFloor)
-              : 'None'}
-          </h2>
-        </>
-      )
+      return <PlanInputSpendingCeilingAndFloorSummary />
     }
 
     case 'risk': {

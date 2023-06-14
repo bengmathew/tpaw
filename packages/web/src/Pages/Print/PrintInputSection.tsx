@@ -338,18 +338,20 @@ export const PlanInputSpendingCeilingAndFloorSummary = React.memo(() => {
   const { monthlySpendingCeiling, monthlySpendingFloor } =
     params.plan.adjustmentsToSpending.tpawAndSPAW
   return (
-    <div className="">
+    <>
       <h2>
         Ceiling:{' '}
         {monthlySpendingCeiling
-          ? formatCurrency(monthlySpendingCeiling)
+          ? `${formatCurrency(monthlySpendingCeiling)} per month`
           : 'None'}
       </h2>
       <h2>
         Floor:{' '}
-        {monthlySpendingFloor ? formatCurrency(monthlySpendingFloor) : 'None'}
+        {monthlySpendingFloor
+          ? `${formatCurrency(monthlySpendingFloor)} per month`
+          : 'None'}
       </h2>
-    </div>
+    </>
   )
 })
 
