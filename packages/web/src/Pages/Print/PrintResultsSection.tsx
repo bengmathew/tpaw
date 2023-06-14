@@ -88,11 +88,11 @@ const _Legacy = React.memo(({ className }: { className?: string }) => {
     params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0
   return (
     <div className={clsx(className)}>
-      <h2 className="text-xl font-bold mb-2">Legacy</h2>
+      <h2 className="text-xl font-bold">Legacy</h2>
       {hasLegacy && (
-        <h2 className=" mb-4">These dollars are adjusted for inflation.</h2>
+        <h2 className=" ">These dollars are adjusted for inflation.</h2>
       )}
-      <div className="inline-block border border-black rounded-lg p-2">
+      <div className="mt-2 inline-block border border-black rounded-lg p-2">
         {hasLegacy ? (
           <>
             <div

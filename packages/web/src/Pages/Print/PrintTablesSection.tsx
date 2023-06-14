@@ -89,7 +89,7 @@ const _Table = React.memo(
         </h2>
         {subLabel && <h2 className="text-xl font-bold">{subLabel}</h2>}
         {yAxisDescriptionStr && <h2 className="">{yAxisDescriptionStr}</h2>}
-        <table className=" border-collapse mt-4 border border-black">
+        <table className=" border-collapse mt-2 border border-black">
           <thead className="">
             <tr className="">
               <th className="px-4" colSpan={2}>
