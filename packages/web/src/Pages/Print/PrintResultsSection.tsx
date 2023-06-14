@@ -115,8 +115,8 @@ const _Legacy = React.memo(({ className }: { className?: string }) => {
         ) : (
           <>
             <div className="">
-              <span className="text-lg">$0</span>{' '}
-              <div className="text-lg">(no legacy target entered)</div>
+              <span className="">$0</span>{' '}
+              <div className="">(no legacy target entered)</div>
             </div>
           </>
         )}
