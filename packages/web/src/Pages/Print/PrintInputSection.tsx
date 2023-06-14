@@ -107,61 +107,41 @@ export const PrintInputSection = React.memo(() => {
           <_SubSectionHeading className="" isFirst>
             Extra Spending
           </_SubSectionHeading>
-          <h2 className="font-medium text-[16px] mt-3">Essential Expenses</h2>
-          <div className="mt-2">
-            {params.plan.adjustmentsToSpending.extraSpending.essential.length >
-            0 ? (
-              <PlanInputValueForMonthRangeSummary
-                entries={
-                  params.plan.adjustmentsToSpending.extraSpending.essential
-                }
-                range={validMonthRangeAsMFN('extra-spending')}
-              />
-            ) : (
-              <_None />
-            )}
-          </div>
-          <h2 className="font-medium text-[16px] mt-3">
-            Discretionary Expenses
-          </h2>
-          <div className="mt-2">
-            {params.plan.adjustmentsToSpending.extraSpending.discretionary
-              .length > 0 ? (
-              <PlanInputValueForMonthRangeSummary
-                entries={
-                  params.plan.adjustmentsToSpending.extraSpending.discretionary
-                }
-                range={validMonthRangeAsMFN('extra-spending')}
-              />
-            ) : (
-              <_None />
-            )}
-          </div>
-          <_SubSectionHeading className="">Legacy</_SubSectionHeading>
-          <div className="mt-2">
-            {params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.external
-              .length === 0 &&
-            params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.total === 0 ? (
-              <_None />
-            ) : (
-              <PlanInputLegacySummary />
-            )}
-          </div>
+          <PlanInputExtraSpendingSummary forPrint />
 
-          <_SubSectionHeading className="">
-            Spending Ceiling And Floor
-          </_SubSectionHeading>
-          <div className="mt-2">
-            {params.plan.advanced.strategy !== 'SWR' &&
-              (params.plan.adjustmentsToSpending.tpawAndSPAW
-                .monthlySpendingCeiling === null &&
-              params.plan.adjustmentsToSpending.tpawAndSPAW
-                .monthlySpendingFloor === null ? (
-                <_None />
-              ) : (
-                <PlanInputSpendingCeilingAndFloorSummary />
-              ))}
-          </div>
+          {params.plan.advanced.strategy !== 'SWR' && (
+            <>
+              <_SubSectionHeading className="">Legacy</_SubSectionHeading>
+              <div className="mt-2">
+                {params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.external
+                  .length === 0 &&
+                params.plan.adjustmentsToSpending.tpawAndSPAW.legacy.total ===
+                  0 ? (
+                  <_None />
+                ) : (
+                  <PlanInputLegacySummary />
+                )}
+              </div>
+            </>
+          )}
+
+          {params.plan.advanced.strategy !== 'SWR' && (
+            <>
+              <_SubSectionHeading className="">
+                Spending Ceiling And Floor
+              </_SubSectionHeading>
+              <div className="mt-2">
+                {params.plan.adjustmentsToSpending.tpawAndSPAW
+                  .monthlySpendingCeiling === null &&
+                params.plan.adjustmentsToSpending.tpawAndSPAW
+                  .monthlySpendingFloor === null ? (
+                  <_None />
+                ) : (
+                  <PlanInputSpendingCeilingAndFloorSummary />
+                )}
+              </div>
+            </>
+          )}
         </div>
         <_SectionHeading className="">Risk</_SectionHeading>
         <div className=" break-inside-avoid-page mt-2">
@@ -365,6 +345,51 @@ export const PlanInputSpendingCeilingAndFloorSummary = React.memo(() => {
     </div>
   )
 })
+
+export const PlanInputExtraSpendingSummary = React.memo(
+  ({ forPrint = false }: { forPrint?: boolean }) => {
+    const { params, paramsExt } = useSimulation()
+    const { validMonthRangeAsMFN } = paramsExt
+    const { essential, discretionary } =
+      params.plan.adjustmentsToSpending.extraSpending
+    const showLabels = params.plan.advanced.strategy !== 'SWR'
+    return (
+      <>
+        {essential.length === 0 && discretionary.length === 0 && <h2>None</h2>}
+        {essential.length > 0 && (
+          <>
+            {showLabels && (
+              <h2
+                className={clsx('mt-1 font-medium ', forPrint && 'text-lg mt-2')}
+              >
+                Essential
+              </h2>
+            )}
+            <PlanInputValueForMonthRangeSummary
+              entries={essential}
+              range={validMonthRangeAsMFN('extra-spending')}
+            />
+          </>
+        )}
+        {discretionary.length > 0 && (
+          <>
+            {showLabels && (
+              <h2
+                className={clsx('mt-1 font-medium ', forPrint && 'text-lg mt-2')}
+              >
+                Discretionary
+              </h2>
+            )}
+            <PlanInputValueForMonthRangeSummary
+              entries={discretionary}
+              range={validMonthRangeAsMFN('extra-spending')}
+            />
+          </>
+        )}
+      </>
+    )
+  },
+)
 
 export const PlanInputRiskSummary = React.memo(() => {
   const { params } = useSimulation()

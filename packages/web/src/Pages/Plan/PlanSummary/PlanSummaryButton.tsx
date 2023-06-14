@@ -27,7 +27,10 @@ import { useSimulation } from '../../App/WithSimulation'
 import { ChartUtils } from '../../Common/Chart/ChartUtils/ChartUtils'
 import { monthToStringForGlidePath } from '../../Common/Inputs/GlidePathInput'
 import { ValueForMonthRangeDisplay } from '../../Common/ValueForMonthRangeDisplay'
-import { PlanInputAgeSummary } from '../../Print/PrintInputSection'
+import {
+  PlanInputAgeSummary,
+  PlanInputExtraSpendingSummary,
+} from '../../Print/PrintInputSection'
 import { useGetSectionURL } from '../Plan'
 import { PlanInputModifiedBadge } from '../PlanInput/Helpers/PlanInputModifiedBadge'
 import { PlanInputType } from '../PlanInput/Helpers/PlanInputType'
@@ -196,36 +199,7 @@ const _SectionSummary = React.memo(({ type }: { type: PlanInputType }) => {
         />
       )
     case 'extra-spending': {
-      const { essential, discretionary } =
-        params.plan.adjustmentsToSpending.extraSpending
-      const showLabels = params.plan.advanced.strategy !== 'SWR'
-      return (
-        <>
-          {essential.length === 0 && discretionary.length === 0 && (
-            <h2>None</h2>
-          )}
-          {essential.length > 0 && (
-            <>
-              {showLabels && <h2 className="mt-1 font-medium ">Essential</h2>}
-              <PlanInputValueForMonthRangeSummary
-                entries={essential}
-                range={validMonthRangeAsMFN(type)}
-              />
-            </>
-          )}
-          {discretionary.length > 0 && (
-            <>
-              {showLabels && (
-                <h2 className="mt-1 font-medium ">Discretionary</h2>
-              )}
-              <PlanInputValueForMonthRangeSummary
-                entries={discretionary}
-                range={validMonthRangeAsMFN(type)}
-              />
-            </>
-          )}
-        </>
-      )
+      return <PlanInputExtraSpendingSummary />
     }
     case 'legacy': {
       const { total, external } =
