@@ -67,21 +67,24 @@ export const PrintInputSection = React.memo(() => {
               <PlanInputCurrentPortfolioBalanceSummary />
             </div>
           </div>
-          <div className=" ">
-            <_SubSectionHeading className="">Future Savings</_SubSectionHeading>
-            <div className="mt-2">
-              {(allowFutureSavingsEntries ||
-                params.plan.wealth.futureSavings.length > 0) &&
-                (params.plan.wealth.futureSavings.length > 0 ? (
+          {(allowFutureSavingsEntries ||
+            params.plan.wealth.futureSavings.length > 0) && (
+            <div className=" ">
+              <_SubSectionHeading className="">
+                Future Savings
+              </_SubSectionHeading>
+              <div className="mt-2">
+                {params.plan.wealth.futureSavings.length > 0 ? (
                   <PlanInputValueForMonthRangeSummary
                     entries={params.plan.wealth.futureSavings}
                     range={validMonthRangeAsMFN('future-savings')}
                   />
                 ) : (
                   <_None />
-                ))}
+                )}
+              </div>
             </div>
-          </div>
+          )}
           <div className=" ">
             <_SubSectionHeading className="">
               Income During Retirement
@@ -249,7 +252,11 @@ export const PlanInputAgeSummary = React.memo(() => {
       <>
         <h2 className={`${className} col-span-2`}>Retired</h2>
         <h2 className={`${className}`}>Month of Birth</h2>
-        <h2> {calendarMonthStr(ages.monthOfBirth)}</h2>
+        <h2>
+          {' '}
+          {calendarMonthStr(ages.monthOfBirth)} (Age:{' '}
+          {numMonthsStr(getCurrentAgeOfPerson(person).inMonths)})
+        </h2>
         <h2 className={`${className}`}>Max</h2>
         <h2> {numMonthsStr(ages.maxAge.inMonths)}</h2>
       </>
@@ -360,7 +367,10 @@ export const PlanInputExtraSpendingSummary = React.memo(
           <>
             {showLabels && (
               <h2
-                className={clsx('mt-1 font-medium ', forPrint && 'text-lg mt-2')}
+                className={clsx(
+                  'mt-1 font-medium ',
+                  forPrint && 'text-lg mt-2',
+                )}
               >
                 Essential
               </h2>
@@ -375,7 +385,10 @@ export const PlanInputExtraSpendingSummary = React.memo(
           <>
             {showLabels && (
               <h2
-                className={clsx('mt-1 font-medium ', forPrint && 'text-lg mt-2')}
+                className={clsx(
+                  'mt-1 font-medium ',
+                  forPrint && 'text-lg mt-2',
+                )}
               >
                 Discretionary
               </h2>
