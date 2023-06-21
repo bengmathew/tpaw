@@ -19,7 +19,7 @@ export const PlanChartSidePanelMenu = React.memo(
           className={clsx(className, 'w-full')}
           style={style}
         >
-          <h2 className="font-bold text-[16px] sm:text-[20px] flex items-center gap-x-2">
+          <h2 className="font-semibold text-[16px] sm:text-[16px] flex   items-center gap-x-2">
             More
             <FontAwesomeIcon icon={faCaretDown} />
           </h2>

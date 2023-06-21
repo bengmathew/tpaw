@@ -14,7 +14,11 @@ import { Sankey } from './SankeyChart'
 export const PlanChartSidePanelMenuBalanceSheet = React.memo(
   ({ show, onHide }: { show: boolean; onHide: () => void }) => {
     return (
-      <CenteredModal show={show} onOutsideClickOrEscape={onHide}>
+      <CenteredModal
+        className="w-[95vw] sm:w-[90vw] xl:w-[calc(1280px*0.9)]"
+        show={show}
+        onOutsideClickOrEscape={onHide}
+      >
         <_Body />
       </CenteredModal>
     )
@@ -417,7 +421,7 @@ const _Body = React.memo(() => {
     }
   }, [tpawResult])
   return (
-    <div className="w-[90vw] max-w-[1000px] sm:px-4">
+    <div className=" sm:px-4">
       <h2 className="font-bold text-3xl">Balance Sheet</h2>
       <div className="my-5 ">
         <Sankey.Chart
@@ -494,7 +498,7 @@ const _Body = React.memo(() => {
           ]}
         />
       </div>
-      <div className="text-sm rounded-lg mt-10">
+      <div className="text-sm rounded-lg mt-10 ">
         <FontAwesomeIcon className="mb-1" icon={faAsterisk} />{' '}
         <span className="text-sm">{`The spending breakdown here reflects what spending would have been if it had not been constrained by things like ceilings, unfunded floors, and borrowing constraints which can move spending across different categories. For example, a ceiling can redirect spending from the general spending category to legacy, and that will not be reflected in this breakdown.`}</span>
       </div>
@@ -548,7 +552,7 @@ const _Section = React.memo(
               key={i}
               className="rounded-lg flex  justify-between items-center mt-6"
             >
-              <h2 className="font-medium text-l">{x.label}</h2>
+              <h2 className="font-medium text-l mr-6">{x.label}</h2>
               {x.value === 'None' ? (
                 <h2 className="text-sm lighten">None</h2>
               ) : (
@@ -594,7 +598,7 @@ const _ValueForMonthRangeDisplay = React.memo(
     return (
       <div className={clsx(className, ' rounded-lg ')}>
         <div className="flex justify-between ">
-          <h2 className=" font-medium text-l">{label} </h2>
+          <h2 className=" font-medium text-l mr-6">{label} </h2>
           {data.length > 0 ? (
             <h2 className=" font-mono font-bold">{formatCurrency(total)}</h2>
           ) : (
@@ -612,7 +616,7 @@ const _ValueForMonthRangeDisplayItem = React.memo(
   ({ data }: { data: ReturnType<typeof _processValueForMonthRange> }) => {
     return (
       <div className="flex justify-between pl-4 pt-2 lighten">
-        <h2 className="">{data.label}</h2>
+        <h2 className="mr-6">{data.label}</h2>
         <h2 className="font-mono text-sm ">
           {formatCurrency(data.netPresentValue)}
         </h2>
