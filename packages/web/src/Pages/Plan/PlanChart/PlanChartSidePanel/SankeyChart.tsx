@@ -86,7 +86,7 @@ export namespace Sankey {
             sizingIn.paddingTop +
             (vertAlign === 'top' ? 0 : (sizing.height - colHeight) / 2)
           const quantity = getNodeQuantity(node)
-          const height = quantity / sizing.scale
+          const height = Math.max(0.5, quantity / sizing.scale)
           return { y, height, colIndex, quantity }
         }
         return { getNodeInfo, getColInfo, sizing }
@@ -115,7 +115,7 @@ export namespace Sankey {
                 case 'merge': {
                   let currY = y
                   return node.srcs.map((src, i) => {
-                    // assert(!src.hidden)
+                    assert(!src.hidden)
                     const srcInfo = getNodeInfo(src)
                     const line = (
                       <_Edge
@@ -137,7 +137,7 @@ export namespace Sankey {
                   })
                 }
                 case 'split':
-                  // assert(!node.src.hidden)
+                  assert(!node.src.hidden)
                   const srcInfo = getNodeInfo(node.src)
                   return (
                     <_Edge
@@ -166,6 +166,7 @@ export namespace Sankey {
                 y={y}
                 quantity={quantity}
                 label={node.label}
+                height={height}
                 labelPosition={col.labelPosition}
                 sizing={sizing}
                 color={node.color.node ?? 'black'}
@@ -275,12 +276,14 @@ export namespace Sankey {
       label,
       labelPosition,
       sizing,
+      height,
       color,
     }: {
       className?: string
       columnIndex: number
       y: number
       quantity: number
+      height:number
       label: ReactNode
       labelPosition: 'left' | 'right' | 'top'
       sizing: _Sizing
@@ -291,7 +294,6 @@ export namespace Sankey {
         labelPosition === 'top'
           ? sizing.width
           : sizing.nodeXGap - sizing.nodeWidth - 5
-      const height = quantity / sizing.scale
       return (
         <>
           <rect

@@ -286,9 +286,9 @@ export const BalanceSheetContent = React.memo(
       const col4Nodes = (() => {
         const [
           generalSpendingNode,
-          legacyNode,
           essentialSpendingNode,
           discretionarySpendingNode,
+          legacyNode,
         ] = Sankey.splitNode(col3Nodes.wealth, [
           {
             label: <_ChartLabel label="General Spending" forPrint={forPrint} />,
@@ -296,14 +296,7 @@ export const BalanceSheetContent = React.memo(
             color: colors.generalSpending,
             hidden: false,
           },
-          hasLegacy
-            ? {
-                label: <_ChartLabel label="Legacy" forPrint={forPrint} />,
-                quantity: netPresentValue.tpaw.adjustmentsToSpending.legacy,
-                color: colors.legacy,
-                hidden: false,
-              }
-            : null,
+
           byMonthData.adjustmentsToSpending.extraSpending.essential.length > 0
             ? {
                 label: (
@@ -334,13 +327,21 @@ export const BalanceSheetContent = React.memo(
                 hidden: false,
               }
             : null,
+          hasLegacy
+            ? {
+                label: <_ChartLabel label="Legacy" forPrint={forPrint} />,
+                quantity: netPresentValue.tpaw.adjustmentsToSpending.legacy,
+                color: colors.legacy,
+                hidden: false,
+              }
+            : null,
         ])
 
         return {
           generalSpending: fGet(generalSpendingNode),
-          legacy: legacyNode,
           essentialSpending: essentialSpendingNode,
           discretionarySpending: discretionarySpendingNode,
+          legacy: legacyNode,
         }
       })()
 
@@ -348,9 +349,7 @@ export const BalanceSheetContent = React.memo(
         ? null
         : {
             generalSpending: { ...col4Nodes.generalSpending, hidden: true },
-            legacy: col4Nodes.legacy
-              ? { ...col4Nodes.legacy, hidden: true }
-              : null,
+
             essentialSpending: col4Nodes.essentialSpending
               ? Sankey.splitNode(
                   col4Nodes.essentialSpending,
@@ -381,6 +380,9 @@ export const BalanceSheetContent = React.memo(
                   ),
                 )
               : [],
+            legacy: col4Nodes.legacy
+              ? { ...col4Nodes.legacy, hidden: true }
+              : null,
           }
       const sankeyModel: Sankey.Model = _.compact([
         noCol1
@@ -409,9 +411,9 @@ export const BalanceSheetContent = React.memo(
           labelPosition: 'right',
           nodes: _.compact([
             col4Nodes.generalSpending,
-            col4Nodes.legacy,
             col4Nodes.essentialSpending,
             col4Nodes.discretionarySpending,
+            col4Nodes.legacy,
           ]),
         },
         col5Nodes
@@ -419,9 +421,9 @@ export const BalanceSheetContent = React.memo(
               labelPosition: 'right',
               nodes: _.compact([
                 col5Nodes.generalSpending,
-                col5Nodes.legacy,
                 ...col5Nodes.essentialSpending,
                 ...col5Nodes.discretionarySpending,
+                col5Nodes.legacy,
               ]),
             }
           : null,
@@ -500,13 +502,7 @@ export const BalanceSheetContent = React.memo(
                 label: 'General Spending',
                 value: generalSpending,
               },
-              {
-                type: 'namedValue',
-                label: 'Legacy',
-                value: hasLegacy
-                  ? netPresentValue.tpaw.adjustmentsToSpending.legacy
-                  : 'None',
-              },
+
               {
                 type: 'valueForMonthRange',
                 label: 'Essential Spending',
@@ -518,6 +514,13 @@ export const BalanceSheetContent = React.memo(
                 label: 'Discretionary Spending',
                 value:
                   byMonthData.adjustmentsToSpending.extraSpending.discretionary,
+              },
+              {
+                type: 'namedValue',
+                label: 'Legacy',
+                value: hasLegacy
+                  ? netPresentValue.tpaw.adjustmentsToSpending.legacy
+                  : 'None',
               },
             ]}
           />
