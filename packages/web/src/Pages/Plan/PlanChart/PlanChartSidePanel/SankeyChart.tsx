@@ -293,7 +293,7 @@ export namespace Sankey {
       const labelWidth =
         labelPosition === 'top'
           ? sizing.width
-          : sizing.nodeXGap - sizing.nodeWidth - 5
+          : sizing.nodeXGap - sizing.nodeWidth - 2
       return (
         <>
           <rect
@@ -388,8 +388,8 @@ export namespace Sankey {
         <>
           <defs>
             <linearGradient id={gradientId}>
-              <stop offset="0%" stop-color={color.src} />
-              <stop offset="100%" stop-color={color.dest} />
+              <stop offset="0%" stopColor={color.src} />
+              <stop offset="100%" stopColor={color.dest} />
             </linearGradient>
           </defs>
           <path

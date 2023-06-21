@@ -238,7 +238,7 @@ export const BalanceSheetContent = React.memo(
                     type: 'merge' as const,
                     label: (
                       <_ChartLabel
-                        label="Retirement Income"
+                        label="Income During Retirement"
                         forPrint={forPrint}
                       />
                     ),
@@ -440,8 +440,13 @@ export const BalanceSheetContent = React.memo(
     }, [forPrint, tpawResult])
     return (
       <div className={clsx(className)}>
-        {!forPrint && (
-          <h2 className="font-bold text-3xl mb-5">Balance Sheet</h2>
+        {forPrint ? (
+          <h2 className="text-center">Net Present Value</h2>
+        ) : (
+          <>
+            <h2 className="font-bold text-3xl">Balance Sheet</h2>
+            <h2 className="mb-5">Net Present Value</h2>
+          </>
         )}
         <div className=" ">
           <Sankey.Chart
@@ -485,7 +490,7 @@ export const BalanceSheetContent = React.memo(
               },
               {
                 type: 'valueForMonthRange',
-                label: 'Retirement Income',
+                label: 'Income During Retirement',
                 value: byMonthData.wealth.retirementIncome,
               },
             ]}
@@ -698,7 +703,7 @@ const _ChartLabel = React.memo(
           className,
           // Thanks: https://stackoverflow.com/a/7993098
           ' whitespace-nowrap overflow-ellipsis overflow-hidden w-full',
-          forPrint ? 'text-[11px]' : 'text-[12px] font-medium',
+          forPrint ? 'text-[10.5px]' : 'text-[12px] font-medium',
         )}
       >
         {label}
