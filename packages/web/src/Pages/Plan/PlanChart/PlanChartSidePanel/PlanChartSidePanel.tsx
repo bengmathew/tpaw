@@ -1,12 +1,9 @@
 import React from 'react'
-import {
-  insetCSSStyle,
-  InsetExt,
-  paddingCSSStyle,
-} from '../../../../Utils/Geometry'
+import { InsetExt, paddingCSSStyle } from '../../../../Utils/Geometry'
 import { PlanSectionName } from '../../PlanInput/Helpers/PlanSectionName'
 import { PlanChartSizing } from '../PlanChart'
 import { PlanChartSidePanelLegacyCard } from './PlanChartSidePanelLegacyCard'
+import { PlanChartSidePanelMenu } from './PlanChartSidePanelMenu'
 import { PlanChartSidePanelTasksCard } from './PlanChartSidePanelTasksCard'
 
 type _DynamicSizing = { inset: InsetExt }
@@ -55,6 +52,13 @@ export const PlanChartSidePanel = React.memo(
           }}
           cardPadding={cardPadding}
           section={section}
+        />
+        <PlanChartSidePanelMenu
+          className="bg-cardBG rounded-2xl"
+          style={{
+            ...paddingCSSStyle(cardPadding),
+            marginTop: `${intraGap}px`,
+          }}
         />
       </div>
     )

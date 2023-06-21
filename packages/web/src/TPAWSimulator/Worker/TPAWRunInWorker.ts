@@ -1,11 +1,10 @@
 import { historicalReturns, ValueForMonthRange } from '@tpaw/common'
 import _ from 'lodash'
-import { nominalToReal } from '../../Utils/NominalToReal'
 import { SimpleRange } from '../../Utils/SimpleRange'
+import { StatsTools } from '../../Utils/StatsTools'
 import { assert, fGet, noCase } from '../../Utils/Utils'
 import { ParamsExtended } from '../ExtentParams'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
-import { StatsTools } from '../../Utils/StatsTools'
 import {
   firstMonthSavingsPortfolioDetail,
   FirstMonthSavingsPortfolioDetail,
@@ -361,16 +360,18 @@ export class TPAWRunInWorker {
       params,
     )
     const withdrawlsEssentialById = new Map(
-      params.original.plan.adjustmentsToSpending.extraSpending.essential.map((x) => [
-        x.id,
-        _separateExtraWithdrawal(
-          x,
-          params,
-          paramsExt,
-          withdrawalsEssential,
-          'essential',
-        ),
-      ]),
+      params.original.plan.adjustmentsToSpending.extraSpending.essential.map(
+        (x) => [
+          x.id,
+          _separateExtraWithdrawal(
+            x,
+            params,
+            paramsExt,
+            withdrawalsEssential,
+            'essential',
+          ),
+        ],
+      ),
     )
     const withdrawlsDiscretionaryById = new Map(
       params.original.plan.adjustmentsToSpending.extraSpending.discretionary.map(
@@ -577,30 +578,30 @@ const _loadBalance = (worker: number, numJobs: number, numWorkers: number) => {
 }
 
 const _separateExtraWithdrawal = (
-  discretionaryWithdrawal: ValueForMonthRange,
+  valueForMonthRange: ValueForMonthRange,
   params: PlanParamsProcessed,
   paramsExt: ParamsExtended,
   x: TPAWRunInWorkerByPercentileByMonthsFromNow,
   type: 'discretionary' | 'essential',
 ): TPAWRunInWorkerByPercentileByMonthsFromNow => {
-  const monthRange = paramsExt.asMFN(discretionaryWithdrawal.monthRange)
+  const monthRange = paramsExt.asMFN(valueForMonthRange.monthRange)
 
   return _mapByPercentileByMonthsFromNow(x, (value, monthsFromNow) => {
     if (monthsFromNow < monthRange.start || monthsFromNow > monthRange.end) {
       return 0
     }
-    const currMonthParams = params.byMonth[monthsFromNow].extraSpending
-    const withdrawalTargetForThisMonth = nominalToReal({
-      value: discretionaryWithdrawal,
-      monthlyInflation: params.monthlyInflation,
-      monthsFromNow,
-    })
+    const currMonthParams =
+      params.byMonth.adjustmentsToSpending.extraSpending[type].total[
+        monthsFromNow
+      ]
+    const withdrawalTargetForThisMonth = fGet(
+      params.byMonth.adjustmentsToSpending.extraSpending[type].byId[
+        valueForMonthRange.id
+      ],
+    )[monthsFromNow]
+
     if (withdrawalTargetForThisMonth === 0) return 0
-    const ratio =
-      withdrawalTargetForThisMonth /
-      (type === 'discretionary'
-        ? currMonthParams.discretionary
-        : currMonthParams.essential)
+    const ratio = withdrawalTargetForThisMonth / currMonthParams
     assert(!isNaN(ratio)) // withdrawalTargetForThisMonth ?>0 imples denominator is not 0.
     return value * ratio
   })

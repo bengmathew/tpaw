@@ -47,12 +47,10 @@ export function runSimulationInWASM(
       : params.risk.swr.monthlyWithdrawal.type === 'asPercent'
       ? params.risk.swr.monthlyWithdrawal.percent
       : noCase(params.risk.swr.monthlyWithdrawal),
-    Float64Array.from(params.byMonth.map((x) => x.tpawAndSPAW.risk.lmp)),
-    Float64Array.from(
-      params.byMonth.map((x) => x.futureSavingsAndRetirementIncome),
-    ),
-    Float64Array.from(params.byMonth.map((x) => x.extraSpending.essential)),
-    Float64Array.from(params.byMonth.map((x) => x.extraSpending.discretionary)),
+    params.byMonth.tpawAndSPAW.risk.lmp,
+    params.byMonth.futureSavingsAndRetirementIncome.total,
+    params.byMonth.adjustmentsToSpending.extraSpending.essential.total,
+    params.byMonth.adjustmentsToSpending.extraSpending.discretionary.total,
     params.adjustmentsToSpending.tpawAndSPAW.legacy.target,
     params.adjustmentsToSpending.tpawAndSPAW.legacy.external,
     Float64Array.from(params.risk.tpawAndSPAW.monthlySpendingTilt),

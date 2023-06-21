@@ -28,7 +28,7 @@ export const GlidePathInput = React.memo(
     value: GlidePath
     onChange: (glidePath: GlidePath) => void
   }) => {
-    const { paramsExt, paramsProcessed } = useSimulation()
+    const { paramsExt } = useSimulation()
     const [newEntry, setNewEntry] = useState<null | _MonthAndStock>(null)
 
     const { getCurrentAgeOfPerson, currentMonth } = paramsExt

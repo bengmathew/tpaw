@@ -36,7 +36,8 @@ export const firstMonthSavingsPortfolioDetail = (
   const start = {
     balance: byMonthsFromNowByRun.start.balance[0][0],
   }
-  const contributionsTotal = params.byMonth[0].futureSavingsAndRetirementIncome
+  const contributionsTotal =
+    params.byMonth.futureSavingsAndRetirementIncome.total[0]
   const afterContributions = {
     balance: start.balance + contributionsTotal,
   }

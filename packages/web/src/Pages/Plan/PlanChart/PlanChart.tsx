@@ -213,7 +213,7 @@ const _transformSizing = (
           x: mainCard.region.right + intraGap,
           y: padding.top,
           width: legacyWidth,
-          height: region.height - padding.top - padding.bottom,
+          height: region.height - padding.top ,
         }),
         region,
       ),
