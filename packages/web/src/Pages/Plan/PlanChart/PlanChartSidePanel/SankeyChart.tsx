@@ -290,7 +290,7 @@ export namespace Sankey {
       const labelWidth =
         labelPosition === 'top'
           ? sizing.width
-          : sizing.nodeXGap - sizing.nodeWidth - 20
+          : sizing.nodeXGap - sizing.nodeWidth - 5
       const height = quantity / sizing.scale
       return (
         <>
@@ -325,9 +325,9 @@ export namespace Sankey {
           >
             <div
               className={clsx(
-                'text-[12px]  h-full flex flex-col',
+                ' h-full flex flex-col',
                 labelPosition === 'right'
-                  ? 'justify-center  items-end'
+                  ? 'justify-center  items-end text-right'
                   : labelPosition === 'left'
                   ? 'justify-center  items-start'
                   : labelPosition === 'top'
@@ -337,7 +337,7 @@ export namespace Sankey {
             >
               {label}
               {labelPosition !== 'top' && (
-                <h2 className="text-[11px] lighten">
+                <h2 className="text-[11px] lighten -mt-0.5">
                   {formatCurrency(quantity)}
                 </h2>
               )}

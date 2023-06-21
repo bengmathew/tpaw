@@ -10,6 +10,7 @@ import { PrintInputSection } from './PrintInputSection'
 import { PrintResultsSection } from './PrintResultsSection'
 import { PrintSection } from './PrintSection'
 import { PrintTablesSection } from './PrintTablesSection'
+import { BalanceSheetContent } from '../Plan/PlanChart/PlanChartSidePanel/PlanChartSidePanelMenuBalanceSheet'
 
 export const Print = React.memo(
   ({ className = '' }: { className?: string }) => {
@@ -68,6 +69,12 @@ export const Print = React.memo(
         </PrintSection>
         <PrintSection>
           <TasksForThisMonthContent className="mt-10" forPrint />
+        </PrintSection>
+        <PrintSection className="flex items-center justify-center">
+          <h1 className="font-bold text-4xl text-center ">Balance Sheet</h1>
+        </PrintSection>
+        <PrintSection>
+          <BalanceSheetContent forPrint />
         </PrintSection>
         <PrintTablesSection />
       </div>
