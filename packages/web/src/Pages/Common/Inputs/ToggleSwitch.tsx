@@ -1,32 +1,35 @@
-import {Switch} from '@headlessui/react'
-import React, {Dispatch, SetStateAction} from 'react'
+import { Switch } from '@headlessui/react'
+import React from 'react'
 
 export const ToggleSwitch = React.memo(
   ({
     className = '',
-    enabled,
-    setEnabled,
+    checked,
+    setChecked,
+    disabled,
     type = 'oneSided',
   }: {
-    className?:string
-    enabled: boolean
-    setEnabled: (value:boolean)=>void
+    className?: string
+    checked: boolean
+    setChecked: (value: boolean) => void
+    disabled?: boolean
     type?: 'twoSided' | 'oneSided'
   }) => {
     return (
       <Switch
-        checked={enabled}
-        onChange={setEnabled}
+        checked={checked}
+        onChange={setChecked}
+        disabled={disabled}
         className={`${className} ${
-          enabled || type === 'twoSided' ? 'bg-darkGray' : 'bg-gray-200'
+          checked || type === 'twoSided' ? 'bg-darkGray' : 'bg-gray-200'
         } relative inline-flex items-center h-[20px] rounded-full w-[36px] transition-colors `}
       >
         <span
           className={`${
-            enabled ? 'translate-x-[19px]' : 'translate-x-[3px]'
+            checked ? 'translate-x-[19px]' : 'translate-x-[3px]'
           } inline-block w-[14px] h-[14px] transform bg-white rounded-full transition-transform`}
         />
       </Switch>
     )
-  }
+  },
 )

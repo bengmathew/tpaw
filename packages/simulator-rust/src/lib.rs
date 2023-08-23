@@ -112,6 +112,7 @@ pub fn run(
     start_run: usize,
     end_run: usize,
     num_months: usize,
+    num_months_to_simulate: usize,
     withdrawal_start_month: usize,
     expected_returns_stocks: f64,
     expected_returns_bonds: f64,
@@ -147,6 +148,7 @@ pub fn run(
         start_run,
         end_run,
         num_months,
+        num_months_to_simulate,
         withdrawal_start_month,
         current_savings,
         expected_monthly_returns,
@@ -197,7 +199,7 @@ pub fn run(
     };
     let num_runs = end_run - start_run;
 
-    let create_vec = || vec![0.0; (num_runs * num_months) as usize];
+    let create_vec = || vec![0.0; (num_runs * num_months_to_simulate) as usize];
     let mut result = RunResult {
         by_mfn_by_run_balance_start: create_vec(),
         by_mfn_by_run_withdrawals_essential: create_vec(),

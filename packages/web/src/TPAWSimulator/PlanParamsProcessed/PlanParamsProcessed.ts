@@ -1,10 +1,10 @@
 import {
   annualToMonthlyReturnRate,
+  MarketData,
   SUGGESTED_ANNUAL_INFLATION,
 } from '@tpaw/common'
-import { MarketData } from '../../Pages/Common/GetMarketData'
 import { noCase } from '../../Utils/Utils'
-import { ParamsExtended } from '../ExtentParams'
+import { PlanParamsExtended } from '../ExtentPlanParams'
 import { planParamsProcessAdjustmentsToSpending } from './PlanParamsProcessAdjustmentsToSpending'
 import { planParamsProcessAnnualReturnsParams } from './PlanParamsProcessAnnualReturns'
 import { planParamsProcessByMonthParams } from './PlanParamsProcessByMonthParams'
@@ -13,30 +13,42 @@ import { planParamsProcessRisk } from './PlanParamsProcessRisk'
 
 export type PlanParamsProcessed = ReturnType<typeof processPlanParams>
 export function processPlanParams(
-  paramsExt: ParamsExtended,
+  planParamsExt: PlanParamsExtended,
   estimatedCurrentPortfolioBalance: number,
-  marketData: MarketData['latest'],
+  currentMarketData: MarketData.Data[0],
 ) {
-  const { params, currentTime } = paramsExt
+  const { planParams, currentTimestamp, ianaTimezoneName } = planParamsExt
 
-  const returns = planParamsProcessAnnualReturnsParams(params, marketData)
-  const monthlyInflation = annualToMonthlyReturnRate(
-    params.plan.advanced.annualInflation.type === 'suggested'
-      ? SUGGESTED_ANNUAL_INFLATION(marketData)
-      : params.plan.advanced.annualInflation.type === 'manual'
-      ? params.plan.advanced.annualInflation.value
-      : noCase(params.plan.advanced.annualInflation),
+  const returns = planParamsProcessAnnualReturnsParams(
+    planParams,
+    currentMarketData,
   )
 
-  const byMonth = planParamsProcessByMonthParams(paramsExt, monthlyInflation)
-  const adjustmentsToSpending = planParamsProcessAdjustmentsToSpending(
-    paramsExt,
+  const monthlyInflation = annualToMonthlyReturnRate(
+    planParams.advanced.annualInflation.type === 'suggested'
+      ? SUGGESTED_ANNUAL_INFLATION(currentMarketData)
+      : planParams.advanced.annualInflation.type === 'manual'
+      ? planParams.advanced.annualInflation.value
+      : noCase(planParams.advanced.annualInflation),
+  )
+
+  const byMonth = planParamsProcessByMonthParams(
+    planParamsExt,
     monthlyInflation,
   )
-  const risk = planParamsProcessRisk(paramsExt, returns.expectedAnnualReturns)
+
+  const adjustmentsToSpending = planParamsProcessAdjustmentsToSpending(
+    planParamsExt,
+    monthlyInflation,
+  )
+
+  const risk = planParamsProcessRisk(
+    planParamsExt,
+    returns.expectedAnnualReturns,
+  )
 
   const netPresentValue = planParamsProcessNetPresentValue(
-    paramsExt,
+    planParamsExt,
     risk,
     adjustmentsToSpending.tpawAndSPAW.legacy.target,
     byMonth,
@@ -44,12 +56,12 @@ export function processPlanParams(
   )
 
   const result = {
-    strategy: params.plan.advanced.strategy,
+    strategy: planParams.advanced.strategy,
     currentTime: {
-      epoch: currentTime.valueOf(),
-      zoneName: currentTime.zoneName,
+      epoch: currentTimestamp,
+      zoneName: ianaTimezoneName,
     },
-    people: params.plan.people,
+    people: planParams.people,
     estimatedCurrentPortfolioBalance,
     byMonth,
     netPresentValue,
@@ -57,10 +69,11 @@ export function processPlanParams(
     risk,
     returns,
     monthlyInflation,
-    sampling: params.plan.advanced.sampling,
+    sampling: planParams.advanced.sampling,
     samplingBlockSizeForMonteCarlo:
-      params.plan.advanced.monteCarloSampling.blockSize,
-    original: params,
+      planParams.advanced.monteCarloSampling.blockSize,
+    original: planParams,
   }
+
   return result
 }

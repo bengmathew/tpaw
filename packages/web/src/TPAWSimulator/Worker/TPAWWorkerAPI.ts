@@ -1,5 +1,9 @@
+import { MarketData, PlanParams } from '@tpaw/common'
+import { CurrentPortfolioBalance } from '../../Pages/PlanRoot/PlanRootHelpers/CurrentPortfolioBalance'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
+import { RunSimulationInWASMResult } from './RunSimulationInWASMResult'
+import { TPAWWorkerResultTypes } from './TPAWWorkerResultTypes'
 
 export type TPAWWorkerArgs =
   | {
@@ -17,48 +21,36 @@ export type TPAWWorkerArgs =
         numMonths: number
       }
     }
+  | {
+      type: 'parseAndMigratePlanParams'
+      taskID: string
+      args: {
+        isPreBase: true
+        planParamsHistoryStr: readonly { id: string; params: string }[]
+      }
+    }
+  | {
+      type: 'estimateCurrentPortfolioBalance'
+      taskID: string
+      args: {
+        planId: string
+        isPreBase: boolean
+        planParamsHistory: (
+          | { cached: true; id: string }
+          | { cached: false; id: string; params: PlanParams }
+        )[]
+        estimationTimestamp: number
+        ianaTimezoneName: string
+        marketData: MarketData.Data
+      }
+    }
   | { type: 'clearMemoizedRandom'; taskID: string }
 
 export type TPAWWorkerResult =
   | {
       type: 'runSimulation'
       taskID: string
-      result: {
-        byMonthsFromNowByRun: {
-          savingsPortfolio: {
-            start: { balance: Float64Array[] }
-            withdrawals: {
-              essential: Float64Array[]
-              discretionary: Float64Array[]
-              regular: Float64Array[]
-              total: Float64Array[]
-              fromSavingsPortfolioRate: Float64Array[]
-            }
-            afterWithdrawals: {
-              allocation: { stocks: Float64Array[] }
-            }
-          }
-          totalPortfolio: {
-            afterWithdrawals: {
-              allocation: { stocks: Float64Array[] }
-            }
-          }
-        }
-        byRun: {
-          numInsufficientFundMonths: Int32Array
-          endingBalanceOfSavingsPortfolio: Float64Array
-        }
-        averageAnnualReturns: {
-          stocks: number
-          bonds: number
-        }
-        perf: [
-          ['runs', number],
-          ['post', number],
-          ['rest', number],
-          ['total', number],
-        ]
-      }
+      result: RunSimulationInWASMResult
     }
   | {
       type: 'sort'
@@ -68,34 +60,22 @@ export type TPAWWorkerResult =
   | {
       type: 'getSampledReturnStats'
       taskID: string
-      result: {
-        oneYear:SampleReturnsStatsForWindowSize
-        fiveYear:SampleReturnsStatsForWindowSize
-        tenYear:SampleReturnsStatsForWindowSize
-        thirtyYear:SampleReturnsStatsForWindowSize
-        perf: number
-      }
+      result: TPAWWorkerResultTypes.GetSampledResultStats
+    }
+  | {
+      type: 'parseAndMigratePlanParams'
+      taskID: string
+      result: { id: string; params: PlanParams }[]
+    }
+  | {
+      type: 'estimateCurrentPortfolioBalance'
+      taskID: string
+      result: CurrentPortfolioBalance.ByMonthInfo
     }
   | {
       type: 'clearMemoizedRandom'
       taskID: string
     }
-
-type SampleReturnsStatsForWindowSize = {
-  n: number
-  mean: number
-  ofLog: {
-    mean: number
-    variance: number
-    standardDeviation: number
-    n: number
-  }
-}
-
-export type TPAWWorkerRunSimulationResult = Extract<
-  TPAWWorkerResult,
-  { type: 'runSimulation' }
->['result']
 
 export type TPAWWorkerSortResult = Extract<
   TPAWWorkerResult,

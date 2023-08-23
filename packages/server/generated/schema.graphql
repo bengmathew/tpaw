@@ -1,3 +1,7 @@
+type ConcurrentChangeError {
+  _: Int!
+}
+
 input CreateLinkBasedPlanInput {
   params: String!
 }
@@ -12,14 +16,39 @@ type Mutation {
   crash: Success!
   createLinkBasedPlan(input: CreateLinkBasedPlanInput!): LinkBasedPlan!
   sendSignInEmail(input: SendSignInEmailInput!): Success!
-  setUserPlan(input: SetUserPlanInput!): User!
+  userMergeFromClient(input: UserMergeFromClientInput!): UserMergeFromClientResult!
+  userPlanCopy(input: UserPlanCopyInput!): PlanAndUserResult!
+  userPlanCreate(input: UserPlanCreateInput!): PlanAndUserResult!
+  userPlanDelete(input: UserPlanDeleteInput!): User!
+  userPlanReset(input: UserPlanResetInput!): UserPlanResetResult!
+  userPlanSetAsMain(input: UserPlanSetAsMainInput!): User!
+  userPlanSync(input: UserPlanSyncInput!): UserPlanSyncResult!
+  userPlanUpdate(input: UserPlanUpdateInput!): PlanWithHistory!
+  userSetNonPlanParams(input: UserSetNonPlanParamsInput!): UserSetNonPlanParamsResult!
 }
 
-type Plan {
-  createdAt: Float!
+type PlanAndUserResult {
+  plan: PlanWithHistory!
+  user: User!
+}
+
+type PlanParamsChangePatched {
+  change: String!
   id: ID!
-  modifiedAt: Float!
   params: String!
+}
+
+type PlanWithHistory {
+  addedToServerAt: Float!
+  id: ID!
+  isMain: Boolean!
+  label: String
+  lastSyncAt: Float!
+  planParamsPostBase(targetCount: Int!): [PlanParamsChangePatched!]!
+  planParamsPreBase(baseId: String!, baseTimestamp: Float!, ianaTimezoneName: String!): [PlanParamsChangePatched!]!
+  reverseHeadIndex: Int!
+  slug: String!
+  sortTime: Float!
 }
 
 type Query {
@@ -34,16 +63,109 @@ input SendSignInEmailInput {
   email: String!
 }
 
-input SetUserPlanInput {
-  params: String!
-  userId: ID!
-}
-
 type Success {
   _: Int!
 }
 
 type User {
   id: ID!
-  plan: Plan
+  nonPlanParams: String!
+  nonPlanParamsLastUpdatedAt: Float!
+  plan(planId: String, slug: String): PlanWithHistory!
+  plans: [PlanWithHistory!]!
+}
+
+input UserMergeFromClientInput {
+  guestPlan: UserPlanCreatePlanInput
+  linkPlan: UserMergeFromClientLinkPlanInput
+  nonPlanParams: String
+  userId: String!
+}
+
+input UserMergeFromClientLinkPlanInput {
+  label: String!
+  plan: UserPlanCreatePlanInput!
+}
+
+type UserMergeFromClientResult {
+  guestPlan: PlanWithHistory
+  linkPlan: PlanWithHistory
+}
+
+input UserPlanCopyInput {
+  cutAfterId: String
+  label: String!
+  planId: String!
+  userId: String!
+}
+
+input UserPlanCreateInput {
+  label: String!
+  plan: UserPlanCreatePlanInput!
+  userId: String!
+}
+
+input UserPlanCreatePlanInput {
+  planParamsHistory: [UserPlanCreatePlanParamsHistryInput!]!
+  reverseHeadIndex: Int!
+}
+
+input UserPlanCreatePlanParamsHistryInput {
+  change: String!
+  id: String!
+  params: String!
+}
+
+input UserPlanDeleteInput {
+  planId: String!
+  userId: String!
+}
+
+input UserPlanResetInput {
+  ianaTimezoneName: String!
+  lastSyncAt: Float!
+  planId: String!
+  userId: String!
+}
+
+union UserPlanResetResult = ConcurrentChangeError | PlanAndUserResult
+
+input UserPlanSetAsMainInput {
+  planId: String!
+  userId: String!
+}
+
+input UserPlanSyncAddInput {
+  change: String!
+  id: String!
+  params: String!
+}
+
+input UserPlanSyncInput {
+  add: [UserPlanSyncAddInput!]!
+  cutAfterId: String!
+  lastSyncAt: Float!
+  planId: String!
+  reverseHeadIndex: Int!
+  userId: String!
+}
+
+union UserPlanSyncResult = ConcurrentChangeError | PlanAndUserResult
+
+input UserPlanUpdateInput {
+  planId: String!
+  setLabel: String
+  userId: String!
+}
+
+input UserSetNonPlanParamsInput {
+  lastUpdatedAt: Float!
+  nonPlanParams: String!
+  userId: String!
+}
+
+union UserSetNonPlanParamsResult = ConcurrentChangeError | UserSuccessResult
+
+type UserSuccessResult {
+  user: User!
 }

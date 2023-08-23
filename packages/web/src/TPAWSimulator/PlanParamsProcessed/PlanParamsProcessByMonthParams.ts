@@ -1,17 +1,17 @@
-import { ValueForMonthRange } from '@tpaw/common'
+import { ValueForMonthRange, ValueForMonthRanges } from '@tpaw/common'
 import _ from 'lodash'
 import { nominalToReal } from '../../Utils/NominalToReal'
-import { ParamsExtended } from '../ExtentParams'
+import { PlanParamsExtended } from '../ExtentPlanParams'
 
 export function planParamsProcessByMonthParams(
-  paramsExt: ParamsExtended,
+  planParamsExt: PlanParamsExtended,
   monthlyInflation: number,
 ) {
-  const { asMFN, withdrawalStartMonth, numMonths, params } = paramsExt
+  const { asMFN, withdrawalStartMonth, numMonths, planParams } = planParamsExt
   const {
     wealth,
     adjustmentsToSpending: { extraSpending },
-  } = params.plan
+  } = planParams
   const withdrawalStart = asMFN(withdrawalStartMonth)
   const lastWorkingMonth = withdrawalStart > 0 ? withdrawalStart - 1 : 0
   const endMonth = numMonths - 1
@@ -38,15 +38,13 @@ export function planParamsProcessByMonthParams(
   }
 
   const fromValueForMonthRanges = (
-    valueForMonthRanges: ValueForMonthRange[],
+    valueForMonthRanges: ValueForMonthRanges,
     minMonth: number,
     maxMonth: number,
   ) => {
-    const byId: Record<number, Float64Array> = _.fromPairs(
-      valueForMonthRanges.map((x) => [
-        x.id,
-        fromValueForMonthRange(x, minMonth, maxMonth),
-      ]),
+    const byId: Record<string, Float64Array> = _.mapValues(
+      valueForMonthRanges,
+      (x) => fromValueForMonthRange(x, minMonth, maxMonth),
     )
     const total = new Float64Array(numMonths)
     const parts = _.values(byId)
@@ -55,24 +53,23 @@ export function planParamsProcessByMonthParams(
   }
 
   const result = {
-    // TODO: Rename to wealth
-    futureSavingsAndRetirementIncome: (() => {
+    wealth: (() => {
       const futureSavings = fromValueForMonthRanges(
         wealth.futureSavings,
         0,
         lastWorkingMonth,
       )
-      const retirementIncome = fromValueForMonthRanges(
-        wealth.retirementIncome,
+      const incomeDuringRetirement = fromValueForMonthRanges(
+        wealth.incomeDuringRetirement,
         withdrawalStart,
         endMonth,
       )
       const total = new Float64Array(numMonths)
       total.forEach(
         (__, i) =>
-          (total[i] = futureSavings.total[i] + retirementIncome.total[i]),
+          (total[i] = futureSavings.total[i] + incomeDuringRetirement.total[i]),
       )
-      return { total, futureSavings, retirementIncome }
+      return { total, futureSavings, incomeDuringRetirement }
     })(),
     adjustmentsToSpending: {
       extraSpending: {
@@ -88,14 +85,13 @@ export function planParamsProcessByMonthParams(
         ),
       },
     },
-    // TODO: rename to risk
-    tpawAndSPAW: {
-      risk: {
+    risk: {
+      tpawAndSPAW: {
         lmp: (() => {
           const result = new Float64Array(numMonths)
           _.times(numMonths, (month) => {
             result[month] =
-              month < withdrawalStart ? 0 : params.plan.risk.tpawAndSPAW.lmp
+              month < withdrawalStart ? 0 : planParams.risk.tpawAndSPAW.lmp
           })
           return result
         })(),

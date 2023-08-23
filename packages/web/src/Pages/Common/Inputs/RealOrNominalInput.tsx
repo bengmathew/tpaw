@@ -4,9 +4,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { RadioGroup } from '@headlessui/react'
 import React, { useState } from 'react'
 import { Contentful } from '../../../Utils/Contentful'
-import { useSimulation } from '../../App/WithSimulation'
-import { usePlanContent } from '../../Plan/Plan'
 import { ModalBase } from '../Modal/ModalBase'
+import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { usePlanContent } from '../../PlanRoot/PlanRootHelpers/WithPlanContent'
 
 export const RealOrNominalInput = React.memo(
   ({
@@ -18,7 +18,7 @@ export const RealOrNominalInput = React.memo(
     nominal: boolean
     onChange: (x: boolean) => void
   }) => {
-    const { params } = useSimulation()
+    const { planParams } = useSimulation()
     const planContent = usePlanContent()
     const [showExplanation, setShowRealDollarsExplanation] = useState(false)
 
@@ -71,7 +71,7 @@ export const RealOrNominalInput = React.memo(
                 <Contentful.RichText
                   body={
                     planContent.misc.realDollarExplanation[
-                      params.plan.advanced.strategy
+                      planParams.advanced.strategy
                     ]
                   }
                   p={`p-base mt-3`}

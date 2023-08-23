@@ -1,6 +1,6 @@
 import { Transition } from '@headlessui/react'
 import clsx from 'clsx'
-import React, { ReactNode, useEffect } from 'react'
+import React, { CSSProperties, ReactNode, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 
 export const CenteredModal = React.memo(
@@ -10,11 +10,13 @@ export const CenteredModal = React.memo(
     children,
     className,
     onLeave,
+    style,
   }: {
     show: boolean
     onOutsideClickOrEscape: (() => void) | null
     children: ReactNode
     className?: string
+    style?: CSSProperties
     onLeave?: () => void
   }) => {
     const forEventRefs = React.useRef({ onOutsideClickOrEscape })
@@ -36,9 +38,11 @@ export const CenteredModal = React.memo(
         afterLeave={onLeave}
       >
         <Transition.Child
-          className="absolute inset-0 bg-black/50 transition-opacity duration-300"
+          className="absolute inset-0 bg-black transition-opacity duration-300"
           enterFrom="opacity-0 "
-          leaveFrom="opacity-50 "
+          enterTo="opacity-50"
+          leaveFrom="opacity-50"
+          leaveTo="opacity-0 "
           onClick={onOutsideClickOrEscape ?? undefined}
         />
         <Transition.Child
@@ -47,6 +51,7 @@ export const CenteredModal = React.memo(
             'duration-300 bg-pageBG rounded-xl z-10 p-4 max-h-[85vh] overflow-scroll',
           )}
           style={{
+            ...style,
             transitionProperty: 'transform, opacity',
             boxShadow: 'rgba(0, 0, 0, 0.35) 0px 5px 15px',
           }}

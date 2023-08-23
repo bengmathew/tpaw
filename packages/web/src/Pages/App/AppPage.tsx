@@ -5,7 +5,6 @@ import { Header } from './Header'
 type Props = {
   title: string
   children: ReactNode
-  curr: 'plan' | 'learn' | 'other'
   style?: React.CSSProperties
   className?: string
   onClick?: () => void
@@ -13,7 +12,7 @@ type Props = {
 export const AppPage = React.memo(
   React.forwardRef<HTMLDivElement, Props>(
     (
-      { title = '', curr, children, className = '', style, onClick }: Props,
+      { title = '', children, className = '', style, onClick }: Props,
       ref,
     ) => {
       return (
@@ -27,7 +26,7 @@ export const AppPage = React.memo(
             <title>{title}</title>
           </Head>
           {children}
-          <Header curr={curr} />
+          <Header />
         </div>
       )
     },

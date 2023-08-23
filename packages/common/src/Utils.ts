@@ -131,8 +131,6 @@ export function getStatsWithLog(x: number[]) {
   }
 }
 
-
-
 export const sequentialAnnualReturnsFromMonthly = (monthly: number[]) =>
   blockify(monthly, 12).map(monthRateArrToYear)
 
@@ -144,3 +142,20 @@ export const blockify = (x: number[], blockSize: number) => {
 
 export const monthRateArrToYear = (year: number[]) =>
   year.map((x) => 1 + x).reduce((x, y) => x * y, 1) - 1
+
+export const block = <T>(fn: () => T): T => fn()
+
+export const letIn = <Vars, U>(x: Vars, fn: (vars: Vars) => U): U => fn(x)
+
+export const generateRandomString = (length: number) => {
+  let result = ''
+  const characters = 'abcdefghijklmnopqrstuvwxyz'
+  const charactersLength = characters.length
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength))
+  }
+  return result
+}
+
+export const generateSmallId = () => generateRandomString(10)
+

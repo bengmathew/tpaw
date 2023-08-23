@@ -14,7 +14,6 @@ export const TOS = React.memo(
       <AppPage
         className=" pt-header min-h-screen"
         title={`${title} - TPAW Planner`}
-        curr={'other'}
       >
         <div className="flex flex-col items-center mb-20 mt-6">
           <div className="w-full max-w-[650px] px-4 z-0">

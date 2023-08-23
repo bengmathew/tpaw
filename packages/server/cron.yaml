@@ -1,0 +1,15 @@
+cron:
+  - description: 'Deploy front end'
+    url: /deploy-frontend
+    schedule: every 20 minutes from 4:00 to 6:00 
+    retry_parameters:
+      job_retry_limit: 2
+      min_backoff_seconds: 2.5
+      max_doublings: 5
+  - description: 'Deploy front end'
+    url: /deploy-frontend
+    schedule: every hour from 7:00 to 9:00 
+    retry_parameters:
+      job_retry_limit: 2
+      min_backoff_seconds: 2.5
+      max_doublings: 5

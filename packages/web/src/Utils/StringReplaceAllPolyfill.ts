@@ -21,4 +21,5 @@ if (!String.prototype.replaceAll) {
   }
 }
 
-export {}
+export { }
+

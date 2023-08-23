@@ -56,5 +56,63 @@ module.exports = {
     },
   },
 
-  plugins: [],
+  plugins: [
+    require('@headlessui/tailwindcss'),
+    // From: https://github.com/tailwindlabs/tailwindcss-intellisense/issues/227
+    ({ addUtilities }) => {
+      addUtilities({
+        '.lighten': {
+          '@apply opacity-70': {},
+        },
+        '.lighten-2': {
+          '@apply opacity-50': {},
+        },
+        // Modal Dialog
+        '.dialog-outer-div': {
+          maxWidth: 'min(800px, calc(100vw - 20px))',
+          minWidth: 'min(400px, calc(100vw - 20px))',
+        },
+        '.dialog-heading': {
+          '@apply font-bold text-lg': {},
+        },
+        '.dialog-content-div': {
+          '@apply mt-4': {},
+        },
+        '.dialog-button-div': {
+          '@apply flex justify-end mt-6 gap-x-4': {},
+        },
+        '.dialog-button-warning': {
+          '@apply btn2-warning btn2-md': {},
+        },
+        '.dialog-button-dark': {
+          '@apply btn2-dark btn2-md': {},
+        },
+        '.dialog-button-cancel': {
+          '@apply btn2-md disabled:lighten-2 -mr-2': {},
+        },
+
+        // Context Menu
+        '.context-menu-item': {
+          '@apply block px-4 py-2.5 text-start ui-active:bg-gray-200 w-full': {},
+        },
+
+        // Button
+        '.btn2-warning': {
+          '@apply text-white bg-errorBlockBG disabled:lighten-2': {},
+        },
+        '.btn2-dark': {
+          '@apply text-white bg-darkGray disabled:lighten-2': {},
+        },
+        '.btn2-sm': {
+          '@apply rounded-full py-0.5 px-4 text-base': {},
+        },
+        '.btn2-md': {
+          '@apply rounded-full py-1 px-4 text-lg': {},
+        },
+        '.btn2-lg': {
+          '@apply rounded-full py-2 px-6 text-lg': {},
+        },
+      })
+    },
+  ],
 }

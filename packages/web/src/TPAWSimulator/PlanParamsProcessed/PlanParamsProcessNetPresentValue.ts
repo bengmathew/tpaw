@@ -1,13 +1,14 @@
 import _ from 'lodash'
 import { blendReturns } from '../../Utils/BlendReturns'
 import { getNetPresentValue } from '../../Utils/GetNetPresentValue'
-import { ParamsExtended } from '../ExtentParams'
+
 import { planParamsProcessByMonthParams } from './PlanParamsProcessByMonthParams'
 import { planParamsProcessRisk } from './PlanParamsProcessRisk'
+import { PlanParamsExtended } from '../ExtentPlanParams'
 
 // TODO: Should we get this from wasm?
 export const planParamsProcessNetPresentValue = (
-  paramsExt: ParamsExtended,
+  paramsExt: PlanParamsExtended,
   risk: ReturnType<typeof planParamsProcessRisk>,
   legacyTarget: number,
   byMonth: ReturnType<typeof planParamsProcessByMonthParams>,
@@ -15,7 +16,7 @@ export const planParamsProcessNetPresentValue = (
 ) => {
   const { numMonths } = paramsExt
   const bondRateArr = _.times(
-    byMonth.futureSavingsAndRetirementIncome.total.length,
+    byMonth.wealth.total.length,
     () => monthlyExpectedReturns.bonds,
   )
   const regularReturns = blendReturns(monthlyExpectedReturns)
@@ -26,7 +27,7 @@ export const planParamsProcessNetPresentValue = (
   const _calcObj = (
     x: {
       total: Float64Array
-      byId: Record<number, Float64Array>
+      byId: Record<string, Float64Array>
     },
     rate: number[],
   ) => ({
@@ -39,14 +40,14 @@ export const planParamsProcessNetPresentValue = (
       wealth: {
         total: getNetPresentValue(
           bondRateArr,
-          byMonth.futureSavingsAndRetirementIncome.total,
+          byMonth.wealth.total,
         ),
         futureSavings: _calcObj(
-          byMonth.futureSavingsAndRetirementIncome.futureSavings,
+          byMonth.wealth.futureSavings,
           bondRateArr,
         ),
-        retirementIncome: _calcObj(
-          byMonth.futureSavingsAndRetirementIncome.retirementIncome,
+        incomeDuringRetirement: _calcObj(
+          byMonth.wealth.incomeDuringRetirement,
           bondRateArr,
         ),
       },

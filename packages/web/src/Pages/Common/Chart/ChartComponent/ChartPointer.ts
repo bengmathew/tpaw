@@ -29,6 +29,15 @@ export type ChartPointerOpts = {
       outside: { lineLength: number; margin: number }
     }
   }
+  colors: {
+    bg: string
+    text: string
+    heading: string
+    subheadingLine:string
+    line: string
+    verticalLine: string
+    targetBG:string
+  }
 }
 const verticalLineDash = [10, 5]
 type _DataFn<Data> = (
@@ -126,7 +135,7 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
     // Draw the vertical line.
     canvasContext.globalAlpha = 0.3
     canvasContext.lineWidth = 1.5
-    canvasContext.strokeStyle = ChartUtils.color.gray[500]
+    canvasContext.strokeStyle = opts.colors.verticalLine
     canvasContext.setLineDash(verticalLineDash)
     canvasContext.lineDashOffset = verticalLineDash[0]
     canvasContext.beginPath()
@@ -139,9 +148,9 @@ export class ChartPointer<Data> implements ChartComponent<Data> {
     canvasContext.globalAlpha = 0.7
     canvasContext.lineWidth = 2
     pixelYs.forEach((pixelY, i) => {
-      canvasContext.fillStyle = ChartUtils.color.gray[700]
+      canvasContext.fillStyle = opts.colors.targetBG
       canvasContext.beginPath()
-      canvasContext.ellipse(pixelX, pixelY, 4, 4, 0, 0, Math.PI * 4)
+      canvasContext.ellipse(pixelX, pixelY, 5, 5, 0, 0, Math.PI * 4)
       canvasContext.fill()
     })
 
@@ -156,7 +165,7 @@ const _calculateBox = (
   dataXAtTarget: number,
   canvasContext: CanvasRenderingContext2D,
   { scale, viewport, plotArea }: ChartStateDerived,
-  { subHeading, formatX, formatY, showTh, pad }: ChartPointerOpts,
+  { subHeading, formatX, formatY, showTh, pad, colors }: ChartPointerOpts,
 ) => {
   const getTextInfo = (
     text: string,
@@ -175,14 +184,14 @@ const _calculateBox = (
       },
     }
   }
-  const defaultColor = ChartUtils.color.gray[200]
+  const defaultColor = colors.text
   const lineInfos = {
     heading: (() => {
       const displayInfo = formatX(dataXAtTarget)
       const gti = (
         text: string,
         font: string = ChartUtils.getMonoFont(13, 'bold'),
-        color: string = ChartUtils.color.orange[400],
+        color: string = colors.heading,
       ) => getTextInfo(text, font, color, 'left')
 
       const forPerson = (numMonths: number | null) => {
@@ -195,7 +204,6 @@ const _calculateBox = (
             : gti(
                 '' + `${numMonths % 12}`.padEnd(2, ' '),
                 ChartUtils.getMonoFont(10),
-                // ChartUtils.color.withOpacity(ChartUtils.color.orange[300], 0.8),
               )
         const width = years.width + (months?.width ?? 0) + 1
         const draw = (x: number, y: number) => {
@@ -352,7 +360,7 @@ const _calculateBox = (
     // Draw the lines.
     canvasContext.globalAlpha = 1
     canvasContext.lineWidth = 1
-    canvasContext.strokeStyle = ChartUtils.color.gray[700]
+    canvasContext.strokeStyle = colors.line
 
     // Math.max, because if it goes to far out, the lines won't draw.
     pixelYs
@@ -379,7 +387,7 @@ const _calculateBox = (
     // Draw the box.
     canvasContext.beginPath()
     ChartUtils.roundRect(canvasContext, regionExt, 10)
-    canvasContext.fillStyle = ChartUtils.color.gray[700]
+    canvasContext.fillStyle = colors.bg
     canvasContext.fill()
 
     let currY = y + headingRelativePosition.y
@@ -397,7 +405,7 @@ const _calculateBox = (
     canvasContext.lineTo(regionExt.right - pad.horz.edge, currY)
     canvasContext.lineCap = 'round'
     canvasContext.lineWidth = 0.5
-    canvasContext.strokeStyle = ChartUtils.color.gray[400]
+    canvasContext.strokeStyle = colors.subheadingLine
     canvasContext.stroke()
     currY += pad.vert.between * 0.75
 

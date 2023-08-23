@@ -1,5 +1,4 @@
 import { linearFnFomPoints } from '@tpaw/common'
-import localPoint from '@visx/event/lib/localPoint'
 import { gsap } from 'gsap'
 import _ from 'lodash'
 import { Padding, rectExt, Size, XY } from '../../../Utils/Geometry'
@@ -9,6 +8,7 @@ import { assert, fGet } from '../../../Utils/Utils'
 import { ChartComponent } from './ChartComponent/ChartComponent'
 import { ChartContext } from './ChartContext'
 import { Transition } from '../../../Utils/Transition'
+import { localPoint } from '@visx/event'
 
 export type ChartXYRange = { x: SimpleRange; y: SimpleRange }
 export type ChartAnimation = { ease: gsap.EaseFunction; duration: number }
@@ -68,8 +68,13 @@ export class Chart<Data> {
       }
     })()
 
-    this._components.forEach((x) =>
-      x.update?.('init', this._getContext(), this._callbacks.registerAnimation),
+    this._components.forEach(
+      (x) =>
+        x.update?.(
+          'init',
+          this._getContext(),
+          this._callbacks.registerAnimation,
+        ),
     )
     canvas.addEventListener('pointermove', this._callbacks.onMouse)
     canvas.addEventListener('pointerenter', this._callbacks.onMouse)
@@ -91,8 +96,8 @@ export class Chart<Data> {
     this._components.forEach((x) => x.destroy?.())
     this._components = components
     const context = this._getContext()
-    this._components.forEach((x) =>
-      x.update?.('init', context, this._callbacks.registerAnimation),
+    this._components.forEach(
+      (x) => x.update?.('init', context, this._callbacks.registerAnimation),
     )
     this.draw()
   }
@@ -173,12 +178,13 @@ export class Chart<Data> {
       }),
     )
 
-    this._components.forEach((x) =>
-      x.update?.(
-        'stateAndPointer',
-        this._getContext(),
-        this._callbacks.registerAnimation,
-      ),
+    this._components.forEach(
+      (x) =>
+        x.update?.(
+          'stateAndPointer',
+          this._getContext(),
+          this._callbacks.registerAnimation,
+        ),
     )
     this.draw()
   }
@@ -188,8 +194,8 @@ export class Chart<Data> {
 
     this._sizing = sizing
     const context = this._getContext()
-    this._components.forEach((x) =>
-      x.update?.('sizing', context, this._callbacks.registerAnimation),
+    this._components.forEach(
+      (x) => x.update?.('sizing', context, this._callbacks.registerAnimation),
     )
     this.draw()
   }
@@ -242,8 +248,8 @@ export class Chart<Data> {
         ease: 'power4',
       }),
     )
-    this._components.forEach((x) =>
-      x.update?.('pointer', context, this._callbacks.registerAnimation),
+    this._components.forEach(
+      (x) => x.update?.('pointer', context, this._callbacks.registerAnimation),
     )
     this.draw()
   }

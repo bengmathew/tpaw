@@ -1,4 +1,4 @@
-import React, { CSSProperties, ReactNode, useEffect, useState } from 'react'
+import React, { CSSProperties, ReactNode, useEffect, useState } from 'react';
 
 type CSSPropertiesWithOpacity = Exclude<CSSProperties, 'opacity'> & {
   opacity: string
@@ -12,6 +12,7 @@ type _Props = {
   onTransitionEnd?: () => void
   onHidden?: () => void
   noDisplayMeans?: 'visibility:hidden' | 'return <></>'
+  onClick?: () => void
 }
 export const NoDisplayOnOpacity0Transition = React.memo(
   React.forwardRef<HTMLDivElement, _Props>(
@@ -23,6 +24,7 @@ export const NoDisplayOnOpacity0Transition = React.memo(
         onHidden,
         onTransitionEnd,
         noDisplayMeans = 'return <></>',
+        onClick,
       }: _Props,
       ref,
     ) => {
@@ -59,6 +61,7 @@ export const NoDisplayOnOpacity0Transition = React.memo(
             }
             onTransitionEnd?.()
           }}
+          onClick={onClick}
         >
           {children}
         </div>

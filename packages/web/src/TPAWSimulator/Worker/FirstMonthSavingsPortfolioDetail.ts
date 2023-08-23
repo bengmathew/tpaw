@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
-import { TPAWWorkerRunSimulationResult } from './TPAWWorkerAPI'
+import { RunSimulationInWASMResult } from './RunSimulationInWASMResult'
 
 export type FirstMonthSavingsPortfolioDetail = {
   start: { balance: number }
@@ -30,14 +30,14 @@ export type FirstMonthSavingsPortfolioDetail = {
 }
 
 export const firstMonthSavingsPortfolioDetail = (
-  byMonthsFromNowByRun: TPAWWorkerRunSimulationResult['byMonthsFromNowByRun']['savingsPortfolio'],
+  byMonthsFromNowByRun: RunSimulationInWASMResult['byMonthsFromNowByRun']['savingsPortfolio'],
   params: PlanParamsProcessed,
 ): FirstMonthSavingsPortfolioDetail => {
   const start = {
     balance: byMonthsFromNowByRun.start.balance[0][0],
   }
   const contributionsTotal =
-    params.byMonth.futureSavingsAndRetirementIncome.total[0]
+    params.byMonth.wealth.total[0]
   const afterContributions = {
     balance: start.balance + contributionsTotal,
   }

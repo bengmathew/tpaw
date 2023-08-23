@@ -1,20 +1,25 @@
-import { historicalReturns, ValueForMonthRange } from '@tpaw/common'
+import {
+  assertFalse,
+  historicalReturns,
+  NonPlanParams,
+  ValueForMonthRange,
+} from '@tpaw/common'
 import _ from 'lodash'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { StatsTools } from '../../Utils/StatsTools'
 import { assert, fGet, noCase } from '../../Utils/Utils'
-import { ParamsExtended } from '../ExtentParams'
+import { PlanParamsExtended } from '../ExtentPlanParams'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 import {
   firstMonthSavingsPortfolioDetail,
   FirstMonthSavingsPortfolioDetail,
 } from './FirstMonthSavingsPortfolioDetail'
 import { mergeWorkerRuns } from './MergeWorkerRuns'
+import { RunSimulationInWASMResult } from './RunSimulationInWASMResult'
 import {
   TPAWWorkerArgs,
   TPAWWorkerCalculateSampledAnnualReturn,
   TPAWWorkerResult,
-  TPAWWorkerRunSimulationResult,
   TPAWWorkerSortResult,
 } from './TPAWWorkerAPI'
 
@@ -26,7 +31,7 @@ const MULTI_THREADED = true
 
 export type TPAWRunInWorkerResult = {
   numSimulationsActual: number
-  percentageOfRunsWithInsufficientFunds: number
+  numRunsWithInsufficientFunds: number
   savingsPortfolio: {
     start: {
       balance: TPAWRunInWorkerByPercentileByMonthsFromNow
@@ -34,11 +39,11 @@ export type TPAWRunInWorkerResult = {
     withdrawals: {
       essential: {
         total: TPAWRunInWorkerByPercentileByMonthsFromNow
-        byId: Map<number, TPAWRunInWorkerByPercentileByMonthsFromNow>
+        byId: Map<string, TPAWRunInWorkerByPercentileByMonthsFromNow>
       }
       discretionary: {
         total: TPAWRunInWorkerByPercentileByMonthsFromNow
-        byId: Map<number, TPAWRunInWorkerByPercentileByMonthsFromNow>
+        byId: Map<string, TPAWRunInWorkerByPercentileByMonthsFromNow>
       }
       regular: TPAWRunInWorkerByPercentileByMonthsFromNow
       total: TPAWRunInWorkerByPercentileByMonthsFromNow
@@ -96,7 +101,7 @@ export class TPAWRunInWorker {
   private _resolvers = {
     runSimulation: new Map<
       string,
-      (value: TPAWWorkerRunSimulationResult) => void
+      (value: RunSimulationInWASMResult) => void
     >(),
     sort: new Map<string, (value: TPAWWorkerSortResult) => void>(),
     getSampledReturnStats: new Map<
@@ -111,52 +116,60 @@ export class TPAWRunInWorker {
       () => new Worker(new URL('./TPAWWorker.ts', import.meta.url)),
     )
 
-    this._workers.forEach(
-      (worker) =>
-        (worker.onmessage = (event) => {
-          const data = event.data as TPAWWorkerResult
-          const { taskID } = data
-          switch (data.type) {
-            case 'runSimulation': {
-              const resolve = fGet(this._resolvers.runSimulation.get(taskID))
-              this._resolvers.runSimulation.delete(taskID)
-              resolve(data.result)
-              break
-            }
-            case 'sort': {
-              const resolve = fGet(this._resolvers.sort.get(taskID))
-              this._resolvers.sort.delete(taskID)
-              resolve(data.result)
-              break
-            }
-            case 'getSampledReturnStats': {
-              const resolve = fGet(
-                this._resolvers.getSampledReturnStats.get(taskID),
-              )
-              this._resolvers.getSampledReturnStats.delete(taskID)
-              resolve(data.result)
-              break
-            }
-            case 'clearMemoizedRandom': {
-              const resolve = fGet(
-                this._resolvers.clearMemoizedRandom.get(taskID),
-              )
-              this._resolvers.clearMemoizedRandom.delete(taskID)
-              resolve()
-              break
-            }
-            default:
-              noCase(data)
+    this._workers.forEach((worker) => {
+      worker.onerror = (event) => {
+        console.dir(event)
+      }
+      worker.addEventListener('unhandledrejection', (event) => {
+        console.dir(event)
+      })
+      worker.onmessage = (event) => {
+        const data = event.data as TPAWWorkerResult
+        const { taskID } = data
+        switch (data.type) {
+          case 'runSimulation': {
+            const resolve = fGet(this._resolvers.runSimulation.get(taskID))
+            this._resolvers.runSimulation.delete(taskID)
+            resolve(data.result)
+            break
           }
-        }),
-    )
+          case 'sort': {
+            const resolve = fGet(this._resolvers.sort.get(taskID))
+            this._resolvers.sort.delete(taskID)
+            resolve(data.result)
+            break
+          }
+          case 'getSampledReturnStats': {
+            const resolve = fGet(
+              this._resolvers.getSampledReturnStats.get(taskID),
+            )
+            this._resolvers.getSampledReturnStats.delete(taskID)
+            resolve(data.result)
+            break
+          }
+          case 'clearMemoizedRandom': {
+            const resolve = fGet(
+              this._resolvers.clearMemoizedRandom.get(taskID),
+            )
+            this._resolvers.clearMemoizedRandom.delete(taskID)
+            resolve()
+            break
+          }
+          case 'parseAndMigratePlanParams':
+          case 'estimateCurrentPortfolioBalance':
+            assertFalse()
+          default:
+            noCase(data)
+        }
+      }
+    })
   }
 
   private _runSimulation(
     worker: Worker,
     runs: SimpleRange,
     params: PlanParamsProcessed,
-  ): Promise<TPAWWorkerRunSimulationResult> {
+  ): Promise<RunSimulationInWASMResult> {
     const taskID = _.uniqueId()
     const message: Extract<TPAWWorkerArgs, { type: 'runSimulation' }> = {
       taskID,
@@ -164,7 +177,7 @@ export class TPAWRunInWorker {
       args: { runs, params },
     }
     worker.postMessage(message)
-    return new Promise<TPAWWorkerRunSimulationResult>((resolve) =>
+    return new Promise<RunSimulationInWASMResult>((resolve) =>
       this._resolvers.runSimulation.set(taskID, resolve),
     )
   }
@@ -264,7 +277,7 @@ export class TPAWRunInWorker {
   //   params: PlanParamsProcessed
   // ): Promise<boolean> {
 
-  //   numRuns = _numRuns(paramsExt, numRuns)
+  //   numRuns = _numRuns(planParamsExt, numRuns)
   //   const runsByWorker = await Promise.all(
   //     this._workers.map((worker, i) =>
   //       this._runSimulation(
@@ -280,15 +293,19 @@ export class TPAWRunInWorker {
   async runSimulations(
     status: { canceled: boolean },
     params: PlanParamsProcessed,
-    paramsExt: ParamsExtended,
+    planParamsExt: PlanParamsExtended,
+    nonPlanParams: NonPlanParams,
   ): Promise<TPAWRunInWorkerResult | null> {
     const start0 = performance.now()
     let start = performance.now()
-    const numSimulationsActual = _getNumSimulationsActual(paramsExt)
+    const numSimulationsActual = _getNumSimulationsActual(
+      planParamsExt,
+      nonPlanParams,
+    )
     const percentiles = [
-      params.original.nonPlan.percentileRange.start,
+      nonPlanParams.percentileRange.start,
       50,
-      params.original.nonPlan.percentileRange.end,
+      nonPlanParams.percentileRange.end,
     ]
 
     const runsByWorker = await Promise.all(
@@ -360,37 +377,38 @@ export class TPAWRunInWorker {
       params,
     )
     const withdrawlsEssentialById = new Map(
-      params.original.plan.adjustmentsToSpending.extraSpending.essential.map(
-        (x) => [
-          x.id,
-          _separateExtraWithdrawal(
-            x,
-            params,
-            paramsExt,
-            withdrawalsEssential,
-            'essential',
-          ),
-        ],
-      ),
+      _.values(
+        planParamsExt.planParams.adjustmentsToSpending.extraSpending.essential,
+      ).map((x) => [
+        x.id,
+        _separateExtraWithdrawal(
+          x,
+          params,
+          planParamsExt,
+          withdrawalsEssential,
+          'essential',
+        ),
+      ]),
     )
     const withdrawlsDiscretionaryById = new Map(
-      params.original.plan.adjustmentsToSpending.extraSpending.discretionary.map(
-        (x) => [
-          x.id,
-          _separateExtraWithdrawal(
-            x,
-            params,
-            paramsExt,
-            withdrawalsDiscretionary,
-            'discretionary',
-          ),
-        ],
-      ),
+      _.values(
+        planParamsExt.planParams.adjustmentsToSpending.extraSpending
+          .discretionary,
+      ).map((x) => [
+        x.id,
+        _separateExtraWithdrawal(
+          x,
+          params,
+          planParamsExt,
+          withdrawalsDiscretionary,
+          'discretionary',
+        ),
+      ]),
     )
 
-    const percentageOfRunsWithInsufficientFunds =
-      byRun.numInsufficientFundMonths.filter((x) => x > 0).length /
-      numSimulationsActual
+    const numRunsWithInsufficientFunds = byRun.numInsufficientFundMonths.filter(
+      (x) => x > 0,
+    ).length
 
     const perfPost = performance.now() - start
     start = performance.now()
@@ -405,7 +423,7 @@ export class TPAWRunInWorker {
 
     const result: TPAWRunInWorkerResult = {
       numSimulationsActual,
-      percentageOfRunsWithInsufficientFunds,
+      numRunsWithInsufficientFunds,
       savingsPortfolio: {
         start: {
           balance: startingBalanceOfSavingsPortfolio,
@@ -580,11 +598,11 @@ const _loadBalance = (worker: number, numJobs: number, numWorkers: number) => {
 const _separateExtraWithdrawal = (
   valueForMonthRange: ValueForMonthRange,
   params: PlanParamsProcessed,
-  paramsExt: ParamsExtended,
+  planParamsExt: PlanParamsExtended,
   x: TPAWRunInWorkerByPercentileByMonthsFromNow,
   type: 'discretionary' | 'essential',
 ): TPAWRunInWorkerByPercentileByMonthsFromNow => {
-  const monthRange = paramsExt.asMFN(valueForMonthRange.monthRange)
+  const monthRange = planParamsExt.asMFN(valueForMonthRange.monthRange)
 
   return _mapByPercentileByMonthsFromNow(x, (value, monthsFromNow) => {
     if (monthsFromNow < monthRange.start || monthsFromNow > monthRange.end) {
@@ -599,7 +617,6 @@ const _separateExtraWithdrawal = (
         valueForMonthRange.id
       ],
     )[monthsFromNow]
-
     if (withdrawalTargetForThisMonth === 0) return 0
     const ratio = withdrawalTargetForThisMonth / currMonthParams
     assert(!isNaN(ratio)) // withdrawalTargetForThisMonth ?>0 imples denominator is not 0.
@@ -620,15 +637,18 @@ const _mapByPercentileByMonthsFromNow = (
   return { byPercentileByMonthsFromNow }
 }
 
-const _getNumSimulationsActual = (paramsExt: ParamsExtended) => {
-  const { params, numMonths } = paramsExt
-  switch (params.plan.advanced.sampling) {
+const _getNumSimulationsActual = (
+  planParamsExt: PlanParamsExtended,
+  nonPlanParams: NonPlanParams,
+) => {
+  const { planParams, numMonths } = planParamsExt
+  switch (planParams.advanced.sampling) {
     case 'monteCarlo':
-      return params.plan.advanced.monteCarloSampling.numOfSimulations
+      return nonPlanParams.numOfSimulationForMonteCarloSampling
     case 'historical': {
       return historicalReturns.monthly.stocks.returns.length - numMonths + 1
     }
     default:
-      noCase(params.plan.advanced.sampling)
+      noCase(planParams.advanced.sampling)
   }
 }

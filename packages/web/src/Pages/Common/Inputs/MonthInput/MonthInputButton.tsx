@@ -5,7 +5,7 @@ import _ from 'lodash'
 import React from 'react'
 import { SimpleRange } from '../../../../Utils/SimpleRange'
 import { noCase } from '../../../../Utils/Utils'
-import { useSimulation } from '../../../App/WithSimulation'
+import { useSimulation } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { CalendarMonthInput } from '../CalendarMonthInput'
 import { NumMonthsInput } from '../NumMonthsInput'
 import { MonthInputProps } from './MonthInput'
@@ -121,8 +121,8 @@ const useNumMonthsProps = (
   range: SimpleRange
   modalLabel: string
 } | null => {
-  const { paramsExt } = useSimulation()
-  const { pickPerson, getCurrentAgeOfPerson } = paramsExt
+  const { planParamsExt } = useSimulation()
+  const { pickPerson, getCurrentAgeOfPerson } = planParamsExt
 
   if ('numMonths' in value) {
     return {

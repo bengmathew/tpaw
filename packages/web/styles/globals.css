@@ -52,6 +52,7 @@ a {
   .page {
     @apply font-font1  text-pageFG;
   }
+  
   .mt-header {
     @apply mt-[47px];
   }
@@ -63,14 +64,7 @@ a {
   .bg-inherit {
     background-color: inherit;
   }
-  .lighten {
-    @apply opacity-70;
-  }
-
-  .lighten-2 {
-    @apply opacity-50;
-  }
-
+  
   .btn-sm {
     @apply py-0.5 px-4;
   }
@@ -112,17 +106,6 @@ a {
     @apply font-font1 text-gray-800  fixed z-50 inset-0 overflow-y-auto flex items-center justify-center;
   }
 
-  .plan-pr {
-    @apply pr-3 sm:pr-4 md:pr-16;
-  }
-  .plan-pl {
-    @apply pl-3 sm:pl-4 md:pl-16;
-  }
-
-  .plan-ml {
-    @apply ml-3 sm:ml-4 md:ml-16;
-  }
-
   .params-card {
     @apply bg-cardBG rounded-2xl border-gray-200 border;
   }
@@ -130,4 +113,6 @@ a {
   .text-input {
     @apply bg-gray-200 rounded-lg py-1.5 px-2;
   }
+
+  
 }

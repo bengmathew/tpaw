@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { NonPlanParams } from '@tpaw/common'
+import { useCallback, useEffect, useState } from 'react'
+import { useNonPlanParams } from '../../Pages/PlanRoot/PlanRootHelpers/WithNonPlanParams'
 import { asyncEffect } from '../../Utils/AsyncEffect'
 import { fGet } from '../../Utils/Utils'
-import { ParamsExtended } from '../ExtentParams'
+import { PlanParamsExtended } from '../ExtentPlanParams'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 import { TPAWRunInWorker, TPAWRunInWorkerResult } from './TPAWRunInWorker'
 
@@ -15,32 +17,33 @@ export const getTPAWRunInWorkerSingleton = () => {
 
 export type UseTPAWWorkerResult = TPAWRunInWorkerResult & {
   params: PlanParamsProcessed
-  paramsExt: ParamsExtended
+  planParamsExt: PlanParamsExtended
+  nonPlanParams: NonPlanParams
 }
 
 export function useTPAWWorker(
   params: PlanParamsProcessed,
-  paramsExt: ParamsExtended,
+  planParamsExt: PlanParamsExtended,
 ) {
+  const { nonPlanParams } = useNonPlanParams()
   const [result, setResult] = useState<UseTPAWWorkerResult | null>(null)
+  const [key, setKey] = useState(0)
 
   useEffect(() => {
     return asyncEffect(async (status) => {
-      
-
       const data = await getTPAWRunInWorkerSingleton().runSimulations(
         status,
         params,
-        paramsExt,
+        planParamsExt,
+        nonPlanParams,
       )
       if (status.canceled) return
-      setResult({ ...fGet(data), params, paramsExt })
+      setResult({ ...fGet(data), params, planParamsExt, nonPlanParams })
     })
-  }, [params, paramsExt])
+  }, [params, planParamsExt, key, nonPlanParams])
 
-  return result
-}
-
-export async function clearMemoizedRandom() {
-  await getTPAWRunInWorkerSingleton().clearMemoizedRandom()
+  const reRun = useCallback(() => {
+    setKey((x) => x + 1)
+  }, [])
+  return { result, reRun }
 }

@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import {assert} from './Utils'
+import { assert } from './Utils'
 
 export namespace StatsTools {
   export function pivot<T>(rows: T[][]) {

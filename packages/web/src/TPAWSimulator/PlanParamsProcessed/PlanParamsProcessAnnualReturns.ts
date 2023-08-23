@@ -2,30 +2,32 @@ import {
   annualToMonthlyReturnRate,
   EXPECTED_ANNUAL_RETURN_PRESETS,
   historicalReturns,
+  MarketData,
   noCase,
-  Params,
   PlanParams,
 } from '@tpaw/common'
 import _ from 'lodash'
-import { MarketData } from '../../Pages/Common/GetMarketData'
 import { getAnnualToMonthlyRateConvertionCorrection } from './GetAnnualToMonthlyRateConvertionCorrection'
 
 export const planParamsProcessExpectedAnnualReturns = (
   annualReturns: PlanParams['advanced']['annualReturns'],
-  marketData: MarketData['latest'],
+  currentMarketData: MarketData.Data[0],
 ) =>
   annualReturns.expected.type === 'manual'
     ? {
         stocks: annualReturns.expected.stocks,
         bonds: annualReturns.expected.bonds,
       }
-    : EXPECTED_ANNUAL_RETURN_PRESETS(annualReturns.expected.type, marketData)
+    : EXPECTED_ANNUAL_RETURN_PRESETS(
+        annualReturns.expected.type,
+        currentMarketData,
+      )
 
 export function planParamsProcessAnnualReturnsParams(
-  params: Params,
-  marketData: MarketData['latest'],
+  planParams: PlanParams,
+  marketData: MarketData.Data[0],
 ) {
-  const { annualReturns } = params.plan.advanced
+  const { annualReturns } = planParams.advanced
   const expectedAnnualReturns = planParamsProcessExpectedAnnualReturns(
     annualReturns,
     marketData,
@@ -46,7 +48,7 @@ export function planParamsProcessAnnualReturnsParams(
               : noCase(adjustment)
 
           const correction = (() => {
-            switch (params.plan.advanced.sampling) {
+            switch (planParams.advanced.sampling) {
               case 'historical':
                 return getAnnualToMonthlyRateConvertionCorrection.forHistoricalSequence(
                   type,
@@ -54,12 +56,12 @@ export function planParamsProcessAnnualReturnsParams(
               case 'monteCarlo':
                 return correctForBlockSampling
                   ? getAnnualToMonthlyRateConvertionCorrection.forMonteCarlo(
-                      params.plan.advanced.monteCarloSampling.blockSize,
+                      planParams.advanced.monteCarloSampling.blockSize,
                       type,
                     )
                   : 0
               default:
-                noCase(params.plan.advanced.sampling)
+                noCase(planParams.advanced.sampling)
             }
           })()
 

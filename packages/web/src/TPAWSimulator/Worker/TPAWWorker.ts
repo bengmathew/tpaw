@@ -1,8 +1,29 @@
+import {
+  PlanParams,
+  SomePlanParams,
+  fGet,
+  planParamsMigrate,
+} from '@tpaw/common'
+import { CurrentPortfolioBalance } from '../../Pages/PlanRoot/PlanRootHelpers/CurrentPortfolioBalance'
 import { noCase } from '../../Utils/Utils'
 import { getWASM } from './GetWASM'
 import { runSimulationInWASM } from './RunSimulationInWASM'
 import { TPAWWorkerArgs, TPAWWorkerResult } from './TPAWWorkerAPI'
 
+import * as Sentry from '@sentry/nextjs'
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+})
+
+addEventListener('unhandledrejection', (event) => {
+  Sentry.captureException(event.reason)
+})
+addEventListener('onError', (event) => {
+  Sentry.captureException(new Error('onError even in worker.'))
+})
+
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 addEventListener('message', async (event) => {
   const eventData: TPAWWorkerArgs = event.data
   const { taskID } = eventData
@@ -98,6 +119,64 @@ addEventListener('message', async (event) => {
       ;(postMessage as any)(reply)
       break
     }
+
+    case 'parseAndMigratePlanParams': {
+      const { planParamsHistoryStr } = eventData.args
+      const start = performance.now()
+      const planParamsHistory = planParamsHistoryStr.map((x) => ({
+        id: x.id,
+        params: planParamsMigrate(JSON.parse(x.params) as SomePlanParams),
+      }))
+      planParamsCache.clear()
+      planParamsHistory.forEach(({ id, params }) =>
+        planParamsCache.set(id, params),
+      )
+      const reply: TPAWWorkerResult = {
+        type: 'parseAndMigratePlanParams',
+        taskID,
+        result: planParamsHistory,
+      }
+      ;(postMessage as any)(reply)
+      break
+    }
+
+    case 'estimateCurrentPortfolioBalance': {
+      const wasm = await getWASM()
+      const {
+        planId,
+        isPreBase,
+        planParamsHistory: planParamsHistoryIn,
+        estimationTimestamp,
+        ianaTimezoneName,
+        marketData,
+      } = eventData.args
+      const planParamsHistory = planParamsHistoryIn.map((x) =>
+        x.cached ? { id: x.id, params: fGet(planParamsCache.get(x.id)) } : x,
+      )
+      if (isPreBase) {
+        planParamsCache.clear()
+        planParamsHistory.forEach(({ id, params }) =>
+          planParamsCache.set(id, params),
+        )
+      }
+      const reply: TPAWWorkerResult = {
+        type: 'estimateCurrentPortfolioBalance',
+        taskID,
+        result: CurrentPortfolioBalance.getByMonthInfo(
+          CurrentPortfolioBalance.getInfo(
+            planId,
+            planParamsHistory,
+            estimationTimestamp,
+            ianaTimezoneName,
+            marketData,
+            wasm,
+          ),
+        ),
+      }
+      ;(postMessage as any)(reply)
+      break
+    }
+
     case 'clearMemoizedRandom': {
       const wasm = await getWASM()
       wasm.clear_memoized_random()
@@ -109,3 +188,5 @@ addEventListener('message', async (event) => {
       noCase(eventData)
   }
 })
+
+const planParamsCache = new Map<string, PlanParams>()

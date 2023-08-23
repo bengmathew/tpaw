@@ -9,13 +9,13 @@ import { asyncEffect } from '../../Utils/AsyncEffect'
 import { useURLParam } from '../../Utils/UseURLParam'
 import { useURLUpdater } from '../../Utils/UseURLUpdater'
 import { useFirebaseUser } from '../App/WithFirebaseUser'
+import { appPaths } from '../../AppPaths'
 
 type _State =
   | { type: 'error'; message: string }
   | { type: 'doSignIn'; email: string }
   | { type: 'loggedIn' }
 
-  
 export const Email = React.memo(() => {
   const auth = getAuth()
   const isLink = isSignInWithEmailLink(auth, window.location.href)
@@ -37,7 +37,7 @@ export const Email = React.memo(() => {
 
   const urlUpdater = useURLUpdater()
 
-  const dest = useURLParam('dest') ?? '/plan'
+  const dest = useURLParam('dest') ?? appPaths.plan()
   useEffect(() => {
     if (isLoggedIn) urlUpdater.replace(dest)
   }, [dest, isLoggedIn, urlUpdater])

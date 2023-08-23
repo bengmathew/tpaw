@@ -8,11 +8,8 @@ export class Config {
         space: fGet(process.env.CONTENTFUL_SPACE_ID),
         accessToken: fGet(process.env.CONTENTFUL_ACCESS_TOKEN),
       },
-      eod: {
-        apiKey: fGet(process.env.EOD_API_KEY),
-      },
-      stLouisFed: {
-        apiKey: fGet(process.env.ST_LOUIS_FED_API_KEY),
+      google: {
+        marketDataURL: fGet(process.env.MARKET_DATA_URL),
       },
     }
   }

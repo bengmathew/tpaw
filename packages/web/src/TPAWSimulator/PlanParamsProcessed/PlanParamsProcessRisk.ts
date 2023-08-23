@@ -11,16 +11,17 @@ import {
   RISK_TOLERANCE_VALUES,
 } from '@tpaw/common'
 import _ from 'lodash'
-import { ParamsExtended } from '../ExtentParams'
+import { PlanParamsExtended } from '../ExtentPlanParams'
 import { sampledAnnualReturnStatsMap } from './GetAnnualToMonthlyRateConvertionCorrection'
 
 export const planParamsProcessRisk = (
-  paramsExt: ParamsExtended,
+  planParamsExt: PlanParamsExtended,
   expectedAnnualReturns: { stocks: number; bonds: number },
 ) => {
-  const { params, numMonths, numRetirementMonths, currentMonth } = paramsExt
+  const { planParams, numMonths, numRetirementMonths, currentMonth } =
+    planParamsExt
 
-  const tpawGlidePath = _tpawGlidePath(paramsExt, expectedAnnualReturns)
+  const tpawGlidePath = _tpawGlidePath(planParamsExt, expectedAnnualReturns)
 
   const tpaw = {
     allocation: normalizeGlidePath(
@@ -29,28 +30,28 @@ export const planParamsProcessRisk = (
           month: currentMonth,
           stocks: tpawGlidePath.now.stockAllocation,
         },
-        intermediate: [],
+        intermediate: {},
         end: { stocks: tpawGlidePath.atMaxAge.stockAllocation },
       },
-      paramsExt,
+      planParamsExt,
     ),
     allocationForLegacy: {
       stocks: _mertonsFormula(
         expectedAnnualReturns,
-        params.plan.risk.tpaw.riskTolerance.at20 +
-          params.plan.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20,
+        planParams.risk.tpaw.riskTolerance.at20 +
+          planParams.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20,
         0, // Does not matter.
         0, // Does not matter.
-        params.plan.advanced.sampling,
-        params.plan.advanced.monteCarloSampling.blockSize,
+        planParams.advanced.sampling,
+        planParams.advanced.monteCarloSampling.blockSize,
       ).stockAllocation,
     },
   }
 
   const tpawAndSPAW = {
     monthlySpendingTilt: _.times(numMonths, (x) =>
-      params.plan.advanced.strategy === 'SPAW'
-        ? annualToMonthlyReturnRate(params.plan.risk.spaw.annualSpendingTilt)
+      planParams.advanced.strategy === 'SPAW'
+        ? annualToMonthlyReturnRate(planParams.risk.spaw.annualSpendingTilt)
         : linearFnFomPoints(
             0,
             tpawGlidePath.now.monthlySpendingTilt,
@@ -58,19 +59,19 @@ export const planParamsProcessRisk = (
             tpawGlidePath.atMaxAge.monthlySpendingTilt,
           )(x),
     ),
-    lmp: params.plan.risk.tpawAndSPAW.lmp,
+    lmp: planParams.risk.tpawAndSPAW.lmp,
   }
 
   const spawAndSWR = {
     allocation: normalizeGlidePath(
-      params.plan.risk.spawAndSWR.allocation,
-      paramsExt,
+      planParams.risk.spawAndSWR.allocation,
+      planParamsExt,
     ),
   }
 
   const swr = {
     monthlyWithdrawal: (() => {
-      switch (params.plan.risk.swr.withdrawal.type) {
+      switch (planParams.risk.swr.withdrawal.type) {
         case 'default':
           return {
             type: 'asPercent' as const,
@@ -80,15 +81,15 @@ export const planParamsProcessRisk = (
         case 'asPercentPerYear':
           return {
             type: 'asPercent' as const,
-            percent: params.plan.risk.swr.withdrawal.percentPerYear / 12,
+            percent: planParams.risk.swr.withdrawal.percentPerYear / 12,
           }
         case 'asAmountPerMonth':
           return {
             type: 'asAmount' as const,
-            amount: params.plan.risk.swr.withdrawal.amountPerMonth,
+            amount: planParams.risk.swr.withdrawal.amountPerMonth,
           }
         default:
-          noCase(params.plan.risk.swr.withdrawal)
+          noCase(planParams.risk.swr.withdrawal)
       }
     })(),
   }
@@ -97,11 +98,11 @@ export const planParamsProcessRisk = (
 }
 
 const _tpawGlidePath = (
-  paramsExt: ParamsExtended,
+  planParamsExt: PlanParamsExtended,
   expectedAnnualReturns: { stocks: number; bonds: number },
 ) => {
-  const { params, pickPerson, longerLivedPerson, getCurrentAgeOfPerson } =
-    paramsExt
+  const { planParams, pickPerson, longerLivedPerson, getCurrentAgeOfPerson } =
+    planParamsExt
   const riskTolerance = (() => {
     const person = pickPerson(longerLivedPerson)
     const atAge = (x: number) =>
@@ -109,10 +110,10 @@ const _tpawGlidePath = (
         RISK_TOLERANCE_VALUES.DATA[0],
         linearFnFomPoints(
           20 * 12,
-          params.plan.risk.tpaw.riskTolerance.at20,
+          planParams.risk.tpaw.riskTolerance.at20,
           person.ages.maxAge.inMonths,
-          params.plan.risk.tpaw.riskTolerance.at20 +
-            params.plan.risk.tpaw.riskTolerance.deltaAtMaxAge,
+          planParams.risk.tpaw.riskTolerance.at20 +
+            planParams.risk.tpaw.riskTolerance.deltaAtMaxAge,
         )(x),
       )
     return {
@@ -127,10 +128,10 @@ const _tpawGlidePath = (
     _mertonsFormula(
       expectedAnnualReturns,
       riskTolerance,
-      params.plan.risk.tpaw.timePreference,
-      params.plan.risk.tpaw.additionalAnnualSpendingTilt,
-      params.plan.advanced.sampling,
-      params.plan.advanced.monteCarloSampling.blockSize,
+      planParams.risk.tpaw.timePreference,
+      planParams.risk.tpaw.additionalAnnualSpendingTilt,
+      planParams.advanced.sampling,
+      planParams.advanced.monteCarloSampling.blockSize,
     )
 
   const maxRiskTolerance =
@@ -196,9 +197,9 @@ export const _mertonsFormula = (
 
 export const normalizeGlidePath = (
   { start, intermediate, end }: GlidePath,
-  paramsExt: ParamsExtended,
+  planParamsExt: PlanParamsExtended,
 ) => {
-  const { asMFN, numMonths } = paramsExt
+  const { asMFN, numMonths } = planParamsExt
   // Keeps only the first  of duplicates and prioritizes "start" and "end", over
   // intermediate if they refer to same month.
   const stage1 = [
@@ -212,10 +213,12 @@ export const normalizeGlidePath = (
             stocks: start.stocks,
           },
           { month: numMonths - 1, stocks: end.stocks },
-          ...intermediate.map(({ month, stocks }) => ({
-            month: asMFN(month),
-            stocks,
-          })),
+          ..._.values(intermediate)
+            .sort((a, b) => a.indexToSortByAdded - b.indexToSortByAdded)
+            .map(({ month, stocks }) => ({
+              month: asMFN(month),
+              stocks,
+            })),
         ],
         (x) => x.month,
       ),
@@ -224,7 +227,7 @@ export const normalizeGlidePath = (
   ]
   assert(stage1[0].month <= 0)
 
-  let result = _.times(numMonths)
+  let result = [] as number[]
   _.times(stage1.length - 1, (i) => {
     const curr = stage1[i]
     const next = stage1[i + 1]

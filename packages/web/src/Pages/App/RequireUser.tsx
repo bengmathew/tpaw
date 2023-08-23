@@ -1,4 +1,5 @@
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
+import * as Sentry from '@sentry/nextjs'
 import { faEnvelope } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { API } from '@tpaw/common'
@@ -10,10 +11,8 @@ import { graphql, useMutation } from 'react-relay'
 import { errorToast } from '../../Utils/CustomToasts'
 import { fGet, noCase } from '../../Utils/Utils'
 import { Spinner } from '../../Utils/View/Spinner'
-import { FirebaseUser, useFirebaseUser } from './WithFirebaseUser'
 import { RequireUserSendEmailMutation } from './__generated__/RequireUserSendEmailMutation.graphql'
-
-export type User = { firebaseUser: FirebaseUser }
+import { useFirebaseUser } from './WithFirebaseUser'
 
 export const RequireUser = React.memo(
   ({ children }: { children: ReactNode }) => {
@@ -99,14 +98,17 @@ const _LoginInput = React.memo(
         commitMutation({
           variables: { input: { email: emailValidation.value, dest } },
           onCompleted: onEmailSent,
-          onError: () => errorToast(),
+          onError: (e) => {
+            Sentry.captureException(e)
+            errorToast('Something went wrong.')
+          },
         })
       }
     }
 
     return (
       <div className={`${className}`}>
-        <h2 className="text-center text-4xl font-bold">Login or Sign Up</h2>
+        <h2 className="text-4xl font-bold">Login / Sign Up</h2>
         <div className="flex gap-x-2 items-stretch mt-20">
           <input
             ref={inputRef}
@@ -159,6 +161,7 @@ const _LoginInput = React.memo(
           </div>
           <button
             className="btn-lg btn-dark flex gap-x-2 items-center"
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onClick={async () => {
               const provider = new GoogleAuthProvider()
               await signInWithRedirect(getAuth(), provider)

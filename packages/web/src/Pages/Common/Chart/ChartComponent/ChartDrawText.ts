@@ -1,5 +1,5 @@
-import {ChartSizing} from '../Chart'
-import {ChartComponent} from './ChartComponent'
+import { ChartSizing } from '../Chart'
+import { ChartComponent } from './ChartComponent'
 
 export const chartDrawText = <Data>(
   paramsFn: (

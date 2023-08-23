@@ -1,15 +1,16 @@
 import React, {
-  ReactElement,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
+    ReactElement,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
 } from 'react'
 import ReactDOM from 'react-dom'
 import { fGet } from '../../../Utils/Utils'
 import { useWindowSize } from '../../App/WithWindowSize'
 
+// TODO: Deprecate in favor of ContextMenu2
 export const ContextMenu = React.memo(
   ({
     referenceElement,

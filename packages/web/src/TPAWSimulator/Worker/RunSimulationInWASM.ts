@@ -1,26 +1,29 @@
 import { annualToMonthlyReturnRate, MAX_AGE_IN_MONTHS } from '@tpaw/common'
 import _ from 'lodash'
-import { DateTime } from 'luxon'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { noCase } from '../../Utils/Utils'
-import { extendParams } from '../ExtentParams'
+import { extendPlanParams } from '../ExtentPlanParams'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 import { WASM } from './GetWASM'
-import { TPAWWorkerRunSimulationResult } from './TPAWWorkerAPI'
+import { RunSimulationInWASMResult } from './RunSimulationInWASMResult'
 
 export function runSimulationInWASM(
   params: PlanParamsProcessed,
   runsSpec: SimpleRange,
   wasm: WASM,
-  test?: { truth: number[]; indexIntoHistoricalReturns: number[] },
-): TPAWWorkerRunSimulationResult {
+  opts: {
+    forFirstMonth: boolean
+    test?: { truth: number[]; indexIntoHistoricalReturns: number[] }
+  } = { forFirstMonth: false },
+): RunSimulationInWASMResult {
   let start0 = performance.now()
-  const { numMonths, asMFN, withdrawalStartMonth } = extendParams(
+  const { numMonths, asMFN, withdrawalStartMonth } = extendPlanParams(
     params.original,
-    DateTime.fromMillis(params.currentTime.epoch, {
-      zone: params.currentTime.zoneName,
-    }),
+    params.currentTime.epoch,
+    params.currentTime.zoneName,
   )
+
+  const numMonthsToSimulate = opts.forFirstMonth ? 1 : numMonths
 
   let start = performance.now()
   let runs = wasm.run(
@@ -28,6 +31,7 @@ export function runSimulationInWASM(
     runsSpec.start,
     runsSpec.end,
     numMonths,
+    numMonthsToSimulate,
     asMFN(withdrawalStartMonth),
     annualToMonthlyReturnRate(params.returns.expectedAnnualReturns.stocks),
     annualToMonthlyReturnRate(params.returns.expectedAnnualReturns.bonds),
@@ -47,8 +51,8 @@ export function runSimulationInWASM(
       : params.risk.swr.monthlyWithdrawal.type === 'asPercent'
       ? params.risk.swr.monthlyWithdrawal.percent
       : noCase(params.risk.swr.monthlyWithdrawal),
-    params.byMonth.tpawAndSPAW.risk.lmp,
-    params.byMonth.futureSavingsAndRetirementIncome.total,
+    params.byMonth.risk.tpawAndSPAW.lmp,
+    params.byMonth.wealth.total,
     params.byMonth.adjustmentsToSpending.extraSpending.essential.total,
     params.byMonth.adjustmentsToSpending.extraSpending.discretionary.total,
     params.adjustmentsToSpending.tpawAndSPAW.legacy.target,
@@ -64,15 +68,15 @@ export function runSimulationInWASM(
       : noCase(params.sampling),
     params.samplingBlockSizeForMonteCarlo,
     MAX_AGE_IN_MONTHS,
-    test?.truth ? Float64Array.from(test.truth) : undefined,
-    test?.indexIntoHistoricalReturns
-      ? Uint32Array.from(test.indexIntoHistoricalReturns)
+    opts.test?.truth ? Float64Array.from(opts.test.truth) : undefined,
+    opts.test?.indexIntoHistoricalReturns
+      ? Uint32Array.from(opts.test.indexIntoHistoricalReturns)
       : undefined,
   )
   const perfRuns = performance.now() - start
 
   const numRuns = runsSpec.end - runsSpec.start
-  const monthIndexes = _.range(0, numMonths)
+  const monthIndexes = _.range(0, numMonthsToSimulate)
   const splitArray = (x: Float64Array) => {
     const copy = x.slice()
     return monthIndexes.map((month) =>
@@ -82,7 +86,7 @@ export function runSimulationInWASM(
 
   start = performance.now()
 
-  const result: Omit<TPAWWorkerRunSimulationResult, 'perf'> = {
+  const result: Omit<RunSimulationInWASMResult, 'perf'> = {
     byMonthsFromNowByRun: {
       savingsPortfolio: {
         start: {
@@ -123,9 +127,10 @@ export function runSimulationInWASM(
         .slice(),
       endingBalanceOfSavingsPortfolio: runs.by_run_ending_balance().slice(),
     },
+    // Don't have enough months if forFirstMonth, so this will crash.
     averageAnnualReturns: {
-      stocks: runs.average_annual_returns_stocks(),
-      bonds: runs.average_annual_returns_bonds(),
+      stocks: opts.forFirstMonth ? 0 : runs.average_annual_returns_stocks(),
+      bonds: opts.forFirstMonth ? 0 : runs.average_annual_returns_bonds(),
     },
   }
   runs.free()

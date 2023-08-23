@@ -47,6 +47,7 @@ pub struct Params {
     pub start_run: usize,
     pub end_run: usize,
     pub num_months: usize,
+    pub num_months_to_simulate: usize,
     pub withdrawal_start_month: usize,
     pub current_savings: f64,
     pub expected_monthly_returns: ReturnsAtPointInTime,

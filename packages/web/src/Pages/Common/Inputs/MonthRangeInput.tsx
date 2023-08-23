@@ -3,9 +3,9 @@ import React from 'react'
 import { numMonthsStr } from '../../../Utils/NumMonthsStr'
 import { SimpleRange } from '../../../Utils/SimpleRange'
 import { noCase } from '../../../Utils/Utils'
-import { useSimulation } from '../../App/WithSimulation'
 import { monthRangeWithStartClampedToNowToString } from '../MonthRangeDisplay'
 import { MonthInput, MonthType } from './MonthInput/MonthInput'
+import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
 
 export type MonthRangeInputProps = React.ComponentProps<typeof MonthRangeInput>
 
@@ -25,14 +25,14 @@ export const MonthRangeInput = React.memo(
     choices: { start: MonthType[]; end: MonthType[] }
     modalTextInputOnMobile: boolean
   }) => {
-    const { paramsExt } = useSimulation()
+    const { planParamsExt } = useSimulation()
     const {
       monthRangeBoundsCheck,
       monthRangeLength,
       asMFN,
       monthsFromNowToNumericAge,
       getIsMonthPastMaxAge,
-    } = paramsExt
+    } = planParamsExt
     const rangeAsMFN = {
       start: Math.max(0, rangeAsMFNIn.start),
       end: rangeAsMFNIn.end,
@@ -107,7 +107,7 @@ export const MonthRangeInput = React.memo(
       }
     }
     const toString = (value: MonthRange) =>
-      monthRangeWithStartClampedToNowToString(value, paramsExt)
+      monthRangeWithStartClampedToNowToString(value, planParamsExt)
     return (
       <div className={`${className}`}>
         <MonthInput

@@ -12,21 +12,75 @@ datasource db {
 }
 
 model User {
-  id     String @id
-  plan   Plan?  @relation(fields: [planId], references: [id])
-  planId Int?   @unique
+  id                String             @id
+  planWithHistory   PlanWithHistory[]
+  planParamsChanges PlanParamsChange[]
+
+  // TODO: drop optional after migration
+  nonPlanParams              Json?
+  // TODO: drop default after migration.
+  nonPlanParamsLastUpdatedAt DateTime @default(now())
+  // TODO: drop default after migration
+  clientIANATimezoneName     String   @default("")
+
+  // TODO: Remove after migration
+  plan   Plan? @relation(fields: [planId], references: [id])
+  planId Int?  @unique
 }
 
-model Plan {
-  id         Int      @id @default(autoincrement())
-  user       User?
-  createdAt  DateTime
-  modifiedAt DateTime
-  params     Json
+model PlanWithHistory {
+  userId String
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId String
+  isMain Boolean // There should be only one main plan per user.
+  slug   String
+
+  label           String?
+  addedToServerAt DateTime
+  sortTime        DateTime
+
+  lastSyncAt DateTime
+  resetCount Int
+
+  endingParams        Json
+  paramsChangeHistory PlanParamsChange[]
+  reverseHeadIndex    Int
+
+  @@id([userId, planId])
+  @@unique([userId, slug])
+}
+
+model PlanParamsChange {
+  userId             String
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId             String
+  planWithHistory    PlanWithHistory @relation(fields: [userId, planId], references: [userId, planId], onDelete: Cascade)
+  // Note that planParamsChangeId is not unquie on it's own. When copying a
+  // planWithHistory, The planParamsChangeId is copied as well. This is to
+  // ensure that the planParamsChangeId referred to other change items (eg. is
+  // currentPortfolioBalance.updatedAtId) are still valid.
+  planParamsChangeId String
+
+  timestamp   DateTime
+  reverseDiff Json
+  change      Json
+
+  @@id([userId, planId, planParamsChangeId])
+  @@unique([userId, planId, timestamp])
+  @@index([userId, planId, timestamp(sort: Desc)])
 }
 
 model LinkBasedPlan {
   id        String   @id
   createdAt DateTime
   params    Json
+}
+
+// TODO: delete after migration
+model Plan {
+  id         Int      @id @default(autoincrement())
+  user       User?
+  createdAt  DateTime
+  modifiedAt DateTime
+  params     Json
 }

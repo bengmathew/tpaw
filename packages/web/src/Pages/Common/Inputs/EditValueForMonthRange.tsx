@@ -1,21 +1,24 @@
 import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { faCaretDown, faCaretRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  LabeledAmount,
-  PlanParams,
-  ValueForMonthRange,
-  assert,
-  fGet,
-  noCase,
-} from '@tpaw/common'
-import _ from 'lodash'
-import React, { useImperativeHandle, useRef, useState } from 'react'
+import { MonthRange, fGet, noCase } from '@tpaw/common'
+import React, {
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { formatCurrency } from '../../../Utils/FormatCurrency'
 import { Padding } from '../../../Utils/Geometry'
 import { SimpleRange } from '../../../Utils/SimpleRange'
-import { useSimulation } from '../../App/WithSimulation'
-import { ConfirmAlert } from '../Modal/ConfirmAlert'
+import { optGet } from '../../../Utils/optGet'
+import {
+  getLabeledAmountEntriesByLocation,
+  getValueForMonthRangeEntriesByLocation,
+} from '../../PlanRoot/PlanRootHelpers/PlanParamsChangeAction'
+import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { CenteredModal } from '../Modal/CenteredModal'
 import { MonthRangeDisplay } from '../MonthRangeDisplay'
 import { AmountInput } from './AmountInput'
 import { MonthRangeInput, MonthRangeInputProps } from './MonthRangeInput'
@@ -23,24 +26,24 @@ import { RealOrNominalInput } from './RealOrNominalInput'
 import { smartDeltaFnForMonthlyAmountInput } from './SmartDeltaFnForAmountInput'
 
 type _PropsCommon = {
-  mode: 'add' | 'edit'
+  addOrEdit: 'add' | 'edit'
   title: string
   setHideInMain: (visible: boolean) => void
   onDone: () => void
-  onBeforeDelete?: (id: number) => void
+  onBeforeDelete?: (id: string) => void
   transitionOut: (onDone: () => void) => void
-  entryId: number
+  entryId: string
   labelPlaceholder: string
   cardPadding: Padding
 }
 type _Props =
   | ({
       hasMonthRange: false
-      getEntries: (params: PlanParams) => LabeledAmount[]
+      location: Parameters<typeof getLabeledAmountEntriesByLocation>[1]
     } & _PropsCommon)
   | ({
       hasMonthRange: true
-      getEntries: (params: PlanParams) => ValueForMonthRange[]
+      location: Parameters<typeof getValueForMonthRangeEntriesByLocation>[1]
       choices: MonthRangeInputProps['choices']
       validRangeAsMFN: SimpleRange
     } & _PropsCommon)
@@ -70,7 +73,7 @@ export type EditValueForMonthRangeStateful = { closeSections: () => void }
 export const EditValueForMonthRange = React.forwardRef(
   (
     {
-      mode,
+      addOrEdit,
       title,
       onDone,
       transitionOut,
@@ -83,13 +86,14 @@ export const EditValueForMonthRange = React.forwardRef(
     }: _Props,
     forwardedRef: React.ForwardedRef<EditValueForMonthRangeStateful>,
   ) => {
-    const { params, setPlanParams } = useSimulation()
+    const { updatePlanParams } = useSimulation()
     const outerDivRef = useRef<HTMLDivElement>(null)
     const buttonDivRef = useRef<HTMLDivElement>(null)
 
+    const { planParams } = useSimulation()
     const [{ dialogMode, currSection }, setState] = useState({
-      dialogMode: mode === 'add',
-      currSection: mode === 'add' ? 'label' : ('none' as _Section),
+      dialogMode: addOrEdit === 'add',
+      currSection: addOrEdit === 'add' ? 'label' : ('none' as _Section),
     })
     const [confirmDelete, setConfirmDelete] = useState(false)
     const endDialogMode = () =>
@@ -101,42 +105,26 @@ export const EditValueForMonthRange = React.forwardRef(
       )
     }
 
-    function processGetEntries<T extends { id: number }>(
-      getEntries: (params: PlanParams) => T[],
-    ) {
-      const entry = fGet(getEntries(params.plan).find((x) => x.id === entryId))
-      const setEntry = (editEntry: (entry: T) => void) => {
-        setPlanParams((plan) => {
-          const clone = _.cloneDeep(plan)
-          const entryClone = _.cloneDeep(entry)
-          editEntry(entryClone)
-          const index = getEntries(clone).findIndex((x) => x.id === entryId)
-          assert(index !== -1)
-          getEntries(clone).splice(index, 1, entryClone)
-          return clone
-        })
-      }
-      return {
-        entry,
-        setEntry,
-        currSection,
-        cardPadding,
-        setCurrSection,
-        dialogMode,
-        endDialogMode,
-      }
+    const sectionPropsCommon = {
+      entryId,
+      currSection,
+      cardPadding,
+      setCurrSection,
+      dialogMode,
+      endDialogMode,
     }
-
     const sectionProps = props.hasMonthRange
       ? {
+          location: props.location,
           hasMonthRange: true as const,
           choices: props.choices,
           validRangeAsMFN: props.validRangeAsMFN,
-          ...processGetEntries(props.getEntries),
+          ...sectionPropsCommon,
         }
       : {
+          location: props.location,
           hasMonthRange: false as const,
-          ...processGetEntries(props.getEntries),
+          ...sectionPropsCommon,
         }
 
     useImperativeHandle(
@@ -149,21 +137,30 @@ export const EditValueForMonthRange = React.forwardRef(
 
     const handleDelete = () => {
       setHideInMain(true)
-      onBeforeDelete?.(sectionProps.entry.id)
+      onBeforeDelete?.(sectionProps.entryId)
       transitionOut(() => {
         onDone()
-        setPlanParams((plan) => {
-          const clone = _.cloneDeep(plan)
-          const entries = props.getEntries(clone)
-          const index = entries.findIndex((x) => x.id === entryId)
-          // Needed because transitionOut seems to be called multiple times.
-          if (index === -1) return plan
-          props.getEntries(clone).splice(index, 1)
-          return clone
+        updatePlanParams('deleteLabeledAmount', {
+          location: props.location,
+          entryId,
         })
       })
     }
 
+    // Handle the case where entry is missing. This can happen through undo/redo.
+    const entry = useMemo(
+      () =>
+        getLabeledAmountEntriesByLocation(planParams, props.location)[entryId],
+      [entryId, planParams, props.location],
+    )
+    const handleNoEntry = () => transitionOut(() => {})
+    const handleNoEntryRef = useRef(handleNoEntry)
+    handleNoEntryRef.current = handleNoEntry
+    useEffect(() => {
+      if (!entry) handleNoEntryRef.current()
+    }, [entry])
+
+    if (!entry) return <></>
     return (
       <div
         ref={outerDivRef}
@@ -191,14 +188,17 @@ export const EditValueForMonthRange = React.forwardRef(
         <div
           ref={buttonDivRef}
           className={`mt-10 flex gap-x-4 ${
-            mode === 'add' ? 'justify-between' : 'justify-end'
+            addOrEdit === 'add' ? 'justify-between' : 'justify-end'
           }`}
           onClick={(e) => {
             if (e.target === buttonDivRef?.current) setCurrSection('none')
           }}
         >
-          {mode === 'add' ? (
-            <button className="btn-md btn-md btn-outline" onClick={handleDelete}>
+          {addOrEdit === 'add' ? (
+            <button
+              className="btn-md btn-md btn-outline"
+              onClick={handleDelete}
+            >
               Cancel
             </button>
           ) : (
@@ -221,18 +221,33 @@ export const EditValueForMonthRange = React.forwardRef(
             </button>
           )}
         </div>
-        {confirmDelete && (
-          <ConfirmAlert
-            option1={{
-              label: 'Delete',
-              onClose: () => handleDelete(),
-              isWarning: true,
-            }}
-            onCancel={() => setConfirmDelete(false)}
-          >
+        <CenteredModal
+          className=" dialog-outer-div"
+          show={confirmDelete}
+          onOutsideClickOrEscape={null}
+        >
+          <h2 className=" dialog-heading">Confirm Delete</h2>
+          <p className=" p-base dialog-content-div">
             Are you sure you want to delete this entry?
-          </ConfirmAlert>
-        )}
+          </p>
+          <div className=" dialog-button-div">
+            <button
+              className=" dialog-button-cancel"
+              onClick={() => setConfirmDelete(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className=" dialog-button-warning"
+              onClick={() => {
+                setConfirmDelete(false)
+                handleDelete()
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        </CenteredModal>
       </div>
     )
   },
@@ -245,23 +260,44 @@ type _SectionPropsCommon = {
   setCurrSection: (x: _Section) => void
   dialogMode: boolean
   endDialogMode: () => void
+  entryId: string
 }
 
 type _SectionProps =
   | ({
       hasMonthRange: true
-      entry: ValueForMonthRange
-      setEntry: (edit: (x: ValueForMonthRange) => void) => void
+      location: Parameters<typeof getValueForMonthRangeEntriesByLocation>[1]
     } & _SectionPropsCommon)
   | ({
       hasMonthRange: false
-      entry: LabeledAmount
-      setEntry: (edit: (x: LabeledAmount) => void) => void
+      location: Parameters<typeof getLabeledAmountEntriesByLocation>[1]
     } & _SectionPropsCommon)
 
 const _LabelSection = React.memo(
   (props: _SectionProps & { labelPlaceholder: string }) => {
-    const { entry, setEntry, labelPlaceholder } = props
+    const { planParams, updatePlanParams } = useSimulation()
+    const { entryId, labelPlaceholder, location } = props
+    const entry = useMemo(
+      () =>
+        fGet(
+          optGet(
+            getLabeledAmountEntriesByLocation(planParams, location),
+            entryId,
+          ),
+        ),
+      [entryId, location, planParams],
+    )
+
+    const [value, setValue] = useState(entry.label ?? '')
+    const handleChangeEntry = () => {
+      const trimmed = value.trim()
+      updatePlanParams('setLabelForLabeledAmount', {
+        location,
+        entryId,
+        label: trimmed.length === 0 ? null : trimmed,
+      })
+    }
+    const ref = useRef<HTMLInputElement>(null)
     return (
       <_Section {...props} sectionType="label" sectionName="Label">
         <>
@@ -272,15 +308,14 @@ const _LabelSection = React.memo(
           )}
         </>
         <input
+          ref={ref}
           type="text"
           className="bg-gray-200 px-2 py-1.5 rounded-lg w-full max-w-[400px] mt-2"
-          value={entry.label ?? ''}
-          onChange={(e) => {
-            setEntry((entry) => {
-              const trimmed = e.target.value.trim()
-              // Cannot set it to trimmed value because we cannot have
-              entry.label = trimmed.length === 0 ? null : e.target.value
-            })
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={handleChangeEntry}
+          onKeyUp={(e) => {
+            if (e.key === 'Enter') ref.current?.blur()
           }}
           placeholder={labelPlaceholder}
         />
@@ -289,8 +324,23 @@ const _LabelSection = React.memo(
   },
 )
 const _AmountSection = React.memo((props: _SectionProps) => {
-  const { entry, setEntry, hasMonthRange } = props
+  const { planParams, updatePlanParams } = useSimulation()
+  const { entryId, location, hasMonthRange } = props
   const { increment, decrement } = smartDeltaFnForMonthlyAmountInput
+  const entry = useMemo(
+    () =>
+      fGet(
+        optGet(
+          getLabeledAmountEntriesByLocation(planParams, location),
+          entryId,
+        ),
+      ),
+    [entryId, location, planParams],
+  )
+
+  const handleAmountChange = (amount: number) => {
+    updatePlanParams('setAmountForLabeledAmount', { location, entryId, amount })
+  }
   return (
     <_Section
       {...props}
@@ -307,28 +357,24 @@ const _AmountSection = React.memo((props: _SectionProps) => {
           grid: 'auto auto /  auto',
         }}
       >
-        <div className="flex " >
+        <div className="flex">
           <AmountInput
             className="w-[100px] text-input"
             prefix="$"
             value={entry.value}
-            onChange={(value) => setEntry((entry) => (entry.value = value))}
+            onChange={handleAmountChange}
             decimals={0}
             modalLabel={null}
           />
           <button
             className="ml-3 px-3"
-            onClick={() =>
-              setEntry((entry) => (entry.value = increment(entry.value)))
-            }
+            onClick={() => handleAmountChange(increment(entry.value))}
           >
             <FontAwesomeIcon icon={faPlus} />
           </button>
           <button
             className="px-3"
-            onClick={() =>
-              setEntry((entry) => (entry.value = decrement(entry.value)))
-            }
+            onClick={() => handleAmountChange(decrement(entry.value))}
           >
             <FontAwesomeIcon icon={faMinus} />
           </button>
@@ -336,7 +382,13 @@ const _AmountSection = React.memo((props: _SectionProps) => {
         <RealOrNominalInput
           className="mt-4"
           nominal={entry.nominal}
-          onChange={(nominal) => setEntry((entry) => (entry.nominal = nominal))}
+          onChange={(nominal) =>
+            updatePlanParams('setNominalForLabeledAmount', {
+              location,
+              entryId,
+              nominal,
+            })
+          }
         />
       </div>
     </_Section>
@@ -352,10 +404,28 @@ const _MonthRangeSection = React.memo(
     validRangeAsMFN: SimpleRange
     choices: MonthRangeInputProps['choices']
   }) => {
-    const { paramsExt } = useSimulation()
-    const { clampMonthRangeToNow, months } = paramsExt
-    const { entry, setEntry } = props
+    const { planParams, planParamsExt, updatePlanParams } = useSimulation()
+    const { clampMonthRangeToNow, months } = planParamsExt
+    const { location, entryId } = props
+    const entry = useMemo(
+      () =>
+        fGet(
+          optGet(
+            getValueForMonthRangeEntriesByLocation(planParams, location),
+            entryId,
+          ),
+        ),
+      [entryId, location, planParams],
+    )
+
     const monthRangeClamped = clampMonthRangeToNow(entry.monthRange)
+    const handleChange = (monthRange: MonthRange) => {
+      updatePlanParams('setMonthRangeForValueForMonthRange', {
+        location,
+        entryId,
+        monthRange,
+      })
+    }
 
     return (
       <_Section
@@ -374,9 +444,7 @@ const _MonthRangeSection = React.memo(
             <MonthRangeInput
               className=""
               valueClamped={monthRangeClamped}
-              setValue={(monthRange) =>
-                setEntry((entry) => (entry.monthRange = monthRange))
-              }
+              setValue={handleChange}
               rangeAsMFN={validRangeAsMFN}
               choices={choices}
               modalTextInputOnMobile={false}
@@ -391,16 +459,13 @@ const _MonthRangeSection = React.memo(
               />
               <button
                 className="underline pt-2"
-                onClick={() => {
-                  setEntry(
-                    (entry) =>
-                      (entry.monthRange = {
-                        type: 'startAndNumMonths',
-                        start: months.now,
-                        numMonths: 1,
-                      }),
-                  )
-                }}
+                onClick={() =>
+                  handleChange({
+                    type: 'startAndNumMonths',
+                    start: months.now,
+                    numMonths: 1,
+                  })
+                }
               >
                 Edit dates
               </button>

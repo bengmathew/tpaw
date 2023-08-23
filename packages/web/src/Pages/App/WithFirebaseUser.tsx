@@ -14,8 +14,9 @@ initializeApp({
   appId: Config.client.google.firebase.appId,
 })
 
-type _Value = FirebaseUser | null
-const [Context, useFirebaseUser] = createContext<_Value>('FirebaseAuth')
+const [Context, useFirebaseUser] = createContext<FirebaseUser | null>(
+  'FirebaseAuth',
+)
 export { useFirebaseUser }
 
 export const useUserGQLArgs = () => {
@@ -34,12 +35,17 @@ export const WithFirebaseUser = React.memo(
     const [state, setState] = useState<_State>({ initialized: false })
     useEffect(
       () =>
-        onAuthStateChanged(getAuth(), async (user) => {
+        onAuthStateChanged(getAuth(), (user) => {
           setState({ initialized: true, user })
         }),
       [],
     )
+
     if (!state.initialized) return <></>
-    return <Context.Provider value={state.user}>{children}</Context.Provider>
+    return (
+      <Context.Provider key={state.user?.uid ?? 'none'} value={state.user}>
+        {children}
+      </Context.Provider>
+    )
   },
 )

@@ -21,6 +21,15 @@ const moduleExports = {
 
     return config
   },
+  // Option 3 (proxy) for firebase auth redirects.
+  async rewrites() {
+    return [
+      {
+        source: '/__/auth/:path*',
+        destination: `https://${process.env.NEXT_PUBLIC_GOOGLE_FIREBASE_AUTH_DOMAIN_REDIRECT}/__/auth/:path*`,
+      },
+    ]
+  },
 }
 
 const SentryWebpackPluginOptions = {

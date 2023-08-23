@@ -6,15 +6,15 @@ import {
 } from '@fortawesome/pro-regular-svg-icons'
 import { faTrash } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { GlidePath, Month } from '@tpaw/common'
+import { GlidePath, Month, generateSmallId } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useMemo, useState } from 'react'
-import { ParamsExtended } from '../../../TPAWSimulator/ExtentParams'
+import { PlanParamsExtended } from '../../../TPAWSimulator/ExtentPlanParams'
 import { normalizeGlidePath } from '../../../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessRisk'
 import { calendarMonthStr } from '../../../Utils/CalendarMonthStr'
 import { numMonthsStr } from '../../../Utils/NumMonthsStr'
 import { assert, noCase } from '../../../Utils/Utils'
-import { useSimulation } from '../../App/WithSimulation'
+import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { AmountInput } from './AmountInput'
 import { MonthInput } from './MonthInput/MonthInput'
 
@@ -28,14 +28,14 @@ export const GlidePathInput = React.memo(
     value: GlidePath
     onChange: (glidePath: GlidePath) => void
   }) => {
-    const { paramsExt } = useSimulation()
-    const [newEntry, setNewEntry] = useState<null | _MonthAndStock>(null)
+    const { planParamsExt } = useSimulation()
+    const [newEntry, setNewEntry] = useState<null | _Entry>(null)
 
-    const { getCurrentAgeOfPerson, currentMonth } = paramsExt
+    const { getCurrentAgeOfPerson, currentMonth } = planParamsExt
 
     const intermediate = useMemo(
-      () => paramsExt.glidePathIntermediateValidated(value.intermediate),
-      [paramsExt, value],
+      () => planParamsExt.glidePathIntermediateValidated(value.intermediate),
+      [planParamsExt, value],
     )
 
     const handleIntermediateChanged = (
@@ -46,8 +46,8 @@ export const GlidePathInput = React.memo(
       onChange(clone)
     }
     const effectiveStart = useMemo(
-      () => normalizeGlidePath(value, paramsExt)[0],
-      [paramsExt, value],
+      () => normalizeGlidePath(value, planParamsExt)[0],
+      [planParamsExt, value],
     )
 
     return (
@@ -103,7 +103,7 @@ export const GlidePathInput = React.memo(
               className="grid gap-y-2 gap-x-2 items-center"
               style={{ grid: 'auto/1fr auto auto' }}
             >
-              <_MonthAndStocksInput
+              <_EntryInput
                 value={newEntry}
                 onChange={(x) => setNewEntry(x)}
                 onDelete={() => setNewEntry(null)}
@@ -113,11 +113,10 @@ export const GlidePathInput = React.memo(
             <div className="flex justify-end mt-4 gap-x-1">
               <button
                 className="btn-dark btn-sm"
-                onClick={(x) => {
-                  onChange({
-                    ...value,
-                    intermediate: [...value.intermediate, newEntry],
-                  })
+                onClick={() => {
+                  const clone = _.cloneDeep(value)
+                  clone.intermediate[newEntry.id] = newEntry
+                  onChange(clone)
                   setNewEntry(null)
                 }}
               >
@@ -130,6 +129,7 @@ export const GlidePathInput = React.memo(
             className=" mt-4 flex justify-center items-center gap-x-2  rounded-full "
             onClick={() =>
               setNewEntry({
+                id: generateSmallId(),
                 month: {
                   type: 'numericAge',
                   person: 'person1',
@@ -138,6 +138,13 @@ export const GlidePathInput = React.memo(
                   },
                 },
                 stocks: 0.5,
+                indexToSortByAdded:
+                  Math.max(
+                    -1,
+                    ..._.values(value.intermediate).map(
+                      (x) => x.indexToSortByAdded,
+                    ),
+                  ) + 1,
               })
             }
           >
@@ -151,7 +158,7 @@ export const GlidePathInput = React.memo(
 )
 
 type _ProcessedIntermediate = ReturnType<
-  ParamsExtended['glidePathIntermediateValidated']
+  PlanParamsExtended['glidePathIntermediateValidated']
 >
 
 const _Intermediate = React.memo(
@@ -167,26 +174,45 @@ const _Intermediate = React.memo(
     return (
       <>
         {value.map(
-          (x, i) =>
+          (x) =>
             filter(x.issue) && (
-              <React.Fragment key={i}>
-                <_MonthAndStocksInput
+              <React.Fragment key={x.id}>
+                <_EntryInput
                   value={x}
                   onChange={(x) => {
                     // Don't use _.cloneDeep because value is _ProcessedIntermediate.
-                    const result = value.map(({ month, stocks }) => ({
-                      month,
-                      stocks,
-                    }))
-                    result[i] = { month: x.month, stocks: x.stocks }
+                    const result = _.fromPairs(
+                      value.map(({ month, stocks, id, indexToSortByAdded }) => [
+                        id,
+                        {
+                          month,
+                          stocks,
+                          id,
+                          indexToSortByAdded,
+                        },
+                      ]),
+                    )
+                    result[x.id] = {
+                      month: x.month,
+                      stocks: x.stocks,
+                      id: x.id,
+                      indexToSortByAdded: x.indexToSortByAdded,
+                    }
                     onChange(result)
                   }}
                   onDelete={() => {
-                    const result = value.map(({ month, stocks }) => ({
-                      month,
-                      stocks,
-                    }))
-                    result.splice(i, 1)
+                    const result = _.fromPairs(
+                      value.map(({ month, stocks, id, indexToSortByAdded }) => [
+                        id,
+                        {
+                          month,
+                          stocks,
+                          id,
+                          indexToSortByAdded,
+                        },
+                      ]),
+                    )
+                    delete result[x.id]
                     onChange(result)
                   }}
                   alwaysOpen={false}
@@ -214,29 +240,29 @@ const _Intermediate = React.memo(
   },
 )
 
-type _MonthAndStock = GlidePath['intermediate'][number]
+type _Entry = GlidePath['intermediate'][number]
 
-const _MonthAndStocksInput = React.memo(
+const _EntryInput = React.memo(
   ({
     value,
     onChange,
     onDelete,
     alwaysOpen,
   }: {
-    value: _MonthAndStock
-    onChange: (value: _MonthAndStock) => void
+    value: _Entry
+    onChange: (value: _Entry) => void
     onDelete: (() => void) | null
     alwaysOpen: boolean
   }) => {
     const [open, setOpen] = useState(alwaysOpen)
-    const { paramsExt } = useSimulation()
-    const { asMFN, months, maxMaxAge } = paramsExt
+    const { planParamsExt } = useSimulation()
+    const { asMFN, months, maxMaxAge } = planParamsExt
 
     return (
       <>
         {!open ? (
           <div className="text-start">
-            {monthToStringForGlidePath(value.month, paramsExt).full}
+            {monthToStringForGlidePath(value.month, planParamsExt).full}
             <button
               className="text-sm px-2 py-0.5 bg-gray-200 rounded-full ml-2"
               onClick={() => setOpen(true)}
@@ -251,7 +277,12 @@ const _MonthAndStocksInput = React.memo(
               valueClamped={value.month}
               onChange={(month) => {
                 assert(!('numMonths' in month))
-                onChange({ month, stocks: value.stocks })
+                onChange({
+                  id: value.id,
+                  month,
+                  stocks: value.stocks,
+                  indexToSortByAdded: value.indexToSortByAdded,
+                })
               }}
               toMFN={(x) => {
                 assert(!('numMonths' in x))
@@ -265,7 +296,7 @@ const _MonthAndStocksInput = React.memo(
               modalTextInputOnMobile
               getMonthLabel={(value) => {
                 assert('type' in value)
-                return monthToStringForGlidePath(value, paramsExt).start
+                return monthToStringForGlidePath(value, planParamsExt).start
               }}
             />
             {!alwaysOpen && (
@@ -338,9 +369,9 @@ const _Percent = React.memo(
 
 export const monthToStringForGlidePath = (
   month: Month,
-  paramsExt: ParamsExtended,
+  planParamsExt: PlanParamsExtended,
 ) => {
-  const { params } = paramsExt
+  const { planParams } = planParamsExt
 
   const result = (startIn: string, date: string | null) => {
     const start = _.capitalize(startIn)
@@ -362,7 +393,7 @@ export const monthToStringForGlidePath = (
       )
     case 'namedAge': {
       const withPerson = (x: string) =>
-        params.plan.people.withPartner
+        planParams.people.withPartner
           ? `${month.person === 'person1' ? 'your' : `your partner's`} ${x}`
           : x
 

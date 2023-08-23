@@ -8,8 +8,10 @@ import 'react-toastify/dist/ReactToastify.css'
 import { GlobalErrorBoundary } from '../src/Pages/App/GlobalErrorBoundary'
 import { WithFirebaseUser } from '../src/Pages/App/WithFirebaseUser'
 import { WithRelayEnvironment } from '../src/Pages/App/WithRelayEnvironment'
+import { WithWindowSize } from '../src/Pages/App/WithWindowSize'
 import { Spinner } from '../src/Utils/View/Spinner'
 import '../styles/globals.css'
+import { WithMergeToServer } from '../src/Pages/App/WithMergeToServer'
 
 const MyApp = React.memo(({ Component, pageProps }: AppProps) => {
   const router = useRouter()
@@ -26,16 +28,20 @@ const MyApp = React.memo(({ Component, pageProps }: AppProps) => {
     <GlobalErrorBoundary>
       <WithFirebaseUser>
         <WithRelayEnvironment>
-          <Suspense
-            fallback={
-              <div className="page h-screen flex flex-col justify-center items-center">
-                <Spinner size="text-4xl" />
-              </div>
-            }
-          >
-            <Component {...pageProps} />
-            <ToastContainer position="bottom-center" transition={Slide} />
-          </Suspense>
+          <WithMergeToServer>
+            <Suspense
+              fallback={
+                <div className="page h-screen flex flex-col justify-center items-center">
+                  <Spinner size="text-4xl" />
+                </div>
+              }
+            >
+              <WithWindowSize>
+                <Component {...pageProps} />
+              </WithWindowSize>
+              <ToastContainer position="bottom-center" transition={Slide} />
+            </Suspense>
+          </WithMergeToServer>
         </WithRelayEnvironment>
       </WithFirebaseUser>
     </GlobalErrorBoundary>

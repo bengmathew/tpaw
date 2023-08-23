@@ -10,10 +10,11 @@ export const Config = {
       // Used by prisma client.
       databaseURL: fGet(process.env['DATABASE_URL']),
     },
-    // Only needed in non Google hosted environments. This should be path to 
+    // Only needed in non Google hosted environments. This should be path to
     // JSON key file.
     applicationDefaultCredentials:
       process.env['GOOGLE_APPLICATION_CREDENTIALS'],
+    marketDataBucket: fGet(process.env['MARKET_DATA_BUCKET']),
   },
   postmark: {
     apiToken: fGet(process.env['POSTMARK_API_TOKEN']),
@@ -21,4 +22,11 @@ export const Config = {
   sentry: {
     dsn: fGet(process.env['SENTRY_DSN']),
   },
+  eod: {
+    apiKey: fGet(process.env['EOD_API_KEY']),
+  },
+  stLouisFed: {
+    apiKey: fGet(process.env['ST_LOUIS_FED_API_KEY']),
+  },
+  deployFrontEndURL: fGet(process.env['DEPLOY_FRONTEND_URL']),
 }

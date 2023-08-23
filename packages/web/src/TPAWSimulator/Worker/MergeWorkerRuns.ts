@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { fGet } from '../../Utils/Utils'
-import { TPAWWorkerRunSimulationResult } from './TPAWWorkerAPI'
+import { RunSimulationInWASMResult } from './RunSimulationInWASMResult'
 
 const _mergeNumberByWorkerByMonthsFromNowByRun = (
   numberByWorkerByMonthsFromNowByRun: Float64Array[][],
@@ -24,8 +24,8 @@ const _mergeNumberByWorkerByMonthsFromNowByRun = (
 }
 
 export const mergeWorkerRuns = (
-  runsByWorker: TPAWWorkerRunSimulationResult[],
-): TPAWWorkerRunSimulationResult => {
+  runsByWorker: RunSimulationInWASMResult[],
+): RunSimulationInWASMResult => {
   const byMonthsFromNowByRun = {
     savingsPortfolio: {
       start: {

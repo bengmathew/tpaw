@@ -15,7 +15,7 @@ export const RelayTest = React.memo(() => {
   const data = useLazyLoadQuery<RelayTestQuery>(query, {})
 
   return (
-    <AppPage className="" title="Test" curr={'other'}>
+    <AppPage className="" title="Test" >
       Hello {data.ping}
     </AppPage>
   )

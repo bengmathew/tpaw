@@ -25,5 +25,6 @@ export const WithWindowSize = React.memo(
     return <Context.Provider value={value}>{children}</Context.Provider>
   },
 )
+WithWindowSize.displayName = 'WithWindowSize'
 
 const _get = () => ({ width: window.innerWidth, height: window.innerHeight })

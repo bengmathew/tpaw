@@ -1,6 +1,7 @@
-import React, { ReactNode, useEffect, useState } from 'react'
-import ReactDOM from 'react-dom'
+import React, { ReactNode, useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
 
+// TODO: Deprecated. Remove this.
 type _State =
   | { show: true }
   | { show: false; onTransitionEnd: (() => void) | null }
@@ -35,8 +36,11 @@ export const ModalBase = React.memo(
         <div
           className={`fixed z-0 inset-0 bg-black 
           ${state.show ? 'opacity-60' : 'opacity-0'}`}
+          // Note, transition only one property, if there are multiple
+          // tansitions, onTransitionEnd() will be fired multiple times. TODO:
+          // Replace with headless ui Transition and afterLeave to remove this
+          // hacky constraint.
           style={{ transition: 'opacity .25s ease' }}
-          // Note, if there are multiple tansitions, this will be fired multiple times.
           onTransitionEnd={() => {
             if (!state.show && state.onTransitionEnd) {
               state.onTransitionEnd()

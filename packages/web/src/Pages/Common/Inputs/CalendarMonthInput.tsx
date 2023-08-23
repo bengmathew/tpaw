@@ -10,8 +10,8 @@ import _ from 'lodash'
 import React, { useEffect, useMemo, useState } from 'react'
 import { calendarMonthStr } from '../../../Utils/CalendarMonthStr'
 import { SimpleRange } from '../../../Utils/SimpleRange'
-import { useSimulation } from '../../App/WithSimulation'
 import { ModalListbox } from '../Modal/ModalListbox'
+import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
 
 export const CalendarMonthInput = React.memo(
   ({
@@ -25,8 +25,8 @@ export const CalendarMonthInput = React.memo(
     onChange: (x: CalendarMonth) => void
     rangeAsMFN: SimpleRange
   }) => {
-    const { paramsExt } = useSimulation()
-    const { monthsFromNowToCalendarMonth, asMFN } = paramsExt
+    const { planParamsExt } = useSimulation()
+    const { monthsFromNowToCalendarMonth, asMFN } = planParamsExt
 
     const rangeAsCalendarMonth = useMemo(
       () => ({

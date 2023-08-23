@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2015",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -22,9 +18,8 @@
   "include": [
     "next-env.d.ts",
     "**/*.ts",
-    "**/*.tsx"
-, "sentry.client.config.js", "src/Pages/Common/Inputs/MonthRangeEdgeInput"  ],
-  "exclude": [
-    "node_modules"
-  ]
+    "**/*.tsx",
+    "sentry.client.config.js"
+  ],
+  "exclude": ["node_modules"]
 }

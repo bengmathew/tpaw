@@ -38,7 +38,6 @@ export const Learn = React.memo(
       <AppPage
         className="min-h-screen"
         title={`${content.fields.publicTitle} - Knowledge Base - TPAW Planner`}
-        curr="learn"
       >
         <>
           <_Desktop {...props} />

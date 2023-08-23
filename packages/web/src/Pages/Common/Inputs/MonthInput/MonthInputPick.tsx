@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { assert, Month } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useState } from 'react'
-import { useSimulation } from '../../../App/WithSimulation'
+import { useSimulation } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { ContextMenu } from '../../Modal/ContextMenu'
 import { MonthInputProps } from './MonthInput'
 
@@ -22,7 +22,7 @@ export const MonthInputPick = React.memo(
     referenceElement: HTMLElement
     onClose: () => void
   } & MonthInputProps) => {
-    const { params, paramsExt } = useSimulation()
+    const { planParams, planParamsExt } = useSimulation()
     const {
       asMFN,
       pickPerson,
@@ -30,7 +30,7 @@ export const MonthInputPick = React.memo(
       isPersonRetired,
       getCurrentAgeOfPerson,
       monthsFromNowToCalendarMonth,
-    } = paramsExt
+    } = planParamsExt
     assert(range.start >= 0)
 
     const [startingValue] = useState(valueClamped)
@@ -68,7 +68,9 @@ export const MonthInputPick = React.memo(
     const choice = {
       now: choices.includes('now') ? nullIfNotInRange(months.now) : null,
       person1: choicesForPerson('person1'),
-      person2: params.plan.people.withPartner ? choicesForPerson('person2') : null,
+      person2: planParams.people.withPartner
+        ? choicesForPerson('person2')
+        : null,
       calendarMonth: choices.includes('calendarMonth')
         ? months.calendarMonth(
             monthsFromNowToCalendarMonth(
@@ -170,7 +172,7 @@ export const MonthInputPick = React.memo(
                     startingValue.type === 'numericAge' &&
                     startingValue.person === 'person1',
                 )}
-                {/* {params.plan.people.withPartner && (
+                {/* {planParams.people.withPartner && (
                   <h2 className="font-bold mx-3 uppercase lighten-2 text-xs py-2">
                     Your Partner
                   </h2>

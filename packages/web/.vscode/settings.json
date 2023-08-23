@@ -1,8 +1,11 @@
 {
   "typescript.tsdk": "node_modules/typescript/lib",
   "cSpell.words": [
-    "asterix",
     "SPAW",
-    "tpaw"
+    "tpaw",
+    "Unmigrated"
+  ],
+  "tailwindCSS.experimental.classRegex": [
+    "_cn\\('([^('\\)]*)"
   ]
 }

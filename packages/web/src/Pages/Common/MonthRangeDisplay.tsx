@@ -1,11 +1,11 @@
 import { Month, MonthRange, noCase } from '@tpaw/common'
 import React from 'react'
-import { ParamsExtended } from '../../TPAWSimulator/ExtentParams'
+import { PlanParamsExtended } from '../../TPAWSimulator/ExtentPlanParams'
 import { calendarMonthStr } from '../../Utils/CalendarMonthStr'
 import { numMonthsStr } from '../../Utils/NumMonthsStr'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { yourOrYourPartners } from '../../Utils/YourOrYourPartners'
-import { useSimulation } from '../App/WithSimulation'
+import { useSimulation } from '../PlanRoot/PlanRootHelpers/WithSimulation'
 
 export const MonthRangeDisplay = React.memo(
   ({
@@ -19,8 +19,8 @@ export const MonthRangeDisplay = React.memo(
     range: SimpleRange | null
     skipLength: boolean
   }) => {
-    const { paramsExt } = useSimulation()
-    const { monthRangeBoundsCheck } = paramsExt
+    const { planParamsExt } = useSimulation()
+    const { monthRangeBoundsCheck } = planParamsExt
     const error =
       range &&
       valueClamped &&
@@ -32,7 +32,7 @@ export const MonthRangeDisplay = React.memo(
           (() => {
             const monthRangeStr = monthRangeWithStartClampedToNowToString(
               valueClamped,
-              paramsExt,
+              planParamsExt,
             )
             return (
               <>
@@ -61,10 +61,10 @@ export const MonthRangeDisplay = React.memo(
 
 export const monthRangeWithStartClampedToNowToString = (
   value: MonthRange,
-  paramsExt: ParamsExtended,
+  planParamsExt: PlanParamsExtended,
 ) => {
-  const { params, monthRangeLength } = paramsExt
-  const { withPartner } = params.plan.people
+  const { planParams, monthRangeLength } = planParamsExt
+  const { withPartner } = planParams.people
 
   let fragments = { start: [] as string[], date: null as string | null }
   const combineAndResetFragments = () => {

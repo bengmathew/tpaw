@@ -1,8 +1,13 @@
 import { ApolloServer, ApolloServerPlugin } from '@apollo/server'
 import { expressMiddleware } from '@apollo/server/express4'
-import { Prisma } from '@prisma/client'
 import Sentry from '@sentry/node'
 import Tracing from '@sentry/tracing'
+import {
+  assert,
+  getDefaultNonPlanParams,
+  getDefaultPlanParams,
+  getSlug,
+} from '@tpaw/common'
 import { ApolloError } from 'apollo-server-express'
 import bodyParser from 'body-parser'
 import compression from 'compression'
@@ -11,10 +16,13 @@ import express from 'express'
 import { writeFileSync } from 'fs'
 import { lexicographicSortSchema, printSchema } from 'graphql'
 import path from 'path'
+import * as uuid from 'uuid'
 import { cli } from '../CLI/CLI.js'
+import { pushMarketData } from '../CLI/CLIMisc/CLIMiscPushMarketData.js'
 import { Clients } from '../Clients.js'
 import { Config } from '../Config.js'
 import { Context } from './Context.js'
+import { patchPlanParams } from './GQLUser/GQLUserPlan/PatchPlanParams.js'
 import { schema } from './schema.js'
 
 cli.command('serve').action(async () => await _impl())
@@ -45,6 +53,12 @@ async function _impl() {
   server.use(compression())
   server.get('/', (req, res) => res.send('I am root!'))
   server.get('/ping', (req, res) => res.send('pong'))
+  server.get('/deploy-frontend', async (req, res) => {
+    assert(req.headers['X-Appengine-Cron'] === 'true')
+    await pushMarketData()
+    await fetch(Config.deployFrontEndURL)
+    await res.send('ok')
+  })
 
   const apollo = new ApolloServer<Context>({ schema, plugins: [sentryPlugin] })
   await apollo.start()
@@ -55,6 +69,10 @@ async function _impl() {
     expressMiddleware<Context>(apollo, {
       context: async ({ req }) => {
         try {
+          const ianaTimezoneName =
+            req.headers['X-IANA-Timezone-Name'.toLowerCase()]
+          assert(typeof ianaTimezoneName === 'string')
+
           const user = await (async () => {
             const idToken = (req.headers.authorization || '')
               .split(', ')
@@ -65,18 +83,54 @@ async function _impl() {
             const decodedToken = await Clients.firebaseAuth.verifyIdToken(
               idToken,
             )
-            const user: Prisma.UserCreateInput & Prisma.UserUpdateInput = {
-              id: decodedToken.uid,
-            }
+            const userId = decodedToken.uid
+
+            const label = null
+            const now = new Date()
+            const planParams = getDefaultPlanParams(
+              now.getTime(),
+              ianaTimezoneName,
+            )
             await Clients.prisma.user.upsert({
-              create: user,
-              update: {},
-              where: { id: user.id },
+              create: {
+                id: userId,
+                planWithHistory: {
+                  create: {
+                    planId: uuid.v4(),
+                    isMain: true,
+                    label,
+                    slug: getSlug(label, []),
+                    addedToServerAt: now,
+                    sortTime: now,
+                    lastSyncAt: now,
+                    resetCount: 0,
+                    endingParams: planParams,
+                    paramsChangeHistory: {
+                      create: patchPlanParams.generate({ type: 'forCreate' }, [
+                        {
+                          id: uuid.v4(),
+                          params: planParams,
+                          change: { type: 'start', value: null },
+                        },
+                      ]),
+                    },
+                    reverseHeadIndex: 0,
+                  },
+                },
+                nonPlanParamsLastUpdatedAt: now,
+                nonPlanParams: getDefaultNonPlanParams(),
+                clientIANATimezoneName: ianaTimezoneName,
+              },
+              update: {
+                clientIANATimezoneName: ianaTimezoneName,
+              },
+              where: { id: userId },
             })
             return { id: decodedToken.uid }
           })()
           return { user }
         } catch (e) {
+          console.dir(e)
           Sentry.captureException(e)
           throw e
         }

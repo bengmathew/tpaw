@@ -38,7 +38,7 @@ pub fn run_using_expected_returns(
 ) -> Vec<(SingleMonthPreWithdrawal, Withdrawals)> {
     let mut balance_starting = params.current_savings;
     let mut pass_forward = initial_pass_forward();
-    return (0..params.num_months)
+    return (0..params.num_months_to_simulate)
         .map(|month_index| {
             let context = SingleMonthContext {
                 params,
@@ -95,7 +95,7 @@ fn run_using_historical_returns(
     result: &mut RunResult,
     run_index: usize,
 ) {
-    let n = params.num_months;
+    let n = params.num_months_to_simulate;
 
     let historical_index = ((params.start_run + run_index)
         ..(params.start_run + run_index + params.num_months))
@@ -328,7 +328,7 @@ fn run_for_single_month_using_historical_returns(
         savings_portfolio_at_end.stock_allocation_percent;
     result.by_mfn_by_run_after_withdrawals_allocation_stocks_total[by_mfn_by_run_index] =
         stock_allocation_on_total_portfolio;
-    let by_run_by_mfn_index = run_index * params.num_months + month_index;
+    let by_run_by_mfn_index = run_index * params.num_months_to_simulate + month_index;
     result.by_run_by_mfn_returns_stocks[by_run_by_mfn_index] = context.returns.stocks;
     result.by_run_by_mfn_returns_bonds[by_run_by_mfn_index] = context.returns.bonds;
 
@@ -645,7 +645,7 @@ fn calculate_stock_allocation(
     //     );
     // }
 
-    return f64::min(stocks_target / savings_portfolio_balance, 1.0);
+    return (stocks_target / savings_portfolio_balance).clamp(0.0, 1.0);
 }
 
 fn get_pass_forward(_withdrawal_target: TargetWithdrawals) -> SingleMonthPassForward {

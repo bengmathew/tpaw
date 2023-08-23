@@ -1,7 +1,7 @@
 import _ from 'lodash'
+import { chartDataTransitionCurrNum } from '../../../../Utils/Transition'
 import { fGet } from '../../../../Utils/Utils'
 import { ChartContext } from '../ChartContext'
-import { chartDataTransitionCurrNum } from '../../../../Utils/Transition'
 import { ChartComponent } from './ChartComponent'
 
 export const chartDrawDataLines = <Data>({

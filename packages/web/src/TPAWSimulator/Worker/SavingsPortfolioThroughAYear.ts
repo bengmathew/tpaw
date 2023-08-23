@@ -1,5 +1,5 @@
-import {blendReturns} from '../../Utils/BlendReturns'
-import {assert} from '../../Utils/Utils'
+import { blendReturns } from '../../Utils/BlendReturns'
+import { assert } from '../../Utils/Utils'
 
 export namespace SavingsPortfolioThroughAYear {
   export type Start = {start: {balance: number}}

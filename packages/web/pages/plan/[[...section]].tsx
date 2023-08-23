@@ -1,23 +1,40 @@
-import React from 'react'
-import { WithWindowSize } from '../../src/Pages/App/WithWindowSize'
-import { Plan } from '../../src/Pages/Plan/Plan'
+import React, { useEffect } from 'react'
+import { appPaths } from '../../src/AppPaths'
+import { useFirebaseUser } from '../../src/Pages/App/WithFirebaseUser'
+import { PlanRoot } from '../../src/Pages/PlanRoot/PlanRoot'
+import { planRootGetStaticPaths } from '../../src/Pages/PlanRoot/PlanRootHelpers/PlanRootGetStaticPaths'
 import {
-  planGetStaticProps,
+  planRootGetStaticProps,
   PlanStaticProps,
-} from '../../src/Pages/Plan/PlanGetStaticProps'
-import { paramsInputTypes } from '../../src/Pages/Plan/PlanInput/Helpers/PlanInputType'
+} from '../../src/Pages/PlanRoot/PlanRootHelpers/PlanRootGetStaticProps'
+import { PlanRootLoginOrLocal } from '../../src/Pages/PlanRoot/PlanRootLoginOrLocal'
+import { useURLParam } from '../../src/Utils/UseURLParam'
+import { useURLUpdater } from '../../src/Utils/UseURLUpdater'
 
-export default React.memo(({ content, marketData }: PlanStaticProps) => (
-    <Plan planContent={content} marketData={marketData} />
-))
+export default React.memo(({ planContent, marketData }: PlanStaticProps) => {
+  const firebaseUser = useFirebaseUser()
 
-export const getStaticProps = planGetStaticProps
+  const urlUpdater = useURLUpdater()
+  const redirectToLink = !!useURLParam('params')
+  useEffect(() => {
+    if (!redirectToLink) return
+    const url = appPaths.link()
+    new URL(window.location.href).searchParams.forEach((value, key) =>
+      url.searchParams.set(key, value),
+    )
+    urlUpdater.replace(url)
+  }, [redirectToLink, urlUpdater])
+  if (redirectToLink) return <></>
 
-export const getStaticPaths = () => ({
-  paths: [
-    ...paramsInputTypes.map((section) => ({ params: { section: [section] } })),
-    { params: { section: ['help'] } },
-    { params: { section: null } },
-  ],
-  fallback: false,
+  if (!firebaseUser) return <PlanRootLoginOrLocal />
+  return (
+    <PlanRoot
+      planContent={planContent}
+      marketData={marketData}
+      src={{ type: 'serverMain' }}
+    />
+  )
 })
+
+export const getStaticProps = planRootGetStaticProps
+export const getStaticPaths = planRootGetStaticPaths

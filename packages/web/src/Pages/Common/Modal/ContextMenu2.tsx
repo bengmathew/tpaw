@@ -95,8 +95,8 @@ export const ContextMenu2 = React.memo(
             <Menu.Button
               ref={setReferenceElement}
               className={className}
-              style={style}
               disabled={disabled}
+              style={style}
             >
               {buttonChild}
             </Menu.Button>

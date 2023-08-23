@@ -1,6 +1,8 @@
 import _ from 'lodash'
+import { DateTime } from 'luxon'
 import { FirebaseUser } from '../Pages/App/WithFirebaseUser'
 import { Config } from '../Pages/Config'
+import { fGet } from '@tpaw/common'
 
 export const fetchGQL =
   (firebaseUser: FirebaseUser | null) =>
@@ -14,9 +16,9 @@ export const fetchGQL =
       headers: {
         'Content-Type': 'application/json',
         ...(authHeaders ? { Authorization: authHeaders.join(', ') } : {}),
+        'X-IANA-Timezone-Name': fGet(DateTime.local().zoneName),
       },
       body: JSON.stringify({ query: text, variables }),
     })
-
     return await response.json()
   }

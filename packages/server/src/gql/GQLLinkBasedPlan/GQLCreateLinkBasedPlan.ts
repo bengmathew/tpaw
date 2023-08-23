@@ -1,6 +1,5 @@
-import { API, Params } from '@tpaw/common'
+import { API } from '@tpaw/common'
 import cryptoRandomString from 'crypto-random-string'
-import { JSONGuard } from 'json-guard'
 import { Clients } from '../../Clients.js'
 import { builder } from '../builder.js'
 
@@ -13,10 +12,7 @@ builder.mutationField('createLinkBasedPlan', (t) =>
     type: 'LinkBasedPlan',
     args: { input: t.arg({ type: Input }) },
     resolve: async (query, _, { input }) => {
-      let guard: JSONGuard<
-        Omit<typeof input, 'params'> & { params: Params }
-      > = API.CreateLinkBasedPlan.check
-      const { params } = guard(input).force()
+      const { params } = API.CreateLinkBasedPlan.check(input).force()
       return await Clients.prisma.linkBasedPlan.create({
         ...query,
         data: {
