@@ -199,8 +199,10 @@ const _Alert = React.memo(
               lastNonNullData?.label ?? ''
             }."`}</span>
           </p>
-          <Link href={appPaths.plans()}>
-            <h2 className="underline py-2 mt-4 font-semibold">View Your Plans</h2>
+          <Link href={appPaths.plans()} onClick={() => onDone()}>
+            <h2 className="underline py-2 mt-4 font-semibold">
+              View Your Plans
+            </h2>
           </Link>
         </div>
         <div className=" dialog-button-div">
