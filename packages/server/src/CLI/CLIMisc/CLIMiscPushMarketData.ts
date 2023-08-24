@@ -30,6 +30,10 @@ export const pushMarketData = async () => {
   for (const file of files) {
     await file.save(JSON.stringify(marketData))
   }
+  const latestFile = fGet(_.last(files))
+  assert(latestFile.name === 'latest.json')
+  await latestFile.makePublic()
+
 
   // const first = fGet(_.first(marketData))
   // const last = fGet(_.last(marketData))

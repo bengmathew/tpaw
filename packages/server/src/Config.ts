@@ -28,5 +28,8 @@ export const Config = {
   stLouisFed: {
     apiKey: fGet(process.env['ST_LOUIS_FED_API_KEY']),
   },
-  deployFrontEndURL: fGet(process.env['DEPLOY_FRONTEND_URL']),
+  deployFrontEnd: {
+    token: fGet(process.env['DEPLOY_FRONTEND_TOKEN']),
+    url: fGet(process.env['DEPLOY_FRONTEND_URL']),
+  },
 }

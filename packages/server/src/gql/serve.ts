@@ -54,9 +54,12 @@ async function _impl() {
   server.get('/', (req, res) => res.send('I am root!'))
   server.get('/ping', (req, res) => res.send('pong'))
   server.get('/deploy-frontend', async (req, res) => {
-    assert(req.headers['X-Appengine-Cron'] === 'true')
-    await pushMarketData()
-    await fetch(Config.deployFrontEndURL)
+    if (req.query['token'] !== Config.deployFrontEnd.token) {
+      res.status(401)
+      res.send('Unauthorized')
+    }
+    // await pushMarketData()
+    // await fetch(Config.deployFrontEnd.url)
     await res.send('ok')
   })
 
@@ -80,9 +83,8 @@ async function _impl() {
               .map((x) => x.substring('Bearer '.length))[0]
 
             if (!idToken) return null
-            const decodedToken = await Clients.firebaseAuth.verifyIdToken(
-              idToken,
-            )
+            const decodedToken =
+              await Clients.firebaseAuth.verifyIdToken(idToken)
             const userId = decodedToken.uid
 
             const label = null
