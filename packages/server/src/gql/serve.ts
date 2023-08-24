@@ -58,8 +58,8 @@ async function _impl() {
       res.status(401)
       res.send('Unauthorized')
     }
-    // await pushMarketData()
-    // await fetch(Config.deployFrontEnd.url)
+    await pushMarketData()
+    await fetch(Config.deployFrontEnd.url)
     await res.send('ok')
   })
 
