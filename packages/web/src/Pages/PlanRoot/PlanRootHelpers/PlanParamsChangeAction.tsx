@@ -289,7 +289,6 @@ export const processPlanParamsChangeAction = (
       return {
         applyToClone: (clone) => {
           const person = _getPerson(clone, personType)
-          assert(person.ages.type === 'retirementDateSpecified')
           person.ages.maxAge = maxAge
         },
         render: () =>

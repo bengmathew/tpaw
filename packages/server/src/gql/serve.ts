@@ -57,10 +57,11 @@ async function _impl() {
     if (req.query['token'] !== Config.deployFrontEnd.token) {
       res.status(401)
       res.send('Unauthorized')
+    } else {
+      await pushMarketData()
+      await fetch(Config.deployFrontEnd.url)
+      res.send('ok')
     }
-    await pushMarketData()
-    await fetch(Config.deployFrontEnd.url)
-    await res.send('ok')
   })
 
   const apollo = new ApolloServer<Context>({ schema, plugins: [sentryPlugin] })
