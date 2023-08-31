@@ -318,7 +318,9 @@ const fParsePercentString = (x: string) => {
 const dateToMarketClosingTime = (date: string) =>
   DateTime.fromISO(`${date}`, {
     zone: fGet(getNYZonedTime.now().zoneName),
-  }).toMillis()
+  })
+    .set({ hour: 16 })
+    .toMillis()
 
 const _getFromEOD = async (name: string) => {
   const url = new URL(`https://eodhistoricaldata.com/api/eod/${name}`)
