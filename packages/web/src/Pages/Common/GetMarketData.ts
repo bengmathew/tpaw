@@ -1,12 +1,16 @@
-import { MarketData } from '@tpaw/common'
+import { MarketData, fGet } from '@tpaw/common'
 import _ from 'lodash'
 import { assert } from '../../Utils/Utils'
 import { Config } from '../Config'
 
 export const getMarketData = async (): Promise<MarketData.Data> => {
-  const marketData = await fetch(Config.server.google.marketDataURL, {cache:'no-store'})
+  const marketData = await fetch(Config.server.google.marketDataURL, {
+    cache: 'no-store',
+  })
   assert(marketData.ok)
-  return (await marketData.json()) as MarketData.Data
+  const result = (await marketData.json()) as MarketData.Data
+  console.dir(fGet(_.last(result)).dailyStockMarketPerformance.closingTime)
+  return result
 }
 
 export const getMarketDataIndexForTime = (

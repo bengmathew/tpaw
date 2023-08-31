@@ -82,6 +82,7 @@ export const pushMarketData = async (opts: { printOnly?: boolean } = {}) => {
   }
   const latestFile = fGet(_.last(files))
   assert(latestFile.name === 'latest.json')
+  latestFile.metadata.cacheControl = 'no-store'
   await latestFile.makePublic()
 }
 

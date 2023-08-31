@@ -21,6 +21,7 @@ import { WASM } from '../../../TPAWSimulator/Worker/GetWASM'
 import { runSimulationInWASM } from '../../../TPAWSimulator/Worker/RunSimulationInWASM'
 import { groupBy } from '../../../Utils/GroupBy'
 import { getMarketDataIndexForTime } from '../../Common/GetMarketData'
+import { DateTime } from 'luxon'
 
 export namespace CurrentPortfolioBalance {
   type _State = { estimate: number; allocation: { stocks: number } }
@@ -98,6 +99,10 @@ export namespace CurrentPortfolioBalance {
         getArgs: () => ({ type: 'marketClose', marketData: x }),
       }))
 
+    const formatTime = (t: number) =>
+      DateTime.fromMillis(t).toLocaleString(DateTime.DATETIME_FULL)
+    console.dir((fGet(_.last(marketData)).closingTime))
+
     const {
       withdrawalAndContributionTimes,
       monthlyRebalanceTimes,
@@ -121,7 +126,6 @@ export namespace CurrentPortfolioBalance {
       const allocation = getAllocationForParams(startingParams, amount)
       return { amount, timestamp, allocation }
     })
-
 
     // -------------------
     // Withdarwal And Contribution Actions
