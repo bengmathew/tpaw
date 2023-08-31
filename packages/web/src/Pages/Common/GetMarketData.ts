@@ -4,7 +4,7 @@ import { assert } from '../../Utils/Utils'
 import { Config } from '../Config'
 
 export const getMarketData = async (): Promise<MarketData.Data> => {
-  const marketData = await fetch(Config.server.google.marketDataURL)
+  const marketData = await fetch(Config.server.google.marketDataURL, {cache:'no-store'})
   assert(marketData.ok)
   return (await marketData.json()) as MarketData.Data
 }

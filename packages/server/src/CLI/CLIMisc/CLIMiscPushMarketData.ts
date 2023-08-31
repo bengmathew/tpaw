@@ -18,74 +18,65 @@ export type MarketData = Awaited<ReturnType<typeof _getMarketData>>['combined']
 
 cliMisc
   .command('pushMarketData')
-  .option('--debug')
-  .action(async (options) => {
-    if (options.debug) {
-      const { combined } = await _getMarketData()
+  .option('--printOnly')
+  .action(
+    async (options) => await pushMarketData({ printOnly: options.printOnly }),
+  )
 
-      const printEntry = (x: MarketData[0], label: string) => {
-        const formatDate = (x: number) =>
-          DateTime.fromMillis(x).toLocaleString(DateTime.DATETIME_FULL)
+const _printLatest = ({
+  combined,
+  raw,
+}: Awaited<ReturnType<typeof _getMarketData>>) => {
+  const formatDate = (x: number) =>
+    DateTime.fromMillis(x).toLocaleString(DateTime.DATETIME_FULL)
 
-        console.log(`--------------------`)
-        console.log(`${label}: ${formatDate(x.closingTime)}`)
-        console.log(`--------------------`)
-        console.log(`       CAPE: ${formatDate(x.CAPE.closingTime)}`)
-        console.log(`  bondRates: ${formatDate(x.bondRates.closingTime)}`)
-        console.log(`  inflation: ${formatDate(x.inflation.closingTime)}`)
-        console.log(
-          `stockMarker: ${formatDate(
-            x.dailyStockMarketPerformance.closingTime,
-          )}`,
-        )
-        console.log('')
-      }
-      printEntry(fGet(combined[combined.length - 2]), 'Second Last')
-      printEntry(fGet(_.last(combined)), 'Last')
-    } else {
-      await pushMarketData()
-    }
-  })
+  const x = fGet(combined[combined.length - 1])
 
-export const pushMarketData = async () => {
-  const { combined: marketData } = await _getMarketData()
+  console.log(`--------------------`)
+  console.log(`        Overall: ${formatDate(x.closingTime)}`)
+  console.log('')
+  console.log(`           CAPE: ${formatDate(x.CAPE.closingTime)}`)
+  console.log(
+    `       CAPE-RAW: ${formatDate(fGet(_.last(raw.CAPE)).closingTime)}`,
+  )
+  console.log('')
+  console.log(`      bondRates: ${formatDate(x.bondRates.closingTime)}`)
+  console.log(
+    `  bondRates-RAW: ${formatDate(fGet(_.last(raw.bondRates)).closingTime)}`,
+  )
+  console.log('')
+  console.log(`      inflation: ${formatDate(x.inflation.closingTime)}`)
+  console.log(
+    `  inflation-RAW: ${formatDate(fGet(_.last(raw.inflation)).closingTime)}`,
+  )
+  console.log('')
+  console.log(
+    `    stockMarket: ${formatDate(x.dailyStockMarketPerformance.closingTime)}`,
+  )
+  console.log(
+    `stockMarket-RAW: ${formatDate(
+      fGet(_.last(raw.dailyStockMarketPerformance)).closingTime,
+    )}`,
+  )
+  console.log(`--------------------`)
+  console.log('')
+}
+
+export const pushMarketData = async (opts: { printOnly?: boolean } = {}) => {
+  const { combined, raw } = await _getMarketData()
+  _printLatest({ combined, raw })
+  if (opts.printOnly) return
   const bucket = Clients.gcs.bucket(Config.google.marketDataBucket)
   const files = [
     getNYZonedTime.now().toFormat('yyyy-MM-dd_HH-mm-ss-ZZZZ'),
     'latest',
   ].map((x) => new File(bucket, `${x}.json`))
   for (const file of files) {
-    await file.save(JSON.stringify(marketData))
+    await file.save(JSON.stringify(combined))
   }
   const latestFile = fGet(_.last(files))
   assert(latestFile.name === 'latest.json')
   await latestFile.makePublic()
-
-  // const first = fGet(_.first(marketData))
-  // const last = fGet(_.last(marketData))
-
-  // const formatToNY = (x: number) =>
-  //   getNYZonedTime(x).toLocaleString(DateTime.DATETIME_FULL)
-
-  // console.log('-------------------------------------')
-  // console.log('Market Data')
-  // console.log('-------------------------------------')
-  // console.log(`From: ${formatToNY(first.closingTime)}`)
-  // console.log('To:')
-  // console.log(` inflation: ${formatToNY(last.inflation.closingTime)}`)
-  // console.log(`      CAPE: ${formatToNY(last.CAPE.closingTime)}`)
-  // console.log(` bondRates: ${formatToNY(last.bondRates.closingTime)}`)
-  // console.log(
-  //   `VT and BND: ${formatToNY(last.dailyStockMarketPerformance.closingTime)}`,
-  // )
-  // console.log('-------------------------------------')
-
-  // console.log('')
-  // console.log('-------------------------------------')
-  // console.log('Wrote market data to:')
-  // console.log('-------------------------------------')
-  // console.log(files.map((x) => `${x.name}`).join('\n'))
-  // console.log('-------------------------------------')
 }
 
 async function _getMarketData() {
@@ -323,7 +314,7 @@ const _getFromEOD = async (name: string) => {
   url.searchParams.set('api_token', fGet(Config.eod.apiKey))
   url.searchParams.set('fmt', 'json')
   url.searchParams.set('period', 'd') // daily
-  url.searchParams.set('order', 'a') // ascendign
+  url.searchParams.set('order', 'a') // ascending
   url.searchParams.set(
     'from',
     fGet(
