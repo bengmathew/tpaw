@@ -28,7 +28,7 @@ const _printLatest = ({
   raw,
 }: Awaited<ReturnType<typeof _getMarketData>>) => {
   const formatDate = (x: number) =>
-    DateTime.fromMillis(x).toLocaleString(DateTime.DATETIME_FULL)
+    getNYZonedTime(x).toLocaleString(DateTime.DATETIME_FULL)
 
   const x = fGet(combined[combined.length - 1])
 
@@ -59,6 +59,12 @@ const _printLatest = ({
     )}`,
   )
   console.log(`--------------------`)
+  console.log(
+    `vt: ${x.dailyStockMarketPerformance.percentageChangeFromLastClose.vt}`,
+  )
+  console.log(
+    `bnd: ${x.dailyStockMarketPerformance.percentageChangeFromLastClose.bnd}`,
+  )
   console.log('')
 }
 
@@ -306,8 +312,13 @@ const fParsePercentString = (x: string) => {
 }
 
 // Date format ISO 2020-03-22
+// Don't user getNYZonedTime.fromISO(date) because that get the timestamp
+// as it local than just changes changes the zone. We want to get the timestamp
+// in NY zone.
 const dateToMarketClosingTime = (date: string) =>
-  getNYZonedTime.fromISO(date).set({ hour: 16 }).valueOf()
+  DateTime.fromISO(`${date}`, {
+    zone: fGet(getNYZonedTime.now().zoneName),
+  }).toMillis()
 
 const _getFromEOD = async (name: string) => {
   const url = new URL(`https://eodhistoricaldata.com/api/eod/${name}`)
