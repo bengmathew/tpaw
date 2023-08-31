@@ -4,6 +4,7 @@ import Sentry from '@sentry/node'
 import Tracing from '@sentry/tracing'
 import {
   assert,
+  fGet,
   getDefaultNonPlanParams,
   getDefaultPlanParams,
   getSlug,
@@ -53,6 +54,17 @@ async function _impl() {
   server.use(compression())
   server.get('/', (req, res) => res.send('I am root!'))
   server.get('/ping', (req, res) => res.send('pong'))
+  server.get('/marketDataURL', async (req, res) => {
+    const bucket = Clients.gcs.bucket(Config.google.marketDataBucket)
+    const [currentLatest] = await bucket.getFiles({ prefix: 'latest/' })
+    assert(currentLatest.length === 1)
+    const file = fGet(currentLatest[0])
+    const [fileName] = await file.getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+    })
+    res.send(fileName)
+  })
   server.get('/deploy-frontend', async (req, res) => {
     if (req.query['token'] !== Config.deployFrontEnd.token) {
       res.status(401)

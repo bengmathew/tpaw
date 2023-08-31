@@ -8,9 +8,6 @@ export class Config {
         space: fGet(process.env.CONTENTFUL_SPACE_ID),
         accessToken: fGet(process.env.CONTENTFUL_ACCESS_TOKEN),
       },
-      google: {
-        marketDataURL: fGet(process.env.MARKET_DATA_URL),
-      },
     }
   }
 

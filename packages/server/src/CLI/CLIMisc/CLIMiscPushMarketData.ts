@@ -73,17 +73,13 @@ export const pushMarketData = async (opts: { printOnly?: boolean } = {}) => {
   _printLatest({ combined, raw })
   if (opts.printOnly) return
   const bucket = Clients.gcs.bucket(Config.google.marketDataBucket)
-  const files = [
-    getNYZonedTime.now().toFormat('yyyy-MM-dd_HH-mm-ss-ZZZZ'),
-    'latest',
-  ].map((x) => new File(bucket, `${x}.json`))
+  const [currentLatest] = await bucket.getFiles({ prefix: 'latest/' })
+  await Promise.all(currentLatest.map((x) => x.delete()))
+  const filename = getNYZonedTime.now().toFormat('yyyy-MM-dd_HH-mm-ss-ZZZZ')
+  const files = [filename, `latest/${filename}`].map((x) => new File(bucket, `${x}.json`))
   for (const file of files) {
     await file.save(JSON.stringify(combined))
   }
-  const latestFile = fGet(_.last(files))
-  assert(latestFile.name === 'latest.json')
-  latestFile.metadata.cacheControl = 'no-store'
-  await latestFile.makePublic()
 }
 
 async function _getMarketData() {
