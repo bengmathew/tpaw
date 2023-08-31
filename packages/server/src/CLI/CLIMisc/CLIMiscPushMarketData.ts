@@ -14,17 +14,44 @@ import { assert, fGet } from '../../Utils/Utils.js'
 import { cliMisc } from './CLIMisc.js'
 
 const lookBackInDays = 30
-export type MarketData = Awaited<ReturnType<typeof _getMarketData>>
+export type MarketData = Awaited<ReturnType<typeof _getMarketData>>['combined']
 
-cliMisc.command('pushMarketData').action(async () => {
-  await pushMarketData()
-})
+cliMisc
+  .command('pushMarketData')
+  .option('--debug')
+  .action(async (options) => {
+    if (options.debug) {
+      const { combined } = await _getMarketData()
+
+      const printEntry = (x: MarketData[0], label: string) => {
+        const formatDate = (x: number) =>
+          DateTime.fromMillis(x).toLocaleString(DateTime.DATETIME_FULL)
+
+        console.log(`--------------------`)
+        console.log(`${label}: ${formatDate(x.closingTime)}`)
+        console.log(`--------------------`)
+        console.log(`       CAPE: ${formatDate(x.CAPE.closingTime)}`)
+        console.log(`  bondRates: ${formatDate(x.bondRates.closingTime)}`)
+        console.log(`  inflation: ${formatDate(x.inflation.closingTime)}`)
+        console.log(
+          `stockMarker: ${formatDate(
+            x.dailyStockMarketPerformance.closingTime,
+          )}`,
+        )
+        console.log('')
+      }
+      printEntry(fGet(combined[combined.length - 2]), 'Second Last')
+      printEntry(fGet(_.last(combined)), 'Last')
+    } else {
+      await pushMarketData()
+    }
+  })
 
 export const pushMarketData = async () => {
-  const marketData = await _getMarketData()
+  const { combined: marketData } = await _getMarketData()
   const bucket = Clients.gcs.bucket(Config.google.marketDataBucket)
   const files = [
-    DateTime.local().toFormat('yyyy-MM-dd_HH-mm-ss'),
+    getNYZonedTime.now().toFormat('yyyy-MM-dd_HH-mm-ss-ZZZZ'),
     'latest',
   ].map((x) => new File(bucket, `${x}.json`))
   for (const file of files) {
@@ -33,7 +60,6 @@ export const pushMarketData = async () => {
   const latestFile = fGet(_.last(files))
   assert(latestFile.name === 'latest.json')
   await latestFile.makePublic()
-
 
   // const first = fGet(_.first(marketData))
   // const last = fGet(_.last(marketData))
@@ -70,12 +96,15 @@ async function _getMarketData() {
       _getBondRates(),
       _getDailyStockMarketPerformance(),
     ])
-  return MarketData.combineStreams(
-    inflation,
-    CAPE,
-    bondRates,
-    dailyStockMarketPerformance,
-  )
+  return {
+    raw: { inflation, CAPE, bondRates, dailyStockMarketPerformance },
+    combined: MarketData.combineStreams(
+      inflation,
+      CAPE,
+      bondRates,
+      dailyStockMarketPerformance,
+    ),
+  }
 }
 
 async function _getDailyStockMarketPerformance(): Promise<
@@ -108,7 +137,7 @@ async function _getBondRates(): Promise<MarketData.BondRates[]> {
       `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/${year}/all`,
     )
     url.searchParams.set('type', 'daily_treasury_real_yield_curve')
-    const response = await fetch(url)
+    const response = await fetch(url, { cache: 'no-store' })
     assert(response.ok)
     const text = await response.text()
     const rows = text.split('\n').map((x) => x.split(','))
@@ -165,7 +194,7 @@ async function _getInflation(): Promise<MarketData.Inflation[]> {
         .toISODate(),
     ),
   )
-  const response = await fetch(url)
+  const response = await fetch(url, { cache: 'no-store' })
   assert(response.ok)
   type ObType = { date: string; value: string }
   const guard: JSONGuard<ObType> = object(
@@ -305,7 +334,7 @@ const _getFromEOD = async (name: string) => {
   )
 
   const requestTime = DateTime.now()
-  const response = await fetch(url)
+  const response = await fetch(url, { cache: 'no-store' })
   assert(response.ok)
   type EODData = {
     date: string // yyyy-mm-dd
