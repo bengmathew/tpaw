@@ -59,11 +59,8 @@ async function _impl() {
     const [currentLatest] = await bucket.getFiles({ prefix: 'latest/' })
     assert(currentLatest.length === 1)
     const file = fGet(currentLatest[0])
-    const [fileName] = await file.getSignedUrl({
-      action: 'read',
-      expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
-    })
-    res.send(fileName)
+    const filename = await file.publicUrl()
+    res.send(filename)
   })
   server.get('/deploy-frontend', async (req, res) => {
     if (req.query['token'] !== Config.deployFrontEnd.token) {

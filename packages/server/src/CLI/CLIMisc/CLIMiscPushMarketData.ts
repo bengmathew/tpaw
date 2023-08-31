@@ -80,6 +80,8 @@ export const pushMarketData = async (opts: { printOnly?: boolean } = {}) => {
   for (const file of files) {
     await file.save(JSON.stringify(combined))
   }
+  const latestFile = fGet(_.last(files))
+  await latestFile.makePublic()
 }
 
 async function _getMarketData() {
