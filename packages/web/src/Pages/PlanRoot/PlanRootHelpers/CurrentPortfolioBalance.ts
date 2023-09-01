@@ -99,10 +99,6 @@ export namespace CurrentPortfolioBalance {
         getArgs: () => ({ type: 'marketClose', marketData: x }),
       }))
 
-    const formatTime = (t: number) =>
-      DateTime.fromMillis(t).toLocaleString(DateTime.DATETIME_FULL)
-    console.dir((fGet(_.last(marketData)).closingTime))
-
     const {
       withdrawalAndContributionTimes,
       monthlyRebalanceTimes,
@@ -391,7 +387,7 @@ export namespace CurrentPortfolioBalance {
       getZonedTime(x.timestamp).startOf('month').toMillis(),
     )
 
-    let currState = info.startState
+    let currState = fGet(_.last(actionsDesc)).stateChange.end
 
     const monthsDesc = _getDescTimeSeq(
       info.ianaTimezoneName,
@@ -426,10 +422,10 @@ export namespace CurrentPortfolioBalance {
         assert(actionsDescByDayMap.size === 0)
 
         const stateChange = {
-          start: currState,
-          end: _.first(actionsDesc)?.stateChange.end ?? currState,
+          end: currState,
+          start: _.last(actionsDesc)?.stateChange.start ?? currState,
         }
-        currState = stateChange.end
+        currState = stateChange.start
         return { month, stateChange, daysDesc }
       })
     assert(actionsDescByMonthMap.size === 0)
