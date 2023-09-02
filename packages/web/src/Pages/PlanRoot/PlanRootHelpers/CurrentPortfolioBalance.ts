@@ -387,7 +387,7 @@ export namespace CurrentPortfolioBalance {
       getZonedTime(x.timestamp).startOf('month').toMillis(),
     )
 
-    let currState = fGet(_.last(actionsDesc)).stateChange.end
+    let currState = fGet(_.first(actionsDesc)).stateChange.end
 
     const monthsDesc = _getDescTimeSeq(
       info.ianaTimezoneName,
