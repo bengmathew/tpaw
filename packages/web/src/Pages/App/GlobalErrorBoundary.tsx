@@ -132,6 +132,8 @@ const _message = (e: Error): string => {
     switch (e.code) {
       case 'concurrentChange':
         assertFalse()
+      case 'serverDownForMaintenance':
+        return 'The server is down for maintenace. We will be back online shortly.'
       case 'networkError':
         return 'There was a problem connecting with the server. Please reload to try again.'
       case '404':

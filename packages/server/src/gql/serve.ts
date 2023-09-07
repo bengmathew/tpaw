@@ -50,6 +50,16 @@ async function _impl() {
     tracesSampleRate: 1.0,
   })
   server.use(Sentry.Handlers.errorHandler({ shouldHandleError: () => true }))
+
+  if (Config.downForMaintenance) {
+    server.use('*', cors({ origin: Config.websiteURL }), (req, res) => {
+      res.status(503)
+      res.send('Down for maintenance')
+    })
+    server.listen(Config.port)
+    return
+  }
+
   // GCP Cloud Run does not gzip for us so do it here.
   server.use(compression())
   server.get('/', (req, res) => res.send('I am root!'))
@@ -62,6 +72,7 @@ async function _impl() {
     const filename = await file.publicUrl()
     res.send(filename)
   })
+
   server.get('/deploy-frontend', async (req, res) => {
     if (req.query['token'] !== Config.deployFrontEnd.token) {
       res.status(401)

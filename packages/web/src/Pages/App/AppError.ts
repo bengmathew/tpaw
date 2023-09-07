@@ -1,4 +1,4 @@
-export type AppErrorCode = '404' | 'concurrentChange' | 'networkError'
+export type AppErrorCode = '404' | 'concurrentChange' | 'networkError' | 'serverDownForMaintenance'
 export class AppError extends Error {
   code: AppErrorCode
   constructor(code: AppErrorCode, message?: string) {

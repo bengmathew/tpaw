@@ -1,8 +1,9 @@
+import { fGet } from '@tpaw/common'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
+import { AppError } from '../Pages/App/AppError'
 import { FirebaseUser } from '../Pages/App/WithFirebaseUser'
 import { Config } from '../Pages/Config'
-import { fGet } from '@tpaw/common'
 
 export const fetchGQL =
   (firebaseUser: FirebaseUser | null) =>
@@ -20,5 +21,8 @@ export const fetchGQL =
       },
       body: JSON.stringify({ query: text, variables }),
     })
+    if (response.status === 503) {
+      throw new AppError('serverDownForMaintenance')
+    }
     return await response.json()
   }
