@@ -412,6 +412,7 @@ function _nodeToReactComponent(
           ? cloneElement(element, { key: index })
           : element,
       )
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
     if (node.nodeType === 'document') {
       return <>{children}</>
     }

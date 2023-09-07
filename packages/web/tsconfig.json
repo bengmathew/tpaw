@@ -20,6 +20,6 @@
     "**/*.ts",
     "**/*.tsx",
     "sentry.client.config.js"
-  ],
+, "pages/_error.js"  ],
   "exclude": ["node_modules"]
 }

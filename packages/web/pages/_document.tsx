@@ -6,6 +6,7 @@ import Document, {
   NextScript,
 } from 'next/document'
 import {Config} from '../src/Pages/Config'
+import React from 'react'
 
 class MyDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {

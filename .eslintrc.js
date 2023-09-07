@@ -1,3 +1,6 @@
+// DEPRECaTED: use sub project specific instead. setting root:true in subproject
+// will make it NOT inherit from this file. Use that to see which subprojects
+// are still using this file.
 module.exports = {
   parser: '@typescript-eslint/parser', 
   parserOptions: {
