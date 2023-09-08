@@ -16,16 +16,9 @@ model User {
   planWithHistory   PlanWithHistory[]
   planParamsChanges PlanParamsChange[]
 
-  // TODO: drop optional after migration
-  nonPlanParams              Json?
-  // TODO: drop default after migration.
-  nonPlanParamsLastUpdatedAt DateTime @default(now())
-  // TODO: drop default after migration
-  clientIANATimezoneName     String   @default("")
-
-  // TODO: Remove after migration
-  plan   Plan? @relation(fields: [planId], references: [id])
-  planId Int?  @unique
+  nonPlanParams              Json
+  nonPlanParamsLastUpdatedAt DateTime
+  clientIANATimezoneName     String  
 }
 
 model PlanWithHistory {
@@ -74,13 +67,4 @@ model LinkBasedPlan {
   id        String   @id
   createdAt DateTime
   params    Json
-}
-
-// TODO: delete after migration
-model Plan {
-  id         Int      @id @default(autoincrement())
-  user       User?
-  createdAt  DateTime
-  modifiedAt DateTime
-  params     Json
 }
