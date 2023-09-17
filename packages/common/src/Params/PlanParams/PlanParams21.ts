@@ -843,7 +843,21 @@ export namespace PlanParams21 {
       // allocation changes in prev.wealth.portfolioBalance.history.
       timestamp: prev.wealth.portfolioBalance.isLastPlanChange
         ? prev.timestamp
-        : prev.wealth.portfolioBalance.original.timestamp,
+        : Math.max(
+          prev.wealth.portfolioBalance.original.timestamp,
+          // Parameter time should not be before start of glidepath.
+          DateTime.fromObject(
+            {
+              month: prev.risk.spawAndSWR.allocation.start.month.month,
+              year: prev.risk.spawAndSWR.allocation.start.month.year,
+            },
+            // Fix timezone to make it deterministic.
+            { zone: 'America/New_York' },
+          )
+            .startOf('month')
+            .plus({ day: 1 }) // Buffer for any timezone.
+            .toMillis(),
+        ),
       dialogPosition: prev.dialogPosition,
       people: prev.people,
       wealth: {
