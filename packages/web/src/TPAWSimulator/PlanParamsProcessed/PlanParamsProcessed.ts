@@ -71,7 +71,7 @@ export function processPlanParams(
     monthlyInflation,
     sampling: planParams.advanced.sampling,
     samplingBlockSizeForMonteCarlo:
-      planParams.advanced.monteCarloSampling.blockSize,
+      planParams.advanced.sampling.blockSizeForMonteCarloSampling,
     original: planParams,
   }
 

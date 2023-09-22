@@ -1,6 +1,6 @@
 import { faCaretDown, faCaretRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { PlanParams, assert, noCase } from '@tpaw/common'
+import { assert } from '@tpaw/common'
 import _ from 'lodash'
 import React, { ReactNode, useMemo, useState } from 'react'
 import { PlanParamsExtended } from '../../../../TPAWSimulator/ExtentPlanParams'
@@ -20,11 +20,13 @@ import { analyzeMonthsInParams } from '../PlanInput/Helpers/AnalyzeMonthsInParam
 import { PlanInputType } from '../PlanInput/Helpers/PlanInputType'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import { useGetPlanInputVisibility } from '../PlanInput/Helpers/UseGetPlanInputVisibility'
-import { useIsPlanInputDevAdditionalSpendingTiltModified } from '../PlanInput/PlanInputDev/PlanInputDevAdditionalSpendingTilt'
 import { useIsPlanInputDevHistoricalReturnsModified } from '../PlanInput/PlanInputDev/PlanInputDevHistoricalReturns'
 import { useIsPlanInputDevMiscModified } from '../PlanInput/PlanInputDev/PlanInputDevMisc'
 import { useIsPlanInputDevSimulationsModified } from '../PlanInput/PlanInputDev/PlanInputDevSimulations'
 import { useIsPlanInputDevTimeModified } from '../PlanInput/PlanInputDev/PlanInputDevTime'
+import { useIsPlanInputExpectedReturnsModified } from '../PlanInput/PlanInputExpectedReturns'
+import { useIsPlanInputInflationModified } from '../PlanInput/PlanInputInflation'
+import { useIsPlanInputStrategyModified } from '../PlanInput/PlanInputStrategy'
 import {
   PlanTransitionState,
   simplifyPlanTransitionState4,
@@ -91,17 +93,21 @@ export const PlanSummary = React.memo(
     const [showDev, setShowDev] = useState(() => DevMode.readDevMode())
     const [showDevClickCount, setShowDevClickCount] = useState(0)
     const [expandDev, setExpandDev] = useState(false)
-    const advancedModifiedCount = _advancedInputs.filter((x) =>
-      isAdvancedInputModified(x, planParams, defaultPlanParams),
-    ).length
 
+    const advancedModifiedByType = {
+      'expected-returns': useIsPlanInputExpectedReturnsModified(),
+      inflation: useIsPlanInputInflationModified(),
+      strategy: useIsPlanInputStrategyModified(),
+      simulation: useIsPlanInputDevSimulationsModified(),
+    }
+    const advancedModifiedCount = _.values(advancedModifiedByType).filter(
+      (x) => x,
+    ).length
     const devModifiedByType = {
       'dev-misc': useIsPlanInputDevMiscModified(),
       'dev-simulations': useIsPlanInputDevSimulationsModified(),
       'dev-time': useIsPlanInputDevTimeModified(),
       'dev-historical-returns': useIsPlanInputDevHistoricalReturnsModified(),
-      'dev-additional-spending-tilt':
-        useIsPlanInputDevAdditionalSpendingTiltModified(),
     }
     const devModifiedCount = _.values(devModifiedByType).filter((x) => x).length
 
@@ -322,41 +328,27 @@ export const PlanSummary = React.memo(
                       type="expected-returns"
                       section={section}
                       padding={cardPadding}
-                      flagAsModified={isAdvancedInputModified(
-                        'expected-returns',
-                        planParams,
-                        defaultPlanParams,
-                      )}
+                      flagAsModified={
+                        advancedModifiedByType['expected-returns']
+                      }
                     />
                     <PlanSummaryButton
                       type="inflation"
                       section={section}
                       padding={cardPadding}
-                      flagAsModified={isAdvancedInputModified(
-                        'inflation',
-                        planParams,
-                        defaultPlanParams,
-                      )}
+                      flagAsModified={advancedModifiedByType['inflation']}
                     />
                     <PlanSummaryButton
                       type="simulation"
                       section={section}
                       padding={cardPadding}
-                      flagAsModified={isAdvancedInputModified(
-                        'simulation',
-                        planParams,
-                        defaultPlanParams,
-                      )}
+                      flagAsModified={advancedModifiedByType['simulation']}
                     />
                     <PlanSummaryButton
                       type="strategy"
                       section={section}
                       padding={cardPadding}
-                      flagAsModified={isAdvancedInputModified(
-                        'strategy',
-                        planParams,
-                        defaultPlanParams,
-                      )}
+                      flagAsModified={advancedModifiedByType['strategy']}
                     />
                   </div>
                 )}
@@ -425,14 +417,6 @@ export const PlanSummary = React.memo(
                         padding={cardPadding}
                         flagAsModified={devModifiedByType['dev-time']}
                       />
-                      <PlanSummaryButton
-                        type="dev-additional-spending-tilt"
-                        section={section}
-                        padding={cardPadding}
-                        flagAsModified={
-                          devModifiedByType['dev-additional-spending-tilt']
-                        }
-                      />
                     </div>
                   )}
                 </div>
@@ -498,36 +482,36 @@ export const _paramsOk = (planParamsExt: PlanParamsExtended, type: _Type) => {
   )
 }
 
-const _advancedInputs = [
-  'expected-returns',
-  'inflation',
-  'strategy',
-  'simulation',
-] as const
-type _AdvancedParamInputType = (typeof _advancedInputs)[number]
-export const isAdvancedInputModified = (
-  type: _AdvancedParamInputType,
-  planParams: PlanParams,
-  def: PlanParams,
-) => {
-  switch (type) {
-    case 'expected-returns':
-      return planParams.advanced.annualReturns.expected.type !== 'suggested'
-    case 'inflation':
-      return planParams.advanced.annualInflation.type !== 'suggested'
-    case 'strategy':
-      return planParams.advanced.strategy !== def.advanced.strategy
-    case 'simulation':
-      return (
-        planParams.advanced.sampling !== def.advanced.sampling ||
-        (planParams.advanced.sampling === 'monteCarlo' &&
-          planParams.advanced.monteCarloSampling.blockSize !==
-            def.advanced.monteCarloSampling.blockSize)
-      )
-    default:
-      noCase(type)
-  }
-}
+// const _advancedInputs = [
+//   'expected-returns',
+//   'inflation',
+//   'strategy',
+//   'simulation',
+// ] as const
+// type _AdvancedParamInputType = (typeof _advancedInputs)[number]
+// export const isAdvancedInputModified = (
+//   type: _AdvancedParamInputType,
+//   planParams: PlanParams,
+//   def: PlanParams,
+// ) => {
+//   switch (type) {
+//     case 'expected-returns':
+//       return planParams.advanced.annualReturns.expected.type !== 'suggested'
+//     case 'inflation':
+//       return planParams.advanced.annualInflation.type !== 'suggested'
+//     case 'strategy':
+//       return planParams.advanced.strategy !== def.advanced.strategy
+//     case 'simulation':
+//       return (
+//         planParams.advanced.sampling !== def.advanced.sampling ||
+//         (planParams.advanced.sampling === 'monteCarlo' &&
+//           planParams.advanced.monteCarloSampling.blockSize !==
+//             def.advanced.monteCarloSampling.blockSize)
+//       )
+//     default:
+//       noCase(type)
+//   }
+// }
 
 export namespace DevMode {
   const key = 'DevMode'

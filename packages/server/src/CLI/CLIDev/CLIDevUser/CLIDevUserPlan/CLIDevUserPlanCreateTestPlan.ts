@@ -1,6 +1,6 @@
 import {
   PlanParams,
-  PlanParamsChangeAction,
+  PlanParamsChangeActionCurrent,
   ValueForMonthRange,
   assert,
   block,
@@ -112,10 +112,10 @@ const _applyChange = (value: number, timestamp: number, params: PlanParams) => {
   clone.results = { displayedAssetAllocation: { stocks: 0.5 } }
 
   const reverseDiff = jsonpatch.compare(clone, params)
-  const change: PlanParamsChangeAction = {
+  const change: PlanParamsChangeActionCurrent = {
     type: 'setCurrentPortfolioBalance',
     value,
-  } as PlanParamsChangeAction
+  } as PlanParamsChangeActionCurrent
   return {
     historyItem: {
       planParamsChangeId: uuid.v4(),
@@ -128,7 +128,7 @@ const _applyChange = (value: number, timestamp: number, params: PlanParams) => {
 }
 
 const startingParams = (timestamp: number): PlanParams => ({
-  v: 21,
+  v: 22,
   risk: {
     swr: {
       withdrawal: {
@@ -297,25 +297,31 @@ const startingParams = (timestamp: number): PlanParams => ({
     }),
   },
   advanced: {
-    sampling: 'monteCarlo',
+    sampling: { type: 'monteCarlo', blockSizeForMonteCarloSampling: 12 * 5 },
     strategy: 'TPAW',
     annualReturns: {
       expected: {
         type: 'suggested',
       },
       historical: {
-        type: 'adjusted',
-        adjustment: {
-          type: 'toExpected',
+        stocks: {
+          type: 'adjustExpected',
+          adjustment: {
+            type: 'toExpectedUsedForPlanning',
+          },
+          correctForBlockSampling: true,
         },
-        correctForBlockSampling: true,
+        bonds: {
+          type: 'adjustExpected',
+          adjustment: {
+            type: 'toExpectedUsedForPlanning',
+          },
+          correctForBlockSampling: true,
+        },
       },
     },
     annualInflation: {
       type: 'suggested',
-    },
-    monteCarloSampling: {
-      blockSize: 60,
     },
   },
   timestamp,

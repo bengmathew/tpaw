@@ -19,7 +19,6 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
-import { useMarketData } from '../../PlanRootHelpers/WithMarketData'
 
 export const PlanInputInflation = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -50,11 +49,7 @@ export const _InflationCard = React.memo(
       annualInflation: PlanParams['advanced']['annualInflation'],
     ) => updatePlanParams('setAnnualInflation', annualInflation)
 
-    const defaultValue = defaultPlanParams.advanced.annualInflation
-    const isModified = !_.isEqual(
-      defaultValue,
-      planParams.advanced.annualInflation,
-    )
+    const isModified = useIsPlanInputInflationModified()
 
     return (
       <div
@@ -142,7 +137,9 @@ export const _InflationCard = React.memo(
         )}
         <button
           className="mt-6 underline disabled:lighten-2"
-          onClick={() => handleChange(defaultValue)}
+          onClick={() =>
+            handleChange(defaultPlanParams.advanced.annualInflation)
+          }
           disabled={!isModified}
         >
           Reset to Default
@@ -163,6 +160,14 @@ export const inflationTypeLabel = ({
     case 'manual':
       return 'Manual'
   }
+}
+
+export const useIsPlanInputInflationModified = () => {
+  const { planParams, defaultPlanParams } = useSimulation()
+  return !_.isEqual(
+    defaultPlanParams.advanced.annualInflation,
+    planParams.advanced.annualInflation,
+  )
 }
 
 export const PlanInputInflationSummary = React.memo(() => {

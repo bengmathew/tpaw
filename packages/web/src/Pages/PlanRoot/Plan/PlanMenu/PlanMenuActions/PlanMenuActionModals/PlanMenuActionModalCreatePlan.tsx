@@ -1,6 +1,6 @@
 import { captureException } from '@sentry/nextjs'
 import {
-  PlanParamsChangeAction,
+  PlanParamsChangeActionCurrent,
   fGet,
   getDefaultPlanParams,
 } from '@tpaw/common'
@@ -87,7 +87,10 @@ const _Body = React.memo(
 
     const handleCreate = (label: string) => {
       const currentTimestamp = Date.now()
-      const change: PlanParamsChangeAction = { type: 'start', value: null }
+      const change: PlanParamsChangeActionCurrent = {
+        type: 'start',
+        value: null,
+      }
       setIsRunning(true)
       commit({
         variables: {

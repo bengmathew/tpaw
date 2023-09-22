@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/nextjs'
 import {
   PlanParams,
   PlanParamsChangeAction,
+  PlanParamsChangeActionCurrent,
   PlanPaths,
   assert,
   fGet,
@@ -16,7 +17,7 @@ import { extendPlanParams } from '../../../TPAWSimulator/ExtentPlanParams'
 import { useAssertConst } from '../../../Utils/UseAssertConst'
 import { Config } from '../../Config'
 import { CurrentPortfolioBalance } from './CurrentPortfolioBalance'
-import { processPlanParamsChangeAction } from './PlanParamsChangeAction'
+import { processPlanParamsChangeActionCurrent } from './PlanParamsChangeAction'
 import { CurrentTimeInfo } from './UseCurrentTime'
 import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName } from './WithNonPlanParams'
@@ -91,19 +92,23 @@ export const useWorkingPlan = (
   )
 
   const updatePlanParams = useCallback(
-    <T extends PlanParamsChangeAction>(type: T['type'], value: T['value']) => {
+    <T extends PlanParamsChangeActionCurrent>(
+      type: T['type'],
+      value: T['value'],
+    ) => {
       const currHistoryItem = fGet(_.last(planParamsUndoRedoStack.undos))
       assert(planParams === currHistoryItem.params)
 
       const change = { type, value } as T
-      const { applyToClone, merge } = processPlanParamsChangeAction(change)
+      const { applyToClone, merge } =
+        processPlanParamsChangeActionCurrent(change)
 
       const clone = cloneJSON(planParams)
       applyToClone(clone, planParamsExt, defaultPlanParams)
       if (
         _.isEqual(clone, planParams) &&
         // setCurrentPortfolio balance is a special case, because it is
-        // is sensitive too timestamps. So even if the value is the same
+        // is sensitive to timestamps. So even if the value is the same
         // but timestamp is different we need to update it.
         change.type !== 'setCurrentPortfolioBalance'
       ) {
@@ -133,7 +138,6 @@ export const useWorkingPlan = (
         merge(currHistoryItem.change)
       )
         planParamsPostBase.splice(-2, 1)
-
 
       clone.results = null
       const displayedAssetAllocation = fGet(

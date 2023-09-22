@@ -3,7 +3,7 @@ import {
   Month,
   PlanParams,
   PlanParamsChangeAction,
-  PlanPaths,
+  PlanParamsChangeActionCurrent,
   assert,
   assertFalse,
   block,
@@ -36,47 +36,41 @@ type _ActionFns = {
     prevPlanParams: PlanParams,
     planParams: PlanParams,
   ) => React.ReactNode
-  getBaseURL: (planPath: PlanPaths) => URL
   merge: null | ((prev: PlanParamsChangeAction) => boolean)
 }
 
-export const processPlanParamsChangeAction = (
-  action: PlanParamsChangeAction,
+export const processPlanParamsChangeActionCurrent = (
+  action: PlanParamsChangeActionCurrent,
 ): _ActionFns => {
   switch (action.type) {
     case 'start':
       return {
         applyToClone: () => assertFalse(),
         render: () => assertFalse(),
-        getBaseURL: () => assertFalse(),
         merge: null,
       }
     case 'startCopiedFromBeforeHistory':
       return {
         applyToClone: () => assertFalse(),
         render: () => assertFalse(),
-        getBaseURL: () => assertFalse(),
         merge: null,
       }
     case 'startCutByClient':
       return {
         applyToClone: () => assertFalse(),
         render: () => assertFalse(),
-        getBaseURL: () => assertFalse(),
         merge: null,
       }
     case 'startFromURL':
       return {
         applyToClone: () => assertFalse(),
         render: () => assertFalse(),
-        getBaseURL: () => assertFalse(),
         merge: null,
       }
     case 'noOpToMarkMigration':
       return {
         applyToClone: () => {}, // Do nothing.
         render: () => `Accepted migration to new inputs`,
-        getBaseURL: (planPaths) => planPaths(),
         merge: null,
       }
     // ---------
@@ -107,7 +101,6 @@ export const processPlanParamsChangeAction = (
               noCase(prevParams.dialogPosition)
           }
         },
-        getBaseURL: (planPaths) => planPaths(),
         merge: null,
       }
     }
@@ -127,7 +120,6 @@ export const processPlanParamsChangeAction = (
           }
         },
         render: () => `Added partner`,
-        getBaseURL: (planPaths) => planPaths.age(),
         merge: null,
       }
     }
@@ -150,7 +142,6 @@ export const processPlanParamsChangeAction = (
           }
         },
         render: () => `Deleted partner`,
-        getBaseURL: (planPaths) => planPaths.age(),
         merge: null,
       }
     }
@@ -194,7 +185,6 @@ export const processPlanParamsChangeAction = (
           `Marked ${
             personType === 'person1' ? 'yourself' : 'your partner'
           } as retired`,
-        getBaseURL: (planPaths) => planPaths.age(),
         merge: null,
       }
     }
@@ -236,7 +226,6 @@ export const processPlanParamsChangeAction = (
           `Marked ${
             personType === 'person1' ? 'yourself' : 'your partner'
           } as not retired`,
-        getBaseURL: (planPaths) => planPaths.age(),
         merge: null,
       }
     }
@@ -253,7 +242,6 @@ export const processPlanParamsChangeAction = (
           `Set ${yourOrYourPartners(
             person,
           )} month of birth to ${calendarMonthStr(monthOfBirth)}`,
-        getBaseURL: (planPaths) => planPaths.age(),
         merge: (prev) =>
           prev.type === 'setPersonMonthOfBirth' && prev.value.person === person,
       }
@@ -274,7 +262,6 @@ export const processPlanParamsChangeAction = (
           `Set ${yourOrYourPartners(
             personType,
           )} retirement age to ${numMonthsStr(retirementAge.inMonths)}`,
-        getBaseURL: (planPaths) => planPaths.age(),
         merge: (prev) =>
           prev.type === 'setPersonRetirementAge' &&
           prev.value.person === personType,
@@ -295,7 +282,6 @@ export const processPlanParamsChangeAction = (
           `Set ${yourOrYourPartners(personType)} max age to ${numMonthsStr(
             maxAge.inMonths,
           )}`,
-        getBaseURL: (planPaths) => planPaths.age(),
         merge: (prev) =>
           prev.type === 'setPersonMaxAge' && prev.value.person === personType,
       }
@@ -313,7 +299,6 @@ export const processPlanParamsChangeAction = (
         },
         render: () =>
           `Set withdrawals to start at ${yourOrYourPartners(value)} retirement`,
-        getBaseURL: (planPaths) => planPaths.age(),
         merge: null,
       }
     }
@@ -332,7 +317,6 @@ export const processPlanParamsChangeAction = (
         },
         render: () =>
           `Set current portfolio balance to ${formatCurrency(value)}`,
-        getBaseURL: (planPaths) => planPaths['current-portfolio-balance'](),
         merge: (prev) => prev.type === 'setCurrentPortfolioBalance',
       }
     }
@@ -362,7 +346,6 @@ export const processPlanParamsChangeAction = (
         render: () => {
           return `Added ${_getValueForMonthRangeLocationStr(location)} entry`
         },
-        getBaseURL: _getlabeledAmountBaseURLByLocation(location, null),
         merge: null,
       }
     }
@@ -391,7 +374,6 @@ export const processPlanParamsChangeAction = (
         render: () => {
           return `Added ${_getLabeledAmountLocationStr(location)} entry `
         },
-        getBaseURL: _getlabeledAmountBaseURLByLocation(location, null),
         merge: null,
       }
     }
@@ -418,7 +400,6 @@ export const processPlanParamsChangeAction = (
             ).label,
           )}" `
         },
-        getBaseURL: _getlabeledAmountBaseURLByLocation(location, entryId),
         merge: null,
       }
     }
@@ -438,7 +419,6 @@ export const processPlanParamsChangeAction = (
             location,
           )} entry label to "${_truncateLabel(label)}'" `
         },
-        getBaseURL: _getlabeledAmountBaseURLByLocation(location, entryId),
         merge: (prev) =>
           prev.type === 'setLabelForLabeledAmount' &&
           prev.value.entryId === entryId,
@@ -469,7 +449,6 @@ export const processPlanParamsChangeAction = (
           )}" amount to ${formatCurrency(amount)} per month`
         },
 
-        getBaseURL: _getlabeledAmountBaseURLByLocation(location, entryId),
         merge: (prev) =>
           prev.type === 'setAmountForLabeledAmount' &&
           prev.value.entryId === entryId,
@@ -499,7 +478,6 @@ export const processPlanParamsChangeAction = (
             ).label,
           )}" amount as ${nominal ? 'nominal' : 'rea'} dollars`
         },
-        getBaseURL: _getlabeledAmountBaseURLByLocation(location, entryId),
         merge: null,
       }
     }
@@ -529,7 +507,6 @@ export const processPlanParamsChangeAction = (
             ).label,
           )}" month range`
         },
-        getBaseURL: _getlabeledAmountBaseURLByLocation(location, entryId),
         merge: (prev) =>
           prev.type === 'setAmountForLabeledAmount' &&
           prev.value.entryId === entryId,
@@ -546,7 +523,6 @@ export const processPlanParamsChangeAction = (
           clone.risk.tpaw.riskTolerance.at20 = value
         },
         render: () => `Set risk tolerance to ${value}`,
-        getBaseURL: (planPaths) => planPaths.risk(),
         merge: (prev) => prev.type === 'setTPAWRiskTolerance',
       }
     }
@@ -561,7 +537,6 @@ export const processPlanParamsChangeAction = (
         },
         render: () =>
           `Set additional spending tilt to ${formatPercentage(1)(value)}`,
-        getBaseURL: (planPaths) => planPaths.risk(),
         merge: (prev) => prev.type === 'setTPAWAdditionalSpendingTilt',
       }
     }
@@ -576,7 +551,6 @@ export const processPlanParamsChangeAction = (
           clone.risk.tpaw.riskTolerance.deltaAtMaxAge = value
         },
         render: () => `Set decease risk tolerance with age to ${-value}`,
-        getBaseURL: (planPaths) => planPaths.risk(),
         merge: (prev) => prev.type === 'setTPAWRiskDeltaAtMaxAge',
       }
     }
@@ -591,7 +565,6 @@ export const processPlanParamsChangeAction = (
           clone.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 = value
         },
         render: () => `Set increase risk tolerance for legacy to ${value}`,
-        getBaseURL: (planPaths) => planPaths.risk(),
         merge: (prev) =>
           prev.type === 'setTPAWRiskToleranceForLegacyAsDeltaFromAt20',
       }
@@ -607,7 +580,6 @@ export const processPlanParamsChangeAction = (
           clone.risk.tpaw.timePreference = value
         },
         render: () => `Set spending tilt to ${formatPercentage(1)(-value)}`,
-        getBaseURL: (planPaths) => planPaths.risk(),
         merge: (prev) => prev.type === 'setTPAWTimePreference',
       }
     }
@@ -626,7 +598,6 @@ export const processPlanParamsChangeAction = (
         },
         render: () =>
           `Set withdrawal rate to ${formatPercentage(1)(value)} per year`,
-        getBaseURL: (planPaths) => planPaths.risk(),
         merge: (prev) => prev.type === 'setSWRWithdrawalAsPercentPerYear',
       }
     }
@@ -645,7 +616,6 @@ export const processPlanParamsChangeAction = (
         },
         render: () =>
           `Set withdrawal amount to ${formatCurrency(value)} per month`,
-        getBaseURL: (planPaths) => planPaths.risk(),
         merge: (prev) => prev.type === 'setSWRWithdrawalAsAmountPerMonth',
       }
     }
@@ -660,7 +630,6 @@ export const processPlanParamsChangeAction = (
           clone.risk.spawAndSWR.allocation = value
         },
         render: () => `Updated stock allocation`,
-        getBaseURL: (planPaths) => planPaths.risk(),
         merge: (prev) => prev.type === 'setSPAWAndSWRAllocation',
       }
     }
@@ -674,7 +643,6 @@ export const processPlanParamsChangeAction = (
           clone.risk.spaw.annualSpendingTilt = value
         },
         render: () => `Set spending tilt to ${formatPercentage(1)(value)}`,
-        getBaseURL: (planPaths) => planPaths.risk(),
         merge: (prev) => prev.type === 'setSPAWAnnualSpendingTilt',
       }
     }
@@ -690,7 +658,6 @@ export const processPlanParamsChangeAction = (
         },
 
         render: () => `Set LMP to ${formatCurrency(value)}`,
-        getBaseURL: (planPaths) => planPaths.risk(),
         merge: (prev) => prev.type === 'setTPAWAndSPAWLMP',
       }
     }
@@ -708,7 +675,6 @@ export const processPlanParamsChangeAction = (
           value === null
             ? 'Removed spending ceiling'
             : `Set spending ceiling to ${formatCurrency(value)}`,
-        getBaseURL: (planPaths) => planPaths['spending-ceiling-and-floor'](),
         merge: (prev) =>
           prev.type === 'setSpendingCeiling' &&
           prev.value !== null &&
@@ -728,7 +694,6 @@ export const processPlanParamsChangeAction = (
           value === null
             ? 'Removed spending floor'
             : `Set spending floor to ${formatCurrency(value)}`,
-        getBaseURL: (planPaths) => planPaths['spending-ceiling-and-floor'](),
         merge: (prev) =>
           prev.type === 'setSpendingFloor' &&
           prev.value !== null &&
@@ -746,7 +711,6 @@ export const processPlanParamsChangeAction = (
           clone.adjustmentsToSpending.tpawAndSPAW.legacy.total = value
         },
         render: () => `Set total legacy target to ${formatCurrency(value)}`,
-        getBaseURL: (planPaths) => planPaths['legacy'](),
         merge: (prev) => prev.type === 'setLegacyTotal',
       }
     }
@@ -771,14 +735,41 @@ export const processPlanParamsChangeAction = (
               : ''
           }`
         },
-        getBaseURL: (planPaths) => planPaths['expected-returns'](),
         merge: (prev) =>
           prev.type === 'setExpectedReturns' &&
           prev.value.type === 'manual' &&
           value.type === 'manual',
       }
     }
+    // ---------
+    // SetHistoricalReturnsBonds
+    // ---------
+    case 'setHistoricalReturnsBonds': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.advanced.annualReturns.historical.bonds =
+            value === 'adjustExpectedToExpectedUsedForPlanning'
+              ? {
+                  type: 'adjustExpected',
+                  adjustment: { type: 'toExpectedUsedForPlanning' },
+                  correctForBlockSampling: true,
+                }
+              : value === 'fixedToExpectedUsedForPlanning'
+              ? { type: 'fixed', value: { type: 'expectedUsedForPlanning' } }
+              : noCase(value)
+        },
 
+        render: () => {
+          return value === 'adjustExpectedToExpectedUsedForPlanning'
+            ? 'Allow bond volatility'
+            : value === 'fixedToExpectedUsedForPlanning'
+            ? 'Remove bond volatility'
+            : noCase(value)
+        },
+        merge: null,
+      }
+    }
 
     // ---------
     // SetAnnualInflation
@@ -795,7 +786,6 @@ export const processPlanParamsChangeAction = (
               ? `${formatPercentage(1)(value.value)}`
               : _.lowerFirst(inflationTypeLabel(value))
           }`,
-        getBaseURL: (planPaths) => planPaths['inflation'](),
         merge: (prev) =>
           prev.type === 'setAnnualInflation' &&
           prev.value.type === 'manual' &&
@@ -814,12 +804,9 @@ export const processPlanParamsChangeAction = (
           defaultPlanParams: PlanParams,
         ) => {
           clone.advanced.sampling = defaultPlanParams.advanced.sampling
-          clone.advanced.monteCarloSampling.blockSize =
-            defaultPlanParams.advanced.monteCarloSampling.blockSize
         },
         render: (_: PlanParams, planParams: PlanParams) =>
           `Set simulation to Monte Carlo sequence`,
-        getBaseURL: (planPaths) => planPaths['simulation'](),
         merge: null,
       }
     }
@@ -831,13 +818,12 @@ export const processPlanParamsChangeAction = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.sampling = value
+          clone.advanced.sampling.type = value
         },
         render: () =>
           `Set simulation to ${
             value === 'historical' ? 'historical' : ' Monte Carlo'
           } sequence`,
-        getBaseURL: (planPaths) => planPaths['simulation'](),
         merge: null,
       }
     }
@@ -849,13 +835,10 @@ export const processPlanParamsChangeAction = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.monteCarloSampling.blockSize = value
+          clone.advanced.sampling.blockSizeForMonteCarloSampling = value
         },
         render: () =>
-          `Set block size for Monte Carlo simulation to ${numMonthsStr(
-            value,
-          )}`,
-        getBaseURL: (planPaths) => planPaths['simulation'](),
+          `Set block size for Monte Carlo simulation to ${numMonthsStr(value)}`,
         merge: (prev) => prev.type === 'setMonteCarloSamplingBlockSize',
       }
     }
@@ -878,107 +861,38 @@ export const processPlanParamsChangeAction = (
           }
         },
         render: () => `Set strategy to ${value}`,
-        getBaseURL: (planPaths) => planPaths['strategy'](),
         merge: null,
       }
     }
 
     // ---------
-    // SwitchHistoricalReturns
+    // SetHistoricalReturnsStocksDev
     // ---------
-    case 'switchHistoricalReturns': {
+    case 'setHistoricalReturnsStocksDev': {
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.annualReturns.historical = value
+          clone.advanced.annualReturns.historical.stocks = value
         },
-        // This is only accessible in dev.
-        render: () => {
-          const stocksAndBondsStr = ({
-            stocks,
-            bonds,
-          }: {
-            stocks: number
-            bonds: number
-          }) =>
-            `stocks: ${formatPercentage(1)(stocks)}, bonds: ${formatPercentage(
-              1,
-            )(bonds)}`
-          return `Switch historical returns to ${
-            value.type === 'adjusted'
-              ? value.adjustment.type === 'toExpected'
-                ? 'adjusted to expected'
-                : value.adjustment.type === 'to' ||
-                  value.adjustment.type === 'by'
-                ? `adjusted ${value.adjustment.type} ${stocksAndBondsStr(
-                    value.adjustment,
-                  )}`
-                : noCase(value.adjustment)
-              : value.type === 'fixed'
-              ? `fixed at ${stocksAndBondsStr(value)}`
-              : value.type === 'unadjusted'
-              ? 'unadjusted'
-              : noCase(value)
-          }`
-        },
-        getBaseURL: (planPaths) => planPaths['dev-historical-returns'](),
+        render: () => `DEV: Set historical returns for stocks`,
         merge: null,
       }
     }
 
     // ---------
-    // SetHistoricalReturnsAdjustForBlockSampling
+    // SetHistoricalReturnsBondsDev
     // ---------
-    case 'setHistoricalReturnsAdjustForBlockSampling': {
+    case 'setHistoricalReturnsBondsDev': {
       const { value } = action
       return {
         applyToClone: (clone) => {
-          assert(clone.advanced.annualReturns.historical.type === 'adjusted')
-          clone.advanced.annualReturns.historical.correctForBlockSampling =
-            value
+          clone.advanced.annualReturns.historical.bonds = value
         },
-        render: () =>
-          `${
-            value ? 'Set' : 'Unset'
-          } correct historical returns for block sampling.`,
-        getBaseURL: (planPaths) => planPaths['dev-historical-returns'](),
+        render: () => `DEV: Set historical returns for bonds`,
         merge: null,
       }
     }
 
-    // ---------
-    // SetHistoricalReturnsFixedStocks
-    // ---------
-    case 'setHistoricalReturnsFixedStocks': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          assert(clone.advanced.annualReturns.historical.type === 'fixed')
-          clone.advanced.annualReturns.historical.stocks = value / 100
-        },
-        render: () =>
-          `Set fixed historical returns stocks to ${formatPercentage(1)(
-            value,
-          )}`,
-        getBaseURL: (planPaths) => planPaths['dev-historical-returns'](),
-        merge: (prev) => prev.type === 'setHistoricalReturnsFixedStocks',
-      }
-    }
-
-    case 'setHistoricalReturnsFixedBonds': {
-      // --------- // SetHistoricalReturnsFixedBonds // ---------
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          assert(clone.advanced.annualReturns.historical.type === 'fixed')
-          clone.advanced.annualReturns.historical.bonds = value / 100
-        },
-        render: () =>
-          `Set fixed historical returns bonds to ${formatPercentage(1)(value)}`,
-        getBaseURL: (planPaths) => planPaths['dev-historical-returns'](),
-        merge: (prev) => prev.type === 'setHistoricalReturnsFixedBonds',
-      }
-    }
     default:
       noCase(action)
   }
@@ -1046,30 +960,6 @@ const _getLabeledAmountLocationStr = (location: LabeledAmountLocation) => {
       return _getValueForMonthRangeLocationStr(location)
   }
 }
-
-const _getlabeledAmountBaseURLByLocation =
-  (location: LabeledAmountLocation, entryId: string | null) =>
-  (planPaths: PlanPaths) => {
-    const url = block(() => {
-      switch (location) {
-        case 'futureSavings':
-          return planPaths['future-savings']()
-        case 'incomeDuringRetirement':
-          return planPaths['income-during-retirement']()
-        case 'extraSpendingEssential':
-        case 'extraSpendingDiscretionary':
-          return planPaths['extra-spending']()
-        case 'legacyExternalSources':
-          return planPaths['legacy']()
-        default:
-          noCase(location)
-      }
-    })
-    if (entryId) {
-      url.searchParams.set('entryId', entryId)
-    }
-    return url
-  }
 
 const _truncateLabel = (label: string | null) =>
   label ? _.truncate(label, { length: 30 }) : '<no label>'

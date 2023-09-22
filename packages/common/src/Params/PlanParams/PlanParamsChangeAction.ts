@@ -8,14 +8,12 @@ import {
   string,
   union,
 } from 'json-guard'
+import { PlanParams21 as V21 } from './Old/PlanParams21'
+import { PlanParams22 as V22 } from './PlanParams22'
 import {
-  CalendarMonth,
-  GlidePath,
-  InMonths,
-  MonthRange,
-  PlanParams,
-  planParamsComponentGuards,
-} from './PlanParams'
+  PlanParamsChangeActionDeprecated,
+  planParamsChangeActionGuardDeprecated,
+} from './PlanParamsChangeActionDeprecated'
 
 type _PersonType = 'person1' | 'person2'
 
@@ -23,12 +21,18 @@ type _PersonType = 'person1' | 'person2'
 //                   TYPES
 // ------------------------------------------
 
-export type PlanParamsChangeAction =
+// WARNING: There should not be any dependency on PlanParams but only to
+// PlanParamsV since these types are frozen.
+
+export type PlanParamsChangeActionCurrent =
   | { type: 'start'; value: null }
   | { type: 'startCopiedFromBeforeHistory'; value: null }
   | { type: 'startCutByClient'; value: null }
   | { type: 'startFromURL'; value: null }
-  | { type: 'setDialogPosition'; value: PlanParams['dialogPosition'] }
+  | {
+      type: 'setDialogPosition'
+      value: V21.PlanParams['dialogPosition']
+    }
   | { type: 'noOpToMarkMigration'; value: null }
   | { type: 'addPartner'; value: null }
   | { type: 'deletePartner'; value: null }
@@ -36,15 +40,15 @@ export type PlanParamsChangeAction =
   | { type: 'setPersonNotRetired'; value: _PersonType }
   | {
       type: 'setPersonMonthOfBirth'
-      value: { person: _PersonType; monthOfBirth: CalendarMonth }
+      value: { person: _PersonType; monthOfBirth: V21.CalendarMonth }
     }
   | {
       type: 'setPersonRetirementAge'
-      value: { person: _PersonType; retirementAge: InMonths }
+      value: { person: _PersonType; retirementAge: V21.InMonths }
     }
   | {
       type: 'setPersonMaxAge'
-      value: { person: _PersonType; maxAge: InMonths }
+      value: { person: _PersonType; maxAge: V21.InMonths }
     }
   | { type: 'setWithdrawalStart'; value: _PersonType }
 
@@ -59,7 +63,7 @@ export type PlanParamsChangeAction =
         location: ValueForMonthRangeLocation
         entryId: string
         sortIndex: number
-        monthRange: MonthRange
+        monthRange: V21.MonthRange
       }
     }
   | {
@@ -106,7 +110,7 @@ export type PlanParamsChangeAction =
       value: {
         location: ValueForMonthRangeLocation
         entryId: string
-        monthRange: MonthRange
+        monthRange: V21.MonthRange
       }
     }
   | { type: 'setSpendingCeiling'; value: number | null }
@@ -137,7 +141,7 @@ export type PlanParamsChangeAction =
     }
   | {
       type: 'setSPAWAndSWRAllocation'
-      value: GlidePath
+      value: V21.GlidePath
     }
   | {
       type: 'setSPAWAnnualSpendingTilt'
@@ -149,7 +153,7 @@ export type PlanParamsChangeAction =
   // ----------ADVANCED
   | {
       type: 'setStrategy'
-      value: PlanParams['advanced']['strategy']
+      value: V21.PlanParams['advanced']['strategy']
     }
   | { type: 'setSamplingToDefault'; value: null }
   | { type: 'setSampling'; value: 'historical' | 'monteCarlo' }
@@ -159,36 +163,38 @@ export type PlanParamsChangeAction =
     }
   | {
       type: 'setExpectedReturns'
-      value: PlanParams['advanced']['annualReturns']['expected']
+      value: V21.PlanParams['advanced']['annualReturns']['expected']
+    }
+  | {
+      type: 'setHistoricalReturnsBonds'
+      value:
+        | 'fixedToExpectedUsedForPlanning'
+        | 'adjustExpectedToExpectedUsedForPlanning'
     }
   | {
       type: 'setAnnualInflation'
-      value: PlanParams['advanced']['annualInflation']
+      value: V21.PlanParams['advanced']['annualInflation']
     }
 
   // -------------- DEV
   | {
-      type: 'switchHistoricalReturns'
-      value: PlanParams['advanced']['annualReturns']['historical']
+      type: 'setHistoricalReturnsStocksDev'
+      value: V22.PlanParams['advanced']['annualReturns']['historical']['stocks']
     }
   | {
-      type: 'setHistoricalReturnsAdjustForBlockSampling'
-      value: boolean
-    }
-  | {
-      type: 'setHistoricalReturnsFixedStocks'
-      value: number
-    }
-  | {
-      type: 'setHistoricalReturnsFixedBonds'
-      value: number
+      type: 'setHistoricalReturnsBondsDev'
+      value: V22.PlanParams['advanced']['annualReturns']['historical']['bonds']
     }
 
+export type PlanParamsChangeAction =
+  | PlanParamsChangeActionCurrent
+  | PlanParamsChangeActionDeprecated
 // ------------------------------------------
 //                   GUARDS
 // ------------------------------------------
 // These guards are not complete. Mostly a sanity check on the shape.
-const cg = planParamsComponentGuards
+const v21CG = V21.componentGuards
+const v22CG = V22.componentGuards
 const valueForMonthRangeLocation: JSONGuard<ValueForMonthRangeLocation> = union(
   constant('futureSavings'),
   constant('incomeDuringRetirement'),
@@ -206,31 +212,31 @@ const _guard = <T extends string, V>(
 ): JSONGuard<{ type: T; value: V }> =>
   object({ type: constant(type), value: valueGuard })
 
-export const planParamsChangeActionGuard: JSONGuard<PlanParamsChangeAction> =
+export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActionCurrent> =
   union(
     _guard('start', constant(null)),
     _guard('startCopiedFromBeforeHistory', constant(null)),
     _guard('startCutByClient', constant(null)),
     _guard('startFromURL', constant(null)),
-    _guard('setDialogPosition', cg.dialogPosition(null)),
+    _guard('setDialogPosition', v21CG.dialogPosition(null)),
     _guard('noOpToMarkMigration', constant(null)),
     _guard('addPartner', constant(null)),
     _guard('deletePartner', constant(null)),
-    _guard('setPersonRetired', cg.personType),
-    _guard('setPersonNotRetired', cg.personType),
+    _guard('setPersonRetired', v21CG.personType),
+    _guard('setPersonNotRetired', v21CG.personType),
     _guard(
       'setPersonMonthOfBirth',
-      object({ person: cg.personType, monthOfBirth: cg.calendarMonth }),
+      object({ person: v21CG.personType, monthOfBirth: v21CG.calendarMonth }),
     ),
     _guard(
       'setPersonRetirementAge',
-      object({ person: cg.personType, retirementAge: cg.inMonths }),
+      object({ person: v21CG.personType, retirementAge: v21CG.inMonths }),
     ),
     _guard(
       'setPersonMaxAge',
-      object({ person: cg.personType, maxAge: cg.inMonths }),
+      object({ person: v21CG.personType, maxAge: v21CG.inMonths }),
     ),
-    _guard('setWithdrawalStart', cg.personType),
+    _guard('setWithdrawalStart', v21CG.personType),
 
     // ----------- WEALTH
     _guard('setCurrentPortfolioBalance', number),
@@ -240,7 +246,7 @@ export const planParamsChangeActionGuard: JSONGuard<PlanParamsChangeAction> =
         location: valueForMonthRangeLocation,
         entryId: string,
         sortIndex: number,
-        monthRange: cg.monthRange(null),
+        monthRange: v21CG.monthRange(null),
       }),
     ),
     _guard(
@@ -284,7 +290,7 @@ export const planParamsChangeActionGuard: JSONGuard<PlanParamsChangeAction> =
       object({
         location: valueForMonthRangeLocation,
         entryId: string,
-        monthRange: cg.monthRange(null),
+        monthRange: v21CG.monthRange(null),
       }),
     ),
     _guard('setSpendingCeiling', nullable(number)),
@@ -299,23 +305,34 @@ export const planParamsChangeActionGuard: JSONGuard<PlanParamsChangeAction> =
     _guard('setTPAWAdditionalSpendingTilt', number),
     _guard('setSWRWithdrawalAsPercentPerYear', number),
     _guard('setSWRWithdrawalAsAmountPerMonth', number),
-    _guard('setSPAWAndSWRAllocation', cg.glidePath(null)),
+    _guard('setSPAWAndSWRAllocation', v21CG.glidePath(null)),
     _guard('setSPAWAnnualSpendingTilt', number),
     _guard('setTPAWAndSPAWLMP', number),
 
     // ------------ ADVANCED
-    _guard('setStrategy', cg.strategy),
+    _guard('setStrategy', v21CG.strategy),
     _guard('setSamplingToDefault', constant(null)),
-    _guard('setSampling', cg.sampling),
+    _guard('setSampling', v22CG.samplingType),
     _guard('setMonteCarloSamplingBlockSize', number),
-    _guard('setExpectedReturns', cg.expectedAnnualReturns),
-    _guard('setAnnualInflation', cg.annualInflation),
+    _guard('setExpectedReturns', v21CG.expectedAnnualReturns),
+    _guard(
+      'setHistoricalReturnsBonds',
+      union(
+        constant('fixedToExpectedUsedForPlanning'),
+        constant('adjustExpectedToExpectedUsedForPlanning'),
+      ),
+    ),
+    _guard('setAnnualInflation', v21CG.annualInflation),
 
     // -------------- DEV
-    _guard('switchHistoricalReturns', cg.historicalAnnualReturns),
-    _guard('setHistoricalReturnsAdjustForBlockSampling', boolean),
-    _guard('setHistoricalReturnsFixedStocks', number),
-    _guard('setHistoricalReturnsFixedBonds', number),
+    _guard('setHistoricalReturnsStocksDev', v22CG.historicalAnnualReturns),
+    _guard('setHistoricalReturnsBondsDev', v22CG.historicalAnnualReturns),
+  )
+
+export const planParamsChangeActionGuard: JSONGuard<PlanParamsChangeAction> =
+  union(
+    planParamsChangeActionGuardCurrent,
+    planParamsChangeActionGuardDeprecated,
   )
 
 // ------------------------------------------

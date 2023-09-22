@@ -1,5 +1,6 @@
 import {
   annualToMonthlyReturnRate,
+  block,
   EXPECTED_ANNUAL_RETURN_PRESETS,
   historicalReturns,
   MarketData,
@@ -32,23 +33,24 @@ export function planParamsProcessAnnualReturnsParams(
     annualReturns,
     marketData,
   )
-  const historicalMonthlyAdjusted = (() => {
-    switch (annualReturns.historical.type) {
-      case 'adjusted': {
-        const { adjustment, correctForBlockSampling } = annualReturns.historical
-        const adjust = (type: 'stocks' | 'bonds') => {
+  const historicalMonthlyAdjusted = block(() => {
+    const adjustByType = (type: 'stocks' | 'bonds'): number[] => {
+      const spec = annualReturns.historical[type]
+      switch (spec.type) {
+        case 'adjustExpected': {
+          const { adjustment, correctForBlockSampling } = spec
           const targetAnnualExpected =
-            adjustment.type === 'to'
-              ? adjustment[type]
-              : adjustment.type === 'toExpected'
+            adjustment.type === 'toValue'
+              ? adjustment.value
+              : adjustment.type === 'toExpectedUsedForPlanning'
               ? expectedAnnualReturns[type]
-              : adjustment.type === 'by'
+              : adjustment.type === 'byValue'
               ? historicalReturns.monthly.annualStats[type].mean -
-                adjustment[type]
+                adjustment.value
               : noCase(adjustment)
 
           const correction = (() => {
-            switch (planParams.advanced.sampling) {
+            switch (planParams.advanced.sampling.type) {
               case 'historical':
                 return getAnnualToMonthlyRateConvertionCorrection.forHistoricalSequence(
                   type,
@@ -56,12 +58,14 @@ export function planParamsProcessAnnualReturnsParams(
               case 'monteCarlo':
                 return correctForBlockSampling
                   ? getAnnualToMonthlyRateConvertionCorrection.forMonteCarlo(
-                      planParams.advanced.monteCarloSampling.blockSize,
+                      planParams.advanced.sampling
+                        .blockSizeForMonteCarloSampling,
                       type,
                     )
                   : 0
-              default:
-                noCase(planParams.advanced.sampling)
+              default: {
+                noCase(planParams.advanced.sampling.type)
+              }
             }
           })()
 
@@ -69,33 +73,36 @@ export function planParamsProcessAnnualReturnsParams(
             annualToMonthlyReturnRate(targetAnnualExpected) - correction,
           )
         }
-
-        return _.zipWith(
-          adjust('stocks'),
-          adjust('bonds'),
-          (stocks, bonds) => ({ stocks, bonds }),
-        )
+        case 'fixed': {
+          const value = annualToMonthlyReturnRate(
+            spec.value.type === 'expectedUsedForPlanning'
+              ? expectedAnnualReturns[type]
+              : spec.value.type === 'manual'
+              ? spec.value.value
+              : noCase(spec.value),
+          )
+          return _.times(
+            historicalReturns.monthly[type].returns.length,
+            () => value,
+          )
+        }
+        case 'rawHistorical': {
+          return historicalReturns.monthly[type].returns
+        }
+        default:
+          noCase(spec)
       }
-      case 'fixed': {
-        const { stocks, bonds } = annualToMonthlyReturnRate(
-          annualReturns.historical,
-        )
-        return _.times(historicalReturns.monthly.stocks.returns.length, () => ({
-          stocks,
-          bonds,
-        }))
-      }
-      case 'unadjusted': {
-        return _.zipWith(
-          historicalReturns.monthly.stocks.returns,
-          historicalReturns.monthly.bonds.returns,
-          (stocks, bonds) => ({ stocks, bonds }),
-        )
-      }
-      default:
-        noCase(annualReturns.historical)
     }
-  })()
+
+    return _.zipWith(
+      adjustByType('stocks'),
+      adjustByType('bonds'),
+      (stocks, bonds) => ({
+        stocks,
+        bonds,
+      }),
+    )
+  })
 
   // TODO: expectedReturns{annual, monthly}
   return {

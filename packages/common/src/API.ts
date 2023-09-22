@@ -27,6 +27,7 @@ import {
 import {
   PlanParamsChangeAction,
   planParamsChangeActionGuard,
+  planParamsChangeActionGuardCurrent,
 } from './Params/PlanParams/PlanParamsChangeAction'
 import { fGet } from './Utils'
 
@@ -227,7 +228,7 @@ export namespace API {
             object({
               id: uuid,
               params: chain(string, json, planParamsGuard),
-              change: chain(string, json, planParamsChangeActionGuard),
+              change: chain(string, json, planParamsChangeActionGuardCurrent),
             }),
             10000,
           ),

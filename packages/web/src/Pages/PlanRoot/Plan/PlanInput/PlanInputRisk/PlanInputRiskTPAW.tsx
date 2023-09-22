@@ -6,16 +6,18 @@ import {
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
+  ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES,
   RISK_TOLERANCE_VALUES,
   TIME_PREFERENCE_VALUES,
   fGet,
+  monthlyToAnnualReturnRate,
 } from '@tpaw/common'
 import _ from 'lodash'
-import React, { ReactNode, useState } from 'react'
+import React, { ReactNode, useEffect, useState } from 'react'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
-import { paddingCSSStyle } from '../../../../../Utils/Geometry'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { paddingCSS, paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { SliderInput } from '../../../../Common/Inputs/SliderInput/SliderInput'
+import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputModifiedBadge } from '../Helpers/PlanInputModifiedBadge'
 import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
 import { PlanInputRiskLMPCard } from './PlanInputRiskLMPCard'
@@ -23,21 +25,17 @@ import { PlanInputRiskRRASlider } from './PlanInputRiskRRASlider'
 
 export const PlanInputRiskTPAW = React.memo(
   ({ props }: { props: PlanInputBodyPassThruProps }) => {
-    const { planParams, defaultPlanParams } = useSimulation()
-    const defaultRisk = defaultPlanParams.risk.tpaw
-    const risk = planParams.risk.tpaw
     const advancedCount = _.filter([
-      risk.riskTolerance.deltaAtMaxAge !==
-        defaultRisk.riskTolerance.deltaAtMaxAge,
-      risk.riskTolerance.forLegacyAsDeltaFromAt20 !==
-        defaultRisk.riskTolerance.forLegacyAsDeltaFromAt20,
-      risk.timePreference !== defaultRisk.timePreference,
+      useIsRiskToleranceDeclineCardModified(),
+      useIsLegacyRiskToleranceDeltaCardModified(),
+      useIsTimePreferenceCardModified(),
     ]).length
 
     const [showAdvanced, setShowAdvanced] = useState(false)
     return (
       <div className="">
         <_TPAWRiskToleranceCard className="" props={props} />
+        <_SpendingTiltCard className="mt-10" props={props} />
         <button
           className="mt-6 text-start"
           onClick={() => setShowAdvanced((x) => !x)}
@@ -54,9 +52,12 @@ export const PlanInputRiskTPAW = React.memo(
         {showAdvanced && (
           <>
             <_TPAWRiskToleranceDeclineCard className="" props={props} />
-            <_TPAWLegacyRiskToleranceDeltaCard className="mt-8" props={props} />
-            <_TPAWSpendingTiltCard className="mt-8" props={props} />
-            <PlanInputRiskLMPCard className="mt-8" props={props} />
+            <_TPAWLegacyRiskToleranceDeltaCard
+              className="mt-10"
+              props={props}
+            />
+            <_TPAWTimePreferenceCard className="mt-10" props={props} />
+            <PlanInputRiskLMPCard className="mt-10" props={props} />
           </>
         )}
       </div>
@@ -110,26 +111,30 @@ const _TPAWRiskToleranceCard = React.memo(
           risk leads to higher average spending, but also a wider range of
           outcomes.
         </p>
-        <div className="flex justify-between mx-[15px] mt-8">
-          <div className="flex items-center gap-x-2">
-            <FontAwesomeIcon icon={faArrowLeftLong} />
-            Conservative
+        <div className="bg-gray-100  rounded-lg border border-gray-200 mt-8 py-4">
+          <div className="flex justify-between mx-[15px]">
+            <div className="flex items-center gap-x-2">
+              <FontAwesomeIcon icon={faArrowLeftLong} />
+              Conservative
+            </div>
+            <div className="flex items-center gap-x-2">
+              Aggressive
+              <FontAwesomeIcon icon={faArrowRightLong} />
+            </div>
           </div>
-          <div className="flex items-center gap-x-2">
-            Aggressive
-            <FontAwesomeIcon icon={faArrowRightLong} />
-          </div>
+          <PlanInputRiskRRASlider
+            className={` `}
+            height={60}
+            maxOverflowHorz={props.sizing.cardPadding}
+            data={RISK_TOLERANCE_VALUES.DATA}
+            value={planParams.risk.tpaw.riskTolerance.at20}
+            onChange={(value) =>
+              updatePlanParams('setTPAWRiskTolerance', value)
+            }
+            format={(value) => `${value}`}
+            ticks={() => 'small'}
+          />
         </div>
-        <PlanInputRiskRRASlider
-          className={` `}
-          height={60}
-          maxOverflowHorz={props.sizing.cardPadding}
-          data={RISK_TOLERANCE_VALUES.DATA}
-          value={planParams.risk.tpaw.riskTolerance.at20}
-          onChange={(value) => updatePlanParams('setTPAWRiskTolerance', value)}
-          format={(value) => `${value}`}
-          ticks={() => 'small'}
-        />
         <div className="mt-2">
           <div
             className="mt-8"
@@ -141,8 +146,9 @@ const _TPAWRiskToleranceCard = React.memo(
               portfolio should be allocated to stocks versus bonds. Your current
               inputs result in the following stock allocation:
             </p>
+            <h2 className="font-semibold mt-4">Stock Allocation</h2>
             <div
-              className="grid gap-x-4 mt-2"
+              className="grid gap-x-4  mb-4 mt-2"
               style={{ grid: 'auto/auto auto 1fr ' }}
             >
               <h2>Now</h2>
@@ -233,9 +239,9 @@ const _ExpandableNote = React.memo(
     return (
       <div className={`${className}`}>
         <button className="text-start mb-2" onClick={() => setOpen((x) => !x)}>
-          <span className="font-medium ">{titleFirst}</span>{' '}
+          <span className="font-semibold ">{titleFirst}</span>{' '}
           {/* So carret is always with at least on word */}
-          <span className="font-medium whitespace-nowrap">
+          <span className="font-semibold whitespace-nowrap">
             {last}
             <FontAwesomeIcon
               className="ml-2"
@@ -244,6 +250,113 @@ const _ExpandableNote = React.memo(
           </span>
         </button>
         {open && children}
+      </div>
+    )
+  },
+)
+
+const _SpendingTiltCard = React.memo(
+  ({
+    className = '',
+    props,
+  }: {
+    className?: string
+    props: PlanInputBodyPassThruProps
+  }) => {
+    const {
+      planParams,
+      planParamsExt,
+      updatePlanParams,
+      defaultPlanParams,
+      planParamsProcessed,
+    } = useSimulation()
+    const { withdrawalsStarted, withdrawalStartMonth, asMFN, numMonths } =
+      planParamsExt
+
+    const handleChange = (value: number) =>
+      updatePlanParams('setTPAWAdditionalSpendingTilt', value)
+    const isModified =
+      defaultPlanParams.risk.tpaw.additionalAnnualSpendingTilt !==
+      planParams.risk.tpaw.additionalAnnualSpendingTilt
+
+    const getSpendingTiltAtMFN = (mfn: number) => {
+      const total = monthlyToAnnualReturnRate(
+        planParamsProcessed.risk.tpawAndSPAW.monthlySpendingTilt[mfn],
+      )
+      const extra = planParams.risk.tpaw.additionalAnnualSpendingTilt
+      const baseline = total - extra
+      return (
+        <>
+          <h2 className="text-right  px-1">{formatPercentage(1)(baseline)}</h2>
+          <h2 className="px-1">+</h2>
+          <h2 className="text-right  px-1">{formatPercentage(1)(extra)}</h2>
+          <h2 className="px-1">=</h2>
+          <h2 className="text-right  px-1">{formatPercentage(1)(total)}</h2>
+        </>
+      )
+    }
+    return (
+      <div
+        className={`${className} params-card relative`}
+        style={{ padding: paddingCSS(props.sizing.cardPadding) }}
+      >
+        <h2 className="text-lg font-bold"> Spending Tilt</h2>
+        <p className="p-base mt-2">
+          This lets you shift your spending between early and late retirement.
+          To spend more in early retirement, move the slider to the left. To
+          spend more in late retirement, move the slider to the right.
+        </p>
+
+        <SliderInput
+          className={`-mx-3 mt-2 `}
+          height={60}
+          maxOverflowHorz={props.sizing.cardPadding}
+          data={ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES}
+          value={planParams.risk.tpaw.additionalAnnualSpendingTilt}
+          onChange={(x) => handleChange(x)}
+          format={(x) => formatPercentage(1)(x)}
+          ticks={(value, i) => (i % 10 === 0 ? 'large' : 'small')}
+        />
+        <p className="p-base mt-2">
+          The spending tilt you entered above is added to a base spending tilt
+          that is automatically calculated for you based on your risk and time
+          preferences. Your total spending tilt is:
+        </p>
+        <h2 className="font-semibold mt-4">Total Spending Tilt</h2>
+        <div>
+          <div
+            className="inline-grid mt-2"
+            style={{ grid: 'auto/auto 50px 20px 50px 20px 50px ' }}
+          >
+            <h2></h2>
+            <h2 className="border-b border-gray-300 px-1">Base</h2>
+            <h2 className="border-b border-gray-300 px-1">+</h2>
+            <h2 className="border-b border-gray-300 px-1">Extra</h2>
+            <h2 className="border-b border-gray-300 px-1">=</h2>
+            <h2 className="border-b border-gray-300 px-1">Total</h2>
+            <h2 className="mr-4">Now</h2>
+            {getSpendingTiltAtMFN(0)}
+            {!withdrawalsStarted && (
+              <>
+                <h2 className="mr-4">At retirement</h2>
+                {getSpendingTiltAtMFN(asMFN(withdrawalStartMonth))}
+              </>
+            )}
+            <h2 className="mr-4">At max age</h2>
+            {getSpendingTiltAtMFN(numMonths - 1)}
+          </div>
+        </div>
+        <button
+          className="mt-6 underline disabled:lighten-2"
+          onClick={() =>
+            handleChange(
+              defaultPlanParams.risk.tpaw.additionalAnnualSpendingTilt,
+            )
+          }
+          disabled={!isModified}
+        >
+          Reset to Default
+        </button>
       </div>
     )
   },
@@ -261,9 +374,7 @@ const _TPAWRiskToleranceDeclineCard = React.memo(
       useSimulation()
     const { longerLivedPerson } = planParamsExt
     const defaultRisk = defaultPlanParams.risk.tpaw
-    const isModified =
-      defaultRisk.riskTolerance.deltaAtMaxAge !==
-      planParams.risk.tpaw.riskTolerance.deltaAtMaxAge
+    const isModified = useIsRiskToleranceDeclineCardModified()
     return (
       <div
         className={`${className} params-card relative`}
@@ -312,6 +423,14 @@ const _TPAWRiskToleranceDeclineCard = React.memo(
   },
 )
 
+const useIsRiskToleranceDeclineCardModified = () => {
+  const { planParams, defaultPlanParams } = useSimulation()
+  return (
+    defaultPlanParams.risk.tpaw.riskTolerance.deltaAtMaxAge !==
+    planParams.risk.tpaw.riskTolerance.deltaAtMaxAge
+  )
+}
+
 const _TPAWLegacyRiskToleranceDeltaCard = React.memo(
   ({
     className = '',
@@ -322,9 +441,7 @@ const _TPAWLegacyRiskToleranceDeltaCard = React.memo(
   }) => {
     const { planParams, updatePlanParams, defaultPlanParams } = useSimulation()
     const defaultRisk = defaultPlanParams.risk.tpaw
-    const isModified =
-      defaultRisk.riskTolerance.forLegacyAsDeltaFromAt20 !==
-      planParams.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20
+    const isModified = useIsLegacyRiskToleranceDeltaCardModified()
 
     const handleChange = (value: number) =>
       updatePlanParams('setTPAWRiskToleranceForLegacyAsDeltaFromAt20', value)
@@ -367,7 +484,15 @@ const _TPAWLegacyRiskToleranceDeltaCard = React.memo(
   },
 )
 
-const _TPAWSpendingTiltCard = React.memo(
+const useIsLegacyRiskToleranceDeltaCardModified = () => {
+  const { planParams, defaultPlanParams } = useSimulation()
+  return (
+    defaultPlanParams.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 !==
+    planParams.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20
+  )
+}
+
+const _TPAWTimePreferenceCard = React.memo(
   ({
     className = '',
     props,
@@ -377,8 +502,7 @@ const _TPAWSpendingTiltCard = React.memo(
   }) => {
     const { planParams, updatePlanParams, defaultPlanParams } = useSimulation()
     const defaultRisk = defaultPlanParams.risk.tpaw
-    const isModified =
-      defaultRisk.timePreference !== planParams.risk.tpaw.timePreference
+    const isModified = useIsTimePreferenceCardModified()
     const handleChange = (value: number) =>
       updatePlanParams('setTPAWTimePreference', value)
     return (
@@ -387,15 +511,21 @@ const _TPAWSpendingTiltCard = React.memo(
         style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
       >
         <PlanInputModifiedBadge show={isModified} mainPage={false} />
-        <h2 className="font-bold text-lg mb-2">Spending Tilt</h2>
+        <h2 className="font-bold text-lg mb-2">Time Preference</h2>
         <p className="p-base">
-          This lets you shift your spending between early and late retirement.
-          To spend more in early retirement and less in late retirement, move
-          the slider to the left. To spend more in late retirement and less in
-          early retirement, move the slider to the right.
+          This is a measure of how much you value spending now versus later. A
+          time preference of{' '}
+          <span className=" font-font1 text-base italic">x%</span> means that
+          next year’s spending is worth{' '}
+          <span className=" font-font1 text-base italic">x%</span> more to you
+          than this year’s spending. So a positive rate of time preference means
+          that you value spending more in late retirement. This will increase
+          your base spending tilt. Conversely, a negative rate of time
+          preference means that you value spending more in early retirement and
+          will decrease your base spending tilt.
         </p>
         <SliderInput
-          className={`-mx-3 mt-2 `}
+          className={`-mx-3 mt-4 `}
           height={60}
           maxOverflowHorz={props.sizing.cardPadding}
           data={[...TIME_PREFERENCE_VALUES].reverse()}
@@ -415,6 +545,13 @@ const _TPAWSpendingTiltCard = React.memo(
     )
   },
 )
+const useIsTimePreferenceCardModified = () => {
+  const { planParams, defaultPlanParams } = useSimulation()
+  return (
+    defaultPlanParams.risk.tpaw.timePreference !==
+    planParams.risk.tpaw.timePreference
+  )
+}
 
 export const PlanInputRiskTPAWSummary = React.memo(() => {
   const { planParams, defaultPlanParams } = useSimulation()
@@ -435,6 +572,10 @@ export const PlanInputRiskTPAWSummary = React.memo(() => {
             x.containsIndex(risk.tpaw.riskTolerance.at20),
           ),
         ).label.toLowerCase()})`}
+      </h2>
+      <h2>
+        Additional Spending Tilt:{' '}
+        {formatPercentage(1)(planParams.risk.tpaw.additionalAnnualSpendingTilt)}
       </h2>
       {advancedCount > -0 && (
         <>

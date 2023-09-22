@@ -19,7 +19,6 @@ import { useGetPlanInputVisibility } from './Helpers/UseGetPlanInputVisibility'
 import { PlanInputAge } from './PlanInputAge/PlanInputAge'
 import { PlanInputBodyPassThruProps } from './PlanInputBody/PlanInputBody'
 import { PlanInputCurrentPortfolioBalance } from './PlanInputCurrentPortfolioBalance'
-import { PlanInputDevAdditionalSpendingTilt } from './PlanInputDev/PlanInputDevAdditionalSpendingTilt'
 import { PlanInputDevHistoricalReturns } from './PlanInputDev/PlanInputDevHistoricalReturns'
 import { PlanInputDevMisc } from './PlanInputDev/PlanInputDevMisc'
 import { PlanInputDevSimulations } from './PlanInputDev/PlanInputDevSimulations'
@@ -34,9 +33,6 @@ import { PlanInputRisk } from './PlanInputRisk/PlanInputRisk'
 import { PlanInputSimulation } from './PlanInputSimulation'
 import { PlanInputSpendingCeilingAndFloor } from './PlanInputSpendingCeilingAndFloor'
 import { PlanInputStrategy } from './PlanInputStrategy'
-import { isPlanSectionDialogInOverlayMode } from './Helpers/PlanSectionDialogPosition'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
-import { valuesIn } from 'lodash'
 
 type _FixedSizingByMode = {
   size: Size
@@ -174,8 +170,6 @@ const _Body = React.memo(
         return <PlanInputDevSimulations {...props} />
       case 'dev-historical-returns':
         return <PlanInputDevHistoricalReturns {...props} />
-      case 'dev-additional-spending-tilt':
-        return <PlanInputDevAdditionalSpendingTilt {...props} />
       case 'dev-time':
         return <PlanInputDevFastForward {...props} />
       default:

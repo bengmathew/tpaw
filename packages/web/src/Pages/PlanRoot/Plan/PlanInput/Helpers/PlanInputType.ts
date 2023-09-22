@@ -14,7 +14,6 @@ export const paramsInputTypes = [
   'dev-misc',
   'dev-simulations',
   'dev-historical-returns',
-  'dev-additional-spending-tilt',
   'dev-time',
 ] as const
 export type PlanInputType = (typeof paramsInputTypes)[number]

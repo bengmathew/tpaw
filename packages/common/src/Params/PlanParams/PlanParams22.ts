@@ -20,10 +20,10 @@ import {
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import { Guards } from '../../Guards'
-import { block, generateRandomString, letIn, preciseRange } from '../../Utils'
-import { Params20 as ParamsPrev } from './Old/Params20'
+import { block, noCase, preciseRange } from '../../Utils'
+import { PlanParams21 as PlanParamsPrev } from './Old/PlanParams21'
 
-export namespace PlanParams21 {
+export namespace PlanParams22 {
   export const MAX_LABEL_LENGTH = 150
   export const MAX_AGE_IN_MONTHS = 120 * 12
   export const MIN_AGE_IN_MONTHS = 120 * 10
@@ -187,8 +187,25 @@ export namespace PlanParams21 {
     end: { stocks: number }
   }
 
+  type HistoricalReturnsAdjustment =
+    | {
+        type: 'adjustExpected'
+        adjustment:
+          | { type: 'byValue'; value: number }
+          | { type: 'toValue'; value: number }
+          | { type: 'toExpectedUsedForPlanning' }
+        correctForBlockSampling: boolean
+      }
+    | {
+        type: 'fixed'
+        value:
+          | { type: 'manual'; value: number }
+          | { type: 'expectedUsedForPlanning' }
+      }
+    | { type: 'rawHistorical' }
+
   export type PlanParams = {
-    v: 21
+    v: 22
     timestamp: number
     // Technically should be in non-plan, but this moves with plan changes,
     // so simpler to keep it here.
@@ -268,22 +285,15 @@ export namespace PlanParams21 {
           | { type: 'regressionPrediction' }
           | { type: 'historical' }
           | { type: 'manual'; stocks: number; bonds: number }
-        historical:
-          | {
-              type: 'adjusted'
-              adjustment:
-                | { type: 'by'; stocks: number; bonds: number }
-                | { type: 'to'; stocks: number; bonds: number }
-                | { type: 'toExpected' }
-              correctForBlockSampling: boolean
-            }
-          | { type: 'fixed'; stocks: number; bonds: number }
-          | { type: 'unadjusted' }
+        historical: {
+          stocks: HistoricalReturnsAdjustment
+          bonds: HistoricalReturnsAdjustment
+        }
       }
       annualInflation: { type: 'suggested' } | { type: 'manual'; value: number }
-      sampling: 'monteCarlo' | 'historical'
-      monteCarloSampling: {
-        blockSize: number
+      sampling: {
+        type: 'monteCarlo' | 'historical'
+        blockSizeForMonteCarloSampling: number
       }
       strategy: 'TPAW' | 'SPAW' | 'SWR'
     }
@@ -292,7 +302,7 @@ export namespace PlanParams21 {
     } | null
   }
 
-  export const currentVersion: PlanParams['v'] = 21
+  export const currentVersion: PlanParams['v'] = 22
 
   // ----------- GUARD  ---------//
   const { uuid } = Guards
@@ -446,33 +456,37 @@ export namespace PlanParams21 {
         end: object({ stocks: chain(number, gte(0), lte(1)) }),
       })
 
-    const sampling = union(constant('monteCarlo'), constant('historical'))
+    const samplingType = union(constant('monteCarlo'), constant('historical'))
 
-    const historicalAnnualReturns = union(
-      object({
-        type: constant('adjusted'),
-        adjustment: union(
-          object({
-            type: constant('to'),
-            stocks: number,
-            bonds: number,
-          }),
-          object({
-            type: constant('by'),
-            stocks: number,
-            bonds: number,
-          }),
-          object({ type: constant('toExpected') }),
-        ),
-        correctForBlockSampling: boolean,
-      }),
-      object({
-        type: constant('fixed'),
-        stocks: number,
-        bonds: number,
-      }),
-      object({ type: constant('unadjusted') }),
-    )
+    const historicalAnnualReturns: JSONGuard<HistoricalReturnsAdjustment> =
+      union(
+        object({
+          type: constant('adjustExpected'),
+          adjustment: union(
+            object({
+              type: constant('toValue'),
+              value: number,
+            }),
+            object({
+              type: constant('byValue'),
+              value: number,
+            }),
+            object({ type: constant('toExpectedUsedForPlanning') }),
+          ),
+          correctForBlockSampling: boolean,
+        }),
+        object({
+          type: constant('fixed'),
+          value: union(
+            object({
+              type: constant('manual'),
+              value: number,
+            }),
+            object({ type: constant('expectedUsedForPlanning') }),
+          ),
+        }),
+        object({ type: constant('rawHistorical') }),
+      )
 
     const expectedAnnualReturns = union(
       object({ type: constant('suggested') }),
@@ -505,7 +519,7 @@ export namespace PlanParams21 {
       monthRange,
       dialogPosition,
       glidePath,
-      sampling,
+      samplingType,
       historicalAnnualReturns,
       expectedAnnualReturns,
       annualInflation,
@@ -745,22 +759,30 @@ export namespace PlanParams21 {
   const annualReturns: JSONGuard<PlanParams['advanced']['annualReturns']> =
     object({
       expected: cg.expectedAnnualReturns,
-      historical: cg.historicalAnnualReturns,
+      historical: object({
+        stocks: cg.historicalAnnualReturns,
+        bonds: cg.historicalAnnualReturns,
+      }),
     })
 
   const advanced: JSONGuard<PlanParams['advanced']> = object({
     annualReturns,
     annualInflation: cg.annualInflation,
-    sampling: cg.sampling,
-    monteCarloSampling: object({
-      blockSize: chain(number, integer, gte(1), lte(MAX_AGE_IN_MONTHS)),
+    sampling: object({
+      type: cg.samplingType,
+      blockSizeForMonteCarloSampling: chain(
+        number,
+        integer,
+        gte(1),
+        lte(MAX_AGE_IN_MONTHS),
+      ),
     }),
     strategy,
   })
 
   const oneOrTwoPassGuard = (x: PlanParams | null): JSONGuard<PlanParams> =>
     object({
-      v: constant(21),
+      v: constant(22),
       timestamp: number,
       dialogPosition: cg.dialogPosition(x),
       people: people,
@@ -782,135 +804,100 @@ export namespace PlanParams21 {
     (x) => oneOrTwoPassGuard(x)(x),
   )
 
-
-  export type SomePlanParams = ParamsPrev.SomePlanParams | PlanParams
+  export type SomePlanParams = PlanParamsPrev.SomePlanParams | PlanParams
 
   export const backwardsCompatibleGuard: JSONGuard<SomePlanParams> = (
     x: unknown,
   ) => {
-    const result = union(ParamsPrev.guard, guard)(x)
+    const result = union(PlanParamsPrev.guard, guard)(x)
     return result.error ? result : success(x as SomePlanParams)
   }
 
   export const migrate = (x: SomePlanParams): PlanParams => {
-    if ('v' in x && x.v === 21) return x
-    const previous: ParamsPrev.Params =
-      'v' in x && x.v === 20 ? x : ParamsPrev.migrate(x)
+    if ('v' in x && x.v === 22) return x
+    const previous: PlanParamsPrev.PlanParams =
+      'v' in x && x.v === 21 ? x : PlanParamsPrev.migrate(x)
 
-    const migrateLabeledAmounts = (
-      x: ParamsPrev.LabeledAmount[],
-    ): LabeledAmounts =>
-      _.fromPairs(
-        x.map(({ id, ...rest }) =>
-          letIn(generateRandomString(10), (newId) => [
-            newId,
-            { id: newId, sortIndex: id, ...rest },
-          ]),
-        ),
-      )
-
-    const migrateValueForMonthRanges = (
-      x: ParamsPrev.ValueForMonthRange[],
-    ): ValueForMonthRanges =>
-      _.fromPairs(
-        x.map(({ id, ...rest }) =>
-          letIn(generateRandomString(10), (newId) => [
-            newId,
-            { id: newId, sortIndex: id, ...rest },
-          ]),
-        ),
-      )
-
-    const migrateGlidePath = (prev: ParamsPrev.GlidePath): GlidePath => ({
-      start: prev.start,
-      intermediate: _.fromPairs(
-        prev.intermediate.map((prev, i) =>
-          letIn(generateRandomString(10), (newId) => [
-            newId,
-            { id: newId, ...prev, indexToSortByAdded: i },
-          ]),
-        ),
-      ),
-      end: prev.end,
-    })
-
-    const prev = previous.plan
     return {
-      v: 21,
-      // Setting timestamp as the last portfolio balance change, so
-      // that estimation will still take place.  Note, this is going to lead
-      // to sightly different estimation because we are not accounting for the
-      // allocation changes in prev.wealth.portfolioBalance.history.
-      timestamp: prev.wealth.portfolioBalance.isLastPlanChange
-        ? prev.timestamp
-        : Math.max(
-          prev.wealth.portfolioBalance.original.timestamp,
-          // Parameter time should not be before start of glidepath.
-          DateTime.fromObject(
-            {
-              month: prev.risk.spawAndSWR.allocation.start.month.month,
-              year: prev.risk.spawAndSWR.allocation.start.month.year,
-            },
-            // Fix timezone to make it deterministic.
-            { zone: 'America/New_York' },
-          )
-            .startOf('month')
-            .plus({ day: 1 }) // Buffer for any timezone.
-            .toMillis(),
-        ),
-      dialogPosition: prev.dialogPosition,
-      people: prev.people,
-      wealth: {
-        portfolioBalance: {
-          updatedHere: true,
-          amount: prev.wealth.portfolioBalance.isLastPlanChange
-            ? prev.wealth.portfolioBalance.amount
-            : prev.wealth.portfolioBalance.original.amount,
-        },
-
-        futureSavings: migrateValueForMonthRanges(prev.wealth.futureSavings),
-        incomeDuringRetirement: migrateValueForMonthRanges(
-          prev.wealth.retirementIncome,
-        ),
-      },
-      adjustmentsToSpending: block(() => {
-        const p = prev.adjustmentsToSpending
-        return {
-          tpawAndSPAW: {
-            monthlySpendingCeiling: p.tpawAndSPAW.monthlySpendingCeiling,
-            monthlySpendingFloor: p.tpawAndSPAW.monthlySpendingFloor,
-            legacy: {
-              total: p.tpawAndSPAW.legacy.total,
-              external: migrateLabeledAmounts(p.tpawAndSPAW.legacy.external),
-            },
-          },
-          extraSpending: {
-            essential: migrateValueForMonthRanges(p.extraSpending.essential),
-            discretionary: migrateValueForMonthRanges(
-              p.extraSpending.discretionary,
-            ),
-          },
-        }
-      }),
-      risk: {
-        tpaw: prev.risk.tpaw,
-        tpawAndSPAW: prev.risk.tpawAndSPAW,
-        spaw: prev.risk.spaw,
-        spawAndSWR: {
-          allocation: migrateGlidePath(prev.risk.spawAndSWR.allocation),
-        },
-        swr: prev.risk.swr,
-      },
+      ...previous,
+      v: 22,
       advanced: {
-        annualReturns: prev.advanced.annualReturns,
-        annualInflation: prev.advanced.annualInflation,
-        sampling: prev.advanced.sampling,
-        strategy: prev.advanced.strategy,
-        monteCarloSampling: {
-          blockSize: prev.advanced.monteCarloSampling.blockSize,
+        annualInflation: previous.advanced.annualInflation,
+        annualReturns: {
+          ...previous.advanced.annualReturns,
+          historical: block(
+            (): PlanParams['advanced']['annualReturns']['historical'] => {
+              const prev = previous.advanced.annualReturns.historical
+              switch (prev.type) {
+                case 'adjusted':
+                  const { correctForBlockSampling } = prev
+                  switch (prev.adjustment.type) {
+                    case 'by':
+                    case 'to':
+                      return {
+                        stocks: {
+                          type: 'adjustExpected',
+                          adjustment: {
+                            type: `${prev.adjustment.type}Value`,
+                            value: prev.adjustment.stocks,
+                          },
+                          correctForBlockSampling,
+                        },
+                        bonds: {
+                          type: 'adjustExpected',
+                          adjustment: {
+                            type: `${prev.adjustment.type}Value`,
+                            value: prev.adjustment.bonds,
+                          },
+                          correctForBlockSampling,
+                        },
+                      } as const
+                    case 'toExpected':
+                      return {
+                        stocks: {
+                          type: 'adjustExpected',
+                          adjustment: { type: 'toExpectedUsedForPlanning' },
+                          correctForBlockSampling,
+                        },
+                        bonds: {
+                          type: 'adjustExpected',
+                          adjustment: { type: 'toExpectedUsedForPlanning' },
+                          correctForBlockSampling,
+                        },
+                      } as const
+                    default:
+                      noCase(prev.adjustment)
+                  }
+
+                case 'fixed':
+                  return {
+                    stocks: {
+                      type: 'fixed',
+                      value: { type: 'manual', value: prev.stocks },
+                    },
+                    bonds: {
+                      type: 'fixed',
+                      value: { type: 'manual', value: prev.bonds },
+                    },
+                  }
+                case 'unadjusted':
+                  return {
+                    stocks: { type: 'rawHistorical' },
+                    bonds: { type: 'rawHistorical' },
+                  }
+                default:
+                  noCase(prev)
+              }
+            },
+          ),
         },
+        sampling: {
+          type: previous.advanced.sampling,
+          blockSizeForMonteCarloSampling:
+            previous.advanced.monteCarloSampling.blockSize,
+        },
+        strategy: previous.advanced.strategy,
       },
-      results: null,
     }
   }
 

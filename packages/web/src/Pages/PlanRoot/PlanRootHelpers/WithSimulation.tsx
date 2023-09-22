@@ -1,7 +1,7 @@
 import {
   MarketData,
   PlanParams,
-  PlanParamsChangeAction,
+  PlanParamsChangeActionCurrent,
   PlanParamsHistoryFns,
   SomePlanParamsVersion,
   assert,
@@ -39,12 +39,12 @@ import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName } from './WithNonPlanParams'
 
 type UpdatePlanParamsFromAction<T> = UnionToIntersection<
-  T extends PlanParamsChangeAction
+  T extends PlanParamsChangeActionCurrent
     ? (x: T['type'], v: T['value']) => void
     : never
 >
 export type UpdatePlanParams =
-  UpdatePlanParamsFromAction<PlanParamsChangeAction>
+  UpdatePlanParamsFromAction<PlanParamsChangeActionCurrent>
 
 export type SimulationInfo = {
   planId: string
@@ -56,7 +56,9 @@ export type SimulationInfo = {
   defaultPlanParams: PlanParams
   currentMarketData: MarketData.Data[0]
 
-  currentPortfolioBalanceInfo: ReturnType<typeof CurrentPortfolioBalance.cutInfo>
+  currentPortfolioBalanceInfo: ReturnType<
+    typeof CurrentPortfolioBalance.cutInfo
+  >
 
   planParamsId: string
   planParams: PlanParams

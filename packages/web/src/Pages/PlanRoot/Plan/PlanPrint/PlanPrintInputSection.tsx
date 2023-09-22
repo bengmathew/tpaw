@@ -16,7 +16,6 @@ import { PlanInputRiskSummary } from '../PlanInput/PlanInputRisk/PlanInputRisk'
 import { PlanInputSimulationSummary } from '../PlanInput/PlanInputSimulation'
 import { PlanInputSpendingCeilingAndFloorSummary } from '../PlanInput/PlanInputSpendingCeilingAndFloor'
 import { PlanInputStrategySummary } from '../PlanInput/PlanInputStrategy'
-import { isAdvancedInputModified } from '../PlanSummary/PlanSummary'
 import { PlanPrintSection } from './PlanPrintSection'
 
 // Note: The show/hide should mirror PlanSummary. "None" displays should mirror
@@ -26,29 +25,8 @@ export const PlanPrintInputSection = React.memo(() => {
 
   const getVisibility = useGetPlanInputVisibility()
 
-  // TODO:
-  const isAdvancedModified = {
-    'expected-returns': isAdvancedInputModified(
-      'expected-returns',
-      planParams,
-      defaultPlanParams,
-    ),
-    inflation: isAdvancedInputModified(
-      'inflation',
-      planParams,
-      defaultPlanParams,
-    ),
-    simulation: isAdvancedInputModified(
-      'simulation',
-      planParams,
-      defaultPlanParams,
-    ),
-    strategy: isAdvancedInputModified(
-      'strategy',
-      planParams,
-      defaultPlanParams,
-    ),
-  }
+  // TODO: show advanced input modified info.
+
   const _assert = (condition: boolean) => {
     assert(condition)
     return true

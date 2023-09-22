@@ -13,6 +13,8 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
+import _ from 'lodash'
+import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 
 export const PlanInputStrategy = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -93,12 +95,15 @@ const _StrategyCard = React.memo(
           noCase(strategy)
       }
     })()
+    const isModified = useIsCardModified(strategy)
+    console.dir(`${strategy} ${isModified}`)
 
     return (
       <div
-        className={`${className} params-card outline-none`}
+        className={`${className} params-card outline-none relative`}
         style={{ padding: paddingCSS(props.sizing.cardPadding) }}
       >
+        <PlanInputModifiedBadge show={isModified} mainPage={false} />
         <button
           className={`text-left  `}
           onClick={() => handleStrategy(strategy)}
@@ -125,6 +130,18 @@ const _StrategyCard = React.memo(
     )
   },
 )
+
+export const useIsPlanInputStrategyModified = () => {
+  const isTPAWCardModified = useIsCardModified('TPAW')
+  const isSPAWCardModified = useIsCardModified('SPAW')
+  const isSWRCardModified = useIsCardModified('SWR')
+  return isSPAWCardModified || isSWRCardModified || isTPAWCardModified
+}
+
+const useIsCardModified = (type: PlanParams['advanced']['strategy']) => {
+  const { planParams } = useSimulation()
+  return type === 'TPAW' ? false : type === planParams.advanced.strategy
+}
 
 export const PlanInputStrategySummary = React.memo(() => {
   const { planParams } = useSimulation()

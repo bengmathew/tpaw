@@ -52,7 +52,6 @@ export type PlanContent = {
   'dev-misc': Record<string, never>
   'dev-simulations': Record<string, never>
   'dev-historical-returns': Record<string, never>
-  'dev-additional-spending-tilt': Record<string, never>
   'dev-time': Record<string, never>
   misc: {
     realDollarExplanation: _FetchedInline
@@ -173,7 +172,6 @@ const _getPlanContent = async () =>
     'dev-misc': {},
     'dev-simulations': {},
     'dev-historical-returns': {},
-    'dev-additional-spending-tilt': {},
     'dev-time': {},
     misc: {
       realDollarExplanation: '3Xp6QN75C8mEljylz013Ek',

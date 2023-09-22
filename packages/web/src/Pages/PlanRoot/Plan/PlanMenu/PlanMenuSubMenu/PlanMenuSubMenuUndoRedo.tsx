@@ -7,7 +7,7 @@ import { formatDistance } from 'date-fns'
 import _ from 'lodash'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { ContextMenu2 } from '../../../../Common/Modal/ContextMenu2'
-import { processPlanParamsChangeAction } from '../../../PlanRootHelpers/PlanParamsChangeAction'
+import { processPlanParamsChangeActionCurrent } from '../../../PlanRootHelpers/PlanParamsChangeAction'
 import {
   TARGET_UNDO_DEPTH,
   WorkingPlanInfo,
@@ -17,6 +17,7 @@ import {
   useSimulation,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
+import { processPlanParamsChangeActionDeprecated } from '../../../PlanRootHelpers/PlanParamsChangeActionDeprecated'
 
 export const PlanMenuSubMenuUndoRedo = React.memo(
   ({
@@ -207,14 +208,13 @@ const _processUndoRedoStack = (
   ): _UndoItem[] => {
     return arr
       .map((x, i): _UndoItem => {
-        const { render, getBaseURL } = processPlanParamsChangeAction(x.change)
+        const { render } = processPlanParamsChangeActionDeprecated(x.change)
 
         return {
           head: x.head,
           id: x.id,
           render: render(x.prevParams, x.params),
           timestamp: x.params.timestamp,
-          // baseURL: getBaseURL(planPaths),
         }
       })
       .filter((x) => x.render !== null)

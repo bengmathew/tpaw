@@ -286,7 +286,7 @@ export const PlanResultsChartCard = React.memo(
               : successRate < 0.99
               ? formatPercentage(1)(successRate)
               : formatPercentage(2)(successRate)}
-            {tpawResult.params.original.advanced.sampling === 'historical' && (
+            {tpawResult.params.original.advanced.sampling.type === 'historical' && (
               <span className="sm:inline hidden ml-2 font-normal text-sm lighten">
                 {numSuccessfullRuns} of {tpawResult.numSimulationsActual}
               </span>

@@ -70,8 +70,6 @@ export const useGetPlanInputVisibility = () => {
         return _helper('done')
       case 'dev-historical-returns':
         return _helper('done')
-      case 'dev-additional-spending-tilt':
-        return _helper('done')
       case 'dev-time':
         return _helper('done')
       default:

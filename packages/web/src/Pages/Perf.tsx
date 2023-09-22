@@ -124,7 +124,7 @@ export const Perf = React.memo(() => {
 const getParams = (currentTime: DateTime) =>
   extendPlanParams(
     {
-      v: 21,
+      v: 22,
       results: null,
       timestamp: currentTime.valueOf(),
       dialogPosition: 'done',
@@ -195,19 +195,16 @@ const getParams = (currentTime: DateTime) =>
       advanced: {
         annualReturns: {
           expected: { type: 'manual', stocks: 0.04, bonds: 0.02 },
-          // historical: {
-          //   type: 'adjusted',
-          //   adjustment: { type: 'toExpected' },
-          //   correctForBlockSampling: true,
-          // },
-          historical: { type: 'unadjusted' },
+          historical: {
+            stocks: { type: 'rawHistorical' },
+            bonds: { type: 'rawHistorical' },
+          },
         },
         annualInflation: { type: 'manual', value: 0.02 },
-        sampling: 'monteCarlo',
-        monteCarloSampling: {
-          blockSize: 12 * 5,
+        sampling: {
+          type: 'monteCarlo',
+          blockSizeForMonteCarloSampling: 12 * 5,
         },
-
         strategy: 'TPAW',
       },
     },

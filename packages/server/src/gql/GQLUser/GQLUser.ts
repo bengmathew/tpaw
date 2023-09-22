@@ -43,10 +43,10 @@ export const PothosUser = builder.prismaObject('User', {
         const plans = await Clients.prisma.planWithHistory.findMany({
           ...query,
           where: planId
-            ? { userId, planId }
-            : slug
-            ? { userId, slug }
-            : { userId, isMain: true },
+          ? { userId, planId }
+          : slug
+          ? { userId, slug }
+          : { userId, isMain: true },
         })
         assert(plans.length === 1)
         return fGet(plans[0])

@@ -642,13 +642,13 @@ const _getNumSimulationsActual = (
   nonPlanParams: NonPlanParams,
 ) => {
   const { planParams, numMonths } = planParamsExt
-  switch (planParams.advanced.sampling) {
+  switch (planParams.advanced.sampling.type) {
     case 'monteCarlo':
       return nonPlanParams.numOfSimulationForMonteCarloSampling
     case 'historical': {
       return historicalReturns.monthly.stocks.returns.length - numMonths + 1
     }
     default:
-      noCase(planParams.advanced.sampling)
+      noCase(planParams.advanced.sampling.type)
   }
 }

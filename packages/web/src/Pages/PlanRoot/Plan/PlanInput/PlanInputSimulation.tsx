@@ -57,22 +57,14 @@ const _MonteCarloCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const { planParams, updatePlanParams, defaultPlanParams } = useSimulation()
-    const defaultNumBlocks =
-      defaultPlanParams.advanced.monteCarloSampling.blockSize
-    const isEnabled = planParams.advanced.sampling === 'monteCarlo'
+    const isModified = useIsMonteCarloCardModifed()
+    const isEnabled = planParams.advanced.sampling.type === 'monteCarlo'
     const handleBlockSize = (x: number) =>
       updatePlanParams('setMonteCarloSamplingBlockSize', x)
 
     const body = (
       <div className="">
-        <PlanInputModifiedBadge
-          show={
-            isEnabled &&
-            planParams.advanced.monteCarloSampling.blockSize !==
-              defaultNumBlocks
-          }
-          mainPage={false}
-        />
+        <PlanInputModifiedBadge show={isModified} mainPage={false} />
         <div className="flex items-start gap-x-2 py-0.5 font-bold text-lg">
           <FontAwesomeIcon
             className="mt-1"
@@ -89,19 +81,19 @@ const _MonteCarloCard = React.memo(
           <NumMonthsInput
             className={` ml-8`}
             modalLabel="Sampling Block Size"
-            value={planParams.advanced.monteCarloSampling.blockSize}
+            value={planParams.advanced.sampling.blockSizeForMonteCarloSampling}
             onChange={handleBlockSize}
             rangeAsMFN={{ start: 1, end: MAX_AGE_IN_MONTHS }}
             disabled={!isEnabled}
           />
           <button
             className="mt-4 underline disabled:lighten-2"
-            disabled={
-              planParams.advanced.monteCarloSampling.blockSize ===
-              defaultNumBlocks
-            }
+            disabled={!isModified}
             onClick={() => {
-              handleBlockSize(defaultNumBlocks)
+              handleBlockSize(
+                defaultPlanParams.advanced.sampling
+                  .blockSizeForMonteCarloSampling,
+              )
             }}
           >
             Reset to Default
@@ -139,10 +131,11 @@ const _HistoricalCard = React.memo(
   }) => {
     const { planParams, updatePlanParams } = useSimulation()
 
-    const isEnabled = planParams.advanced.sampling === 'historical'
+    const isEnabled = planParams.advanced.sampling.type === 'historical'
+    const isModified = useIsHistoricalSequenceCardModifed()
     const body = (
       <div className="">
-        <PlanInputModifiedBadge show={isEnabled} mainPage={false} />
+        <PlanInputModifiedBadge show={isModified} mainPage={false} />
         <div className="flex items-start gap-x-2 py-0.5 font-bold text-lg">
           <FontAwesomeIcon
             className="mt-1"
@@ -175,14 +168,34 @@ const _HistoricalCard = React.memo(
   },
 )
 
+export const useIsPlanInputSimulationModifed = () => {
+  const isMonteCarloCardModified = useIsMonteCarloCardModifed()
+  const isHistoricalSequenceCardModified = useIsHistoricalSequenceCardModifed()
+  return isMonteCarloCardModified || isHistoricalSequenceCardModified
+}
+
+const useIsMonteCarloCardModifed = () => {
+  const { planParams, defaultPlanParams } = useSimulation()
+  return (
+    planParams.advanced.sampling.blockSizeForMonteCarloSampling !==
+    defaultPlanParams.advanced.sampling.blockSizeForMonteCarloSampling
+  )
+}
+const useIsHistoricalSequenceCardModifed = () => {
+  const { planParams } = useSimulation()
+  return planParams.advanced.sampling.type === 'historical'
+}
+
 export const PlanInputSimulationSummary = React.memo(() => {
   const { planParams } = useSimulation()
-  return planParams.advanced.sampling === 'monteCarlo' ? (
+  return planParams.advanced.sampling.type === 'monteCarlo' ? (
     <>
       <h2>Monte Carlo Sequence</h2>
       <h2>
         Block Size:{' '}
-        {numMonthsStr(planParams.advanced.monteCarloSampling.blockSize)}
+        {numMonthsStr(
+          planParams.advanced.sampling.blockSizeForMonteCarloSampling,
+        )}
       </h2>
     </>
   ) : (

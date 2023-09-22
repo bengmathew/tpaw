@@ -23,8 +23,8 @@ export const PlanInputRiskRRASliderBlocks = React.memo(
             className={`fill-current 
             ${
               segment.containsIndex(pointerIndex)
-                ? 'text-gray-400'
-                : 'text-gray-200'
+                ? 'text-gray-600'
+                : 'text-gray-300'
             }
             `}
             x={pixelXToDataX.inverse(segment.startIndex)}

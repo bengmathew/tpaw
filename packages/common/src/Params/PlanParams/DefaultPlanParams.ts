@@ -69,7 +69,7 @@ export function getDefaultPlanParams(
     DateTime.fromMillis(currentTimestamp).setZone(ianaTimezoneName)
 
   const params: PlanParams = {
-    v: 21,
+    v: 22,
     timestamp: currentTimestamp,
     dialogPosition: 'age',
     people: {
@@ -146,17 +146,20 @@ export function getDefaultPlanParams(
       annualReturns: {
         expected: { type: 'suggested' },
         historical: {
-          type: 'adjusted',
-          adjustment: { type: 'toExpected' },
-          correctForBlockSampling: true,
+          stocks: {
+            type: 'adjustExpected',
+            adjustment: { type: 'toExpectedUsedForPlanning' },
+            correctForBlockSampling: true,
+          },
+          bonds: {
+            type: 'adjustExpected',
+            adjustment: { type: 'toExpectedUsedForPlanning' },
+            correctForBlockSampling: true,
+          },
         },
       },
       annualInflation: { type: 'suggested' },
-      sampling: 'monteCarlo',
-      monteCarloSampling: {
-        blockSize: 12 * 5,
-      },
-
+      sampling: { type: 'monteCarlo', blockSizeForMonteCarloSampling: 12 * 5 },
       strategy: 'TPAW',
     },
     results: null,

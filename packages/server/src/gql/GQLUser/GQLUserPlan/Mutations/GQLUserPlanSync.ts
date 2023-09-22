@@ -1,7 +1,7 @@
 import {
   API,
   PlanParams,
-  PlanParamsChangeAction,
+  PlanParamsChangeActionCurrent,
   SomePlanParams,
   assert,
   fGet,
@@ -10,11 +10,11 @@ import {
 } from '@tpaw/common'
 import _ from 'lodash'
 import { Clients } from '../../../../Clients.js'
+import { PrismaTransaction } from '../../../../Utils/PrismaTransaction.js'
 import { concurrentChangeError } from '../../../../impl/Common/ConcurrentChangeError.js'
 import { PothosPlanAndUserResult } from '../../../GQLCommon/GQLPlanAndUserResult.js'
 import { builder } from '../../../builder.js'
 import { patchPlanParams } from '../PatchPlanParams.js'
-import { PrismaTransaction } from '../../../../Utils/PrismaTransaction.js'
 
 const Input = builder.inputType('UserPlanSyncInput', {
   fields: (t) => ({
@@ -76,7 +76,11 @@ export const userPlanSync = async (
   userId: string,
   planId: string,
   cutAfterId: string,
-  add: { id: string; params: PlanParams; change: PlanParamsChangeAction }[],
+  add: {
+    id: string
+    params: PlanParams
+    change: PlanParamsChangeActionCurrent
+  }[],
   reverseHeadIndex: number,
 ) => {
   const cutAfterHistoryItem = await tx.planParamsChange.findUniqueOrThrow({

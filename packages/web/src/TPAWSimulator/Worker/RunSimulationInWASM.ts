@@ -61,11 +61,11 @@ export function runSimulationInWASM(
     params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling ??
       undefined,
     params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor ?? undefined,
-    params.sampling === 'monteCarlo'
+    params.sampling.type === 'monteCarlo'
       ? true
-      : params.sampling === 'historical'
+      : params.sampling.type === 'historical'
       ? false
-      : noCase(params.sampling),
+      : noCase(params.sampling.type),
     params.samplingBlockSizeForMonteCarlo,
     MAX_AGE_IN_MONTHS,
     opts.test?.truth ? Float64Array.from(opts.test.truth) : undefined,

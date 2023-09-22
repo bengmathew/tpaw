@@ -15,7 +15,6 @@ import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import { useGetPlanInputVisibility } from '../PlanInput/Helpers/UseGetPlanInputVisibility'
 import { PlanInputAgeSummary } from '../PlanInput/PlanInputAge/PlanInputAge'
 import { PlanInputCurrentPortfolioBalanceSummary } from '../PlanInput/PlanInputCurrentPortfolioBalance'
-import { PlanInputDevAdditionalSpendingTiltSummary } from '../PlanInput/PlanInputDev/PlanInputDevAdditionalSpendingTilt'
 import { PlanInputDevHistoricalReturnsSummary } from '../PlanInput/PlanInputDev/PlanInputDevHistoricalReturns'
 import { PlanInputDevMiscSummary } from '../PlanInput/PlanInputDev/PlanInputDevMisc'
 import { PlanInputDevSimulationsSummary } from '../PlanInput/PlanInputDev/PlanInputDevSimulations'
@@ -30,7 +29,7 @@ import { PlanInputRiskSummary } from '../PlanInput/PlanInputRisk/PlanInputRisk'
 import { PlanInputSimulationSummary } from '../PlanInput/PlanInputSimulation'
 import { PlanInputSpendingCeilingAndFloorSummary } from '../PlanInput/PlanInputSpendingCeilingAndFloor'
 import { PlanInputStrategySummary } from '../PlanInput/PlanInputStrategy'
-import { colors, gray, orange, usePlanColors } from '../UsePlanColors'
+import { gray, orange, usePlanColors } from '../UsePlanColors'
 
 type _Props = {
   padding: Padding
@@ -169,8 +168,6 @@ const _SectionSummary = React.memo(
         return <PlanInputDevSimulationsSummary />
       case 'dev-historical-returns':
         return <PlanInputDevHistoricalReturnsSummary />
-      case 'dev-additional-spending-tilt':
-        return <PlanInputDevAdditionalSpendingTiltSummary />
       case 'dev-time':
         return <PlanInputDevTimeSummary />
       default:

@@ -1,30 +1,61 @@
 import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
-import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
+import {
+  faCaretDown,
+  faCaretRight,
+  faCircle as faCircleSelected,
+} from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EXPECTED_ANNUAL_RETURN_PRESETS,
-  fGet,
   MANUAL_STOCKS_BONDS_RETURNS_VALUES,
   PlanParams,
+  fGet,
 } from '@tpaw/common'
 import _ from 'lodash'
-import React from 'react'
+import React, { useState } from 'react'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { paddingCSSStyle } from '../../../../Utils/Geometry'
 import { SliderInput } from '../../../Common/Inputs/SliderInput/SliderInput'
+import { ToggleSwitch } from '../../../Common/Inputs/ToggleSwitch'
+import { useMarketData } from '../../PlanRootHelpers/WithMarketData'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
-import { useMarketData } from '../../PlanRootHelpers/WithMarketData'
 
 export const PlanInputExpectedReturns = React.memo(
   (props: PlanInputBodyPassThruProps) => {
+    const advancedCount = _.filter([useIsFixedBondsCardModified()]).length
+
+    const [showAdvanced, setShowAdvanced] = useState(false) 
+
     return (
       <PlanInputBody {...props}>
-        <_ExpectedReturnsCard className="" props={props} />
+        <>
+          <_ExpectedReturnsCard className="" props={props} />
+          <button
+            className="mt-6 text-start"
+            onClick={() => setShowAdvanced((x) => !x)}
+            style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
+          >
+            <div className="text-[20px] sm:text-[24px] font-bold text-left">
+              Advanced{' '}
+              <FontAwesomeIcon
+                icon={showAdvanced ? faCaretDown : faCaretRight}
+              />
+            </div>
+            <h2 className="">
+              {advancedCount === 0 ? 'None' : `${advancedCount} modified`}
+            </h2>
+          </button>
+          {showAdvanced && (
+            <>
+              <_BondVolatilityCard className="" props={props} />
+            </>
+          )}
+        </>
       </PlanInputBody>
     )
   },
@@ -44,11 +75,7 @@ export const _ExpectedReturnsCard = React.memo(
       expected: PlanParams['advanced']['annualReturns']['expected'],
     ) => updatePlanParams('setExpectedReturns', expected)
 
-    const defaultValue = defaultPlanParams.advanced.annualReturns.expected
-    const isModified = !_.isEqual(
-      defaultValue,
-      planParams.advanced.annualReturns.expected,
-    )
+    const isModified = useIsExpectedReturnsCardModified()
 
     return (
       <div
@@ -76,7 +103,9 @@ export const _ExpectedReturnsCard = React.memo(
         </div>
         <button
           className="mt-6 underline disabled:lighten-2"
-          onClick={() => handleChange(defaultValue)}
+          onClick={() =>
+            handleChange(defaultPlanParams.advanced.annualReturns.expected)
+          }
           disabled={!isModified}
         >
           Reset to Default
@@ -258,6 +287,92 @@ export const expectedReturnTypeLabel = ({
     case 'manual':
       return 'Manual'
   }
+}
+
+export const _BondVolatilityCard = React.memo(
+  ({
+    className = '',
+    props,
+  }: {
+    className?: string
+    props: PlanInputBodyPassThruProps
+  }) => {
+    const { planParams, updatePlanParams } = useSimulation()
+    const isModified = useIsFixedBondsCardModified()
+    const currHistorical = planParams.advanced.annualReturns.historical.bonds
+
+    return (
+      <div
+        className={`${className} params-card relative`}
+        style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
+      >
+        <PlanInputModifiedBadge show={isModified} mainPage={false} />
+        <h2 className="font-bold text-lg ">Bond Volatility</h2>
+        <p className="p-base mt-2">
+          The default simulation models bonds with volatility equalling the
+          historical volatility. The historical volatility comes from interest
+          rate risk. You may instead want to model bonds with no volatility,
+          making bond returns deterministic. Bonds returns will then equal the
+          expected return every year. This might be a better model of bond
+          returns when bonds are duration matched to reduce interest rate risk,
+          especially when they form a large portion of the portfolio.
+        </p>
+
+        <div className="flex items-center gap-x-4 mt-4">
+          <h2 className="font-medium">Remove Bond Volatility</h2>
+          <ToggleSwitch
+            className=""
+            checked={
+              currHistorical.type === 'fixed' &&
+              currHistorical.value.type === 'expectedUsedForPlanning'
+            }
+            setChecked={(enabled) => {
+              updatePlanParams(
+                'setHistoricalReturnsBonds',
+                enabled
+                  ? 'fixedToExpectedUsedForPlanning'
+                  : 'adjustExpectedToExpectedUsedForPlanning',
+              )
+            }}
+          />
+        </div>
+        <button
+          className="mt-6 underline disabled:lighten-2"
+          onClick={() =>
+            updatePlanParams(
+              'setHistoricalReturnsBonds',
+              'adjustExpectedToExpectedUsedForPlanning',
+            )
+          }
+          disabled={!isModified}
+        >
+          Reset to Default
+        </button>
+      </div>
+    )
+  },
+)
+
+export const useIsPlanInputExpectedReturnsModified = () => {
+  const isExpectedCardModified = useIsExpectedReturnsCardModified()
+  const isFixedBondsCardModified = useIsFixedBondsCardModified()
+
+  return isExpectedCardModified || isFixedBondsCardModified
+}
+
+const useIsExpectedReturnsCardModified = () => {
+  const { planParams, defaultPlanParams } = useSimulation()
+  return !_.isEqual(
+    defaultPlanParams.advanced.annualReturns.expected,
+    planParams.advanced.annualReturns.expected,
+  )
+}
+const useIsFixedBondsCardModified = () => {
+  const { planParams, defaultPlanParams } = useSimulation()
+  return !_.isEqual(
+    defaultPlanParams.advanced.annualReturns.historical.bonds,
+    planParams.advanced.annualReturns.historical.bonds,
+  )
 }
 
 export const PlanInputExpectedReturnsSummary = React.memo(() => {
