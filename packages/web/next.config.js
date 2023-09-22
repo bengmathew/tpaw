@@ -8,6 +8,7 @@ const moduleExports = {
   reactStrictMode: true,
   sentry: {
     hideSourceMaps: false,
+    widenClientFileUpload: true,
   },
   webpack: (config, options) => {
     config.experiments.asyncWebAssembly = true
