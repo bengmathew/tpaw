@@ -29,7 +29,7 @@ export const PlanInputExpectedReturns = React.memo(
   (props: PlanInputBodyPassThruProps) => {
     const advancedCount = _.filter([useIsFixedBondsCardModified()]).length
 
-    const [showAdvanced, setShowAdvanced] = useState(false) 
+    const [showAdvanced, setShowAdvanced] = useState(false)
 
     return (
       <PlanInputBody {...props}>
@@ -300,7 +300,9 @@ export const _BondVolatilityCard = React.memo(
     const { planParams, updatePlanParams } = useSimulation()
     const isModified = useIsFixedBondsCardModified()
     const currHistorical = planParams.advanced.annualReturns.historical.bonds
-
+    const currIsFixed =
+      currHistorical.type === 'fixed' &&
+      currHistorical.value.type === 'expectedUsedForPlanning'
     return (
       <div
         className={`${className} params-card relative`}
@@ -319,17 +321,14 @@ export const _BondVolatilityCard = React.memo(
         </p>
 
         <div className="flex items-center gap-x-4 mt-4">
-          <h2 className="font-medium">Remove Bond Volatility</h2>
+          <h2 className="font-medium">Allow Bond Volatility</h2>
           <ToggleSwitch
             className=""
-            checked={
-              currHistorical.type === 'fixed' &&
-              currHistorical.value.type === 'expectedUsedForPlanning'
-            }
+            checked={!currIsFixed}
             setChecked={(enabled) => {
               updatePlanParams(
                 'setHistoricalReturnsBonds',
-                enabled
+                !enabled
                   ? 'fixedToExpectedUsedForPlanning'
                   : 'adjustExpectedToExpectedUsedForPlanning',
               )
@@ -390,8 +389,11 @@ export const PlanInputExpectedReturnsSummary = React.memo(() => {
       <h2>
         {expectedReturnTypeLabel(planParams.advanced.annualReturns.expected)}
       </h2>
-      <h2>Stocks: {format(stocks)}</h2>
-      <h2>Bonds: {format(bonds)}</h2>
+      <h2 className="ml-4">Stocks: {format(stocks)}</h2>
+      <h2 className="ml-4">Bonds: {format(bonds)}</h2>
+      {planParams.advanced.annualReturns.historical.bonds.type === 'fixed' &&
+        planParams.advanced.annualReturns.historical.bonds.value.type ===
+          'expectedUsedForPlanning' && <h2>Bond Volatility Disabled </h2>}
     </>
   )
 })

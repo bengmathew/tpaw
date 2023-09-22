@@ -536,7 +536,7 @@ export const processPlanParamsChangeActionCurrent = (
           clone.risk.tpaw.additionalAnnualSpendingTilt = value
         },
         render: () =>
-          `Set additional spending tilt to ${formatPercentage(1)(value)}`,
+          `Set extra spending tilt to ${formatPercentage(1)(value)}`,
         merge: (prev) => prev.type === 'setTPAWAdditionalSpendingTilt',
       }
     }
@@ -579,7 +579,7 @@ export const processPlanParamsChangeActionCurrent = (
         applyToClone: (clone) => {
           clone.risk.tpaw.timePreference = value
         },
-        render: () => `Set spending tilt to ${formatPercentage(1)(-value)}`,
+        render: () => `Set time preference to ${formatPercentage(1)(-value)}`,
         merge: (prev) => prev.type === 'setTPAWTimePreference',
       }
     }
@@ -762,9 +762,9 @@ export const processPlanParamsChangeActionCurrent = (
 
         render: () => {
           return value === 'adjustExpectedToExpectedUsedForPlanning'
-            ? 'Allow bond volatility'
+            ? 'Bond volatility enabled'
             : value === 'fixedToExpectedUsedForPlanning'
-            ? 'Remove bond volatility'
+            ? 'Bond volatility disabled'
             : noCase(value)
         },
         merge: null,

@@ -574,7 +574,7 @@ export const PlanInputRiskTPAWSummary = React.memo(() => {
         ).label.toLowerCase()})`}
       </h2>
       <h2>
-        Additional Spending Tilt:{' '}
+        Extra Spending Tilt:{' '}
         {formatPercentage(1)(planParams.risk.tpaw.additionalAnnualSpendingTilt)}
       </h2>
       {advancedCount > -0 && (
@@ -596,7 +596,7 @@ export const PlanInputRiskTPAWSummary = React.memo(() => {
           )}
           {defaultRisk.tpaw.timePreference !== risk.tpaw.timePreference && (
             <h2 className="ml-4">
-              Spending Tilt: {formatPercentage(1)(-risk.tpaw.timePreference)}
+              Time Preference: {formatPercentage(1)(-risk.tpaw.timePreference)}
             </h2>
           )}
         </>
