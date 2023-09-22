@@ -70,6 +70,14 @@ const _MiscCard = React.memo(
           Test
         </button>
         <button
+          className="block btn-sm btn-outline mt-4"
+          onClick={() => {
+            throw new Error('Crash Test')
+          }}
+        >
+          Crash
+        </button>
+        <button
           className="mt-6 underline disabled:lighten-2 block"
           onClick={() =>
             handleChangeShowAllMonths(
