@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/nextjs'
 import {
   Guards,
   PlanParams,
@@ -98,19 +97,11 @@ export namespace PlanLocalStorage {
     (): PlanLocalStorageUnmigratedUnsorted | null => {
       const oldParams = window.localStorage.getItem('params')
       if (oldParams) {
-        const planParamsJSON = chain(string, json)(oldParams).force()
-        const planParamsCheck =
-          planParamsBackwardsCompatibleGuard(planParamsJSON)
-
-        const planParams = block(() => {
-          if (!planParamsCheck.error) {
-            Sentry.captureMessage(`localPlanParamsV: ${planParamsJSON.v}`)
-            Sentry.captureMessage(
-              `localPlanParamsKeys: ${_.keys(planParamsJSON).join(', ')}`,
-            )
-          }
-          return planParamsCheck.force()
-        })
+        const planParams = chain(
+          string,
+          json,
+          planParamsBackwardsCompatibleGuard,
+        )(oldParams).force()
 
         const state: PlanLocalStorageUnmigratedUnsorted = {
           v: 1,
@@ -140,19 +131,9 @@ export namespace PlanLocalStorage {
           ...stateWithoutHistory,
           planParamsPostBaseUnmigratedUnsorted: _.entries(localStorage)
             .filter(([key]) => _planParamsPostBaseItemKey.isKey(key))
-            .map(([id, str]) => {
-
-              const itemJSON = chain(string, json)(str).force()
-              const itemCheck = _planParamsPostBaseItemGuard(itemJSON)
-              console.dir(itemJSON.params.v)
-              if (!itemCheck.error) {
-                Sentry.captureMessage(`localPlanParamsV: ${itemJSON.params.v}`)
-                Sentry.captureMessage(
-                  `localPlanParamsKeys: ${_.keys(itemJSON.params).join(', ')}`,
-                )
-              }
-              return itemCheck.force()
-            }),
+            .map(([id, str]) =>
+              chain(string, json, _planParamsPostBaseItemGuard)(str).force(),
+            ),
         }
       }
     }
