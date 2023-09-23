@@ -809,7 +809,7 @@ export namespace PlanParams22 {
   export const backwardsCompatibleGuard: JSONGuard<SomePlanParams> = (
     x: unknown,
   ) => {
-    const result = union(PlanParamsPrev.guard, guard)(x)
+    const result = union(PlanParamsPrev.backwardsCompatibleGuard, guard)(x)
     return result.error ? result : success(x as SomePlanParams)
   }
 
