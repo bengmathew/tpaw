@@ -86,7 +86,7 @@ export const _ExpectedReturnsCard = React.memo(
     ) => updatePlanParams('setExpectedReturns', expected)
 
     const isModified = useIsExpectedReturnsCardModified()
-    const [showCalculationPopup, setShowCalculationPopup] = useState(true)
+    const [showCalculationPopup, setShowCalculationPopup] = useState(false)
 
     return (
       <div

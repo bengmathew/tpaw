@@ -238,8 +238,6 @@ const AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS = [
   },
   {
     // Monday, October 2, 2023 11:12:29.500 AM PDT
-    // TODO: Remove
-    // addedDate: DateTime.fromMillis(1696270349500).minus({ days: 5 }).toMillis(),
     addedDate: 1696270349500,
     tenYearDuration: {
       start: { year: 2013, month: 4 },
