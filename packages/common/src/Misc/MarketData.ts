@@ -7,6 +7,15 @@ export namespace MarketData {
   }
   export type CAPE = {
     closingTime: number
+    sp500: number
+    averageAnnualRealEarningsForSP500For10Years: {
+      addedDate: number
+      tenYearDuration: {
+        start: { year: number; month: number }
+        end: { year: number; month: number }
+      }
+      value: number
+    }
     value: number
     oneOverCAPE: number
     regression: {
@@ -50,7 +59,6 @@ export namespace MarketData {
     bondRates: BondRates
     dailyStockMarketPerformance: DailyStockMarketPerformance
   }[]
-  
 
   export const combineStreams = (
     inflation: Inflation[],

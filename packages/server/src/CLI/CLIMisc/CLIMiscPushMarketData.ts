@@ -76,7 +76,9 @@ export const pushMarketData = async (opts: { printOnly?: boolean } = {}) => {
   const [currentLatest] = await bucket.getFiles({ prefix: 'latest/' })
   await Promise.all(currentLatest.map((x) => x.delete()))
   const filename = getNYZonedTime.now().toFormat('yyyy-MM-dd_HH-mm-ss-ZZZZ')
-  const files = [filename, `latest/${filename}`].map((x) => new File(bucket, `${x}.json`))
+  const files = [filename, `latest/${filename}`].map(
+    (x) => new File(bucket, `${x}.json`),
+  )
   for (const file of files) {
     await file.save(JSON.stringify(combined))
   }
@@ -92,6 +94,7 @@ async function _getMarketData() {
       _getBondRates(),
       _getDailyStockMarketPerformance(),
     ])
+  console.dir(CAPE.slice(-3))
   return {
     raw: { inflation, CAPE, bondRates, dailyStockMarketPerformance },
     combined: MarketData.combineStreams(
@@ -226,21 +229,35 @@ const AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS = [
   {
     addedDate: DateTime.fromMillis(MIN_PLAN_PARAM_TIME)
       .minus({ month: 30 })
-      .valueOf(),
+      .toMillis(),
+    tenYearDuration: {
+      start: { year: 2012, month: 10 },
+      end: { year: 2022, month: 9 },
+    },
     value: 136.71,
+  },
+  {
+    // Monday, October 2, 2023 11:12:29.500 AM PDT
+    // TODO: Remove
+    // addedDate: DateTime.fromMillis(1696270349500).minus({ days: 5 }).toMillis(),
+    addedDate: 1696270349500,
+    tenYearDuration: {
+      start: { year: 2013, month: 4 },
+      end: { year: 2023, month: 3 },
+    },
+    value: 143.91,
   },
 ]
 
 async function _getCAPE(): Promise<MarketData.CAPE[]> {
-  const sp500 = await _getFromEOD('GSPC.INDX')
-  return sp500.map(({ closingTime, close }) => {
+  return (await _getFromEOD('GSPC.INDX')).map((sp500) => {
     const averageEarnings = fGet(
       _.findLast(
         AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS,
-        (x) => closingTime > x.addedDate,
+        (x) => sp500.closingTime > x.addedDate,
       ),
     )
-    const oneOverCAPE = averageEarnings.value / close
+    const oneOverCAPE = averageEarnings.value / sp500.close
     const lnOnePlusOneOverCAPE = Math.log(1 + oneOverCAPE)
     const regressionLog = {
       full: {
@@ -290,7 +307,9 @@ async function _getCAPE(): Promise<MarketData.CAPE[]> {
     ])
 
     return {
-      closingTime,
+      closingTime: sp500.closingTime,
+      sp500: sp500.close,
+      averageAnnualRealEarningsForSP500For10Years: averageEarnings,
       value: 1 / oneOverCAPE,
       oneOverCAPE,
       regression,

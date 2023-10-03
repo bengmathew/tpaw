@@ -1,15 +1,16 @@
 import { Contentful } from '../../../../../../Utils/Contentful'
+import { formatCurrency } from '../../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../../Utils/FormatPercentage'
+import {
+  useIANATimezoneName,
+  useNonPlanParams,
+} from '../../../../PlanRootHelpers/WithNonPlanParams'
+import { usePlanContent } from '../../../../PlanRootHelpers/WithPlanContent'
 import { useSimulation } from '../../../../PlanRootHelpers/WithSimulation'
 import { PlanInputType } from '../../Helpers/PlanInputType'
-import { useMarketData } from '../../../../PlanRootHelpers/WithMarketData'
-import { useNonPlanParams } from '../../../../PlanRootHelpers/WithNonPlanParams'
-import { usePlanContent } from '../../../../PlanRootHelpers/WithPlanContent'
-import { useMemo } from 'react'
-import { getMarketDataForTime } from '../../../../../Common/GetMarketData'
 
 export function usePlanInputGuideContent(type: PlanInputType) {
-  const { marketData } = useMarketData()
+  const { getZonedTime } = useIANATimezoneName()
   const { nonPlanParams } = useNonPlanParams()
   const { planParams, currentMarketData } = useSimulation()
   const { CAPE, bondRates, inflation } = currentMarketData
@@ -28,6 +29,29 @@ export function usePlanInputGuideContent(type: PlanInputType) {
   const variables = {
     numRuns: `${nonPlanParams.numOfSimulationForMonteCarloSampling}`,
     capeDate: formatDate(CAPE.closingTime),
+    capeEarningsDateStart: getZonedTime
+      .fromObject({
+        year: CAPE.averageAnnualRealEarningsForSP500For10Years.tenYearDuration
+          .start.year,
+        month:
+          CAPE.averageAnnualRealEarningsForSP500For10Years.tenYearDuration.start
+            .month,
+      })
+      .toFormat('MMMM yyyy'),
+    capeEarningsDateEnd: getZonedTime
+      .fromObject({
+        year: CAPE.averageAnnualRealEarningsForSP500For10Years.tenYearDuration
+          .end.year,
+        month:
+          CAPE.averageAnnualRealEarningsForSP500For10Years.tenYearDuration.end
+            .month,
+      })
+      .toFormat('MMMM yyyy'),
+    capeEarnings: formatCurrency(
+      CAPE.averageAnnualRealEarningsForSP500For10Years.value,
+      2,
+    ),
+    sp500: formatCurrency(CAPE.sp500, 2),
     expectedReturnsStocksCAPE: CAPE.value.toFixed(2),
     expectedReturnsStocksOneOverCAPE: formatPercentage(1)(CAPE.oneOverCAPE),
     expectedReturnsStocksRegressionFull5Year: formatPercentage(1)(

@@ -1,12 +1,12 @@
-import {Document} from '@contentful/rich-text-types'
-import {faXmark} from '@fortawesome/pro-light-svg-icons'
-import {faChevronDown, faChevronRight} from '@fortawesome/pro-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
+import { Document } from '@contentful/rich-text-types'
+import { faXmark } from '@fortawesome/pro-light-svg-icons'
+import { faChevronDown, faChevronRight } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import _ from 'lodash'
-import React, {useMemo, useState} from 'react'
-import {Contentful} from '../../../../../../Utils/Contentful'
-import {assert} from '../../../../../../Utils/Utils'
-import {usePlanInputGuideContent} from './UsePlanInputGuideContent'
+import React, { useMemo, useState } from 'react'
+import { Contentful } from '../../../../../../Utils/Contentful'
+import { assert } from '../../../../../../Utils/Utils'
+import { usePlanInputGuideContent } from './UsePlanInputGuideContent'
 
 export const PlanInputBodyGuideContent = React.memo(
   ({
@@ -14,9 +14,9 @@ export const PlanInputBodyGuideContent = React.memo(
   }: {
     content: Exclude<ReturnType<typeof usePlanInputGuideContent>, null>
   }) => {
-    const {main, theory} = useMemo(
+    const { main, theory } = useMemo(
       () => _splitDocumentOnTheory(content),
-      [content]
+      [content],
     )
 
     const [showTheory, setShowTheory] = useState(false)
@@ -55,14 +55,14 @@ export const PlanInputBodyGuideContent = React.memo(
         )}
       </div>
     )
-  }
+  },
 )
 
 const _Part = React.memo(
-  ({className = '', body}: {className?: string; body: Document}) => {
-    const {intro, sections} = useMemo(
+  ({ className = '', body }: { className?: string; body: Document }) => {
+    const { intro, sections } = useMemo(
       () => _splitDocumentOnCollapse(body),
-      [body]
+      [body],
     )
     return (
       <div className={`${className}`}>
@@ -76,15 +76,15 @@ const _Part = React.memo(
         ))}
       </div>
     )
-  }
+  },
 )
 const _Collapsable = React.memo(
   ({
     className = '',
-    section: {body, heading},
+    section: { body, heading },
   }: {
     className?: string
-    section: {heading: string; body: Document}
+    section: { heading: string; body: Document }
   }) => {
     const [show, setShow] = useState(false)
     return (
@@ -102,11 +102,11 @@ const _Collapsable = React.memo(
         {show && <_RichText className="" body={body} />}
       </div>
     )
-  }
+  },
 )
 
 const _RichText = React.memo(
-  ({className = '', body}: {className?: string; body: Document}) => {
+  ({ className = '', body }: { className?: string; body: Document }) => {
     return (
       <div className={`${className}`}>
         <Contentful.RichText
@@ -117,14 +117,15 @@ const _RichText = React.memo(
           h2={([index]) =>
             `font-bold text-lg mb-3 ${index === 0 ? '' : 'mt-6'}`
           }
+          h3={`font-semibold mb-3 mt-5`}
         />
       </div>
     )
-  }
+  },
 )
 
 const _splitDocumentOnTheory = (document: Document) => {
-  const {intro, sections} = Contentful.splitDocument(document, 'theory')
+  const { intro, sections } = Contentful.splitDocument(document, 'theory')
   assert(intro)
   assert(sections.length <= 1)
   return {
