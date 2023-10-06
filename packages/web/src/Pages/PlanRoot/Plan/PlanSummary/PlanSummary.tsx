@@ -24,7 +24,7 @@ import { useIsPlanInputDevHistoricalReturnsModified } from '../PlanInput/PlanInp
 import { useIsPlanInputDevMiscModified } from '../PlanInput/PlanInputDev/PlanInputDevMisc'
 import { useIsPlanInputDevSimulationsModified } from '../PlanInput/PlanInputDev/PlanInputDevSimulations'
 import { useIsPlanInputDevTimeModified } from '../PlanInput/PlanInputDev/PlanInputDevTime'
-import { useIsPlanInputExpectedReturnsModified } from '../PlanInput/PlanInputExpectedReturns'
+import { useIsPlanInputExpectedReturnsAndVolatilityModified } from '../PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { useIsPlanInputInflationModified } from '../PlanInput/PlanInputInflation'
 import { useIsPlanInputStrategyModified } from '../PlanInput/PlanInputStrategy'
 import {
@@ -33,6 +33,7 @@ import {
 } from '../PlanTransition'
 import { PlanSummaryButton } from './PlanSummaryButton'
 import { PlanSummaryDialog } from './PlanSummaryDialog'
+import { useIsPlanInputSimulationModifed } from '../PlanInput/PlanInputSimulation'
 
 type _FixedSizingByMode = {
   size: Size
@@ -95,10 +96,10 @@ export const PlanSummary = React.memo(
     const [expandDev, setExpandDev] = useState(false)
 
     const advancedModifiedByType = {
-      'expected-returns': useIsPlanInputExpectedReturnsModified(),
+      'expected-returns-and-volatility': useIsPlanInputExpectedReturnsAndVolatilityModified(),
       inflation: useIsPlanInputInflationModified(),
       strategy: useIsPlanInputStrategyModified(),
-      simulation: useIsPlanInputDevSimulationsModified(),
+      simulation: useIsPlanInputSimulationModifed(),
     }
     const advancedModifiedCount = _.values(advancedModifiedByType).filter(
       (x) => x,
@@ -325,11 +326,11 @@ export const PlanSummary = React.memo(
                 {expandAdvanced && (
                   <div className="flex flex-col gap-y-6 mt-6">
                     <PlanSummaryButton
-                      type="expected-returns"
+                      type="expected-returns-and-volatility"
                       section={section}
                       padding={cardPadding}
                       flagAsModified={
-                        advancedModifiedByType['expected-returns']
+                        advancedModifiedByType['expected-returns-and-volatility']
                       }
                     />
                     <PlanSummaryButton
@@ -481,37 +482,6 @@ export const _paramsOk = (planParamsExt: PlanParamsExtended, type: _Type) => {
       .every((x) => x.analyzed.every((x) => x.issue === 'none'))
   )
 }
-
-// const _advancedInputs = [
-//   'expected-returns',
-//   'inflation',
-//   'strategy',
-//   'simulation',
-// ] as const
-// type _AdvancedParamInputType = (typeof _advancedInputs)[number]
-// export const isAdvancedInputModified = (
-//   type: _AdvancedParamInputType,
-//   planParams: PlanParams,
-//   def: PlanParams,
-// ) => {
-//   switch (type) {
-//     case 'expected-returns':
-//       return planParams.advanced.annualReturns.expected.type !== 'suggested'
-//     case 'inflation':
-//       return planParams.advanced.annualInflation.type !== 'suggested'
-//     case 'strategy':
-//       return planParams.advanced.strategy !== def.advanced.strategy
-//     case 'simulation':
-//       return (
-//         planParams.advanced.sampling !== def.advanced.sampling ||
-//         (planParams.advanced.sampling === 'monteCarlo' &&
-//           planParams.advanced.monteCarloSampling.blockSize !==
-//             def.advanced.monteCarloSampling.blockSize)
-//       )
-//     default:
-//       noCase(type)
-//   }
-// }
 
 export namespace DevMode {
   const key = 'DevMode'

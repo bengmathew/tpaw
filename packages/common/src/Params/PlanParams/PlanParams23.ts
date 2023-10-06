@@ -20,16 +20,19 @@ import {
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import { Guards } from '../../Guards'
-import { block, noCase, preciseRange } from '../../Utils'
-import { PlanParams21 as PlanParamsPrev } from './Old/PlanParams21'
+import { assertFalse, block, letIn, noCase, preciseRange } from '../../Utils'
+import { PlanParams22 as PlanParamsPrev } from './Old/PlanParams22'
 
-export namespace PlanParams22 {
+export namespace PlanParams23 {
+  export const currentVersion = 23 as const
+
   export const MAX_LABEL_LENGTH = 150
   export const MAX_AGE_IN_MONTHS = 120 * 12
   export const MIN_AGE_IN_MONTHS = 120 * 10
   export const MAX_SIZE_FOR_GLIDE_PATH_INTERMEDIATE_ARRAY = 1000
   export const MAX_SIZE_FOR_MONTH_RANGE_ARR = 100
   export const MAX_EXTERNAL_LEGACY_SOURCES = 100
+  export const STOCK_VOLATILITY_SCALE_VALUES = preciseRange(0.5, 1.5, 0.01, 2)
   export const TIME_PREFERENCE_VALUES = preciseRange(-0.05, 0.05, 0.001, 3)
   export const ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES = preciseRange(
     -0.05,
@@ -63,11 +66,15 @@ export namespace PlanParams22 {
     const scale =
       (numPoints - 2) / (log1OverRRA(endRRA) - log1OverRRA(startRRA))
 
-    const riskToleranceToRRA = (riskTolerance: number) =>
-      1 / Math.exp((riskTolerance - 1) / scale + shift)
-
-    riskToleranceToRRA.inverse = (rra: number) =>
-      (log1OverRRA(rra) - shift) * scale + 1
+    const riskToleranceToRRA = block(() => {
+      const withoutInfinityAtZero = (riskTolerance: number) =>
+        1 / Math.exp((riskTolerance - 1) / scale + shift)
+      const withInfinityAtZero = (riskTolerance: number) =>
+        riskTolerance === 0 ? Infinity : withoutInfinityAtZero(riskTolerance)
+      withoutInfinityAtZero.inverse = (rra: number) =>
+        (log1OverRRA(rra) - shift) * scale + 1
+      return { withInfinityAtZero, withoutInfinityAtZero }
+    })
 
     const DATA = _.times(numPoints, (i) => i)
 
@@ -87,7 +94,11 @@ export namespace PlanParams22 {
       segmentDef(3, 'Aggressive'),
       segmentDef(4, 'Very Aggressive'),
     ]
-    return { DATA, SEGMENTS, riskToleranceToRRA }
+    return {
+      DATA,
+      SEGMENTS,
+      riskToleranceToRRA,
+    }
   })()
 
   export const MIN_PLAN_PARAM_TIME = 1680481336120
@@ -187,25 +198,17 @@ export namespace PlanParams22 {
     end: { stocks: number }
   }
 
-  type HistoricalReturnsAdjustment =
+  type AdjustExpectedReturn =
+    | { type: 'none' }
+    | { type: 'toExpectedUsedForPlanning'; correctForBlockSampling: boolean }
     | {
-        type: 'adjustExpected'
-        adjustment:
-          | { type: 'byValue'; value: number }
-          | { type: 'toValue'; value: number }
-          | { type: 'toExpectedUsedForPlanning' }
+        type: 'toAnnualExpectedReturn'
+        annualExpectedReturn: number
         correctForBlockSampling: boolean
       }
-    | {
-        type: 'fixed'
-        value:
-          | { type: 'manual'; value: number }
-          | { type: 'expectedUsedForPlanning' }
-      }
-    | { type: 'rawHistorical' }
 
   export type PlanParams = {
-    v: 22
+    v: typeof currentVersion
     timestamp: number
     // Technically should be in non-plan, but this moves with plan changes,
     // so simpler to keep it here.
@@ -278,31 +281,33 @@ export namespace PlanParams22 {
 
     // Advanced.
     advanced: {
-      annualReturns: {
-        expected:
-          | { type: 'suggested' }
-          | { type: 'oneOverCAPE' }
-          | { type: 'regressionPrediction' }
-          | { type: 'historical' }
-          | { type: 'manual'; stocks: number; bonds: number }
-        historical: {
-          stocks: HistoricalReturnsAdjustment
-          bonds: HistoricalReturnsAdjustment
+      expectedAnnualReturnForPlanning:
+        | { type: 'suggested' }
+        | { type: 'oneOverCAPE' }
+        | { type: 'regressionPrediction' }
+        | { type: 'historical' }
+        | { type: 'manual'; stocks: number; bonds: number }
+      historicalReturnsAdjustment: {
+        stocks: {
+          adjustExpectedReturn: AdjustExpectedReturn
+          volatilityScale: number
+        }
+        bonds: {
+          adjustExpectedReturn: AdjustExpectedReturn
+          enableVolatility: boolean
         }
       }
-      annualInflation: { type: 'suggested' } | { type: 'manual'; value: number }
       sampling: {
         type: 'monteCarlo' | 'historical'
         blockSizeForMonteCarloSampling: number
       }
+      annualInflation: { type: 'suggested' } | { type: 'manual'; value: number }
       strategy: 'TPAW' | 'SPAW' | 'SWR'
     }
     results: {
       displayedAssetAllocation: { stocks: number }
     } | null
   }
-
-  export const currentVersion: PlanParams['v'] = 22
 
   // ----------- GUARD  ---------//
   const { uuid } = Guards
@@ -458,37 +463,20 @@ export namespace PlanParams22 {
 
     const samplingType = union(constant('monteCarlo'), constant('historical'))
 
-    const historicalAnnualReturns: JSONGuard<HistoricalReturnsAdjustment> =
-      union(
-        object({
-          type: constant('adjustExpected'),
-          adjustment: union(
-            object({
-              type: constant('toValue'),
-              value: number,
-            }),
-            object({
-              type: constant('byValue'),
-              value: number,
-            }),
-            object({ type: constant('toExpectedUsedForPlanning') }),
-          ),
-          correctForBlockSampling: boolean,
-        }),
-        object({
-          type: constant('fixed'),
-          value: union(
-            object({
-              type: constant('manual'),
-              value: number,
-            }),
-            object({ type: constant('expectedUsedForPlanning') }),
-          ),
-        }),
-        object({ type: constant('rawHistorical') }),
-      )
+    const adjustExpectedReturn = union(
+      object({ type: constant('none') }),
+      object({
+        type: constant('toExpectedUsedForPlanning'),
+        correctForBlockSampling: boolean,
+      }),
+      object({
+        type: constant('toAnnualExpectedReturn'),
+        annualExpectedReturn: number,
+        correctForBlockSampling: boolean,
+      }),
+    )
 
-    const expectedAnnualReturns = union(
+    const expectedAnnualReturnForPlanning = union(
       object({ type: constant('suggested') }),
       object({ type: constant('oneOverCAPE') }),
       object({ type: constant('regressionPrediction') }),
@@ -520,8 +508,8 @@ export namespace PlanParams22 {
       dialogPosition,
       glidePath,
       samplingType,
-      historicalAnnualReturns,
-      expectedAnnualReturns,
+      adjustExpectedReturn,
+      expectedAnnualReturnForPlanning,
       annualInflation,
     }
   })()
@@ -756,17 +744,18 @@ export namespace PlanParams22 {
       }),
     })
 
-  const annualReturns: JSONGuard<PlanParams['advanced']['annualReturns']> =
-    object({
-      expected: cg.expectedAnnualReturns,
-      historical: object({
-        stocks: cg.historicalAnnualReturns,
-        bonds: cg.historicalAnnualReturns,
-      }),
-    })
-
   const advanced: JSONGuard<PlanParams['advanced']> = object({
-    annualReturns,
+    expectedAnnualReturnForPlanning: cg.expectedAnnualReturnForPlanning,
+    historicalReturnsAdjustment: object({
+      stocks: object({
+        adjustExpectedReturn: cg.adjustExpectedReturn,
+        volatilityScale: among(STOCK_VOLATILITY_SCALE_VALUES),
+      }),
+      bonds: object({
+        adjustExpectedReturn: cg.adjustExpectedReturn,
+        enableVolatility: boolean,
+      }),
+    }),
     annualInflation: cg.annualInflation,
     sampling: object({
       type: cg.samplingType,
@@ -782,7 +771,7 @@ export namespace PlanParams22 {
 
   const oneOrTwoPassGuard = (x: PlanParams | null): JSONGuard<PlanParams> =>
     object({
-      v: constant(22),
+      v: constant(currentVersion),
       timestamp: number,
       dialogPosition: cg.dialogPosition(x),
       people: people,
@@ -814,89 +803,78 @@ export namespace PlanParams22 {
   }
 
   export const migrate = (x: SomePlanParams): PlanParams => {
-    if ('v' in x && x.v === 22) return x
-    const previous: PlanParamsPrev.PlanParams =
-      'v' in x && x.v === 21 ? x : PlanParamsPrev.migrate(x)
+    if ('v' in x && x.v === currentVersion) return x
+    const prev: PlanParamsPrev.PlanParams = PlanParamsPrev.migrate(x)
 
     return {
-      ...previous,
-      v: 22,
+      ...prev,
+      v: currentVersion,
       advanced: {
-        annualInflation: previous.advanced.annualInflation,
-        annualReturns: {
-          ...previous.advanced.annualReturns,
-          historical: block(
-            (): PlanParams['advanced']['annualReturns']['historical'] => {
-              const prev = previous.advanced.annualReturns.historical
-              switch (prev.type) {
-                case 'adjusted':
-                  const { correctForBlockSampling } = prev
-                  switch (prev.adjustment.type) {
-                    case 'by':
-                    case 'to':
-                      return {
-                        stocks: {
-                          type: 'adjustExpected',
-                          adjustment: {
-                            type: `${prev.adjustment.type}Value`,
-                            value: prev.adjustment.stocks,
-                          },
-                          correctForBlockSampling,
-                        },
-                        bonds: {
-                          type: 'adjustExpected',
-                          adjustment: {
-                            type: `${prev.adjustment.type}Value`,
-                            value: prev.adjustment.bonds,
-                          },
-                          correctForBlockSampling,
-                        },
-                      } as const
-                    case 'toExpected':
-                      return {
-                        stocks: {
-                          type: 'adjustExpected',
-                          adjustment: { type: 'toExpectedUsedForPlanning' },
-                          correctForBlockSampling,
-                        },
-                        bonds: {
-                          type: 'adjustExpected',
-                          adjustment: { type: 'toExpectedUsedForPlanning' },
-                          correctForBlockSampling,
-                        },
-                      } as const
-                    default:
-                      noCase(prev.adjustment)
-                  }
-
-                case 'fixed':
-                  return {
-                    stocks: {
-                      type: 'fixed',
-                      value: { type: 'manual', value: prev.stocks },
-                    },
-                    bonds: {
-                      type: 'fixed',
-                      value: { type: 'manual', value: prev.bonds },
-                    },
-                  }
-                case 'unadjusted':
-                  return {
-                    stocks: { type: 'rawHistorical' },
-                    bonds: { type: 'rawHistorical' },
-                  }
-                default:
-                  noCase(prev)
-              }
-            },
-          ),
-        },
-        sampling: {
-          type: previous.advanced.sampling,
-          blockSizeForMonteCarloSampling:
-            previous.advanced.monteCarloSampling.blockSize,
-        },
-        strategy: previous.advanced.strategy,
+        expectedAnnualReturnForPlanning: prev.advanced.annualReturns.expected,
+        historicalReturnsAdjustment: block(() => {
+          const byPrev = (
+            p: typeof prev.advanced.annualReturns.historical.stocks,
+          ): PlanParams['advanced']['historicalReturnsAdjustment']['bonds'] => {
+            switch (p.type) {
+              case 'rawHistorical':
+                return {
+                  adjustExpectedReturn: { type: 'none' },
+                  enableVolatility: true,
+                }
+              case 'fixed':
+                return {
+                  adjustExpectedReturn:
+                    p.value.type === 'manual'
+                      ? {
+                          type: 'toAnnualExpectedReturn',
+                          annualExpectedReturn: p.value.value,
+                          correctForBlockSampling: true,
+                        }
+                      : p.value.type === 'expectedUsedForPlanning'
+                      ? {
+                          type: 'toExpectedUsedForPlanning',
+                          correctForBlockSampling: true,
+                        }
+                      : noCase(p.value),
+                  enableVolatility: false,
+                }
+              case 'adjustExpected':
+                return {
+                  adjustExpectedReturn:
+                    p.adjustment.type === 'byValue'
+                      ? assertFalse()
+                      : p.adjustment.type === 'toValue'
+                      ? {
+                          type: 'toAnnualExpectedReturn',
+                          annualExpectedReturn: p.adjustment.value,
+                          correctForBlockSampling: p.correctForBlockSampling,
+                        }
+                      : p.adjustment.type === 'toExpectedUsedForPlanning'
+                      ? {
+                          type: 'toExpectedUsedForPlanning',
+                          correctForBlockSampling: p.correctForBlockSampling,
+                        }
+                      : noCase(p.adjustment),
+                  enableVolatility: true,
+                }
+              default:
+                noCase(p)
+            }
+          }
+          return {
+            stocks: letIn(
+              byPrev(prev.advanced.annualReturns.historical.stocks),
+              ({ adjustExpectedReturn, enableVolatility }) => ({
+                adjustExpectedReturn,
+                volatilityScale: enableVolatility ? 1 : assertFalse(),
+              }),
+            ),
+            bonds: byPrev(prev.advanced.annualReturns.historical.bonds),
+          }
+        }),
+        annualInflation: prev.advanced.annualInflation,
+        sampling: prev.advanced.sampling,
+        strategy: prev.advanced.strategy,
       },
     }
   }

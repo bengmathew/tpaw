@@ -9,11 +9,14 @@ import {
   ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES,
   RISK_TOLERANCE_VALUES,
   TIME_PREFERENCE_VALUES,
+  block,
   fGet,
+  letIn,
   monthlyToAnnualReturnRate,
 } from '@tpaw/common'
+import clsx from 'clsx'
 import _ from 'lodash'
-import React, { ReactNode, useEffect, useState } from 'react'
+import React, { ReactNode, useState } from 'react'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSS, paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { SliderInput } from '../../../../Common/Inputs/SliderInput/SliderInput'
@@ -111,7 +114,7 @@ const _TPAWRiskToleranceCard = React.memo(
           risk leads to higher average spending, but also a wider range of
           outcomes.
         </p>
-        <div className="bg-gray-100  rounded-lg border border-gray-200 mt-8 py-4">
+        <div className="mt-8 bg-gray-100  rounded-lg border border-gray-200 py-4">
           <div className="flex justify-between mx-[15px]">
             <div className="flex items-center gap-x-2">
               <FontAwesomeIcon icon={faArrowLeftLong} />
@@ -135,88 +138,108 @@ const _TPAWRiskToleranceCard = React.memo(
             ticks={() => 'small'}
           />
         </div>
-        <div className="mt-2">
+        <_ExpandableNote
+          className="mt-8"
+          title="Stock allocation corresponding to this risk tolerance"
+        >
+          <p className="p-base">
+            Your risk tolerance, together with other inputs such as essential
+            expenses and retirement income, determine how much of your portfolio
+            should be allocated to stocks versus bonds. Your current inputs
+            result in the following stock allocation:
+          </p>
+          <h2 className="font-semibold mt-4">Stock Allocation</h2>
           <div
-            className="mt-8"
-            // title="What stock allocation does this risk tolerance imply?"
+            className="grid gap-x-4  mb-4 mt-2"
+            style={{ grid: 'auto/auto auto 1fr ' }}
           >
-            <p className="p-base">
-              Your risk tolerance, together with other inputs such as essential
-              expenses and retirement income, determine how much of your
-              portfolio should be allocated to stocks versus bonds. Your current
-              inputs result in the following stock allocation:
-            </p>
-            <h2 className="font-semibold mt-4">Stock Allocation</h2>
-            <div
-              className="grid gap-x-4  mb-4 mt-2"
-              style={{ grid: 'auto/auto auto 1fr ' }}
-            >
-              <h2>Now</h2>
-              <h2 className="text-right">
-                {formatPercentage(0)(stockAllocations.now)}
-              </h2>
-              <h2></h2>
-              {!withdrawalsStarted && (
-                <>
-                  <h2>At retirement</h2>
-                  <h2 className="text-right">
-                    {formatPercentage(0)(stockAllocations.atRetirement)}
-                  </h2>
-                  <h2>(50th percentile)</h2>
-                </>
-              )}
-              <h2>At max age</h2>
-              <h2 className="text-right">
-                {formatPercentage(0)(stockAllocations.atMaxAge)}
-              </h2>
-              <h2 className="">(50th percentile)</h2>
-            </div>
-
-            <_ExpandableNote
-              className="mt-4"
-              title="Why the percentile for future years?"
-            >
-              <p className="p-base mb-4">
-                Your stock allocation in the future may be a range and not a
-                single number because the optimal allocation will depend on the
-                relative sizes of competing spending goals and other resources
-                like pensions. This depends on market performance and so we can
-                get a range of possible allocations from the simulations.
-              </p>
-            </_ExpandableNote>
-            {stockAllocations.atMaxAge > stockAllocations.atRetirement && (
-              <_ExpandableNote
-                className=""
-                title="Why does the stock allocation increase between retirement and max age?"
-              >
-                <p className="p-base">
-                  This happens when you have a legacy goal. As you get older,
-                  more of your assets are going towards legacy and less towards
-                  funding your remaining retirement years. Since you have a
-                  higher risk tolerance for legacy, your portfolio becomes
-                  correspondingly more aggressive. You can change your risk
-                  tolerance for legacy in advanced settings.
-                </p>
-              </_ExpandableNote>
+            <h2>Now</h2>
+            <h2 className="text-right">
+              {formatPercentage(0)(stockAllocations.now)}
+            </h2>
+            <h2></h2>
+            {!withdrawalsStarted && (
+              <>
+                <h2>At retirement</h2>
+                <h2 className="text-right">
+                  {formatPercentage(0)(stockAllocations.atRetirement)}
+                </h2>
+                <h2>(50th percentile)</h2>
+              </>
             )}
+            <h2>At max age</h2>
+            <h2 className="text-right">
+              {formatPercentage(0)(stockAllocations.atMaxAge)}
+            </h2>
+            <h2 className="">(50th percentile)</h2>
           </div>
+          <h2 className="font-semibold">
+            Why the percentile for future years?
+          </h2>
+          {/* <p className="p-base mb-4">
+            You are seeing percentiles for the stock allocation for future years
+            because the optimal allocation will depend on the relative sizes of
+            competing spending goals and other resources like pensions. This
+            depends on market performance and so we can get a range of possible
+            allocations from the simulations.
+          </p> */}
+          <p className="p-base mt-2">
+            Your stock allocation in the future may be a range and not a single
+            number because the optimal allocation will depend on the relative
+            sizes of competing spending goals and other resources like pensions.
+            This depends on market performance and so we can get a range of
+            possible allocations from the simulations.
+          </p>
+          {stockAllocations.atMaxAge > stockAllocations.atRetirement && (
+            <>
+              <h2 className="font-semibold mt-4">
+                Why does the stock allocation increase between retirement and
+                max age?
+              </h2>
+              <p className="p-base mt-2">
+                This happens when you have a legacy goal. As you get older, more
+                of your assets are going towards legacy and less towards funding
+                your remaining retirement years. Since you have a higher risk
+                tolerance for legacy, your portfolio becomes correspondingly
+                more aggressive. You can change your risk tolerance for legacy
+                in advanced settings.
+              </p>
+            </>
+          )}
+        </_ExpandableNote>
+        <_ExpandableNote
+          className="mt-2"
+          title="Relative risk aversion (RRA) corresponding to this risk tolerance."
+        >
+          <p className="p-base">
+            Your risk tolerance of {planParams.risk.tpaw.riskTolerance.at20}{' '}
+            corresponds to a relative risk aversion of{' '}
+            <span className="font-bold">
+              {_rraToStr(
+                RISK_TOLERANCE_VALUES.riskToleranceToRRA.withInfinityAtZero(
+                  planParams.risk.tpaw.riskTolerance.at20,
+                ),
+              )}
+            </span>
+            .
+          </p>
+        </_ExpandableNote>
 
-          <button
-            className="mt-6 underline disabled:lighten-2"
-            onClick={() =>
-              updatePlanParams(
-                'setTPAWRiskTolerance',
-                defaultRisk.riskTolerance.at20,
-              )
-            }
-            disabled={
-              defaultRisk.riskTolerance.at20 ===
-              planParams.risk.tpaw.riskTolerance.at20
-            }
-          >
-            Reset to Default
-          </button>
-        </div>
+        <button
+          className="mt-6 underline disabled:lighten-2"
+          onClick={() =>
+            updatePlanParams(
+              'setTPAWRiskTolerance',
+              defaultRisk.riskTolerance.at20,
+            )
+          }
+          disabled={
+            defaultRisk.riskTolerance.at20 ===
+            planParams.risk.tpaw.riskTolerance.at20
+          }
+        >
+          Reset to Default
+        </button>
       </div>
     )
   },
@@ -237,11 +260,11 @@ const _ExpandableNote = React.memo(
     const last = titleSplit.pop()
     const titleFirst = titleSplit.join(' ')
     return (
-      <div className={`${className}`}>
+      <div className={clsx(className)}>
         <button className="text-start mb-2" onClick={() => setOpen((x) => !x)}>
-          <span className="font-semibold ">{titleFirst}</span>{' '}
+          <span className="font-medium ">{titleFirst}</span>{' '}
           {/* So carret is always with at least on word */}
-          <span className="font-semibold whitespace-nowrap">
+          <span className="font-medium whitespace-nowrap">
             {last}
             <FontAwesomeIcon
               className="ml-2"
@@ -249,7 +272,11 @@ const _ExpandableNote = React.memo(
             />
           </span>
         </button>
-        {open && children}
+        {open && (
+          <div className="bg-orange-50 border border-gray-300 rounded-lg p-2 sm:p-4 mb-8">
+            {children}
+          </div>
+        )}
       </div>
     )
   },
@@ -287,11 +314,11 @@ const _SpendingTiltCard = React.memo(
       const baseline = total - extra
       return (
         <>
-          <h2 className="text-right  px-1">{formatPercentage(1)(baseline)}</h2>
-          <h2 className="px-1">+</h2>
-          <h2 className="text-right  px-1">{formatPercentage(1)(extra)}</h2>
-          <h2 className="px-1">=</h2>
-          <h2 className="text-right  px-1">{formatPercentage(1)(total)}</h2>
+          <h2 className="text-right  ">{formatPercentage(1)(baseline)}</h2>
+          <h2 className="">+</h2>
+          <h2 className="text-right  ">{formatPercentage(1)(extra)}</h2>
+          <h2 className="">=</h2>
+          <h2 className="text-right  ">{formatPercentage(1)(total)}</h2>
         </>
       )
     }
@@ -317,35 +344,63 @@ const _SpendingTiltCard = React.memo(
           format={(x) => formatPercentage(1)(x)}
           ticks={(value, i) => (i % 10 === 0 ? 'large' : 'small')}
         />
-        <p className="p-base mt-2">
-          The spending tilt you entered above is added to a base spending tilt
-          that is automatically calculated for you based on your risk and time
-          preferences. Your total spending tilt is:
-        </p>
-        <h2 className="font-semibold mt-4">Total Spending Tilt</h2>
-        <div>
-          <div
-            className="inline-grid mt-2"
-            style={{ grid: 'auto/auto 50px 20px 50px 20px 50px ' }}
-          >
-            <h2></h2>
-            <h2 className="border-b border-gray-300 px-1">Base</h2>
-            <h2 className="border-b border-gray-300 px-1">+</h2>
-            <h2 className="border-b border-gray-300 px-1">Extra</h2>
-            <h2 className="border-b border-gray-300 px-1">=</h2>
-            <h2 className="border-b border-gray-300 px-1">Total</h2>
-            <h2 className="mr-4">Now</h2>
-            {getSpendingTiltAtMFN(0)}
-            {!withdrawalsStarted && (
-              <>
-                <h2 className="mr-4">At retirement</h2>
-                {getSpendingTiltAtMFN(asMFN(withdrawalStartMonth))}
-              </>
-            )}
-            <h2 className="mr-4">At max age</h2>
-            {getSpendingTiltAtMFN(numMonths - 1)}
+        <_ExpandableNote className="mt-2" title="Spending Tilt Breakdown">
+          <p className="p-base">Your spending tilt has two components:</p>
+          {/* <h2 className="font-semibold mt-2">Base Spending Tilt</h2> */}
+          <h2 className="font-semibold mt-4">1. Base Spending Tilt</h2>
+          {/* <ol className=" list-decimal ml-4"> */}
+          {/* <li className="p-base mt-2"> */}
+          <p className="p-base mt-2">
+            This is automatically calculated for you based on your risk
+            tolerance and time preference. The risk tolerance input is located
+            above, and the time preference input is located in the advanced
+            section below.
+          </p>
+          <p className="p-base mt-2">
+            Your base spending tilt will change with age if your risk tolerance
+            changes with age. The default setting decreases risk tolerance by{' '}
+            {-defaultPlanParams.risk.tpaw.riskTolerance.deltaAtMaxAge} between
+            age 20 and max age. You can change this in the advanced section
+            below.
+          </p>
+          {/* </li> */}
+          <h2 className="font-semibold mt-4">2. Extra Spending Tilt</h2>
+          <p className="p-base mt-2">
+            This is the value that you entered in the slider above.
+          </p>
+          <h2 className="font-bold mt-4">Total Spending Tilt</h2>
+          {/* </ol> */}
+          {/* <h2 className="font-semibold mt-2">Extra Spending Tilt</h2> */}
+          <p className="p-base mt-2">
+            Your total spending tilt is obtained by adding your base and extra
+            spending tilts. This is a table of your total spending tilt at key
+            ages:
+          </p>
+          <div>
+            <div
+              className="inline-grid mt-4 gap-x-4 rounded-md p-2 border bg-orange-100/30 border-orange-200"
+              style={{ grid: 'auto/auto auto auto auto auto auto' }}
+            >
+              <h2></h2>
+              <h2 className="">Base</h2>
+              <h2 className="">+</h2>
+              <h2 className="">Extra</h2>
+              <h2 className="">=</h2>
+              <h2 className="">Total</h2>
+              <h2 className="">Now</h2>
+              {getSpendingTiltAtMFN(0)}
+              {!withdrawalsStarted && (
+                <>
+                  <h2 className="">At retirement</h2>
+                  {getSpendingTiltAtMFN(asMFN(withdrawalStartMonth))}
+                </>
+              )}
+              <h2 className="">At max age</h2>
+              {getSpendingTiltAtMFN(numMonths - 1)}
+            </div>
           </div>
-        </div>
+        </_ExpandableNote>
+
         <button
           className="mt-6 underline disabled:lighten-2"
           onClick={() =>
@@ -372,7 +427,15 @@ const _TPAWRiskToleranceDeclineCard = React.memo(
   }) => {
     const { planParams, updatePlanParams, defaultPlanParams, planParamsExt } =
       useSimulation()
-    const { longerLivedPerson } = planParamsExt
+    const {
+      longerLivedPerson,
+      withdrawalsStarted,
+      getCurrentAgeOfPerson,
+      withdrawalStartMonth,
+      asMFN,
+      getRiskToleranceFromMFN,
+      numMonths,
+    } = planParamsExt
     const defaultRisk = defaultPlanParams.risk.tpaw
     const isModified = useIsRiskToleranceDeclineCardModified()
     return (
@@ -389,11 +452,14 @@ const _TPAWRiskToleranceDeclineCard = React.memo(
           that the risk tolerance you entered above applies at age 20 and that
           it decreases linearly from there to max age by the amount entered
           below.{' '}
-          {planParams.people.withPartner &&
-            (longerLivedPerson === 'person1'
-              ? `This calculation will be based on your age since you have the longer remaining lifespan.`
-              : `This calculation will be based on your partner's age since your partner has the longer remaining lifespan.`)}
         </p>
+        {planParams.people.withPartner && (
+          <p className="p-base mt-2">
+            {longerLivedPerson === 'person1'
+              ? `This calculation will be based on the ages of the partner who has the longer remaining lifespan. Based on the ages you have entered, you have the longer remaining lifespan.`
+              : `This calculation will be based on the ages of the partner who has the longer remaining lifespan. Based on the ages you have entered, your partner has the longer remaining lifespan.`}
+          </p>
+        )}
         <SliderInput
           className={`-mx-3 mt-2 `}
           height={60}
@@ -406,6 +472,75 @@ const _TPAWRiskToleranceDeclineCard = React.memo(
           format={(x) => (-x).toFixed(0)}
           ticks={(value, i) => (i % 10 === 0 ? 'large' : 'small')}
         />
+        <_ExpandableNote className="mt-8" title="Risk Tolerance Table">
+          {block(() => {
+            const data = _.compact([
+              {
+                label: 'At Age 20',
+                mfn:
+                  20 * 12 - getCurrentAgeOfPerson(longerLivedPerson).inMonths,
+              },
+              {
+                label: 'Now',
+                mfn: 0,
+              },
+              withdrawalsStarted
+                ? null
+                : {
+                    label: 'Retirement',
+                    mfn: asMFN(withdrawalStartMonth),
+                  },
+              {
+                label: 'Max Age',
+                mfn: numMonths,
+              },
+            ])
+              .map((x) =>
+                letIn(getRiskToleranceFromMFN(x.mfn), (riskTolerance) => ({
+                  ...x,
+                  riskTolerance,
+                  rra: RISK_TOLERANCE_VALUES.riskToleranceToRRA.withInfinityAtZero(
+                    riskTolerance,
+                  ),
+                })),
+              )
+              .sort((a, b) => a.mfn - b.mfn)
+            return (
+              <div className="">
+                <p className="p-base">
+                  This is a table of your risk tolerances at key ages:
+                </p>
+                <div
+                  className="inline-grid max-w-[400px] mt-4 gap-x-4 border border-orange-200 bg-orange-100/30 rounded-md p-2"
+                  style={{ grid: 'auto/auto auto auto ' }}
+                >
+                  <div className="flex items-end justify-center">
+                    <h2 className="">
+                      {longerLivedPerson === 'person1'
+                        ? 'Your Age'
+                        : `Your Partner's Age`}
+                    </h2>
+                  </div>
+                  <div className="flex items-end">
+                    <h2 className="">Risk Tolerance</h2>
+                  </div>
+                  <h2 className="text-center">Relative Risk Aversion (RRA)</h2>
+                  <h2 className="col-span-3 my-1 -mx-2 border-b border-orange-200"></h2>
+                  {data.map(({ label, rra, riskTolerance }) => (
+                    <React.Fragment key={label}>
+                      <h2 className="">{label}</h2>
+                      <h2 className="text-center">
+                        {riskTolerance.toFixed(1)}
+                      </h2>
+                      <h2 className="text-center">{_rraToStr(rra)}</h2>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </_ExpandableNote>
+
         <button
           className="mt-6 underline disabled:lighten-2"
           onClick={() =>
@@ -604,3 +739,6 @@ export const PlanInputRiskTPAWSummary = React.memo(() => {
     </>
   )
 })
+
+const _rraToStr = (rra: number) =>
+  rra === Infinity ? 'infinity' : `${rra.toFixed(2)}`

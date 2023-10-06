@@ -23,6 +23,7 @@ module.exports = {
     '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/no-namespace': 'off',
     '@typescript-eslint/require-await': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
 
     // Project specific.
   },

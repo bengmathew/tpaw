@@ -5,9 +5,9 @@ import {
   faPlus,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { PlanParams, assert, noCase } from '@tpaw/common'
+import { PlanParams, noCase } from '@tpaw/common'
 import _ from 'lodash'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { getPrecision } from '../../../../../Utils/GetPrecision'
@@ -60,15 +60,15 @@ const _HistoricalReturnsCard = React.memo(
     const isModified = useIsCardModified(type)
 
     const handleChange = (
-      value: PlanParams['advanced']['annualReturns']['historical']['stocks'],
+      adjustExpectedReturn: PlanParams['advanced']['historicalReturnsAdjustment']['stocks']['adjustExpectedReturn'],
     ) =>
-      type === 'stocks'
-        ? updatePlanParams('setHistoricalReturnsStocksDev', value)
-        : type === 'bonds'
-        ? updatePlanParams('setHistoricalReturnsBondsDev', value)
-        : noCase(type)
+      updatePlanParams('setHistoricalReturnsAdjustExpectedReturnDev', {
+        type,
+        adjustExpectedReturn,
+      })
 
-    const currValue = planParams.advanced.annualReturns.historical[type]
+    const currValue =
+      planParams.advanced.historicalReturnsAdjustment[type].adjustExpectedReturn
 
     return (
       <div
@@ -77,14 +77,16 @@ const _HistoricalReturnsCard = React.memo(
       >
         <PlanInputModifiedBadge show={isModified} mainPage={false} />
 
-        <h2 className="font-bold text-lg">{_.capitalize(type)}</h2>
+        <h2 className="font-bold text-lg">
+          Expected Value Adjustment for {_.capitalize(type)}
+        </h2>
+
         <div className="mt-4">
           <h2
             className={`cursor-pointer `}
             onClick={() =>
               handleChange({
-                type: 'adjustExpected',
-                adjustment: { type: 'toExpectedUsedForPlanning' },
+                type: 'toExpectedUsedForPlanning',
                 correctForBlockSampling: true,
               })
             }
@@ -92,97 +94,87 @@ const _HistoricalReturnsCard = React.memo(
             <FontAwesomeIcon
               className="mr-2"
               icon={
-                currValue.type === 'adjustExpected'
+                currValue.type === 'toExpectedUsedForPlanning'
                   ? faCircleSelected
                   : faCircleRegular
               }
             />{' '}
-            Adjusted to Expected
+            Adjusted to Expected Used for Planning
           </h2>
-          {currValue.type === 'adjustExpected' && (
-            <_HistoricalAdjustedDetails
+          {currValue.type === 'toExpectedUsedForPlanning' && (
+            <_CorrectForBlockSamplingInput
               className="ml-[28px] mt-2"
-              historical={currValue}
-              onChange={handleChange}
-            />
-          )}
-        </div>
-        <div className="mt-4">
-          <h2
-            className={`cursor-pointer `}
-            onClick={() => handleChange({ type: 'rawHistorical' })}
-          >
-            <FontAwesomeIcon
-              className="mr-2"
-              icon={
-                currValue.type === 'rawHistorical'
-                  ? faCircleSelected
-                  : faCircleRegular
+              curr={currValue.correctForBlockSampling}
+              onChange={(correctForBlockSampling) =>
+                handleChange({
+                  type: 'toExpectedUsedForPlanning',
+                  correctForBlockSampling,
+                })
               }
-            />{' '}
-            Unadjusted
-          </h2>
-        </div>
-        <div className="mt-4">
-          <h2
-            className={`cursor-pointer `}
-            onClick={() =>
-              handleChange({
-                type: 'fixed',
-                value: { type: 'expectedUsedForPlanning' },
-              })
-            }
-          >
-            <FontAwesomeIcon
-              className="mr-2"
-              icon={
-                currValue.type === 'fixed' &&
-                currValue.value.type === 'expectedUsedForPlanning'
-                  ? faCircleSelected
-                  : faCircleRegular
-              }
-            />{' '}
-            Fixed to Expected
-          </h2>
-        </div>
-        <div className="mt-4">
-          <h2
-            className={`cursor-pointer `}
-            onClick={() =>
-              handleChange({
-                type: 'fixed',
-                value: {
-                  type: 'manual',
-                  value:
-                    planParamsProcessed.returns.expectedAnnualReturns[type],
-                },
-              })
-            }
-          >
-            <FontAwesomeIcon
-              className="mr-2"
-              icon={
-                currValue.type === 'fixed' && currValue.value.type === 'manual'
-                  ? faCircleSelected
-                  : faCircleRegular
-              }
-            />{' '}
-            Fixed to Manual
-          </h2>
-          {currValue.type === 'fixed' && currValue.value.type === 'manual' && (
-            <_HistoricalFixedToManualDetails
-              className="ml-[28px] mt-2"
-              type={type}
-              onChange={handleChange}
             />
           )}
         </div>
 
+        <div className="mt-4">
+          <h2
+            className={`cursor-pointer `}
+            onClick={() =>
+              handleChange({
+                type: 'toAnnualExpectedReturn',
+                annualExpectedReturn:
+                  planParamsProcessed.expectedReturnsForPlanning.annual[type],
+                correctForBlockSampling: true,
+              })
+            }
+          >
+            <FontAwesomeIcon
+              className="mr-2"
+              icon={
+                currValue.type === 'toAnnualExpectedReturn'
+                  ? faCircleSelected
+                  : faCircleRegular
+              }
+            />{' '}
+            Adjust to Other
+          </h2>
+          {currValue.type === 'toAnnualExpectedReturn' && (
+            <div className="">
+              <_ExpectedReturnInput
+                className="ml-[28px] mt-2"
+                curr={currValue.annualExpectedReturn}
+                onChange={(value) =>
+                  handleChange({ ...currValue, annualExpectedReturn: value })
+                }
+              />
+              <_CorrectForBlockSamplingInput
+                curr={currValue.correctForBlockSampling}
+                onChange={(correctForBlockSampling) =>
+                  handleChange({ ...currValue, correctForBlockSampling })
+                }
+              />
+            </div>
+          )}
+        </div>
+        <div className="mt-4">
+          <h2
+            className={`cursor-pointer `}
+            onClick={() => handleChange({ type: 'none' })}
+          >
+            <FontAwesomeIcon
+              className="mr-2"
+              icon={
+                currValue.type === 'none' ? faCircleSelected : faCircleRegular
+              }
+            />{' '}
+            Do Not Adjust
+          </h2>
+        </div>
         <button
           className="mt-6 underline disabled:lighten-2"
           onClick={() =>
             handleChange(
-              defaultPlanParams.advanced.annualReturns.historical[type],
+              defaultPlanParams.advanced.historicalReturnsAdjustment[type]
+                .adjustExpectedReturn,
             )
           }
           disabled={!isModified}
@@ -194,68 +186,49 @@ const _HistoricalReturnsCard = React.memo(
   },
 )
 
-const _HistoricalAdjustedDetails = React.memo(
+const _CorrectForBlockSamplingInput = React.memo(
   ({
     className = '',
-    historical,
+    curr,
     onChange,
   }: {
     className?: string
-    historical: Extract<
-      PlanParams['advanced']['annualReturns']['historical']['stocks'],
-      { type: 'adjustExpected' }
-    >
-    onChange: (
-      value: PlanParams['advanced']['annualReturns']['historical']['stocks'],
-    ) => void
-  }) => {
-    const { adjustment, correctForBlockSampling } = historical
-    assert(adjustment.type === 'toExpectedUsedForPlanning')
-    return (
-      <div className={`${className} ml-8 `}>
-        <div className="flex  items-center gap-x-4  py-1.5">
-          <h2 className="">Correct for Block Sampling</h2>
-          <ToggleSwitch
-            className=""
-            checked={correctForBlockSampling}
-            setChecked={(x) =>
-              onChange({ ...historical, correctForBlockSampling: x })
-            }
-          />
-        </div>
+    curr: boolean
+    onChange: (value: boolean) => void
+  }) => (
+    <div className={`${className} ml-8 `}>
+      <div className="flex  items-center gap-x-4  py-1.5">
+        <h2 className="">Correct for Block Sampling</h2>
+        <ToggleSwitch
+          className=""
+          checked={curr}
+          setChecked={(x) => onChange(x)}
+        />
       </div>
-    )
-  },
+    </div>
+  ),
 )
-const _HistoricalFixedToManualDetails = React.memo(
+
+const _ExpectedReturnInput = React.memo(
   ({
     className = '',
-    type,
+    curr,
     onChange,
   }: {
     className?: string
-    type: 'stocks' | 'bonds'
-    onChange: (
-      value: PlanParams['advanced']['annualReturns']['historical']['stocks'],
-    ) => void
+    curr: number
+    onChange: (value: number) => void
   }) => {
     const _delta = 0.1
-    const { planParams } = useSimulation()
-    const currHistorical = planParams.advanced.annualReturns.historical[type]
-    assert(currHistorical.type === 'fixed')
-    assert(currHistorical.value.type === 'manual')
-    const currValue = currHistorical.value.value
-    const [str, setStr] = useState((currValue * 100).toFixed(1))
+    const [str, setStr] = useState((curr * 100).toFixed(1))
     useEffect(() => {
-      setStr((currValue * 100).toFixed(1))
-    }, [currValue])
+      setStr((curr * 100).toFixed(1))
+    }, [curr])
     const handleAmount = (x: number) => {
       if (isNaN(x)) return
-      onChange({
-        type: 'fixed',
-        value: { type: 'manual', value: _.round(x / 100, getPrecision(x) + 2) },
-      })
+      onChange(_.round(x / 100, getPrecision(x) + 2))
     }
+
     return (
       <div className={`${className}`}>
         <div
@@ -276,13 +249,13 @@ const _HistoricalFixedToManualDetails = React.memo(
           />
           <button
             className={`flex items-center px-2 `}
-            onClick={() => handleAmount(currValue * 100 + _delta)}
+            onClick={() => handleAmount(curr * 100 + _delta)}
           >
             <FontAwesomeIcon className="text-base" icon={faPlus} />
           </button>
           <button
             className={`flex items-center px-2 `}
-            onClick={() => handleAmount(currValue * 100 - _delta)}
+            onClick={() => handleAmount(curr * 100 - _delta)}
           >
             <FontAwesomeIcon className="text-base" icon={faMinus} />
           </button>
@@ -391,67 +364,45 @@ export const useIsPlanInputDevHistoricalReturnsModified = () => {
 
 const useIsCardModified = (type: 'stocks' | 'bonds') => {
   const { planParams, defaultPlanParams } = useSimulation()
-  return useMemo(
-    () =>
-      !_.isEqual(
-        planParams.advanced.annualReturns.historical[type],
-        defaultPlanParams.advanced.annualReturns.historical[type],
-      ),
-    [
-      defaultPlanParams.advanced.annualReturns.historical,
-      planParams.advanced.annualReturns.historical,
-      type,
-    ],
+  return !_.isEqual(
+    planParams.advanced.historicalReturnsAdjustment[type].adjustExpectedReturn,
+    defaultPlanParams.advanced.historicalReturnsAdjustment[type]
+      .adjustExpectedReturn,
   )
 }
 
 export const PlanInputDevHistoricalReturnsSummary = React.memo(() => {
   const { planParams } = useSimulation()
   const byType = (type: 'stocks' | 'bonds') => {
-    const historical = planParams.advanced.annualReturns.historical[type]
-    switch (historical.type) {
-      case 'adjustExpected': {
-        switch (historical.adjustment.type) {
-          case 'toExpectedUsedForPlanning':
-            return (
-              <>
-                <h2>Adjusted to Expected</h2>
-                <h2>
-                  Corrected for Block Sampling:{' '}
-                  {historical.correctForBlockSampling}
-                </h2>
-              </>
-            )
-          case 'byValue':
-          case 'toValue':
-            return (
-              <>
-                <h2>
-                  Adjusted {historical.adjustment.type.slice(2)}:{' '}
-                  {formatPercentage(2)(historical.adjustment.value)}
-                </h2>
-                <h2>
-                  Corrected for Block Sampling:{' '}
-                  {historical.correctForBlockSampling}
-                </h2>
-              </>
-            )
-          default:
-            noCase(historical.adjustment)
-        }
-      }
-      case 'rawHistorical':
-        return <h2>Unadjusted</h2>
-      case 'fixed':
-        return historical.value.type === 'manual' ? (
-          <>Fixed to {formatPercentage(2)(historical.value.value)}</>
-        ) : historical.value.type === 'expectedUsedForPlanning' ? (
-          <>Fixed to Expected</>
-        ) : (
-          noCase(historical.value)
+    const curr =
+      planParams.advanced.historicalReturnsAdjustment[type].adjustExpectedReturn
+    switch (curr.type) {
+      case 'none':
+        return <h2>None</h2>
+      case 'toExpectedUsedForPlanning':
+        return (
+          <>
+            <h2>Adjusted to Expected</h2>
+            <h2>
+              Corrected for Block Sampling:{' '}
+              {curr.correctForBlockSampling ? 'true' : 'false'}
+            </h2>
+          </>
+        )
+      case 'toAnnualExpectedReturn':
+        return (
+          <>
+            <h2>
+              Adjusted to {formatPercentage(2)(curr.annualExpectedReturn)}
+            </h2>
+            <h2>
+              Corrected for Block Sampling:
+              {curr.correctForBlockSampling ? 'true' : 'false'}
+            </h2>
+          </>
         )
       default:
-        noCase(historical)
+        noCase(curr)
     }
   }
 

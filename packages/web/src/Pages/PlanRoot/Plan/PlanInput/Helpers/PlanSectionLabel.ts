@@ -27,8 +27,8 @@ export function planSectionLabel(type: PlanSectionName): string {
       return 'Inflation'
     case 'strategy':
       return 'Strategy'
-    case 'expected-returns':
-      return 'Expected Returns'
+    case 'expected-returns-and-volatility':
+      return 'Expected Returns and Volatility'
     case 'simulation':
       return 'Simulation'
     case 'dev-misc':

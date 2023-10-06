@@ -5,7 +5,7 @@ import { assert, block, fGet, noCase } from '@tpaw/common'
 import clsx from 'clsx'
 import _, { capitalize } from 'lodash'
 import { DateTime, Duration } from 'luxon'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { writableCloneDeep } from '../../../../../Utils/WritableCloneDeep'
@@ -300,10 +300,11 @@ const _SynthesizeMarketDataCard = React.memo(
                     dailyStockMarketPerformance: {
                       type: 'constant',
                       annualBND:
-                        planParamsProcessed.returns.expectedAnnualReturns
+                        planParamsProcessed.expectedReturnsForPlanning.annual
                           .bonds,
                       annualVT:
-                        planParamsProcessed.returns.expectedAnnualReturns.stocks,
+                        planParamsProcessed.expectedReturnsForPlanning.annual
+                          .stocks,
                     },
                   },
                 })
@@ -329,7 +330,8 @@ const _SynthesizeMarketDataCard = React.memo(
                       const strategy = fGet(synthesizeMarketDataSpec).strategy
                         .dailyStockMarketPerformance
                       assert(strategy.type === 'constant')
-                      const annualReturns = planParams.advanced.annualReturns
+                      const expectedReturns =
+                        planParams.advanced.expectedAnnualReturnForPlanning
 
                       return (
                         <>
@@ -347,7 +349,7 @@ const _SynthesizeMarketDataCard = React.memo(
                             </h2>
                           </div>
                           <div className="mt-2">
-                            {annualReturns.expected.type === 'manual' ? (
+                            {expectedReturns.type === 'manual' ? (
                               <h2 className="">
                                 NOTE: Expected return is manual.
                               </h2>

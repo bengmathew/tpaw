@@ -1,5 +1,6 @@
 import { JSONGuard, boolean, number, union, object, constant } from 'json-guard'
 import { PlanParams21 as V21 } from './Old/PlanParams21'
+import { PlanParams22 as V22 } from './Old/PlanParams22'
 
 export type PlanParamsChangeActionDeprecated =
   | {
@@ -18,6 +19,20 @@ export type PlanParamsChangeActionDeprecated =
       type: 'setHistoricalReturnsFixedBonds'
       value: number
     }
+  | {
+      type: 'setHistoricalReturnsBonds'
+      value:
+        | 'fixedToExpectedUsedForPlanning'
+        | 'adjustExpectedToExpectedUsedForPlanning'
+    }
+  | {
+      type: 'setHistoricalReturnsStocksDev'
+      value: V22.PlanParams['advanced']['annualReturns']['historical']['stocks']
+    }
+  | {
+      type: 'setHistoricalReturnsBondsDev'
+      value: V22.PlanParams['advanced']['annualReturns']['historical']['bonds']
+    }
 
 const _guard = <T extends string, V>(
   type: T,
@@ -25,6 +40,8 @@ const _guard = <T extends string, V>(
 ): JSONGuard<{ type: T; value: V }> =>
   object({ type: constant(type), value: valueGuard })
 
+
+  const v22CG = V22.componentGuards
 export const planParamsChangeActionGuardDeprecated: JSONGuard<PlanParamsChangeActionDeprecated> =
   union(
     _guard(
@@ -34,4 +51,13 @@ export const planParamsChangeActionGuardDeprecated: JSONGuard<PlanParamsChangeAc
     _guard('setHistoricalReturnsAdjustForBlockSampling', boolean),
     _guard('setHistoricalReturnsFixedStocks', number),
     _guard('setHistoricalReturnsFixedBonds', number),
+    _guard(
+      'setHistoricalReturnsBonds',
+      union(
+        constant('fixedToExpectedUsedForPlanning'),
+        constant('adjustExpectedToExpectedUsedForPlanning'),
+      ),
+    ),
+    _guard('setHistoricalReturnsStocksDev', v22CG.historicalAnnualReturns),
+    _guard('setHistoricalReturnsBondsDev', v22CG.historicalAnnualReturns),
   )

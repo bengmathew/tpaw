@@ -1,9 +1,4 @@
-import {
-  PlanParams,
-  PlanParamsChangeAction,
-  assert,
-  noCase,
-} from '@tpaw/common'
+import { PlanParams, PlanParamsChangeAction, noCase } from '@tpaw/common'
 import { formatPercentage } from '../../../Utils/FormatPercentage'
 import { processPlanParamsChangeActionCurrent } from './PlanParamsChangeAction'
 
@@ -70,6 +65,22 @@ export const processPlanParamsChangeActionDeprecated = (
     }
 
     // ---------
+    // SetHistoricalReturnsBonds
+    // ---------
+    case 'setHistoricalReturnsBonds': {
+      const { value } = action
+      return {
+        render: () => {
+          return value === 'adjustExpectedToExpectedUsedForPlanning'
+            ? 'Bond volatility enabled'
+            : value === 'fixedToExpectedUsedForPlanning'
+            ? 'Bond volatility disabled'
+            : noCase(value)
+        },
+      }
+    }
+
+    // ---------
     // SetHistoricalReturnsFixedStocks
     // ---------
     case 'setHistoricalReturnsFixedStocks': {
@@ -82,12 +93,34 @@ export const processPlanParamsChangeActionDeprecated = (
       }
     }
 
+    // ---------
+    // SetHistoricalReturnsFixedBonds
+    // ---------
     case 'setHistoricalReturnsFixedBonds': {
-      // --------- // SetHistoricalReturnsFixedBonds // ---------
       const { value } = action
       return {
         render: () =>
           `Set fixed historical returns bonds to ${formatPercentage(1)(value)}`,
+      }
+    }
+
+    // ---------
+    // SetHistoricalReturnsStocksDev
+    // ---------
+    case 'setHistoricalReturnsStocksDev': {
+      const { value } = action
+      return {
+        render: () => `DEV: Set historical returns for stocks`,
+      }
+    }
+
+    // ---------
+    // SetHistoricalReturnsBondsDev
+    // ---------
+    case 'setHistoricalReturnsBondsDev': {
+      const { value } = action
+      return {
+        render: () => `DEV: Set historical returns for bonds`,
       }
     }
 

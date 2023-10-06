@@ -43,7 +43,7 @@ export type PlanContent = {
     }
     rewardRiskRatioIntro: _FetchedInline
   }
-  'expected-returns': _IntroAndGuide
+  'expected-returns-and-volatility': _IntroAndGuide
   inflation: _IntroAndGuide
   simulation: {
     guide: _FetchedInline
@@ -157,7 +157,7 @@ const _getPlanContent = async () =>
       rewardRiskRatioIntro: '7wNIfORQHqumvZG6wWcmqG',
       guide: '5F0tZKpZ2SPvljHIGkPYmy',
     },
-    'expected-returns': {
+    'expected-returns-and-volatility': {
       intro: '2NxIclWQoxuk0TMVH0GjhR',
       guide: '2GxHf6q4kfRrz6AnFLniFh',
     },

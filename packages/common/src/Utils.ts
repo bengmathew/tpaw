@@ -126,7 +126,7 @@ export function getStats<T extends Float64Array | number[]>(returns: T) {
 
 export function getStatsWithLog(x: number[]) {
   return {
-    ...getStats(x),
+    ofBase: getStats(x),
     ofLog: getStats(getLogReturns(x)),
   }
 }
@@ -158,4 +158,3 @@ export const generateRandomString = (length: number) => {
 }
 
 export const generateSmallId = () => generateRandomString(10)
-

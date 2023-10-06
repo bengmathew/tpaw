@@ -23,7 +23,7 @@ import { yourOrYourPartners } from '../../../Utils/YourOrYourPartners'
 import { optGet } from '../../../Utils/optGet'
 import { nextPlanSectionDialogPosition } from '../Plan/PlanInput/Helpers/PlanSectionDialogPosition'
 import { planSectionLabel } from '../Plan/PlanInput/Helpers/PlanSectionLabel'
-import { expectedReturnTypeLabel } from '../Plan/PlanInput/PlanInputExpectedReturns'
+import { expectedReturnTypeLabel } from '../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { inflationTypeLabel } from '../Plan/PlanInput/PlanInputInflation'
 
 type _ActionFns = {
@@ -722,7 +722,7 @@ export const processPlanParamsChangeActionCurrent = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.annualReturns.expected = value
+          clone.advanced.expectedAnnualReturnForPlanning = value
         },
         render: () => {
           return `Set expected returns to ${_.lowerFirst(
@@ -742,31 +742,33 @@ export const processPlanParamsChangeActionCurrent = (
       }
     }
     // ---------
-    // SetHistoricalReturnsBonds
+    // setHistoricalStockReturnsAdjustmentVolatilityScale
     // ---------
-    case 'setHistoricalReturnsBonds': {
+    case 'setHistoricalStockReturnsAdjustmentVolatilityScale': {
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.annualReturns.historical.bonds =
-            value === 'adjustExpectedToExpectedUsedForPlanning'
-              ? {
-                  type: 'adjustExpected',
-                  adjustment: { type: 'toExpectedUsedForPlanning' },
-                  correctForBlockSampling: true,
-                }
-              : value === 'fixedToExpectedUsedForPlanning'
-              ? { type: 'fixed', value: { type: 'expectedUsedForPlanning' } }
-              : noCase(value)
+          clone.advanced.historicalReturnsAdjustment.stocks.volatilityScale =
+            value
         },
 
-        render: () => {
-          return value === 'adjustExpectedToExpectedUsedForPlanning'
-            ? 'Bond volatility enabled'
-            : value === 'fixedToExpectedUsedForPlanning'
-            ? 'Bond volatility disabled'
-            : noCase(value)
+        render: () => `Set stocks volatility scaling to ${value}`,
+        merge: null,
+      }
+    }
+
+    // ---------
+    // setHistoricalBondReturnsAdjustmentEnableVolatility
+    // ---------
+    case 'setHistoricalBondReturnsAdjustmentEnableVolatility': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.advanced.historicalReturnsAdjustment.bonds.enableVolatility =
+            value
         },
+
+        render: () => `Bond volatility ${value ? 'enabled' : 'disabled'}`,
         merge: null,
       }
     }
@@ -866,35 +868,23 @@ export const processPlanParamsChangeActionCurrent = (
     }
 
     // ---------
-    // SetHistoricalReturnsStocksDev
+    // setHistoricalReturnsAdjustExpectedReturnDev
     // ---------
-    case 'setHistoricalReturnsStocksDev': {
-      const { value } = action
+    case 'setHistoricalReturnsAdjustExpectedReturnDev': {
+      const { type, adjustExpectedReturn } = action.value
       return {
         applyToClone: (clone) => {
-          clone.advanced.annualReturns.historical.stocks = value
+          clone.advanced.historicalReturnsAdjustment[
+            type
+          ].adjustExpectedReturn = adjustExpectedReturn
         },
-        render: () => `DEV: Set historical returns for stocks`,
+        render: () =>
+          `DEV: Set historical returns expected value adjustment for ${
+            type === 'stocks' ? 'stocks' : 'bonds'
+          }`,
         merge: null,
       }
     }
-
-    // ---------
-    // SetHistoricalReturnsBondsDev
-    // ---------
-    case 'setHistoricalReturnsBondsDev': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          clone.advanced.annualReturns.historical.bonds = value
-        },
-        render: () => `DEV: Set historical returns for bonds`,
-        merge: null,
-      }
-    }
-
-    default:
-      noCase(action)
   }
 }
 

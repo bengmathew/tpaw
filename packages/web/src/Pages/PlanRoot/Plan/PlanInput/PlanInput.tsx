@@ -23,7 +23,7 @@ import { PlanInputDevHistoricalReturns } from './PlanInputDev/PlanInputDevHistor
 import { PlanInputDevMisc } from './PlanInputDev/PlanInputDevMisc'
 import { PlanInputDevSimulations } from './PlanInputDev/PlanInputDevSimulations'
 import { PlanInputDevFastForward } from './PlanInputDev/PlanInputDevTime'
-import { PlanInputExpectedReturns } from './PlanInputExpectedReturns'
+import { PlanInputExpectedReturnsAndVolatility } from './PlanInputExpectedReturnsAndVolatility'
 import { PlanInputExtraSpending } from './PlanInputExtraSpending'
 import { PlanInputFutureSavings } from './PlanInputFutureSavings'
 import { PlanInputIncomeDuringRetirement } from './PlanInputIncomeDuringRetirement'
@@ -158,8 +158,8 @@ const _Body = React.memo(
         return <PlanInputRisk {...props} />
       case 'strategy':
         return <PlanInputStrategy {...props} />
-      case 'expected-returns':
-        return <PlanInputExpectedReturns {...props} />
+      case 'expected-returns-and-volatility':
+        return <PlanInputExpectedReturnsAndVolatility {...props} />
       case 'inflation':
         return <PlanInputInflation {...props} />
       case 'simulation':

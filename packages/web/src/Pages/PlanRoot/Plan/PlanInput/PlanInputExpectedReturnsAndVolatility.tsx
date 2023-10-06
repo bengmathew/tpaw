@@ -1,14 +1,11 @@
 import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
-import {
-  faCaretDown,
-  faCaretRight,
-  faCircle as faCircleSelected,
-} from '@fortawesome/pro-solid-svg-icons'
+import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EXPECTED_ANNUAL_RETURN_PRESETS,
   MANUAL_STOCKS_BONDS_RETURNS_VALUES,
   PlanParams,
+  STOCK_VOLATILITY_SCALE_VALUES,
   fGet,
   historicalReturns,
 } from '@tpaw/common'
@@ -30,36 +27,14 @@ import {
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
-export const PlanInputExpectedReturns = React.memo(
+export const PlanInputExpectedReturnsAndVolatility = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const advancedCount = _.filter([useIsFixedBondsCardModified()]).length
-
-    const [showAdvanced, setShowAdvanced] = useState(false)
-
     return (
       <PlanInputBody {...props}>
         <>
           <_ExpectedReturnsCard className="" props={props} />
-          <button
-            className="mt-6 text-start"
-            onClick={() => setShowAdvanced((x) => !x)}
-            style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
-          >
-            <div className="text-[20px] sm:text-[24px] font-bold text-left">
-              Advanced{' '}
-              <FontAwesomeIcon
-                icon={showAdvanced ? faCaretDown : faCaretRight}
-              />
-            </div>
-            <h2 className="">
-              {advancedCount === 0 ? 'None' : `${advancedCount} modified`}
-            </h2>
-          </button>
-          {showAdvanced && (
-            <>
-              <_BondVolatilityCard className="" props={props} />
-            </>
-          )}
+          <_BondVolatilityCard className="mt-10" props={props} />
+          <_StockVolatilityCard className="mt-10" props={props} />
         </>
       </PlanInputBody>
     )
@@ -82,7 +57,7 @@ export const _ExpectedReturnsCard = React.memo(
       getZonedTime(timestamp).toLocaleString(DateTime.DATE_MED)
 
     const handleChange = (
-      expected: PlanParams['advanced']['annualReturns']['expected'],
+      expected: PlanParams['advanced']['expectedAnnualReturnForPlanning'],
     ) => updatePlanParams('setExpectedReturns', expected)
 
     const isModified = useIsExpectedReturnsCardModified()
@@ -94,7 +69,9 @@ export const _ExpectedReturnsCard = React.memo(
         style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
       >
         <PlanInputModifiedBadge show={isModified} mainPage={false} />
-        <div className="">
+
+        <h2 className="font-bold text-lg ">Expected Returns</h2>
+        <div className="mt-2">
           <p className="p-base mb-2 mt-1">
             {`Pick the expected annual real returns for stocks and bonds. All the options other than "manual" are automatically updated periodically based on new data.`}
           </p>
@@ -139,7 +116,9 @@ export const _ExpectedReturnsCard = React.memo(
         <button
           className="mt-3 underline disabled:lighten-2"
           onClick={() =>
-            handleChange(defaultPlanParams.advanced.annualReturns.expected)
+            handleChange(
+              defaultPlanParams.advanced.expectedAnnualReturnForPlanning,
+            )
           }
           disabled={!isModified}
         >
@@ -352,7 +331,7 @@ export const _ExpectedReturnsCard = React.memo(
                   Historical — average of the historical stock returns:{' '}
                   <span className="font-bold">
                     {formatPercentage(1)(
-                      historicalReturns.monthly.annualStats.stocks
+                      historicalReturns.monthly.annualStats.stocks.ofBase
                         .expectedValue,
                     )}
                   </span>{' '}
@@ -424,7 +403,7 @@ export const _ExpectedReturnsCard = React.memo(
                     Historical — average of the historical bond returns:{' '}
                     <span className="font-bold">
                       {formatPercentage(1)(
-                        historicalReturns.monthly.annualStats.bonds
+                        historicalReturns.monthly.annualStats.bonds.ofBase
                           .expectedValue,
                       )}
                     </span>{' '}
@@ -448,7 +427,7 @@ export const _Preset = React.memo(
     className?: string
     type: Parameters<typeof EXPECTED_ANNUAL_RETURN_PRESETS>[0]
     onChange: (
-      expected: PlanParams['advanced']['annualReturns']['expected'],
+      expected: PlanParams['advanced']['expectedAnnualReturnForPlanning'],
     ) => void
   }) => {
     const { planParams, currentMarketData } = useSimulation()
@@ -465,7 +444,7 @@ export const _Preset = React.memo(
         <FontAwesomeIcon
           className="mt-1"
           icon={
-            planParams.advanced.annualReturns.expected.type === type
+            planParams.advanced.expectedAnnualReturnForPlanning.type === type
               ? faCircleSelected
               : faCircleRegular
           }
@@ -490,7 +469,7 @@ export const _Manual = React.memo(
   }: {
     className?: string
     onChange: (
-      expected: PlanParams['advanced']['annualReturns']['expected'],
+      expected: PlanParams['advanced']['expectedAnnualReturnForPlanning'],
     ) => void
     props: PlanInputBodyPassThruProps
   }) => {
@@ -498,10 +477,10 @@ export const _Manual = React.memo(
     const { planParams, currentMarketData } = useSimulation()
 
     const curr =
-      planParams.advanced.annualReturns.expected.type === 'manual'
-        ? { ...planParams.advanced.annualReturns.expected }
+      planParams.advanced.expectedAnnualReturnForPlanning.type === 'manual'
+        ? { ...planParams.advanced.expectedAnnualReturnForPlanning }
         : EXPECTED_ANNUAL_RETURN_PRESETS(
-            planParams.advanced.annualReturns.expected.type,
+            planParams.advanced.expectedAnnualReturnForPlanning.type,
             currentMarketData,
           )
 
@@ -525,7 +504,8 @@ export const _Manual = React.memo(
           <FontAwesomeIcon
             className="mt-1"
             icon={
-              planParams.advanced.annualReturns.expected.type === 'manual'
+              planParams.advanced.expectedAnnualReturnForPlanning.type ===
+              'manual'
                 ? faCircleSelected
                 : faCircleRegular
             }
@@ -536,7 +516,8 @@ export const _Manual = React.memo(
             </h2>
           </div>
         </button>
-        {planParams.advanced.annualReturns.expected.type === 'manual' && (
+        {planParams.advanced.expectedAnnualReturnForPlanning.type ===
+          'manual' && (
           <div className="mt-4">
             <h2 className="ml-6 mt-2 ">Stocks</h2>
             <SliderInput
@@ -545,7 +526,7 @@ export const _Manual = React.memo(
               maxOverflowHorz={props.sizing.cardPadding}
               format={formatPercentage(1)}
               data={MANUAL_STOCKS_BONDS_RETURNS_VALUES}
-              value={planParams.advanced.annualReturns.expected.stocks}
+              value={planParams.advanced.expectedAnnualReturnForPlanning.stocks}
               onChange={(stocks) =>
                 onChange({
                   type: 'manual',
@@ -569,7 +550,7 @@ export const _Manual = React.memo(
               maxOverflowHorz={props.sizing.cardPadding}
               format={formatPercentage(1)}
               data={MANUAL_STOCKS_BONDS_RETURNS_VALUES}
-              value={planParams.advanced.annualReturns.expected.bonds}
+              value={planParams.advanced.expectedAnnualReturnForPlanning.bonds}
               onChange={(bonds) =>
                 onChange({
                   type: 'manual',
@@ -597,7 +578,7 @@ export const _Manual = React.memo(
 export const expectedReturnTypeLabel = ({
   type,
 }: {
-  type: PlanParams['advanced']['annualReturns']['expected']['type']
+  type: PlanParams['advanced']['expectedAnnualReturnForPlanning']['type']
 }) => {
   switch (type) {
     case 'suggested':
@@ -621,12 +602,14 @@ export const _BondVolatilityCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParams, updatePlanParams } = useSimulation()
-    const isModified = useIsFixedBondsCardModified()
-    const currHistorical = planParams.advanced.annualReturns.historical.bonds
-    const currIsFixed =
-      currHistorical.type === 'fixed' &&
-      currHistorical.value.type === 'expectedUsedForPlanning'
+    const { planParams, updatePlanParams, defaultPlanParams } = useSimulation()
+    const isModified = useIsBondVolatilityCardModified()
+    const handleChange = (enableVolatility: boolean) => {
+      updatePlanParams(
+        'setHistoricalBondReturnsAdjustmentEnableVolatility',
+        enableVolatility,
+      )
+    }
     return (
       <div
         className={`${className} params-card relative`}
@@ -648,23 +631,26 @@ export const _BondVolatilityCard = React.memo(
           <h2 className="font-medium">Allow Bond Volatility</h2>
           <ToggleSwitch
             className=""
-            checked={!currIsFixed}
+            checked={
+              planParams.advanced.historicalReturnsAdjustment.bonds
+                .enableVolatility
+            }
             setChecked={(enabled) => {
               updatePlanParams(
-                'setHistoricalReturnsBonds',
-                !enabled
-                  ? 'fixedToExpectedUsedForPlanning'
-                  : 'adjustExpectedToExpectedUsedForPlanning',
+                'setHistoricalBondReturnsAdjustmentEnableVolatility',
+                enabled,
               )
             }}
           />
         </div>
+        {/* <p className="">This sets the bond volatility to {}</p> */}
+
         <button
           className="mt-6 underline disabled:lighten-2"
           onClick={() =>
-            updatePlanParams(
-              'setHistoricalReturnsBonds',
-              'adjustExpectedToExpectedUsedForPlanning',
+            handleChange(
+              defaultPlanParams.advanced.historicalReturnsAdjustment.bonds
+                .enableVolatility,
             )
           }
           disabled={!isModified}
@@ -676,48 +662,160 @@ export const _BondVolatilityCard = React.memo(
   },
 )
 
-export const useIsPlanInputExpectedReturnsModified = () => {
-  const isExpectedCardModified = useIsExpectedReturnsCardModified()
-  const isFixedBondsCardModified = useIsFixedBondsCardModified()
+export const _StockVolatilityCard = React.memo(
+  ({
+    className = '',
+    props,
+  }: {
+    className?: string
+    props: PlanInputBodyPassThruProps
+  }) => {
+    const {
+      planParams,
+      planParamsProcessed,
+      updatePlanParams,
+      defaultPlanParams,
+    } = useSimulation()
+    const isModified = useIsStockVolatilityCardModified()
+    const handleChange = (volatilityScale: number) => {
+      updatePlanParams(
+        'setHistoricalStockReturnsAdjustmentVolatilityScale',
+        volatilityScale,
+      )
+    }
+    return (
+      <div
+        className={`${className} params-card relative`}
+        style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
+      >
+        <PlanInputModifiedBadge show={isModified} mainPage={false} />
+        <h2 className="font-bold text-lg ">Stock Volatility</h2>
+        <p className="p-base mt-2">
+          The default simulation models stocks with volatility equalling the
+          historical volatility. You can choose to model stocks with more or
+          less volatility by choosing a scaling factor for the stock return
+          distribution here. A scaling factor of{' '}
+          <span className="italic">X</span> multiplies the deviations of
+          historical log stock returns from its the mean by{' '}
+          <span className="italic">X</span>. This will change the standard
+          deviation to <span className="italic">X</span> times the historical
+          standard deviation.
+        </p>
+        {/* <p className="p-base mt-2">
+          So an input of 1 keeps the log stock return distribution the same as
+          historical. An input less than 1 tightens the distribution and results
+          in a lower standard deviation. An input greater than 1 widens the
+          distribution and results in a higher standard deviation.
+        </p> */}
 
-  return isExpectedCardModified || isFixedBondsCardModified
+        <SliderInput
+          className={`-mx-3 mt-2 `}
+          height={60}
+          maxOverflowHorz={props.sizing.cardPadding}
+          data={STOCK_VOLATILITY_SCALE_VALUES}
+          value={
+            planParams.advanced.historicalReturnsAdjustment.stocks
+              .volatilityScale
+          }
+          onChange={(x) => handleChange(x)}
+          format={(x) => `${x}`}
+          ticks={(value, i) =>
+            _.round(value, 1) === value ? 'large' : 'small'
+          }
+        />
+        <p className="p-base mt-4">
+          This corresponds to a standard deviation of log stock returns of{' '}
+          {formatPercentage(2)(
+            Math.sqrt(
+              planParamsProcessed.historicalReturnsAdjusted.monthly.annualStats
+                .estimatedSampledStats.stocks.ofLog.variance,
+            ),
+          )}.
+        </p>
+
+        <button
+          className="mt-6 underline disabled:lighten-2"
+          onClick={() =>
+            handleChange(
+              defaultPlanParams.advanced.historicalReturnsAdjustment.stocks
+                .volatilityScale,
+            )
+          }
+          disabled={!isModified}
+        >
+          Reset to Default
+        </button>
+      </div>
+    )
+  },
+)
+
+export const useIsPlanInputExpectedReturnsAndVolatilityModified = () => {
+  const isExpectedCardModified = useIsExpectedReturnsCardModified()
+  const isBondVolatilityModified = useIsBondVolatilityCardModified()
+  const isStockVolatilityModified = useIsStockVolatilityCardModified()
+
+  return (
+    isExpectedCardModified ||
+    isBondVolatilityModified ||
+    isStockVolatilityModified
+  )
 }
 
 const useIsExpectedReturnsCardModified = () => {
   const { planParams, defaultPlanParams } = useSimulation()
   return !_.isEqual(
-    defaultPlanParams.advanced.annualReturns.expected,
-    planParams.advanced.annualReturns.expected,
+    defaultPlanParams.advanced.expectedAnnualReturnForPlanning,
+    planParams.advanced.expectedAnnualReturnForPlanning,
   )
 }
-const useIsFixedBondsCardModified = () => {
+const useIsStockVolatilityCardModified = () => {
   const { planParams, defaultPlanParams } = useSimulation()
   return !_.isEqual(
-    defaultPlanParams.advanced.annualReturns.historical.bonds,
-    planParams.advanced.annualReturns.historical.bonds,
+    defaultPlanParams.advanced.historicalReturnsAdjustment.stocks
+      .volatilityScale,
+    planParams.advanced.historicalReturnsAdjustment.stocks.volatilityScale,
   )
 }
 
-export const PlanInputExpectedReturnsSummary = React.memo(() => {
-  const { planParams, currentMarketData } = useSimulation()
+const useIsBondVolatilityCardModified = () => {
+  const { planParams, defaultPlanParams } = useSimulation()
+  return !_.isEqual(
+    defaultPlanParams.advanced.historicalReturnsAdjustment.bonds
+      .enableVolatility,
+    planParams.advanced.historicalReturnsAdjustment.bonds.enableVolatility,
+  )
+}
+
+export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(() => {
+  const { planParams, planParamsProcessed, currentMarketData } = useSimulation()
+  const { expectedReturnsForPlanning } = planParamsProcessed
+  const { historicalReturnsAdjustment } = planParams.advanced
   const format = formatPercentage(1)
-  const { stocks, bonds } =
-    planParams.advanced.annualReturns.expected.type === 'manual'
-      ? planParams.advanced.annualReturns.expected
-      : EXPECTED_ANNUAL_RETURN_PRESETS(
-          planParams.advanced.annualReturns.expected.type,
-          currentMarketData,
-        )
+
   return (
     <>
       <h2>
-        {expectedReturnTypeLabel(planParams.advanced.annualReturns.expected)}
+        Expected Returns:{' '}
+        {expectedReturnTypeLabel(
+          planParams.advanced.expectedAnnualReturnForPlanning,
+        )}
       </h2>
-      <h2 className="ml-4">Stocks: {format(stocks)}</h2>
-      <h2 className="ml-4">Bonds: {format(bonds)}</h2>
-      {planParams.advanced.annualReturns.historical.bonds.type === 'fixed' &&
-        planParams.advanced.annualReturns.historical.bonds.value.type ===
-          'expectedUsedForPlanning' && <h2>Bond Volatility Disabled </h2>}
+      <h2 className="ml-4">
+        Stocks: {format(expectedReturnsForPlanning.annual.stocks)}
+      </h2>
+      <h2 className="ml-4">
+        Bonds: {format(expectedReturnsForPlanning.annual.bonds)}
+      </h2>
+      <h2 className="">Volatility</h2>
+      <h2 className="ml-4">
+        Allow Bond Volatility:{' '}
+        {`${historicalReturnsAdjustment.bonds.enableVolatility ? 'Yes' : 'No'}`}
+      </h2>
+      <h2 className="ml-4">
+        Scale Stock Volatility by{' '}
+        {`${historicalReturnsAdjustment.stocks.volatilityScale}`}
+      </h2>
     </>
   )
 })

@@ -122,7 +122,6 @@ pub fn memoized_random(
     unsafe { std::mem::transmute(&store.data) }
 }
 
-
 #[wasm_bindgen]
 #[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct Stats {
@@ -162,7 +161,7 @@ pub fn get_log_returns(returns: &Vec<f64>) -> Vec<f64> {
 #[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct StatsForWindowSize {
     pub n: usize,
-    pub mean: f64,
+    pub of_base: Stats,
     pub of_log: Stats,
 }
 
@@ -184,7 +183,7 @@ pub fn get_stats_for_window_size_from_log_returns(
         .collect();
     return StatsForWindowSize {
         n: gross.len(),
-        mean: get_mean(&gross.iter().map(|x| x.exp() - 1.0).collect()),
+        of_base: get_stats(&gross.iter().map(|x| x.exp() - 1.0).collect()),
         of_log: get_stats(&gross),
     };
 }

@@ -8,7 +8,7 @@ export const paramsInputTypes = [
   'risk',
   'spending-ceiling-and-floor',
   'strategy',
-  'expected-returns',
+  'expected-returns-and-volatility',
   'inflation',
   'simulation',
   'dev-misc',

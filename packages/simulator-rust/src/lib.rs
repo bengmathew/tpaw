@@ -38,6 +38,8 @@ pub struct RunResult {
     // so ok to leave it in.
     by_run_by_mfn_returns_stocks: Vec<f64>,
     by_run_by_mfn_returns_bonds: Vec<f64>,
+    annual_stats_for_sampled_stock_returns: StatsForWindowSize,
+    annual_stats_for_sampled_bond_returns: StatsForWindowSize,
 }
 
 #[wasm_bindgen]
@@ -83,20 +85,26 @@ impl RunResult {
     pub fn by_run_by_mfn_returns_bonds(&self) -> js_sys::Float64Array {
         to_js_arr(&self.by_run_by_mfn_returns_bonds)
     }
-    pub fn average_annual_returns_stocks(&self) -> f64 {
-        get_stats_for_window_size_from_log_returns(
-            &get_log_returns(&self.by_run_by_mfn_returns_stocks),
-            12,
-        )
-        .mean
+    pub fn annual_stats_for_sampled_stock_returns(&self) -> StatsForWindowSize {
+        self.annual_stats_for_sampled_stock_returns
     }
-    pub fn average_annual_returns_bonds(&self) -> f64 {
-        get_stats_for_window_size_from_log_returns(
-            &get_log_returns(&self.by_run_by_mfn_returns_bonds),
-            12,
-        )
-        .mean
+    pub fn annual_stats_for_sampled_bond_returns(&self) -> StatsForWindowSize {
+        self.annual_stats_for_sampled_bond_returns
     }
+    // pub fn average_annual_returns_stocks(&self) -> f64 {
+    // get_stats_for_window_size_from_log_returns(
+    //     &get_log_returns(&self.by_run_by_mfn_returns_stocks),
+    //     12,
+    // )
+    //     .mean
+    // }
+    // pub fn average_annual_returns_bonds(&self) -> f64 {
+    //     get_stats_for_window_size_from_log_returns(
+    //         &get_log_returns(&self.by_run_by_mfn_returns_bonds),
+    //         12,
+    //     )
+    //     .mean
+    // }
 }
 
 #[wasm_bindgen]
@@ -214,6 +222,36 @@ pub fn run(
         // Test
         by_run_by_mfn_returns_stocks: create_vec(),
         by_run_by_mfn_returns_bonds: create_vec(),
+        annual_stats_for_sampled_stock_returns: StatsForWindowSize {
+            n: 0,
+            of_base: Stats {
+                mean: 0.0,
+                variance: 0.0,
+                standard_deviation: 0.0,
+                n: 0,
+            },
+            of_log: Stats {
+                mean: 0.0,
+                variance: 0.0,
+                standard_deviation: 0.0,
+                n: 0,
+            },
+        },
+        annual_stats_for_sampled_bond_returns: StatsForWindowSize {
+            n: 0,
+            of_base: Stats {
+                mean: 0.0,
+                variance: 0.0,
+                standard_deviation: 0.0,
+                n: 0,
+            },
+            of_log: Stats {
+                mean: 0.0,
+                variance: 0.0,
+                standard_deviation: 0.0,
+                n: 0,
+            },
+        },
     };
 
     match strategy {
@@ -222,6 +260,17 @@ pub fn run(
         params::ParamsStrategy::SWR => run_swr::run(&params, &mut result),
         _ => panic!(),
     };
+
+    if (result.by_run_by_mfn_returns_stocks.len() >= 12) {
+        result.annual_stats_for_sampled_stock_returns = get_stats_for_window_size_from_log_returns(
+            &get_log_returns(&result.by_run_by_mfn_returns_stocks),
+            12,
+        );
+        result.annual_stats_for_sampled_bond_returns = get_stats_for_window_size_from_log_returns(
+            &get_log_returns(&result.by_run_by_mfn_returns_bonds),
+            12,
+        );
+    }
     return result;
 }
 

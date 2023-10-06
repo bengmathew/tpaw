@@ -19,7 +19,7 @@ import { PlanInputDevHistoricalReturnsSummary } from '../PlanInput/PlanInputDev/
 import { PlanInputDevMiscSummary } from '../PlanInput/PlanInputDev/PlanInputDevMisc'
 import { PlanInputDevSimulationsSummary } from '../PlanInput/PlanInputDev/PlanInputDevSimulations'
 import { PlanInputDevTimeSummary } from '../PlanInput/PlanInputDev/PlanInputDevTime'
-import { PlanInputExpectedReturnsSummary } from '../PlanInput/PlanInputExpectedReturns'
+import { PlanInputExpectedReturnsAndVolatilitySummary } from '../PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { PlanInputExtraSpendingSummary } from '../PlanInput/PlanInputExtraSpending'
 import { PlanInputFutureSavingsSummary } from '../PlanInput/PlanInputFutureSavings'
 import { PlanInputIncomeDuringRetirementSummary } from '../PlanInput/PlanInputIncomeDuringRetirement'
@@ -154,8 +154,8 @@ const _SectionSummary = React.memo(
         return <PlanInputSpendingCeilingAndFloorSummary />
       case 'risk':
         return <PlanInputRiskSummary />
-      case 'expected-returns':
-        return <PlanInputExpectedReturnsSummary />
+      case 'expected-returns-and-volatility':
+        return <PlanInputExpectedReturnsAndVolatilitySummary />
       case 'inflation':
         return <PlanInputInflationSummary />
       case 'strategy':

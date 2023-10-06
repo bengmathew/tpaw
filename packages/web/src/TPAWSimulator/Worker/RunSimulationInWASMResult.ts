@@ -1,4 +1,3 @@
-
 export type RunSimulationInWASMResult = {
   byMonthsFromNowByRun: {
     savingsPortfolio: {
@@ -24,10 +23,18 @@ export type RunSimulationInWASMResult = {
     numInsufficientFundMonths: Int32Array
     endingBalanceOfSavingsPortfolio: Float64Array
   }
-  averageAnnualReturns: {
-    stocks: number
-    bonds: number
-  }
+  annualStatsForSampledReturns: Record<
+    'stocks' | 'bonds',
+    { n: number } & Record<
+      'ofBase' | 'ofLog',
+      {
+        mean: number
+        variance: number
+        standardDeviation: number
+        n: number
+      }
+    >
+  >
   perf: [
     ['runs', number],
     ['post', number],

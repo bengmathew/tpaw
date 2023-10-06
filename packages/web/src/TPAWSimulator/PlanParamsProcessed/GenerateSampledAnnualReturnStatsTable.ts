@@ -45,24 +45,24 @@ export async function generateSampledAnnualReturnStatsTable() {
       monthly: typeof historicalReturns.monthly.stocks,
     ): Promise<SampledReturnStats> => {
       const start = performance.now()
-      const sampledReturnStats = await getSampledReturnStats(monthly.returns)
+      const sampledReturnStats = await getSampledReturnStats(monthly.ofBase.returns)
 
       // Test output for the first few blockSizes.
       if (i < 0) {
         const correction = _correction(
           sampledReturnStats.oneYear.mean,
-          monthly.mean,
+          monthly.ofBase.mean,
         )
 
         const testTargetAnnual = 0.04
         const testTargetMonthly = annualToMonthlyReturnRate(testTargetAnnual)
         const testWithCorrectionActual = (
           await getSampledReturnStats(
-            monthly.adjust(testTargetMonthly - correction),
+            monthly.adjust(testTargetMonthly - correction, 1),
           )
         ).oneYear.mean
         const testWithoutCorrectionActual = (
-          await getSampledReturnStats(monthly.adjust(testTargetMonthly))
+          await getSampledReturnStats(monthly.adjust(testTargetMonthly, 1))
         ).oneYear.mean
 
         const formatP = formatPercentage(10)

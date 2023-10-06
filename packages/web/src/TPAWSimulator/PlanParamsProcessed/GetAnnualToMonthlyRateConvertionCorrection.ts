@@ -37,14 +37,14 @@ export const getAnnualToMonthlyRateConvertionCorrection = {
   forMonteCarlo: (blockSize: number, type: 'stocks' | 'bonds') =>
     _correction(
       fGet(sampledAnnualReturnStatsMap.get(blockSize))[type].mean,
-      historicalReturns.monthly[type].mean,
+      historicalReturns.monthly[type].ofBase.mean,
     ),
 
   forHistoricalSequence: (type: 'stocks' | 'bonds') => {
     const monthly = historicalReturns.monthly[type]
     const annualReturnStats = getStats(
-      sequentialAnnualReturnsFromMonthly(monthly.returns),
+      sequentialAnnualReturnsFromMonthly(monthly.ofBase.returns),
     )
-    return _correction(annualReturnStats.mean, monthly.mean)
+    return _correction(annualReturnStats.mean, monthly.ofBase.mean)
   },
 }

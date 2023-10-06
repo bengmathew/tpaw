@@ -56,7 +56,7 @@ export const useGetPlanInputVisibility = () => {
         return _helper('done', planParams.advanced.strategy !== 'SWR')
       case 'risk':
         return _helper('done')
-      case 'expected-returns':
+      case 'expected-returns-and-volatility':
         return _helper('done')
       case 'inflation':
         return _helper('done')

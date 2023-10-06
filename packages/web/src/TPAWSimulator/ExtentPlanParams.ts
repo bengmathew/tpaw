@@ -9,6 +9,7 @@ import {
   calendarMonthFromTime,
   fGet,
   getZonedTimeFns,
+  linearFnFomPoints,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { SimpleRange } from '../Utils/SimpleRange'
@@ -406,7 +407,22 @@ export const extendPlanParams = (
   const numRetirementMonths = numMonths - asMFN(withdrawalStartMonth)
   const withdrawalsStarted = asMFN(withdrawalStartMonth) === 0
 
+  const getRiskToleranceFromMFN = (mfn: number) =>
+    Math.max(
+      0,
+      pickPerson(longerLivedPerson).ages.maxAge.inMonths > 20 * 12
+        ? linearFnFomPoints(
+            20 * 12,
+            planParams.risk.tpaw.riskTolerance.at20,
+            pickPerson(longerLivedPerson).ages.maxAge.inMonths,
+            planParams.risk.tpaw.riskTolerance.at20 +
+              planParams.risk.tpaw.riskTolerance.deltaAtMaxAge,
+          )(mfn + getCurrentAgeOfPerson(longerLivedPerson).inMonths)
+        : planParams.risk.tpaw.riskTolerance.at20,
+    )
+
   return {
+    getRiskToleranceFromMFN,
     getZonedTime,
     monthsFromNowToNumericAge,
     currentTimestamp,

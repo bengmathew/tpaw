@@ -9,7 +9,8 @@ import {
   union,
 } from 'json-guard'
 import { PlanParams21 as V21 } from './Old/PlanParams21'
-import { PlanParams22 as V22 } from './PlanParams22'
+import { PlanParams22 as V22 } from './Old/PlanParams22'
+import { PlanParams23 as V23 } from './PlanParams23'
 import {
   PlanParamsChangeActionDeprecated,
   planParamsChangeActionGuardDeprecated,
@@ -166,24 +167,25 @@ export type PlanParamsChangeActionCurrent =
       value: V21.PlanParams['advanced']['annualReturns']['expected']
     }
   | {
-      type: 'setHistoricalReturnsBonds'
-      value:
-        | 'fixedToExpectedUsedForPlanning'
-        | 'adjustExpectedToExpectedUsedForPlanning'
-    }
-  | {
       type: 'setAnnualInflation'
       value: V21.PlanParams['advanced']['annualInflation']
+    }
+  | {
+      type: 'setHistoricalStockReturnsAdjustmentVolatilityScale'
+      value: number
+    }
+  | {
+      type: 'setHistoricalBondReturnsAdjustmentEnableVolatility'
+      value: boolean
     }
 
   // -------------- DEV
   | {
-      type: 'setHistoricalReturnsStocksDev'
-      value: V22.PlanParams['advanced']['annualReturns']['historical']['stocks']
-    }
-  | {
-      type: 'setHistoricalReturnsBondsDev'
-      value: V22.PlanParams['advanced']['annualReturns']['historical']['bonds']
+      type: 'setHistoricalReturnsAdjustExpectedReturnDev'
+      value: {
+        type: 'stocks' | 'bonds'
+        adjustExpectedReturn: V23.PlanParams['advanced']['historicalReturnsAdjustment']['stocks']['adjustExpectedReturn']
+      }
     }
 
 export type PlanParamsChangeAction =
@@ -195,6 +197,7 @@ export type PlanParamsChangeAction =
 // These guards are not complete. Mostly a sanity check on the shape.
 const v21CG = V21.componentGuards
 const v22CG = V22.componentGuards
+const v23CG = V23.componentGuards
 const valueForMonthRangeLocation: JSONGuard<ValueForMonthRangeLocation> = union(
   constant('futureSavings'),
   constant('incomeDuringRetirement'),
@@ -315,18 +318,18 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
     _guard('setSampling', v22CG.samplingType),
     _guard('setMonteCarloSamplingBlockSize', number),
     _guard('setExpectedReturns', v21CG.expectedAnnualReturns),
-    _guard(
-      'setHistoricalReturnsBonds',
-      union(
-        constant('fixedToExpectedUsedForPlanning'),
-        constant('adjustExpectedToExpectedUsedForPlanning'),
-      ),
-    ),
     _guard('setAnnualInflation', v21CG.annualInflation),
+    _guard('setHistoricalStockReturnsAdjustmentVolatilityScale', number),
+    _guard('setHistoricalBondReturnsAdjustmentEnableVolatility', boolean),
 
     // -------------- DEV
-    _guard('setHistoricalReturnsStocksDev', v22CG.historicalAnnualReturns),
-    _guard('setHistoricalReturnsBondsDev', v22CG.historicalAnnualReturns),
+    _guard(
+      'setHistoricalReturnsAdjustExpectedReturnDev',
+      object({
+        type: union(constant('stocks'), constant('bonds')),
+        adjustExpectedReturn: v23CG.adjustExpectedReturn,
+      }),
+    ),
   )
 
 export const planParamsChangeActionGuard: JSONGuard<PlanParamsChangeAction> =

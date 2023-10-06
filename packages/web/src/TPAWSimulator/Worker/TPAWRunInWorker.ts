@@ -1,9 +1,4 @@
-import {
-  assertFalse,
-  historicalReturns,
-  NonPlanParams,
-  ValueForMonthRange,
-} from '@tpaw/common'
+import { assertFalse, NonPlanParams, ValueForMonthRange } from '@tpaw/common'
 import _ from 'lodash'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { StatsTools } from '../../Utils/StatsTools'
@@ -67,7 +62,18 @@ export type TPAWRunInWorkerResult = {
     percentile: number
   }[]
   firstMonthOfSomeRun: FirstMonthSavingsPortfolioDetail
-  averageAnnualReturns: { stocks: number; bonds: number }
+  annualStatsForSampledReturns: Record<
+    'stocks' | 'bonds',
+    { n: number } & Record<
+    'ofBase' | 'ofLog',
+      {
+        mean: number
+        variance: number
+        standardDeviation: number
+        n: number
+      }
+    >
+  >
   perf: {
     main: [
       ['num-workers', number],
@@ -299,6 +305,7 @@ export class TPAWRunInWorker {
     const start0 = performance.now()
     let start = performance.now()
     const numSimulationsActual = _getNumSimulationsActual(
+      params,
       planParamsExt,
       nonPlanParams,
     )
@@ -325,7 +332,7 @@ export class TPAWRunInWorker {
     const {
       byMonthsFromNowByRun,
       byRun,
-      averageAnnualReturns,
+      annualStatsForSampledReturns,
       perf: perfSlowestSimulationWorker,
     } = mergeWorkerRuns(runsByWorker)
 
@@ -459,7 +466,7 @@ export class TPAWRunInWorker {
       },
       firstMonthOfSomeRun,
       endingBalanceOfSavingsPortfolioByPercentile,
-      averageAnnualReturns,
+      annualStatsForSampledReturns,
       perf: {
         main: [
           ['num-workers', this._workers.length],
@@ -638,6 +645,7 @@ const _mapByPercentileByMonthsFromNow = (
 }
 
 const _getNumSimulationsActual = (
+  planParamsProcessed: PlanParamsProcessed,
   planParamsExt: PlanParamsExtended,
   nonPlanParams: NonPlanParams,
 ) => {
@@ -646,7 +654,11 @@ const _getNumSimulationsActual = (
     case 'monteCarlo':
       return nonPlanParams.numOfSimulationForMonteCarloSampling
     case 'historical': {
-      return historicalReturns.monthly.stocks.returns.length - numMonths + 1
+      return (
+        planParamsProcessed.historicalReturnsAdjusted.monthly.stocks.length -
+        numMonths +
+        1
+      )
     }
     default:
       noCase(planParams.advanced.sampling.type)

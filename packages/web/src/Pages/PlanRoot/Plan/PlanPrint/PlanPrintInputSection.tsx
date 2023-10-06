@@ -6,7 +6,7 @@ import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { useGetPlanInputVisibility } from '../PlanInput/Helpers/UseGetPlanInputVisibility'
 import { PlanInputAgeSummary } from '../PlanInput/PlanInputAge/PlanInputAge'
 import { PlanInputCurrentPortfolioBalanceSummary } from '../PlanInput/PlanInputCurrentPortfolioBalance'
-import { PlanInputExpectedReturnsSummary } from '../PlanInput/PlanInputExpectedReturns'
+import { PlanInputExpectedReturnsAndVolatilitySummary } from '../PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { PlanInputExtraSpendingSummary } from '../PlanInput/PlanInputExtraSpending'
 import { PlanInputFutureSavingsSummary } from '../PlanInput/PlanInputFutureSavings'
 import { PlanInputIncomeDuringRetirementSummary } from '../PlanInput/PlanInputIncomeDuringRetirement'
@@ -147,13 +147,13 @@ export const PlanPrintInputSection = React.memo(() => {
 
         <_SectionHeading className="">Advanced</_SectionHeading>
         <div className="mt-1.5">
-          {_assert(getVisibility('expected-returns').visible) && (
+          {_assert(getVisibility('expected-returns-and-volatility').visible) && (
             <div className="">
               <_SubSectionHeading className="" isFirst>
                 Expected Returns
               </_SubSectionHeading>
               <div className="mt-2">
-                <PlanInputExpectedReturnsSummary />
+                <PlanInputExpectedReturnsAndVolatilitySummary />
               </div>
             </div>
           )}

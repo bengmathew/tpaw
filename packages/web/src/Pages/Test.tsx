@@ -1,4 +1,9 @@
-import { MAX_AGE_IN_MONTHS, calendarMonthFromTime, fGet } from '@tpaw/common'
+import {
+  MAX_AGE_IN_MONTHS,
+  calendarMonthFromTime,
+  currentPlanParamsVersion,
+  fGet,
+} from '@tpaw/common'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useState } from 'react'
@@ -198,7 +203,7 @@ const truth = _.flatten(
 const getTestParams = (currentTime: DateTime) =>
   extendPlanParams(
     {
-      v: 22,
+      v: currentPlanParamsVersion,
       results: null,
       timestamp: currentTime.valueOf(),
       dialogPosition: 'done',
@@ -268,11 +273,25 @@ const getTestParams = (currentTime: DateTime) =>
 
       advanced: {
         annualInflation: { type: 'suggested' },
-        annualReturns: {
-          expected: { type: 'manual', stocks: 0.04, bonds: 0.02 },
-          historical: {
-            stocks: { type: 'rawHistorical' },
-            bonds: { type: 'rawHistorical' },
+        expectedAnnualReturnForPlanning: {
+          type: 'manual',
+          stocks: 0.04,
+          bonds: 0.02,
+        },
+        historicalReturnsAdjustment: {
+          stocks: {
+            adjustExpectedReturn: {
+              type: 'toExpectedUsedForPlanning',
+              correctForBlockSampling: true,
+            },
+            volatilityScale: 1,
+          },
+          bonds: {
+            adjustExpectedReturn: {
+              type: 'toExpectedUsedForPlanning',
+              correctForBlockSampling: true,
+            },
+            enableVolatility: true,
           },
         },
         sampling: {

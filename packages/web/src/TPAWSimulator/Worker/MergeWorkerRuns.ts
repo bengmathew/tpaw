@@ -1,3 +1,4 @@
+import { block } from '@tpaw/common'
 import _ from 'lodash'
 import { fGet } from '../../Utils/Utils'
 import { RunSimulationInWASMResult } from './RunSimulationInWASMResult'
@@ -101,10 +102,31 @@ export const mergeWorkerRuns = (
       runsByWorker.map((s) => s.byRun.endingBalanceOfSavingsPortfolio),
     ),
   }
-  const averageAnnualReturns = {
-    stocks: _.mean(runsByWorker.map((x) => x.averageAnnualReturns.stocks)),
-    bonds: _.mean(runsByWorker.map((x) => x.averageAnnualReturns.bonds)),
-  }
+  const annualStatsForSampledReturns = block(() => {
+    type StatsForWindowSize =
+      RunSimulationInWASMResult['annualStatsForSampledReturns']['stocks']
+    const mergeStats = (x: StatsForWindowSize['ofBase'][]) => ({
+      mean: _.mean(x.map((x) => x.mean)),
+      variance: _.mean(x.map((x) => x.variance)),
+      standardDeviation: _.mean(x.map((x) => x.standardDeviation)),
+      n: _.sum(x.map((x) => x.n)),
+    })
+    const mergeStatsForWindowSize = (
+      x: StatsForWindowSize[],
+    ): StatsForWindowSize => ({
+      n: _.sumBy(x, (x) => x.n),
+      ofBase: mergeStats(x.map((x) => x.ofBase)),
+      ofLog: mergeStats(x.map((x) => x.ofLog)),
+    })
+    return {
+      stocks: mergeStatsForWindowSize(
+        runsByWorker.map((x) => x.annualStatsForSampledReturns.stocks),
+      ),
+      bonds: mergeStatsForWindowSize(
+        runsByWorker.map((x) => x.annualStatsForSampledReturns.bonds),
+      ),
+    }
+  })
 
   const worstPerf = fGet(
     _.last(_.sortBy(runsByWorker, (x) => x.perf[3][1])),
@@ -112,7 +134,7 @@ export const mergeWorkerRuns = (
   return {
     byMonthsFromNowByRun,
     byRun,
-    averageAnnualReturns,
+    annualStatsForSampledReturns,
     perf: worstPerf,
   }
 }

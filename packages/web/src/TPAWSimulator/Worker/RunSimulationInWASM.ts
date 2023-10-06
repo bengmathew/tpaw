@@ -1,4 +1,5 @@
-import { annualToMonthlyReturnRate, MAX_AGE_IN_MONTHS } from '@tpaw/common'
+import { MAX_AGE_IN_MONTHS, block } from '@tpaw/common'
+import { Stats, StatsForWindowSize } from '@tpaw/simulator'
 import _ from 'lodash'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { noCase } from '../../Utils/Utils'
@@ -33,14 +34,10 @@ export function runSimulationInWASM(
     numMonths,
     numMonthsToSimulate,
     asMFN(withdrawalStartMonth),
-    annualToMonthlyReturnRate(params.returns.expectedAnnualReturns.stocks),
-    annualToMonthlyReturnRate(params.returns.expectedAnnualReturns.bonds),
-    Float64Array.from(
-      params.returns.historicalMonthlyAdjusted.map((x) => x.stocks),
-    ),
-    Float64Array.from(
-      params.returns.historicalMonthlyAdjusted.map((x) => x.bonds),
-    ),
+    params.expectedReturnsForPlanning.monthly.stocks,
+    params.expectedReturnsForPlanning.monthly.bonds,
+    Float64Array.from(params.historicalReturnsAdjusted.monthly.stocks),
+    Float64Array.from(params.historicalReturnsAdjusted.monthly.bonds),
     params.estimatedCurrentPortfolioBalance,
     Float64Array.from(params.risk.tpaw.allocation),
     Float64Array.from(params.risk.spawAndSWR.allocation),
@@ -127,11 +124,27 @@ export function runSimulationInWASM(
         .slice(),
       endingBalanceOfSavingsPortfolio: runs.by_run_ending_balance().slice(),
     },
-    // Don't have enough months if forFirstMonth, so this will crash.
-    averageAnnualReturns: {
-      stocks: opts.forFirstMonth ? 0 : runs.average_annual_returns_stocks(),
-      bonds: opts.forFirstMonth ? 0 : runs.average_annual_returns_bonds(),
-    },
+    annualStatsForSampledReturns: block(() => {
+      const processStats = (stats: Stats) => ({
+        mean: stats.mean,
+        variance: stats.variance,
+        standardDeviation: stats.standard_deviation,
+        n: stats.n,
+      })
+      const processStatsForWindowSize = (stats: StatsForWindowSize) => ({
+        n: stats.n,
+        ofBase: processStats(stats.of_base),
+        ofLog: processStats(stats.of_log),
+      })
+      return {
+        stocks: processStatsForWindowSize(
+          runs.annual_stats_for_sampled_stock_returns(),
+        ),
+        bonds: processStatsForWindowSize(
+          runs.annual_stats_for_sampled_bond_returns(),
+        ),
+      }
+    }),
   }
   runs.free()
   const perfPost = performance.now() - start

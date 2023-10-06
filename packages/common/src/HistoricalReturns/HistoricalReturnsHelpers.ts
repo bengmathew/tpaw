@@ -1,23 +1,50 @@
-import { fGet, getLogReturns, getStats, getStatsWithLog } from '../Utils'
+import { fGet, getStatsWithLog } from '../Utils'
+
+const _convertExpectedToExpectedOfLog = (
+  targetExpected: number,
+  stats: ReturnType<typeof getStatsWithLog>,
+) => {
+  const naive = (x: number) => Math.log(1 + x) - stats.ofLog.variance / 2
+  const delta = stats.ofLog.expectedValue - naive(stats.ofBase.expectedValue)
+  return naive(targetExpected) + delta
+}
+
+const _adjustExpected = (
+  targetExpected: number,
+  stats: ReturnType<typeof getStatsWithLog>,
+) => {
+  const targetExpectedOfLog = _convertExpectedToExpectedOfLog(
+    targetExpected,
+    stats,
+  )
+  const adjustmentToLogReturns = stats.ofLog.expectedValue - targetExpectedOfLog
+  const adjustedLogReturns = stats.ofLog.returns.map(
+    (log) => log - adjustmentToLogReturns,
+  )
+  return adjustedLogReturns.map((x) => Math.exp(x) - 1)
+}
 
 const _fromReturns = (returns: number[]) => {
   const stats = getStatsWithLog(returns)
 
-  const convertExpectedToExpectedOfLog = (x: number) => {
-    const naive = (x: number) => Math.log(1 + x) - stats.ofLog.variance / 2
-    const delta = stats.ofLog.expectedValue - naive(stats.expectedValue)
-    return naive(x) + delta
+  const adjust = (targetExpected: number, volatilityScale: number) => {
+    const volatilityAdjustedStats =
+      // Optimization for the common case where volatilityScale is 1.
+      volatilityScale === 1
+        ? stats
+        : getStatsWithLog(
+            stats.ofLog.returns.map((log) => {
+              return (
+                Math.exp(
+                  stats.ofLog.expectedValue +
+                    (log - stats.ofLog.expectedValue) * volatilityScale,
+                ) - 1
+              )
+            }),
+          )
+    return _adjustExpected(targetExpected, volatilityAdjustedStats)
   }
 
-  const adjust = (targetExpected: number) => {
-    const targetExpectedOfLog = convertExpectedToExpectedOfLog(targetExpected)
-    const adjustmentToLogReturns =
-      stats.ofLog.expectedValue - targetExpectedOfLog
-    const adjustedLogReturns = stats.ofLog.returns.map(
-      (log) => log - adjustmentToLogReturns,
-    )
-    return adjustedLogReturns.map((x) => Math.exp(x) - 1)
-  }
   return {
     ...stats,
     adjust,

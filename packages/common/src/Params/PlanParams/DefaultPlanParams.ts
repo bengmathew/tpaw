@@ -2,7 +2,11 @@ import _ from 'lodash'
 import { DateTime } from 'luxon'
 import { historicalReturns } from '../../HistoricalReturns/HistoricalReturns'
 import { noCase } from '../../Utils'
-import { calendarMonthFromTime, PlanParams } from './PlanParams'
+import {
+  calendarMonthFromTime,
+  currentPlanParamsVersion,
+  PlanParams,
+} from './PlanParams'
 
 type MarketData = {
   CAPE: {
@@ -16,7 +20,7 @@ type MarketData = {
 
 export const EXPECTED_ANNUAL_RETURN_PRESETS = (
   type: Exclude<
-    PlanParams['advanced']['annualReturns']['expected']['type'],
+    PlanParams['advanced']['expectedAnnualReturnForPlanning']['type'],
     'manual'
   >,
   { CAPE, bondRates }: MarketData,
@@ -41,8 +45,8 @@ export const EXPECTED_ANNUAL_RETURN_PRESETS = (
     case 'historical':
       // Intentionally not rounding here.
       return {
-        stocks: historicalReturns.monthly.annualStats.stocks.mean,
-        bonds: historicalReturns.monthly.annualStats.bonds.mean,
+        stocks: historicalReturns.monthly.annualStats.stocks.ofBase.mean,
+        bonds: historicalReturns.monthly.annualStats.bonds.ofBase.mean,
       }
     default:
       noCase(type)
@@ -69,7 +73,7 @@ export function getDefaultPlanParams(
     DateTime.fromMillis(currentTimestamp).setZone(ianaTimezoneName)
 
   const params: PlanParams = {
-    v: 22,
+    v: currentPlanParamsVersion,
     timestamp: currentTimestamp,
     dialogPosition: 'age',
     people: {
@@ -143,19 +147,21 @@ export function getDefaultPlanParams(
     },
 
     advanced: {
-      annualReturns: {
-        expected: { type: 'suggested' },
-        historical: {
-          stocks: {
-            type: 'adjustExpected',
-            adjustment: { type: 'toExpectedUsedForPlanning' },
+      expectedAnnualReturnForPlanning: { type: 'suggested' },
+      historicalReturnsAdjustment: {
+        stocks: {
+          adjustExpectedReturn: {
+            type: 'toExpectedUsedForPlanning',
             correctForBlockSampling: true,
           },
-          bonds: {
-            type: 'adjustExpected',
-            adjustment: { type: 'toExpectedUsedForPlanning' },
+          volatilityScale: 1,
+        },
+        bonds: {
+          adjustExpectedReturn: {
+            type: 'toExpectedUsedForPlanning',
             correctForBlockSampling: true,
           },
+          enableVolatility: true,
         },
       },
       annualInflation: { type: 'suggested' },

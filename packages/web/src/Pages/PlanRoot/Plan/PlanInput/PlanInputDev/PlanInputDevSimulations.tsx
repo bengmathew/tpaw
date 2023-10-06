@@ -1,4 +1,5 @@
-import { defaultNonPlanParams } from '@tpaw/common'
+import { defaultNonPlanParams, historicalReturns } from '@tpaw/common'
+import clsx from 'clsx'
 import _ from 'lodash'
 import React from 'react'
 import { getTPAWRunInWorkerSingleton } from '../../../../../TPAWSimulator/Worker/UseTPAWWorker'
@@ -67,19 +68,8 @@ const _SimulationsCard = React.memo(
           <h2 className="ml-2">{_timeToRun(tpawResult)}</h2>
         </div>
         <div className="mt-2">
-          <h2 className="mb-1">Average Sampled Annual Returns:</h2>
-          <div className="ml-4 flex gap-x-4 items-center">
-            <h2 className="">Stocks</h2>
-            <h2 className="ml-2">
-              {formatPercentage(5)(tpawResult.averageAnnualReturns.stocks)}
-            </h2>
-          </div>
-          <div className="ml-4 flex gap-x-4 items-center">
-            <h2 className="">Bonds</h2>
-            <h2 className="ml-2">
-              {formatPercentage(5)(tpawResult.averageAnnualReturns.bonds)}
-            </h2>
-          </div>
+          <h2> Annual Return Stats:</h2>
+          <_AnnualReturnStatsTable className="mt-2" />
         </div>
 
         <button
@@ -117,7 +107,7 @@ export const useIsPlanInputDevSimulationsModified = () => {
 }
 
 export const PlanInputDevSimulationsSummary = React.memo(() => {
-  const { tpawResult } = useSimulation()
+  const { tpawResult, planParamsProcessed } = useSimulation()
   const { nonPlanParams } = useNonPlanParams()
   return (
     <>
@@ -125,16 +115,96 @@ export const PlanInputDevSimulationsSummary = React.memo(() => {
         Num of simulations: {nonPlanParams.numOfSimulationForMonteCarloSampling}
       </h2>
       <h2>Time to run: {_timeToRun(tpawResult)}</h2>
-      <h2>Average Sampled Annual Returns:</h2>
-      <h2 className="ml-4">
-        Stocks: {formatPercentage(5)(tpawResult.averageAnnualReturns.stocks)}
-      </h2>
-      <h2 className="ml-4">
-        Bonds: {formatPercentage(5)(tpawResult.averageAnnualReturns.bonds)}
-      </h2>
+      <h2> Annual Return Stats:</h2>
+      <_AnnualReturnStatsTable className="" />
     </>
   )
 })
 
 const _timeToRun = (tpawResult: SimulationInfo['tpawResult']) =>
   `${Math.round(tpawResult.perf.main[6][1])}ms (${tpawResult.perf.main[6][0]})`
+
+const _AnnualReturnStatsTable = React.memo(
+  ({ className }: { className?: string }) => {
+    const { tpawResult, planParamsProcessed } = useSimulation()
+
+    const forData = (stats: {
+      ofBase: {
+        mean: number
+      }
+      ofLog: {
+        variance: number | null
+      }
+    }) => (
+      <>
+        <h2 className="text-right font-mono">
+          {formatPercentage(5)(stats.ofBase.mean)}
+        </h2>
+        <h2 className="text-right font-mono">
+          {stats.ofLog.variance?.toFixed(5) ?? '-'}
+        </h2>
+        <h2 className="text-right font-mono">
+          {stats.ofLog.variance
+            ? Math.sqrt(stats.ofLog.variance).toFixed(5)
+            : '-'}
+        </h2>
+      </>
+    )
+    return (
+      <div className={clsx(className)}>
+        <div
+          className="inline-grid gap-x-6 border border-gray-300 rounded-lg p-2"
+          style={{ grid: 'auto/auto auto auto auto' }}
+        >
+          <h2></h2>
+          <h2 className="text-center">Mean</h2>
+          <div className="text-center">
+            Variance <h2 className="text-xs -mt-1">(of Log)</h2>
+          </div>
+          <div className="text-center">
+            SD <h2 className="text-xs -mt-1">(of Log)</h2>
+          </div>
+          <h2></h2>
+          <h2 className="col-span-3 border-t border-gray-300 my-2"></h2>
+          <h2>Stocks - Target</h2>
+          {forData({
+            ofBase: {
+              mean: tpawResult.params.expectedReturnsForPlanning.annual.stocks,
+            },
+            ofLog:
+              planParamsProcessed.historicalReturnsAdjusted.monthly.annualStats
+                .estimatedSampledStats.stocks.ofLog,
+          })}
+          <h2>Stocks - Sampled</h2>
+          {forData(tpawResult.annualStatsForSampledReturns.stocks)}
+          <h2>Stocks - Historical - Adj </h2>
+          {forData(
+            planParamsProcessed.historicalReturnsAdjusted.monthly.annualStats
+              .direct.stocks,
+          )}
+          <h2>Stocks - Historical - Raw</h2>
+          {forData(historicalReturns.monthly.annualStats.stocks)}
+          <h2 className="col-span-4 border-t border-gray-300 my-2"></h2>
+          <h2>Bonds - Target</h2>
+          {forData({
+            ofBase: {
+              mean: planParamsProcessed.expectedReturnsForPlanning.annual.bonds,
+            },
+            ofLog: {
+              variance: null,
+            },
+          })}
+          <h2>Bonds - Sampled</h2>
+          {forData(tpawResult.annualStatsForSampledReturns.bonds)}
+          <h2>Bonds - Historical - Adj </h2>
+          {forData(
+            planParamsProcessed.historicalReturnsAdjusted.monthly.annualStats
+              .direct.bonds,
+          )}
+          <h2>Bonds - Historical - Raw</h2>
+          {forData(historicalReturns.monthly.annualStats.bonds)}
+        </div>
+      </div>
+    )
+  },
+)

@@ -6,8 +6,9 @@ import {
 import { noCase } from '../../Utils/Utils'
 import { PlanParamsExtended } from '../ExtentPlanParams'
 import { planParamsProcessAdjustmentsToSpending } from './PlanParamsProcessAdjustmentsToSpending'
-import { planParamsProcessAnnualReturnsParams } from './PlanParamsProcessAnnualReturns'
 import { planParamsProcessByMonthParams } from './PlanParamsProcessByMonthParams'
+import { planParamsProcessExpectedAnnualReturnForPlanning } from './PlanParamsProcessExpectedAnnualReturnForPlanning'
+import { planParamsProcessHistoricalReturnsAdjustment } from './PlanParamsProcessHistoricalReturnsAdjustment'
 import { planParamsProcessNetPresentValue } from './PlanParamsProcessNetPresentValue'
 import { planParamsProcessRisk } from './PlanParamsProcessRisk'
 
@@ -19,10 +20,16 @@ export function processPlanParams(
 ) {
   const { planParams, currentTimestamp, ianaTimezoneName } = planParamsExt
 
-  const returns = planParamsProcessAnnualReturnsParams(
-    planParams,
-    currentMarketData,
-  )
+  const expectedReturnsForPlanning =
+    planParamsProcessExpectedAnnualReturnForPlanning(
+      planParams.advanced.expectedAnnualReturnForPlanning,
+      currentMarketData,
+    )
+  const historicalReturnsAdjusted =
+    planParamsProcessHistoricalReturnsAdjustment(
+      planParams,
+      expectedReturnsForPlanning,
+    )
 
   const monthlyInflation = annualToMonthlyReturnRate(
     planParams.advanced.annualInflation.type === 'suggested'
@@ -44,7 +51,8 @@ export function processPlanParams(
 
   const risk = planParamsProcessRisk(
     planParamsExt,
-    returns.expectedAnnualReturns,
+    expectedReturnsForPlanning,
+    historicalReturnsAdjusted.monthly.annualStats.estimatedSampledStats.stocks,
   )
 
   const netPresentValue = planParamsProcessNetPresentValue(
@@ -52,7 +60,7 @@ export function processPlanParams(
     risk,
     adjustmentsToSpending.tpawAndSPAW.legacy.target,
     byMonth,
-    annualToMonthlyReturnRate(returns.expectedAnnualReturns),
+    expectedReturnsForPlanning.monthly,
   )
 
   const result = {
@@ -67,7 +75,8 @@ export function processPlanParams(
     netPresentValue,
     adjustmentsToSpending,
     risk,
-    returns,
+    expectedReturnsForPlanning,
+    historicalReturnsAdjusted,
     monthlyInflation,
     sampling: planParams.advanced.sampling,
     samplingBlockSizeForMonteCarlo:

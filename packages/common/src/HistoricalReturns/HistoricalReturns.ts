@@ -10,10 +10,10 @@ export const historicalReturns = {
     ...monthly,
     annualStats: {
       stocks: getStatsWithLog(
-        sequentialAnnualReturnsFromMonthly(monthly.stocks.returns),
+        sequentialAnnualReturnsFromMonthly(monthly.stocks.ofBase.returns),
       ),
       bonds: getStatsWithLog(
-        sequentialAnnualReturnsFromMonthly(monthly.bonds.returns),
+        sequentialAnnualReturnsFromMonthly(monthly.bonds.ofBase.returns),
       ),
     },
   },

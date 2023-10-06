@@ -2,6 +2,7 @@ import {
   NonPlanParams,
   assert,
   calendarMonthFromTime,
+  currentPlanParamsVersion,
   defaultNonPlanParams,
 } from '@tpaw/common'
 import _ from 'lodash'
@@ -124,7 +125,7 @@ export const Perf = React.memo(() => {
 const getParams = (currentTime: DateTime) =>
   extendPlanParams(
     {
-      v: 22,
+      v: currentPlanParamsVersion,
       results: null,
       timestamp: currentTime.valueOf(),
       dialogPosition: 'done',
@@ -193,11 +194,25 @@ const getParams = (currentTime: DateTime) =>
       },
 
       advanced: {
-        annualReturns: {
-          expected: { type: 'manual', stocks: 0.04, bonds: 0.02 },
-          historical: {
-            stocks: { type: 'rawHistorical' },
-            bonds: { type: 'rawHistorical' },
+        expectedAnnualReturnForPlanning: {
+          type: 'manual',
+          stocks: 0.04,
+          bonds: 0.02,
+        },
+        historicalReturnsAdjustment: {
+          stocks: {
+            adjustExpectedReturn: {
+              type: 'toExpectedUsedForPlanning',
+              correctForBlockSampling: true,
+            },
+            volatilityScale: 1,
+          },
+          bonds: {
+            adjustExpectedReturn: {
+              type: 'toExpectedUsedForPlanning',
+              correctForBlockSampling: true,
+            },
+            enableVolatility: true,
           },
         },
         annualInflation: { type: 'manual', value: 0.02 },

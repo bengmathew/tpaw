@@ -93,9 +93,9 @@ addEventListener('message', async (event) => {
           numMonths,
         )
 
-      const processYear = ({ n, mean, of_log }: typeof one_year) => ({
+      const processYear = ({ n, of_base, of_log }: typeof one_year) => ({
         n,
-        mean,
+        mean:of_base.mean,
         ofLog: {
           n: of_log.n,
           mean: of_log.mean,

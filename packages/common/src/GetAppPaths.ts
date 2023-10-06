@@ -19,7 +19,7 @@ export const getAppPaths = (base: URL) => {
       result['spending-ceiling-and-floor'] = () =>
         urlFromPath(`${path}/spending-ceiling-and-floor`)
       result['strategy'] = () => urlFromPath(`${path}/strategy`)
-      result['expected-returns'] = () => urlFromPath(`${path}/expected-returns`)
+      result['expected-returns-and-volatility'] = () => urlFromPath(`${path}/expected-returns-and-volatility`)
       result['inflation'] = () => urlFromPath(`${path}/inflation`)
       result['simulation'] = () => urlFromPath(`${path}/simulation`)
       result['dev-misc'] = () => urlFromPath(`${path}/dev-misc`)
