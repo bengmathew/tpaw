@@ -864,9 +864,9 @@ export namespace PlanParams23 {
           return {
             stocks: letIn(
               byPrev(prev.advanced.annualReturns.historical.stocks),
-              ({ adjustExpectedReturn, enableVolatility }) => ({
+              ({ adjustExpectedReturn }) => ({
                 adjustExpectedReturn,
-                volatilityScale: enableVolatility ? 1 : assertFalse(),
+                volatilityScale: 1,
               }),
             ),
             bonds: byPrev(prev.advanced.annualReturns.historical.bonds),
