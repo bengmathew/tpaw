@@ -103,7 +103,7 @@ export const Header = React.memo(() => {
               </div>
 
               <Link className="block px-4 py-2" href="/about" shallow>
-                About
+                About / Contact
               </Link>
               <Link className="block px-4 py-2" href="/license" shallow>
                 License

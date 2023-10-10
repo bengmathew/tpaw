@@ -9,6 +9,9 @@ import Link from 'next/link'
 import React from 'react'
 import { Contentful } from '../../Utils/Contentful'
 import { Footer } from '../App/Footer'
+import { faTwitter } from '@fortawesome/free-brands-svg-icons'
+import { PlanContactContent } from '../PlanRoot/Plan/PlanContact/PlanContactContent'
+import { gray } from '../PlanRoot/Plan/UsePlanColors'
 
 export const indexGetStaticProps: GetStaticProps<{
   detail: Awaited<ReturnType<typeof Contentful.fetchInline>>
@@ -21,7 +24,7 @@ export const indexGetStaticProps: GetStaticProps<{
 export const Index = React.memo(
   ({ detail }: InferGetStaticPropsType<typeof indexGetStaticProps>) => {
     return (
-      <div className="font-font1  text-gray-800 pl-4 pr-4 sm:pl-20 sm:pr-4">
+      <div className="font-font1  text-gray-800 pl-4 sm:pl-20 pr-4 ">
         <Head>
           <title>TPAW Planner</title>
         </Head>
@@ -67,6 +70,13 @@ export const Index = React.memo(
               },
             })}
           </div>
+        </div>
+
+        <div className="flex justify-end sticky bottom-4 mb-4  ">
+          <PlanContactContent
+            className=" border border-gray-300 shadow-xl "
+            colors={{ bg: 'white', fg: gray[800] }}
+          />
         </div>
 
         <Footer />

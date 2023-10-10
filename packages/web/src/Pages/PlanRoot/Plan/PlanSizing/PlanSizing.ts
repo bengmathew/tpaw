@@ -9,6 +9,7 @@ import { PlanSummaySizing } from '../PlanSummary/PlanSummary'
 import { planSizingDesktop } from './PlanSizingDesktop'
 import { planSizingLaptop } from './PlanSizingLaptop'
 import { planSizingMobile } from './PlanSizingMobile'
+import { PlanContactSizing } from '../PlanContact/PlanContact'
 
 export type PlanSizing = {
   input: PlanInputSizing
@@ -16,6 +17,7 @@ export type PlanSizing = {
   chart: PlanResultsSizing
   summary: PlanSummaySizing
   menu: PlanMenuSizing
+  contact: PlanContactSizing
 }
 
 export function planSizing(

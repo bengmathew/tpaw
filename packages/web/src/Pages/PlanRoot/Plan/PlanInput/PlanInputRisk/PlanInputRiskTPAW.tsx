@@ -314,11 +314,11 @@ const _SpendingTiltCard = React.memo(
       const baseline = total - extra
       return (
         <>
-          <h2 className="text-right  ">{formatPercentage(1)(baseline)}</h2>
+          <h2 className="text-right  ">{formatPercentage(2)(baseline)}</h2>
           <h2 className="">+</h2>
-          <h2 className="text-right  ">{formatPercentage(1)(extra)}</h2>
+          <h2 className="text-right  ">{formatPercentage(2)(extra)}</h2>
           <h2 className="">=</h2>
-          <h2 className="text-right  ">{formatPercentage(1)(total)}</h2>
+          <h2 className="text-right  ">{formatPercentage(2)(total)}</h2>
         </>
       )
     }

@@ -1,5 +1,5 @@
 import { block, noCase } from '@tpaw/common'
-import { newPadding, rectExt, Size } from '../../../../Utils/Geometry'
+import { Size, newPadding, rectExt } from '../../../../Utils/Geometry'
 import { PlanSizing } from './PlanSizing'
 
 export function planSizingLaptop(
@@ -198,5 +198,25 @@ export function planSizingLaptop(
       },
     }
   })()
-  return { input, help, chart, summary, menu }
+  // ---- CONTACT ----
+  const contact = ((): PlanSizing['contact'] => {
+    const dynamic = {
+      position: {
+        right: windowSize.width - 40,
+        bottom: windowSize.height - 20,
+      },
+      opacity: 1,
+    }
+
+    return {
+      dynamic: {
+        summaryDialog: dynamic,
+        summaryNotDialog: dynamic,
+        inputDialog: dynamic,
+        inputNotDialog: dynamic,
+        help: dynamic,
+      },
+    }
+  })()
+  return { input, help, chart, summary, menu, contact }
 }

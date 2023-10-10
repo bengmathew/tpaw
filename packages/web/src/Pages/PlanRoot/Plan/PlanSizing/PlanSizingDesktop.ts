@@ -182,6 +182,25 @@ export function planSizingDesktop(
       },
     }
   })()
+  // ---- CONTACT ----
+  const contact = ((): PlanSizing['contact'] => {
+    const dynamic = {
+      position: {
+        right: windowSize.width - 20,
+        bottom: windowSize.height - 20,
+      },
+      opacity: 1,
+    }
 
-  return { chart, input, help, summary, menu }
+    return {
+      dynamic: {
+        summaryDialog: dynamic,
+        summaryNotDialog: dynamic,
+        inputDialog: dynamic,
+        inputNotDialog: dynamic,
+        help: dynamic,
+      },
+    }
+  })()
+  return { input, help, chart, summary, menu, contact }
 }

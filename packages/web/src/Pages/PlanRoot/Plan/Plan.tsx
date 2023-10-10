@@ -32,6 +32,7 @@ import { planSizing } from './PlanSizing/PlanSizing'
 import { PlanSummary } from './PlanSummary/PlanSummary'
 import { usePlanColors } from './UsePlanColors'
 import { WithChartData } from './WithChartData'
+import { PlanContact } from './PlanContact/PlanContact'
 
 export const Plan = React.memo(() => {
   return (
@@ -168,6 +169,7 @@ const _Plan = React.memo(() => {
           planTransition={transition}
         />
         <PlanMenu sizing={_sizing.menu} planTransition={transition} />
+        <PlanContact sizing={_sizing.contact} planTransition={transition} />
         <PlanMigrationWarnings />
         <PlanDialogOverlay chartDiv={chartDiv} />
       </AppPage>
