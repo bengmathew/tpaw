@@ -530,7 +530,8 @@ export namespace CurrentPortfolioBalance {
     const targetInfo = info.postBase ? info.postBase : info.preBase
     if (targetInfo.actions.length === 0) return null
 
-    const lastPortfolioUpdateIndex = targetInfo.actions.findLastIndex(
+    const lastPortfolioUpdateIndex = _.findLastIndex(
+      targetInfo.actions,
       (action) =>
         action.args.type === 'planChange' &&
         action.args.portfolioUpdate !== null,

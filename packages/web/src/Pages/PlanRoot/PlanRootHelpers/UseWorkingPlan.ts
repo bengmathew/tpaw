@@ -195,7 +195,8 @@ export const useWorkingPlan = (
   const rebase = useMemo(() => {
     const planParamsPostBase = workingPlan.planParamsPostBase
 
-    const rebaseIndex = planParamsPostBase.findLastIndex(
+    const rebaseIndex = _.findLastIndex(
+      planParamsPostBase,
       (x, i) =>
         // not current index
         i > 0 &&
@@ -205,6 +206,7 @@ export const useWorkingPlan = (
         // undo + buffer.
         planParamsPostBase.length - i > TARGET_UNDO_DEPTH + 1 + REBASE_BUFFER,
     )
+    
     if (rebaseIndex < 0) return null
     return ({ hard }: { hard: boolean }) => {
       const cutAndBase = planParamsPostBase.slice(0, rebaseIndex + 1)

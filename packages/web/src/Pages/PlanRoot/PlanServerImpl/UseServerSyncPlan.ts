@@ -10,6 +10,7 @@ import {
   UseServerSyncPlanMutation,
   UserPlanSyncAddInput,
 } from './__generated__/UseServerSyncPlanMutation.graphql'
+import _ from 'lodash'
 
 type _ServerPlan = {
   planId: string
@@ -137,7 +138,8 @@ const _getInput = (
   serverPlan: _ServerPlan,
   workingPlan: WorkingPlanInfo['workingPlan'],
 ) => {
-  const cutAfterIndex = serverPlan.planParamsPostBaseIds.findLastIndex(
+  const cutAfterIndex = _.findLastIndex(
+    serverPlan.planParamsPostBaseIds,
     (x, i) => x === workingPlan.planParamsPostBase[i]?.id,
   )
   assert(cutAfterIndex >= 0)
