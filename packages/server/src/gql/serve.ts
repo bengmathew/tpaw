@@ -25,6 +25,8 @@ import { Config } from '../Config.js'
 import { Context } from './Context.js'
 import { patchPlanParams } from './GQLUser/GQLUserPlan/PatchPlanParams.js'
 import { schema } from './schema.js'
+import { el } from 'date-fns/locale'
+import { Prisma, User } from '@prisma/client'
 
 cli.command('serve').action(async () => await _impl())
 
@@ -114,46 +116,62 @@ async function _impl() {
               now.getTime(),
               ianaTimezoneName,
             )
-            await Clients.prisma.user.upsert({
-              create: {
-                id: userId,
-                planWithHistory: {
-                  create: {
-                    planId: uuid.v4(),
-                    isMain: true,
-                    label,
-                    slug: getSlug(label, []),
-                    addedToServerAt: now,
-                    sortTime: now,
-                    lastSyncAt: now,
-                    resetCount: 0,
-                    endingParams: planParams,
-                    paramsChangeHistory: {
-                      create: patchPlanParams.generate({ type: 'forCreate' }, [
-                        {
-                          id: uuid.v4(),
-                          params: planParams,
-                          change: { type: 'start', value: null },
-                        },
-                      ]),
-                    },
-                    reverseHeadIndex: 0,
+            const createData: Prisma.UserCreateInput = {
+              id: userId,
+              planWithHistory: {
+                create: {
+                  planId: uuid.v4(),
+                  isMain: true,
+                  label,
+                  slug: getSlug(label, []),
+                  addedToServerAt: now,
+                  sortTime: now,
+                  lastSyncAt: now,
+                  resetCount: 0,
+                  endingParams: planParams,
+                  paramsChangeHistory: {
+                    create: patchPlanParams.generate({ type: 'forCreate' }, [
+                      {
+                        id: uuid.v4(),
+                        params: planParams,
+                        change: { type: 'start', value: null },
+                      },
+                    ]),
                   },
+                  reverseHeadIndex: 0,
                 },
-                nonPlanParamsLastUpdatedAt: now,
-                nonPlanParams: getDefaultNonPlanParams(),
-                clientIANATimezoneName: ianaTimezoneName,
               },
-              update: {
-                clientIANATimezoneName: ianaTimezoneName,
-              },
-              where: { id: userId },
+              nonPlanParamsLastUpdatedAt: now,
+              nonPlanParams: getDefaultNonPlanParams(),
+              clientIANATimezoneName: ianaTimezoneName,
+            }
+
+            const updateData: Prisma.UserUpdateInput = {
+              clientIANATimezoneName: ianaTimezoneName,
+            }
+
+            await Clients.prisma.$transaction(async (tx) => {
+              const user = await tx.user.findUnique({ where: { id: userId } })
+              if (user) {
+                await tx.user.update({
+                  where: { id: userId },
+                  data: updateData,
+                })
+              } else {
+                await tx.user.create({
+                  data: createData,
+                })
+              }
             })
-            return { id: decodedToken.uid }
+            // await Clients.prisma.user.upsert({
+            //   create: createData,
+            //   update: updateData,
+            //   where: { id: userId },
+            // })
+            return { id: userId }
           })()
           return { user }
         } catch (e) {
-          console.dir(e)
           Sentry.captureException(e)
           throw e
         }

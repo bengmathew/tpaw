@@ -42,10 +42,14 @@ export const SliderInput = React.memo(
 
     const ref = useRef<HTMLDivElement>(null)
     useEffect(() => {
+      // fGet() inside observer was crashing so get element ahead of time.
+      // Possibly because of this sequence on cleanup. 1. ref set to null 2.
+      // resize event 3. disconnect called.
+      const element = fGet(ref.current)
       const observer = new ResizeObserver(() => {
-        setWidth(fGet(ref.current).getBoundingClientRect().width)
+        setWidth(element.getBoundingClientRect().width)
       })
-      observer.observe(fGet(ref.current))
+      observer.observe(element)
       return () => observer.disconnect()
     }, [])
 
