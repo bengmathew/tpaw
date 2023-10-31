@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import {
   MarketData,
   PlanParams,
@@ -21,7 +22,6 @@ import { WASM } from '../../../TPAWSimulator/Worker/GetWASM'
 import { runSimulationInWASM } from '../../../TPAWSimulator/Worker/RunSimulationInWASM'
 import { groupBy } from '../../../Utils/GroupBy'
 import { getMarketDataIndexForTime } from '../../Common/GetMarketData'
-import { DateTime } from 'luxon'
 
 export namespace CurrentPortfolioBalance {
   type _State = { estimate: number; allocation: { stocks: number } }
@@ -554,14 +554,31 @@ export namespace CurrentPortfolioBalance {
     endTimestamp: number,
     info: { preBase: ByMonthInfo | null; postBase: Info },
   ) => {
-    return letIn(_cutInfo(endTimestamp, info.postBase), (postBase) =>
-      postBase
-        ? ({ preBase: info.preBase, postBase } as const)
+    const cutPostBase = _cutInfo(endTimestamp, info.postBase)
+    try {
+      return cutPostBase
+        ? ({ preBase: info.preBase, postBase: cutPostBase } as const)
         : ({
             preBase: fGet(_cutByMonthInfo(endTimestamp, fGet(info.preBase))),
             postBase: null,
-          } as const),
-    )
+          } as const)
+    } catch (e) {
+      Sentry.captureException(e)
+      Sentry.captureMessage(`
+      endTimestamp: ${endTimestamp}
+      info.preBase === null: ${info.preBase === null}
+      info.postBase: ${
+        info.postBase
+          ? `
+          startTimestamp: ${info.postBase.startTimestamp}
+          endTimestamp: ${info.postBase.endTimestamp}
+          `
+          : 'null'
+      }
+      cutPostBase === null: ${cutPostBase === null}
+      `)
+      throw e
+    }
   }
 
   const _cutInfo = (endTimestamp: number, info: Info): Info | null => {
