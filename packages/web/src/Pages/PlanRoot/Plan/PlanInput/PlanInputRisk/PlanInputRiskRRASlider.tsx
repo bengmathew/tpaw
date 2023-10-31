@@ -1,4 +1,4 @@
-import { assert, fGet, RISK_TOLERANCE_VALUES } from '@tpaw/common'
+import { fGet, RISK_TOLERANCE_VALUES } from '@tpaw/common'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { PaddingHorz } from '../../../../../Utils/Geometry'
 import { lineFromPoints } from '../../../../../Utils/SVG/LineFromPoints'
@@ -12,14 +12,14 @@ export const PlanInputRiskRRASlider = React.memo(
   ({
     data,
     value,
-    onChange:onChangeValue,
+    onChange: onChangeValue,
     className = '',
-    ticks:ticksFn,
-    format:formatValue,
+    ticks: ticksFn,
+    format: formatValue,
     height,
     maxOverflowHorz,
   }: {
-    data:number[]
+    data: number[]
     value: number
     onChange: (value: number) => void
     className?: string
@@ -43,10 +43,14 @@ export const PlanInputRiskRRASlider = React.memo(
 
     const ref = useRef<HTMLDivElement>(null)
     useEffect(() => {
+      // fGet() inside observer was crashing so get element ahead of time.
+      // Possibly because of this sequence on cleanup. 1. ref set to null 2.
+      // resize event 3. disconnect called.
+      const element = fGet(ref.current)
       const observer = new ResizeObserver(() => {
-        setWidth(fGet(ref.current).getBoundingClientRect().width)
+        setWidth(element.getBoundingClientRect().width)
       })
-      observer.observe(fGet(ref.current))
+      observer.observe(element)
       return () => observer.disconnect()
     }, [])
 
@@ -111,7 +115,10 @@ export const PlanInputRiskRRASlider = React.memo(
         </div>
         <p className="mt-2 ml-[15px] ">
           This is {segment.label.startsWith('A') ? 'an' : 'a'}{' '}
-          <span className="font-bold bg-gray-300 px-2 py-0.5 rounded-md lowercase">{segment.label}</span> risk level.
+          <span className="font-bold bg-gray-300 px-2 py-0.5 rounded-md lowercase">
+            {segment.label}
+          </span>{' '}
+          risk level.
         </p>
       </div>
     )
