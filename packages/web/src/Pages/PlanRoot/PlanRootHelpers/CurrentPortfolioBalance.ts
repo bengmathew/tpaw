@@ -10,6 +10,7 @@ import {
   letIn,
   noCase,
 } from '@tpaw/common'
+import { getAuth } from 'firebase/auth'
 import _ from 'lodash'
 import * as uuid from 'uuid'
 import { extendPlanParams } from '../../../TPAWSimulator/ExtentPlanParams'
@@ -563,8 +564,10 @@ export namespace CurrentPortfolioBalance {
             postBase: null,
           } as const)
     } catch (e) {
+      getAuth()
       Sentry.captureException(e)
       Sentry.captureMessage(`
+      uid: ${getAuth().currentUser?.uid ?? 'none'}
       endTimestamp: ${endTimestamp}
       info.preBase === null: ${info.preBase === null}
       info.postBase: ${
