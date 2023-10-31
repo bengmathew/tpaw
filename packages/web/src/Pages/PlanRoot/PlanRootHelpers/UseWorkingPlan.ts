@@ -206,7 +206,7 @@ export const useWorkingPlan = (
         // undo + buffer.
         planParamsPostBase.length - i > TARGET_UNDO_DEPTH + 1 + REBASE_BUFFER,
     )
-    
+
     if (rebaseIndex < 0) return null
     return ({ hard }: { hard: boolean }) => {
       const cutAndBase = planParamsPostBase.slice(0, rebaseIndex + 1)
@@ -239,6 +239,41 @@ export const useWorkingPlan = (
       marketData,
       wasm,
     )
+    if (result.startTimestamp > result.endTimestamp) {
+      Sentry.captureMessage(
+        `startTimestamp: ${result.startTimestamp}
+         endTimestamp: ${result.endTimestamp}}
+         nActions: ${result.actions.length}
+         nParams: ${planParamsUndoRedoStack.undos.length}
+         `,
+      )
+      Sentry.captureMessage(
+        `startTimestamp: ${result.startTimestamp}
+         endTimestamp: ${result.endTimestamp}}
+         nActions: ${result.actions.length}
+         actionTimestamps: ${result.actions.map((x) => x.timestamp).join(', ')}
+         nParams: ${planParamsUndoRedoStack.undos.length}
+         paramTimestamps: ${planParamsUndoRedoStack.undos
+           .map((x) => x.params.timestamp)
+           .join(', ')}
+         `,
+      )
+      Sentry.captureMessage(
+        `startTimestamp: ${result.startTimestamp}
+         endTimestamp: ${result.endTimestamp}}
+         nActions: ${result.actions.length}
+         actionTimestamps: ${result.actions.map((x) => x.timestamp).join(', ')}
+         actionTypes: ${result.actions.map((x) => x.args.type).join(', ')}
+         nParams: ${planParamsUndoRedoStack.undos.length}
+         paramTimestamps: ${planParamsUndoRedoStack.undos
+           .map((x) => x.params.timestamp)
+           .join(', ')}
+         paramChangeType: ${planParamsUndoRedoStack.undos
+           .map((x) => x.change.type)
+           .join(', ')}
+         `,
+      )
+    }
     const runTime = performance.now() - start
     if (runTime > 100) {
       Sentry.captureMessage(
