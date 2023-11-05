@@ -94,7 +94,6 @@ async function _getMarketData() {
       _getBondRates(),
       _getDailyStockMarketPerformance(),
     ])
-  console.dir(CAPE.slice(-3))
   return {
     raw: { inflation, CAPE, bondRates, dailyStockMarketPerformance },
     combined: MarketData.combineStreams(
@@ -244,6 +243,15 @@ const AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS = [
       end: { year: 2023, month: 3 },
     },
     value: 143.91,
+  },
+  {
+    // Sun Nov 05 2023 07:53:20 PST
+    addedDate: 1699199600576,
+    tenYearDuration: {
+      start: { year: 2013, month: 7 },
+      end: { year: 2023, month: 6 },
+    },
+    value: 146.14,
   },
 ]
 

@@ -72,6 +72,7 @@ async function _impl() {
     assert(currentLatest.length === 1)
     const file = fGet(currentLatest[0])
     const filename = await file.publicUrl()
+    console.dir(filename)
     res.send(filename)
   })
 
@@ -158,9 +159,14 @@ async function _impl() {
                   data: updateData,
                 })
               } else {
-                await tx.user.create({
-                  data: createData,
-                })
+                try {
+                  await tx.user.create({
+                    data: createData,
+                  })
+                } catch (e) {
+                  Sentry.captureMessage(`uid: ${userId}}`)
+                  throw e
+                }
               }
             })
             // await Clients.prisma.user.upsert({
