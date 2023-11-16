@@ -95,7 +95,13 @@ export const PlanResultsChartCardMenu = React.memo(
 
         {ReactDOM.createPortal(
           <div
-            className=" page fixed inset-0"
+            className={clsx(
+              ' page fixed inset-0 ',
+              // Not setting 'pointer-events-none' was causing an issue on Safari
+              // where elements were not scrollable under this even thought it was
+              // hidden.
+              invisible && 'pointer-events-none',
+            )}
             style={{
               visibility: invisible ? 'hidden' : 'visible',
               transitionProperty: 'opacity',
@@ -316,26 +322,25 @@ const _Chart = React.memo(
 
 const components =
   ({ results: chartColors }: PlanColors) =>
-  () =>
-    [
-      chartDrawDataRangeBand<TPAWChartDataMain>({
-        fillStyle: chartColors.rangeBand,
+  () => [
+    chartDrawDataRangeBand<TPAWChartDataMain>({
+      fillStyle: chartColors.rangeBand,
 
-        dataFn: (data: TPAWChartDataMain) => ({
-          min: fGet(_.first(data.percentiles)).data,
-          max: fGet(_.last(data.percentiles)).data,
-        }),
+      dataFn: (data: TPAWChartDataMain) => ({
+        min: fGet(_.first(data.percentiles)).data,
+        max: fGet(_.last(data.percentiles)).data,
       }),
+    }),
 
-      chartDrawDataLines<TPAWChartDataMain>({
-        lineWidth: 1.2 * 0.8,
-        strokeStyle: chartColors.medianLine,
-        dataFn: (data: TPAWChartDataMain) => {
-          return {
-            lines: data.percentiles
-              .filter((x) => x.percentile === 50)
-              .map((x) => x.data),
-          }
-        },
-      }),
-    ]
+    chartDrawDataLines<TPAWChartDataMain>({
+      lineWidth: 1.2 * 0.8,
+      strokeStyle: chartColors.medianLine,
+      dataFn: (data: TPAWChartDataMain) => {
+        return {
+          lines: data.percentiles
+            .filter((x) => x.percentile === 50)
+            .map((x) => x.data),
+        }
+      },
+    }),
+  ]

@@ -1,5 +1,6 @@
 import { Listbox } from '@headlessui/react'
 import { assert, fGet } from '@tpaw/common'
+import clsx from 'clsx'
 import _ from 'lodash'
 import React, {
   ReactNode,
@@ -9,7 +10,7 @@ import React, {
   useState,
 } from 'react'
 import ReactDOM from 'react-dom'
-import { applyOriginToHTMLElement, Size } from '../../../Utils/Geometry'
+import { Size, applyOriginToHTMLElement } from '../../../Utils/Geometry'
 import { tailwindScreens } from '../../../Utils/TailwindScreens'
 import { useWindowSize } from '../../App/WithWindowSize'
 
@@ -143,7 +144,13 @@ const __Options = <T extends string | number>({
     <>
       {ReactDOM.createPortal(
         <div
-          className=" page fixed inset-0 z-50"
+          className={clsx(
+            ' page fixed inset-0 z-50',
+            // Not here, but in another setting, not doing this was causing an
+            // issue on Safari where elements were not scrollable under this
+            // even thought it was hidden.
+            invisible && 'pointer-events-none',
+          )}
           style={{
             visibility: invisible ? 'hidden' : 'visible',
             transitionProperty: 'opacity',
