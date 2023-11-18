@@ -47,7 +47,7 @@ export const useDefaultErrorHandlerForNetworkCall = () => {
       }
       if (toast) errorToast(toast)
     },
-    [],
+    [setGlobalError],
   )
   useAssertConst([defaultErrorHandlerForNetworkCall])
   return {
