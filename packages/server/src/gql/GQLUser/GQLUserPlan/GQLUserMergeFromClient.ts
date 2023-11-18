@@ -80,7 +80,7 @@ builder.mutationField('userMergeFromClient', (t) =>
         API.UserMergeFromClient.check(input).force()
 
       // FEATURE: Don't ignore nonPlanParams
-      return serialTransaction(async (tx) => {
+      return await serialTransaction(async (tx) => {
         return {
           userId,
           // ---- GUEST PLAN ----

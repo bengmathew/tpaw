@@ -182,7 +182,7 @@ async function _impl() {
               clientIANATimezoneName: ianaTimezoneName,
             }
 
-            serialTransaction(
+            await serialTransaction(
               async (tx) => {
                 const user = await tx.user.findUnique({
                   where: { id: userId },

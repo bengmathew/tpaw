@@ -12,7 +12,8 @@ export const serialTransaction = async <T>(
   {
     retries = 0,
     onConflict = () => {},
-  }: { retries?: number; onConflict?: () => void } = {},
+    label,
+  }: { retries?: number; onConflict?: () => void; label?: string } = {},
 ): Promise<T> => {
   try {
     return await Clients.prisma.$transaction(fn, {
