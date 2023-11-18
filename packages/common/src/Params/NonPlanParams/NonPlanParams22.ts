@@ -57,7 +57,7 @@ export namespace NonPlanParams22 {
   export const backwardsCompatibleGuard: JSONGuard<SomeNonPlanParams> = (
     x: unknown,
   ) => {
-    const result = union(NonPlanParamsPrev.guard, guard)(x)
+    const result = union(NonPlanParamsPrev.backwardsCompatibleGuard, guard)(x)
     return result.error ? result : success(x as SomeNonPlanParams)
   }
 

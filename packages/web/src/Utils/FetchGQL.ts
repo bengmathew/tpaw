@@ -27,7 +27,6 @@ export const fetchGQL =
       body: JSON.stringify({ query: text, variables }),
     })
     const code = response.headers.get('x-app-error-code')
-    console.dir(code)
     switch (code) {
       case 'downForMaintenance':
         throw new AppError('serverDownForMaintenance')

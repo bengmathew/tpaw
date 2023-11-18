@@ -61,15 +61,6 @@ async function _impl() {
   server.use(cors({ origin: Config.websiteURL }))
   // GCP Cloud Run does not gzip for us so do it here.
   server.use(compression())
-  server.get('/marketDataURL', async (req, res) => {
-    const bucket = Clients.gcs.bucket(Config.google.marketDataBucket)
-    const [currentLatest] = await bucket.getFiles({ prefix: 'latest/' })
-    assert(currentLatest.length === 1)
-    const file = fGet(currentLatest[0])
-    const filename = await file.publicUrl()
-    res.send(filename)
-  })
-
   server.use((req, res, next) => {
     if (Config.status.downForMaintenance || Config.status.downForUpdate) {
       const code = Config.status.downForMaintenance
@@ -89,6 +80,15 @@ async function _impl() {
   server.get('/time', (req, res) => res.send(`${Date.now()}`))
   server.get('/crash', (req, res) => {
     throw new Error('crash')
+  })
+  
+  server.get('/marketDataURL', async (req, res) => {
+    const bucket = Clients.gcs.bucket(Config.google.marketDataBucket)
+    const [currentLatest] = await bucket.getFiles({ prefix: 'latest/' })
+    assert(currentLatest.length === 1)
+    const file = fGet(currentLatest[0])
+    const filename = await file.publicUrl()
+    res.send(filename)
   })
 
   server.get('/deploy-frontend', async (req, res) => {

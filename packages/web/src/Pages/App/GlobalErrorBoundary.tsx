@@ -27,9 +27,7 @@ export const useDefaultErrorHandlerForNetworkCall = () => {
   const defaultErrorHandlerForNetworkCall = useCallback(
     ({ e, toast }: { e: Error; toast: string | null }) => {
       Sentry.captureException(e)
-      console.dir(e)
       if (e instanceof AppError) {
-
         if (e.code === 'serverDownForMaintenance') {
           errorToast(
             'Could not complete action. The server is down for maintenace.',
