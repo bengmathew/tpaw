@@ -209,7 +209,7 @@ const _TPAWRiskToleranceCard = React.memo(
         </_ExpandableNote>
         <_ExpandableNote
           className="mt-2"
-          title="Relative risk aversion (RRA) corresponding to this risk tolerance."
+          title="Relative risk aversion (RRA) corresponding to this risk tolerance"
         >
           <p className="p-base">
             Your risk tolerance of {planParams.risk.tpaw.riskTolerance.at20}{' '}
@@ -709,8 +709,9 @@ export const PlanInputRiskTPAWSummary = React.memo(() => {
         ).label.toLowerCase()})`}
       </h2>
       <h2>
-        Extra Spending Tilt:{' '}
+         Spending Tilt:{' '} Base + {' '}
         {formatPercentage(1)(planParams.risk.tpaw.additionalAnnualSpendingTilt)}
+
       </h2>
       {advancedCount > -0 && (
         <>

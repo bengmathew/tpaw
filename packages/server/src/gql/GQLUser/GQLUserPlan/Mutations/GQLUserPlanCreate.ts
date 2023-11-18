@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client'
+import Sentry from '@sentry/node'
 import {
   API,
   PlanParamsChangeAction,
@@ -8,11 +10,13 @@ import {
 import { assert } from 'console'
 import _ from 'lodash'
 import * as uuid from 'uuid'
-import { Clients } from '../../../../Clients.js'
-import { PrismaTransaction } from '../../../../Utils/PrismaTransaction.js'
+import {
+  PrismaTransaction,
+  serialTransaction,
+} from '../../../../Utils/PrismaTransaction.js'
+import { PothosPlanAndUserResult } from '../../../GQLCommon/GQLPlanAndUserResult.js'
 import { builder } from '../../../builder.js'
 import { patchPlanParams } from '../PatchPlanParams.js'
-import { PothosPlanAndUserResult } from '../../../GQLCommon/GQLPlanAndUserResult.js'
 
 export const PothosUserPlanCreatePlanInput = builder.inputType(
   'UserPlanCreatePlanInput',
@@ -51,7 +55,7 @@ builder.mutationField('userPlanCreate', (t) =>
     resolve: async (__, { input }, context) => {
       const { userId, label, plan } = API.UserPlanCreate.check(input).force()
 
-      const newPlan = await Clients.prisma.$transaction(
+      const newPlan = await serialTransaction(
         async (tx) =>
           await userPlanCreate(
             tx,
@@ -101,27 +105,46 @@ export const userPlanCreate = async (
     label,
     currPlans.map((x) => x.slug),
   )
-  return await tx.planWithHistory.create({
-    data: {
-      planId: uuid.v4(),
-      isMain,
-      userId,
-      addedToServerAt: now,
-      sortTime: now,
-      lastSyncAt: now,
-      label,
-      slug,
-      resetCount: 0,
-      endingParams,
-      paramsChangeHistory: {
-        createMany: {
-          data: patchPlanParams.generate(
-            { type: 'forCreate' },
-            planParamsHistory,
-          ),
-        },
+  const createData: Prisma.PlanWithHistoryUncheckedCreateInput = {
+    planId: uuid.v4(),
+    isMain,
+    userId,
+    addedToServerAt: now,
+    sortTime: now,
+    lastSyncAt: now,
+    label,
+    slug,
+    resetCount: 0,
+    endingParams,
+    paramsChangeHistory: {
+      createMany: {
+        data: patchPlanParams.generate(
+          { type: 'forCreate' },
+          planParamsHistory,
+        ),
       },
-      reverseHeadIndex,
     },
-  })
+    reverseHeadIndex,
+  }
+  try {
+    return await tx.planWithHistory.create({
+      data: createData,
+    })
+  } catch (e) {
+    Sentry.captureMessage(
+      JSON.stringify({
+        userId,
+        createData,
+        slugs: {
+          before: currPlans.map((x) => x.slug),
+          after: (
+            await tx.planWithHistory.findMany({
+              where: { userId },
+            })
+          ).map((x) => x.slug),
+        },
+      }),
+    )
+    throw e
+  }
 }

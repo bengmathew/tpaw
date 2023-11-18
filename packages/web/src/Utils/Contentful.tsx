@@ -1,14 +1,14 @@
 import {
-    Block,
-    BLOCKS,
-    Document,
-    helpers,
-    Inline,
-    INLINES,
-    Mark,
-    MARKS,
-    Text,
-    TopLevelBlock,
+  Block,
+  BLOCKS,
+  Document,
+  helpers,
+  Inline,
+  INLINES,
+  Mark,
+  MARKS,
+  Text,
+  TopLevelBlock,
 } from '@contentful/rich-text-types'
 import * as contentful from 'contentful'
 import _ from 'lodash'
@@ -24,6 +24,7 @@ export namespace Contentful {
     spawBody?: Document
     swrBody?: Document
   }
+
   export type StandaloneEntry = {
     title: string
     slug: string

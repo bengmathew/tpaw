@@ -1,6 +1,7 @@
 import { ValueForMonthRange, ValueForMonthRanges } from '@tpaw/common'
 import _ from 'lodash'
 import { nominalToReal } from '../../Utils/NominalToReal'
+import { SimpleRange } from '../../Utils/SimpleRange'
 import { PlanParamsExtended } from '../ExtentPlanParams'
 
 export function planParamsProcessByMonthParams(
@@ -21,20 +22,22 @@ export function planParamsProcessByMonthParams(
     minMonth: number,
     maxMonth: number,
   ) => {
-    const result = new Float64Array(numMonths)
+    const values = new Float64Array(numMonths)
+
     const normMonthRange = asMFN(monthRange)
-    const start = _.clamp(normMonthRange.start, minMonth, maxMonth)
-    if (normMonthRange.end < start) return result
+    if (maxMonth < normMonthRange.start) return { values, validRange: null }
+    const start = Math.max(normMonthRange.start, minMonth)
+    if (normMonthRange.end < start) return { values, validRange: null }
     const end = Math.min(normMonthRange.end, maxMonth)
     _.range(start, end + 1).forEach(
       (monthsFromNow) =>
-        (result[monthsFromNow] = nominalToReal({
+        (values[monthsFromNow] = nominalToReal({
           value: { value, nominal },
           monthlyInflation,
           monthsFromNow,
         })),
     )
-    return result
+    return { values, validRange: { start, end } }
   }
 
   const fromValueForMonthRanges = (
@@ -42,13 +45,15 @@ export function planParamsProcessByMonthParams(
     minMonth: number,
     maxMonth: number,
   ) => {
-    const byId: Record<string, Float64Array> = _.mapValues(
-      valueForMonthRanges,
-      (x) => fromValueForMonthRange(x, minMonth, maxMonth),
+    const byId: Record<
+      string,
+      { values: Float64Array; validRange: SimpleRange | null }
+    > = _.mapValues(valueForMonthRanges, (x) =>
+      fromValueForMonthRange(x, minMonth, maxMonth),
     )
     const total = new Float64Array(numMonths)
     const parts = _.values(byId)
-    total.forEach((__, i) => (total[i] = _.sum(parts.map((x) => x[i]))))
+    total.forEach((__, i) => (total[i] = _.sum(parts.map((x) => x.values[i]))))
     return { byId, total }
   }
 

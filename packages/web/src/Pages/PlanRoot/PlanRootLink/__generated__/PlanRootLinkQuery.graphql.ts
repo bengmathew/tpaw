@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<22dacc74b0adc8b8d25c90029638e437>>
+ * @generated SignedSource<<463618cb39b08ea8c8067fb0ac3e6220>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -19,7 +19,7 @@ export type PlanRootLinkQuery$variables = {
 export type PlanRootLinkQuery$data = {
   readonly linkBasedPlan?: {
     readonly params: string;
-  } | null;
+  } | null | undefined;
   readonly " $fragmentSpreads": FragmentRefs<"WithUser_query">;
 };
 export type PlanRootLinkQuery = {

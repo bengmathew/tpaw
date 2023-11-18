@@ -135,7 +135,7 @@ async function _getBondRates(): Promise<MarketData.BondRates[]> {
       `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/${year}/all`,
     )
     url.searchParams.set('type', 'daily_treasury_real_yield_curve')
-    const response = await fetch(url, { cache: 'no-store' })
+    const response = await fetch(url, { headers: { cache: 'no-store' } })
     assert(response.ok)
     const text = await response.text()
     const rows = text.split('\n').map((x) => x.split(','))
@@ -192,7 +192,7 @@ async function _getInflation(): Promise<MarketData.Inflation[]> {
         .toISODate(),
     ),
   )
-  const response = await fetch(url, { cache: 'no-store' })
+  const response = await fetch(url, { headers: { cache: 'no-store' } })
   assert(response.ok)
   type ObType = { date: string; value: string }
   const guard: JSONGuard<ObType> = object(
@@ -362,7 +362,7 @@ const _getFromEOD = async (name: string) => {
   )
 
   const requestTime = DateTime.now()
-  const response = await fetch(url, { cache: 'no-store' })
+  const response = await fetch(url, { headers: { cache: 'no-store' } })
   assert(response.ok)
   type EODData = {
     date: string // yyyy-mm-dd

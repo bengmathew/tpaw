@@ -3,6 +3,7 @@ import { getAuth, onAuthStateChanged, User } from 'firebase/auth'
 import React, { ReactNode, useEffect, useState } from 'react'
 import { createContext } from '../../Utils/CreateContext'
 import { Config } from '../Config'
+import * as Sentry from '@sentry/nextjs'
 
 export type FirebaseUser = User
 initializeApp({
@@ -36,6 +37,9 @@ export const WithFirebaseUser = React.memo(
     useEffect(
       () =>
         onAuthStateChanged(getAuth(), (user) => {
+          Sentry.setUser(
+            user ? { id: user.uid, email: user.email ?? undefined } : null,
+          )
           setState({ initialized: true, user })
         }),
       [],

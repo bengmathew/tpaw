@@ -2,13 +2,12 @@ import {
   faCalendarAlt,
   faCaretLeft,
   faCaretRight,
-  faCircle,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
 import { fGet } from '@tpaw/common'
 import clsx from 'clsx'
-import _, { divide } from 'lodash'
+import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useMemo, useState } from 'react'
 import { ContextMenu2 } from '../../../../Common/Modal/ContextMenu2'
@@ -17,7 +16,7 @@ import {
   SimulationInfoForHistoryMode,
   useSimulation,
 } from '../../../PlanRootHelpers/WithSimulation'
-import { gray, usePlanColors } from '../../UsePlanColors'
+import { usePlanColors } from '../../UsePlanColors'
 
 export const PlanMenuSubMenuRewind = React.memo(
   ({

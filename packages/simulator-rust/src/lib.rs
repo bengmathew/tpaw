@@ -261,7 +261,7 @@ pub fn run(
         _ => panic!(),
     };
 
-    if (result.by_run_by_mfn_returns_stocks.len() >= 12) {
+    if result.by_run_by_mfn_returns_stocks.len() >= 12 {
         result.annual_stats_for_sampled_stock_returns = get_stats_for_window_size_from_log_returns(
             &get_log_returns(&result.by_run_by_mfn_returns_stocks),
             12,

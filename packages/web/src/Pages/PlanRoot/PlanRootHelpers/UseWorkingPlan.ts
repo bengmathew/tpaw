@@ -39,8 +39,8 @@ export type WorkingPlanSrc = {
 // persisted on the server.
 // Note 2. This is the visible undo depth. The number of changes items to
 // support it is  TARGET_UNDO_DEPTH + 1
-export const TARGET_UNDO_DEPTH = Config.client.production ? 100 : 10
-export const REBASE_BUFFER = Config.client.production ? 50 : 5
+export const TARGET_UNDO_DEPTH = Config.client.isProduction ? 100 : 10
+export const REBASE_BUFFER = Config.client.isProduction ? 50 : 5
 
 export type WorkingPlanInfo = ReturnType<typeof useWorkingPlan>
 
@@ -58,8 +58,9 @@ export const useWorkingPlan = (
     [currentTimeInfo.currentTimestamp, ianaTimezoneName],
   )
 
+
   const [workingPlan, setWorkingPlan] = useState(src)
-  assert(workingPlan.reverseHeadIndex < TARGET_UNDO_DEPTH)
+  assert(workingPlan.reverseHeadIndex <= TARGET_UNDO_DEPTH)
   const headIndex = useMemo(
     () =>
       workingPlan.planParamsPostBase.length - 1 - workingPlan.reverseHeadIndex,
@@ -242,14 +243,14 @@ export const useWorkingPlan = (
     if (result.startTimestamp > result.endTimestamp) {
       Sentry.captureMessage(
         `startTimestamp: ${result.startTimestamp}
-         endTimestamp: ${result.endTimestamp}}
+         endTimestamp: ${result.endTimestamp}
          nActions: ${result.actions.length}
          nParams: ${planParamsUndoRedoStack.undos.length}
          `,
       )
       Sentry.captureMessage(
         `startTimestamp: ${result.startTimestamp}
-         endTimestamp: ${result.endTimestamp}}
+         endTimestamp: ${result.endTimestamp}
          nActions: ${result.actions.length}
          actionTimestamps: ${result.actions.map((x) => x.timestamp).join(', ')}
          nParams: ${planParamsUndoRedoStack.undos.length}
@@ -260,7 +261,7 @@ export const useWorkingPlan = (
       )
       Sentry.captureMessage(
         `startTimestamp: ${result.startTimestamp}
-         endTimestamp: ${result.endTimestamp}}
+         endTimestamp: ${result.endTimestamp}
          nActions: ${result.actions.length}
          actionTimestamps: ${result.actions.map((x) => x.timestamp).join(', ')}
          actionTypes: ${result.actions.map((x) => x.args.type).join(', ')}

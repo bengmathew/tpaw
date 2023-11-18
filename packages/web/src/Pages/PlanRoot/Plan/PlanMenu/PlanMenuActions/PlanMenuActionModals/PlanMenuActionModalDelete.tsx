@@ -12,6 +12,7 @@ import { useURLUpdater } from '../../../../../../Utils/UseURLUpdater'
 import { appPaths } from '../../../../../../AppPaths'
 import { captureException } from '@sentry/nextjs'
 import { set } from 'lodash'
+import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalErrorBoundary'
 
 export const PlanMenuActionModalDelete = React.memo(
   ({
@@ -56,6 +57,8 @@ const _Body = React.memo(
     toPlansOnSuccess: boolean
     isSyncing: boolean
   }) => {
+    const { defaultErrorHandlerForNetworkCall } =
+      useDefaultErrorHandlerForNetworkCall()
     const user = fGet(useUser())
     const urlUpdater = useURLUpdater()
     // Intentionally not using isRunning from useMutation because we want to
@@ -85,8 +88,7 @@ const _Body = React.memo(
           }
         },
         onError: (e) => {
-          captureException(e)
-          errorToast('Error deleting plan')
+          defaultErrorHandlerForNetworkCall({ e, toast: 'Error deleting plan' })
           setIsRunning(false)
         },
       })

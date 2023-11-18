@@ -1,20 +1,20 @@
 import Head from 'next/head'
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useState } from 'react'
 import { Header } from './Header'
 
 type Props = {
   title: string
-  children: ReactNode
+  children:
+    | ReactNode
+    | ((x: { setDarkHeader: (x: boolean) => void }) => ReactNode)
   style?: React.CSSProperties
   className?: string
   onClick?: () => void
 }
 export const AppPage = React.memo(
   React.forwardRef<HTMLDivElement, Props>(
-    (
-      { title = '', children, className = '', style, onClick }: Props,
-      ref,
-    ) => {
+    ({ title = '', children, className = '', style, onClick }: Props, ref) => {
+      const [darkHeader, setDarkHeader] = useState(false)
       return (
         <div
           className={`${className} page relative z-0`}
@@ -25,8 +25,10 @@ export const AppPage = React.memo(
           <Head>
             <title>{title}</title>
           </Head>
-          {children}
-          <Header />
+          {typeof children === 'function'
+            ? children({ setDarkHeader })
+            : children}
+          <Header isDark={darkHeader} />
         </div>
       )
     },

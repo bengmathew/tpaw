@@ -2,34 +2,34 @@ import {
   boolean,
   chain,
   constant,
+  failure,
   gt,
-  gte,
   integer,
   JSONGuard,
-  lt,
-  lte,
   number,
   object,
   success,
   union,
 } from 'json-guard'
 import { Guards } from '../../Guards'
-import { Params20 as NonPlanParamsPrev } from '../PlanParams/Old/Params20'
-export namespace NonPlanParams1 {
+import { assert } from '../../Utils'
+import { NonPlanParams21 as NonPlanParamsPrev } from './Old/NonPlanParams21'
+export namespace NonPlanParams22 {
+  export const currentVersion = 22 as const
   export type NonPlanParams = {
-    v: 21
+    v: typeof currentVersion
     timezone: { type: 'auto' } | { type: 'manual'; ianaTimezoneName: string }
-    percentileRange: { start: number; end: number }
     numOfSimulationForMonteCarloSampling: number
     dev: {
+      showDevFeatures: boolean
       alwaysShowAllMonths: boolean
+      overridePlanResultChartYRange: false | { start: number; end: number }
     }
   }
-  export const currentVersion: NonPlanParams['v'] = 21
 
   // ----------- GUARD  ---------//
   export const guard: JSONGuard<NonPlanParams> = object({
-    v: constant(21),
+    v: constant(currentVersion),
     timezone: union(
       object({ type: constant('auto') }),
       object({
@@ -37,18 +37,21 @@ export namespace NonPlanParams1 {
         ianaTimezoneName: Guards.ianaTimezoneName,
       }),
     ),
-    percentileRange: object({
-      start: chain(number, integer, gte(1), lt(50)),
-      end: chain(number, integer, gt(50), lte(99)),
-    }),
     numOfSimulationForMonteCarloSampling: chain(number, integer, gt(0)),
     dev: object({
+      showDevFeatures: boolean,
       alwaysShowAllMonths: boolean,
+      overridePlanResultChartYRange: union(
+        constant(false),
+        chain(object({ start: number, end: number }), (x) =>
+          x.start < x.end ? success(x) : failure('start must be less than end'),
+        ),
+      ),
     }),
   })
 
   export type SomeNonPlanParams =
-    | NonPlanParamsPrev.SomePlanParams
+    | NonPlanParamsPrev.SomeNonPlanParams
     | NonPlanParams
 
   export const backwardsCompatibleGuard: JSONGuard<SomeNonPlanParams> = (
@@ -59,19 +62,21 @@ export namespace NonPlanParams1 {
   }
 
   export const migrate = (x: SomeNonPlanParams): NonPlanParams => {
-    if ('v' in x && x.v === 21) return x
-    const previous: NonPlanParamsPrev.Params =
-      'v' in x && x.v === 20 ? x : NonPlanParamsPrev.migrate(x)
+    if ('v' in x && x.v === currentVersion) return x
+    const prev = NonPlanParamsPrev.migrate(x)
 
-    return {
-      ...previous.nonPlan,
-      v: 21,
+    const result: NonPlanParams = {
+      v: currentVersion,
       timezone: { type: 'auto' },
       numOfSimulationForMonteCarloSampling:
-        previous.plan.advanced.monteCarloSampling.numOfSimulations,
+        prev.numOfSimulationForMonteCarloSampling,
       dev: {
-        alwaysShowAllMonths: previous.nonPlan.dev.alwaysShowAllMonths,
+        showDevFeatures: false,
+        alwaysShowAllMonths: prev.dev.alwaysShowAllMonths,
+        overridePlanResultChartYRange: false,
       },
     }
+    assert(!guard(result).error)
+    return result
   }
 }

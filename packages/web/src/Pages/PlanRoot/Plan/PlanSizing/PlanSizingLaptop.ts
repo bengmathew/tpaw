@@ -7,7 +7,7 @@ export function planSizingLaptop(
   scrollbarWidth: number,
   isSWR: boolean,
   tallPlanMenu: boolean,
-): PlanSizing {
+): Omit<PlanSizing, 'args'> {
   const pad = 40
 
   const summaryWidth = Math.max(windowSize.width * 0.38, 500)
@@ -161,8 +161,30 @@ export function planSizingLaptop(
     }
   })()
 
+  // ---- POINTER ----
+  const pointer = block<PlanSizing['pointer']>(() => ({
+    fixed: block(() => {
+      const fromChart = (
+        chart: PlanSizing['chart']['dynamic']['dialogInput'],
+      ) => {
+        return {
+          region: rectExt({ x: 0, y: 0, ...windowSize }),
+          chartPosition: {
+            bottom: chart.region.bottom - chart.padding.bottom,
+            left: chart.region.x + chart.padding.left,
+          },
+        }
+      }
+      return {
+        summary: fromChart(chart.dynamic.notDialogSummary),
+        input: fromChart(chart.dynamic.notDialogInput),
+        help: fromChart(chart.dynamic.notDialogInput),
+      }
+    }),
+  }))
+
   // ---- MENU ----
-  const menu = ((): PlanSizing['menu'] => {
+  const menu = block<PlanSizing['menu']>(() => {
     const dynamic = (
       dialog: 'dialog' | 'notDialog',
       section: 'Summary' | 'Input',
@@ -197,7 +219,7 @@ export function planSizingLaptop(
         help: { ...dynamic('notDialog', 'Input'), opacity: 0 },
       },
     }
-  })()
+  })
   // ---- CONTACT ----
   const contact = ((): PlanSizing['contact'] => {
     const dynamic = {
@@ -218,5 +240,5 @@ export function planSizingLaptop(
       },
     }
   })()
-  return { input, help, chart, summary, menu, contact }
+  return { input, help, chart, summary, menu, contact, pointer }
 }

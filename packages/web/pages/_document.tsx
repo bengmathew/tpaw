@@ -18,7 +18,7 @@ class MyDocument extends Document {
     return (
       <Html>
         <Head>
-          {Config.client.production && (
+          {Config.client.isProduction && (
             <>
               <script
                 async

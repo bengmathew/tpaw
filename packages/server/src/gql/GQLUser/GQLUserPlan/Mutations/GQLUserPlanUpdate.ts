@@ -1,5 +1,6 @@
 import { API, getSlug } from '@tpaw/common'
 import { Clients } from '../../../../Clients.js'
+import { serialTransaction } from '../../../../Utils/PrismaTransaction.js'
 import { builder } from '../../../builder.js'
 
 const Input = builder.inputType('UserPlanUpdateInput', {
@@ -19,7 +20,7 @@ builder.mutationField('userPlanUpdate', (t) =>
       const { userId, planId, setLabel } =
         API.UserPlanUpdate.check(input).force()
 
-      await Clients.prisma.$transaction(async (tx) => {
+      await serialTransaction(async (tx) => {
         if (setLabel) {
           const currSlugs = (
             await tx.planWithHistory.findMany({

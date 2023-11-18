@@ -46,7 +46,7 @@ export const PlanResultsSidePanelTasksCard = React.memo(
         <button
           className={clsx(
             className,
-            'block text-start w-full rounded-2xl overflow-hidden',
+            'block text-start w-full rounded-2xl overflow-hidden ',
           )}
           style={{ ...style, backgroundColor: planColors.results.cardBG }}
           onClick={() => setShowModal(true)}

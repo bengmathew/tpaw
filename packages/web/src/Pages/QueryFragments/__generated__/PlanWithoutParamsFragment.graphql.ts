@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<a9f2bee0d83aa89786b864017bc004cb>>
+ * @generated SignedSource<<832801b06600d08f9986b4051f087e0f>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -14,7 +14,7 @@ export type PlanWithoutParamsFragment$data = {
   readonly addedToServerAt: number;
   readonly id: string;
   readonly isMain: boolean;
-  readonly label: string | null;
+  readonly label: string | null | undefined;
   readonly lastSyncAt: number;
   readonly slug: string;
   readonly sortTime: number;

@@ -8,6 +8,7 @@ import {
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
+import Link from 'next/link'
 import React, { useState } from 'react'
 import { appPaths } from '../../../../AppPaths'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
@@ -20,10 +21,8 @@ import { usePlanColors } from '../UsePlanColors'
 import { PlanMenuActionCopyToLink } from './PlanMenuActions/PlanMenuActionCopyToLink'
 import { PlanMenuActionModalLoginRequired } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalLoginRequired'
 import { PlanMenuActionModalResetLocal } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalResetLocal'
-import { PlanMenuActionPrint } from './PlanMenuActions/PlanMenuActionPrint'
 import { PlanMenuDivider } from './PlanMenuHelpers/PlanMenuDivider'
 import { PlanMenuSubMenuUndoRedo } from './PlanMenuSubMenu/PlanMenuSubMenuUndoRedo'
-import Link from 'next/link'
 
 export const PlanMenuLocalPlanMode = React.memo(
   ({
@@ -129,10 +128,6 @@ export const PlanMenuLocalPlanMode = React.memo(
                 closeMenu={close}
               />
 
-              <PlanMenuActionPrint
-                className="context-menu-item"
-                closeMenu={close}
-              />
               <Menu.Item
                 as="button"
                 className="context-menu-item "

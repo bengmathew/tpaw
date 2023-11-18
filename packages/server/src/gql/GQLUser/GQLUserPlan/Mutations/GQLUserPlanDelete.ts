@@ -1,6 +1,9 @@
 import { API, assert } from '@tpaw/common'
 import { Clients } from '../../../../Clients.js'
-import { PrismaTransaction } from '../../../../Utils/PrismaTransaction.js'
+import {
+  PrismaTransaction,
+  serialTransaction,
+} from '../../../../Utils/PrismaTransaction.js'
 import { builder } from '../../../builder.js'
 
 const Input = builder.inputType('UserPlanDeleteInput', {
@@ -18,7 +21,7 @@ builder.mutationField('userPlanDelete', (t) =>
     resolve: async (query, _, { input }) => {
       const { userId, planId } = API.UserPlanDelete.check(input).force()
 
-      await Clients.prisma.$transaction(
+      await serialTransaction(
         async (tx) => await userPlanDelete(tx, userId, planId),
       )
       return Clients.prisma.user.findUniqueOrThrow({

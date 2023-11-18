@@ -30,7 +30,6 @@ import { PlanMenuActionModalLoginRequired } from './PlanMenuActions/PlanMenuActi
 import { PlanMenuActionModalOverwriteLocal } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalOverwriteLocal'
 import { PlanMenuActionModalResetLocal } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalResetLocal'
 import { PlanMenuActionModalSaveLinkPlanToAccount } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalSaveLinkPlanToAccount'
-import { PlanMenuActionPrint } from './PlanMenuActions/PlanMenuActionPrint'
 import { PlanMenuDivider } from './PlanMenuHelpers/PlanMenuDivider'
 import { PlanMenuSubMenuUndoRedo } from './PlanMenuSubMenu/PlanMenuSubMenuUndoRedo'
 
@@ -237,10 +236,6 @@ export const PlanMenuLinkPlanMode = React.memo(
 
               <PlanMenuActionCopyToLink
                 className=" context-menu-item "
-                closeMenu={close}
-              />
-              <PlanMenuActionPrint
-                className="context-menu-item"
                 closeMenu={close}
               />
               {isModified && (

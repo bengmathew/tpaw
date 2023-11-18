@@ -7,7 +7,7 @@ import {
   faHome,
   faPlus,
   faTag,
-  faTrash
+  faTrash,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
@@ -29,7 +29,6 @@ import { PlanMenuActionModalDelete } from './PlanMenuActions/PlanMenuActionModal
 import { PlanMenuActionModalEditLabel } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalEditLabel'
 import { PlanMenuActionModalReset } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalReset'
 import { PlanMenuActionModalSetAsMain } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalSetAsMain'
-import { PlanMenuActionPrint } from './PlanMenuActions/PlanMenuActionPrint'
 import { PlanMenuActionViewPlanHistory } from './PlanMenuActions/PlanMenuActionViewPlanHistory'
 import { PlanMenuDivider } from './PlanMenuHelpers/PlanMenuDivider'
 import { PlanMenuSubMenuUndoRedo } from './PlanMenuSubMenu/PlanMenuSubMenuUndoRedo'
@@ -147,10 +146,6 @@ export const PlanMenuServerPlanMode = React.memo(
 
               <PlanMenuActionCopyToLink
                 className="context-menu-item"
-                closeMenu={close}
-              />
-              <PlanMenuActionPrint
-                className=" context-menu-item"
                 closeMenu={close}
               />
               <PlanMenuActionViewPlanHistory

@@ -77,6 +77,10 @@ export const PlanServer = React.memo(
     const planId = serverPlan.planId
 
     const currentTimeInfo = useCurrentTime({ planId })
+    assert(
+      currentTimeInfo.currentTimestamp >=
+        fGet(_.last(startingServerPlan.planParamsPostBase)).params.timestamp,
+    )
     const workingPlanInfo = useWorkingPlan(
       currentTimeInfo,
       startingServerPlan,

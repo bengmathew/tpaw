@@ -1,17 +1,24 @@
-import {ChartContext} from '../ChartContext'
+import { Transition } from '../../../../Utils/Transition'
+import { ChartContext } from '../ChartContext'
 
 export type ChartRegisterAnimation = <
-  T extends gsap.core.Tween | gsap.core.Timeline
+  T extends gsap.core.Tween | gsap.core.Timeline,
 >(
-  x: T
+  x: T,
 ) => T
 
+export type ChartComponentPointerTargetY = (dataX: number) => {
+  id: string
+  pixelYTransition: { from: number; target: number }
+  hoverTransition: Transition<0 | 1> | null
+}[]
+
 export interface ChartComponent<Data> {
-  draw: (ctx: ChartContext<Data>) => void
-  destroy?: () => void
-  update?: (
-    change: 'init' | 'pointer' | 'stateAndPointer' | 'sizing',
+  draw: (
     ctx: ChartContext<Data>,
-    registerAnimation: ChartRegisterAnimation
-  ) => void
+    reason: 'draw' | 'init' | 'pointer' | 'stateAndPointer' | 'sizingAndPointer',
+    registerAnimation: ChartRegisterAnimation,
+    pointerTargetY: ChartComponentPointerTargetY,
+  ) => ChartComponentPointerTargetY | null
+  destroy?: () => void
 }

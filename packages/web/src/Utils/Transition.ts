@@ -1,21 +1,32 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
+import { assert } from '@tpaw/common'
 import _ from 'lodash'
 import { zeroOneInterpolate } from './ZeroOneInterpolate'
 
-export type Transition<Data> = {
+export type Transition<Data, Target = Data> = {
   from: Data
-  target: Data
+  target: Target
   progress: number
 }
 
 export const transitionTransform = <T, U>(
   x: Transition<T>,
-  transform: (x: T) => U,
+  transform: (x: T, other: T, src: 'from' | 'target') => U,
 ): Transition<U> => ({
-  from: transform(x.from),
-  target: transform(x.target),
+  from: transform(x.from, x.target, 'from'),
+  target: transform(x.target, x.from, 'target'),
   progress: x.progress,
 })
+
+export const transitionArrayDecompose = <T>({
+  from,
+  target,
+  progress,
+}: Transition<T[]>): Transition<T>[] =>
+  _.zip(from, target).map(([from, target]) => {
+    assert(from !== undefined && target !== undefined)
+    return { from, target, progress }
+  })
 
 // Thanks: https://stackoverflow.com/a/47842314
 type Indirect<X> = Record<string, number | number[] | X>

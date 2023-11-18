@@ -8,6 +8,8 @@ import {
   useSimulationParamsForPlanMode,
 } from '../PlanRootHelpers/WithSimulation'
 import { PlanLocalStorage } from './PlanLocalStorage'
+import { assert, fGet } from '@tpaw/common'
+import _ from 'lodash'
 
 export const PlanRootLocalImpl = React.memo(
   ({ reload }: { reload: () => void }) => {
@@ -19,6 +21,10 @@ export const PlanRootLocalImpl = React.memo(
     )
     const planPaths = appPaths.guest
     const currentTimeInfo = useCurrentTime({ planId: startingSrc.state.planId })
+    assert(
+      currentTimeInfo.currentTimestamp >=
+        fGet(_.last(startingSrc.state.planParamsPostBase)).params.timestamp,
+    )
     const workingPlanInfo = useWorkingPlan(
       currentTimeInfo,
       startingSrc.state,
@@ -29,7 +35,6 @@ export const PlanRootLocalImpl = React.memo(
     useEffect(() => {
       rebase?.({ hard: true })
     }, [rebase])
-
 
     useEffect(() => {
       PlanLocalStorage.write({

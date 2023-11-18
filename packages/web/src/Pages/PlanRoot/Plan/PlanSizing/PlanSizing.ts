@@ -1,23 +1,32 @@
-import { ta } from 'date-fns/locale'
+import { add } from 'lodash'
 import { Size } from '../../../../Utils/Geometry'
 import { noCase } from '../../../../Utils/Utils'
-import { PlanResultsSizing } from '../PlanResults/PlanResults'
+import { PlanChartPointerSizing } from '../PlanChartPointer/PlanChartPointer'
+import { PlanContactSizing } from '../PlanContact/PlanContact'
 import { PlanHelpSizing } from '../PlanHelp'
 import { PlanInputSizing } from '../PlanInput/PlanInput'
 import { PlanMenuSizing } from '../PlanMenu/PlanMenu'
+import { PlanResultsSizing } from '../PlanResults/PlanResults'
 import { PlanSummaySizing } from '../PlanSummary/PlanSummary'
 import { planSizingDesktop } from './PlanSizingDesktop'
 import { planSizingLaptop } from './PlanSizingLaptop'
 import { planSizingMobile } from './PlanSizingMobile'
-import { PlanContactSizing } from '../PlanContact/PlanContact'
 
 export type PlanSizing = {
+  args: {
+    layout: 'mobile' | 'laptop' | 'desktop'
+    windowSize: Size
+    scrollbarWidth: number
+    isSWR: boolean
+    tallPlanMenu: boolean
+  }
   input: PlanInputSizing
   help: PlanHelpSizing
   chart: PlanResultsSizing
   summary: PlanSummaySizing
   menu: PlanMenuSizing
   contact: PlanContactSizing
+  pointer: PlanChartPointerSizing
 }
 
 export function planSizing(
@@ -27,13 +36,23 @@ export function planSizing(
   isSWR: boolean,
   tallPlanMenu: boolean,
 ) {
+  const addArgs = (x: Omit<PlanSizing, 'args'>): PlanSizing => ({
+    ...x,
+    args: { layout, windowSize, scrollbarWidth, isSWR, tallPlanMenu },
+  })
   switch (layout) {
     case 'laptop':
-      return planSizingLaptop(windowSize, scrollbarWidth, isSWR, tallPlanMenu)
+      return addArgs(
+        planSizingLaptop(windowSize, scrollbarWidth, isSWR, tallPlanMenu),
+      )
     case 'desktop':
-      return planSizingDesktop(windowSize, scrollbarWidth, isSWR, tallPlanMenu)
+      return addArgs(
+        planSizingDesktop(windowSize, scrollbarWidth, isSWR, tallPlanMenu),
+      )
     case 'mobile':
-      return planSizingMobile(windowSize, scrollbarWidth, isSWR, tallPlanMenu)
+      return addArgs(
+        planSizingMobile(windowSize, scrollbarWidth, isSWR, tallPlanMenu),
+      )
     default:
       noCase(layout)
   }

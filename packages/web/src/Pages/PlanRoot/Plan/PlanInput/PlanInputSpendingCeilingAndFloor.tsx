@@ -9,7 +9,7 @@ import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { paddingCSSStyle } from '../../../../Utils/Geometry'
 import { fGet } from '../../../../Utils/Utils'
 import { AmountInput } from '../../../Common/Inputs/AmountInput'
-import { smartDeltaFnForAmountInput } from '../../../Common/Inputs/SmartDeltaFnForAmountInput'
+import { smartDeltaFnForMonthlyAmountInput } from '../../../Common/Inputs/SmartDeltaFnForAmountInput'
 import { ToggleSwitch } from '../../../Common/Inputs/ToggleSwitch'
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
@@ -20,32 +20,12 @@ import {
 
 export const PlanInputSpendingCeilingAndFloor = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    return (
-      <PlanInputBody {...props}>
-        <>
-          <_SpendingCeilingCard className="" props={props} />
-          <_SpendingFloorCard className="mt-8" props={props} />
-        </>
-      </PlanInputBody>
-    )
-  },
-)
-
-export const _SpendingCeilingCard = React.memo(
-  ({
-    className = '',
-    props,
-  }: {
-    className?: string
-    props: PlanInputBodyPassThruProps
-  }) => {
-    const content = usePlanContent()['spending-ceiling-and-floor']
-    const { planParams, updatePlanParams, tpawResult } = useSimulation()
-    // planParamsExt from result.
-    const { asMFN, withdrawalStartMonth } = tpawResult.planParamsExt
-    const withdrawalStartAsMFN = asMFN(withdrawalStartMonth)
-
-    const { minWithdrawal, maxWithdrawal } = useMemo(() => {
+    const { planParams, tpawResult } = useSimulation()
+    const { initialCeiling, initialFloor } = useMemo(() => {
+      // planParamsExt from result because we use it to index into the result.
+      const withdrawalStartAsMFN = tpawResult.planParamsExt.asMFN(
+        tpawResult.planParamsExt.withdrawalStartMonth,
+      )
       const last = fGet(
         _.last(
           tpawResult.savingsPortfolio.withdrawals.total
@@ -60,13 +40,52 @@ export const _SpendingCeilingCard = React.memo(
       ).data
       const maxWithdrawal = Math.max(...last.slice(withdrawalStartAsMFN))
       const minWithdrawal = Math.min(...first.slice(withdrawalStartAsMFN))
-      return { minWithdrawal, maxWithdrawal }
-    }, [tpawResult, withdrawalStartAsMFN])
+      const initialCeiling = smartDeltaFnForMonthlyAmountInput.increment(
+        minWithdrawal + (maxWithdrawal - minWithdrawal) / 2,
+      )
+      const initialFloor = Math.min(
+        smartDeltaFnForMonthlyAmountInput.increment(
+          minWithdrawal + (maxWithdrawal - minWithdrawal) * 0.05,
+        ),
+        planParams.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling ??
+          Number.MAX_SAFE_INTEGER,
+      )
 
-    const [entryOnEnabled, setEntryOnEnabled] = useState(
-      planParams.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling ??
-        _roundUp(minWithdrawal + (maxWithdrawal - minWithdrawal) / 2, 1000),
+      return { initialCeiling, initialFloor }
+    }, [tpawResult, planParams])
+    return (
+      <PlanInputBody {...props}>
+        <>
+          <_SpendingCeilingCard
+            className=""
+            props={props}
+            initialCeiling={initialCeiling}
+          />
+          <_SpendingFloorCard
+            className="mt-8"
+            props={props}
+            initialFloor={initialFloor}
+          />
+        </>
+      </PlanInputBody>
     )
+  },
+)
+
+export const _SpendingCeilingCard = React.memo(
+  ({
+    className = '',
+    props,
+    initialCeiling,
+  }: {
+    className?: string
+    props: PlanInputBodyPassThruProps
+    initialCeiling: number
+  }) => {
+    const content = usePlanContent()['spending-ceiling-and-floor']
+    const { planParams, updatePlanParams } = useSimulation()
+
+    const [entryOnEnabled, setEntryOnEnabled] = useState(initialCeiling)
 
     const handleAmount = (amount: number | null) => {
       if (
@@ -136,7 +155,7 @@ export const _SpendingCeilingCard = React.memo(
                   disabled={value === null}
                   onClick={() =>
                     handleAmount(
-                      smartDeltaFnForAmountInput.increment(
+                      smartDeltaFnForMonthlyAmountInput.increment(
                         value ?? entryOnEnabled,
                       ),
                     )
@@ -149,7 +168,7 @@ export const _SpendingCeilingCard = React.memo(
                   disabled={value === null}
                   onClick={() =>
                     handleAmount(
-                      smartDeltaFnForAmountInput.decrement(
+                      smartDeltaFnForMonthlyAmountInput.decrement(
                         value ?? entryOnEnabled,
                       ),
                     )
@@ -170,28 +189,16 @@ export const _SpendingFloorCard = React.memo(
   ({
     className = '',
     props,
+    initialFloor,
   }: {
     className?: string
     props: PlanInputBodyPassThruProps
+    initialFloor: number
   }) => {
     const content = usePlanContent()['spending-ceiling-and-floor']
-    const { planParams, updatePlanParams, tpawResult } = useSimulation()
-    // planParamsExt from result.
-    const { asMFN, withdrawalStartMonth } = tpawResult.planParamsExt
-    const withdrawalStartAsYFN = asMFN(withdrawalStartMonth)
+    const { planParams, updatePlanParams } = useSimulation()
 
-    const firstWithdrawalOfMinPercentile =
-      tpawResult.savingsPortfolio.withdrawals.total
-        .byPercentileByMonthsFromNow[0].data[withdrawalStartAsYFN]
-
-    const [entryOnEnabled, setEntryOnEnabled] = useState(
-      planParams.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor ??
-        Math.min(
-          _roundUp(firstWithdrawalOfMinPercentile, 500),
-          planParams.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling ??
-            Number.MAX_SAFE_INTEGER,
-        ),
-    )
+    const [entryOnEnabled, setEntryOnEnabled] = useState(initialFloor)
 
     const handleAmount = (amount: number | null) => {
       const clone = _.cloneDeep(planParams)
@@ -257,7 +264,9 @@ export const _SpendingFloorCard = React.memo(
               <button
                 className="ml-2 px-3"
                 onClick={() =>
-                  handleAmount(smartDeltaFnForAmountInput.increment(value))
+                  handleAmount(
+                    smartDeltaFnForMonthlyAmountInput.increment(value),
+                  )
                 }
               >
                 <FontAwesomeIcon icon={faPlus} />
@@ -265,7 +274,9 @@ export const _SpendingFloorCard = React.memo(
               <button
                 className="px-3"
                 onClick={() =>
-                  handleAmount(smartDeltaFnForAmountInput.decrement(value))
+                  handleAmount(
+                    smartDeltaFnForMonthlyAmountInput.decrement(value),
+                  )
                 }
               >
                 <FontAwesomeIcon icon={faMinus} />
@@ -291,13 +302,13 @@ export const PlanInputSpendingCeilingAndFloorSummary = React.memo(() => {
     <>
       <h2>
         Ceiling:{' '}
-        {monthlySpendingCeiling
+        {monthlySpendingCeiling !== null
           ? `${formatCurrency(monthlySpendingCeiling)} per month`
           : 'None'}
       </h2>
       <h2>
         Floor:{' '}
-        {monthlySpendingFloor
+        {monthlySpendingFloor !== null
           ? `${formatCurrency(monthlySpendingFloor)} per month`
           : 'None'}
       </h2>

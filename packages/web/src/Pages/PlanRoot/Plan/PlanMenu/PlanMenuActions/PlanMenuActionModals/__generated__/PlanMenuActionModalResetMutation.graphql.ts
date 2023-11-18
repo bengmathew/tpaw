@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<a5682d4bd064dfed2a6f0d7bbf684701>>
+ * @generated SignedSource<<e62e7332d119e804f35fa4ffa4800a3b>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -27,6 +27,7 @@ export type PlanMenuActionModalResetMutation$data = {
     readonly __typename: "PlanAndUserResult";
     readonly plan: {
       readonly id: string;
+      readonly lastSyncAt: number;
       readonly " $fragmentSpreads": FragmentRefs<"PlanWithoutParamsFragment">;
     };
   } | {
@@ -70,6 +71,13 @@ v3 = {
   "storageKey": null
 },
 v4 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "lastSyncAt",
+  "storageKey": null
+},
+v5 = {
   "kind": "InlineFragment",
   "selections": [
     {
@@ -111,6 +119,7 @@ return {
                 "plural": false,
                 "selections": [
                   (v3/*: any*/),
+                  (v4/*: any*/),
                   {
                     "args": null,
                     "kind": "FragmentSpread",
@@ -123,7 +132,7 @@ return {
             "type": "PlanAndUserResult",
             "abstractKey": null
           },
-          (v4/*: any*/)
+          (v5/*: any*/)
         ],
         "storageKey": null
       }
@@ -158,6 +167,7 @@ return {
                 "plural": false,
                 "selections": [
                   (v3/*: any*/),
+                  (v4/*: any*/),
                   {
                     "alias": null,
                     "args": null,
@@ -192,13 +202,6 @@ return {
                     "kind": "ScalarField",
                     "name": "sortTime",
                     "storageKey": null
-                  },
-                  {
-                    "alias": null,
-                    "args": null,
-                    "kind": "ScalarField",
-                    "name": "lastSyncAt",
-                    "storageKey": null
                   }
                 ],
                 "storageKey": null
@@ -207,23 +210,23 @@ return {
             "type": "PlanAndUserResult",
             "abstractKey": null
           },
-          (v4/*: any*/)
+          (v5/*: any*/)
         ],
         "storageKey": null
       }
     ]
   },
   "params": {
-    "cacheID": "979672248e3ae7877938e796fb2ab579",
+    "cacheID": "71568ba2d3126ed2d5864f2d031990b2",
     "id": null,
     "metadata": {},
     "name": "PlanMenuActionModalResetMutation",
     "operationKind": "mutation",
-    "text": "mutation PlanMenuActionModalResetMutation(\n  $input: UserPlanResetInput!\n) {\n  userPlanReset(input: $input) {\n    __typename\n    ... on PlanAndUserResult {\n      plan {\n        id\n        ...PlanWithoutParamsFragment\n      }\n    }\n    ... on ConcurrentChangeError {\n      _\n    }\n  }\n}\n\nfragment PlanWithoutParamsFragment on PlanWithHistory {\n  id\n  isMain\n  label\n  slug\n  addedToServerAt\n  sortTime\n  lastSyncAt\n}\n"
+    "text": "mutation PlanMenuActionModalResetMutation(\n  $input: UserPlanResetInput!\n) {\n  userPlanReset(input: $input) {\n    __typename\n    ... on PlanAndUserResult {\n      plan {\n        id\n        lastSyncAt\n        ...PlanWithoutParamsFragment\n      }\n    }\n    ... on ConcurrentChangeError {\n      _\n    }\n  }\n}\n\nfragment PlanWithoutParamsFragment on PlanWithHistory {\n  id\n  isMain\n  label\n  slug\n  addedToServerAt\n  sortTime\n  lastSyncAt\n}\n"
   }
 };
 })();
 
-(node as any).hash = "3702f21c5adc360911d91c921f8cc7ca";
+(node as any).hash = "f000ad80d445293a42694fd46f856ecf";
 
 export default node;

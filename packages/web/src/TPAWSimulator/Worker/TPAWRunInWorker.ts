@@ -23,6 +23,9 @@ export type TPAWRunInWorkerByPercentileByMonthsFromNow = {
 }
 
 const MULTI_THREADED = true
+export const PERCENTILES_STR = ['5', '50', '95'] as const
+export type Percentile = (typeof PERCENTILES_STR)[number]
+export const PERCENTILES = PERCENTILES_STR.map((x) => parseInt(x))
 
 export type TPAWRunInWorkerResult = {
   numSimulationsActual: number
@@ -65,7 +68,7 @@ export type TPAWRunInWorkerResult = {
   annualStatsForSampledReturns: Record<
     'stocks' | 'bonds',
     { n: number } & Record<
-    'ofBase' | 'ofLog',
+      'ofBase' | 'ofLog',
       {
         mean: number
         variance: number
@@ -309,11 +312,7 @@ export class TPAWRunInWorker {
       planParamsExt,
       nonPlanParams,
     )
-    const percentiles = [
-      nonPlanParams.percentileRange.start,
-      50,
-      nonPlanParams.percentileRange.end,
-    ]
+    const percentiles = PERCENTILES
 
     const runsByWorker = await Promise.all(
       this._workers.map((worker, i) =>
@@ -622,7 +621,7 @@ const _separateExtraWithdrawal = (
     const withdrawalTargetForThisMonth = fGet(
       params.byMonth.adjustmentsToSpending.extraSpending[type].byId[
         valueForMonthRange.id
-      ],
+      ].values,
     )[monthsFromNow]
     if (withdrawalTargetForThisMonth === 0) return 0
     const ratio = withdrawalTargetForThisMonth / currMonthParams

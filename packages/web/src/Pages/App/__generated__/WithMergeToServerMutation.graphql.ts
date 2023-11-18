@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<dc5e262f0f951fff42c444eed9c20548>>
+ * @generated SignedSource<<306aea42d59e91081bb657c7cf7fbc82>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -11,9 +11,9 @@
 import { ConcreteRequest, Mutation } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type UserMergeFromClientInput = {
-  guestPlan?: UserPlanCreatePlanInput | null;
-  linkPlan?: UserMergeFromClientLinkPlanInput | null;
-  nonPlanParams?: string | null;
+  guestPlan?: UserPlanCreatePlanInput | null | undefined;
+  linkPlan?: UserMergeFromClientLinkPlanInput | null | undefined;
+  nonPlanParams?: string | null | undefined;
   userId: string;
 };
 export type UserPlanCreatePlanInput = {
@@ -35,13 +35,13 @@ export type WithMergeToServerMutation$variables = {
 export type WithMergeToServerMutation$data = {
   readonly userMergeFromClient: {
     readonly guestPlan: {
-      readonly label: string | null;
+      readonly label: string | null | undefined;
       readonly " $fragmentSpreads": FragmentRefs<"PlanWithoutParamsFragment">;
-    } | null;
+    } | null | undefined;
     readonly linkPlan: {
-      readonly label: string | null;
+      readonly label: string | null | undefined;
       readonly " $fragmentSpreads": FragmentRefs<"PlanWithoutParamsFragment">;
-    } | null;
+    } | null | undefined;
   };
 };
 export type WithMergeToServerMutation = {

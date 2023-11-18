@@ -91,12 +91,13 @@ module.exports = {
           '@apply btn2-md disabled:lighten-2 -mr-2': {},
         },
 
-        // Context Menu
+        // ---- Context Menu ----
         '.context-menu-item': {
-          '@apply block px-4 py-2.5 text-start ui-active:bg-gray-200 w-full': {},
+          '@apply block px-4 py-2.5 text-start ui-active:bg-gray-200 w-full':
+            {},
         },
 
-        // Button
+        // ---- Button ----
         '.btn2-warning': {
           '@apply text-white bg-errorBlockBG disabled:lighten-2': {},
         },
@@ -111,6 +112,10 @@ module.exports = {
         },
         '.btn2-lg': {
           '@apply rounded-full py-2 px-6 text-lg': {},
+        },
+
+        '.custom-shadow-md': {
+          boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.1)',
         },
       })
     },

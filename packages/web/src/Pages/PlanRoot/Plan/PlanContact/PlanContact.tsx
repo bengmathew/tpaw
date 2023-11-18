@@ -1,17 +1,10 @@
-import { faTwitter } from '@fortawesome/free-brands-svg-icons'
-import { faEnvelope } from '@fortawesome/pro-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Menu } from '@headlessui/react'
-import Image from 'next/image'
 import React, { useMemo } from 'react'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
-import { ContextMenu2 } from '../../../Common/Modal/ContextMenu2'
 import {
   PlanTransitionState,
   simplifyPlanTransitionState5,
 } from '../PlanTransition'
 import { usePlanColors } from '../UsePlanColors'
-import Link from 'next/link'
 import { PlanContactContent } from './PlanContactContent'
 
 export type PlanContactSizing = {
@@ -22,14 +15,26 @@ export type PlanContactSizing = {
 }
 
 const _toPlanContactTransitionState = simplifyPlanTransitionState5(
-  { label: 'help', sections: [{ name: 'help', dialogMode: 'any' }] },
-  { label: 'summaryDialog', sections: [{ name: 'summary', dialogMode: true }] },
-  { label: 'inputDialog', sections: [{ name: 'rest', dialogMode: true }] },
+  {
+    label: 'help',
+    sections: [{ section: 'help', dialogMode: 'any'}],
+  },
+  {
+    label: 'summaryDialog',
+    sections: [{ section: 'summary', dialogMode: true}],
+  },
+  {
+    label: 'inputDialog',
+    sections: [{ section: 'rest', dialogMode: true}],
+  },
   {
     label: 'summaryNotDialog',
-    sections: [{ name: 'summary', dialogMode: false }],
+    sections: [{ section: 'summary', dialogMode: false}],
   },
-  { label: 'inputNotDialog', sections: [{ name: 'rest', dialogMode: false }] },
+  {
+    label: 'inputNotDialog',
+    sections: [{ section: 'rest', dialogMode: false}],
+  },
 )
 type _PlanContactTransitionState = ReturnType<
   typeof _toPlanContactTransitionState

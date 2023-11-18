@@ -782,7 +782,6 @@ export namespace PlanParams21 {
     (x) => oneOrTwoPassGuard(x)(x),
   )
 
-
   export type SomePlanParams = ParamsPrev.SomePlanParams | PlanParams
 
   export const backwardsCompatibleGuard: JSONGuard<SomePlanParams> = (
@@ -844,20 +843,20 @@ export namespace PlanParams21 {
       timestamp: prev.wealth.portfolioBalance.isLastPlanChange
         ? prev.timestamp
         : Math.max(
-          prev.wealth.portfolioBalance.original.timestamp,
-          // Parameter time should not be before start of glidepath.
-          DateTime.fromObject(
-            {
-              month: prev.risk.spawAndSWR.allocation.start.month.month,
-              year: prev.risk.spawAndSWR.allocation.start.month.year,
-            },
-            // Fix timezone to make it deterministic.
-            { zone: 'America/New_York' },
-          )
-            .startOf('month')
-            .plus({ day: 1 }) // Buffer for any timezone.
-            .toMillis(),
-        ),
+            prev.wealth.portfolioBalance.original.timestamp,
+            // Parameter time should not be before start of glidepath.
+            DateTime.fromObject(
+              {
+                month: prev.risk.spawAndSWR.allocation.start.month.month,
+                year: prev.risk.spawAndSWR.allocation.start.month.year,
+              },
+              // Fix timezone to make it deterministic.
+              { zone: 'America/New_York' },
+            )
+              .startOf('month')
+              .plus({ day: 1 }) // Buffer for any timezone.
+              .toMillis(),
+          ),
       dialogPosition: prev.dialogPosition,
       people: prev.people,
       wealth: {

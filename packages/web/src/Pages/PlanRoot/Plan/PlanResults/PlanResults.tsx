@@ -1,6 +1,8 @@
 import clsx from 'clsx'
 import { Power1, Power4 } from 'gsap'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
+
+import getIsMobile from 'is-mobile'
 import {
   Padding,
   RectExt,
@@ -11,19 +13,19 @@ import {
 } from '../../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import { Record } from '../../../../Utils/Record'
-import { fGet } from '../../../../Utils/Utils'
 import { ChartAnimation } from '../../../Common/Chart/Chart'
+import { ChartPointerPortal } from '../../../Common/Chart/ChartComponent/ChartPointerPortal'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import {
   PlanTransitionState,
   simplifyPlanTransitionState4,
 } from '../PlanTransition'
 import { usePlanColors } from '../UsePlanColors'
-import { useChartData } from '../WithChartData'
-import { PlanResultsDialogCurtain } from './PlanResultsDialogCurtain'
-import { PlanResultsHelp } from './PlanResultsHelp'
+import { useChartData } from '../WithPlanResultsChartData'
 import { PlanResultsChartCard } from './PlanResultsChartCard/PlanResultsChartCard'
 import { PlanResultsChartRescale } from './PlanResultsChartRescale'
+import { PlanResultsDialogCurtain } from './PlanResultsDialogCurtain'
+import { PlanResultsHelp } from './PlanResultsHelp'
 import { PlanResultsSidePanel } from './PlanResultsSidePanel/PlanResultsSidePanel'
 import {
   planResultsLegacyCardFormat,
@@ -47,13 +49,22 @@ export type PlanResultsTransitionState = ReturnType<
 >
 
 const _toPlanResultsTransitionState = simplifyPlanTransitionState4(
-  { label: 'dialogSummary', sections: [{ name: 'summary', dialogMode: true }] },
-  { label: 'dialogInput', sections: [{ name: 'rest', dialogMode: true }] },
+  {
+    label: 'dialogSummary',
+    sections: [{ section: 'summary', dialogMode: true }],
+  },
+  {
+    label: 'dialogInput',
+    sections: [{ section: 'rest', dialogMode: true }],
+  },
   {
     label: 'notDialogSummary',
-    sections: [{ name: 'summary', dialogMode: false }],
+    sections: [{ section: 'summary', dialogMode: false }],
   },
-  { label: 'notDialogInput', sections: [{ name: 'rest', dialogMode: false }] },
+  {
+    label: 'notDialogInput',
+    sections: [{ section: 'rest', dialogMode: false }],
+  },
 )
 
 export type PlanResultsSizing = {
@@ -77,18 +88,29 @@ type _Props = {
   sizing: PlanResultsSizing
   planTransition: { target: PlanTransitionState; duration: number }
   section: PlanSectionName
+  chartPointerPortal: ChartPointerPortal
+  onChartHover: (hover: boolean) => void
+  chartHover: boolean
 }
 export const PlanResults = React.forwardRef<HTMLDivElement, _Props>(
-  ({ layout, sizing: sizingIn, planTransition, section }: _Props, ref) => {
+  (
+    {
+      layout,
+      sizing: sizingIn,
+      planTransition,
+      section,
+      chartPointerPortal,
+      onChartHover,
+      chartHover,
+    }: _Props,
+    ref,
+  ) => {
     const chartType = usePlanResultsChartType()
 
-    const allChartData = useChartData()
-    const chartMainData = fGet(
-      allChartData.byYearsFromNowPercentiles.get(chartType),
-    )
+    const chartData = useChartData(chartType)
 
-    const [mainYRange, setMainYRange] = useState(chartMainData.yDisplayRange)
-    
+    const [mainYRange, setMainYRange] = useState(chartData.displayRange.y)
+
     const [measures, setMeasures] = useState({
       help: { height: 0 },
     })
@@ -96,9 +118,8 @@ export const PlanResults = React.forwardRef<HTMLDivElement, _Props>(
       setMeasures((x) => ({ help: { height } }))
     }, [])
 
-    const maxLegacy = Math.max(
-      ...usePlanResultsLegacyCardData().map((x) => x.amount),
-    )
+    const legacyData = usePlanResultsLegacyCardData()
+    const maxLegacy = Math.max(...legacyData.map((x) => x.amount))
 
     const sizing = useMemo(
       () => _transformSizing(sizingIn, measures, maxLegacy, layout),
@@ -123,7 +144,7 @@ export const PlanResults = React.forwardRef<HTMLDivElement, _Props>(
       <NoDisplayOnOpacity0Transition
         ref={ref}
         noDisplayMeans="visibility:hidden"
-        className={clsx('absolute z-10  overflow-hidden')}
+        className={clsx('absolute z-50  overflow-hidden')}
         style={{
           transitionProperty: 'borderRadius, opacity, width, height, top, left',
           transitionDuration,
@@ -138,19 +159,39 @@ export const PlanResults = React.forwardRef<HTMLDivElement, _Props>(
         }}
       >
         <PlanResultsDialogCurtain layout={layout} />
-        <PlanResultsChartCard
-          layout={layout}
-          yRange={mainYRange}
-          setYRange={setMainYRange}
-          sizing={sizing}
-          transition={transition}
-        />
+
         <PlanResultsSidePanel
           layout={layout}
           targetDynamicSizing={targetSizing.sidePanel}
           duration={planTransition.duration}
           fixedSizing={sizing.fixed}
           section={section}
+        />
+
+        <PlanResultsHelp
+          onHeight_const={handleHelpHeight}
+          layout={layout}
+          targetDynamicSizing={targetSizing.help}
+          duration={planTransition.duration}
+          section={section}
+        />
+        <div
+          className={'absolute inset-0 pointer-events-none bg-black/60'}
+          style={{
+            transitionProperty: 'opacity',
+            transitionDuration: '300ms',
+            opacity: `${getIsMobile() && chartHover ? 1 : 0}`,
+          }}
+        />
+        <PlanResultsChartCard
+          layout={layout}
+          yRange={mainYRange}
+          setYRange={setMainYRange}
+          sizing={sizing}
+          transition={transition}
+          chartPointerPortal={chartPointerPortal}
+          onChartHover={onChartHover}
+          chartHover={chartHover}
         />
         <div
           className="absolute"
@@ -169,13 +210,6 @@ export const PlanResults = React.forwardRef<HTMLDivElement, _Props>(
             setMainYRange={setMainYRange}
           />
         </div>
-        <PlanResultsHelp
-          onHeight_const={handleHelpHeight}
-          layout={layout}
-          targetDynamicSizing={targetSizing.help}
-          duration={planTransition.duration}
-          section={section}
-        />
       </NoDisplayOnOpacity0Transition>
     )
   },

@@ -38,6 +38,7 @@ export const builder = new SchemaBuilder<{
 
 builder.queryType()
 builder.mutationType()
+builder.queryField('time', (t) => t.float({ resolve: () => Date.now() }))
 builder.queryField('ping', (t) => t.string({ resolve: () => 'pong' }))
 builder.queryField('crash', (t) =>
   t.string({

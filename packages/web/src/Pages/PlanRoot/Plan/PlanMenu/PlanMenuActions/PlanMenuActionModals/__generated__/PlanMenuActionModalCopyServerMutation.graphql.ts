@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<a550117a2a9d43a58c76eb1a5d209661>>
+ * @generated SignedSource<<d73ee2d8df73e4aab9c4b2455a95fa21>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -11,7 +11,7 @@
 import { ConcreteRequest, Mutation } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type UserPlanCopyInput = {
-  cutAfterId?: string | null;
+  cutAfterId?: string | null | undefined;
   label: string;
   planId: string;
   userId: string;

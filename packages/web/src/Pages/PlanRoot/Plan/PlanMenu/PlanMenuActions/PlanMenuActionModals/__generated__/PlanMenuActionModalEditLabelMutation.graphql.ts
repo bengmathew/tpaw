@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<2057faa9aab779ba256bb9ffb7328550>>
+ * @generated SignedSource<<0d328156ff9e79b7a5e44e33c9cd7af1>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -12,7 +12,7 @@ import { ConcreteRequest, Mutation } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type UserPlanUpdateInput = {
   planId: string;
-  setLabel?: string | null;
+  setLabel?: string | null | undefined;
   userId: string;
 };
 export type PlanMenuActionModalEditLabelMutation$variables = {

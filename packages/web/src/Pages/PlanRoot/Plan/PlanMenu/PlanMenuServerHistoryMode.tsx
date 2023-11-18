@@ -18,7 +18,6 @@ import {
 import { usePlanColors } from '../UsePlanColors'
 import { PlanMenuActionCopyToLink } from './PlanMenuActions/PlanMenuActionCopyToLink'
 import { PlanMenuActionModalCopyServer } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalCopyServer'
-import { PlanMenuActionPrint } from './PlanMenuActions/PlanMenuActionPrint'
 import { PlanMenuDivider } from './PlanMenuHelpers/PlanMenuDivider'
 import { PlanMenuSubMenuRewind } from './PlanMenuSubMenu/PlanMenuSubMenuRewind'
 
@@ -78,7 +77,6 @@ export const PlanMenuServerHistoryMode = React.memo(
                 className="context-menu-item"
                 closeMenu={close}
               />
-              <PlanMenuActionPrint className="context-menu-item" closeMenu={close} />
               <PlanMenuDivider />
               <Menu.Item>
                 <Link

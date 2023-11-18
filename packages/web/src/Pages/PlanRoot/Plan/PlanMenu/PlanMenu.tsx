@@ -19,14 +19,26 @@ export type PlanMenuSizing = {
 }
 
 const _toPlanMenuTransitionState = simplifyPlanTransitionState5(
-  { label: 'help', sections: [{ name: 'help', dialogMode: 'any' }] },
-  { label: 'summaryDialog', sections: [{ name: 'summary', dialogMode: true }] },
-  { label: 'inputDialog', sections: [{ name: 'rest', dialogMode: true }] },
+  {
+    label: 'help',
+    sections: [{ section: 'help', dialogMode: 'any'}],
+  },
+  {
+    label: 'summaryDialog',
+    sections: [{ section: 'summary', dialogMode: true}],
+  },
+  {
+    label: 'inputDialog',
+    sections: [{ section: 'rest', dialogMode: true}],
+  },
   {
     label: 'summaryNotDialog',
-    sections: [{ name: 'summary', dialogMode: false }],
+    sections: [{ section: 'summary', dialogMode: false}],
   },
-  { label: 'inputNotDialog', sections: [{ name: 'rest', dialogMode: false }] },
+  {
+    label: 'inputNotDialog',
+    sections: [{ section: 'rest', dialogMode: false}],
+  },
 )
 type _PlanUndoTransitionState = ReturnType<typeof _toPlanMenuTransitionState>
 

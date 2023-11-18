@@ -36,6 +36,12 @@ export const linearFnFomPoints = (
   return linearFnFromPointAndSlope(x0, y0, slope)
 }
 
+export const clampedLinearFnFomPoints =
+  (x0: number, y0: number, x1: number, y1: number) => (x: number) =>
+    letIn(linearFnFomPoints(x0, y0, x1, y1), (fn) =>
+      x < x0 ? y0 : x > x1 ? y1 : fn(x),
+    )
+
 export const linearFnFromPointAndSlope = (
   x: number,
   y: number,

@@ -1,7 +1,7 @@
 import { API, fGet, getSlug } from '@tpaw/common'
 import { assert } from 'console'
 import * as uuid from 'uuid'
-import { Clients } from '../../../../Clients.js'
+import { serialTransaction } from '../../../../Utils/PrismaTransaction.js'
 import { PothosPlanAndUserResult } from '../../../GQLCommon/GQLPlanAndUserResult.js'
 import { builder } from '../../../builder.js'
 import { userPlanSync } from './GQLUserPlanSync.js'
@@ -25,7 +25,7 @@ builder.mutationField('userPlanCopy', (t) =>
         API.UserPlanCopy.check(input).force()
 
       const newPlanId = uuid.v4()
-      await Clients.prisma.$transaction(async (tx) => {
+      await serialTransaction(async (tx) => {
         const currPlans = await tx.planWithHistory.findMany({
           where: { userId },
         })

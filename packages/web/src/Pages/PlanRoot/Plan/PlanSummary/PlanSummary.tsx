@@ -15,6 +15,7 @@ import {
 } from '../../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import { Config } from '../../../Config'
+import { useNonPlanParams } from '../../PlanRootHelpers/WithNonPlanParams'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { analyzeMonthsInParams } from '../PlanInput/Helpers/AnalyzeMonthsInParams'
 import { PlanInputType } from '../PlanInput/Helpers/PlanInputType'
@@ -26,6 +27,7 @@ import { useIsPlanInputDevSimulationsModified } from '../PlanInput/PlanInputDev/
 import { useIsPlanInputDevTimeModified } from '../PlanInput/PlanInputDev/PlanInputDevTime'
 import { useIsPlanInputExpectedReturnsAndVolatilityModified } from '../PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { useIsPlanInputInflationModified } from '../PlanInput/PlanInputInflation'
+import { useIsPlanInputSimulationModifed } from '../PlanInput/PlanInputSimulation'
 import { useIsPlanInputStrategyModified } from '../PlanInput/PlanInputStrategy'
 import {
   PlanTransitionState,
@@ -33,7 +35,6 @@ import {
 } from '../PlanTransition'
 import { PlanSummaryButton } from './PlanSummaryButton'
 import { PlanSummaryDialog } from './PlanSummaryDialog'
-import { useIsPlanInputSimulationModifed } from '../PlanInput/PlanInputSimulation'
 
 type _FixedSizingByMode = {
   size: Size
@@ -51,10 +52,22 @@ export type PlanSummaySizing = {
 }
 
 const _toPlanSummaryTransitionState = simplifyPlanTransitionState4(
-  { label: 'dialogIn', sections: [{ name: 'summary', dialogMode: true }] },
-  { label: 'dialogOut', sections: [{ name: 'rest', dialogMode: true }] },
-  { label: 'notDialogIn', sections: [{ name: 'summary', dialogMode: false }] },
-  { label: 'notDialogOut', sections: [{ name: 'rest', dialogMode: false }] },
+  {
+    label: 'dialogIn',
+    sections: [{ section: 'summary', dialogMode: true }],
+  },
+  {
+    label: 'dialogOut',
+    sections: [{ section: 'rest', dialogMode: true }],
+  },
+  {
+    label: 'notDialogIn',
+    sections: [{ section: 'summary', dialogMode: false }],
+  },
+  {
+    label: 'notDialogOut',
+    sections: [{ section: 'rest', dialogMode: false }],
+  },
 )
 export type PlanSummaryTransitionState = ReturnType<
   typeof _toPlanSummaryTransitionState
@@ -70,6 +83,7 @@ export const PlanSummary = React.memo(
     sizing: PlanSummaySizing
     planTransition: { target: PlanTransitionState; duration: number }
   }) => {
+    const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
     const [outerElement, setOuterElement] = useState<HTMLElement | null>(null)
     const [bodyElement, setBodyElement] = useState<HTMLElement | null>(null)
     const [ageElement, setAgeElement] = useState<HTMLElement | null>(null)
@@ -82,21 +96,16 @@ export const PlanSummary = React.memo(
     const [adjustmentsToSpendingElement, setAdjustmentsToSpendingElement] =
       useState<HTMLElement | null>(null)
 
-    const {
-      planParams,
-      planParamsExt,
-      defaultPlanParams,
-      simulationInfoByMode,
-    } = useSimulation()
+    const { planParams, planParamsExt } = useSimulation()
     const { isFutureSavingsAllowed } = planParamsExt
 
     const [expandAdvanced, setExpandAdvanced] = useState(false)
-    const [showDev, setShowDev] = useState(() => DevMode.readDevMode())
     const [showDevClickCount, setShowDevClickCount] = useState(0)
     const [expandDev, setExpandDev] = useState(false)
 
     const advancedModifiedByType = {
-      'expected-returns-and-volatility': useIsPlanInputExpectedReturnsAndVolatilityModified(),
+      'expected-returns-and-volatility':
+        useIsPlanInputExpectedReturnsAndVolatilityModified(),
       inflation: useIsPlanInputInflationModified(),
       strategy: useIsPlanInputStrategyModified(),
       simulation: useIsPlanInputSimulationModifed(),
@@ -104,6 +113,7 @@ export const PlanSummary = React.memo(
     const advancedModifiedCount = _.values(advancedModifiedByType).filter(
       (x) => x,
     ).length
+
     const devModifiedByType = {
       'dev-misc': useIsPlanInputDevMiscModified(),
       'dev-simulations': useIsPlanInputDevSimulationsModified(),
@@ -145,8 +155,9 @@ export const PlanSummary = React.memo(
             if (prev === 0)
               window.setTimeout(() => setShowDevClickCount(0), 3000)
             if (prev === 9) {
-              DevMode.setDevMode(!showDev)
-              setShowDev(!showDev)
+              const clone = _.cloneDeep(nonPlanParams)
+              clone.dev.showDevFeatures = !clone.dev.showDevFeatures
+              setNonPlanParams(clone)
             }
             return prev + 1
           })
@@ -201,8 +212,7 @@ export const PlanSummary = React.memo(
                   section={section}
                   padding={cardPadding}
                 />
-                {(isFutureSavingsAllowed ||
-                  _.values(planParams.wealth.futureSavings).length > 0) && (
+                {isFutureSavingsAllowed && (
                   <PlanSummaryButton
                     ref={setFutureSavingsElement}
                     type="future-savings"
@@ -330,7 +340,9 @@ export const PlanSummary = React.memo(
                       section={section}
                       padding={cardPadding}
                       flagAsModified={
-                        advancedModifiedByType['expected-returns-and-volatility']
+                        advancedModifiedByType[
+                          'expected-returns-and-volatility'
+                        ]
                       }
                     />
                     <PlanSummaryButton
@@ -354,7 +366,8 @@ export const PlanSummary = React.memo(
                   </div>
                 )}
               </div>
-              {showDev && (
+              {(!Config.client.isProduction ||
+                nonPlanParams.dev.showDevFeatures) && (
                 <div className="">
                   <button
                     className="disabled:opacity-20"
@@ -378,20 +391,7 @@ export const PlanSummary = React.memo(
                     )}
                   </button>
                   {expandDev && (
-                    <div
-                      className="flex flex-col gap-y-6 mt-6"
-                      onClick={() => {
-                        setShowDevClickCount((prev) => {
-                          if (prev === 0)
-                            window.setTimeout(
-                              () => setShowDevClickCount(0),
-                              3000,
-                            )
-                          if (prev === 9) setShowDev((x) => !x)
-                          return prev + 1
-                        })
-                      }}
-                    >
+                    <div className="flex flex-col gap-y-6 mt-6">
                       <PlanSummaryButton
                         type="dev-misc"
                         section={section}
@@ -481,14 +481,4 @@ export const _paramsOk = (planParamsExt: PlanParamsExtended, type: _Type) => {
       .filter((x) => x.section === type)
       .every((x) => x.analyzed.every((x) => x.issue === 'none'))
   )
-}
-
-export namespace DevMode {
-  const key = 'DevMode'
-  export const readDevMode = () => {
-    return !Config.client.production || localStorage.getItem(key) === 'true'
-  }
-  export const setDevMode = (devMode: boolean) => {
-    return localStorage.setItem(key, devMode ? 'true' : 'false')
-  }
 }

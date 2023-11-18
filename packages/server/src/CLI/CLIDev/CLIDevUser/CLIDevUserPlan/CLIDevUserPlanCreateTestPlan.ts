@@ -128,7 +128,7 @@ const _applyChange = (value: number, timestamp: number, params: PlanParams) => {
 }
 
 const startingParams = (timestamp: number): PlanParams => ({
-  v: 23,
+  v: 24,
   risk: {
     swr: {
       withdrawal: {
@@ -192,6 +192,7 @@ const startingParams = (timestamp: number): PlanParams => ({
       result[id1] = {
         id: id1,
         sortIndex: 0,
+        colorIndex: 0,
         label: 'From My Salary',
         value: 300,
         nominal: false,
@@ -209,6 +210,7 @@ const startingParams = (timestamp: number): PlanParams => ({
       result[id2] = {
         id: id2,
         sortIndex: 1,
+        colorIndex: 1,
         label: 'From Spouse Salary',
         value: 0,
         nominal: false,
@@ -236,6 +238,7 @@ const startingParams = (timestamp: number): PlanParams => ({
       result[id1] = {
         id: id1,
         sortIndex: 0,
+        colorIndex: 2,
         label: 'Rental property',
         value: 500,
         nominal: false,
@@ -256,6 +259,7 @@ const startingParams = (timestamp: number): PlanParams => ({
       result[id2] = {
         id: id2,
         sortIndex: 1,
+        colorIndex: 3,
         label: 'Social Security',
         value: 200,
         nominal: false,
@@ -276,6 +280,7 @@ const startingParams = (timestamp: number): PlanParams => ({
       result[id3] = {
         id: id3,
         sortIndex: 2,
+        colorIndex: 4,
         label: 'Spouse Social Security',
         value: 0,
         nominal: false,
@@ -338,6 +343,7 @@ const startingParams = (timestamp: number): PlanParams => ({
         result[id1] = {
           id: id1,
           sortIndex: 0,
+          colorIndex: 0,
           label: 'Travel',
           value: 0,
           nominal: false,
@@ -359,6 +365,7 @@ const startingParams = (timestamp: number): PlanParams => ({
         result[id1] = {
           id: id1,
           sortIndex: 0,
+          colorIndex: 1,
           label: 'Vacation',
           value: 100,
           nominal: false,

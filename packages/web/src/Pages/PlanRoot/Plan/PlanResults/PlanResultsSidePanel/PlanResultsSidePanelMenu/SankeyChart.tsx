@@ -186,8 +186,20 @@ export namespace Sankey {
               className="w-full h-full"
               viewBox={`0 0 ${sizing.width} ${sizing.height}`}
             >
-              {elements.map((col) => col.map((x) => x?.lineElements))}
-              {elements.map((col) => col.map((x) => x?.nodeElement))}
+              {elements.map((col, i) => (
+                <React.Fragment key={`lines-${i}`}>
+                  {col.map((x, j) => (
+                    <React.Fragment key={j}>{x?.lineElements}</React.Fragment>
+                  ))}
+                </React.Fragment>
+              ))}
+              {elements.map((col, i) => (
+                <React.Fragment key={`node-${i}`}>
+                  {col.map((x, j) => (
+                    <React.Fragment key={j}>{x?.nodeElement}</React.Fragment>
+                  ))}
+                </React.Fragment>
+              ))}
             </svg>
           </div>
         </div>

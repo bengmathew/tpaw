@@ -7,10 +7,12 @@ import { useRouter } from 'next/router'
 import React, { useMemo, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { appPaths } from '../../AppPaths'
+import { RGB } from '../../Utils/ColorUtils'
+import { mainPlanColors } from '../PlanRoot/Plan/UsePlanColors'
 import { useFirebaseUser } from './WithFirebaseUser'
 
 export const headerHeight = 47
-export const Header = React.memo(() => {
+export const Header = React.memo(({ isDark }: { isDark: boolean }) => {
   const [showMenu, setShowMenu] = useState(false)
   const firebaseUser = useFirebaseUser()
   const path = useRouter().asPath
@@ -31,13 +33,16 @@ export const Header = React.memo(() => {
     <div
       className={` print:hidden fixed top-0  right-0 
         flex justify-between  items-stretch 
-          opacity-100 bg-theme1
-          rounded-bl-lg  border-gray-700 text-lg sm:text-base z-50`}
-      style={{ height: `${headerHeight}px` }}
+          opacity-100
+          rounded-bl-lg  border-gray-700 text-lg sm:text-base z-50 `}
+      style={{
+        height: `${headerHeight}px`,
+        backgroundColor: mainPlanColors.shades.main[10].hex,
+        color: mainPlanColors.shades.light[5].hex,
+      }}
     >
       <Link
-        className={`pl-4 pr-2 flex items-center font-bold 
-          ${curr === 'plan' ? 'text-gray-100' : 'text-stone-900'} `}
+        className={`pl-4 pr-2 flex items-center font-bold `}
         href={appPaths.plan()}
         shallow
       >
@@ -50,13 +55,29 @@ export const Header = React.memo(() => {
           onClick={() => setShowMenu(true)}
         >
           {firebaseUser && (
-            <div className="w-[30px] h-[30px] rounded-full bg-black/20 flex justify-center items-center">
+            <div
+              className="w-[30px] h-[30px] rounded-full flex justify-center items-center"
+              style={{
+                backgroundColor: RGB.toHex(
+                  RGB.addAlpha(mainPlanColors.fgForDarkBG.rgb, 0.2),
+                ),
+              }}
+            >
               <FontAwesomeIcon icon={faUser} />
             </div>
           )}
           <FontAwesomeIcon className="text-lg" icon={faBars} />
         </button>
       </div>
+      <div
+        className={'absolute inset-0 pointer-events-none bg-black/60'}
+        style={{
+          transitionProperty: 'opacity',
+          transitionDuration: '300ms',
+          opacity: `${isDark ? 1 : 0}`,
+        }}
+      />
+
       {ReactDOM.createPortal(
         <Transition
           show={showMenu}
@@ -134,11 +155,7 @@ const _Button = React.memo(
     isCurrent: boolean
   }) => {
     return (
-      <Link
-        className={`flex items-center font-bold px-2  
-      ${isCurrent ? 'text-gray-100' : 'text-stone-900'}`}
-        href={href}
-      >
+      <Link className={`flex items-center font-bold px-2 `} href={href}>
         {label}
       </Link>
     )

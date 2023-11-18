@@ -1,5 +1,6 @@
 import { PlanParams, block, noCase } from '@tpaw/common'
 import clsx from 'clsx'
+import getIsMobile from 'is-mobile'
 import _ from 'lodash'
 import { useRouter } from 'next/router'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -11,7 +12,10 @@ import {
   useScrollbarWidth,
 } from '../../App/WithScrollbarWidth'
 import { useWindowSize } from '../../App/WithWindowSize'
+import { ChartPointerPortal } from '../../Common/Chart/ChartComponent/ChartPointerPortal'
 import { useSimulation } from '../PlanRootHelpers/WithSimulation'
+import { PlanChartPointer } from './PlanChartPointer/PlanChartPointer'
+import { PlanContact } from './PlanContact/PlanContact'
 import { PlanDialogOverlay } from './PlanDialogOverlay'
 import { PlanHelp } from './PlanHelp'
 import {
@@ -31,15 +35,12 @@ import { usePlanResultsChartType } from './PlanResults/UsePlanResultsChartType'
 import { planSizing } from './PlanSizing/PlanSizing'
 import { PlanSummary } from './PlanSummary/PlanSummary'
 import { usePlanColors } from './UsePlanColors'
-import { WithChartData } from './WithChartData'
-import { PlanContact } from './PlanContact/PlanContact'
+import { WithPlanResultsChartData } from './WithPlanResultsChartData'
 
 export const Plan = React.memo(() => {
   return (
     <WithScrollbarWidth>
-      <WithChartData>
-        <_Plan />
-      </WithChartData>
+      <_Plan />
     </WithScrollbarWidth>
   )
 })
@@ -53,11 +54,11 @@ const _Plan = React.memo(() => {
   const isTallMenu =
     simulationInfoBySrc.src === 'localMain' ||
     simulationInfoByMode.mode === 'history'
-  const windowSize = useWindowSize()
+  const { windowSize, windowWidthName } = useWindowSize()
   const scrollbarWidth = useScrollbarWidth()
   const aspectRatio = windowSize.width / windowSize.height
   const layout =
-    windowSize.width <= 640 // Same as tailwind "sm" breakpoint.
+    windowWidthName === 'xs'
       ? 'mobile'
       : aspectRatio > 1.2
       ? 'laptop'
@@ -69,7 +70,7 @@ const _Plan = React.memo(() => {
   )
 
   const planChartType = usePlanResultsChartType()
-  const chartLabel = planResultsChartLabel(planParams, planChartType, 'full')
+  const chartLabel = planResultsChartLabel(planParams, planChartType)
 
   const state = usePlanState()
 
@@ -77,9 +78,12 @@ const _Plan = React.memo(() => {
     const x = {
       section: state.section,
       dialogMode: _isDialogMode(state.dialogPosition),
+      chartHover: false,
     }
     return { prev: x, target: x, duration: 0 }
   })
+  const [chartPointerPortal] = useState(() => new ChartPointerPortal())
+  const [chartHover, setChartHover] = useState(false)
 
   useEffect(() => {
     setTransition((t) => {
@@ -87,6 +91,7 @@ const _Plan = React.memo(() => {
       const target = {
         section: state.section,
         dialogMode: _isDialogMode(state.dialogPosition),
+        chartHover: false,
       }
       return { prev, target, duration: 300 }
     })
@@ -111,8 +116,11 @@ const _Plan = React.memo(() => {
     }
   })
   return (
-    <>
-      {showPrint && <PlanPrint planLabel={planLabel} />}
+    <WithPlanResultsChartData
+      planSizing={_sizing}
+      planTransitionState={transition.target}
+    >
+      {showPrint && <PlanPrint planLabel={planLabel ?? null} />}
       <AppPage
         // iPhone viewport height is the max viewport height, but the scroll
         // that results does not properly hide the address and nav bar, so it
@@ -134,10 +142,10 @@ const _Plan = React.memo(() => {
             : [
                 planChartType === 'spending-total'
                   ? undefined
-                  : `View:${_.compact([
-                      ...chartLabel.label,
+                  : `View: ${_.compact([
+                      ...chartLabel.label.full,
                       chartLabel.subLabel,
-                    ]).join('>')}`,
+                    ]).join(' > ')}`,
                 state.section === 'summary'
                   ? undefined
                   : planSectionLabel(state.section),
@@ -145,35 +153,59 @@ const _Plan = React.memo(() => {
           'TPAW Planner',
         ]).join(' - ')}
       >
-        {/* <PlanWelcome sizing={_sizing.welcome} planTransition={transition} /> */}
-        {paramsInputTypes.map((type) => (
-          <PlanInput
-            key={type}
-            layout={layout}
-            sizing={_sizing.input}
-            planTransition={transition}
-            planInputType={type}
-          />
-        ))}
-        <PlanHelp sizing={_sizing.help} planTransition={transition} />
-        <PlanResults
-          ref={setChartDiv}
-          layout={layout}
-          sizing={_sizing.chart}
-          planTransition={transition}
-          section={state.section}
-        />
-        <PlanSummary
-          section={state.section}
-          sizing={_sizing.summary}
-          planTransition={transition}
-        />
-        <PlanMenu sizing={_sizing.menu} planTransition={transition} />
-        <PlanContact sizing={_sizing.contact} planTransition={transition} />
-        <PlanMigrationWarnings />
-        <PlanDialogOverlay chartDiv={chartDiv} />
+        {({ setDarkHeader }) => (
+          <>
+            {paramsInputTypes.map((type) => (
+              <PlanInput
+                key={type}
+                layout={layout}
+                sizing={_sizing.input}
+                planTransition={transition}
+                planInputType={type}
+              />
+            ))}
+            <PlanHelp sizing={_sizing.help} planTransition={transition} />
+
+            <PlanSummary
+              section={state.section}
+              sizing={_sizing.summary}
+              planTransition={transition}
+            />
+            <PlanMenu sizing={_sizing.menu} planTransition={transition} />
+            <PlanContact sizing={_sizing.contact} planTransition={transition} />
+            <PlanMigrationWarnings />
+            <PlanDialogOverlay chartDiv={chartDiv} />
+            <div
+              className="absolute z-40 inset-0 pointer-events-none bg-black/60"
+              style={{
+                transitionProperty: 'opacity',
+                transitionDuration: '300ms',
+                opacity: `${getIsMobile() && chartHover ? 1 : 0}`,
+              }}
+            />
+            {/* Place this before PlanResults, so sizing changes propagate to it first. */}
+            <PlanChartPointer
+              sizing={_sizing.pointer}
+              planTransition={transition}
+              chartPointerPortal={chartPointerPortal}
+            />
+            <PlanResults
+              ref={setChartDiv}
+              layout={layout}
+              sizing={_sizing.chart}
+              planTransition={transition}
+              section={state.section}
+              chartPointerPortal={chartPointerPortal}
+              onChartHover={(hover) => {
+                if (getIsMobile()) setDarkHeader(hover)
+                setChartHover(hover)
+              }}
+              chartHover={chartHover}
+            />
+          </>
+        )}
       </AppPage>
-    </>
+    </WithPlanResultsChartData>
   )
 })
 _Plan.displayName = '_Plan'
@@ -181,8 +213,7 @@ _Plan.displayName = '_Plan'
 function usePlanState() {
   const { planParams, updatePlanParams, planParamsExt, simulationInfoByMode } =
     useSimulation()
-  const { asMFN, withdrawalStartMonth } = planParamsExt
-  const withdrawalStartMonthAMFN = asMFN(withdrawalStartMonth)
+  const { isFutureSavingsAllowed } = planParamsExt
 
   const urlSection = useURLSection()
 
@@ -203,7 +234,7 @@ function usePlanState() {
         state.section === state.dialogPosition
           ? nextPlanSectionDialogPosition(
               state.dialogPosition,
-              withdrawalStartMonthAMFN,
+              isFutureSavingsAllowed,
             )
           : state.dialogPosition,
     })

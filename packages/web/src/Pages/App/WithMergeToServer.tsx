@@ -1,17 +1,17 @@
 import {
   API,
   NonPlanParams,
-  assertFalse,
   fGet,
   letIn,
-  noCase,
   planParamsMigrate,
 } from '@tpaw/common'
 import { chain, json, number, object, success } from 'json-guard'
 import _ from 'lodash'
+import Link from 'next/link'
 import React, { ReactNode, useEffect, useRef, useState } from 'react'
 import { useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
+import { appPaths } from '../../AppPaths'
 import { Spinner } from '../../Utils/View/Spinner'
 import { CenteredModal } from '../Common/Modal/CenteredModal'
 import { NonPlanParamsLocalStorage } from '../PlanRoot/PlanRootHelpers/WithNonPlanParams'
@@ -20,14 +20,13 @@ import {
   PlanLocalStorageUnmigratedUnsorted,
 } from '../PlanRoot/PlanRootLocalMain/PlanLocalStorage'
 import { AppPage } from './AppPage'
+import { useSetGlobalError } from './GlobalErrorBoundary'
 import { useFirebaseUser } from './WithFirebaseUser'
 import {
   UserMergeFromClientLinkPlanInput,
   WithMergeToServerMutation,
   WithMergeToServerMutation$data,
 } from './__generated__/WithMergeToServerMutation.graphql'
-import Link from 'next/link'
-import { appPaths } from '../../AppPaths'
 
 export const WithMergeToServer = React.memo(
   ({ children }: { children: ReactNode }) => {
@@ -92,6 +91,7 @@ const _Merge = React.memo(
       result: WithMergeToServerMutation$data['userMergeFromClient'],
     ) => void
   }) => {
+    const { setGlobalError } = useSetGlobalError()
     type _State = { type: 'idle' } | { type: 'commit' }
 
     const [state, setState] = useState<_State>({ type: 'idle' })
@@ -147,7 +147,9 @@ const _Merge = React.memo(
         },
         onCompleted: ({ userMergeFromClient }) => onDone(userMergeFromClient),
         onError: (e) => {
-          throw e
+          // Cannot really proceed meaningfull after this. User should reload.
+          // So don't use defaultErrorHandlerForNetworkCall. Set to crashed page.
+          setGlobalError(e)
         },
       })
     }

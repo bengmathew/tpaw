@@ -1,10 +1,9 @@
-import { captureException } from '@sentry/nextjs'
 import { block, fGet } from '@tpaw/common'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { graphql, useMutation } from 'react-relay'
 import { appPaths } from '../../../../../../AppPaths'
-import { errorToast } from '../../../../../../Utils/CustomToasts'
+import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalErrorBoundary'
 import { User, useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { setPlansOnDoneURL } from '../../../../../Plans/Plans'
@@ -59,6 +58,8 @@ const _Body = React.memo(
     cutAfterId: string | null
     isSyncing: boolean
   }) => {
+    const { defaultErrorHandlerForNetworkCall } =
+      useDefaultErrorHandlerForNetworkCall()
     const [result, setResult] = React.useState<{ slug: string } | null>(null)
     const [label, setLabel] = useState(null as string | null)
     const user = fGet(useUser())
@@ -98,8 +99,7 @@ const _Body = React.memo(
           }
         },
         onError: (e) => {
-          captureException(e)
-          errorToast('Error copying plan.')
+          defaultErrorHandlerForNetworkCall({ e, toast: 'Error copying plan.' })
           onHide()
         },
       })

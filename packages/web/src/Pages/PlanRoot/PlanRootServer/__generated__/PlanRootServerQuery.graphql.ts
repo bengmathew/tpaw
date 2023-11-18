@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<609849c67bab8ee5d43dc26fcc6b3cb1>>
+ * @generated SignedSource<<d8430297849585847b0ec473ba8c72a0>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -12,7 +12,7 @@ import { ConcreteRequest, Query } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type PlanRootServerQuery$variables = {
   includeUser: boolean;
-  slug?: string | null;
+  slug?: string | null | undefined;
   targetCount: number;
   userId: string;
 };
@@ -22,7 +22,7 @@ export type PlanRootServerQuery$data = {
       readonly addedToServerAt: number;
       readonly id: string;
       readonly isMain: boolean;
-      readonly label: string | null;
+      readonly label: string | null | undefined;
       readonly lastSyncAt: number;
       readonly planParamsPostBase: ReadonlyArray<{
         readonly change: string;

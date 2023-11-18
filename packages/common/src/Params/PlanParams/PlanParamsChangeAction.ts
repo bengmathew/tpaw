@@ -10,7 +10,7 @@ import {
 } from 'json-guard'
 import { PlanParams21 as V21 } from './Old/PlanParams21'
 import { PlanParams22 as V22 } from './Old/PlanParams22'
-import { PlanParams23 as V23 } from './PlanParams23'
+import { PlanParams23 as V23 } from './Old/PlanParams23'
 import {
   PlanParamsChangeActionDeprecated,
   planParamsChangeActionGuardDeprecated,

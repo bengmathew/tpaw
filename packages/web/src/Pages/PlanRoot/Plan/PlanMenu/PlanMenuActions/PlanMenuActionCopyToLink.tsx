@@ -18,6 +18,8 @@ import { errorToast } from '../../../../../Utils/CustomToasts'
 import { CurrentPortfolioBalance } from '../../../PlanRootHelpers/CurrentPortfolioBalance'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionCopyToLinkShortLinkMutation } from './__generated__/PlanMenuActionCopyToLinkShortLinkMutation.graphql'
+import { AppError } from '../../../../App/AppError'
+import { useDefaultErrorHandlerForNetworkCall } from '../../../../App/GlobalErrorBoundary'
 
 export const PlanMenuActionCopyToLink = React.memo(
   ({ className, closeMenu }: { className?: string; closeMenu: () => void }) => {
@@ -74,6 +76,8 @@ const _Link = React.memo(
     closeMenu: () => void
     shortOrLong: 'short' | 'long'
   }) => {
+    const { defaultErrorHandlerForNetworkCall } =
+      useDefaultErrorHandlerForNetworkCall()
     const { planParams, currentPortfolioBalanceInfo } = useSimulation()
     const [state, setState] = useState<
       | { type: 'idle' }
@@ -122,8 +126,10 @@ const _Link = React.memo(
           setState({ type: 'gotLink', link: url.toString() })
         },
         onError: (e) => {
-          captureException(e)
-          errorToast('Something went wrong.')
+          defaultErrorHandlerForNetworkCall({
+            e,
+            toast: 'Something went wrong.',
+          })
           setState({ type: 'idle' })
         },
       })

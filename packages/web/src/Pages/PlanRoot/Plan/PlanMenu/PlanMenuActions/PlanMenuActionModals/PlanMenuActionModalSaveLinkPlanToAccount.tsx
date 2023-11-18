@@ -1,21 +1,17 @@
-import { captureException } from '@sentry/nextjs'
-import { API, fGet } from '@tpaw/common'
-import { clsx } from 'clsx'
-import React, { useMemo, useState } from 'react'
+import { fGet } from '@tpaw/common'
+import React from 'react'
 import { graphql, useMutation } from 'react-relay'
 import { appPaths } from '../../../../../../AppPaths'
-import { errorToast } from '../../../../../../Utils/CustomToasts'
 import { useURLUpdater } from '../../../../../../Utils/UseURLUpdater'
-import { Spinner } from '../../../../../../Utils/View/Spinner'
+import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalErrorBoundary'
 import { useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import {
   SimulationInfoForLinkSrc,
   SimulationInfoForPlanMode,
 } from '../../../../PlanRootHelpers/WithSimulation'
-import { PlanMenuActionModalSaveLinkPlanToAccountMutation } from './__generated__/PlanMenuActionModalSaveLinkPlanToAccountMutation.graphql'
-import { Plan } from '../../../Plan'
 import { PlanMenuActionModalLabelInput } from './PlanMenuActionModalLabelInput'
+import { PlanMenuActionModalSaveLinkPlanToAccountMutation } from './__generated__/PlanMenuActionModalSaveLinkPlanToAccountMutation.graphql'
 
 export const PlanMenuActionModalSaveLinkPlanToAccount = React.memo(
   ({
@@ -56,6 +52,8 @@ const _Body = React.memo(
     simulationInfoForLinkSrc: SimulationInfoForLinkSrc
     simulationInfoForPlanMode: SimulationInfoForPlanMode
   }) => {
+    const { defaultErrorHandlerForNetworkCall } =
+      useDefaultErrorHandlerForNetworkCall()
     const { setForceNav } = simulationInfoForLinkSrc
     const { planParamsUndoRedoStack } = simulationInfoForPlanMode
     const user = fGet(useUser())
@@ -106,8 +104,7 @@ const _Body = React.memo(
           window.setTimeout(() => urlUpdater.push(url), 1)
         },
         onError: (e) => {
-          captureException(e)
-          errorToast('Error copying plan.')
+          defaultErrorHandlerForNetworkCall({ e, toast: 'Error copying plan.' })
           onHide()
         },
       })

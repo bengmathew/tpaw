@@ -9,8 +9,10 @@ import {
   planParamsMigrate,
 } from '@tpaw/common'
 import _ from 'lodash'
-import { Clients } from '../../../../Clients.js'
-import { PrismaTransaction } from '../../../../Utils/PrismaTransaction.js'
+import {
+  PrismaTransaction,
+  serialTransaction,
+} from '../../../../Utils/PrismaTransaction.js'
 import { concurrentChangeError } from '../../../../impl/Common/ConcurrentChangeError.js'
 import { PothosPlanAndUserResult } from '../../../GQLCommon/GQLPlanAndUserResult.js'
 import { builder } from '../../../builder.js'
@@ -49,7 +51,7 @@ builder.mutationField('userPlanSync', (t) =>
       const { userId, planId, lastSyncAt, cutAfterId, add, reverseHeadIndex } =
         API.UserPlanSync.check(input).force()
 
-      return await Clients.prisma.$transaction(async (tx) => {
+      return await serialTransaction(async (tx) => {
         const startingPlan = await tx.planWithHistory.findUniqueOrThrow({
           where: { userId_planId: { userId, planId } },
         })

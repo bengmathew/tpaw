@@ -1,37 +1,34 @@
-import { faChevronRight } from '@fortawesome/pro-solid-svg-icons'
+import { faCaretRight, faChevronRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Menu } from '@headlessui/react'
+import { noCase } from '@tpaw/common'
 import clsx from 'clsx'
 import _ from 'lodash'
 import Link from 'next/link'
 import React, { CSSProperties, useEffect, useRef, useState } from 'react'
-import ReactDOM from 'react-dom'
-import {
-  Padding,
-  RectExt,
-  applyOriginToHTMLElement,
-  rectExt,
-} from '../../../../../Utils/Geometry'
-import { fGet } from '../../../../../Utils/Utils'
+import { Padding, RectExt, rectExt } from '../../../../../Utils/Geometry'
 import { useWindowSize } from '../../../../App/WithWindowSize'
-import { chartDrawDataLines } from '../../../../Common/Chart/ChartComponent/ChartDrawDataLines'
-import { chartDrawDataRangeBand } from '../../../../Common/Chart/ChartComponent/ChartDrawRangeBand'
 import {
   ChartReact,
   ChartReactStatefull,
 } from '../../../../Common/Chart/ChartReact'
+import { ContextMenu2 } from '../../../../Common/Modal/ContextMenu2'
+import { Config } from '../../../../Config'
+import { useNonPlanParams } from '../../../PlanRootHelpers/WithNonPlanParams'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
-import { PlanColors, usePlanColors } from '../../UsePlanColors'
-import { useChartData } from '../../WithChartData'
+import { usePlanColors } from '../../UsePlanColors'
+import { useChartData } from '../../WithPlanResultsChartData'
 import { PlanResultsTransitionState } from '../PlanResults'
 import { PlanResultsChartType } from '../PlanResultsChartType'
-import { TPAWChartDataMain } from '../TPAWChart/TPAWChartDataMain'
 import { useGetPlanResultsChartURL } from '../UseGetPlanResultsChartURL'
-import { usePlanResultsChartType } from '../UsePlanResultsChartType'
-import { planResultsChartLabel } from './PlanResultsChartLabel'
-import { PlanResultsChartCardMenuButton } from './PlanResutlsChartCardMenuButton'
+import { getPlanResultsChartRange } from './PlanResultsChart/GetPlanResultsChartRange'
+import { PlanResultsChartData } from './PlanResultsChart/PlanResultsChartData'
+import { PlanResultsChartCardMenuButton } from './PlanResultsChartCardMenuButton'
+import {
+  getPlanResultsChartLabelInfoForSpending,
+  planResultsChartLabel,
+} from './PlanResultsChartLabel'
 
-const duration = 500
-const scale = 0.95
 const maxWidth = 700
 export type PlanChartMainCardMenuStateful = {
   setButtonScale: (scale: number) => void
@@ -46,233 +43,349 @@ export const PlanResultsChartCardMenu = React.memo(
     style?: CSSProperties
     transition: { target: PlanResultsTransitionState; duration: number }
   }) => {
-    const windowSize = useWindowSize()
-    const width = Math.min(windowSize.width, maxWidth)
-    const simulation = useSimulation()
-    const { params } = simulation.tpawResult
-    const type = usePlanResultsChartType()
+    const { windowWidthName } = useWindowSize()
+    const { tpawResult } = useSimulation()
+    const { params } = tpawResult
     const planColors = usePlanColors()
+    const { nonPlanParams } = useNonPlanParams()
 
-    const referenceElementRef = useRef<HTMLDivElement | null>(null)
-    const popperElementRef = useRef<HTMLDivElement | null>(null)
-    // Hack to force redraw on open. Seemed like the draws were not taking
-    // effect when the canvas was not visible.
-    const [drawKey, setDrawKey] = useState(0)
-    const [show, setShow] = useState(false)
+    const [expandEssential, setExpandEssential] = useState(false)
+    const [expandDiscretionary, setExpandDiscretionary] = useState(false)
 
-    const handleShow = () => {
-      setDrawKey((x) => x + 1)
-      setShow(true)
-      const position = fGet(referenceElementRef.current).getBoundingClientRect()
-      const origin = {
-        y: position.top,
-        x:
-          width < maxWidth
-            ? 0
-            : Math.min(position.left, windowSize.width - width - 20),
-      }
-      applyOriginToHTMLElement(origin, fGet(popperElementRef.current))
-    }
+    const chartH = windowWidthName === 'xs' ? 50 : 55
 
-    const buttonProps = {
-      currType: type,
-      onHide: () => setShow(false),
-      drawKey,
-    }
+    const essentialArray = _.values(
+      params.original.adjustmentsToSpending.extraSpending.essential,
+    ).sort((a, b) => a.sortIndex - b.sortIndex)
 
-    const [opacity0AtTransitionEnd, setOpacity0AtTransitionEnd] = useState(true)
-    const invisible = !show && opacity0AtTransitionEnd
+    const discretionaryArray = _.values(
+      params.original.adjustmentsToSpending.extraSpending.discretionary,
+    ).sort((a, b) => a.sortIndex - b.sortIndex)
 
+    const spendingLabelInfo = getPlanResultsChartLabelInfoForSpending(
+      params.original,
+    )
+    const marginToWindow = windowWidthName === 'xs' ? 0 : 10
     return (
-      <>
+      <ContextMenu2
+        align={'left'}
+        onMenuClose={() => {
+          setExpandEssential(false)
+          setExpandDiscretionary(false)
+        }}
+        getMarginToWindow={() => marginToWindow}
+      >
         <PlanResultsChartCardMenuButton
-          ref={referenceElementRef}
           className={className}
           style={style}
-          onClick={handleShow}
           transition={transition}
         />
 
-        {ReactDOM.createPortal(
-          <div
-            className={clsx(
-              ' page fixed inset-0 ',
-              // Not setting 'pointer-events-none' was causing an issue on Safari
-              // where elements were not scrollable under this even thought it was
-              // hidden.
-              invisible && 'pointer-events-none',
-            )}
-            style={{
-              visibility: invisible ? 'hidden' : 'visible',
-              transitionProperty: 'opacity',
-              transitionDuration: `${duration}ms`,
-              opacity: show ? '1' : '0',
-            }}
-            onTransitionEnd={() => setOpacity0AtTransitionEnd(!show)}
-          >
-            <div
-              className="fixed inset-0 bg-black opacity-70"
-              onClick={() => setShow(false)}
+        <Menu.Items
+          className="rounded-lg"
+          style={{
+            maxWidth: `calc(100vw - ${marginToWindow * 2}px)`,
+            width: '700px',
+            color: planColors.results.fg,
+          }}
+        >
+          <_Link type="spending-total" indent={0} chartH={chartH} />
+          {spendingLabelInfo.hasExtra && (
+            <>
+              <_Link indent={1} type="spending-general" chartH={chartH} />
+              {spendingLabelInfo.extraSpendingLabelInfo
+                .splitEssentialAndDiscretionary ? (
+                <>
+                  {essentialArray.length > 0 && (
+                    <>
+                      <_Button
+                        indent={1}
+                        isExpanded={expandEssential}
+                        onClick={() => setExpandEssential((x) => !x)}
+                        label={
+                          spendingLabelInfo.extraSpendingLabelInfo.essential
+                            .label
+                        }
+                        description={
+                          spendingLabelInfo.extraSpendingLabelInfo.essential
+                            .description
+                        }
+                        chartH={chartH}
+                      />
+                      {expandEssential &&
+                        essentialArray.map((x) => (
+                          <_Link
+                            indent={2}
+                            key={`essential-${x.id}`}
+                            type={`spending-essential-${x.id}`}
+                            chartH={chartH}
+                          />
+                        ))}
+                    </>
+                  )}
+                  {discretionaryArray.length > 0 && (
+                    <>
+                      <_Button
+                        isExpanded={expandDiscretionary}
+                        indent={1}
+                        onClick={() => setExpandDiscretionary((x) => !x)}
+                        label={
+                          spendingLabelInfo.extraSpendingLabelInfo.discretionary
+                            .label
+                        }
+                        description={
+                          spendingLabelInfo.extraSpendingLabelInfo.discretionary
+                            .description
+                        }
+                        chartH={chartH}
+                      />
+                      {expandDiscretionary &&
+                        discretionaryArray.map((x) => (
+                          <_Link
+                            indent={2}
+                            key={`discretionary-${x.id}`}
+                            type={`spending-discretionary-${x.id}`}
+                            chartH={chartH}
+                          />
+                        ))}
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <_Button
+                    isExpanded={expandEssential}
+                    onClick={() => setExpandEssential((x) => !x)}
+                    label={spendingLabelInfo.extraSpendingLabelInfo.label}
+                    description={
+                      spendingLabelInfo.extraSpendingLabelInfo.description
+                    }
+                    indent={1}
+                    chartH={chartH}
+                  />
+                  {expandEssential &&
+                    [
+                      ..._.values(
+                        params.original.adjustmentsToSpending.extraSpending
+                          .essential,
+                      ),
+                    ]
+                      .sort((a, b) => a.sortIndex - b.sortIndex)
+                      .map((x) => (
+                        <_Link
+                          key={`essential-${x.id}`}
+                          indent={2}
+                          type={`spending-essential-${x.id}`}
+                          chartH={chartH}
+                        />
+                      ))}
+                  {expandEssential &&
+                    [
+                      ..._.values(
+                        params.original.adjustmentsToSpending.extraSpending
+                          .discretionary,
+                      ),
+                    ]
+                      .sort((a, b) => a.sortIndex - b.sortIndex)
+                      .map((x) => (
+                        <_Link
+                          key={`discretionary-${x.id}`}
+                          indent={2}
+                          type={`spending-discretionary-${x.id}`}
+                          chartH={chartH}
+                        />
+                      ))}
+                </>
+              )}
+            </>
+          )}
+
+          <_Link type={'portfolio'} indent={0} chartH={chartH} />
+          <_Link
+            type={'asset-allocation-savings-portfolio'}
+            indent={0}
+            chartH={chartH}
+          />
+          <_Link type={'withdrawal'} indent={0} chartH={chartH} />
+          {(!Config.client.isProduction ||
+            nonPlanParams.dev.showDevFeatures) && (
+            <_Link
+              type="asset-allocation-total-portfolio"
+              indent={0}
+              chartH={chartH}
             />
-            <div
-              className={`flex absolute flex-col  rounded-xl  bg-pageBG  max-h-[calc(100vh-150px)] overflow-scroll`}
-              ref={popperElementRef}
+          )}
+        </Menu.Items>
+      </ContextMenu2>
+    )
+  },
+)
+
+const _DescriptionLine = React.memo(
+  ({ description }: { description: string }) => (
+    <p className={clsx(` text-sm -mt-1`, 'lighten-2')}>{description}</p>
+  ),
+)
+
+const _LabelLine = React.memo(({ label }: { label: readonly string[] }) => (
+  <h2 className={clsx('text-base sm:text-lg font-bold')}>
+    {label.map((x, i) => (
+      <React.Fragment key={i}>
+        <span>{x}</span>
+        {i !== label.length - 1 && (
+          <FontAwesomeIcon
+            className="mx-2 text-xs sm:text-sm lighten-2"
+            icon={faChevronRight}
+          />
+        )}
+      </React.Fragment>
+    ))}
+  </h2>
+))
+
+const _Button = React.memo(
+  ({
+    onClick,
+    isExpanded,
+    label,
+    description,
+    chartH,
+    indent,
+  }: {
+    isExpanded: boolean
+    onClick: () => void
+    label: readonly string[]
+    description: string
+    chartH: number
+    indent: 0 | 1 | 2
+  }) => {
+    const planColors = usePlanColors()
+    return (
+      <Menu.Item>
+        {({ active }) => (
+          <div className="px-2 py-1">
+            <button
+              className={clsx(
+                indent === 0
+                  ? 'pl-2'
+                  : indent === 1
+                  ? 'pl-8'
+                  : indent === 2
+                  ? 'pl-16'
+                  : noCase(indent),
+                'text-start w-full  rounded-lg pr-2 py-1',
+              )}
               style={{
-                transitionProperty: 'transform',
-                transitionDuration: `${duration}ms`,
-                transform: `scale(${show ? 1 : scale})`,
-                width: `${width}px`,
-                boxShadow: '0px 0px 10px 5px rgba(0,0,0,0.28)',
-                backgroundColor: planColors.results.menu.bg,
-                color: planColors.results.fg,
+                backgroundColor: active
+                  ? planColors.shades.alt[5].hex
+                  : 'rgb(0,0,0,0)',
+              }}
+              onClick={(e) => {
+                // This keeps the menu open (only  on click through, not on keyboard)
+                // As of Jun 2023, no solution for keyboard:
+                // https://github.com/tailwindlabs/headlessui/discussions/1122
+                e.preventDefault()
+                onClick()
               }}
             >
-              <_Link type="spending-total" {...buttonProps} />
-              {(_.values(
-                params.original.adjustmentsToSpending.extraSpending.essential,
-              ).length > 0 ||
-                _.values(
-                  params.original.adjustmentsToSpending.extraSpending
-                    .discretionary,
-                ).length > 0) && (
-                <div className=" flex flex-col  ">
-                  <_Link
-                    className="pl-10"
-                    type="spending-general"
-                    {...buttonProps}
-                  />
-                  {_.values(
-                    params.original.adjustmentsToSpending.extraSpending
-                      .essential,
-                  )
-                    .sort((a, b) => a.sortIndex - b.sortIndex)
-                    .map((x) => (
-                      <_Link
-                        className="pl-10"
-                        key={`essential-${x.id}`}
-                        type={`spending-essential-${x.id}`}
-                        {...buttonProps}
-                      />
-                    ))}
-                  {_.values(
-                    params.original.adjustmentsToSpending.extraSpending
-                      .discretionary,
-                  )
-                    .sort((a, b) => a.sortIndex - b.sortIndex)
-                    .map((x) => (
-                      <_Link
-                        className="pl-10"
-                        key={`discretionary-${x.id}`}
-                        type={`spending-discretionary-${x.id}`}
-                        {...buttonProps}
-                      />
-                    ))}
+              <div
+                className="flex items-center"
+                style={{ minHeight: `${chartH}px` }}
+              >
+                <div className="">
+                  <div className="flex items-center gap-x-2">
+                    <_LabelLine label={label} />
+                    <FontAwesomeIcon
+                      className={clsx(
+                        'text-xl transition-transform duration-300',
+                        isExpanded && 'rotate-90',
+                      )}
+                      icon={faCaretRight}
+                    />
+                  </div>
+                  <_DescriptionLine description={description} />
                 </div>
-              )}
-              <_Link type={'portfolio'} {...buttonProps} />
-              <_Link
-                type={'asset-allocation-savings-portfolio'}
-                {...buttonProps}
-              />
-              <_Link type={'withdrawal'} {...buttonProps} />
-            </div>
-          </div>,
-          window.document.body,
+              </div>
+            </button>
+          </div>
         )}
-      </>
+      </Menu.Item>
     )
   },
 )
 
 const _Link = React.memo(
   ({
-    className = '',
-    currType,
-    onHide,
     type,
-    drawKey,
+    chartH,
+    indent,
   }: {
-    className?: string
-    currType: PlanResultsChartType
-    onHide: () => void
     type: PlanResultsChartType
-    drawKey: number
+    indent: 0 | 1 | 2
+    chartH: number
   }) => {
     const { tpawResult } = useSimulation()
     const { params } = tpawResult
     const getPlanChartURL = useGetPlanResultsChartURL()
-    const chartData = fGet(useChartData().byYearsFromNowPercentiles.get(type))
+    const chartData = useChartData(type)
 
-    const { label, subLabel, description } = planResultsChartLabel(
-      params.original,
-      type,
-      'short',
-    )
-    const isCurrent = _.isEqual(currType, type)
-    const windowSize = useWindowSize()
-    const width = windowSize.width < 640 ? 120 : 145
-    const height = windowSize.width < 640 ? 50 : 55
+    const { label, description } = planResultsChartLabel(params.original, type)
+    const { windowWidthName } = useWindowSize()
+    const width = windowWidthName === 'xs' ? 120 : 145
+
     const planColors = usePlanColors()
     return (
-      <Link
-        className={clsx(
-          className,
-          'text-left px-4 py-2  grid  gap-x-4 items-center',
+      <Menu.Item>
+        {({ active }) => (
+          <Link
+            className={clsx('block px-2 py-1')}
+            href={getPlanChartURL(type)}
+            shallow
+          >
+            <div
+              className={clsx(
+                indent === 0
+                  ? 'pl-2'
+                  : indent === 1
+                  ? 'pl-8'
+                  : indent === 2
+                  ? 'pl-16'
+                  : noCase(indent),
+                'grid gap-x-4 items-center  rounded-lg pr-2 py-1',
+              )}
+              style={{
+                transitionProperty: 'background-color',
+                transitionDuration: '300ms',
+                grid: 'auto / 1fr auto',
+                backgroundColor: active
+                  ? planColors.shades.alt[5].hex
+                  : 'rgb(0,0,0,0)',
+              }}
+            >
+              <div className="">
+                <_LabelLine label={label.forMenu} />
+                <_DescriptionLine description={description} />
+              </div>
+              <div
+                className={`relative  rounded-xl  flex flex-col justify-center `}
+                style={{
+                  width: `${width}px`,
+                  height: `${chartH}px`,
+                  backgroundColor: planColors.shades.alt[2].hex,
+                }}
+              >
+                <_Chart
+                  data={chartData}
+                  startingSizing={{
+                    position: rectExt({ x: 0, y: 0, width, height: chartH }),
+                    padding: { left: 10, right: 10, top: 5, bottom: 5 },
+                  }}
+                />
+              </div>
+            </div>
+          </Link>
         )}
-        onClick={() => onHide()}
-        style={{
-          grid: 'auto / 1fr auto',
-          backgroundColor: isCurrent
-            ? planColors.results.menu.currentBG
-            : undefined,
-        }}
-        href={getPlanChartURL(type)}
-        shallow
-      >
-        <div className="">
-          <h2 className="text-base sm:text-lg font-bold">
-            {label.map((x, i) => (
-              <React.Fragment key={i}>
-                <span>{x}</span>
-                {i !== label.length - 1 && (
-                  <FontAwesomeIcon
-                    className="mx-2 text-xs sm:text-sm lighten-2"
-                    icon={faChevronRight}
-                  />
-                )}
-              </React.Fragment>
-            ))}
-          </h2>
-          {subLabel && (
-            <h2 className="text-sm sm:text-base font-semibold -mt-1">
-              {subLabel}
-            </h2>
-          )}
-          <p className={`${isCurrent ? '' : 'lighten-2'} text-sm -mt-1`}>
-            {description}
-          </p>
-        </div>
-        <div
-          className={`relative  border rounded-xl  flex flex-col justify-center `}
-          style={{
-            width: `${width}px`,
-            height: `${height}px`,
-            backgroundColor: isCurrent
-              ? planColors.results.menu.chart.bg
-              : planColors.results.menu.chart.bg,
-          }}
-        >
-          <_Chart
-            data={chartData}
-            isCurrent={isCurrent}
-            drawKey={drawKey}
-            startingSizing={{
-              position: rectExt({ x: 0, y: 0, width, height }),
-              padding: { left: 10, right: 10, top: 5, bottom: 5 },
-            }}
-          />
-        </div>
-      </Link>
+      </Menu.Item>
     )
   },
 )
@@ -280,67 +393,36 @@ const _Link = React.memo(
 const _Chart = React.memo(
   ({
     data,
-    isCurrent,
-    drawKey,
     startingSizing,
   }: {
-    data: TPAWChartDataMain
-    isCurrent: boolean
-    drawKey: number
+    data: PlanResultsChartData
     startingSizing: { position: RectExt; padding: Padding }
   }) => {
-    const ref = useRef<ChartReactStatefull<TPAWChartDataMain>>(null)
+    const ref =
+      useRef<ChartReactStatefull<{ data: PlanResultsChartData }>>(null)
     useEffect(() => {
       if (!ref.current) return
-      ref.current.setState(
-        data,
-        {
-          x: data.months.displayRange,
-          y: data.yDisplayRange,
-        },
-        null,
-      )
-    }, [data, drawKey])
-    const planColors = usePlanColors()
+      ref.current.setData({ data }, null)
+    }, [data])
 
     return (
-      <ChartReact<TPAWChartDataMain>
+      <ChartReact<{ data: PlanResultsChartData }>
         ref={ref}
         starting={{
-          data,
-          xyRange: {
-            x: data.months.displayRange,
-            y: data.yDisplayRange,
-          },
+          data: { data },
           sizing: startingSizing,
+          propsFn: ({ data }) => ({
+            dataRange: {
+              x: data.displayRange.x,
+              y: data.displayRange.y,
+            },
+            includeWidthOfLastX: false,
+          }),
         }}
-        components={components(planColors)}
+        components={components}
       />
     )
   },
 )
 
-const components =
-  ({ results: chartColors }: PlanColors) =>
-  () => [
-    chartDrawDataRangeBand<TPAWChartDataMain>({
-      fillStyle: chartColors.rangeBand,
-
-      dataFn: (data: TPAWChartDataMain) => ({
-        min: fGet(_.first(data.percentiles)).data,
-        max: fGet(_.last(data.percentiles)).data,
-      }),
-    }),
-
-    chartDrawDataLines<TPAWChartDataMain>({
-      lineWidth: 1.2 * 0.8,
-      strokeStyle: chartColors.medianLine,
-      dataFn: (data: TPAWChartDataMain) => {
-        return {
-          lines: data.percentiles
-            .filter((x) => x.percentile === 50)
-            .map((x) => x.data),
-        }
-      },
-    }),
-  ]
+const components = () => [getPlanResultsChartRange('menu')]

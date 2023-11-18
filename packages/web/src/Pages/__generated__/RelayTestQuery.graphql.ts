@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<6468c12f0bf5954ca1168f345deaec6e>>
+ * @generated SignedSource<<1bce2e66782161acdeab445c565ddbb4>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -9,7 +9,7 @@
 // @ts-nocheck
 
 import { ConcreteRequest, Query } from 'relay-runtime';
-export type RelayTestQuery$variables = {};
+export type RelayTestQuery$variables = Record<PropertyKey, never>;
 export type RelayTestQuery$data = {
   readonly ping: string;
 };

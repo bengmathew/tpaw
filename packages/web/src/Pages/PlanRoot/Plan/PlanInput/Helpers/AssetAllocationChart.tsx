@@ -1,19 +1,15 @@
 import { Power1 } from 'gsap'
-import _ from 'lodash'
 import React, { useEffect, useRef, useState } from 'react'
 import { rectExt } from '../../../../../Utils/Geometry'
 import { fGet } from '../../../../../Utils/Utils'
-import { useChartData } from '../../WithChartData'
-import { chartDrawDataLines } from '../../../../Common/Chart/ChartComponent/ChartDrawDataLines'
-import { chartDrawDataRangeBand } from '../../../../Common/Chart/ChartComponent/ChartDrawRangeBand'
-import { ChartMinMaxYAxis } from '../../../../Common/Chart/ChartComponent/ChartMinMaxYAxis'
 import {
   ChartReact,
   ChartReactStatefull,
 } from '../../../../Common/Chart/ChartReact'
-import { ChartUtils } from '../../../../Common/Chart/ChartUtils/ChartUtils'
-import { TPAWChartDataMain } from '../../PlanResults/TPAWChart/TPAWChartDataMain'
-import { colors, gray } from '../../UsePlanColors'
+import { getPlanResultsChartRange } from '../../PlanResults/PlanResultsChartCard/PlanResultsChart/GetPlanResultsChartRange'
+import { getPlanResultsChartSalientPoints } from '../../PlanResults/PlanResultsChartCard/PlanResultsChart/GetPlanResultsChartSalientPoints'
+import { PlanResultsChartData } from '../../PlanResults/PlanResultsChartCard/PlanResultsChart/PlanResultsChartData'
+import { useChartData } from '../../WithPlanResultsChartData'
 
 export const AssetAllocationChart = React.memo(
   ({
@@ -25,11 +21,13 @@ export const AssetAllocationChart = React.memo(
       | 'asset-allocation-savings-portfolio'
       | 'asset-allocation-total-portfolio'
   }) => {
-    const data = fGet(useChartData().byYearsFromNowPercentiles.get(type))
+    const chartData = useChartData(type)
 
     const divRef = useRef<HTMLDivElement | null>(null)
-    const [ref, setRef] =
-      useState<ChartReactStatefull<TPAWChartDataMain> | null>(null)
+    const [ref, setRef] = useState<ChartReactStatefull<{
+      data: PlanResultsChartData
+    }> | null>(null)
+
     const [width, setWidth] = useState(50)
     useEffect(() => {
       const div = fGet(divRef.current)
@@ -50,13 +48,15 @@ export const AssetAllocationChart = React.memo(
     }, [ref, width])
 
     useEffect(() => {
-      const xyRange = { x: data.months.displayRange, y: data.yDisplayRange }
       if (!ref) return
-      ref.setState(data, xyRange, {
-        ease: Power1.easeOut,
-        duration: 0.5,
-      })
-    }, [data, ref])
+      ref.setData(
+        { data: chartData },
+        {
+          ease: Power1.easeOut,
+          duration: 0.5,
+        },
+      )
+    }, [chartData, ref])
 
     return (
       <div
@@ -64,12 +64,16 @@ export const AssetAllocationChart = React.memo(
         className={`${className} relative w-full border border-gray-200 bg-gray-50 rounded-md  pointer-events-none`}
         ref={divRef}
       >
-        <ChartReact<TPAWChartDataMain>
+        <ChartReact<{ data: PlanResultsChartData }>
           ref={setRef}
           starting={{
-            data,
-            xyRange: { x: data.months.displayRange, y: data.yDisplayRange },
+            data: { data: chartData },
             sizing: _sizing(width),
+            propsFn: ({ data }) => ({
+              dataRange: { x: data.displayRange.x, y: { start: 0, end: 1 } },
+              includeWidthOfLastX: false,
+            }),
+            debug: false,
           }}
           components={components}
         />
@@ -83,36 +87,7 @@ const _sizing = (width: number) => ({
   padding: { left: 4, right: 4, top: 20, bottom: 20 },
 })
 
-const components = () => [
-  chartDrawDataRangeBand<TPAWChartDataMain>({
-    fillStyle: colors.withOpacity(gray[400], 0.5),
-    dataFn: (data: TPAWChartDataMain) => ({
-      min: fGet(_.first(data.percentiles)).data,
-      max: fGet(_.last(data.percentiles)).data,
-    }),
-  }),
-
-  chartDrawDataLines<TPAWChartDataMain>({
-    lineWidth: 1.2,
-    strokeStyle: gray[500],
-    dataFn: (data: TPAWChartDataMain) => {
-      return {
-        lines: data.percentiles
-          .filter((x) => x.percentile === 50)
-          .map((x) => x.data),
-      }
-    },
-  }),
-
-  new ChartMinMaxYAxis<TPAWChartDataMain>(
-    (data, x) => data.yFormat(x),
-    gray[800],
-    (data) => data.max.x,
-    (data, x) => {
-      return {
-        min: data.percentiles[0].data(x),
-        max: fGet(_.last(data.percentiles)).data(x),
-      }
-    },
-  ),
-]
+const components = () => {
+  const range = getPlanResultsChartRange('inline')
+  return [range, getPlanResultsChartSalientPoints(range.ids)]
+}

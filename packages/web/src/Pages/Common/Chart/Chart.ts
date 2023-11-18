@@ -1,257 +1,348 @@
-import { linearFnFomPoints } from '@tpaw/common'
+import { block, linearFnFomPoints } from '@tpaw/common'
+import { localPoint } from '@visx/event'
 import { gsap } from 'gsap'
 import _ from 'lodash'
-import { Padding, rectExt, Size, XY } from '../../../Utils/Geometry'
+import { Padding, Rect, Size, XY, rectExt } from '../../../Utils/Geometry'
 import { interpolate } from '../../../Utils/Interpolate'
 import { SimpleRange } from '../../../Utils/SimpleRange'
+import { Transition, transitionTransform } from '../../../Utils/Transition'
 import { assert, fGet } from '../../../Utils/Utils'
-import { ChartComponent } from './ChartComponent/ChartComponent'
+import {
+  ChartComponent,
+  ChartComponentPointerTargetY,
+} from './ChartComponent/ChartComponent'
 import { ChartContext } from './ChartContext'
-import { Transition } from '../../../Utils/Transition'
-import { localPoint } from '@visx/event'
 
-export type ChartXYRange = { x: SimpleRange; y: SimpleRange }
+export type ChartDataRange = { x: SimpleRange; y: SimpleRange }
 export type ChartAnimation = { ease: gsap.EaseFunction; duration: number }
-export type ChartState = { xyRange: ChartXYRange }
 export type ChartSizing = { size: Size; padding: Padding }
-
-const pointerAnimationDuration = 1
-
-type _Animated<T> = {
+export type ChartAnimatedProperty<T> = {
   transition: Transition<T>
   animation: gsap.core.Animation | null
 }
-export class Chart<Data> {
-  private _canvas: HTMLCanvasElement
-  private _dataTransition: Transition<Data>
-  private _dataAnimation: gsap.core.Animation | null = null
-  private _stateTransition: Transition<ChartState>
-  private _stateAnimation: gsap.core.Animation | null = null
-  private _sizing: ChartSizing
-  private _pointerInDataCoord: _Animated<XY>
 
-  private _components: readonly ChartComponent<Data>[]
+const pointerAnimationDuration = 1
+
+type _Props = {
+  dataRange: ChartDataRange
+  includeWidthOfLastX: boolean
+}
+
+export class Chart<Params> {
+  private _destroyed = false
+
+  private _params: ChartAnimatedProperty<Params>
+  private _pointer: {
+    // Visual position will not always line up to data grid, or be within data
+    // bounds because of scale is invertible only modulo floating point precision.
+    // So the guarantee of visual position is that the target will be "close" to
+    // the data grid and within the visual plot area bounds.
+    visualPosition: ChartAnimatedProperty<XY>
+    hover: ChartAnimatedProperty<0 | 1>
+    // press: ChartAnimatedProperty<0 | 1>
+  }
 
   private _callbacks = {
-    draw: this.draw.bind(this),
+    draw: () => this.draw('draw'),
     registerAnimation: this._registerAnimation.bind(this),
-    onMouse: this._handleMouse.bind(this),
   }
   private _activeAnimations: gsap.core.Animation[] = []
 
   constructor(
-    canvas: HTMLCanvasElement,
-    data: Data,
-    xyRange: ChartXYRange,
-    components: readonly ChartComponent<Data>[],
-    sizing: ChartSizing,
+    private _canvas: HTMLCanvasElement,
+    private _onHover: (hover: boolean) => void,
+    params: Params,
+    private _components: readonly ChartComponent<Params>[],
+    private _sizing: ChartSizing,
+    private propsFn: (params: Params) => _Props,
+    private _debug: boolean,
   ) {
-    this._canvas = canvas
-    this._components = components
-    this._sizing = sizing
-
-    this._dataTransition = { target: data, from: data, progress: 1 }
-    this._stateTransition = {
-      target: { xyRange },
-      from: { xyRange },
-      progress: 1,
+    this._params = {
+      transition: { target: params, from: params, progress: 1 },
+      animation: null,
     }
+    const props = this.propsFn(params)
 
-    this._pointerInDataCoord = (() => {
-      const target = _getPointerInDataCoord(
-        { x: this._sizing.size.width * 0.25, y: 0 },
-        _chartDerivedState(this._sizing, { xyRange }),
-      )
-      return {
-        transition: { from: target, target, progress: 1 },
-        animation: null,
-      }
-    })()
-
-    this._components.forEach(
-      (x) =>
-        x.update?.(
-          'init',
-          this._getContext(),
-          this._callbacks.registerAnimation,
-        ),
-    )
-    canvas.addEventListener('pointermove', this._callbacks.onMouse)
-    canvas.addEventListener('pointerenter', this._callbacks.onMouse)
-    canvas.addEventListener('pointerleave', this._callbacks.onMouse)
-  }
-
-  destroy() {
-    this._components.forEach((x) => x.destroy?.())
-    this._dataAnimation?.kill()
-    this._stateAnimation?.kill()
-    this._pointerInDataCoord.animation?.kill()
-    assert(this._activeAnimations.length === 0)
-    this._canvas.removeEventListener('pointermove', this._callbacks.onMouse)
-    this._canvas.removeEventListener('pointerenter', this._callbacks.onMouse)
-    this._canvas.removeEventListener('pointerleave', this._callbacks.onMouse)
-  }
-
-  setComponents(components: readonly ChartComponent<Data>[]) {
-    this._components.forEach((x) => x.destroy?.())
-    this._components = components
-    const context = this._getContext()
-    this._components.forEach(
-      (x) => x.update?.('init', context, this._callbacks.registerAnimation),
-    )
-    this.draw()
-  }
-
-  getState() {
-    return {
-      data: this._dataTransition.target,
-      xyRange: this._stateTransition.target.xyRange,
-    }
-  }
-
-  setState(
-    data: Data,
-    xyRange: ChartXYRange,
-    animation: ChartAnimation | null,
-  ) {
-    if (this._dataTransition.target !== data) {
-      // Cannot interpolate data, so accept that data update mid transition will
-      // be jerky.
-      this._dataTransition.from = this._dataTransition.target
-      this._dataTransition.target = data
-      this._dataAnimation?.kill()
-      this._dataAnimation = null
-      if (animation) {
-        this._dataAnimation = this._registerAnimation(
-          gsap.fromTo(
-            this._dataTransition,
-            { progress: 0 },
-            {
-              progress: 1,
-              ease: animation.ease,
-              duration: animation.duration,
-            },
-          ),
+    this._pointer = {
+      visualPosition: block(() => {
+        const target = _snapPointerToGridAndPlotArea(
+          { x: this._sizing.size.width * 0.25, y: 0 },
+          _chartDerivedState(this._sizing, props),
         )
-      } else {
-        this._dataTransition.progress = 1
-      }
+        return {
+          transition: { from: target, target, progress: 1 },
+          animation: null,
+        }
+      }),
+      hover: {
+        transition: { from: 0, target: 0, progress: 1 },
+        animation: null,
+      },
     }
 
-    this._stateTransition.from = interpolate(this._stateTransition)
-    this._stateTransition.target = { xyRange }
-    this._stateAnimation?.kill()
+    this.draw('init')
+  }
+  onPointerMove(e: React.PointerEvent | React.TouchEvent) {
+    this._handlePointer(e, true)
+  }
+  onPointerEnter(e: React.PointerEvent | React.TouchEvent) {
+    this._handlePointer(e, true)
+  }
+  onPointerLeave(e: React.PointerEvent | React.TouchEvent) {
+    this._handlePointer(e, false)
+  }
+
+  get isDestroyed() {
+    return this._destroyed
+  }
+  destroy() {
+    this._destroyed = true
+    this._components.forEach((x) => x.destroy?.())
+    this._params.animation?.kill()
+    this._pointer.visualPosition.animation?.kill()
+    this._pointer.hover.animation?.kill()
+    assert(this._activeAnimations.length === 0)
+  }
+
+  setComponents(components: readonly ChartComponent<Params>[]) {
+    this._components.forEach((x) => x.destroy?.())
+    this._components = components
+    this.draw('init')
+  }
+
+  getParams() {
+    return this._params.transition.target
+  }
+
+  setParams(params: Params, animation: ChartAnimation | null) {
+    if (this._params.transition.target === params) return
+
+    this._params.transition.from = this._params.transition.target
+    this._params.transition.target = params
+    this._params.animation?.kill()
     if (animation) {
-      this._stateAnimation = this._registerAnimation(
+      this._params.animation = this._registerAnimation(
         gsap.fromTo(
-          this._stateTransition,
+          this._params.transition,
           { progress: 0 },
-          { progress: 1, ease: animation.ease, duration: animation.duration },
+          {
+            progress: 1,
+            ease: animation.ease,
+            duration: animation.duration,
+          },
         ),
       )
     } else {
-      this._stateTransition.progress = 1
+      this._params.animation = null
+      this._params.transition.progress = 1
     }
 
-    this._pointerInDataCoord.animation?.kill()
-    this._pointerInDataCoord.transition = {
-      from: interpolate(this._pointerInDataCoord.transition),
-      target: {
-        x: _.clamp(
-          this._pointerInDataCoord.transition.target.x,
-          xyRange.x.start,
-          xyRange.x.end,
-        ),
-        y: _.clamp(
-          this._pointerInDataCoord.transition.target.y,
-          xyRange.y.start,
-          xyRange.y.end,
-        ),
-      },
+    const { stateTransition } = this._getContext()
+
+    this._pointer.visualPosition.animation?.kill()
+    this._pointer.visualPosition.transition = {
+      from: interpolate(this._pointer.visualPosition.transition),
+      target: _snapPointerToGridAndPlotArea(
+        this._pointer.visualPosition.transition.target,
+        stateTransition.target.derivedState,
+      ),
       progress: 0,
     }
-    this._pointerInDataCoord.animation = this._registerAnimation(
-      gsap.to(this._pointerInDataCoord.transition, {
+    this._pointer.visualPosition.animation = this._registerAnimation(
+      gsap.to(this._pointer.visualPosition.transition, {
         progress: 1,
         duration: pointerAnimationDuration,
         ease: 'power4',
       }),
     )
-
-    this._components.forEach(
-      (x) =>
-        x.update?.(
-          'stateAndPointer',
-          this._getContext(),
-          this._callbacks.registerAnimation,
-        ),
-    )
-    this.draw()
+    this.draw('stateAndPointer')
   }
 
   setSizing(sizing: ChartSizing) {
     if (_.isEqual(sizing, this._sizing)) return
-
     this._sizing = sizing
-    const context = this._getContext()
-    this._components.forEach(
-      (x) => x.update?.('sizing', context, this._callbacks.registerAnimation),
+
+    const { stateTransition } = this._getContext()
+    this._pointer.visualPosition.animation?.kill()
+    const target = _snapPointerToGridAndPlotArea(
+      this._pointer.visualPosition.transition.target,
+      stateTransition.target.derivedState,
     )
-    this.draw()
+    this._pointer.visualPosition.transition = {
+      from: target,
+      target,
+      progress: 1,
+    }
+
+    this.draw('sizingAndPointer')
   }
 
-  draw() {
+  draw(
+    reason:
+      | 'draw'
+      | 'init'
+      | 'pointer'
+      | 'stateAndPointer'
+      | 'sizingAndPointer' = 'draw',
+  ) {
+    assert(!this._destroyed)
     const context = this._getContext()
+
     const { canvasContext } = context
     canvasContext.clearRect(0, 0, this._canvas.width, this._canvas.height)
+    const pointerTargetYs: (ChartComponentPointerTargetY | null)[] = []
     this._components.forEach((component) => {
       canvasContext.save()
-      component.draw(context)
+      pointerTargetYs.push(
+        component.draw(
+          context,
+          reason,
+          this._callbacks.registerAnimation,
+          (dataX: number) =>
+            _.flatten(_.compact(pointerTargetYs).map((x) => x(dataX))),
+        ),
+      )
       canvasContext.restore()
     })
   }
 
-  private _getContext(): ChartContext<Data> {
-    const currState = interpolate(this._stateTransition)
+  private _getContext(): ChartContext<Params> {
+    // Without this we will have to explicity ignore the from state when
+    // progress is 1, for example calculating the xRange.
+    if (this._params.transition.progress === 1) {
+      this._params.transition.from = this._params.transition.target
+    }
+    const stateTransition = transitionTransform(
+      this._params.transition,
+      (params) => {
+        const props = this.propsFn(params)
+        return {
+          params,
+          dataRange: props.dataRange,
+          includeWidthOfLastX: props.includeWidthOfLastX,
+          derivedState: _chartDerivedState(this._sizing, props),
+        }
+      },
+    )
+
+    const currState = block((): ChartContext<Params>['currState'] => {
+      const dataRange = interpolate(
+        transitionTransform(stateTransition, (x) => x.dataRange),
+      )
+      const dataRangeUnion = {
+        x: SimpleRange.union(
+          stateTransition.from.dataRange.x,
+          stateTransition.target.dataRange.x,
+        ),
+        y: SimpleRange.union(
+          stateTransition.from.dataRange.y,
+          stateTransition.target.dataRange.y,
+        ),
+      }
+      const includeWidthOfLastX = stateTransition.target.includeWidthOfLastX
+      const derivedState = _chartDerivedState(this._sizing, {
+        dataRange,
+        includeWidthOfLastX,
+      })
+      const dataXRangeCurrentlyVisible = {
+        start: Math.ceil(
+          derivedState.scale.x.inverse.notRounded(derivedState.plotArea.x),
+        ),
+        end: Math.floor(
+          derivedState.scale.x.inverse.notRounded(derivedState.plotArea.right),
+        ),
+      }
+      const pointer = {
+        position: block(() => {
+          const visual = _clampToPlotArea(
+            interpolate(this._pointer.visualPosition.transition),
+            derivedState.plotArea,
+          )
+          return {
+            visual,
+            dataNotRounded: {
+              x: SimpleRange.Closed.clamp(
+                derivedState.scale.x.inverse.notRounded(visual.x),
+                dataRangeUnion.x,
+              ),
+            },
+          }
+        }),
+        hover: interpolate(this._pointer.hover.transition),
+      }
+      return {
+        dataRangeUnion,
+        dataXRangeCurrentlyVisible,
+        pointer,
+        derivedState,
+      }
+    })
     return {
       canvasContext: fGet(this._canvas.getContext('2d')),
-      dataTransition: this._dataTransition,
-      stateTransition: this._stateTransition,
-      pointerInDataCoordTransition: this._pointerInDataCoord.transition,
-      currState,
-      currPointerInDataCoord: interpolate(this._pointerInDataCoord.transition),
-      derivedState: {
-        prev: _chartDerivedState(this._sizing, this._stateTransition.from),
-        target: _chartDerivedState(this._sizing, this._stateTransition.target),
-        curr: _chartDerivedState(this._sizing, currState),
+      stateTransition,
+      pointerTransition: {
+        visualPosition: this._pointer.visualPosition.transition,
+        hover: this._pointer.hover.transition,
       },
       sizing: this._sizing,
+      currState,
     }
   }
 
-  private _handleMouse(e: MouseEvent) {
-    const context = this._getContext()
+  private _handlePointer(
+    e: React.PointerEvent | React.TouchEvent,
+    isInside: boolean,
+  ) {
+    const { stateTransition } = this._getContext()
 
-    this._pointerInDataCoord.animation?.kill()
-    this._pointerInDataCoord.transition = {
-      from: interpolate(this._pointerInDataCoord.transition),
-      target: _getPointerInDataCoord(
-        fGet(localPoint(this._canvas, e)),
-        this._getContext().derivedState.target,
-      ),
-      progress: 0,
+    const positionFromEvent = fGet(localPoint(this._canvas, e))
+    // Hover
+    const resetVisualPosition = block(() => {
+      const target = isInside ? 1 : 0
+      if (target !== this._pointer.hover.transition.target) {
+        this._onHover(target === 1)
+        this._pointer.hover.animation?.kill()
+        this._pointer.hover.transition = {
+          from: interpolate(this._pointer.hover.transition),
+          target,
+          progress: 0,
+        }
+        this._pointer.hover.animation = this._registerAnimation(
+          gsap.to(this._pointer.hover.transition, {
+            progress: 1,
+            duration: pointerAnimationDuration,
+            ease: 'power4',
+          }),
+        )
+        return target === 1
+      } else {
+        return false
+      }
+    })
+    // Visual Position
+    {
+      this._pointer.visualPosition.animation?.kill()
+      const target = _snapPointerToGridAndPlotArea(
+        positionFromEvent,
+        stateTransition.target.derivedState,
+      )
+      this._pointer.visualPosition.transition = {
+        from: resetVisualPosition
+          ? target
+          : interpolate(this._pointer.visualPosition.transition),
+        target: target,
+        progress: 0,
+      }
+      this._pointer.visualPosition.animation = this._registerAnimation(
+        gsap.to(this._pointer.visualPosition.transition, {
+          progress: 1,
+          duration: pointerAnimationDuration,
+          ease: 'power4',
+        }),
+      )
     }
-    this._pointerInDataCoord.animation = this._registerAnimation(
-      gsap.to(this._pointerInDataCoord.transition, {
-        progress: 1,
-        duration: pointerAnimationDuration,
-        ease: 'power4',
-      }),
-    )
-    this._components.forEach(
-      (x) => x.update?.('pointer', context, this._callbacks.registerAnimation),
-    )
-    this.draw()
+
+    this.draw('pointer')
   }
 
   private _registerAnimation<T extends gsap.core.Tween | gsap.core.Timeline>(
@@ -277,54 +368,66 @@ export class Chart<Data> {
   }
 }
 
-// const _interpolateState = (
-//   stateTransition: ChartDataTransition<ChartState>,
-// ): ChartState => ({
-//   xyRange: chartDataTransitionCurrObj(stateTransition, (x) => x.xyRange),
-// })
-
 export type ChartStateDerived = ReturnType<typeof _chartDerivedState>
-const _chartDerivedState = (sizing: ChartSizing, state: ChartState) => {
-  const { xyRange } = state
+const _chartDerivedState = (
+  sizing: ChartSizing,
+  { dataRange, includeWidthOfLastX }: _Props,
+) => {
   const { size, padding } = sizing
   const viewport = rectExt({ x: 0, y: 0, ...size })
+
   const plotArea = rectExt({
     x: viewport.x + padding.left,
     y: viewport.y + padding.top,
     width: viewport.width - padding.left - padding.right,
     height: viewport.height - padding.top - padding.bottom,
   })
+
+  const basicScaleX = linearFnFomPoints(
+    dataRange.x.start,
+    plotArea.x,
+    dataRange.x.end + (includeWidthOfLastX ? 1 : 0),
+    plotArea.width + plotArea.x,
+  )
+  const scaleX = block(() => {
+    const start = (dataX: number) => basicScaleX(dataX)
+    const end = (dataX: number) => basicScaleX(dataX + 1)
+    const width = start(1) - start(0)
+    const center = (dataX: number) => start(dataX) + width / 2
+    const inverse = {
+      rounded: (pixelX: number) => Math.round(basicScaleX.inverse(pixelX)),
+      notRounded: (pixelX: number) => basicScaleX.inverse(pixelX),
+    }
+    return { start, end, center, inverse }
+  })
+
+  // Data to pixel coordinates.
   const scale = {
-    x: linearFnFomPoints(
-      xyRange.x.start,
-      plotArea.x,
-      xyRange.x.end,
-      plotArea.width + plotArea.x,
-    ),
+    x: scaleX,
     y: linearFnFomPoints(
-      xyRange.y.start,
+      dataRange.y.start,
       plotArea.y + plotArea.height,
-      xyRange.y.end,
+      // Handle case where dataRange.y.end === dataRange.y.start.
+      Math.max(dataRange.y.start + 0.0000001, dataRange.y.end),
       plotArea.y,
     ),
   }
   return { plotArea, scale, viewport, padding }
 }
 
-function _getPointerInDataCoord(
+const _snapPointerToGridAndPlotArea = (
   pointerInPixelsCoord: XY,
   { scale, plotArea }: ChartStateDerived,
-) {
-  return {
-    x: _.clamp(
-      Math.round(scale.x.inverse(pointerInPixelsCoord.x)),
-      Math.round(scale.x.inverse(plotArea.x)),
-      Math.round(scale.x.inverse(plotArea.right)),
-    ),
-    y: _.clamp(
-      Math.round(scale.y.inverse(pointerInPixelsCoord.y)),
-      Math.round(scale.y.inverse(plotArea.y)),
-      Math.round(scale.y.inverse(plotArea.right)),
-    ),
-  }
-}
+) =>
+  _clampToPlotArea(
+    {
+      x: scale.x.start(scale.x.inverse.rounded(pointerInPixelsCoord.x)),
+      y: pointerInPixelsCoord.y,
+    },
+    plotArea,
+  )
+
+const _clampToPlotArea = ({ x, y }: XY, plotArea: Rect) => ({
+  x: _.clamp(x, plotArea.x, plotArea.x + plotArea.width),
+  y: _.clamp(y, plotArea.y, plotArea.y + plotArea.height),
+})

@@ -24,7 +24,7 @@ export const PlanSummaryDialog = React.memo(
     fixedSizing: { padding: { top: number } }
   }) => {
     const { updatePlanParams, planParamsExt } = useSimulation()
-    const { withdrawalStartMonth, asMFN } = planParamsExt
+    const { isFutureSavingsAllowed } = planParamsExt
 
     const [measures, setMeasures] = useState({
       age: rectExt(0),
@@ -147,8 +147,9 @@ export const PlanSummaryDialog = React.memo(
       )
         return
 
+      const bodyElement = elements.body
       const resizeObserver = new ResizeObserver(() => {
-        const bodyRect = fGet(elements.body).getBoundingClientRect()
+        const bodyRect = bodyElement.getBoundingClientRect()
         const _rel = _relativePosition(bodyRect, fixedSizing.padding.top)
         setMeasures({
           age: _rel(elements.age),
@@ -160,7 +161,7 @@ export const PlanSummaryDialog = React.memo(
           ['adjustments-to-spending']: _rel(elements.adjustmentsToSpending),
         })
       })
-      resizeObserver.observe(elements.body)
+      resizeObserver.observe(bodyElement)
       return () => resizeObserver.disconnect()
     }, [
       elements.adjustmentsToSpending,
@@ -199,7 +200,7 @@ export const PlanSummaryDialog = React.memo(
                         'setDialogPosition',
                         nextPlanSectionDialogPosition(
                           dialogPosition,
-                          asMFN(withdrawalStartMonth),
+                          isFutureSavingsAllowed,
                         ),
                       )
                     }
@@ -211,19 +212,6 @@ export const PlanSummaryDialog = React.memo(
             )}
           </DialogBubble>
         )}
-
-        {/* {dialogPosition !== 'show-results' &&
-          dialogPosition !== 'show-all-inputs' && (
-            <div
-              className="absolute bg-planBG bg-opacity-80 z-10"
-              style={{
-                top: `${fGet(measures[dialogPosition]).bottom}px`,
-                bottom: '0px',
-                width: '100%',
-                left: '0px',
-              }}
-            />
-          )} */}
       </>
     )
   },

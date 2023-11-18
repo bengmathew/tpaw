@@ -1,6 +1,6 @@
-import * as Sentry from '@sentry/nextjs'
 import {
   NonPlanParams,
+  currentNonPlanParamsVersion,
   fGet,
   getDefaultNonPlanParams,
   getZonedTimeFns,
@@ -21,7 +21,8 @@ import React, {
 import { useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { createContext } from '../../../Utils/CreateContext'
-import { errorToast } from '../../../Utils/CustomToasts'
+import { useAssertConst } from '../../../Utils/UseAssertConst'
+import { useDefaultErrorHandlerForNetworkCall } from '../../App/GlobalErrorBoundary'
 import { User, useUser } from '../../App/WithUser'
 import { WithNonPlanParamsMutation } from './__generated__/WithNonPlanParamsMutation.graphql'
 
@@ -58,6 +59,8 @@ const _NotLoggedIn = React.memo(({ children }: { children: ReactNode }) => {
 
 const _LoggedIn = React.memo(
   ({ children, user }: { children: ReactNode; user: User }) => {
+    const { defaultErrorHandlerForNetworkCall } =
+      useDefaultErrorHandlerForNetworkCall()
     const nonPlanParams = useMemo(
       () =>
         nonPlanParamsMigrate(
@@ -88,6 +91,7 @@ const _LoggedIn = React.memo(
 
     const setNonPlanParams = useCallback(
       (nonPlanParams: NonPlanParams) => {
+        nonPlanParamsGuard(nonPlanParams).force()
         const nonPlanParamsStr = JSON.stringify(nonPlanParams)
         commit({
           variables: {
@@ -102,15 +106,24 @@ const _LoggedIn = React.memo(
             userRecord.setValue(nonPlanParamsStr, 'nonPlanParams')
           },
           onError: (e) => {
-            Sentry.captureException(e)
-            errorToast('Could not save changes to server.')
+            defaultErrorHandlerForNetworkCall({
+              e,
+              toast: 'Could not save changes to server.',
+            })
           },
         })
       },
-      [commit, user.id, user.nonPlanParamsLastUpdatedAt],
+      [
+        commit,
+        defaultErrorHandlerForNetworkCall,
+        user.id,
+        user.nonPlanParamsLastUpdatedAt,
+      ],
     )
-    const  ianaTimezoneName  = _getIANATimezoneName(nonPlanParams)
-    
+    useAssertConst([defaultErrorHandlerForNetworkCall])
+
+    const ianaTimezoneName = _getIANATimezoneName(nonPlanParams)
+
     return (
       <Context.Provider
         // Recreate components if the timezone changes.

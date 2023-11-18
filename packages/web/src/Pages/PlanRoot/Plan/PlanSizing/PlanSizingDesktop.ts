@@ -1,5 +1,5 @@
-import { noCase } from '@tpaw/common'
-import { newPadding, rectExt, Size } from '../../../../Utils/Geometry'
+import { block, noCase } from '@tpaw/common'
+import { Size, newPadding, rectExt } from '../../../../Utils/Geometry'
 import { PlanSizing } from './PlanSizing'
 
 const pad = 40
@@ -10,7 +10,7 @@ export function planSizingDesktop(
   scrollbarWidth: number,
   isSWR: boolean,
   isTallMenu: boolean,
-): PlanSizing {
+): Omit<PlanSizing, 'args'> {
   const contentWidth = 600
 
   // ---- CHART ----
@@ -182,6 +182,29 @@ export function planSizingDesktop(
       },
     }
   })()
+
+  // ---- POINTER ----
+  const pointer = block<PlanSizing['pointer']>(() => ({
+    fixed: block(() => {
+      const fromChart = (
+        chart: PlanSizing['chart']['dynamic']['dialogInput'],
+      ) => {
+        return {
+          region: rectExt({ x: 0, y: 0, ...windowSize }),
+          chartPosition: {
+            bottom: chart.region.bottom - chart.padding.bottom,
+            left: chart.region.x + chart.padding.left,
+          },
+        }
+      }
+      return {
+        summary: fromChart(chart.dynamic.notDialogSummary),
+        input: fromChart(chart.dynamic.notDialogInput),
+        help: fromChart(chart.dynamic.notDialogInput),
+      }
+    }),
+  }))
+
   // ---- CONTACT ----
   const contact = ((): PlanSizing['contact'] => {
     const dynamic = {
@@ -202,5 +225,5 @@ export function planSizingDesktop(
       },
     }
   })()
-  return { input, help, chart, summary, menu, contact }
+  return { pointer, input, help, chart, summary, menu, contact }
 }

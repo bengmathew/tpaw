@@ -1,18 +1,25 @@
+import _ from 'lodash'
 import { Rect } from '../../../../Utils/Geometry'
+import { SimpleRange } from '../../../../Utils/SimpleRange'
 import { fGet } from '../../../../Utils/Utils'
 
-type FontWeight = 'bold' | '400' | '500' | '600' | '800' | '900' | ''
 export namespace ChartUtils {
+  export const saveRestore = <T>(
+    ctx: CanvasRenderingContext2D,
+    fn: () => T,
+  ) => {
+    ctx.save()
+    const result = fn()
+    ctx.restore()
+    return result
+  }
+  export type FontWeight = 'bold' | '400' | '500' | '600' | '800' | '900' | ''
   export const getFont = (size: number, style: FontWeight = '') =>
     `${style} ${size}px Montserrat, sans-serif`
   export const getMonoFont = (size: number, style: FontWeight = '') =>
     `${style} ${size}px Roboto Mono, monospace`
 
-  export function roundRect(
-    ctx: CanvasRenderingContext2D,
-    { x, y, width, height }: Rect,
-    radius: number,
-  ) {
+  export function roundRect({ x, y, width, height }: Rect, radius: number) {
     const right = x + width
     const bottom = y + height
     const edges = [
@@ -21,24 +28,52 @@ export namespace ChartUtils {
       { x: right, y: bottom },
       { x, y: bottom },
     ]
-    roundedPolygon(ctx, edges, radius)
+    return roundedPolygon(edges, radius)
   }
 
   // Thanks, https://stackoverflow.com/a/56214413
   type _Point = { x: number; y: number }
-  export function roundedPolygon(
-    ctx: CanvasRenderingContext2D,
-    points: _Point[],
-    radius: number,
-  ) {
+  export function roundedPolygon(points: _Point[], radius: number) {
+    const path = new Path2D()
     const corners = _roundedPolygonCorners(points, radius)
-    ctx.moveTo(corners[0].start.x, corners[0].start.y)
+    path.moveTo(corners[0].start.x, corners[0].start.y)
     for (const { start, ctrl, end } of corners) {
-      ctx.lineTo(start.x, start.y)
-      ctx.quadraticCurveTo(ctrl.x, ctrl.y, end.x, end.y)
+      path.lineTo(start.x, start.y)
+      path.quadraticCurveTo(ctrl.x, ctrl.y, end.x, end.y)
     }
-    ctx.closePath()
+    path.closePath()
+    return path
   }
+
+  export const getRangePath = (
+    pixelXYs: { x: number; yRange: SimpleRange }[],
+  ) => {
+    const path = new Path2D()
+    path.moveTo(pixelXYs[0].x, pixelXYs[0].yRange.start)
+    pixelXYs.forEach(({ x, yRange }) => {
+      path.lineTo(x, yRange.start)
+    })
+    pixelXYs
+      .slice()
+      .reverse()
+      .forEach(({ x, yRange }) => {
+        path.lineTo(x, yRange.end)
+      })
+    path.closePath()
+    return path
+  }
+  getRangePath.getBounds = (
+    pixelXYs: { x: number; yRange: SimpleRange }[],
+  ) => ({
+    x: {
+      start: fGet(_.first(pixelXYs)).x,
+      end: fGet(_.last(pixelXYs)).x,
+    },
+    y: {
+      start: Math.min(...pixelXYs.map((xy) => xy.yRange.end)),
+      end: Math.max(...pixelXYs.map((xy) => xy.yRange.start)),
+    },
+  })
 
   export function roundedLine(
     ctx: CanvasRenderingContext2D,

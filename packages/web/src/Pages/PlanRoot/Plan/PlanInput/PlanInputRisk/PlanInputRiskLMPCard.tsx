@@ -26,7 +26,7 @@ export const PlanInputRiskLMPCard = React.memo(
     const handleAmount = (amount: number) =>
       updatePlanParams('setTPAWAndSPAWLMP', amount)
 
-    if (Config.client.production) return <></>
+    if (Config.client.isProduction) return <></>
 
     return (
       <div

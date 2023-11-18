@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<cc60196a279961f714acdfe1b26a64a6>>
+ * @generated SignedSource<<f4d59feb8236c5f29e973c72a5b95a30>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -31,7 +31,7 @@ export type PlanMenuActionModalCreatePlanMutation$data = {
   readonly userPlanCreate: {
     readonly plan: {
       readonly id: string;
-      readonly label: string | null;
+      readonly label: string | null | undefined;
       readonly slug: string;
       readonly " $fragmentSpreads": FragmentRefs<"PlanWithoutParamsFragment">;
     };

@@ -25,7 +25,7 @@ export const ContextMenu = React.memo(
     children: (onHide: () => void) => ReactElement
     darkBG?: boolean
   }) => {
-    const windowSize = useWindowSize()
+    const {windowSize} = useWindowSize()
     const menuRef = useRef<HTMLDivElement | null>(null)
 
     const handleResize = useCallback(

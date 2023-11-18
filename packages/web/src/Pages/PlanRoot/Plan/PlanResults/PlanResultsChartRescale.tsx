@@ -2,10 +2,10 @@ import { faArrowsUpDown } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { useCallback, useEffect } from 'react'
 import { SimpleRange } from '../../../../Utils/SimpleRange'
-import { fGet } from '../../../../Utils/Utils'
+import { useNonPlanParams } from '../../PlanRootHelpers/WithNonPlanParams'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
-import { useChartData } from '../WithChartData'
+import { useChartData } from '../WithPlanResultsChartData'
 import { PlanResultsChartType } from './PlanResultsChartType'
 
 export const PlanResultsChartRescale = React.memo(
@@ -21,20 +21,17 @@ export const PlanResultsChartRescale = React.memo(
     setMainYRange: (x: SimpleRange) => void
   }) => {
     const { planParams } = useSimulation()
-    const allChartData = useChartData()
-    const chartMainData = fGet(
-      allChartData.byYearsFromNowPercentiles.get(chartType),
-    )
+    const { nonPlanParams } = useNonPlanParams()
+    const chartData = useChartData(chartType)
+    const targetYRange = nonPlanParams.dev.overridePlanResultChartYRange
+      ? nonPlanParams.dev.overridePlanResultChartYRange
+      : chartData.displayRange.y
 
-    const rescaleWarningLevel = _rescaleWarningLevel(
-      mainYRange,
-      chartMainData.yDisplayRange,
-    )
+    const rescaleWarningLevel = _rescaleWarningLevel(mainYRange, targetYRange)
 
-    const handleRescale = useCallback(
-      () => setMainYRange(chartMainData.yDisplayRange),
-      [chartMainData.yDisplayRange, setMainYRange],
-    )
+    const handleRescale = useCallback(() => {
+      setMainYRange(targetYRange)
+    }, [targetYRange, setMainYRange])
 
     useEffect(() => {
       if (rescaleWarningLevel === 0) return

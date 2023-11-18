@@ -1,7 +1,9 @@
 import { API, getDefaultPlanParams } from '@tpaw/common'
 import * as uuid from 'uuid'
-import { Clients } from '../../../../Clients.js'
-import { PrismaTransaction } from '../../../../Utils/PrismaTransaction.js'
+import {
+  PrismaTransaction,
+  serialTransaction,
+} from '../../../../Utils/PrismaTransaction.js'
 import { concurrentChangeError } from '../../../../impl/Common/ConcurrentChangeError.js'
 import { PothosPlanAndUserResult } from '../../../GQLCommon/GQLPlanAndUserResult.js'
 import { builder } from '../../../builder.js'
@@ -28,7 +30,7 @@ builder.mutationField('userPlanReset', (t) =>
       const { userId, planId, lastSyncAt, ianaTimezoneName } =
         API.UserPlanReset.check(input).force()
 
-      return await Clients.prisma.$transaction(async (tx) => {
+      return await serialTransaction(async (tx) => {
         const startingPlan = await tx.planWithHistory.findUniqueOrThrow({
           where: { userId_planId: { userId, planId } },
         })

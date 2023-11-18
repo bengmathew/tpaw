@@ -1,5 +1,7 @@
 import { Switch } from '@headlessui/react'
+import clsx from 'clsx'
 import React from 'react'
+import { gray } from '../../../Utils/ColorPalette'
 
 export const ToggleSwitch = React.memo(
   ({
@@ -8,26 +10,61 @@ export const ToggleSwitch = React.memo(
     setChecked,
     disabled,
     type = 'oneSided',
+    style = {
+      bg: {
+        on: { color: gray['700'] },
+        off: { color: gray['200'] },
+      },
+    },
+    sizing = { width: 36, height: 20, gap: 3 },
   }: {
     className?: string
     checked: boolean
     setChecked: (value: boolean) => void
     disabled?: boolean
+    style?: {
+      bg: {
+        on: { color: string }
+        off: { color: string }
+      }
+    }
+    sizing?: {
+      width: number
+      height: number
+      gap: number
+    }
     type?: 'twoSided' | 'oneSided'
   }) => {
+    const dotS = sizing.height - sizing.gap * 2
     return (
       <Switch
         checked={checked}
         onChange={setChecked}
         disabled={disabled}
-        className={`${className} ${
-          checked || type === 'twoSided' ? 'bg-darkGray' : 'bg-gray-200'
-        } relative inline-flex items-center h-[20px] rounded-full w-[36px] transition-colors `}
+        className={clsx(
+          className,
+          'relative inline-flex items-center rounded-full transition-colors',
+        )}
+        style={{
+          width: `${sizing.width}px`,
+          height: `${sizing.height}px`,
+          backgroundColor:
+            checked || type === 'twoSided'
+              ? style.bg.on.color
+              : style.bg.off.color,
+        }}
       >
         <span
-          className={`${
-            checked ? 'translate-x-[19px]' : 'translate-x-[3px]'
-          } inline-block w-[14px] h-[14px] transform bg-white rounded-full transition-transform`}
+          className={clsx(
+            'inline-block transform bg-white rounded-full transition-transform',
+          )}
+          style={{
+            transform: `translateX(${
+              checked ? sizing.width - dotS - sizing.gap : sizing.gap
+            }px)`,
+            width: `${dotS}px`,
+            height: `${dotS}px`,
+          }}
         />
       </Switch>
     )

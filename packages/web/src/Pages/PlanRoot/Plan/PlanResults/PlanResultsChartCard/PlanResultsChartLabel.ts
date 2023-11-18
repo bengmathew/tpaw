@@ -1,11 +1,15 @@
-import { PlanParams, fGet, noCase } from '@tpaw/common'
+import { PlanParams, assert, block, fGet, noCase } from '@tpaw/common'
 import _ from 'lodash'
+import { pluralize } from '../../../../../Utils/Pluralize'
 import { trimAndNullify } from '../../../../../Utils/TrimAndNullify'
 import { optGet } from '../../../../../Utils/optGet'
 import {
   PlanResultsChartType,
+  PlanResultsSpendingChartType,
   isPlanResultsChartSpendingDiscretionaryType,
   isPlanResultsChartSpendingEssentialType,
+  isPlanResultsChartSpendingTotalFundingSourcesType,
+  isPlanResultsChartSpendingType,
   planResultsChartSpendingDiscretionaryTypeID,
   planResultsChartSpendingEssentialTypeID,
 } from '../PlanResultsChartType'
@@ -13,102 +17,196 @@ import {
 export const planResultsChartLabel = (
   planParams: PlanParams,
   panelType: PlanResultsChartType,
-  type: 'full' | 'short',
 ) => {
   switch (panelType) {
-    case 'spending-total':
-      return {
-        label: ['Monthly Spending During Retirement'],
-        subLabel: null,
-        description: 'Total retirement spending',
-        yAxisDescription: _yAxisDescriptionType.realDollarsExplanation,
-      }
-    case 'spending-general':
-      return {
-        label: _.compact([
-          type === 'full' ? 'Monthly Spending' : undefined,
-          `General`,
-        ]),
-        subLabel: null,
-        description: 'General retirement spending',
-        yAxisDescription: _yAxisDescriptionType.realDollarsExplanation,
-      }
     case 'portfolio':
+      const full = ['Portfolio Balance']
       return {
-        label: ['Portfolio Balance'],
+        label: { full, forMenu: full },
         subLabel: null,
         description: 'Savings portfolio balance',
         yAxisDescription: _yAxisDescriptionType.realDollarsExplanation,
       }
-    case 'asset-allocation-savings-portfolio':
+    case 'asset-allocation-savings-portfolio': {
+      const full = ['Asset Allocation']
       return {
-        label: ['Asset Allocation'],
+        label: { full, forMenu: full },
         subLabel: null,
         description: ' Percentage of portfolio invested in stocks',
         yAxisDescription: _yAxisDescriptionType.assetAllocationExplanation,
       }
-    case 'asset-allocation-total-portfolio':
+    }
+    case 'asset-allocation-total-portfolio': {
+      const full = ['Dev', 'Asset Allocation of Total Portfolio']
       return {
-        label: ['Asset Allocation of Total Portfolio'],
+        label: { full, forMenu: full },
         subLabel: null,
         description: ' Percentage of total portfolio invested in stocks',
         yAxisDescription: _yAxisDescriptionType.assetAllocationExplanation,
       }
-    case 'withdrawal':
+    }
+    case 'withdrawal': {
+      const full = ['Monthly Withdrawal Rate']
       return {
-        label: ['Monthly Withdrawal Rate'],
+        label: { full, forMenu: full },
         subLabel: null,
         description: 'Percentage of portfolio withdrawn for spending',
         yAxisDescription: null,
       }
+    }
     default:
-      const { essential, discretionary } =
-        planParams.adjustmentsToSpending.extraSpending
-      const splitEssentialAndDiscretionary =
-        planParams.advanced.strategy !== 'SWR'
-      if (isPlanResultsChartSpendingEssentialType(panelType)) {
-        const id = planResultsChartSpendingEssentialTypeID(panelType)
-
-        const spendingLabel = `${
-          trimAndNullify(fGet(optGet(essential, id)).label) ?? '<No label>'
-        }`
-
-        const label = _.compact([
-          type === 'full' ? 'Monthly Spending' : undefined,
-          ...(splitEssentialAndDiscretionary
-            ? ['Extra', 'Essential']
-            : [spendingLabel]),
-        ])
-        const subLabel = splitEssentialAndDiscretionary ? spendingLabel : null
-        return {
-          label,
-          subLabel,
-          description: 'Extra essential spending',
-          yAxisDescription: _yAxisDescriptionType.realDollarsExplanation,
-        }
-      }
-      if (isPlanResultsChartSpendingDiscretionaryType(panelType)) {
-        const id = planResultsChartSpendingDiscretionaryTypeID(panelType)
-
-        const spendingLabel = `${
-          trimAndNullify(fGet(optGet(discretionary, id)).label) ?? '<No label>'
-        }`
-
-        const label = _.compact([
-          type === 'full' ? 'Monthly Spending' : undefined,
-          ...(splitEssentialAndDiscretionary
-            ? ['Extra', 'Discretionary']
-            : [spendingLabel]),
-        ])
-        const subLabel = splitEssentialAndDiscretionary ? spendingLabel : null
-        return {
-          label,
-          subLabel,
-          description: 'Extra discretionary spending',
-          yAxisDescription: _yAxisDescriptionType.realDollarsExplanation,
-        }
+      if (isPlanResultsChartSpendingType(panelType)) {
+        return getPlanResultsChartLabelInfoForSpending(planParams).getLabelInfo(
+          panelType,
+        )
       }
       noCase(panelType)
+  }
+}
+
+export const getPlanResultsChartLabelInfoForSpending = (
+  planParams: PlanParams,
+) => {
+  const { essential, discretionary } =
+    planParams.adjustmentsToSpending.extraSpending
+  const numEssential = _.values(essential).length
+  const numDiscretionary = _.values(discretionary).length
+  const numExtra = numEssential + numDiscretionary
+  const spendingTotalInfo = block(() => {
+    const full = ['Monthly Spending During Retirement']
+    return {
+      label: { full, forMenu: full },
+      subLabel: null,
+      description: 'Total retirement spending',
+      yAxisDescription: _yAxisDescriptionType.realDollarsExplanation,
+    }
+  })
+  if (numExtra === 0) {
+    return {
+      hasExtra: false,
+      getLabelInfo: (chartType: PlanResultsSpendingChartType) => {
+        if (
+          isPlanResultsChartSpendingTotalFundingSourcesType(chartType) ||
+          chartType === 'spending-total'
+        ) {
+          return spendingTotalInfo
+        }
+        assert(
+          !(
+            chartType === 'spending-general' ||
+            isPlanResultsChartSpendingDiscretionaryType(chartType) ||
+            isPlanResultsChartSpendingEssentialType(chartType)
+          ),
+        )
+        noCase(chartType)
+      },
+    } as const
+  } else {
+    const splitEssentialAndDiscretionary =
+      planParams.advanced.strategy !== 'SWR'
+    return {
+      hasExtra: true,
+      extraSpendingLabelInfo: splitEssentialAndDiscretionary
+        ? ({
+            splitEssentialAndDiscretionary: true,
+            essential: {
+              label: ['Extra Spending', 'Essential'],
+              description: `Extra essential spending (${pluralize(
+                numEssential,
+                'graph',
+              )})`,
+            },
+            discretionary: {
+              label: ['Extra Spending', 'Discretionary'],
+              description: `Extra discretionary spending (${pluralize(
+                numDiscretionary,
+                'graph',
+              )})`,
+            },
+          } as const)
+        : ({
+            splitEssentialAndDiscretionary: false,
+            label: ['Extra Spending'],
+            description: `Extra  spending (${pluralize(
+              numDiscretionary + numEssential,
+              'graph',
+            )})`,
+          } as const),
+      getLabelInfo: (chartType: PlanResultsSpendingChartType) => {
+        if (
+          isPlanResultsChartSpendingTotalFundingSourcesType(chartType) ||
+          chartType === 'spending-total'
+        ) {
+          return spendingTotalInfo
+        }
+        if (chartType === 'spending-general') {
+          return {
+            label: {
+              full: ['Monthly Spending', 'General'],
+              forMenu: ['General Spending'],
+            },
+            subLabel: null,
+            description: 'Excludes extra spending',
+            yAxisDescription: _yAxisDescriptionType.realDollarsExplanation,
+          }
+        }
+
+        if (isPlanResultsChartSpendingEssentialType(chartType)) {
+          const id = planResultsChartSpendingEssentialTypeID(chartType)
+          const spendingLabel = `${
+            trimAndNullify(fGet(optGet(essential, id)).label) ?? '<No label>'
+          }`
+          return {
+            ...(splitEssentialAndDiscretionary
+              ? {
+                  label: {
+                    full: ['Monthly Spending', 'Extra', 'Essential'],
+                    forMenu: [spendingLabel],
+                  },
+                }
+              : {
+                  label: {
+                    full: ['Monthly Spending', 'Extra'],
+                    forMenu: [spendingLabel],
+                  },
+                }),
+            subLabel: spendingLabel,
+            description: splitEssentialAndDiscretionary
+              ? 'Essential expense'
+              : 'Extra expense',
+            yAxisDescription: _yAxisDescriptionType.realDollarsExplanation,
+          }
+        }
+        if (isPlanResultsChartSpendingDiscretionaryType(chartType)) {
+          const id = planResultsChartSpendingDiscretionaryTypeID(chartType)
+          const spendingLabel = `${
+            trimAndNullify(fGet(optGet(discretionary, id)).label) ??
+            '<No label>'
+          }`
+          return {
+            ...(splitEssentialAndDiscretionary
+              ? {
+                  label: {
+                    full: ['Monthly Spending', 'Extra', 'Discretionary'],
+                    forMenu: [spendingLabel],
+                  },
+                }
+              : {
+                  label: {
+                    full: ['Monthly Spending', 'Extra'],
+                    forMenu: [spendingLabel],
+                  },
+                }),
+            subLabel: spendingLabel,
+            description: splitEssentialAndDiscretionary
+              ? 'Discretionary expense'
+              : 'Extra expense',
+            yAxisDescription: _yAxisDescriptionType.realDollarsExplanation,
+          }
+        }
+        noCase(chartType)
+      },
+    }
   }
 }
 

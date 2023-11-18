@@ -1,7 +1,10 @@
 import { API, fGet } from '@tpaw/common'
 import { assert } from 'console'
 import { Clients } from '../../../../Clients.js'
-import { PrismaTransaction } from '../../../../Utils/PrismaTransaction.js'
+import {
+  PrismaTransaction,
+  serialTransaction,
+} from '../../../../Utils/PrismaTransaction.js'
 import { builder } from '../../../builder.js'
 
 const Input = builder.inputType('UserPlanSetAsMainInput', {
@@ -19,7 +22,7 @@ builder.mutationField('userPlanSetAsMain', (t) =>
     resolve: async (query, __, { input }) => {
       const { userId, planId } = API.UserPlanSetAsMain.check(input).force()
 
-      await Clients.prisma.$transaction(
+      await serialTransaction(
         async (tx) => await userPlanSetAsMain(tx, userId, planId),
       )
       return Clients.prisma.user.findUniqueOrThrow({

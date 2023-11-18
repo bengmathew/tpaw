@@ -1,26 +1,26 @@
 import gsap from 'gsap'
 import React, {
-    useEffect,
-    useImperativeHandle,
-    useLayoutEffect,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
 } from 'react'
 import {
-    Padding,
-    RectExt,
-    applySizeToHTMLElement,
-    originCSSStyle,
+  Padding,
+  RectExt,
+  applySizeToHTMLElement,
+  originCSSStyle,
 } from '../../../Utils/Geometry'
 import { fGet } from '../../../Utils/Utils'
-import { interpolateObj } from '../../PlanRoot/Plan/PlanSizing/PlanSizingInterpolate'
-import { Chart, ChartAnimation, ChartXYRange } from './Chart'
+import { Chart, ChartAnimation } from './Chart'
 import { ChartComponent } from './ChartComponent/ChartComponent'
+import { interpolate } from '../../../Utils/Interpolate'
 
 export type ChartReactSizing = { position: RectExt; padding: Padding }
 export type ChartReactState<Data> = {
   data: Data
-  xyRange: ChartXYRange
   animation: ChartAnimation | null
 }
 
@@ -29,25 +29,29 @@ export type ChartReactStatefull<Data> = {
     sizing: ChartReactSizing,
     animation: ChartAnimation | null,
   ) => void
-  setState: (
-    data: Data,
-    xyRange: ChartXYRange,
-    animation: ChartAnimation | null,
-  ) => void
-  getState: () => { data: Data; xyRange: ChartXYRange }
+  setData: (data: Data, animation: ChartAnimation | null) => void
+  getData: () => Data
+  onPointerMove: (e: React.PointerEvent | React.TouchEvent) => void
+  onPointerEnter: (e: React.PointerEvent | React.TouchEvent) => void
+  onPointerLeave: (e: React.PointerEvent | React.TouchEvent) => void
 }
 export const ChartReact = React.forwardRef(
   <Data,>(
     {
       starting,
       components,
+      onHover: onHoverIn,
+      captureTouchEvents = false,
     }: {
       starting: {
         data: Data
-        xyRange: ChartXYRange
         sizing: ChartReactSizing
+        propsFn: Chart<Data>['propsFn']
+        debug?: boolean
       }
+      onHover?: (hover: boolean) => void
       components: () => readonly ChartComponent<Data>[]
+      captureTouchEvents?: boolean
     },
     forwardedRef: React.ForwardedRef<ChartReactStatefull<Data>>,
   ) => {
@@ -55,8 +59,15 @@ export const ChartReact = React.forwardRef(
     const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null)
     const [chart, setChart] = useState<_AfterCanvasStateful<Data> | null>(null)
 
+    const onHoverRef = useRef(onHoverIn)
+    onHoverRef.current = onHoverIn
+    const onHover = useCallback(
+      (hover: boolean) => onHoverRef.current?.(hover),
+      [],
+    )
+
     const [sizingTransition, setSizingTransition] = useState({
-      prev: starting.sizing,
+      from: starting.sizing,
       target: starting.sizing,
       animation: null as ChartAnimation | null,
     })
@@ -81,11 +92,11 @@ export const ChartReact = React.forwardRef(
           if (!canvas || !chart) return
           const obj = this.targets()[0] as { progress: number }
           chart.setSizing(
-            interpolateObj(
-              sizingTransition.prev,
-              sizingTransition.target,
-              obj.progress,
-            ),
+            interpolate({
+              from: sizingTransition.from,
+              target: sizingTransition.target,
+              progress: obj.progress,
+            }),
           )
         },
       })
@@ -115,15 +126,16 @@ export const ChartReact = React.forwardRef(
         return {
           setSizing: (sizing, animation) => {
             setSizingTransition((old) => ({
-              prev: old.target,
+              from: old.target,
               target: sizing,
               animation,
             }))
           },
-          setState: (data, xyRange, animation) => {
-            chart.setState(data, xyRange, animation)
-          },
-          getState: () => chart.getState(),
+          setData: (data, animation) => chart.setData(data, animation),
+          getData: () => chart.getData(),
+          onPointerMove: (e) => chart.onPointerMove(e),
+          onPointerEnter: (e) => chart.onPointerEnter(e),
+          onPointerLeave: (e) => chart.onPointerLeave(e),
         }
       },
       [canvas, chart],
@@ -131,16 +143,29 @@ export const ChartReact = React.forwardRef(
 
     return (
       <div
-        className="absolute overflow-hidden"
+        // select-none prevents long press on mobile.
+        className="absolute overflow-hidden select-none"
         ref={divRef}
         style={{ ...originCSSStyle({ x: 0, y: 0 }) }}
+        onTouchStart={
+          captureTouchEvents ? (e) => chart?.onPointerEnter(e) : undefined
+        }
+        onTouchMove={
+          captureTouchEvents ? (e) => chart?.onPointerMove(e) : undefined
+        }
+        onTouchEnd={
+          captureTouchEvents ? (e) => chart?.onPointerLeave(e) : undefined
+        }
       >
         <canvas className="" style={{ touchAction: 'none' }} ref={setCanvas} />
         {canvas && (
           <_AfterCanvas
-            starting={starting}
+            starting={{
+              ...starting,
+              onHover,
+              canvas,
+            }}
             components={components}
-            canvas={canvas}
             ref={setChart}
           />
         )}
@@ -187,12 +212,11 @@ const applyTargetSizingToHTML = (
 
 type _AfterCanvasStateful<Data> = {
   setSizing: (sizing: ChartReactSizing) => void
-  setState: (
-    data: Data,
-    xyRange: ChartXYRange,
-    animation: ChartAnimation | null,
-  ) => void
-  getState: () => { data: Data; xyRange: ChartXYRange }
+  setData: (data: Data, animation: ChartAnimation | null) => void
+  getData: () => Data
+  onPointerMove: (e: React.PointerEvent | React.TouchEvent) => void
+  onPointerEnter: (e: React.PointerEvent | React.TouchEvent) => void
+  onPointerLeave: (e: React.PointerEvent | React.TouchEvent) => void
 }
 
 const _AfterCanvas = React.forwardRef(
@@ -200,26 +224,29 @@ const _AfterCanvas = React.forwardRef(
     {
       starting,
       components,
-      canvas,
     }: {
       starting: {
+        canvas: HTMLCanvasElement
         data: Data
-        xyRange: ChartXYRange
         sizing: ChartReactSizing
+        propsFn: Chart<Data>['propsFn']
+        debug?: boolean
+        onHover: (hover: boolean) => void
       }
       components: () => readonly ChartComponent<Data>[]
-      canvas: HTMLCanvasElement
     },
     ref: React.ForwardedRef<_AfterCanvasStateful<Data>>,
   ) => {
     const [chart, setChart] = useState<Chart<Data> | null>(null)
     useLayoutEffect(() => {
       const chart = new Chart(
-        canvas,
+        starting.canvas,
+        starting.onHover,
         starting.data,
-        starting.xyRange,
         [], // Will be set in useEffect
         _sizingTransform(starting.sizing),
+        starting.propsFn,
+        starting.debug ?? false,
       )
       setChart(chart)
       return () => chart.destroy()
@@ -230,18 +257,26 @@ const _AfterCanvas = React.forwardRef(
       ref,
       () => {
         if (!chart) return null as unknown as _AfterCanvasStateful<Data>
+        // Need to check isDestroyed because in dev during double initialization
+        // chart was destroyed, but ref was still called which led to problems.
         return {
-          setSizing: (sizing) => chart.setSizing(_sizingTransform(sizing)),
-          setState: (data, xyRange, animation) =>
-            chart.setState(data, xyRange, animation),
-          getState: () => chart.getState(),
+          setSizing: (sizing) =>
+            !chart.isDestroyed && chart.setSizing(_sizingTransform(sizing)),
+          setData: (data, animation) =>
+            !chart.isDestroyed && chart.setParams(data, animation),
+          getData: () => chart.getParams(),
+          onPointerMove: (e) => !chart.isDestroyed && chart.onPointerMove(e),
+          onPointerEnter: (e) => !chart.isDestroyed && chart.onPointerEnter(e),
+          onPointerLeave: (e) => !chart.isDestroyed && chart.onPointerLeave(e),
         }
       },
       [chart],
     )
 
     useEffect(() => {
-      if (!chart) return
+      // Need to check isDestroyed because in dev during double initialization
+      // chart was destroyed, but ref was still called which led to problems.
+      if (!chart || chart.isDestroyed) return
       chart.setComponents(components())
     }, [components, chart])
 

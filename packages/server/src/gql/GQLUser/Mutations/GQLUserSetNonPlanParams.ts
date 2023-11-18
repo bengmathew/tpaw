@@ -1,5 +1,5 @@
 import { API } from '@tpaw/common'
-import { Clients } from '../../../Clients.js'
+import { serialTransaction } from '../../../Utils/PrismaTransaction.js'
 import { concurrentChangeError } from '../../../impl/Common/ConcurrentChangeError.js'
 import { getUserSuccessResult } from '../../../impl/Common/UserSuccessResult.js'
 import { builder } from '../../builder.js'
@@ -23,14 +23,14 @@ builder.mutationField('userSetNonPlanParams', (t) =>
     resolve: async (_, { input }) => {
       const { userId, lastUpdatedAt, nonPlanParams } =
         API.UserSetNonPlanParams.check(input).force()
-      return await Clients.prisma.$transaction(async (tx) => {
+      return await serialTransaction(async (tx) => {
         const startingUser = await tx.user.findUniqueOrThrow({
-          where: { id:userId },
+          where: { id: userId },
         })
         if (startingUser.nonPlanParamsLastUpdatedAt.getTime() !== lastUpdatedAt)
           return concurrentChangeError
         await tx.user.update({
-          where: { id:userId },
+          where: { id: userId },
           data: {
             nonPlanParams: nonPlanParams,
             nonPlanParamsLastUpdatedAt: new Date(),

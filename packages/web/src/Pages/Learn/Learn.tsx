@@ -11,6 +11,7 @@ import ReactDOM from 'react-dom'
 import { Contentful } from '../../Utils/Contentful'
 import { assert } from '../../Utils/Utils'
 import { AppPage } from '../App/AppPage'
+import { mainPlanColors } from '../PlanRoot/Plan/UsePlanColors'
 
 export const learnGetStaticProps: GetStaticProps<{
   outline: Contentful.FetchedKnowledgeBaseOutline
@@ -305,9 +306,10 @@ const _Link = React.memo(
         icon={faChevronRight}
       />
       <span
-        className={`font-semibold ${
-          isCurrent ? 'text-theme1Dark' : 'text-gray-700'
-        }`}
+        className={`font-semibold`}
+        style={{
+          color: isCurrent ? mainPlanColors.shades.main[8].hex : undefined,
+        }}
       >
         {title}
       </span>

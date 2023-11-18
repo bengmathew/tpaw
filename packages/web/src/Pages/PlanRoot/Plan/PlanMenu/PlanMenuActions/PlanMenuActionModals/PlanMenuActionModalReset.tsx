@@ -11,6 +11,7 @@ import { User, useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { useIANATimezoneName } from '../../../../PlanRootHelpers/WithNonPlanParams'
 import { PlanMenuActionModalResetMutation } from './__generated__/PlanMenuActionModalResetMutation.graphql'
+import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalErrorBoundary'
 
 export const PlanMenuActionModalReset = React.memo(
   ({
@@ -55,6 +56,8 @@ const _Body = React.memo(
     reloadOnSuccess: { planPaths: PlanPaths } | null
     isSyncing: boolean
   }) => {
+    const { defaultErrorHandlerForNetworkCall } =
+      useDefaultErrorHandlerForNetworkCall()
     const user = fGet(useUser())
     const { ianaTimezoneName } = useIANATimezoneName()
     // Intentionally not using isRunning from useMutation because we want to
@@ -73,6 +76,7 @@ const _Body = React.memo(
           ... on PlanAndUserResult {
             plan {
               id
+              lastSyncAt
               ...PlanWithoutParamsFragment
             }
           }
@@ -96,8 +100,16 @@ const _Body = React.memo(
         onCompleted: ({ userPlanReset }) => {
           switch (userPlanReset.__typename) {
             case 'ConcurrentChangeError':
+              // TODO: throwing this error is not the right way to handle this.
+              // investigate all occurrences.
               throw new AppError('concurrentChange')
             case 'PlanAndUserResult':
+              const now = Date.now()
+              if (userPlanReset.plan.lastSyncAt > now) {
+                throw new Error(
+                  `lastSyncAt is in the future: ${userPlanReset.plan.lastSyncAt} > ${now}`,
+                )
+              }
               if (reloadOnSuccess) {
                 // View will be removed from under us, so no need to setState.
                 const url = reloadOnSuccess.planPaths()
@@ -116,8 +128,10 @@ const _Body = React.memo(
           }
         },
         onError: (e) => {
-          captureException(e)
-          errorToast('Error resetting plan')
+          defaultErrorHandlerForNetworkCall({
+            e,
+            toast: 'Error resetting plan',
+          })
           setState({ type: 'confirm' })
         },
       })

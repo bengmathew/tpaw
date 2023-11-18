@@ -48,7 +48,7 @@ export const CenteredModal = React.memo(
         <Transition.Child
           className={clsx(
             className,
-            'duration-300 bg-pageBG rounded-xl z-10 p-4 max-h-[85vh] overflow-scroll',
+            'duration-300 bg-pageBG rounded-xl z-10 p-4 max-h-[80vh] overflow-scroll',
           )}
           style={{
             ...style,

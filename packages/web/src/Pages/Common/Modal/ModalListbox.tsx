@@ -100,7 +100,7 @@ const __Options = <T extends string | number>({
     groups = choicesIn as T[][]
   }
 
-  const windowSize = useWindowSize()
+  const {windowSize} = useWindowSize()
 
   const [size, setSize] = useState<Size | null>(null)
   const [show, setShow] = useState(false)

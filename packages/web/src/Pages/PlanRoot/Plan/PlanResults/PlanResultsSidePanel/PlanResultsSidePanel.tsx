@@ -1,14 +1,10 @@
 import React from 'react'
-import {
-  insetCSSStyle,
-  InsetExt,
-  paddingCSSStyle,
-} from '../../../../../Utils/Geometry'
+import { InsetExt, paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { PlanSectionName } from '../../PlanInput/Helpers/PlanSectionName'
 import { PlanResultsSizing } from '../PlanResults'
 import { PlanResultsSidePanelLegacyCard } from './PlanResultsSidePanelLegacyCard'
-import { PlanResultsSidePanelTasksCard } from './PlanResultsSidePanelTasksCard'
 import { PlanResultsSidePanelMenu } from './PlanResultsSidePanelMenu/PlanResultsSidePanelMenu'
+import { PlanResultsSidePanelTasksCard } from './PlanResultsSidePanelTasksCard'
 
 type _DynamicSizing = { inset: InsetExt }
 

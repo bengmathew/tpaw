@@ -4,22 +4,22 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { useMemo, useState } from 'react'
 import { Contentful } from '../../../Utils/Contentful'
 import {
+  Size,
+  XY,
   newPaddingHorz,
   originCSSStyle,
   paddingCSSStyleHorz,
-  Size,
   sizeCSSStyle,
-  XY,
 } from '../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity0Transition'
 import { fGet } from '../../../Utils/Utils'
+import { usePlanContent } from '../PlanRootHelpers/WithPlanContent'
+import { useSimulation } from '../PlanRootHelpers/WithSimulation'
 import { PlanInputBodyHeader } from './PlanInput/PlanInputBody/PlanInputBodyHeader'
 import {
   PlanTransitionState,
   simplifyPlanTransitionState2,
 } from './PlanTransition'
-import { useSimulation } from '../PlanRootHelpers/WithSimulation'
-import { usePlanContent } from '../PlanRootHelpers/WithPlanContent'
 
 export type PlanHelpSizing = {
   dynamic: Record<_PlanHelpTransitionState, { origin: XY; opacity: number }>
@@ -32,8 +32,8 @@ export type PlanHelpSizing = {
 }
 
 const _toPlanHelpTransitionState = simplifyPlanTransitionState2(
-  { label: 'in', sections: [{ name: 'help', dialogMode: 'any' }] },
-  { label: 'out', sections: [{ name: 'rest', dialogMode: 'any' }] },
+  { label: 'in', sections: [{ section: 'help', dialogMode: 'any' }] },
+  { label: 'out', sections: [{ section: 'rest', dialogMode: 'any' }] },
 )
 type _PlanHelpTransitionState = ReturnType<typeof _toPlanHelpTransitionState>
 

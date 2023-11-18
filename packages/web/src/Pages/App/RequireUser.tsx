@@ -13,6 +13,7 @@ import { fGet, noCase } from '../../Utils/Utils'
 import { Spinner } from '../../Utils/View/Spinner'
 import { RequireUserSendEmailMutation } from './__generated__/RequireUserSendEmailMutation.graphql'
 import { useFirebaseUser } from './WithFirebaseUser'
+import { useDefaultErrorHandlerForNetworkCall } from './GlobalErrorBoundary'
 
 export const RequireUser = React.memo(
   ({ children }: { children: ReactNode }) => {
@@ -71,6 +72,8 @@ const _LoginInput = React.memo(
     setEmail: Dispatch<string>
     onEmailSent: () => void
   }) => {
+    const { defaultErrorHandlerForNetworkCall } =
+      useDefaultErrorHandlerForNetworkCall()
     const [commitMutation, isRunning] =
       useMutation<RequireUserSendEmailMutation>(graphql`
         mutation RequireUserSendEmailMutation($input: SendSignInEmailInput!) {
@@ -99,8 +102,10 @@ const _LoginInput = React.memo(
           variables: { input: { email: emailValidation.value, dest } },
           onCompleted: onEmailSent,
           onError: (e) => {
-            Sentry.captureException(e)
-            errorToast('Something went wrong.')
+            defaultErrorHandlerForNetworkCall({
+              e,
+              toast: 'Something went wrong.',
+            })
           },
         })
       }

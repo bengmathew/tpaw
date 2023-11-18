@@ -480,4 +480,4 @@ export const getIsFutureSavingsAllowed = (
 ) =>
   person2Retired === undefined
     ? !person1Retired
-    : !person1Retired && !person2Retired
+    : !(person1Retired && person2Retired)

@@ -171,7 +171,7 @@ export const processPlanParamsChangeActionCurrent = (
           ) {
             clone.dialogPosition = nextPlanSectionDialogPosition(
               'future-savings',
-              1, // 0 throws the calculations off.
+              true, // false will throw things off.
             )
           }
           const person = _getPerson(clone, personType)
@@ -328,19 +328,19 @@ export const processPlanParamsChangeActionCurrent = (
       const { location, entryId, monthRange, sortIndex } = action.value
       return {
         applyToClone: (clone) => {
-          assert(
-            !optGet(
-              getValueForMonthRangeEntriesByLocation(clone, location),
-              entryId,
-            ),
-          )
-          getValueForMonthRangeEntriesByLocation(clone, location)[entryId] = {
+          const values = getValueForMonthRangeEntriesByLocation(clone, location)
+          assert(!optGet(values, entryId))
+
+          values[entryId] = {
             id: entryId,
             sortIndex,
             label: null,
             value: 0,
             nominal: false,
             monthRange,
+            colorIndex: _getNextColorIndex(
+              _getUsedColorIndexesByLocation(clone, location),
+            ),
           }
         },
         render: () => {
@@ -369,6 +369,9 @@ export const processPlanParamsChangeActionCurrent = (
             value: 0,
             nominal: false,
             sortIndex,
+            colorIndex: _getNextColorIndex(
+              _getUsedColorIndexesByLocation(clone, location),
+            ),
           }
         },
         render: () => {
@@ -913,6 +916,50 @@ export const getValueForMonthRangeEntriesByLocation = (
       noCase(location)
   }
 }
+const _getUsedColorIndexesByLocation = (
+  planParams: PlanParams,
+  location: LabeledAmountLocation,
+): Set<number> => {
+  switch (location) {
+    case 'extraSpendingEssential':
+    case 'extraSpendingDiscretionary':
+      return new Set(
+        [
+          ..._.values(planParams.adjustmentsToSpending.extraSpending.essential),
+          ..._.values(
+            planParams.adjustmentsToSpending.extraSpending.discretionary,
+          ),
+        ].map((x) => x.colorIndex),
+      )
+    case 'futureSavings':
+    case 'incomeDuringRetirement':
+      return new Set(
+        [
+          ..._.values(planParams.wealth.futureSavings),
+          ..._.values(planParams.wealth.incomeDuringRetirement),
+        ].map((x) => x.colorIndex),
+      )
+    case 'legacyExternalSources':
+      return new Set(
+        [
+          ..._.values(
+            planParams.adjustmentsToSpending.tpawAndSPAW.legacy.external,
+          ),
+        ].map((x) => x.colorIndex),
+      )
+    default:
+      noCase(location)
+  }
+}
+
+const _getNextColorIndex = (usedColorIndexes: Set<number>) => {
+  let colorIndex = 0
+  while (true) {
+    if (!usedColorIndexes.has(colorIndex)) return colorIndex
+    colorIndex++
+  }
+}
+
 const _getValueForMonthRangeLocationStr = (
   location: ValueForMonthRangeLocation,
 ) => {

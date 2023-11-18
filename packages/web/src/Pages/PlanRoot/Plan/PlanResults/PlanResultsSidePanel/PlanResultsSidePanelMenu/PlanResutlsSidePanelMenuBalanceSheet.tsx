@@ -7,9 +7,9 @@ import React, { useMemo } from 'react'
 
 import { formatCurrency } from '../../../../../../Utils/FormatCurrency'
 import { getNetPresentValue } from '../../../../../../Utils/GetNetPresentValue'
-import { ChartUtils } from '../../../../../Common/Chart/ChartUtils/ChartUtils'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { useSimulation } from '../../../../PlanRootHelpers/WithSimulation'
+import { usePlanColors } from '../../../UsePlanColors'
 import { Sankey } from './SankeyChart'
 import {
   indigo,
@@ -17,8 +17,7 @@ import {
   fuchsia,
   red,
   amber,
-  usePlanColors,
-} from '../../../UsePlanColors'
+} from '../../../../../../Utils/ColorPalette'
 
 export const PlanResultsSidePanelMenuBalanceSheet = React.memo(
   ({ show, onHide }: { show: boolean; onHide: () => void }) => {

@@ -10,7 +10,7 @@ import {
   nextPlanSectionDialogPosition,
 } from './PlanInput/Helpers/PlanSectionDialogPosition'
 import { useSimulation } from '../PlanRootHelpers/WithSimulation'
-import { colors, gray, orange } from './UsePlanColors'
+import { colorPalette, gray, orange } from '../../../Utils/ColorPalette'
 
 export const PlanDialogOverlay = React.memo(
   ({
@@ -49,7 +49,7 @@ export const PlanDialogOverlay = React.memo(
               elementId="planResultsDialogCurtionShowResultsButton"
               padding={{ horz: 0, vert: 0 }}
               // Need a fill to make clickable (at least on chrome.)
-              fill={colors.withOpacity(gray[50], 0.1)}
+              fill={colorPalette.withOpacity(gray[50], 0.1)}
               border={null}
               rounding={(size) => size.height / 2}
               hidden={false}
@@ -79,7 +79,7 @@ export const PlanDialogOverlay = React.memo(
               chartDiv={chartDiv}
               elementId="planSummaryInputsAfterDialog"
               padding={{ horz: 20, vert: 20 }}
-              fill={colors.withOpacity(orange[200], 0.4)}
+              fill={colorPalette.withOpacity(orange[200], 0.4)}
               // fill="none"
               border={null}
               rounding={() => 25}

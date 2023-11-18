@@ -1,12 +1,13 @@
 import { assert, fGet } from '@tpaw/common'
 import { Clients } from '../../../../Clients.js'
+import { serialTransaction } from '../../../../Utils/PrismaTransaction.js'
 import { cliDevUserPlan } from './CLIDevUserPlan.js'
 
 cliDevUserPlan
   .command('delete <email> <planSlug>')
   .action(async (email, planSlug) => {
     const userId = fGet(await Clients.firebaseAuth.getUserByEmail(email)).uid
-    await Clients.prisma.$transaction(async (tx) => {
+    await serialTransaction(async (tx) => {
       assert(
         !(
           await tx.planWithHistory.findUniqueOrThrow({

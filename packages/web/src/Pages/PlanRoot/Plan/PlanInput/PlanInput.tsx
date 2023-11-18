@@ -51,15 +51,21 @@ export type PlanInputSizing = {
 
 export const toPlanInputTransitionStateByType = (type: PlanInputType) =>
   simplifyPlanTransitionState4(
-    { label: 'dialogIn', sections: [{ name: type, dialogMode: true }] },
+    {
+      label: 'dialogIn',
+      sections: [{ section: type, dialogMode: true}],
+    },
     {
       label: 'dialogOut',
-      sections: [{ name: 'rest', dialogMode: true }],
+      sections: [{ section: 'rest', dialogMode: true}],
     },
-    { label: 'notDialogIn', sections: [{ name: type, dialogMode: false }] },
+    {
+      label: 'notDialogIn',
+      sections: [{ section: type, dialogMode: false}],
+    },
     {
       label: 'notDialogOut',
-      sections: [{ name: 'rest', dialogMode: false }],
+      sections: [{ section: 'rest', dialogMode: false}],
     },
   )
 

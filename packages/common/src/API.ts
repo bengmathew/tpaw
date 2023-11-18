@@ -32,6 +32,7 @@ import {
 import { fGet } from './Utils'
 
 export namespace API {
+  export const version = '1'
   const { uuid, ianaTimezoneName } = Guards
 
   const trimmed: JSONGuard<string, string> = (x) =>

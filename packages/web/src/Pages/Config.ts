@@ -18,7 +18,7 @@ export class Config {
           `${fGet(process.env.NEXT_PUBLIC_URL_WEBSITE)}${path}`,
         backend: fGet(process.env.NEXT_PUBLIC_URL_BACKEND),
       },
-      production: process.env.NODE_ENV === 'production',
+      isProduction: process.env.NODE_ENV === 'production',
       google: {
         cloud: {
           projectId: fGet(process.env.NEXT_PUBLIC_GOOGLE_CLOUD_PROJECT_ID),

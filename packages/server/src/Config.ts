@@ -4,7 +4,11 @@ import { fGet } from './Utils/Utils.js'
 dotenv.config()
 export const Config = {
   port: fGet(process.env['PORT']),
-  downForMaintenance: fGet(process.env['DOWN_FOR_MAINTENANCE']) === 'true',
+  status: {
+    downForMaintenance: fGet(process.env['DOWN_FOR_MAINTENANCE']) === 'true',
+    downForUpdate: fGet(process.env['DOWN_FOR_UPDATE']) === 'true',
+  },
+  isProduction: process.env['NODE_ENV'] === 'production',
   websiteURL: fGet(process.env['WEBSITE_URL']),
   google: {
     sql: {

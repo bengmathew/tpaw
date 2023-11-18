@@ -23,6 +23,7 @@ export const patchPlanParams = (
   endingParams: SomePlanParams,
   planParamsHistoryReversed: PlanParamsChange[],
   filter: (x: PlanParamsChange, reverseIndex: number) => boolean,
+  {checkTimestamps = true}: {checkTimestamps?: boolean} = {}
 ): PlanParamsChangePatched[] => {
   const result: (PlanParamsChangePatched | null)[] = []
   let currParams = cloneJSON(endingParams)
@@ -48,7 +49,7 @@ export const patchPlanParams = (
   const check = (x?: PlanParamsChangePatched) => {
     if (x) assert(planParamsMigrate(x.params).timestamp === x.timestamp)
   }
-  if (process.env['NODE_ENV'] === 'development') {
+  if (process.env['NODE_ENV'] === 'development' || checkTimestamps) {
     compacted.forEach(check)
   } else {
     check(_.first(compacted))

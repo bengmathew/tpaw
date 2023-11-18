@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<026aa30ac5388cbbc1667a2bf758af15>>
+ * @generated SignedSource<<2fb7c70276838fd0b2f7208d7aba5658>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -18,7 +18,7 @@ export type WithUser_user$data = {
     readonly addedToServerAt: number;
     readonly id: string;
     readonly isMain: boolean;
-    readonly label: string | null;
+    readonly label: string | null | undefined;
     readonly lastSyncAt: number;
     readonly slug: string;
     readonly sortTime: number;

@@ -29,7 +29,8 @@ import { PlanInputRiskSummary } from '../PlanInput/PlanInputRisk/PlanInputRisk'
 import { PlanInputSimulationSummary } from '../PlanInput/PlanInputSimulation'
 import { PlanInputSpendingCeilingAndFloorSummary } from '../PlanInput/PlanInputSpendingCeilingAndFloor'
 import { PlanInputStrategySummary } from '../PlanInput/PlanInputStrategy'
-import { gray, orange, usePlanColors } from '../UsePlanColors'
+import { gray, orange } from '../../../../Utils/ColorPalette'
+import { usePlanColors } from '../UsePlanColors'
 
 type _Props = {
   padding: Padding

@@ -55,6 +55,7 @@ type Query {
   crash: String!
   linkBasedPlan(linkId: ID!): LinkBasedPlan
   ping: String!
+  time: Float!
   user(userId: ID!): User!
 }
 

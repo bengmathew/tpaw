@@ -1,6 +1,2 @@
 node_modules
 .DS_Store
-
-# Workspaces is in dev only.
-/package.json
-/package-lock.json

@@ -12,21 +12,19 @@ export const planSectionDialogOrder: PlanParams['dialogPosition'][] = [
 
 export function nextPlanSectionDialogPosition(
   section: Exclude<PlanParams['dialogPosition'], 'done'>,
-  withdrawalStartMonthAMFN: number,
+  isFutureSavingsAllowed: boolean,
 ): PlanParams['dialogPosition']
 export function nextPlanSectionDialogPosition(
   section: 'show-results' | 'show-all-inputs',
-  withdrawalStartMonthAMFN?: number,
 ): PlanParams['dialogPosition']
 export function nextPlanSectionDialogPosition(
   section: Exclude<PlanParams['dialogPosition'], 'done'>,
-  withdrawalStartMonthAMFN?: number,
+  isFutureSavingsAllowed?: boolean,
 ): PlanParams['dialogPosition'] {
-  withdrawalStartMonthAMFN = withdrawalStartMonthAMFN ?? 0
   const order =
-    withdrawalStartMonthAMFN <= 0
-      ? planSectionDialogOrder.filter((x) => x !== 'future-savings')
-      : planSectionDialogOrder
+    isFutureSavingsAllowed ?? true
+      ? planSectionDialogOrder
+      : planSectionDialogOrder.filter((x) => x !== 'future-savings')
   return order[order.indexOf(section) + 1]
 }
 

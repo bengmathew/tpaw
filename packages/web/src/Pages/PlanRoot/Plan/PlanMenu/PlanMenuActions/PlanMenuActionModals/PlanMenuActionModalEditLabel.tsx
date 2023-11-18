@@ -1,9 +1,8 @@
-import { captureException } from '@sentry/nextjs'
 import React from 'react'
 import { graphql, useMutation } from 'react-relay'
-import { errorToast } from '../../../../../../Utils/CustomToasts'
 import { useURLUpdater } from '../../../../../../Utils/UseURLUpdater'
 import { fGet } from '../../../../../../Utils/Utils'
+import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalErrorBoundary'
 import { User, useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { PlanMenuActionModalLabelInput } from './PlanMenuActionModalLabelInput'
@@ -33,6 +32,8 @@ export const PlanMenuActionModalEditLabel = React.memo(
 
 const _Body = React.memo(
   ({ plan, onHide }: { plan: User['plans'][0]; onHide: () => void }) => {
+    const { defaultErrorHandlerForNetworkCall } =
+      useDefaultErrorHandlerForNetworkCall()
     const user = fGet(useUser())
     const urlUpdater = useURLUpdater()
     const [updateMutation, isUpdateRunning] =
@@ -65,8 +66,7 @@ const _Body = React.memo(
           onHide()
         },
         onError: (e) => {
-          captureException(e)
-          errorToast('Error updating plan')
+          defaultErrorHandlerForNetworkCall({ e, toast: 'Error updating plan' })
         },
       })
     }

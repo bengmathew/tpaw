@@ -1,23 +1,30 @@
 import { XY } from '../../../Utils/Geometry'
-import { ChartSizing, ChartState, ChartStateDerived } from './Chart'
+import { SimpleRange } from '../../../Utils/SimpleRange'
 import { Transition } from '../../../Utils/Transition'
+import { ChartDataRange, ChartSizing, ChartStateDerived } from './Chart'
 
 export type ChartContext<Data> = {
   canvasContext: CanvasRenderingContext2D
-
-  // Current chart state.
+  stateTransition: Transition<{
+    params: Data
+    dataRange: ChartDataRange
+    derivedState: ChartStateDerived
+  }>
+  pointerTransition: {
+    visualPosition: Transition<XY>
+    hover: Transition<0 | 1>
+    // press: Transition<0 | 1>
+  }
   sizing: ChartSizing
 
-  dataTransition: Transition<Data>
-  stateTransition: Transition<ChartState>
-  pointerInDataCoordTransition: Transition<XY>
-
-  // Computed chart state.
-  currState: ChartState
-  currPointerInDataCoord: XY
-  derivedState: {
-    prev: ChartStateDerived
-    target: ChartStateDerived
-    curr: ChartStateDerived
+  currState: {
+    dataRangeUnion: ChartDataRange
+    dataXRangeCurrentlyVisible: SimpleRange
+    derivedState: ChartStateDerived
+    pointer: {
+      position: { visual: XY; dataNotRounded: { x: number } }
+      hover: number
+      // press: number
+    }
   }
 }

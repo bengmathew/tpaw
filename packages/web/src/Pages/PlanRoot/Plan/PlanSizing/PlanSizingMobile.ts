@@ -10,7 +10,7 @@ export function planSizingMobile(
   scrollbarWidth: number,
   isSWR: boolean,
   isTallMenu: boolean,
-): PlanSizing {
+): Omit<PlanSizing, 'args'> {
   const pad = windowSize.width < 400 ? 10 : 12
 
   // ---- CHART ----
@@ -177,6 +177,28 @@ export function planSizingMobile(
     }
   })
 
+  // ---- POINTER ----
+  const pointer = block<PlanSizing['pointer']>(() => ({
+    fixed: block(() => {
+      const fromChart = (
+        chart: PlanSizing['chart']['dynamic']['dialogInput'],
+      ) => {
+        return {
+          region: rectExt({ x: 0, y: 0, ...windowSize }),
+          chartPosition: {
+            bottom: chart.region.bottom - chart.padding.bottom,
+            left: chart.region.x + chart.padding.left,
+          },
+        }
+      }
+      return {
+        summary: fromChart(chart.dynamic.notDialogSummary),
+        input: fromChart(chart.dynamic.notDialogInput),
+        help: fromChart(chart.dynamic.notDialogInput),
+      }
+    }),
+  }))
+
   // ---- CONTACT ----
   const contact = ((): PlanSizing['contact'] => {
     const dynamic = {
@@ -197,5 +219,5 @@ export function planSizingMobile(
       },
     }
   })()
-  return { input, help, chart, summary, menu, contact }
+  return { pointer, input, help, chart, summary, menu, contact }
 }

@@ -1,49 +1,52 @@
 import { faChevronRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { fGet } from '@tpaw/common'
+import { assert, fGet } from '@tpaw/common'
 import clsx from 'clsx'
 import _ from 'lodash'
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { getChartBandColor } from '../../../../Utils/ColorPalette'
+import { RGB } from '../../../../Utils/ColorUtils'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { rectExt } from '../../../../Utils/Geometry'
-import { getYAxisGridInfo } from '../../../Common/Chart/ChartComponent/ChartYAxis'
+import { interpolate } from '../../../../Utils/Interpolate'
 import { ChartReactStatefull } from '../../../Common/Chart/ChartReact'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { PlanResultsChartData } from '../PlanResults/PlanResultsChartCard/PlanResultsChart/PlanResultsChartData'
 import { PlanResultsChartType } from '../PlanResults/PlanResultsChartType'
 import {
   planResultsLegacyCardFormat,
   usePlanResultsLegacyCardData,
 } from '../PlanResults/PlanResultsSidePanel/PlanResultsSidePanelLegacyCard'
-import { TPAWChartDataMain } from '../PlanResults/TPAWChart/TPAWChartDataMain'
-import { tpawChartMainXAxisSizing } from '../PlanResults/TPAWChart/TPAWChartMain'
-import { TPAWChartMainPrint } from '../PlanResults/TPAWChart/TPAWChartMainPrint'
-import { useChartData } from '../WithChartData'
-import { PlanPrintSection } from './PlanPrintSection'
-import { planResultsChartLabel } from '../PlanResults/PlanResultsChartCard/PlanResultsChartLabel'
 import { mainPlanColors } from '../UsePlanColors'
+import { useChartData } from '../WithPlanResultsChartData'
+import { getPlanPrintChartLabel } from './GetPlanPrintChartLabel'
+import {
+  PlanPrintChart,
+  planPrintChartOutsidePlotAreaSizing,
+} from './PlanPrintChart'
+import { PlanPrintSVGBackground } from './PlanPrintSVGBackground'
+import { PlanPrintSection } from './PlanPrintSection'
 
 export const PlanPrintResultsSection = React.memo(() => {
   const { tpawResult, planParams } = useSimulation()
   const { extraSpending } = planParams.adjustmentsToSpending
 
-  const secondaryCharts: PlanResultsChartType[][] = _.chunk(
-    _.compact([
-      _.values(extraSpending.discretionary).length > 0 ||
-      _.values(extraSpending.essential).length > 0
-        ? 'spending-general'
-        : undefined,
-      ..._.values(extraSpending.essential)
-        .sort((a, b) => a.sortIndex - b.sortIndex)
-        .map((x) => `spending-essential-${x.id}` as const),
-      ..._.values(extraSpending.discretionary)
-        .sort((a, b) => a.sortIndex - b.sortIndex)
-        .map((x) => `spending-discretionary-${x.id}` as const),
-      'portfolio' as const,
-      'asset-allocation-savings-portfolio' as const,
-      'withdrawal' as const,
-    ]),
-    3,
-  )
+  const secondaryCharts: PlanResultsChartType[] = _.compact([
+    _.values(extraSpending.discretionary).length > 0 ||
+    _.values(extraSpending.essential).length > 0
+      ? 'spending-general'
+      : undefined,
+    ..._.values(extraSpending.essential)
+      .sort((a, b) => a.sortIndex - b.sortIndex)
+      .map((x) => `spending-essential-${x.id}` as const),
+    ..._.values(extraSpending.discretionary)
+      .sort((a, b) => a.sortIndex - b.sortIndex)
+      .map((x) => `spending-discretionary-${x.id}` as const),
+    'portfolio' as const,
+    'asset-allocation-savings-portfolio' as const,
+    'withdrawal' as const,
+  ])
+
   return (
     <>
       <PlanPrintSection className="flex items-center justify-center">
@@ -64,23 +67,65 @@ export const PlanPrintResultsSection = React.memo(() => {
           </h2>
         )}
         <_Legacy className="mt-12" />
+        {_.keys(planParams.wealth.futureSavings).length > 0 && (
+          <div className=" break-inside-avoid-page">
+            <_Chart className="mt-12" type="spending-total-funding-sources-5" />
+            <_MonthlySpendingBreakdownLegend className="" />
+          </div>
+        )}
+        {secondaryCharts.map((x, i) => (
+          <_Chart key={i} className="mt-12" type={x} />
+        ))}
       </PlanPrintSection>
-      {secondaryCharts.map((x, i) => (
-        <PlanPrintSection
-          key={i}
-          className={clsx(
-            'flex flex-col',
-            x.length === 3 ? 'justify-between' : 'justify-start gap-y-10',
-          )}
-        >
-          {x.map((y, i) => (
-            <_Chart key={i} className="" type={y} />
-          ))}
-        </PlanPrintSection>
-      ))}
     </>
   )
 })
+
+const _MonthlySpendingBreakdownLegend = React.memo(
+  ({ className }: { className?: string }) => {
+    const chartData = useChartData('spending-total-funding-sources-5')
+    assert(chartData.type === 'breakdown')
+    const parts = chartData.breakdown.parts.slice().reverse()
+    const cols = _.chunk(parts, Math.ceil(parts.length / 3))
+    return (
+      // Make sure
+      <div className={clsx(className)}>
+        <div
+          className="inline-grid gap-x-4"
+          style={{ grid: `auto/${_.repeat('1fr ', cols.length)}` }}
+        >
+          {cols.map((col, i) => (
+            <div key={i} className="">
+              {col.map((part, i) => {
+                const { fillPattern } = getChartBandColor(part.chartColorIndex)
+                return (
+                  <div key={i} className="flex gap-x-2 items-start">
+                    <div
+                      className="w-[10px] h-[10px] relative rounded-sm overflow-hidden shrink-0 mt-1"
+                      style={{ opacity: `${fillPattern.bg.opacity}` }}
+                    >
+                      <PlanPrintSVGBackground
+                        className=""
+                        fill={RGB.toHex(
+                          interpolate({
+                            from: fillPattern.bg.color,
+                            target: fillPattern.stroke.color,
+                            progress: 0.7,
+                          }),
+                        )}
+                      />
+                    </div>
+                    <h2>{part.label ?? '<No label>'}</h2>
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  },
+)
 
 const _Legacy = React.memo(({ className }: { className?: string }) => {
   const { planParams } = useSimulation()
@@ -131,17 +176,13 @@ const _Legacy = React.memo(({ className }: { className?: string }) => {
 const _Chart = React.memo(
   ({ className, type }: { className?: string; type: PlanResultsChartType }) => {
     const { planParams, tpawResult } = useSimulation()
-    const allChartData = useChartData()
-    const chartMainData = fGet(allChartData.byYearsFromNowPercentiles.get(type))
+    const chartData = useChartData(type)
     const outerDivRef = useRef<HTMLDivElement>(null)
 
     const hasPartner = tpawResult.params.people.withPartner
-    const { displayMax } = getYAxisGridInfo({
-      max: chartMainData.yDisplayRange.end,
-      maxGridLine: null,
-    })
-    const [chart, setChart] =
-      useState<ChartReactStatefull<TPAWChartDataMain> | null>(null)
+    const [chart, setChart] = useState<ChartReactStatefull<{
+      data: PlanResultsChartData
+    }> | null>(null)
     useEffect(() => {}, [])
     useLayoutEffect(() => {
       if (!chart) return
@@ -155,20 +196,15 @@ const _Chart = React.memo(
       return () => observer.disconnect()
     }, [chart, hasPartner])
 
-    const { label, subLabel, yAxisDescription } = planResultsChartLabel(
+    const { label, subLabel, yAxisDescriptionStr } = getPlanPrintChartLabel(
       planParams,
       type,
-      'full',
     )
-    const yAxisDescriptionStr = yAxisDescription
-      ? yAxisDescription.notMobile.map((x) => x.value).join(' ')
-      : null
-
 
     return (
       <div className={clsx(className, ' break-inside-avoid-page')}>
         <h2 className="flex items-center">
-          {label.map((x, i) => (
+          {label.full.map((x, i) => (
             <React.Fragment key={i}>
               {i > 0 && (
                 <FontAwesomeIcon className="mx-3" icon={faChevronRight} />
@@ -177,36 +213,32 @@ const _Chart = React.memo(
             </React.Fragment>
           ))}
         </h2>
-        {subLabel && <h2 className="text-xl font-bold">{subLabel}</h2>}
-        <h2 className="">
+        {subLabel && <h2 className="text-lg font-bold">{subLabel}</h2>}
+        <h2 className="text-[11px]">
           {yAxisDescriptionStr && (
             <span className="">{yAxisDescriptionStr}. </span>
           )}
-          The graph shows 5<span className=" align-super text-[10px]">th</span>{' '}
-          to 95
-          <span className=" align-super text-[10px]">th</span> percentiles with
-          the 50<span className=" align-super text-[10px]">th</span> percentile
-          in bold.
+          The graph shows the 5
+          <span className=" align-super text-[10px]">th</span> to 95
+          <span className=" align-super text-[10px]">th</span> percentile range
+          with the 50<span className=" align-super text-[10px]">th</span>{' '}
+          percentile in bold.
         </h2>
 
         <div
           className={clsx(
             // The border is applied to the div outside the measured div.
-            'relative   rounded-lg mt-2 ',
-
+            'relative   rounded-lg mt-2 overflow-hidden ',
           )}
-          style={{
-            backgroundColor:mainPlanColors.results.print.chartBG
-          }}
         >
-          <div className="h-[225px]" ref={outerDivRef}>
-            <TPAWChartMainPrint
+          <div className="relative h-[225px]" ref={outerDivRef}>
+            <PlanPrintSVGBackground
+              className=""
+              fill={mainPlanColors.shades.alt[2].hex}
+            />
+            <PlanPrintChart
               starting={{
-                data: chartMainData,
-                xyRange: {
-                  x: chartMainData.months.displayRange,
-                  y: { start: 0, end: displayMax },
-                },
+                data: chartData,
                 sizing: _sizingFromWidth(300, hasPartner),
               }}
               ref={setChart}
@@ -219,18 +251,19 @@ const _Chart = React.memo(
 )
 
 const _sizingFromWidth = (width: number, hasPartner: boolean) => {
-  const xAxisSizing = tpawChartMainXAxisSizing(width)
-
   const padding = {
     left: 90,
     right: 10,
     top: 20, // 20 is needed for the max y label.
     bottom:
-      2 +
-      xAxisSizing.height +
+      planPrintChartOutsidePlotAreaSizing.below.gapToLine +
+      planPrintChartOutsidePlotAreaSizing.below.lineWidth +
+      planPrintChartOutsidePlotAreaSizing.below.xAxis.height +
       (hasPartner
-        ? 3 * xAxisSizing.gap + xAxisSizing.height
-        : 2 * xAxisSizing.gap),
+        ? planPrintChartOutsidePlotAreaSizing.below.xAxis.vertGapBetweenPeople +
+          planPrintChartOutsidePlotAreaSizing.below.xAxis.height
+        : 0) +
+      planPrintChartOutsidePlotAreaSizing.below.xAxis.vertGapBetweenPeople * 2,
   }
 
   return {

@@ -37,6 +37,10 @@ export const PlanRootLinkImpl = React.memo(
       reverseHeadIndex: 0,
     }))
     const currentTimeInfo = useCurrentTime({ planId: startingSrc.planId })
+    assert(
+      currentTimeInfo.currentTimestamp >=
+        fGet(_.last(startingSrc.planParamsPostBase)).params.timestamp,
+    )
     const workingPlanInfo = useWorkingPlan(
       currentTimeInfo,
       startingSrc,

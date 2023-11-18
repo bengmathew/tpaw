@@ -96,7 +96,6 @@ const _StrategyCard = React.memo(
       }
     })()
     const isModified = useIsCardModified(strategy)
-    console.dir(`${strategy} ${isModified}`)
 
     return (
       <div

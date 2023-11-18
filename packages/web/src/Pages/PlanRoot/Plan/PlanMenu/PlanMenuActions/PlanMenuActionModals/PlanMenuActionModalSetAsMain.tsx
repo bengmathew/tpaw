@@ -11,6 +11,7 @@ import { Spinner } from '../../../../../../Utils/View/Spinner'
 import { User, useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { PlanMenuActionModalSetAsMainPlanMutation } from './__generated__/PlanMenuActionModalSetAsMainPlanMutation.graphql'
+import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalErrorBoundary'
 
 export const PlanMenuActionModalSetAsMain = React.memo(
   ({
@@ -26,6 +27,8 @@ export const PlanMenuActionModalSetAsMain = React.memo(
     switchToMainPlanOnSuccess: boolean
     isSyncing: boolean
   }) => {
+    const { defaultErrorHandlerForNetworkCall } =
+      useDefaultErrorHandlerForNetworkCall()
     const user = fGet(useUser())
     const urlUpdater = useURLUpdater()
     const [mutation, isRunning] =
@@ -56,8 +59,7 @@ export const PlanMenuActionModalSetAsMain = React.memo(
           }
         },
         onError: (e) => {
-          captureException(e)
-          errorToast('Error updating plan')
+          defaultErrorHandlerForNetworkCall({ e, toast: 'Error updating plan' })
         },
       })
     }

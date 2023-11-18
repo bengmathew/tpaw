@@ -11,7 +11,7 @@ import { Contentful } from '../../Utils/Contentful'
 import { Footer } from '../App/Footer'
 import { faTwitter } from '@fortawesome/free-brands-svg-icons'
 import { PlanContactContent } from '../PlanRoot/Plan/PlanContact/PlanContactContent'
-import { gray } from '../PlanRoot/Plan/UsePlanColors'
+import { gray } from '../../Utils/ColorPalette'
 
 export const indexGetStaticProps: GetStaticProps<{
   detail: Awaited<ReturnType<typeof Contentful.fetchInline>>

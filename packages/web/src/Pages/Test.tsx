@@ -14,7 +14,7 @@ import { useMarketData } from './PlanRoot/PlanRootHelpers/WithMarketData'
 export const Test = React.memo(() => {
   const marketData = useMarketData()
   const [currentTime] = useState(DateTime.local)
-  if (Config.client.production) throw new Error()
+  if (Config.client.isProduction) throw new Error()
 
   const [rows, setRows] = useState<string[][]>([])
 

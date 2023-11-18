@@ -1,20 +1,30 @@
 import _ from 'lodash'
+import { RGB } from '../../../../Utils/ColorUtils'
 import { ChartContext } from '../ChartContext'
 import { ChartUtils } from '../ChartUtils/ChartUtils'
 import { ChartComponent } from './ChartComponent'
 
-export class ChartYAxis<Data> implements ChartComponent<Data> {
+export type ChartYAxisProps = {
+  format: (dataY: number) => string
+  gridInfo: ReturnType<typeof getYAxisGridInfo>
+  style: {
+    colors: { text: RGB; line: RGB }
+  }
+}
+
+export class ChartYAxis<Params> implements ChartComponent<Params> {
   constructor(
-    public format: (data: Data, x: number) => string,
-    public getGridInfo: (data: Data) => ReturnType<typeof getYAxisGridInfo>,
-    public colors: { text: string; line: string },
+    private _propsFn: (
+      state: ChartContext<Params>['stateTransition']['from'],
+    ) => ChartYAxisProps,
   ) {}
 
-  public draw(context: ChartContext<Data>) {
-    const { canvasContext: ctx, dataTransition, derivedState } = context
-    const { scale, plotArea } = derivedState.curr
-
-    const { gridDataSize, numLines } = this.getGridInfo(dataTransition.target)
+  public draw(context: ChartContext<Params>) {
+    const { canvasContext: ctx, stateTransition } = context
+    const { derivedState } = stateTransition.target
+    const { scale, plotArea } = derivedState
+    const { format, gridInfo, style } = this._propsFn(stateTransition.target)
+    const { gridDataSize, numLines } = gridInfo
 
     ctx.font = ChartUtils.getMonoFont(11)
     ctx.textAlign = 'right'
@@ -25,20 +35,17 @@ export class ChartYAxis<Data> implements ChartComponent<Data> {
         const gridGraphY = scale.y(gridDataY)
         if (gridGraphY < plotArea.y) return
         if (i !== 0) {
-          ctx.strokeStyle = this.colors.line
+          ctx.strokeStyle = RGB.toHex(style.colors.line)
           ctx.beginPath()
           ctx.moveTo(plotArea.x, gridGraphY)
           ctx.lineTo(plotArea.right, gridGraphY)
           ctx.stroke()
         }
-        ctx.fillStyle = this.colors.text
+        ctx.fillStyle = RGB.toHex(style.colors.text)
         ctx.textBaseline = i === 0 ? 'middle' : 'middle'
-        ctx.fillText(
-          this.format(dataTransition.target, gridDataY),
-          plotArea.x - 10,
-          gridGraphY,
-        )
+        ctx.fillText(format(gridDataY), plotArea.x - 10, gridGraphY)
       })
+    return null
   }
 }
 

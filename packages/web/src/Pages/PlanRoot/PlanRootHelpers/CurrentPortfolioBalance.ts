@@ -70,6 +70,7 @@ export namespace CurrentPortfolioBalance {
     wasm: WASM,
   ) {
     const startingParams = fGet(_.first(planParamsHistory)).params
+    assert(startingParams.timestamp <= estimationTimestamp)
     const startingPortfolioBalance = startingParams.wealth.portfolioBalance
     assert(startingPortfolioBalance.updatedHere)
 

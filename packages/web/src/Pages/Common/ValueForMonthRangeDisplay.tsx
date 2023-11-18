@@ -3,8 +3,8 @@ import React from 'react'
 import { formatCurrency } from '../../Utils/FormatCurrency'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { trimAndNullify } from '../../Utils/TrimAndNullify'
-import { MonthRangeDisplay } from './MonthRangeDisplay'
 import { useSimulation } from '../PlanRoot/PlanRootHelpers/WithSimulation'
+import { MonthRangeDisplay } from './MonthRangeDisplay'
 
 export const ValueForMonthRangeDisplay = React.memo(
   ({

@@ -1,7 +1,10 @@
 import { API, PlanParamsChangeAction, assert, block, fGet } from '@tpaw/common'
 import _ from 'lodash'
 import { Clients } from '../../../Clients.js'
-import { PrismaTransaction } from '../../../Utils/PrismaTransaction.js'
+import {
+  PrismaTransaction,
+  serialTransaction,
+} from '../../../Utils/PrismaTransaction.js'
 import { builder } from '../../builder.js'
 import { PothosPlanWithHistory } from './GQLUserPlan.js'
 import {
@@ -77,7 +80,7 @@ builder.mutationField('userMergeFromClient', (t) =>
         API.UserMergeFromClient.check(input).force()
 
       // FEATURE: Don't ignore nonPlanParams
-      return await Clients.prisma.$transaction(async (tx) => {
+      return serialTransaction(async (tx) => {
         return {
           userId,
           // ---- GUEST PLAN ----
@@ -154,7 +157,6 @@ const _isCurrMainPlanOverwriteable = async (
   const numPlans = await tx.planWithHistory.count()
   assert(currMainPlans.length === 1)
   const currMainPlan = fGet(currMainPlans[0])
-
 
   return {
     currMainPlan,

@@ -16,6 +16,7 @@ import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { useIANATimezoneName } from '../../../../PlanRootHelpers/WithNonPlanParams'
 import { PlanMenuActionModalLabelInput } from './PlanMenuActionModalLabelInput'
 import { PlanMenuActionModalCreatePlanMutation } from './__generated__/PlanMenuActionModalCreatePlanMutation.graphql'
+import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalErrorBoundary'
 
 export const PlanMenuActionModalCreatePlan = React.memo(
   ({
@@ -61,6 +62,8 @@ const _Body = React.memo(
     onCancel: () => void
     onCreate: (slug: string) => void
   }) => {
+    const { defaultErrorHandlerForNetworkCall } =
+      useDefaultErrorHandlerForNetworkCall()
     const { ianaTimezoneName } = useIANATimezoneName()
     const user = fGet(useUser())
     // Intentionally not using isRunning from useMutation because we want to
@@ -115,8 +118,7 @@ const _Body = React.memo(
         // Don't set isRunning to false, let it stay true until the modal is removed.
         onCompleted: ({ userPlanCreate }) => onCreate(userPlanCreate.plan.slug),
         onError: (e) => {
-          captureException(e)
-          errorToast('Error creating plan')
+          defaultErrorHandlerForNetworkCall({e, toast:'Error creating plan'})
           setIsRunning(false)
         },
       })

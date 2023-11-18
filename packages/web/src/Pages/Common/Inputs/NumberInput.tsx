@@ -1,5 +1,6 @@
 import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import clsx from 'clsx'
 import React, { useEffect, useState } from 'react'
 import { AmountInput } from './AmountInput'
 
@@ -14,16 +15,22 @@ export const NumberInput = React.memo(
     modalLabel,
     disabled = false,
     showDecrement = true,
+    textAlign = 'center',
+    decrement = (x) => x - 1,
+    increment = (x) => x + 1,
   }: {
     value: number
     label?: string
-    setValue: (value: number) => boolean
+    setValue: (value: number) => boolean // true if clamped.
     buttonClassName?: string
     className?: string
     width?: number
+    textAlign?: 'left' | 'center' | 'right'
     modalLabel: string | null
     disabled?: boolean
     showDecrement?: boolean
+    decrement?: (value: number) => number
+    increment?: (value: number) => number
   }) => {
     const [error, setError] = useState(false)
     useEffect(() => {
@@ -38,8 +45,15 @@ export const NumberInput = React.memo(
     return (
       <div className={`${className} flex items-stretch`}>
         <AmountInput
-          className={` rounded-lg py-0.5 px-2 mr-3 text-center transition-all duration-1000
-          ${error ? 'bg-errorBlockBG' : 'bg-gray-200'}`}
+          className={clsx(
+            'rounded-lg py-0.5 px-2 mr-3 transition-all duration-1000',
+            textAlign === 'left'
+              ? 'text-start'
+              : textAlign === 'right'
+              ? 'text-end'
+              : 'text-center',
+            error ? 'bg-errorBlockBG' : 'bg-gray-200',
+          )}
           style={{ width: `${width}px` }}
           modalLabel={modalLabel}
           value={value}
@@ -55,7 +69,7 @@ export const NumberInput = React.memo(
         )}
         <button
           className={buttonClassName}
-          onClick={() => handleAccept(value + 1)}
+          onClick={() => handleAccept(increment(value))}
           disabled={disabled}
         >
           <FontAwesomeIcon icon={faPlus} />
@@ -64,7 +78,7 @@ export const NumberInput = React.memo(
           <button
             disabled={disabled}
             className={buttonClassName}
-            onClick={() => handleAccept(value - 1)}
+            onClick={() => handleAccept(decrement(value))}
           >
             <FontAwesomeIcon icon={faMinus} />
           </button>

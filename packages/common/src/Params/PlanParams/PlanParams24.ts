@@ -20,11 +20,11 @@ import {
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import { Guards } from '../../Guards'
-import { assertFalse, block, letIn, noCase, preciseRange } from '../../Utils'
-import { PlanParams22 as PlanParamsPrev } from './Old/PlanParams22'
+import { assert, block, preciseRange } from '../../Utils'
+import { PlanParams23 as PlanParamsPrev } from './Old/PlanParams23'
 
-export namespace PlanParams23 {
-  export const currentVersion = 23 as const
+export namespace PlanParams24 {
+  export const currentVersion = 24 as const
 
   export const MAX_LABEL_LENGTH = 150
   export const MAX_AGE_IN_MONTHS = 120 * 12
@@ -176,6 +176,7 @@ export namespace PlanParams23 {
     nominal: boolean
     id: string
     sortIndex: number
+    colorIndex: number
   }
 
   export type ValueForMonthRanges = Record<string, ValueForMonthRange>
@@ -186,6 +187,7 @@ export namespace PlanParams23 {
     nominal: boolean
     id: string
     sortIndex: number
+    colorIndex: number
   }
   export type LabeledAmounts = Record<string, LabeledAmount>
 
@@ -588,8 +590,8 @@ export namespace PlanParams23 {
     value: chain(number, gte(0)),
     nominal: boolean,
     id: smallId,
-
     sortIndex: chain(number, integer),
+    colorIndex: chain(number, integer, gte(0)),
   })
 
   const valueForMonthRange = (
@@ -604,6 +606,7 @@ export namespace PlanParams23 {
       nominal: boolean,
       id: smallId,
       sortIndex: chain(number, integer),
+      colorIndex: chain(number, integer, gte(0)),
     })
 
   const arrAsObj =
@@ -646,22 +649,34 @@ export namespace PlanParams23 {
   )
 
   const wealth = (params: PlanParams | null): JSONGuard<PlanParams['wealth']> =>
-    object({
-      portfolioBalance: union(
-        object({
-          updatedHere: constant(true),
-          amount: chain(number, gte(0)),
-        }),
-        object({
-          updatedHere: constant(false),
-          updatedAtId: uuid,
-          updatedTo: chain(number, gte(0)),
-          updatedAtTimestamp: chain(number, integer, gte(0)),
-        }),
-      ),
-      futureSavings: valueForMonthRanges(params),
-      incomeDuringRetirement: valueForMonthRanges(params),
-    })
+    chain(
+      object({
+        portfolioBalance: union(
+          object({
+            updatedHere: constant(true),
+            amount: chain(number, gte(0)),
+          }),
+          object({
+            updatedHere: constant(false),
+            updatedAtId: uuid,
+            updatedTo: chain(number, gte(0)),
+            updatedAtTimestamp: chain(number, integer, gte(0)),
+          }),
+        ),
+        futureSavings: valueForMonthRanges(params),
+        incomeDuringRetirement: valueForMonthRanges(params),
+      }),
+      (x) => {
+        const colorIndexes = [
+          ..._.values(x.futureSavings),
+          ..._.values(x.incomeDuringRetirement),
+        ].map((x) => x.colorIndex)
+        const uniqueColorIndexes = _.uniq(colorIndexes)
+        if (uniqueColorIndexes.length !== colorIndexes.length)
+          return failure('Duplicate color indexes.')
+        return success(x)
+      },
+    )
 
   const adjustmentsToSpending = (
     planParams: PlanParams | null,
@@ -691,10 +706,22 @@ export namespace PlanParams23 {
           external: labeledAmounts,
         }),
       }),
-      extraSpending: object({
-        essential: valueForMonthRanges(planParams),
-        discretionary: valueForMonthRanges(planParams),
-      }),
+      extraSpending: chain(
+        object({
+          essential: valueForMonthRanges(planParams),
+          discretionary: valueForMonthRanges(planParams),
+        }),
+        (x) => {
+          const colorIndexes = [
+            ..._.values(x.essential),
+            ..._.values(x.discretionary),
+          ].map((x) => x.colorIndex)
+          const uniqueColorIndexes = _.uniq(colorIndexes)
+          if (uniqueColorIndexes.length !== colorIndexes.length)
+            return failure('Duplicate color indexes.')
+          return success(x)
+        },
+      ),
     })
 
   const risk = (planParams: PlanParams | null): JSONGuard<PlanParams['risk']> =>
@@ -804,79 +831,73 @@ export namespace PlanParams23 {
 
   export const migrate = (x: SomePlanParams): PlanParams => {
     if ('v' in x && x.v === currentVersion) return x
-    const prev: PlanParamsPrev.PlanParams = PlanParamsPrev.migrate(x)
+    const prev = PlanParamsPrev.migrate(x)
 
-    return {
-      ...prev,
-      v: currentVersion,
-      advanced: {
-        expectedAnnualReturnForPlanning: prev.advanced.annualReturns.expected,
-        historicalReturnsAdjustment: block(() => {
-          const byPrev = (
-            p: typeof prev.advanced.annualReturns.historical.stocks,
-          ): PlanParams['advanced']['historicalReturnsAdjustment']['bonds'] => {
-            switch (p.type) {
-              case 'rawHistorical':
-                return {
-                  adjustExpectedReturn: { type: 'none' },
-                  enableVolatility: true,
-                }
-              case 'fixed':
-                return {
-                  adjustExpectedReturn:
-                    p.value.type === 'manual'
-                      ? {
-                          type: 'toAnnualExpectedReturn',
-                          annualExpectedReturn: p.value.value,
-                          correctForBlockSampling: true,
-                        }
-                      : p.value.type === 'expectedUsedForPlanning'
-                      ? {
-                          type: 'toExpectedUsedForPlanning',
-                          correctForBlockSampling: true,
-                        }
-                      : noCase(p.value),
-                  enableVolatility: false,
-                }
-              case 'adjustExpected':
-                return {
-                  adjustExpectedReturn:
-                    p.adjustment.type === 'byValue'
-                      ? assertFalse()
-                      : p.adjustment.type === 'toValue'
-                      ? {
-                          type: 'toAnnualExpectedReturn',
-                          annualExpectedReturn: p.adjustment.value,
-                          correctForBlockSampling: p.correctForBlockSampling,
-                        }
-                      : p.adjustment.type === 'toExpectedUsedForPlanning'
-                      ? {
-                          type: 'toExpectedUsedForPlanning',
-                          correctForBlockSampling: p.correctForBlockSampling,
-                        }
-                      : noCase(p.adjustment),
-                  enableVolatility: true,
-                }
-              default:
-                noCase(p)
-            }
-          }
-          return {
-            stocks: letIn(
-              byPrev(prev.advanced.annualReturns.historical.stocks),
-              ({ adjustExpectedReturn }) => ({
-                adjustExpectedReturn,
-                volatilityScale: 1,
-              }),
-            ),
-            bonds: byPrev(prev.advanced.annualReturns.historical.bonds),
-          }
-        }),
-        annualInflation: prev.advanced.annualInflation,
-        sampling: prev.advanced.sampling,
-        strategy: prev.advanced.strategy,
-      },
+    const migrateLabeledAmounts = <T extends { sortIndex: number }>(
+      prev: Record<string, T>,
+      startingColorIndex: number,
+    ): Record<string, T & { colorIndex: number }> => {
+      const pairs = _.toPairs(prev).sort(
+        (a, b) => a[1].sortIndex - b[1].sortIndex,
+      )
+      const result: Record<string, T & { colorIndex: number }> = {}
+      pairs.forEach(([key, value], i) => {
+        result[key] = {
+          ...value,
+          colorIndex: startingColorIndex + i,
+        }
+      })
+      return result
     }
+
+    const result: PlanParams = {
+      v: currentVersion,
+      timestamp: prev.timestamp,
+      dialogPosition: prev.dialogPosition,
+      people: prev.people,
+      wealth: {
+        portfolioBalance: prev.wealth.portfolioBalance,
+        futureSavings: migrateLabeledAmounts(
+          prev.wealth.futureSavings,
+          _.keys(prev.wealth.incomeDuringRetirement).length,
+        ),
+        incomeDuringRetirement: migrateLabeledAmounts(
+          prev.wealth.incomeDuringRetirement,
+          0,
+        ),
+      },
+      adjustmentsToSpending: {
+        extraSpending: {
+          essential: migrateLabeledAmounts(
+            prev.adjustmentsToSpending.extraSpending.essential,
+            _.keys(prev.adjustmentsToSpending.extraSpending.discretionary)
+              .length,
+          ),
+          discretionary: migrateLabeledAmounts(
+            prev.adjustmentsToSpending.extraSpending.discretionary,
+            0,
+          ),
+        },
+        tpawAndSPAW: {
+          monthlySpendingCeiling:
+            prev.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling,
+          monthlySpendingFloor:
+            prev.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor,
+          legacy: {
+            total: prev.adjustmentsToSpending.tpawAndSPAW.legacy.total,
+            external: migrateLabeledAmounts(
+              prev.adjustmentsToSpending.tpawAndSPAW.legacy.external,
+              0,
+            ),
+          },
+        },
+      },
+      risk: prev.risk,
+      advanced: prev.advanced,
+      results: prev.results,
+    }
+    assert(!guard(result).error)
+    return result
   }
 
   // ---------------------------------------
