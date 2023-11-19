@@ -4,9 +4,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { RadioGroup } from '@headlessui/react'
 import React, { useState } from 'react'
 import { Contentful } from '../../../Utils/Contentful'
-import { ModalBase } from '../Modal/ModalBase'
-import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { usePlanContent } from '../../PlanRoot/PlanRootHelpers/WithPlanContent'
+import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { CenteredModal } from '../Modal/CenteredModal'
 
 export const RealOrNominalInput = React.memo(
   ({
@@ -20,7 +20,7 @@ export const RealOrNominalInput = React.memo(
   }) => {
     const { planParams } = useSimulation()
     const planContent = usePlanContent()
-    const [showExplanation, setShowRealDollarsExplanation] = useState(false)
+    const [showExplanation, setShowExplanation] = useState(false)
 
     return (
       <div className={`${className} flex flex-row items-center gap-x-2`}>
@@ -57,29 +57,29 @@ export const RealOrNominalInput = React.memo(
           <RadioGroup.Description>
             <button
               className="underline text-sm"
-              onClick={() => setShowRealDollarsExplanation(true)}
+              onClick={() => setShowExplanation(true)}
             >
               What does this mean?
             </button>
           </RadioGroup.Description>
         </RadioGroup>
-        {showExplanation && (
-          <ModalBase onClose={() => setShowRealDollarsExplanation(false)}>
-            {(transitionOut) => (
-              <div className="">
-                <h2 className="font-bold">{`What does "adjusted for inflation" mean?`}</h2>
-                <Contentful.RichText
-                  body={
-                    planContent.misc.realDollarExplanation[
-                      planParams.advanced.strategy
-                    ]
-                  }
-                  p={`p-base mt-3`}
-                />
-              </div>
-            )}
-          </ModalBase>
-        )}
+        <CenteredModal
+          className=" dialog-outer-div"
+          show={showExplanation}
+          onOutsideClickOrEscape={() => setShowExplanation(false)}
+        >
+          <h2 className=" dialog-heading">{`What does "adjusted for inflation" mean?`}</h2>
+          <div className=" dialog-content-div">
+            <Contentful.RichText
+              body={
+                planContent.misc.realDollarExplanation[
+                  planParams.advanced.strategy
+                ]
+              }
+              p={`p-base mt-3`}
+            />
+          </div>
+        </CenteredModal>
       </div>
     )
   },

@@ -55,7 +55,6 @@ export const getPlanResultsChartSalientPoints = (
                   (minOrMax === 'max' &&
                     info.y < Math.max(...unfiltered.map((x) => x.dataY)) * 1.1)
                 ) {
-                  console.dir()
                   return
                 }
                 unfiltered.push({

@@ -1,5 +1,4 @@
 import isMobile from 'is-mobile'
-import _ from 'lodash'
 import React, { CSSProperties, useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { NumericFormat } from 'react-number-format'
@@ -135,7 +134,6 @@ const _AmountInput = React.memo(
           isAllowed={(x) => !x.value.startsWith('-')}
           fixedDecimalScale
           onValueChange={(x) => {
-            console.dir(JSON.stringify(_.values(x)))
             setInternalValue(x.floatValue === undefined ? null : x.floatValue)
           }}
           onBlur={() => {

@@ -69,23 +69,6 @@ export type PlanResultsChartData = {
     }
 )
 
-const _spendingMonths = (
-  { planParams, asMFN, withdrawalStartMonth }: PlanParamsExtended,
-  nonPlanParams: NonPlanParams,
-) => {
-  const withdrawalStart = asMFN(withdrawalStartMonth)
-
-  return nonPlanParams.dev.alwaysShowAllMonths
-    ? 'allMonths'
-    : [
-        ..._.values(planParams.adjustmentsToSpending.extraSpending.essential),
-        ..._.values(
-          planParams.adjustmentsToSpending.extraSpending.discretionary,
-        ),
-      ].some((x) => asMFN(x.monthRange).start < withdrawalStart)
-    ? ('allMonths' as const)
-    : ('retirementMonths' as const)
-}
 
 export const getPlanResultsChartData = (
   chartType: PlanResultsChartType,
@@ -337,16 +320,6 @@ export const getPlanResultsChartData = (
             ),
           ).data,
           parts: [
-            ..._.toPairs(
-              planParamsProcessed.byMonth.wealth.futureSavings.byId,
-            ).map(([id, x]) => ({
-              yByX: x.values,
-              xRange: x.validRange,
-              id: `futureSavings-${id}`,
-              label: planParams.wealth.futureSavings[id].label,
-              sortIndex: planParams.wealth.futureSavings[id].sortIndex,
-              colorIndex: planParams.wealth.futureSavings[id].colorIndex,
-            })),
             ..._.toPairs(
               planParamsProcessed.byMonth.wealth.incomeDuringRetirement.byId,
             ).map(([id, x]) => ({

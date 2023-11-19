@@ -31,6 +31,8 @@ import { PlanMigrationWarnings } from './PlanMigrationWarnings'
 import { PlanPrint } from './PlanPrint/PlanPrint'
 import { PlanResults } from './PlanResults/PlanResults'
 import { planResultsChartLabel } from './PlanResults/PlanResultsChartCard/PlanResultsChartLabel'
+import { isPlanResultsChartSpendingTotalFundingSourcesType } from './PlanResults/PlanResultsChartType'
+import { useGetPlanResultsChartURL } from './PlanResults/UseGetPlanResultsChartURL'
 import { usePlanResultsChartType } from './PlanResults/UsePlanResultsChartType'
 import { planSizing } from './PlanSizing/PlanSizing'
 import { PlanSummary } from './PlanSummary/PlanSummary'
@@ -70,6 +72,8 @@ const _Plan = React.memo(() => {
   )
 
   const planChartType = usePlanResultsChartType()
+  const spendingTotalURL = useGetPlanResultsChartURL()('spending-total')
+  const urlUpdater = useURLUpdater()
   const chartLabel = planResultsChartLabel(planParams, planChartType)
 
   const state = usePlanState()
@@ -96,6 +100,17 @@ const _Plan = React.memo(() => {
       return { prev, target, duration: 300 }
     })
   }, [state])
+
+  const handleSectionChange = (section: PlanSectionName) => {
+    if (isPlanResultsChartSpendingTotalFundingSourcesType(planChartType)) {
+      urlUpdater.replace(spendingTotalURL)
+    }
+  }
+  const handleSectionChangeRef = useRef(handleSectionChange)
+  handleSectionChangeRef.current = handleSectionChange
+  useEffect(() => {
+    handleSectionChangeRef.current(state.section)
+  }, [state.section])
 
   const [chartDiv, setChartDiv] = useState<HTMLElement | null>(null)
   const isIPhone = window.navigator.userAgent.match(/iPhone/i) !== null

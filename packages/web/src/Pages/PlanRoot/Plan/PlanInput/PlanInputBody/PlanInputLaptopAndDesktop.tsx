@@ -105,7 +105,7 @@ export const PlanInputLaptopAndDesktop = React.memo(
             {guideContent && (
               <PlanInputBodyGuide
                 className="mb-10"
-                type={type}
+                guideContent={guideContent}
                 padding={cardPadding}
                 customIntro={customGuideIntro}
               />

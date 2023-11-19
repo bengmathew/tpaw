@@ -6,10 +6,13 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { newPaddingHorz, paddingCSSStyleHorz } from '../../../../../Utils/Geometry'
+import {
+  newPaddingHorz,
+  paddingCSSStyleHorz,
+} from '../../../../../Utils/Geometry'
 import { fGet } from '../../../../../Utils/Utils'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { ModalBase } from '../../../../Common/Modal/ModalBase'
+import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputType } from '../Helpers/PlanInputType'
 import { PlanInputSizing } from '../PlanInput'
 import { PlanInputBodyGuide } from './PlanInputBodyGuide/PlanInputBodyGuide'
@@ -74,7 +77,7 @@ export const PlanInputBodyMobile = React.memo(
             {guideContent && (
               <PlanInputBodyGuide
                 className="mb-10"
-                type={type}
+                guideContent={guideContent}
                 padding={sizing.cardPadding}
                 customIntro={customGuideIntro}
               />

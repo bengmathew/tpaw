@@ -103,7 +103,7 @@ a {
   }
 
   .modal-base {
-    @apply font-font1 text-gray-800  fixed z-50 inset-0 overflow-y-auto flex items-center justify-center;
+    @apply font-font1 text-gray-800  fixed inset-0 overflow-y-auto flex items-center justify-center;
   }
 
   .params-card {
