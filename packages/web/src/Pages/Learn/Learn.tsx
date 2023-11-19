@@ -65,6 +65,7 @@ const _Desktop = React.memo(
             className="mt-6"
             outline={outline}
             slug={content.fields.slug}
+            onClick={() => {}}
           />
         </div>
         <div className="pl-8 relative pt-header max-w-[650px] ">
@@ -145,6 +146,7 @@ const _MobileOutline = React.memo(
             className=" m-3"
             outline={outline}
             slug={content.fields.slug}
+            onClick={() => setShowContents(false)}
           />
         </Transition.Child>
       </Transition>,
@@ -248,13 +250,15 @@ const _Outline = React.memo(
     className = '',
     outline,
     slug,
+    onClick,
   }: {
     className?: string
     outline: Contentful.FetchedKnowledgeBaseOutline
     slug: string
+    onClick: () => void
   }) => {
     return (
-      <div className={`${className}`}>
+      <div className={`${className}`} onClick={onClick}>
         <div className="">
           {outline.fields.items.map((item, i) => {
             if (_isArticle(item)) {
@@ -277,7 +281,12 @@ const _Outline = React.memo(
                     isCurrent={false}
                     isChildCurrent={childSlugs.includes(slug)}
                   />
-                  <_Outline className="ml-8" outline={item} slug={slug} />
+                  <_Outline
+                    className="ml-8"
+                    outline={item}
+                    slug={slug}
+                    onClick={() => {}}
+                  />
                 </div>
               )
             }

@@ -347,7 +347,7 @@ const _getRangeSection = (
           align: { vert: 'start', horz: 'between' },
         },
         dataYs.map(({ id, label, y, explain }) => [
-          oneRowGrid({gap:10, align:{horz:'start', vert:'start'}}, [
+          oneRowGrid({ gap: 10, align: { horz: 'start', vert: 'start' } }, [
             style(
               { fillColor: planColors.shades.main[7].hex },
               circle({
@@ -635,7 +635,11 @@ const _getBreakdownSection = (
               return [
                 gap(height.gap.beforeTotalLine),
                 style(
-                  { opacity: 1, strokeColor: colors.fgForDarkBG.hex },
+                  {
+                    opacity: 1,
+                    strokeColor: colors.fgForDarkBG.hex,
+                    font: ChartUtils.getMonoFont(fontSize.large.mono),
+                  },
                   barForText({
                     text: label,
                     height: height.barAboveTotal,
@@ -664,7 +668,21 @@ const _getRangeExplanation = (chartType: PlanResultsChartType) => {
     '50': 'the most likely scenario',
     '5': 'if the market does very badly',
   }
-
+  const usuallyProportional = {
+    '95': 'usually if the market does well',
+    '50': proportional['50'],
+    '5': 'usually if the market does badly',
+  }
+  const inverse = {
+    '95': proportional['5'],
+    '50': proportional['50'],
+    '5': proportional['95'],
+  }
+  const usuallyInverse = {
+    '95': usuallyProportional['5'],
+    '50': usuallyProportional['50'],
+    '5': usuallyProportional['95'],
+  }
   switch (chartType) {
     case 'spending-total':
     case 'spending-total-funding-sources-5':
@@ -674,18 +692,10 @@ const _getRangeExplanation = (chartType: PlanResultsChartType) => {
     case 'spending-general':
       return proportional
     case 'withdrawal':
-      return {
-        '95': 'usually if the market does badly',
-        '50': proportional['50'],
-        '5': 'usually if the market does well',
-      }
     case 'asset-allocation-savings-portfolio':
+      return usuallyInverse
     case 'asset-allocation-total-portfolio':
-      return {
-        '95': proportional['5'],
-        '50': proportional['50'],
-        '5': proportional['95'],
-      }
+      return usuallyProportional
     default: {
       if (
         isPlanResultsChartSpendingDiscretionaryType(chartType) ||
