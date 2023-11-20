@@ -40,7 +40,9 @@ export const PrintTablesSection = React.memo(() => {
       </PlanPrintSection>
       <PlanPrintSection>
         <_Table className="mt-10" type="spending-total" />
-        <_Table className="mt-10" type="spending-total-funding-sources-5" />
+        {_.keys(planParams.wealth.incomeDuringRetirement).length > 0 && (
+          <_Table className="mt-10" type="spending-total-funding-sources-50" />
+        )}
         {secondaryCharts.map((x, i) => (
           <_Table key={i} className="mt-10" type={x} />
         ))}

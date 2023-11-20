@@ -3,7 +3,6 @@ import getIsMobile from 'is-mobile'
 import _ from 'lodash'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { cssEaseAsGSAPEase } from '../../../../../Utils/CSSEaseAsGSAPEase'
-import { Contentful } from '../../../../../Utils/Contentful'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import {
   InsetExt,
@@ -20,7 +19,6 @@ import { HeightsForWidths } from '../../../../../Utils/View/HeightsForWidths'
 import { ChartPointerPortal } from '../../../../Common/Chart/ChartComponent/ChartPointerPortal'
 import { ChartReactStatefull } from '../../../../Common/Chart/ChartReact'
 import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
-import { usePlanContent } from '../../../PlanRootHelpers/WithPlanContent'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
 import { useChartData } from '../../WithPlanResultsChartData'
@@ -223,7 +221,6 @@ export const PlanResultsChartCard = React.memo(
       })
     }, [targetSizing, transition.duration])
 
-    const planContent = usePlanContent()
     const numSuccessfullRuns =
       tpawResult.numSimulationsActual - tpawResult.numRunsWithInsufficientFunds
     const successRate = numSuccessfullRuns / tpawResult.numSimulationsActual
@@ -353,11 +350,16 @@ export const PlanResultsChartCard = React.memo(
             color: planColors.results.fg,
           }}
         >
-          <div className="-mt-4">
-            <Contentful.RichText
-              body={planContent.chart.realBlurb[planParams.advanced.strategy]}
-              p={`font-font2 text-lg mt-4`}
-            />
+          <div className="">
+            <p className="font-font2 text-lg ">
+              {`Future dollars are adjusted for inflation and expressed as today's
+          dollars. For example, thirty years from now, $10 might buy only what
+          $5 buys today. In that case, $10 thirty years from now is expressed as
+          just $5 on the graph. So a dollar at any age on the graph has the same
+          buying power as a dollar does today.`}
+            </p>
+            <p className="font-font2 text-lg  mt-3">{`When dollars are adjusted for
+          inflation in this way, they are called “real” dollars.`}</p>
           </div>
         </CenteredModal>
       </div>

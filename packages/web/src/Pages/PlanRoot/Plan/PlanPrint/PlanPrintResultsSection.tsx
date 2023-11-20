@@ -17,7 +17,7 @@ import {
   planResultsLegacyCardFormat,
   usePlanResultsLegacyCardData,
 } from '../PlanResults/PlanResultsSidePanel/PlanResultsSidePanelLegacyCard'
-import { mainPlanColors } from '../UsePlanColors'
+import { PlanColors, mainPlanColors, usePlanColors } from '../UsePlanColors'
 import { useChartData } from '../WithPlanResultsChartData'
 import { getPlanPrintChartLabel } from './GetPlanPrintChartLabel'
 import {
@@ -26,6 +26,7 @@ import {
 } from './PlanPrintChart'
 import { PlanPrintSVGBackground } from './PlanPrintSVGBackground'
 import { PlanPrintSection } from './PlanPrintSection'
+import { getChartBreakdownTotalFillPattern } from '../PlanResults/PlanResultsChartCard/PlanResultsChart/GetPlanResultsChartBreakdown'
 
 export const PlanPrintResultsSection = React.memo(() => {
   const { tpawResult, planParams } = useSimulation()
@@ -67,7 +68,7 @@ export const PlanPrintResultsSection = React.memo(() => {
           </h2>
         )}
         <_Legacy className="mt-12" />
-        {_.keys(planParams.wealth.futureSavings).length > 0 && (
+        {_.keys(planParams.wealth.incomeDuringRetirement).length > 0 && (
           <div className=" break-inside-avoid-page">
             <_Chart className="mt-12" type="spending-total-funding-sources-5" />
             <_MonthlySpendingBreakdownLegend className="" />
@@ -83,9 +84,22 @@ export const PlanPrintResultsSection = React.memo(() => {
 
 const _MonthlySpendingBreakdownLegend = React.memo(
   ({ className }: { className?: string }) => {
+    const planColors = usePlanColors()
     const chartData = useChartData('spending-total-funding-sources-5')
     assert(chartData.type === 'breakdown')
-    const parts = chartData.breakdown.parts.slice().reverse()
+    const parts = [
+      ...chartData.breakdown.parts
+        .slice()
+        .reverse()
+        .map((part) => ({
+          fillPattern: getChartBandColor(part.chartColorIndex).fillPattern,
+          label: part.label,
+        })),
+      {
+        fillPattern: getChartBreakdownTotalFillPattern(planColors),
+        label: 'From Portfolio',
+      },
+    ]
     const cols = _.chunk(parts, Math.ceil(parts.length / 3))
     return (
       // Make sure
@@ -96,8 +110,7 @@ const _MonthlySpendingBreakdownLegend = React.memo(
         >
           {cols.map((col, i) => (
             <div key={i} className="">
-              {col.map((part, i) => {
-                const { fillPattern } = getChartBandColor(part.chartColorIndex)
+              {col.map(({ fillPattern, label }, i) => {
                 return (
                   <div key={i} className="flex gap-x-2 items-start">
                     <div
@@ -115,7 +128,7 @@ const _MonthlySpendingBreakdownLegend = React.memo(
                         )}
                       />
                     </div>
-                    <h2>{part.label ?? '<No label>'}</h2>
+                    <h2>{label ?? '<No label>'}</h2>
                   </div>
                 )
               })}
@@ -196,10 +209,8 @@ const _Chart = React.memo(
       return () => observer.disconnect()
     }, [chart, hasPartner])
 
-    const { label, subLabel, yAxisDescriptionStr } = getPlanPrintChartLabel(
-      planParams,
-      type,
-    )
+    const { label, subLabel, yAxisDescriptionStr, description } =
+      getPlanPrintChartLabel(planParams, type)
 
     return (
       <div className={clsx(className, ' break-inside-avoid-page')}>
@@ -218,11 +229,7 @@ const _Chart = React.memo(
           {yAxisDescriptionStr && (
             <span className="">{yAxisDescriptionStr}. </span>
           )}
-          The graph shows the 5
-          <span className=" align-super text-[10px]">th</span> to 95
-          <span className=" align-super text-[10px]">th</span> percentile range
-          with the 50<span className=" align-super text-[10px]">th</span>{' '}
-          percentile in bold.
+          {description}
         </h2>
 
         <div

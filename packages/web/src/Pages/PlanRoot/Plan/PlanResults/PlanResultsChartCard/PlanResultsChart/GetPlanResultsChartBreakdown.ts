@@ -1,6 +1,7 @@
 import { getChartBandColor } from '../../../../../../Utils/ColorPalette'
 import { ChartBreakdown } from '../../../../../Common/Chart/ChartComponent/ChartBreakdown'
 import { ChartStyling } from '../../../../../Common/Chart/ChartUtils/ChartStyling'
+import { PlanColors } from '../../../UsePlanColors'
 import { PlanResultsChartData } from './PlanResultsChartData'
 
 const { Stroke } = ChartStyling
@@ -26,11 +27,7 @@ export const getPlanResultsChartBreakdown = () =>
           })),
           style: {
             total: {
-              fillPattern: {
-                bg: { color: shades.light[5].rgb, opacity: 1 },
-                stroke: Stroke.get(shades.main[5].rgb, 1),
-                gap: 3,
-              },
+              fillPattern: getChartBreakdownTotalFillPattern(planColors),
               stroke: Stroke.get(shades.main[10].rgb, 2.5),
               pointer: {
                 hover: Stroke.get(shades.main[10].rgb, 10),
@@ -41,3 +38,9 @@ export const getPlanResultsChartBreakdown = () =>
         }
       : null
   })
+
+export const getChartBreakdownTotalFillPattern = ({ shades }: PlanColors) => ({
+  bg: { color: shades.light[5].rgb, opacity: 1 },
+  stroke: Stroke.get(shades.main[5].rgb, 1),
+  gap: 3,
+})

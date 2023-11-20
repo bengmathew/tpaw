@@ -1,10 +1,7 @@
 import {
-  faBalanceScale,
   faCaretDown,
-  faFile,
   faFilePdf,
   faLineColumns,
-  faPrint,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
@@ -36,13 +33,23 @@ export const PlanResultsSidePanelMenu = React.memo(
         <ContextMenu2
           align={'right'}
           className={clsx(className, 'w-full')}
-          style={{ ...style, backgroundColor: planColors.results.cardBG }}
+          style={{
+            ...style,
+            backgroundColor: planColors.results.cardBG,
+            color: planColors.results.fg,
+          }}
         >
           <h2 className="font-semibold text-[16px] sm:text-[16px] flex   items-center gap-x-2">
             More
             <FontAwesomeIcon icon={faCaretDown} />
           </h2>
-          <Menu.Items className="rounded-lg my-2">
+          <Menu.Items
+            className="rounded-lg py-2"
+            style={{
+              backgroundColor: planColors.results.cardBG,
+              color: planColors.results.fg,
+            }}
+          >
             <Menu.Item
               as="button"
               className="context-menu-item"

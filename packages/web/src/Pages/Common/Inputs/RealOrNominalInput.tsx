@@ -3,9 +3,6 @@ import { faCircle as faCircleSolid } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { RadioGroup } from '@headlessui/react'
 import React, { useState } from 'react'
-import { Contentful } from '../../../Utils/Contentful'
-import { usePlanContent } from '../../PlanRoot/PlanRootHelpers/WithPlanContent'
-import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { CenteredModal } from '../Modal/CenteredModal'
 
 export const RealOrNominalInput = React.memo(
@@ -18,8 +15,6 @@ export const RealOrNominalInput = React.memo(
     nominal: boolean
     onChange: (x: boolean) => void
   }) => {
-    const { planParams } = useSimulation()
-    const planContent = usePlanContent()
     const [showExplanation, setShowExplanation] = useState(false)
 
     return (
@@ -70,14 +65,10 @@ export const RealOrNominalInput = React.memo(
         >
           <h2 className=" dialog-heading">{`What does "adjusted for inflation" mean?`}</h2>
           <div className=" dialog-content-div">
-            <Contentful.RichText
-              body={
-                planContent.misc.realDollarExplanation[
-                  planParams.advanced.strategy
-                ]
-              }
-              p={`p-base mt-3`}
-            />
+            <p className="p-base">
+              {`If the amount that you are entering is inflation adjusted, then you are entering the value in today's dollars. For example, if thirty years from now $10 will buy only what $5 buys today, then you would enter $10 thirty years from now as just $5. So a dollar entered for any age has the same buying power as a dollar does today.`}
+            </p>
+            <p className="p-base mt-3">{`Dollars that are adjusted for inflation in this way are called “real” dollars. Dollars that are not adjusted for inflation are called “nominal dollars.”`}</p>
           </div>
         </CenteredModal>
       </div>
