@@ -1,5 +1,4 @@
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
-import * as Sentry from '@sentry/nextjs'
 import { faEnvelope } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { API } from '@tpaw/common'
@@ -8,12 +7,11 @@ import Head from 'next/head'
 import Link from 'next/link'
 import React, { Dispatch, ReactNode, useMemo, useRef, useState } from 'react'
 import { graphql, useMutation } from 'react-relay'
-import { errorToast } from '../../Utils/CustomToasts'
 import { fGet, noCase } from '../../Utils/Utils'
 import { Spinner } from '../../Utils/View/Spinner'
 import { RequireUserSendEmailMutation } from './__generated__/RequireUserSendEmailMutation.graphql'
-import { useFirebaseUser } from './WithFirebaseUser'
 import { useDefaultErrorHandlerForNetworkCall } from './GlobalErrorBoundary'
+import { useFirebaseUser } from './WithFirebaseUser'
 
 export const RequireUser = React.memo(
   ({ children }: { children: ReactNode }) => {
@@ -165,7 +163,7 @@ const _LoginInput = React.memo(
             <div className="border-t border-gray-500"></div>
           </div>
           <button
-            className="btn-lg btn-dark flex gap-x-2 items-center"
+            className="btn-lg btn-dark flex gap-x-2 items-center whitespace-nowrap"
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onClick={async () => {
               const provider = new GoogleAuthProvider()

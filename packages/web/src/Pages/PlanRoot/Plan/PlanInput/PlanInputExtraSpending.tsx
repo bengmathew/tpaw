@@ -96,7 +96,6 @@ export const PlanInputExtraSpending = React.memo(
             />
             <ByMonthSchedule
               className="mt-6"
-              heading={null}
               editProps={{
                 defaultMonthRange: defaultRange,
                 onEdit: (entryId, isAdd) =>
@@ -133,7 +132,6 @@ export const PlanInputExtraSpending = React.memo(
               />
               <ByMonthSchedule
                 className="mt-6"
-                heading={null}
                 editProps={{
                   defaultMonthRange: defaultRange,
                   onEdit: (entryId, isAdd) =>

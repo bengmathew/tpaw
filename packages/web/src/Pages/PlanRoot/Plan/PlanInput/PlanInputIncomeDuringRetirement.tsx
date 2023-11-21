@@ -40,7 +40,6 @@ export const PlanInputIncomeDuringRetirement = React.memo(
             />
             <ByMonthSchedule
               className="mt-6"
-              heading={null}
               editProps={{
                 defaultMonthRange: {
                   type: 'startAndEnd',

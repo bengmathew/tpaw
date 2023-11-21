@@ -5,6 +5,7 @@ import {
   letIn,
   planParamsMigrate,
 } from '@tpaw/common'
+import { User } from 'firebase/auth'
 import { chain, json, number, object, success } from 'json-guard'
 import _ from 'lodash'
 import Link from 'next/link'
@@ -28,48 +29,75 @@ import {
   WithMergeToServerMutation$data,
 } from './__generated__/WithMergeToServerMutation.graphql'
 
+const _getLocalData = () => ({
+  guestPlan: PlanLocalStorage.readUnMigratedUnsorted(),
+  linkPlan: MergeToServerLinkPlan.read(),
+  nonPlanParams: NonPlanParamsLocalStorage.read(),
+})
+
+const _clearLocalData = () => {
+  console.dir('*************** CLEAR')
+  PlanLocalStorage.clear()
+  MergeToServerLinkPlan.clear()
+  NonPlanParamsLocalStorage.clear()
+}
+
+const _getNeedsToMerge = (localData: {
+  guestPlan: PlanLocalStorageUnmigratedUnsorted | null
+  linkPlan: UserMergeFromClientLinkPlanInput | null
+  nonPlanParams: NonPlanParams | null
+}) => !!(localData.guestPlan || localData.linkPlan || localData.nonPlanParams)
+
 export const WithMergeToServer = React.memo(
   ({ children }: { children: ReactNode }) => {
     const firebaseUser = useFirebaseUser()
-    const [localData, setLocalData] = useState(() => {
-      return {
-        guestPlan: PlanLocalStorage.readUnMigratedUnsorted(),
-        linkPlan: MergeToServerLinkPlan.read(),
-        nonPlanParams: NonPlanParamsLocalStorage.read(),
-      }
-    })
+    return firebaseUser ? (
+      <_WithMergeToServer firebaseUser={firebaseUser}>
+        {children}
+      </_WithMergeToServer>
+    ) : (
+      <>{children}</>
+    )
+  },
+)
 
-    const [savedGuestPlan, setSavedGuestPlan] = useState<{
-      label: string
-    } | null>(null)
+// A specific component if the user is logged in makes it easy to manage the state
+// of merging/non merging in the presense or absence of the user.
+const _WithMergeToServer = React.memo(
+  ({ children, firebaseUser }: { children: ReactNode; firebaseUser: User }) => {
+    const [state, setState] = useState<
+      | { isMerging: true }
+      | { isMerging: false; savedGuestPlan: { label: string } | null }
+    >(() =>
+      _getNeedsToMerge(_getLocalData())
+        ? { isMerging: true }
+        : { isMerging: false, savedGuestPlan: null },
+    )
 
     const handleMergeCompleted = (
       result: WithMergeToServerMutation$data['userMergeFromClient'],
     ) => {
-      PlanLocalStorage.clear()
-      MergeToServerLinkPlan.clear()
-      NonPlanParamsLocalStorage.clear()
-      setLocalData({ guestPlan: null, linkPlan: null, nonPlanParams: null })
-      if (result.guestPlan) {
-        setSavedGuestPlan({
-          // Only the first main plan created on the server will not have a
-          // label.
-          label: fGet(result.guestPlan.label),
-        })
-      }
+      setState({
+        isMerging: false,
+        savedGuestPlan: result.guestPlan
+          ? {
+              // Only the first main plan created on the server will not have a
+              // label.
+              label: fGet(result.guestPlan.label),
+            }
+          : null,
+      })
     }
 
-    return firebaseUser &&
-      (localData.guestPlan || localData.linkPlan || localData.nonPlanParams) ? (
-      <_Merge
-        userId={firebaseUser.uid}
-        localData={localData}
-        onDone={handleMergeCompleted}
-      />
+    return state.isMerging ? (
+      <_Merge userId={firebaseUser.uid} onDone={handleMergeCompleted} />
     ) : (
       <>
         {children}
-        <_Alert data={savedGuestPlan} onDone={() => setSavedGuestPlan(null)} />
+        <_Alert
+          data={state.savedGuestPlan}
+          onDone={() => setState({ isMerging: false, savedGuestPlan: null })}
+        />
       </>
     )
   },
@@ -78,25 +106,23 @@ export const WithMergeToServer = React.memo(
 const _Merge = React.memo(
   ({
     userId,
-    localData: { guestPlan, linkPlan, nonPlanParams },
     onDone,
   }: {
     userId: string
-    localData: {
-      guestPlan: PlanLocalStorageUnmigratedUnsorted | null
-      linkPlan: UserMergeFromClientLinkPlanInput | null
-      nonPlanParams: NonPlanParams | null
-    }
     onDone: (
       result: WithMergeToServerMutation$data['userMergeFromClient'],
     ) => void
   }) => {
     const { setGlobalError } = useSetGlobalError()
-    type _State = { type: 'idle' } | { type: 'commit' }
 
-    const [state, setState] = useState<_State>({ type: 'idle' })
+    // const [state, setState] = useState<
+    //   | { type: 'init' }
+    //   | { type: 'askedForLock'; abortController: AbortController }
+    //   | { type: 'gotLock'; releaseLock: () => void }
+    // >({ type: 'init' })
+
     // To avoid double useEffect in dev due to strict mode.
-    useEffect(() => setState({ type: 'commit' }), [])
+    const [isInitialized, setIsInitialized] = useState(false)
 
     const [commit] = useMutation<WithMergeToServerMutation>(graphql`
       mutation WithMergeToServerMutation($input: UserMergeFromClientInput!) {
@@ -114,6 +140,13 @@ const _Merge = React.memo(
     `)
 
     const handleCommit = () => {
+      const localData = _getLocalData()
+      if (!_getNeedsToMerge(localData)) {
+        // This can happen if another tab got the lock first and merged.
+        onDone({ guestPlan: null, linkPlan: null })
+        return
+      }
+      const { guestPlan, linkPlan, nonPlanParams } = localData
       commit({
         variables: {
           input: {
@@ -145,7 +178,10 @@ const _Merge = React.memo(
             nonPlanParams: nonPlanParams ? JSON.stringify(nonPlanParams) : null,
           },
         },
-        onCompleted: ({ userMergeFromClient }) => onDone(userMergeFromClient),
+        onCompleted: ({ userMergeFromClient }) => {
+          _clearLocalData()
+          onDone(userMergeFromClient)
+        },
         onError: (e) => {
           // Cannot really proceed meaningfull after this. User should reload.
           // So don't use defaultErrorHandlerForNetworkCall. Set to crashed page.
@@ -157,9 +193,37 @@ const _Merge = React.memo(
     handleCommitRef.current = handleCommit
 
     useEffect(() => {
-      if (state.type !== 'commit') return
-      handleCommitRef.current()
-    }, [state])
+      if (!isInitialized) {
+        setIsInitialized(true)
+      } else {
+        const subState = {
+          abortController: null as AbortController | null,
+          resolve: null as (() => void) | null,
+        }
+        subState.abortController = new AbortController()
+        void window.navigator.locks.request(
+          'mergeToServer',
+          { mode: 'exclusive', signal: subState.abortController.signal },
+          () => {
+            subState.abortController = null
+            handleCommitRef.current()
+            return new Promise<void>((resolve) => {
+              subState.resolve = resolve
+            })
+          },
+        )
+        return () => {
+          // This means component has unmounted, because isInitialized once
+          // true, never goes back to false.
+          if (subState.abortController) {
+            subState.abortController.abort('Component unmounted.')
+          }
+          if (subState.resolve) {
+            subState.resolve()
+          }
+        }
+      }
+    }, [isInitialized])
 
     return (
       <AppPage
@@ -256,3 +320,64 @@ export namespace MergeToServerLinkPlan {
   }
   export const clear = () => window.localStorage.removeItem(key)
 }
+
+// // This component handles locking to allow only one tab to merge at a time.
+// // This situation can occur when a new user signs in through email, which
+// // opens a new tab, resulting in two tabs being open and needing to merge.
+// const _lockKeyPrefix = 'MergeLockKey_'
+// const useLock = () => {
+//   const [lockInfo] = useState(() => ({
+//     key: `${_lockKeyPrefix}${uuid.v4()}`,
+//     timestamp: Date.now(),
+//   }))
+//   const [locksUnfiltered, setLocksUnfiltered] = useState<
+//     { key: string; timestamp: number }[]
+//   >([])
+
+//   const [now, setNow] = useState(() => Date.now())
+//   useEffect(() => {
+//     const interval = window.setInterval(
+//       () => setNow(Date.now()),
+//       1000 * 15, // Every 15 seconds
+//     )
+//     return () => window.clearInterval(interval)
+//   }, [])
+
+//   useEffect(() => {
+//     const onStorage = () => {
+//       setLocksUnfiltered(
+//         _.compact(
+//           _.keys(localStorage)
+//             .filter((x) => x.startsWith(_lockKeyPrefix))
+//             .map((key) => {
+//               const timestamp = parseFloat(localStorage.getItem(key) ?? 'NaN')
+//               return isNaN(timestamp) ? null : { key, timestamp }
+//             }),
+//         ).sort((a, b) => a.timestamp - b.timestamp),
+//       )
+//     }
+//     window.addEventListener('storage', onStorage)
+//     window.localStorage.setItem(lockInfo.key, `${lockInfo.timestamp}`)
+//     onStorage()
+//     return () => {
+//       window.removeEventListener('storage', onStorage)
+//       window.localStorage.removeItem(lockInfo.key)
+//     }
+//   }, [lockInfo])
+//   useAssertConst([lockInfo])
+
+//   const locks = locksUnfiltered.filter(
+//     // Does not have to be too long, because it is only a UI bug not a
+//     // data integrity issue. The worst that happens is that there the
+//     // local plan is merge twice, which is not a big deal.
+//     (x) =>
+//       x.timestamp > now - 1000 * 60 * 2 && // 2 minutes
+//       x.key !== lockInfo.key,
+//   )
+//   console.dir('----LOCKS-----')
+//   console.log(locks.map((x) => x.key).join('\n'))
+//   console.dir('----LOCKS-----')
+//   const hasLock = locks.length > 0 && locks[0].key === lockInfo.key
+//   console.dir(`hasLock: ${hasLock}`)
+//   return hasLock
+// }

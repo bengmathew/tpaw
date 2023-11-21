@@ -34,6 +34,7 @@ type _State =
 export const WithFirebaseUser = React.memo(
   ({ children }: { children: ReactNode }) => {
     const [state, setState] = useState<_State>({ initialized: false })
+    
     useEffect(
       () =>
         onAuthStateChanged(getAuth(), (user) => {

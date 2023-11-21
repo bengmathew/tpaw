@@ -99,7 +99,6 @@ const _FutureSavingsCard = React.memo(
           <p className="p-base">{`How much do you expect to save per month between now and retirement? You can enter savings from different sources separately—your savings, your partner's savings, etc.`}</p>
           <ByMonthSchedule
             className="mt-6"
-            heading={null}
             editProps={{
               defaultMonthRange: {
                 type: 'startAndEnd',
