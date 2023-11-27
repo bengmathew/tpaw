@@ -36,7 +36,6 @@ const _getLocalData = () => ({
 })
 
 const _clearLocalData = () => {
-  console.dir('*************** CLEAR')
   PlanLocalStorage.clear()
   MergeToServerLinkPlan.clear()
   NonPlanParamsLocalStorage.clear()
@@ -114,12 +113,6 @@ const _Merge = React.memo(
     ) => void
   }) => {
     const { setGlobalError } = useSetGlobalError()
-
-    // const [state, setState] = useState<
-    //   | { type: 'init' }
-    //   | { type: 'askedForLock'; abortController: AbortController }
-    //   | { type: 'gotLock'; releaseLock: () => void }
-    // >({ type: 'init' })
 
     // To avoid double useEffect in dev due to strict mode.
     const [isInitialized, setIsInitialized] = useState(false)
@@ -201,6 +194,9 @@ const _Merge = React.memo(
           resolve: null as (() => void) | null,
         }
         subState.abortController = new AbortController()
+        // Locking is necessary to prevent two tabs from merging at the same.
+        // This can happen when a new user signs in through email, which opens
+        // a new tab, resulting in two tabs being open and needing to merge.
         void window.navigator.locks.request(
           'mergeToServer',
           { mode: 'exclusive', signal: subState.abortController.signal },
@@ -320,64 +316,3 @@ export namespace MergeToServerLinkPlan {
   }
   export const clear = () => window.localStorage.removeItem(key)
 }
-
-// // This component handles locking to allow only one tab to merge at a time.
-// // This situation can occur when a new user signs in through email, which
-// // opens a new tab, resulting in two tabs being open and needing to merge.
-// const _lockKeyPrefix = 'MergeLockKey_'
-// const useLock = () => {
-//   const [lockInfo] = useState(() => ({
-//     key: `${_lockKeyPrefix}${uuid.v4()}`,
-//     timestamp: Date.now(),
-//   }))
-//   const [locksUnfiltered, setLocksUnfiltered] = useState<
-//     { key: string; timestamp: number }[]
-//   >([])
-
-//   const [now, setNow] = useState(() => Date.now())
-//   useEffect(() => {
-//     const interval = window.setInterval(
-//       () => setNow(Date.now()),
-//       1000 * 15, // Every 15 seconds
-//     )
-//     return () => window.clearInterval(interval)
-//   }, [])
-
-//   useEffect(() => {
-//     const onStorage = () => {
-//       setLocksUnfiltered(
-//         _.compact(
-//           _.keys(localStorage)
-//             .filter((x) => x.startsWith(_lockKeyPrefix))
-//             .map((key) => {
-//               const timestamp = parseFloat(localStorage.getItem(key) ?? 'NaN')
-//               return isNaN(timestamp) ? null : { key, timestamp }
-//             }),
-//         ).sort((a, b) => a.timestamp - b.timestamp),
-//       )
-//     }
-//     window.addEventListener('storage', onStorage)
-//     window.localStorage.setItem(lockInfo.key, `${lockInfo.timestamp}`)
-//     onStorage()
-//     return () => {
-//       window.removeEventListener('storage', onStorage)
-//       window.localStorage.removeItem(lockInfo.key)
-//     }
-//   }, [lockInfo])
-//   useAssertConst([lockInfo])
-
-//   const locks = locksUnfiltered.filter(
-//     // Does not have to be too long, because it is only a UI bug not a
-//     // data integrity issue. The worst that happens is that there the
-//     // local plan is merge twice, which is not a big deal.
-//     (x) =>
-//       x.timestamp > now - 1000 * 60 * 2 && // 2 minutes
-//       x.key !== lockInfo.key,
-//   )
-//   console.dir('----LOCKS-----')
-//   console.log(locks.map((x) => x.key).join('\n'))
-//   console.dir('----LOCKS-----')
-//   const hasLock = locks.length > 0 && locks[0].key === lockInfo.key
-//   console.dir(`hasLock: ${hasLock}`)
-//   return hasLock
-// }

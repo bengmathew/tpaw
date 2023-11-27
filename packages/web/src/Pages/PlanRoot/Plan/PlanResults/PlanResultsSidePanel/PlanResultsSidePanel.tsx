@@ -61,19 +61,3 @@ export const PlanResultsSidePanel = React.memo(
     )
   },
 )
-
-// const _transformSizing = ({
-//   sidePanel,
-// }: PlanChartSidePanelSizing['dynamic']['dialogInput']) => {
-//   const { inset } = sidePanel
-//   const chart = {
-//     position: rectExt({
-//       x: 0,
-//       y: 0,
-//       height: inset.height,
-//       width: inset.width,
-//     }),
-//     padding: newPadding({ horz: 0, top: 60, bottom: 10 }),
-//   }
-//   return { ...sidePanel, chart }
-// }
