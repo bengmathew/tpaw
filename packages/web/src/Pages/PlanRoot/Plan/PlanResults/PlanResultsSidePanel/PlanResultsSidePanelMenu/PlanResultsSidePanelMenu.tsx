@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { CSSProperties, useMemo } from 'react'
 import { ContextMenu2 } from '../../../../../Common/Modal/ContextMenu2'
+import { useSimulation } from '../../../../PlanRootHelpers/WithSimulation'
 import { setPrintOnDoneURL } from '../../../PlanPrint/PlanPrint'
 import { usePlanColors } from '../../../UsePlanColors'
 import { PlanResultsSidePanelMenuBalanceSheet } from './PlanResutlsSidePanelMenuBalanceSheet'
@@ -17,6 +18,7 @@ import { PlanResultsSidePanelMenuBalanceSheet } from './PlanResutlsSidePanelMenu
 export const PlanResultsSidePanelMenu = React.memo(
   ({ className, style }: { className?: string; style?: CSSProperties }) => {
     const [showBalanceSheet, setShowBalanceSheet] = React.useState(false)
+    const { planParams } = useSimulation()
     const planColors = usePlanColors()
     const path = useRouter().asPath
     const printURL = useMemo(() => {
@@ -47,16 +49,18 @@ export const PlanResultsSidePanelMenu = React.memo(
               color: planColors.results.fg,
             }}
           >
-            <Menu.Item
-              as="button"
-              className="context-menu-item"
-              onClick={() => setShowBalanceSheet(true)}
-            >
-              <span className="inline-block w-[30px]">
-                <FontAwesomeIcon icon={faLineColumns} />
-              </span>
-              Balance Sheet
-            </Menu.Item>
+            {planParams.advanced.strategy === 'TPAW' && (
+              <Menu.Item
+                as="button"
+                className="context-menu-item"
+                onClick={() => setShowBalanceSheet(true)}
+              >
+                <span className="inline-block w-[30px]">
+                  <FontAwesomeIcon icon={faLineColumns} />
+                </span>
+                Balance Sheet
+              </Menu.Item>
+            )}
             <Menu.Item>
               <Link
                 className="context-menu-item"
