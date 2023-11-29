@@ -119,7 +119,7 @@ async function _impl() {
   })
   server.use(
     '/gql',
-    bodyParser.json(),
+    bodyParser.json({limit:'10mb'}),
     expressMiddleware<Context>(apollo, {
       context: async ({ req }) => {
         try {
