@@ -5,7 +5,7 @@ import {
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
-import clsx from 'clsx'
+import clix from 'clsx'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { CSSProperties, useMemo } from 'react'
@@ -31,7 +31,7 @@ export const PlanResultsSidePanelMenu = React.memo(
       <>
         <ContextMenu2
           align={'right'}
-          className={clsx(className, 'w-full')}
+          className={clix(className, 'w-full')}
           style={{
             ...style,
             backgroundColor: planColors.results.cardBG,

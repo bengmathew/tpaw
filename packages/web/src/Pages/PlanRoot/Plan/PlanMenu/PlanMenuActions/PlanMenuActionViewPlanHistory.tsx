@@ -1,6 +1,6 @@
 import { Menu } from '@headlessui/react'
 import { assertFalse, noCase } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import React, { useEffect, useRef, useState } from 'react'
 import { useURLUpdater } from '../../../../../Utils/UseURLUpdater'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
@@ -48,7 +48,7 @@ export const PlanMenuActionViewPlanHistory = React.memo(
     return (
       <Menu.Item
         as="button"
-        className={clsx(className)}
+        className={clix(className)}
         onClick={(e) => {
           if (historyStatus === 'fetched') {
             handleSwitchToHistoryMode()

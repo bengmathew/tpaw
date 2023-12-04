@@ -1,10 +1,12 @@
-import { PlanParams24 as PlanParamsCurr } from './PlanParams24'
+import { PlanParams25 as PlanParamsCurr } from './PlanParams25'
 
 type _GetVersion<T> = T extends { v: infer V } ? V : 1
 
 export type PlanParams = PlanParamsCurr.PlanParams
 export type SomePlanParams = PlanParamsCurr.SomePlanParams
 export type SomePlanParamsVersion = _GetVersion<SomePlanParams>
+export type TimestampedPlanParams = PlanParamsCurr.TimestampedPlanParams
+export type DialogPosition = PlanParamsCurr.DialogPosition
 export type CalendarMonth = PlanParamsCurr.CalendarMonth
 export type InMonths = PlanParamsCurr.InMonths
 export type Person = PlanParamsCurr.Person
@@ -21,6 +23,8 @@ export const planParamsComponentGuards = PlanParamsCurr.componentGuards
 export const planParamsGuard = PlanParamsCurr.guard
 export const planParamsBackwardsCompatibleGuard =
   PlanParamsCurr.backwardsCompatibleGuard
+export const planParamsBackwardsUpToTimestampCompatibleGuard =
+  PlanParamsCurr.backwardsCompatibleToTimestampGuard
 export const planParamsMigrate = PlanParamsCurr.migrate
 export const MAX_AGE_IN_MONTHS = PlanParamsCurr.MAX_AGE_IN_MONTHS
 export const MAX_LABEL_LENGTH = PlanParamsCurr.MAX_LABEL_LENGTH
@@ -43,3 +47,5 @@ export const MANUAL_STOCKS_BONDS_RETURNS_VALUES =
   PlanParamsCurr.MANUAL_STOCKS_BONDS_RETURNS_VALUES
 export const MIN_PLAN_PARAM_TIME = PlanParamsCurr.MIN_PLAN_PARAM_TIME
 export const calendarMonthFromTime = PlanParamsCurr.calendarMonthFromTime
+export const PLAN_PARAMS_CONSTANTS = PlanParamsCurr.CONSTANTS
+export const planParamsFns = PlanParamsCurr.fns

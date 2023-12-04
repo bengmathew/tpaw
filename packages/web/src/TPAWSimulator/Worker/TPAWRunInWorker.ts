@@ -128,9 +128,12 @@ export class TPAWRunInWorker {
     this._workers.forEach((worker) => {
       worker.onerror = (event) => {
         console.dir(event)
+        // TODO: Confirm that this logs to sentry and switches to error page.
+        throw event.error
       }
       worker.addEventListener('unhandledrejection', (event) => {
-        console.dir(event)
+        // TODO: Confirm that this logs to sentry and switches to error page.
+        throw new Error(`unhandledrejection: ${(event as any).reason}`)
       })
       worker.onmessage = (event) => {
         const data = event.data as TPAWWorkerResult

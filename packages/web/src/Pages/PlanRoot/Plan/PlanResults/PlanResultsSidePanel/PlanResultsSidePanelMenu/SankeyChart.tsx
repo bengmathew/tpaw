@@ -1,5 +1,5 @@
 import { assert, fGet, noCase } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import { path } from 'd3-path'
 import _ from 'lodash'
 import React, { ReactNode, useLayoutEffect, useMemo, useState } from 'react'
@@ -174,7 +174,7 @@ export namespace Sankey {
         }))()
       return (
         <div
-          className={clsx(className, ' overflow-x-auto ')}
+          className={clix(className, ' overflow-x-auto ')}
           style={{ height: `${sizing.height}px` }}
           ref={setOuterDiv}
         >
@@ -306,7 +306,7 @@ export namespace Sankey {
       return (
         <>
           <rect
-            className={clsx(className)}
+            className={clix(className)}
             fill={color}
             x={x}
             y={y}
@@ -335,7 +335,7 @@ export namespace Sankey {
             height={height + sizing.nodeYGap}
           >
             <div
-              className={clsx(
+              className={clix(
                 ' h-full flex flex-col',
                 labelPosition === 'right'
                   ? 'justify-center  items-end text-right'
@@ -402,7 +402,7 @@ export namespace Sankey {
             </linearGradient>
           </defs>
           <path
-            className={clsx(className)}
+            className={clix(className)}
             stroke={'none'}
             strokeWidth={height}
             fill={`url(#${gradientId})`}

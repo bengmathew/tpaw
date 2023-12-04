@@ -2,7 +2,7 @@ import { faTwitter } from '@fortawesome/free-brands-svg-icons'
 import { faEnvelope } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
-import clsx from 'clsx'
+import clix from 'clsx'
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
@@ -18,7 +18,7 @@ export const PlanContactContent = React.memo(
   }) => {
     return (
       <div
-        className={clsx(className, 'rounded-full text-lg flex items-stretch ')}
+        className={clix(className, 'rounded-full text-lg flex items-stretch ')}
         style={{ backgroundColor: colors.bg, color: colors.fg }}
       >
         <a

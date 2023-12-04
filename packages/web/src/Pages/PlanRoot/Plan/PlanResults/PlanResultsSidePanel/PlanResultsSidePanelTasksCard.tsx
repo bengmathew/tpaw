@@ -1,5 +1,5 @@
 import { PlanParams, fGet } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import _ from 'lodash'
 import React, { CSSProperties, ReactNode, useState } from 'react'
 import { FirstMonthSavingsPortfolioDetail } from '../../../../../TPAWSimulator/Worker/FirstMonthSavingsPortfolioDetail'
@@ -44,7 +44,7 @@ export const PlanResultsSidePanelTasksCard = React.memo(
     return (
       <>
         <button
-          className={clsx(
+          className={clix(
             className,
             'block text-start w-full rounded-2xl overflow-hidden ',
           )}
@@ -85,7 +85,7 @@ export const PlanResultsSidePanelTasksCard = React.memo(
             }}
           >
             <h2
-              className={clsx('py-0.5 pl-4 pr-4 rounded-tl-lg')}
+              className={clix('py-0.5 pl-4 pr-4 rounded-tl-lg')}
               style={{
                 backgroundColor: planColors.results.darkBG,
                 color: planColors.results.fgForDarkBG,
@@ -183,11 +183,11 @@ export const TasksForThisMonthContent = React.memo(
 
     const { withdrawals, withdrawalsStarted } = props
     return (
-      <div className={clsx(className, forPrint ? '' : 'font-font2 text-lg')}>
+      <div className={clix(className, forPrint ? '' : 'font-font2 text-lg')}>
         {withdrawals.total !== 0 || withdrawalsStarted ? (
           <>
             <h2
-              className={clsx(
+              className={clix(
                 'font-bold text-xl sm:text-2xl mb-4 font-font1 ',
                 forPrint && 'text-black',
               )}
@@ -197,7 +197,7 @@ export const TasksForThisMonthContent = React.memo(
             <_Summary className="" {...props} forPrint={forPrint} />
 
             <h2
-              className={clsx(
+              className={clix(
                 'font-bold text-xl sm:text-2xl mt-10 mb-6  font-font1 ',
                 forPrint && 'text-black',
               )}
@@ -608,7 +608,7 @@ const _Heading = React.memo(
     const planColors = usePlanColors()
     return (
       <h2
-        className={clsx(
+        className={clix(
           'font-bold text-lg mb-1 font-font1 ',
           forPrint && 'text-black',
         )}

@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import {
   PlanParams,
   PlanParamsChangeAction,
@@ -22,16 +23,17 @@ import { useUser } from '../../App/WithUser'
 import { CenteredModal } from '../../Common/Modal/CenteredModal'
 import { useCurrentTime } from '../PlanRootHelpers/UseCurrentTime'
 import { useWorkingPlan } from '../PlanRootHelpers/UseWorkingPlan'
+import { useIANATimezoneName } from '../PlanRootHelpers/WithNonPlanParams'
 import {
-  SimulationInfo,
+  SimulationInfoForServerSrc,
   WithSimulation,
   useSimulationParamsForHistoryMode,
   useSimulationParamsForPlanMode,
 } from '../PlanRootHelpers/WithSimulation'
+import { PlanRootServerQuery$data } from '../PlanRootServer/__generated__/PlanRootServerQuery.graphql'
+import { PlanServerImplSyncState } from './PlanServerImplSyncState'
 import { useServerHistoryPreBase } from './UseServerHistoryFromStart'
 import { useServerSyncPlan } from './UseServerSyncPlan'
-import { PlanRootServerQuery$data } from '../PlanRootServer/__generated__/PlanRootServerQuery.graphql'
-import { useIANATimezoneName } from '../PlanRootHelpers/WithNonPlanParams'
 
 export const PlanServer = React.memo(
   ({
@@ -86,12 +88,13 @@ export const PlanServer = React.memo(
       startingServerPlan,
       planPaths,
     )
-    const isSyncing = useServerSyncPlan(
+    const serverSyncState = useServerSyncPlan(
       user.id,
       serverPlan,
       workingPlanInfo.workingPlan,
       setServerPlan,
     )
+    const isSyncing = serverSyncState.type !== 'synced'
 
     const serverHistoryPreBaseInfo = useServerHistoryPreBase(
       planId,
@@ -187,11 +190,11 @@ export const PlanServer = React.memo(
           : noCase(serverHistoryPreBaseInfo.state),
     )
 
-    const simulationInfoBySrc: SimulationInfo['simulationInfoBySrc'] = {
+    const simulationInfoBySrc: SimulationInfoForServerSrc = {
       src: 'server',
       plan: serverPlanIn,
       historyStatus: serverHistoryPreBaseInfo.state.type,
-      isSyncing,
+      syncState: serverSyncState,
     }
 
     const simulationParamsForPlanMode = useSimulationParamsForPlanMode(
@@ -221,6 +224,22 @@ export const PlanServer = React.memo(
       isSyncing,
       planPaths,
     )
+    const [showSyncState, setShowSyncState] = useState(false)
+    useEffect(() => {
+      if (showSyncState) return
+      if (
+        serverSyncState.type === 'waitDueToError' &&
+        (serverSyncState.waitEndTime === 'never' ||
+          serverSyncState.failures.length >= 2)
+      ) {
+        Sentry.captureMessage(
+          `Showed sync error dialog.\n${
+            (JSON.stringify(serverSyncState.failures), null, 2)
+          }`,
+        )
+        setShowSyncState(true)
+      }
+    }, [showSyncState, serverSyncState])
 
     if (rewindInfo && !simulationParamsForHistoryMode) {
       return (
@@ -241,7 +260,7 @@ export const PlanServer = React.memo(
         />
         <CenteredModal
           className="dialog-outer-div"
-          show={navGuardState.isTriggered}
+          show={navGuardState.isTriggered && !showSyncState}
           onOutsideClickOrEscape={null}
         >
           {isSyncing ? (
@@ -271,6 +290,16 @@ export const PlanServer = React.memo(
               Close
             </button>
           </div>
+        </CenteredModal>
+        <CenteredModal
+          className="dialog-outer-div"
+          show={showSyncState}
+          onOutsideClickOrEscape={null}
+        >
+          <PlanServerImplSyncState
+            syncState={serverSyncState}
+            onHide={() => setShowSyncState(false)}
+          />
         </CenteredModal>
       </>
     )

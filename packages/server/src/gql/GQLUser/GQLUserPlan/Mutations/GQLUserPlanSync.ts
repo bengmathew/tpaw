@@ -3,6 +3,7 @@ import {
   PlanParams,
   PlanParamsChangeActionCurrent,
   SomePlanParams,
+  TimestampedPlanParams,
   assert,
   fGet,
   letIn,
@@ -80,7 +81,7 @@ export const userPlanSync = async (
   cutAfterId: string,
   add: {
     id: string
-    params: PlanParams
+    params: TimestampedPlanParams
     change: PlanParamsChangeActionCurrent
   }[],
   reverseHeadIndex: number,

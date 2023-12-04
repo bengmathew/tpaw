@@ -1,5 +1,5 @@
 import { block } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import _ from 'lodash'
 import React, { CSSProperties } from 'react'
 import { PERCENTILES_STR } from '../../../../../TPAWSimulator/Worker/TPAWRunInWorker'
@@ -53,7 +53,7 @@ export const PlanResultsChartCardFundingSourcesToggle = React.memo(
     }
 
     return (
-      <div className={clsx(className, 'flex justify-start')} style={style}>
+      <div className={clix(className, 'flex justify-start')} style={style}>
         <div className="flex items-center gap-x-2">
           <ToggleSwitch
             style={{
@@ -105,7 +105,7 @@ export const PlanResultsChartCardFundingSourcesToggle = React.memo(
                       {PERCENTILES_STR.map((percentileStr, i) => (
                         <button
                           key={percentileStr}
-                          className={clsx(
+                          className={clix(
                             'relative z-10',
                             i !== 0 && ' border-l',
                           )}

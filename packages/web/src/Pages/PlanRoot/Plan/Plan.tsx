@@ -1,5 +1,5 @@
-import { PlanParams, block, noCase } from '@tpaw/common'
-import clsx from 'clsx'
+import { DialogPosition, block, noCase } from '@tpaw/common'
+import clix from 'clsx'
 import getIsMobile from 'is-mobile'
 import _ from 'lodash'
 import { useRouter } from 'next/router'
@@ -22,7 +22,6 @@ import {
   isPlanInputType,
   paramsInputTypes,
 } from './PlanInput/Helpers/PlanInputType'
-import { nextPlanSectionDialogPosition } from './PlanInput/Helpers/PlanSectionDialogPosition'
 import { planSectionLabel } from './PlanInput/Helpers/PlanSectionLabel'
 import { PlanSectionName } from './PlanInput/Helpers/PlanSectionName'
 import { PlanInput } from './PlanInput/PlanInput'
@@ -36,8 +35,10 @@ import { useGetPlanResultsChartURL } from './PlanResults/UseGetPlanResultsChartU
 import { usePlanResultsChartType } from './PlanResults/UsePlanResultsChartType'
 import { planSizing } from './PlanSizing/PlanSizing'
 import { PlanSummary } from './PlanSummary/PlanSummary'
+import { PlanSyncStateDev } from './PlanSyncStateDev'
 import { usePlanColors } from './UsePlanColors'
 import { WithPlanResultsChartData } from './WithPlanResultsChartData'
+import { PlanServerImplSyncState } from '../PlanServerImpl/PlanServerImplSyncState'
 
 export const Plan = React.memo(() => {
   return (
@@ -75,7 +76,6 @@ const _Plan = React.memo(() => {
   const spendingTotalURL = useGetPlanResultsChartURL()('spending-total')
   const urlUpdater = useURLUpdater()
   const chartLabel = planResultsChartLabel(planParams, planChartType)
-
   const state = usePlanState()
 
   const [transition, setTransition] = useState(() => {
@@ -142,7 +142,7 @@ const _Plan = React.memo(() => {
         // just does not work. Tested on iOS 15.4. So dont use h-screen for
         // iPhone, max out based on windowSize.
         // className={`${i  sIPhone ? '' : 'h-screen'} bg-planBG overflow-hidden`}
-        className={clsx(
+        className={clix(
           showPrint && 'hidden',
           planColors.pageBG,
           'overflow-hidden',
@@ -217,6 +217,8 @@ const _Plan = React.memo(() => {
               }}
               chartHover={chartHover}
             />
+            {/* <PlanSyncState /> */}
+            <PlanSyncStateDev />
           </>
         )}
       </AppPage>
@@ -228,7 +230,7 @@ _Plan.displayName = '_Plan'
 function usePlanState() {
   const { planParams, updatePlanParams, planParamsExt, simulationInfoByMode } =
     useSimulation()
-  const { isFutureSavingsAllowed } = planParamsExt
+  const { dialogPositionEffective, nextDialogPosition } = planParamsExt
 
   const urlSection = useURLSection()
 
@@ -238,7 +240,7 @@ function usePlanState() {
   // this?)
   const [state, setState] = useState({
     section: urlSection,
-    dialogPosition: planParams.dialogPosition,
+    dialogPosition: dialogPositionEffective,
   })
   const handleURLSectionChange = (section: typeof urlSection) =>
     setState({
@@ -247,21 +249,16 @@ function usePlanState() {
         state.dialogPosition !== 'done' &&
         urlSection === 'summary' &&
         state.section === state.dialogPosition
-          ? nextPlanSectionDialogPosition(
-              state.dialogPosition,
-              isFutureSavingsAllowed,
-            )
+          ? nextDialogPosition
           : state.dialogPosition,
     })
   const handleURLSectionChangeRef = useRef(handleURLSectionChange)
   handleURLSectionChangeRef.current = handleURLSectionChange
   useEffect(() => handleURLSectionChangeRef.current(urlSection), [urlSection])
 
-  const handleDialogPosition = (
-    dialogPosition: PlanParams['dialogPosition'],
-  ) => {
+  const handleDialogPosition = (dialogPosition: DialogPosition) => {
     if (simulationInfoByMode.mode === 'history') return
-    if (planParams.dialogPosition === dialogPosition) return
+    if (planParams.dialogPositionNominal === dialogPosition) return
     updatePlanParams('setDialogPosition', dialogPosition)
   }
   const handleDialogPositionRef = useRef(handleDialogPosition)
@@ -273,11 +270,11 @@ function usePlanState() {
 
   useEffect(() => {
     setState((prev) =>
-      planParams.dialogPosition === prev.dialogPosition
+      dialogPositionEffective === prev.dialogPosition
         ? prev
-        : { section: prev.section, dialogPosition: planParams.dialogPosition },
+        : { section: prev.section, dialogPosition: dialogPositionEffective },
     )
-  }, [planParams.dialogPosition])
+  }, [dialogPositionEffective])
 
   return state
 }
@@ -316,7 +313,7 @@ export const useGetSectionURL = () => {
   )
 }
 
-const _isDialogMode = (dialogPosition: PlanParams['dialogPosition']) => {
+const _isDialogMode = (dialogPosition: DialogPosition) => {
   switch (dialogPosition) {
     case 'age':
     case 'current-portfolio-balance':

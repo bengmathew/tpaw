@@ -2,7 +2,7 @@ import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
 import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { assert, block, fGet, noCase } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import _, { capitalize } from 'lodash'
 import { DateTime, Duration } from 'luxon'
 import React from 'react'
@@ -101,7 +101,7 @@ const _FastForwardCard = React.memo(
           </div>
         </div>
         <div className=" flex justify-start gap-x-4 items-center mt-8">
-          <h2 className={clsx(`font-semibold`)}>Fast Forward</h2>
+          <h2 className={clix(`font-semibold`)}>Fast Forward</h2>
           <ToggleSwitch
             className="disabled:lighten-2"
             checked={fastForwardInfo.isFastForwarding}

@@ -20,11 +20,11 @@ import {
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import { Guards } from '../../Guards'
-import { assert, block, preciseRange } from '../../Utils'
-import { PlanParams23 as PlanParamsPrev } from './Old/PlanParams23'
+import { assert, block, fGet, preciseRange } from '../../Utils'
+import { PlanParams24 as PlanParamsPrev } from './Old/PlanParams24'
 
-export namespace PlanParams24 {
-  export const currentVersion = 24 as const
+export namespace PlanParams25 {
+  export const currentVersion = 25 as const
 
   export const MAX_LABEL_LENGTH = 150
   export const MAX_AGE_IN_MONTHS = 120 * 12
@@ -102,6 +102,53 @@ export namespace PlanParams24 {
   })()
 
   export const MIN_PLAN_PARAM_TIME = 1680481336120
+
+  export const CONSTANTS = {
+    dialogPositionOrder: [
+      'age',
+      'current-portfolio-balance',
+      'future-savings',
+      'income-during-retirement',
+      'show-results',
+      'show-all-inputs',
+      'done',
+    ] as const,
+  }
+
+  export type DialogPosition = (typeof CONSTANTS)['dialogPositionOrder'][number]
+  export const fns = block(() => {
+    const getNextDialogPosition = (
+      x: Exclude<DialogPosition, 'done'>,
+    ): DialogPosition =>
+      fGet(
+        CONSTANTS.dialogPositionOrder[
+          CONSTANTS.dialogPositionOrder.indexOf(x) + 1
+        ],
+      )
+
+    return {
+      // Intentionally, future savings is allowed even if the couple is jointly
+      // retired (withdrawals have started), but one of them are not individually
+      // retired. This does not matter either way because future savings and income
+      // during retirement are really the same thing under the hood.
+      getIsFutureSavingsAllowed: (
+        person1Retired: boolean,
+        person2Retired: boolean | undefined,
+      ) =>
+        person2Retired === undefined
+          ? !person1Retired
+          : !(person1Retired && person2Retired),
+
+      getNextDialogPosition,
+      getDialogPositionEffective: (
+        dialogPositionNominal: DialogPosition,
+        isFutureSavingsAllowed: boolean,
+      ) =>
+        dialogPositionNominal === 'future-savings' && !isFutureSavingsAllowed
+          ? getNextDialogPosition('future-savings')
+          : dialogPositionNominal,
+    }
+  })
 
   // -----------------
   // MasterListOfMonths
@@ -212,16 +259,17 @@ export namespace PlanParams24 {
   export type PlanParams = {
     v: typeof currentVersion
     timestamp: number
-    // Technically should be in non-plan, but this moves with plan changes,
-    // so simpler to keep it here.
-    dialogPosition:
-      | 'age'
-      | 'current-portfolio-balance'
-      | 'future-savings'
-      | 'income-during-retirement'
-      | 'show-results'
-      | 'show-all-inputs'
-      | 'done'
+    // Note 1. Technically should be in non-plan, but this moves with plan
+    // changes, so simpler to keep it here.
+    // Note 2. "nominal" because 'future-savings' does not apply if both
+    // people are retired. In that case effective will convert 'future-savings'
+    // to 'income-during-retirement'. Additional Note: It is not possible
+    // to enforce not 'future-savings' if both retired at the guard level,
+    // because retired is a property that needs an evaluation time to determine,
+    // which is not available here, so we really need to allow 'future-savings'
+    // in all cases in the params and deal with converting nominal to effective
+    // at evaluation time.
+    dialogPositionNominal: DialogPosition
     people: People
     // Wealth
     wealth: {
@@ -323,33 +371,15 @@ export namespace PlanParams24 {
     }
 
   export const componentGuards = (() => {
-    const dialogPosition = (
-      params: PlanParams | null,
-    ): JSONGuard<PlanParams['dialogPosition']> =>
-      chain(
-        union(
-          constant('age'),
-          constant('current-portfolio-balance'),
-          constant('future-savings'),
-          constant('income-during-retirement'),
-          constant('show-results'),
-          constant('show-all-inputs'),
-          constant('done'),
-        ),
-        (x): JSONGuardResult<PlanParams['dialogPosition']> => {
-          if (!params) return success(x)
-          if (params.dialogPosition !== 'future-savings') return success(x)
-          const targetPerson = !params.people.withPartner
-            ? params.people.person1
-            : params.people[params.people.withdrawalStart]
-
-          if (targetPerson.ages.type !== 'retiredWithNoRetirementDateSpecified')
-            return success(x)
-          return failure(
-            'dialogPosition is future-savings, but withdrawals have already started.',
-          )
-        },
-      )
+    const dialogPositionNominal = union(
+      constant('age'),
+      constant('current-portfolio-balance'),
+      constant('future-savings'),
+      constant('income-during-retirement'),
+      constant('show-results'),
+      constant('show-all-inputs'),
+      constant('done'),
+    )
 
     const personType: JSONGuard<'person1' | 'person2'> = union(
       constant('person1'),
@@ -507,7 +537,7 @@ export namespace PlanParams24 {
       inMonths,
       month,
       monthRange,
-      dialogPosition,
+      dialogPositionNominal,
       glidePath,
       samplingType,
       adjustExpectedReturn,
@@ -800,7 +830,7 @@ export namespace PlanParams24 {
     object({
       v: constant(currentVersion),
       timestamp: number,
-      dialogPosition: cg.dialogPosition(x),
+      dialogPositionNominal: cg.dialogPositionNominal,
       people: people,
       wealth: wealth(x),
       adjustmentsToSpending: adjustmentsToSpending(x),
@@ -821,6 +851,9 @@ export namespace PlanParams24 {
   )
 
   export type SomePlanParams = PlanParamsPrev.SomePlanParams | PlanParams
+  export type TimestampedPlanParams =
+    | PlanParamsPrev.TimestampedPlanParams
+    | PlanParams
 
   export const backwardsCompatibleGuard: JSONGuard<SomePlanParams> = (
     x: unknown,
@@ -828,70 +861,24 @@ export namespace PlanParams24 {
     const result = union(PlanParamsPrev.backwardsCompatibleGuard, guard)(x)
     return result.error ? result : success(x as SomePlanParams)
   }
+  export const backwardsCompatibleToTimestampGuard: JSONGuard<
+    TimestampedPlanParams
+  > = (x: unknown) => {
+    const result = union(PlanParamsPrev.backwardsCompatibleGuard, guard)(x)
+    return result.error ? result : success(x as TimestampedPlanParams)
+  }
 
   export const migrate = (x: SomePlanParams): PlanParams => {
     if ('v' in x && x.v === currentVersion) return x
     const prev = PlanParamsPrev.migrate(x)
 
-    const migrateLabeledAmounts = <T extends { sortIndex: number }>(
-      prev: Record<string, T>,
-      startingColorIndex: number,
-    ): Record<string, T & { colorIndex: number }> => {
-      const pairs = _.toPairs(prev).sort(
-        (a, b) => a[1].sortIndex - b[1].sortIndex,
-      )
-      const result: Record<string, T & { colorIndex: number }> = {}
-      pairs.forEach(([key, value], i) => {
-        result[key] = {
-          ...value,
-          colorIndex: startingColorIndex + i,
-        }
-      })
-      return result
-    }
-
     const result: PlanParams = {
       v: currentVersion,
       timestamp: prev.timestamp,
-      dialogPosition: prev.dialogPosition,
+      dialogPositionNominal: prev.dialogPosition,
       people: prev.people,
-      wealth: {
-        portfolioBalance: prev.wealth.portfolioBalance,
-        futureSavings: migrateLabeledAmounts(
-          prev.wealth.futureSavings,
-          _.keys(prev.wealth.incomeDuringRetirement).length,
-        ),
-        incomeDuringRetirement: migrateLabeledAmounts(
-          prev.wealth.incomeDuringRetirement,
-          0,
-        ),
-      },
-      adjustmentsToSpending: {
-        extraSpending: {
-          essential: migrateLabeledAmounts(
-            prev.adjustmentsToSpending.extraSpending.essential,
-            _.keys(prev.adjustmentsToSpending.extraSpending.discretionary)
-              .length,
-          ),
-          discretionary: migrateLabeledAmounts(
-            prev.adjustmentsToSpending.extraSpending.discretionary,
-            0,
-          ),
-        },
-        tpawAndSPAW: {
-          monthlySpendingCeiling:
-            prev.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling,
-          monthlySpendingFloor:
-            prev.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor,
-          legacy: {
-            total: prev.adjustmentsToSpending.tpawAndSPAW.legacy.total,
-            external: migrateLabeledAmounts(
-              prev.adjustmentsToSpending.tpawAndSPAW.legacy.external,
-              0,
-            ),
-          },
-        },
-      },
+      wealth: prev.wealth,
+      adjustmentsToSpending: prev.adjustmentsToSpending,
       risk: prev.risk,
       advanced: prev.advanced,
       results: prev.results,

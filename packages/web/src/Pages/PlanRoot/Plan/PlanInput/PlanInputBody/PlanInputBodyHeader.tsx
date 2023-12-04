@@ -1,6 +1,6 @@
 import { faLeftLong } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import clsx from 'clsx'
+import clix from 'clsx'
 import Link from 'next/link'
 import React, { useRef } from 'react'
 import { useGetSectionURL } from '../../Plan'
@@ -49,7 +49,7 @@ export const PlanInputBodyHeaderDoneButton = React.memo(
   ({ className, url }: { className?: string; url: URL }) => {
     return (
       <Link
-        className={clsx(
+        className={clix(
           className,
           'flex items-center gap-x-2 text-sm sm:text-base btn-dark px-4 py-1.5',
         )}

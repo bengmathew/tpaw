@@ -1,6 +1,6 @@
 import { captureException } from '@sentry/nextjs'
 import { fGet } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import React from 'react'
 import { useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
@@ -74,7 +74,7 @@ export const PlanMenuActionModalSetAsMain = React.memo(
           {isSyncing ? 'Syncing Plan to Server...' : 'Make This the Main Plan'}
         </h2>
         <div className=" dialog-content-div relative">
-          <p className={clsx('p-base', isSyncing && 'opacity-0')}>
+          <p className={clix('p-base', isSyncing && 'opacity-0')}>
             {`Your current main plan will be moved to "Other Plans."`}
           </p>
           {isSyncing && <Spinner size="text-3xl" />}
@@ -92,7 +92,7 @@ export const PlanMenuActionModalSetAsMain = React.memo(
             disabled={isRunning || isSyncing}
             onClick={handleClick}
           >
-            <span className={clsx(isRunning && 'opacity-0')}>Continue</span>
+            <span className={clix(isRunning && 'opacity-0')}>Continue</span>
             {isRunning && <Spinner size="text-xl" />}
           </button>
         </div>

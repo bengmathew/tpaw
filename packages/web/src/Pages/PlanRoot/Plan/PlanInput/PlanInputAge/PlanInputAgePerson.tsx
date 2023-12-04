@@ -5,10 +5,15 @@ import {
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Switch } from '@headlessui/react'
-import { MAX_AGE_IN_MONTHS, PlanParams, block, noCase } from '@tpaw/common'
+import {
+  MAX_AGE_IN_MONTHS,
+  PlanParams,
+  block,
+  noCase,
+  planParamsFns,
+} from '@tpaw/common'
 import _ from 'lodash'
 import React, { ReactNode, useMemo, useRef, useState } from 'react'
-import { getIsFutureSavingsAllowed } from '../../../../../TPAWSimulator/ExtentPlanParams'
 import { calendarMonthStr } from '../../../../../Utils/CalendarMonthStr'
 import { numMonthsStr } from '../../../../../Utils/NumMonthsStr'
 import { pluralize } from '../../../../../Utils/Pluralize'
@@ -404,6 +409,7 @@ const usePerson2DeleteWarnings = () => {
 }
 
 const useRetireWarnings = (personType: 'person1' | 'person2') => {
+  const { getIsFutureSavingsAllowed } = planParamsFns
   const { planParamsExt } = useSimulation()
   const { isPersonRetired, planParams } = planParamsExt
   const futureSavingsWarnings = block(() => {

@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
 import { captureException } from '@sentry/nextjs'
 import { fGet, noCase } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import cloneJSON from 'fast-json-clone'
 import React, { ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from 'react-relay'
@@ -29,7 +29,7 @@ export const PlanMenuActionCopyToLink = React.memo(
     return state.type === 'idle' ? (
       <Menu.Item
         as="button"
-        className={clsx(className)}
+        className={clix(className)}
         onClick={(e) => {
           // This keeps the menu open (only  on click through, not on keyboard)
           // As of Jun 2023, no solution for keyboard:
@@ -139,7 +139,7 @@ const _Link = React.memo(
       'flex w-full items-center gap-x-1 h-[35px]  border border-gray-300 rounded-md px-1  '
 
     return (
-      <div className={clsx(outerClassName)} ref={outerDivRef}>
+      <div className={clix(outerClassName)} ref={outerDivRef}>
         <div className="" style={{ width: `${width}px` }}>
           {state.type === 'idle' ? (
             <button

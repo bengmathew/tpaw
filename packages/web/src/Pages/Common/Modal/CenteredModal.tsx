@@ -1,5 +1,5 @@
 import { Transition } from '@headlessui/react'
-import clsx from 'clsx'
+import clix from 'clsx'
 import React, { CSSProperties, ReactNode, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 
@@ -46,7 +46,7 @@ export const CenteredModal = React.memo(
           onClick={onOutsideClickOrEscape ?? undefined}
         />
         <Transition.Child
-          className={clsx(
+          className={clix(
             className,
             'duration-300 bg-pageBG rounded-xl z-10 p-4 max-h-[80vh] overflow-scroll',
           )}

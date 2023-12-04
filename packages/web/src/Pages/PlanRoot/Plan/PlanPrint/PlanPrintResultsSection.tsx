@@ -1,7 +1,7 @@
 import { faChevronRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { assert, fGet } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import _ from 'lodash'
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { getChartBandColor } from '../../../../Utils/ColorPalette'
@@ -103,7 +103,7 @@ const _MonthlySpendingBreakdownLegend = React.memo(
     const cols = _.chunk(parts, Math.ceil(parts.length / 3))
     return (
       // Make sure
-      <div className={clsx(className)}>
+      <div className={clix(className)}>
         <div
           className="inline-grid gap-x-4"
           style={{ grid: `auto/${_.repeat('1fr ', cols.length)}` }}
@@ -148,7 +148,7 @@ const _Legacy = React.memo(({ className }: { className?: string }) => {
     maxLegacy > 0 ||
     planParams.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0
   return (
-    <div className={clsx(className)}>
+    <div className={clix(className)}>
       <h2 className="text-xl font-bold">Legacy</h2>
       {hasLegacy && (
         <h2 className=" ">These dollars are adjusted for inflation.</h2>
@@ -213,7 +213,7 @@ const _Chart = React.memo(
       getPlanPrintChartLabel(planParams, type)
 
     return (
-      <div className={clsx(className, ' break-inside-avoid-page')}>
+      <div className={clix(className, ' break-inside-avoid-page')}>
         <h2 className="flex items-center">
           {label.full.map((x, i) => (
             <React.Fragment key={i}>
@@ -233,7 +233,7 @@ const _Chart = React.memo(
         </h2>
 
         <div
-          className={clsx(
+          className={clix(
             // The border is applied to the div outside the measured div.
             'relative   rounded-lg mt-2 overflow-hidden ',
           )}

@@ -1,18 +1,20 @@
-import { PlanParams, block, noCase } from '@tpaw/common'
+import {
+  DialogPosition,
+  PLAN_PARAMS_CONSTANTS,
+  block,
+  noCase,
+} from '@tpaw/common'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputType } from './PlanInputType'
-import {
-  isPlanSectionDialogInOverlayMode,
-  planSectionDialogOrder,
-} from './PlanSectionDialogPosition'
+import { isPlanSectionDialogInOverlayMode } from './PlanSectionDialogPosition'
 
 export const useGetPlanInputVisibility = () => {
   const { planParams, planParamsExt } = useSimulation()
-  const { isFutureSavingsAllowed } = planParamsExt
+  const { isFutureSavingsAllowed, dialogPositionEffective } = planParamsExt
 
   const _helper = (
     showAtDialogPosition: Exclude<
-      PlanParams['dialogPosition'],
+      DialogPosition,
       'show-results' | 'show-all-inputs'
     >,
     visible = true,
@@ -20,11 +22,12 @@ export const useGetPlanInputVisibility = () => {
     if (!visible) return { visible: false } as const
 
     const disabled = block(() => {
-      if (isPlanSectionDialogInOverlayMode(planParams.dialogPosition))
-        return true
+      if (isPlanSectionDialogInOverlayMode(dialogPositionEffective)) return true
       return (
-        planSectionDialogOrder.indexOf(planParams.dialogPosition) <
-        planSectionDialogOrder.indexOf(showAtDialogPosition)
+        PLAN_PARAMS_CONSTANTS.dialogPositionOrder.indexOf(
+          dialogPositionEffective,
+        ) <
+        PLAN_PARAMS_CONSTANTS.dialogPositionOrder.indexOf(showAtDialogPosition)
       )
     })
     return {
@@ -33,8 +36,7 @@ export const useGetPlanInputVisibility = () => {
       // In overlay mode, the curtain will effectively do the lightening, so don't
       // lighten the button directly.
       grayOutButton:
-        disabled &&
-        !isPlanSectionDialogInOverlayMode(planParams.dialogPosition),
+        disabled && !isPlanSectionDialogInOverlayMode(dialogPositionEffective),
     }
   }
 

@@ -37,6 +37,7 @@ import { CurrentTimeInfo } from './UseCurrentTime'
 import { WorkingPlanInfo } from './UseWorkingPlan'
 import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName } from './WithNonPlanParams'
+import { ServerSyncState } from '../PlanServerImpl/UseServerSyncPlan'
 
 type UpdatePlanParamsFromAction<T> = UnionToIntersection<
   T extends PlanParamsChangeActionCurrent
@@ -77,7 +78,7 @@ export type SimulationInfo = {
         src: 'server'
         plan: User['plans'][0]
         historyStatus: 'fetching' | 'fetched' | 'failed'
-        isSyncing: boolean
+        syncState: ServerSyncState
       }
     | {
         src: 'link'

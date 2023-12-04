@@ -97,7 +97,7 @@ export const PlanSummary = React.memo(
       useState<HTMLElement | null>(null)
 
     const { planParams, planParamsExt } = useSimulation()
-    const { isFutureSavingsAllowed } = planParamsExt
+    const { isFutureSavingsAllowed, dialogPositionEffective } = planParamsExt
 
     const [expandAdvanced, setExpandAdvanced] = useState(false)
     const [showDevClickCount, setShowDevClickCount] = useState(0)
@@ -164,7 +164,7 @@ export const PlanSummary = React.memo(
         }}
       >
         <div className="mt-0" ref={setBodyElement}>
-          {planParams.dialogPosition !== 'done' && (
+          {dialogPositionEffective !== 'done' && (
             <PlanSummaryDialog
               elements={{
                 outer: outerElement,
@@ -176,7 +176,7 @@ export const PlanSummary = React.memo(
                 adjustmentsToSpending: adjustmentsToSpendingElement,
               }}
               fixedSizing={fixedSizing}
-              dialogPosition={planParams.dialogPosition}
+              dialogPosition={dialogPositionEffective}
             />
           )}
 
@@ -212,7 +212,7 @@ export const PlanSummary = React.memo(
                   section={section}
                   padding={cardPadding}
                 />
-                {isFutureSavingsAllowed && (
+                {isFutureSavingsAllowed ? (
                   <PlanSummaryButton
                     ref={setFutureSavingsElement}
                     type="future-savings"
@@ -222,6 +222,13 @@ export const PlanSummary = React.memo(
                     empty={
                       _.values(planParams.wealth.futureSavings).length === 0
                     }
+                  />
+                ) : (
+                  // This avoids managing null/non-null future savings element
+                  // in the PlanSummaryDialog, which was very error prone.
+                  <div
+                    ref={setFutureSavingsElement}
+                    className="h-0 w-0 hidden"
                   />
                 )}
                 <PlanSummaryButton
@@ -316,7 +323,7 @@ export const PlanSummary = React.memo(
                   className="disabled:opacity-20"
                   style={{ ...paddingCSSStyleHorz(cardPadding) }}
                   onClick={() => setExpandAdvanced(!expandAdvanced)}
-                  disabled={planParams.dialogPosition !== 'done'}
+                  disabled={dialogPositionEffective !== 'done'}
                 >
                   <div className="text-[20px] sm:text-[26px] font-bold text-left">
                     Advanced
@@ -373,7 +380,7 @@ export const PlanSummary = React.memo(
                     className="disabled:opacity-20"
                     style={{ ...paddingCSSStyleHorz(cardPadding) }}
                     onClick={() => setExpandDev(!expandDev)}
-                    disabled={planParams.dialogPosition !== 'done'}
+                    disabled={dialogPositionEffective !== 'done'}
                   >
                     <div className="text-[20px] sm:text-[26px] font-bold text-left">
                       Dev

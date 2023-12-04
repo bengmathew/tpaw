@@ -9,19 +9,16 @@ import {
   block,
   fGet,
   noCase,
+  planParamsFns,
 } from '@tpaw/common'
 import _ from 'lodash'
-import {
-  PlanParamsExtended,
-  getIsFutureSavingsAllowed,
-} from '../../../TPAWSimulator/ExtentPlanParams'
+import { PlanParamsExtended } from '../../../TPAWSimulator/ExtentPlanParams'
 import { calendarMonthStr } from '../../../Utils/CalendarMonthStr'
 import { formatCurrency } from '../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../Utils/FormatPercentage'
 import { numMonthsStr } from '../../../Utils/NumMonthsStr'
 import { yourOrYourPartners } from '../../../Utils/YourOrYourPartners'
 import { optGet } from '../../../Utils/optGet'
-import { nextPlanSectionDialogPosition } from '../Plan/PlanInput/Helpers/PlanSectionDialogPosition'
 import { planSectionLabel } from '../Plan/PlanInput/Helpers/PlanSectionLabel'
 import { expectedReturnTypeLabel } from '../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { inflationTypeLabel } from '../Plan/PlanInput/PlanInputInflation'
@@ -80,16 +77,16 @@ export const processPlanParamsChangeActionCurrent = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.dialogPosition = value
+          clone.dialogPositionNominal = value
         },
         render: (prevParams) => {
-          switch (prevParams.dialogPosition) {
+          switch (prevParams.dialogPositionNominal) {
             case 'age':
             case 'current-portfolio-balance':
             case 'future-savings':
             case 'income-during-retirement':
               return `Completed "${planSectionLabel(
-                prevParams.dialogPosition,
+                prevParams.dialogPositionNominal,
               )}" section`
             case 'done':
               return assertFalse()
@@ -98,7 +95,7 @@ export const processPlanParamsChangeActionCurrent = (
             case 'show-all-inputs':
               return 'Show All Inputs'
             default:
-              noCase(prevParams.dialogPosition)
+              noCase(prevParams.dialogPositionNominal)
           }
         },
         merge: null,
@@ -153,6 +150,8 @@ export const processPlanParamsChangeActionCurrent = (
       return {
         applyToClone: (clone, planParamsExt: PlanParamsExtended) => {
           const { isPersonRetired } = planParamsExt
+          const { getDialogPositionEffective, getIsFutureSavingsAllowed } =
+            planParamsFns
           const isFutureSavingsGoingToBeAllowed = getIsFutureSavingsAllowed(
             personType === 'person1' ? true : isPersonRetired('person1'),
             personType === 'person2'
@@ -165,15 +164,10 @@ export const processPlanParamsChangeActionCurrent = (
             clone.wealth.futureSavings = {}
           }
           _convertRetirementReferencesToNow(clone, planParamsExt, personType)
-          if (
-            clone.dialogPosition === 'future-savings' &&
-            !isFutureSavingsGoingToBeAllowed
-          ) {
-            clone.dialogPosition = nextPlanSectionDialogPosition(
-              'future-savings',
-              true, // false will throw things off.
-            )
-          }
+          clone.dialogPositionNominal = getDialogPositionEffective(
+            clone.dialogPositionNominal,
+            isFutureSavingsGoingToBeAllowed,
+          )
           const person = _getPerson(clone, personType)
           person.ages = {
             type: 'retiredWithNoRetirementDateSpecified',
@@ -756,7 +750,8 @@ export const processPlanParamsChangeActionCurrent = (
         },
 
         render: () => `Set stocks volatility scaling to ${value}`,
-        merge: null,
+        merge: (prev) =>
+          prev.type === 'setHistoricalStockReturnsAdjustmentVolatilityScale',
       }
     }
 

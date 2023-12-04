@@ -1,5 +1,5 @@
-import { defaultNonPlanParams } from '@tpaw/common'
-import clsx from 'clsx'
+import { NonPlanParams, assert, defaultNonPlanParams } from '@tpaw/common'
+import clix from 'clsx'
 import _ from 'lodash'
 import React from 'react'
 import { paddingCSS } from '../../../../../Utils/Geometry'
@@ -7,7 +7,6 @@ import { NumberInput } from '../../../../Common/Inputs/NumberInput'
 import { smartDeltaFnForMonthlyAmountInput } from '../../../../Common/Inputs/SmartDeltaFnForAmountInput'
 import { ToggleSwitch } from '../../../../Common/Inputs/ToggleSwitch'
 import { useNonPlanParams } from '../../../PlanRootHelpers/WithNonPlanParams'
-import { useGetPlanResultsChartURL } from '../../PlanResults/UseGetPlanResultsChartURL'
 import { usePlanResultsChartType } from '../../PlanResults/UsePlanResultsChartType'
 import { useChartData } from '../../WithPlanResultsChartData'
 import { PlanInputModifiedBadge } from '../Helpers/PlanInputModifiedBadge'
@@ -37,15 +36,7 @@ const _MiscCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
-    const getPlanChartURL = useGetPlanResultsChartURL()
-
     const isModified = useIsPlanInputDevMiscModified()
-
-    const handleChangeShowAllMonths = (x: boolean) => {
-      const clone = _.cloneDeep(nonPlanParams)
-      clone.dev.alwaysShowAllMonths = x
-      setNonPlanParams(clone)
-    }
 
     return (
       <div
@@ -57,9 +48,25 @@ const _MiscCard = React.memo(
           <ToggleSwitch
             className=""
             checked={nonPlanParams.dev.alwaysShowAllMonths}
-            setChecked={(x) => handleChangeShowAllMonths(x)}
+            setChecked={(x) => {
+              const clone = _.cloneDeep(nonPlanParams)
+              clone.dev.alwaysShowAllMonths = x
+              setNonPlanParams(clone)
+            }}
           />
-          <h2 className=""> Show All Months</h2>
+          <h2 className="">Always Show All Months</h2>
+        </div>
+        <div className=" flex justify-start gap-x-4 items-center mt-4">
+          <ToggleSwitch
+            className=""
+            checked={nonPlanParams.dev.showSyncStatus}
+            setChecked={(x) => {
+              const clone = _.cloneDeep(nonPlanParams)
+              clone.dev.showSyncStatus = x
+              setNonPlanParams(clone)
+            }}
+          />
+          <h2 className=""> Show Sync Status</h2>
         </div>
         <_ChartYRangeOverride className="mt-4" />
 
@@ -76,11 +83,16 @@ const _MiscCard = React.memo(
         </button>
         <button
           className="mt-6 underline disabled:lighten-2 block"
-          onClick={() =>
-            handleChangeShowAllMonths(
-              defaultNonPlanParams.dev.alwaysShowAllMonths,
-            )
-          }
+          onClick={() => {
+            const clone = _.cloneDeep(nonPlanParams)
+            clone.dev.showSyncStatus = defaultNonPlanParams.dev.showSyncStatus
+            clone.dev.alwaysShowAllMonths =
+              defaultNonPlanParams.dev.alwaysShowAllMonths
+            clone.dev.overridePlanResultChartYRange =
+              defaultNonPlanParams.dev.overridePlanResultChartYRange
+            assert(!_getIsPlanInputDevMiscModified(clone))
+            setNonPlanParams(clone)
+          }}
           disabled={!isModified}
         >
           Reset to Default
@@ -96,7 +108,7 @@ const _ChartYRangeOverride = React.memo(
     const chartType = usePlanResultsChartType()
     const chartData = useChartData(chartType)
     return (
-      <div className={clsx(className)}>
+      <div className={clix(className)}>
         <div className="flex justify-start gap-x-4 items-center ">
           <ToggleSwitch
             checked={!!nonPlanParams.dev.overridePlanResultChartYRange}
@@ -143,21 +155,26 @@ const _ChartYRangeOverride = React.memo(
 
 export const useIsPlanInputDevMiscModified = () => {
   const { nonPlanParams } = useNonPlanParams()
-  return (
-    nonPlanParams.dev.alwaysShowAllMonths !==
-      defaultNonPlanParams.dev.alwaysShowAllMonths ||
-    nonPlanParams.dev.overridePlanResultChartYRange !==
-      defaultNonPlanParams.dev.overridePlanResultChartYRange
-  )
+  return _getIsPlanInputDevMiscModified(nonPlanParams)
 }
+const _getIsPlanInputDevMiscModified = (nonPlanParams: NonPlanParams) =>
+  nonPlanParams.dev.showSyncStatus !==
+    defaultNonPlanParams.dev.showSyncStatus ||
+  nonPlanParams.dev.alwaysShowAllMonths !==
+    defaultNonPlanParams.dev.alwaysShowAllMonths ||
+  nonPlanParams.dev.overridePlanResultChartYRange !==
+    defaultNonPlanParams.dev.overridePlanResultChartYRange
 
 export const PlanInputDevMiscSummary = React.memo(() => {
   const { nonPlanParams } = useNonPlanParams()
   return (
     <>
       <h2>
-        Always show all months:{' '}
+        Always Show All Months:{' '}
         {nonPlanParams.dev.alwaysShowAllMonths ? 'yes' : 'no'}
+      </h2>
+      <h2>
+        Show Sync Status: {nonPlanParams.dev.showSyncStatus ? 'yes' : 'no'}
       </h2>
       <h2 className="">
         Override Y Range:{' '}

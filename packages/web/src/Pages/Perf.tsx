@@ -128,7 +128,7 @@ const getParams = (currentTime: DateTime) =>
       v: currentPlanParamsVersion,
       results: null,
       timestamp: currentTime.valueOf(),
-      dialogPosition: 'done',
+      dialogPositionNominal: 'done',
       people: {
         withPartner: false,
         person1: {

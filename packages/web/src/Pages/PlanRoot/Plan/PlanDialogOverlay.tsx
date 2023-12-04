@@ -1,16 +1,12 @@
 import { fGet } from '@tpaw/common'
 import React, { ReactNode, useEffect, useLayoutEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
+import { colorPalette, gray, orange } from '../../../Utils/ColorPalette'
 import { RectExt, Size, newPadding, rectExt } from '../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity0Transition'
-import { ChartUtils } from '../../Common/Chart/ChartUtils/ChartUtils'
 import { DialogBubble } from '../../Common/DialogBubble'
-import {
-  isPlanSectionDialogInOverlayMode,
-  nextPlanSectionDialogPosition,
-} from './PlanInput/Helpers/PlanSectionDialogPosition'
 import { useSimulation } from '../PlanRootHelpers/WithSimulation'
-import { colorPalette, gray, orange } from '../../../Utils/ColorPalette'
+import { isPlanSectionDialogInOverlayMode } from './PlanInput/Helpers/PlanSectionDialogPosition'
 
 export const PlanDialogOverlay = React.memo(
   ({
@@ -19,13 +15,13 @@ export const PlanDialogOverlay = React.memo(
     // Because this resizes with animation on window resizing.
     chartDiv: HTMLElement | null
   }) => {
-    const { planParams, updatePlanParams, simulationInfoByMode } =
+    const { planParamsExt, updatePlanParams, simulationInfoByMode } =
       useSimulation()
-    const { dialogPosition } = planParams
+    const { dialogPositionEffective, nextDialogPosition } = planParamsExt
     if (
       !(
-        isPlanSectionDialogInOverlayMode(dialogPosition) ||
-        dialogPosition === 'done'
+        isPlanSectionDialogInOverlayMode(dialogPositionEffective) ||
+        dialogPositionEffective === 'done'
       ) ||
       // Don't show in history mode because it hides the calendar input, so
       // they will get stuck.
@@ -33,18 +29,15 @@ export const PlanDialogOverlay = React.memo(
     )
       return <></>
     const handleNext = () => {
-      if (dialogPosition === 'done') return
-      updatePlanParams(
-        'setDialogPosition',
-        nextPlanSectionDialogPosition(dialogPosition),
-      )
+      if (dialogPositionEffective === 'done') return
+      updatePlanParams('setDialogPosition', nextDialogPosition)
     }
     const body = (() => {
-      switch (dialogPosition) {
+      switch (dialogPositionEffective) {
         case 'show-results':
           return (
             <_Overlay
-              dialogPosition={dialogPosition}
+              dialogPosition={dialogPositionEffective}
               chartDiv={chartDiv}
               elementId="planResultsDialogCurtionShowResultsButton"
               padding={{ horz: 0, vert: 0 }}
@@ -83,7 +76,7 @@ export const PlanDialogOverlay = React.memo(
               // fill="none"
               border={null}
               rounding={() => 25}
-              hidden={dialogPosition === 'done'}
+              hidden={dialogPositionEffective === 'done'}
               onClick={null}
             >
               {(targetSize) => (

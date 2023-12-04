@@ -13,14 +13,15 @@ import {
 } from 'json-guard'
 import { Guards } from '../../Guards'
 import { assert } from '../../Utils'
-import { NonPlanParams21 as NonPlanParamsPrev } from './Old/NonPlanParams21'
-export namespace NonPlanParams22 {
-  export const currentVersion = 22 as const
+import { NonPlanParams22 as NonPlanParamsPrev } from './Old/NonPlanParams22'
+export namespace NonPlanParams23 {
+  export const currentVersion = 23 as const
   export type NonPlanParams = {
     v: typeof currentVersion
     timezone: { type: 'auto' } | { type: 'manual'; ianaTimezoneName: string }
     numOfSimulationForMonteCarloSampling: number
     dev: {
+      showSyncStatus: boolean
       showDevFeatures: boolean
       alwaysShowAllMonths: boolean
       overridePlanResultChartYRange: false | { start: number; end: number }
@@ -39,6 +40,7 @@ export namespace NonPlanParams22 {
     ),
     numOfSimulationForMonteCarloSampling: chain(number, integer, gt(0)),
     dev: object({
+      showSyncStatus: boolean,
       showDevFeatures: boolean,
       alwaysShowAllMonths: boolean,
       overridePlanResultChartYRange: union(
@@ -67,13 +69,14 @@ export namespace NonPlanParams22 {
 
     const result: NonPlanParams = {
       v: currentVersion,
-      timezone: { type: 'auto' },
+      timezone: prev.timezone,
       numOfSimulationForMonteCarloSampling:
         prev.numOfSimulationForMonteCarloSampling,
       dev: {
-        showDevFeatures: false,
+        showSyncStatus: false,
+        showDevFeatures: prev.dev.showDevFeatures,
         alwaysShowAllMonths: prev.dev.alwaysShowAllMonths,
-        overridePlanResultChartYRange: false,
+        overridePlanResultChartYRange: prev.dev.overridePlanResultChartYRange,
       },
     }
     assert(!guard(result).error)

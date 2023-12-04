@@ -2,7 +2,7 @@ import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { faTurnDownLeft } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { block, noCase } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useMemo, useState } from 'react'
@@ -56,7 +56,7 @@ export const _CurrentPortfolioBalanceCard = React.memo(
     return (
       <div className="">
         <div
-          className={clsx(className, 'params-card')}
+          className={clix(className, 'params-card')}
           style={{ padding: paddingCSS(props.sizing.cardPadding) }}
         >
           <p className="p-base">

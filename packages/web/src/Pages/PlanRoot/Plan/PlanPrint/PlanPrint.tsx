@@ -3,7 +3,7 @@ import React from 'react'
 
 import { faLeftLong, faPrint } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import clsx from 'clsx'
+import clix from 'clsx'
 import Head from 'next/head'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
 import {
@@ -35,7 +35,7 @@ export const PlanPrint = React.memo(
           }- Print - TPAW Planner'`}</title>
         </Head>
         <div
-          className={clsx(
+          className={clix(
             className,
             'bg-gray-300 print:bg-white',
             'pb-10 print:pb-0',

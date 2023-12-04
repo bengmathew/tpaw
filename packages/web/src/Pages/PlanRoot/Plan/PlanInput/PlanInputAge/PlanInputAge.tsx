@@ -1,10 +1,14 @@
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { faExclamationCircle } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import clix from 'clsx'
 import _ from 'lodash'
 import React, { useRef, useState } from 'react'
+import { calendarMonthStr } from '../../../../../Utils/CalendarMonthStr'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { joinWithCommaAnd } from '../../../../../Utils/JoinWithAnd'
+import { numMonthsStr } from '../../../../../Utils/NumMonthsStr'
+import { yourOrYourPartners } from '../../../../../Utils/YourOrYourPartners'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { analyzeMonthsInParams } from '../Helpers/AnalyzeMonthsInParams'
 import { planSectionLabel } from '../Helpers/PlanSectionLabel'
@@ -14,10 +18,6 @@ import {
 } from '../PlanInputBody/PlanInputBody'
 import { PlanInputAgePerson } from './PlanInputAgePerson'
 import { PlanInputAgeWithdrawalStart } from './PlanInputAgeWithdrawalStart'
-import clsx from 'clsx'
-import { calendarMonthStr } from '../../../../../Utils/CalendarMonthStr'
-import { numMonthsStr } from '../../../../../Utils/NumMonthsStr'
-import { yourOrYourPartners } from '../../../../../Utils/YourOrYourPartners'
 
 export type PlanInputAgeOpenableSection =
   | `${'person1' | 'person2'}-${'monthOfBirth' | 'retirementAge' | 'maxAge'}`
@@ -117,8 +117,9 @@ export const PlanInputAgeSummary = React.memo(() => {
     isPersonRetired,
     pickPerson,
     getCurrentAgeOfPerson,
+    dialogPositionEffective,
   } = planParamsExt
-  if (planParams.dialogPosition === 'age') {
+  if (dialogPositionEffective === 'age') {
     return (
       <>
         <h2>Month of Birth: </h2>
@@ -159,7 +160,7 @@ export const PlanInputAgeSummary = React.memo(() => {
     const withdrawalPerson = pickPerson(planParams.people.withdrawalStart)
     return (
       <div
-        className={clsx('grid gap-x-3 gap-y-1')}
+        className={clix('grid gap-x-3 gap-y-1')}
         style={{ grid: 'auto/auto 1fr' }}
       >
         <h2 className="font-medium col-span-2">You</h2>
@@ -181,7 +182,7 @@ export const PlanInputAgeSummary = React.memo(() => {
   } else {
     return (
       <div
-        className={clsx('grid gap-x-3 gap-y-1')}
+        className={clix('grid gap-x-3 gap-y-1')}
         style={{ grid: 'auto/auto 1fr' }}
       >
         {forPerson('person1')}

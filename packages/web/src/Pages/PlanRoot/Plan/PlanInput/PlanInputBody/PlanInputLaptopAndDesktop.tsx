@@ -46,7 +46,8 @@ export const PlanInputLaptopAndDesktop = React.memo(
       | { mainOrInput: 'main'; onDone: (() => void) | null }
       | { mainOrInput: 'input' }
     >({ mainOrInput: 'main', onDone: null })
-    const { planParams } = useSimulation()
+    const { planParams, planParamsExt } = useSimulation()
+    const { dialogPositionEffective } = planParamsExt
     const hasInput = children?.input !== undefined
     useLayoutEffect(() => {
       if (hasInput) {
@@ -60,7 +61,7 @@ export const PlanInputLaptopAndDesktop = React.memo(
     const inputScrollRef = useRef<HTMLDivElement>(null)
 
     const { padding } =
-      planParams.dialogPosition !== 'done'
+      dialogPositionEffective !== 'done'
         ? sizing.dialogMode
         : sizing.notDialogMode
     const { cardPadding } = sizing

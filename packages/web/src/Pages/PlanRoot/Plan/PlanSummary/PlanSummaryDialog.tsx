@@ -1,9 +1,8 @@
-import { PlanParams, fGet } from '@tpaw/common'
+import { DialogPosition, fGet } from '@tpaw/common'
 import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { RectExt, rectExt } from '../../../../Utils/Geometry'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { DialogBubble } from '../../../Common/DialogBubble'
-import { nextPlanSectionDialogPosition } from '../PlanInput/Helpers/PlanSectionDialogPosition'
+import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 
 export const PlanSummaryDialog = React.memo(
   ({
@@ -20,11 +19,11 @@ export const PlanSummaryDialog = React.memo(
       incomeDuringRetirement: HTMLElement | null
       adjustmentsToSpending: HTMLElement | null
     }
-    dialogPosition: Exclude<PlanParams['dialogPosition'], 'done'>
+    dialogPosition: Exclude<DialogPosition, 'done'>
     fixedSizing: { padding: { top: number } }
   }) => {
     const { updatePlanParams, planParamsExt } = useSimulation()
-    const { isFutureSavingsAllowed } = planParamsExt
+    const { nextDialogPosition } = planParamsExt
 
     const [measures, setMeasures] = useState({
       age: rectExt(0),
@@ -154,9 +153,7 @@ export const PlanSummaryDialog = React.memo(
         setMeasures({
           age: _rel(elements.age),
           'current-portfolio-balance': _rel(elements.currentPortfolioBalance),
-          'future-savings': elements.futureSavings
-            ? _rel(elements.futureSavings, true)
-            : null,
+          'future-savings': _rel(elements.futureSavings, true),
           'income-during-retirement': _rel(elements.incomeDuringRetirement),
           ['adjustments-to-spending']: _rel(elements.adjustmentsToSpending),
         })
@@ -196,13 +193,7 @@ export const PlanSummaryDialog = React.memo(
                   <button
                     className="btn-sm bg-orange-200  rounded-full text-base"
                     onClick={() =>
-                      updatePlanParams(
-                        'setDialogPosition',
-                        nextPlanSectionDialogPosition(
-                          dialogPosition,
-                          isFutureSavingsAllowed,
-                        ),
-                      )
+                      updatePlanParams('setDialogPosition', nextDialogPosition)
                     }
                   >
                     Skip This Section

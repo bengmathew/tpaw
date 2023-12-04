@@ -1,6 +1,6 @@
 import { Listbox } from '@headlessui/react'
 import { assert, fGet } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import _ from 'lodash'
 import React, {
   ReactNode,
@@ -144,7 +144,7 @@ const __Options = <T extends string | number>({
     <>
       {ReactDOM.createPortal(
         <div
-          className={clsx(
+          className={clix(
             ' page fixed inset-0 z-50',
             // Not here, but in another setting, not doing this was causing an
             // issue on Safari where elements were not scrollable under this

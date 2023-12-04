@@ -128,7 +128,7 @@ const _applyChange = (value: number, timestamp: number, params: PlanParams) => {
 }
 
 const startingParams = (timestamp: number): PlanParams => ({
-  v: 24,
+  v: 25,
   risk: {
     swr: {
       withdrawal: {
@@ -326,7 +326,7 @@ const startingParams = (timestamp: number): PlanParams => ({
     },
   },
   timestamp,
-  dialogPosition: 'done',
+  dialogPositionNominal: 'done',
   adjustmentsToSpending: {
     tpawAndSPAW: {
       legacy: {

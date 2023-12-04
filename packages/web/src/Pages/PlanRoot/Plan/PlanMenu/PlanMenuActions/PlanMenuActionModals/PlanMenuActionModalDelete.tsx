@@ -7,7 +7,7 @@ import { Spinner } from '../../../../../../Utils/View/Spinner'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { User, useUser } from '../../../../../App/WithUser'
 import { PlanMenuActionModalDeleteMutation } from './__generated__/PlanMenuActionModalDeleteMutation.graphql'
-import clsx from 'clsx'
+import clix from 'clsx'
 import { useURLUpdater } from '../../../../../../Utils/UseURLUpdater'
 import { appPaths } from '../../../../../../AppPaths'
 import { captureException } from '@sentry/nextjs'
@@ -121,7 +121,7 @@ const _Body = React.memo(
             disabled={isRunning}
             onClick={() => setIsRunning(true)}
           >
-            <span className={clsx(isRunning && 'opacity-0')}>Delete</span>
+            <span className={clix(isRunning && 'opacity-0')}>Delete</span>
             {isRunning && <Spinner size="text-xl" />}
           </button>
         </div>

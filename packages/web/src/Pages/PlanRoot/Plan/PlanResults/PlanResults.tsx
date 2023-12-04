@@ -1,4 +1,4 @@
-import clsx from 'clsx'
+import clix from 'clsx'
 import { Power1, Power4 } from 'gsap'
 import React, { useCallback, useMemo, useState } from 'react'
 
@@ -144,7 +144,7 @@ export const PlanResults = React.forwardRef<HTMLDivElement, _Props>(
       <NoDisplayOnOpacity0Transition
         ref={ref}
         noDisplayMeans="visibility:hidden"
-        className={clsx('absolute z-50  overflow-hidden')}
+        className={clix('absolute z-50  overflow-hidden')}
         style={{
           transitionProperty: 'borderRadius, opacity, width, height, top, left',
           transitionDuration,

@@ -2,7 +2,7 @@ import { faRedo, faUndo } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
 import { PlanParams, PlanParamsChangeAction, block, fGet } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import { formatDistance } from 'date-fns'
 import _ from 'lodash'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
@@ -38,12 +38,12 @@ export const PlanMenuSubMenuUndoRedo = React.memo(
         }}
       >
         <_Menu
-          className={clsx(className?.undo)}
+          className={clix(className?.undo)}
           type={'undo'}
           simulationDetailForPlanMode={simulationDetailForPlanMode}
         />
         <_Menu
-          className={clsx(className?.redo)}
+          className={clix(className?.redo)}
           type={'redo'}
           simulationDetailForPlanMode={simulationDetailForPlanMode}
         />
@@ -67,7 +67,7 @@ const _Menu = React.memo(
     const { planParamsUndoRedoStack } = simulationDetailForPlanMode
     return (
       <ContextMenu2
-        className={clsx(className, ' disabled:lighten-2')}
+        className={clix(className, ' disabled:lighten-2')}
         disabled={
           _processUndoRedoStack(planParamsUndoRedoStack)[type].length === 0
         }
@@ -314,7 +314,7 @@ const _Item = React.memo(
         onMouseMove={onMouseMove}
       >
         <div
-          className={clsx(className, 'mx-2 rounded-lg px-3 py-2  text-start')}
+          className={clix(className, 'mx-2 rounded-lg px-3 py-2  text-start')}
         >
           <h2>{render}</h2>
           <h2 className="text-xs lighten">{durationStr}</h2>

@@ -1,5 +1,5 @@
 import { API } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import React, { useEffect, useMemo, useState } from 'react'
 import { Spinner } from '../../../../../../Utils/View/Spinner'
 
@@ -71,7 +71,7 @@ px-2 py-1.5 rounded-lg w-full `}
             disabled={isRunning}
             onClick={handleAction}
           >
-            <h2 className={clsx(isRunning && 'opacity-0')}>{buttonLabel}</h2>
+            <h2 className={clix(isRunning && 'opacity-0')}>{buttonLabel}</h2>
             {isRunning && <Spinner size="text-xl" />}
           </button>
         </div>

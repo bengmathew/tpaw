@@ -1,5 +1,6 @@
 import {
   CalendarMonth,
+  DialogPosition,
   GlidePath,
   InMonths,
   Month,
@@ -10,11 +11,18 @@ import {
   fGet,
   getZonedTimeFns,
   linearFnFomPoints,
+  planParamsFns,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { SimpleRange } from '../Utils/SimpleRange'
 import { assert, noCase } from '../Utils/Utils'
 import { yourOrYourPartners } from '../Utils/YourOrYourPartners'
+
+const {
+  getDialogPositionEffective,
+  getIsFutureSavingsAllowed,
+  getNextDialogPosition,
+} = planParamsFns
 
 export type PlanParamsExtended = ReturnType<typeof extendPlanParams>
 export const extendPlanParams = (
@@ -197,6 +205,17 @@ export const extendPlanParams = (
     isPersonRetired('person1'),
     planParams.people.withPartner ? isPersonRetired('person2') : undefined,
   )
+  const dialogPositionEffective = getDialogPositionEffective(
+    planParams.dialogPositionNominal,
+    isFutureSavingsAllowed,
+  )
+  const nextDialogPosition: DialogPosition =
+    dialogPositionEffective === 'done'
+      ? 'done'
+      : getDialogPositionEffective(
+          getNextDialogPosition(dialogPositionEffective),
+          isFutureSavingsAllowed,
+        )
 
   const longerLivedPerson = ((): 'person1' | 'person2' => {
     if (!planParams.people.withPartner) return 'person1'
@@ -455,6 +474,8 @@ export const extendPlanParams = (
     numRetirementMonths,
     yourOrYourPartners,
     isFutureSavingsAllowed,
+    dialogPositionEffective,
+    nextDialogPosition,
     planParams,
     longerLivedPerson,
   }
@@ -469,15 +490,3 @@ extendPlanParams.monthRangeEdge = (
     : 'end' in monthRange && edge === 'end'
     ? monthRange.end
     : null
-
-// Intentionally, future savings is allowed even if the couple is jointly
-// retired (withdrawals have started), but one of them are not individually
-// retired. This does not matter either way because future savings and income
-// during retirement are really the same thing under the hood.
-export const getIsFutureSavingsAllowed = (
-  person1Retired: boolean,
-  person2Retired: boolean | undefined,
-) =>
-  person2Retired === undefined
-    ? !person1Retired
-    : !(person1Retired && person2Retired)

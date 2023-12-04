@@ -104,6 +104,9 @@ module.exports = {
         '.btn2-dark': {
           '@apply text-white bg-darkGray disabled:lighten-2': {},
         },
+        '.btn2-xs': {
+          '@apply rounded-full py-0.5 px-3 text-sm': {},
+        },
         '.btn2-sm': {
           '@apply rounded-full py-0.5 px-4 text-base': {},
         },

@@ -2,7 +2,7 @@ import { faCaretRight, faChevronRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
 import { noCase } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import _ from 'lodash'
 import Link from 'next/link'
 import React, { CSSProperties, useEffect, useRef, useState } from 'react'
@@ -223,12 +223,12 @@ export const PlanResultsChartCardMenu = React.memo(
 
 const _DescriptionLine = React.memo(
   ({ description }: { description: string }) => (
-    <p className={clsx(` text-sm -mt-1`, 'lighten-2')}>{description}</p>
+    <p className={clix(` text-sm -mt-1`, 'lighten-2')}>{description}</p>
   ),
 )
 
 const _LabelLine = React.memo(({ label }: { label: readonly string[] }) => (
-  <h2 className={clsx('text-base sm:text-lg font-bold')}>
+  <h2 className={clix('text-base sm:text-lg font-bold')}>
     {label.map((x, i) => (
       <React.Fragment key={i}>
         <span>{x}</span>
@@ -265,7 +265,7 @@ const _Button = React.memo(
         {({ active }) => (
           <div className="px-2 py-1">
             <button
-              className={clsx(
+              className={clix(
                 indent === 0
                   ? 'pl-2'
                   : indent === 1
@@ -296,7 +296,7 @@ const _Button = React.memo(
                   <div className="flex items-center gap-x-2">
                     <_LabelLine label={label} />
                     <FontAwesomeIcon
-                      className={clsx(
+                      className={clix(
                         'text-xl transition-transform duration-300',
                         isExpanded && 'rotate-90',
                       )}
@@ -338,12 +338,12 @@ const _Link = React.memo(
       <Menu.Item>
         {({ active }) => (
           <Link
-            className={clsx('block px-2 py-1')}
+            className={clix('block px-2 py-1')}
             href={getPlanChartURL(type)}
             shallow
           >
             <div
-              className={clsx(
+              className={clix(
                 indent === 0
                   ? 'pl-2'
                   : indent === 1

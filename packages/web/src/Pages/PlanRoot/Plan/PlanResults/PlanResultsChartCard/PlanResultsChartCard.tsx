@@ -1,4 +1,4 @@
-import clsx from 'clsx'
+import clix from 'clsx'
 import getIsMobile from 'is-mobile'
 import _ from 'lodash'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
@@ -230,7 +230,7 @@ export const PlanResultsChartCard = React.memo(
 
     return (
       <div
-        className={clsx(
+        className={clix(
           'absolute   rounded-t-2xl rounded-b-2xl overflow-hidden ',
           chartHover && 'custom-shadow-md',
         )}
@@ -267,7 +267,7 @@ export const PlanResultsChartCard = React.memo(
         </div>
         {yAxisDescription && (
           <div
-            className={clsx(
+            className={clix(
               'absolute  lighten text-[14px] sm:text-[16px] whitespace-nowrap ',
             )}
             style={{

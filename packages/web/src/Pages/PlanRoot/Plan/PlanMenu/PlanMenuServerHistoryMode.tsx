@@ -5,11 +5,10 @@ import {
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
-import clsx from 'clsx'
+import clix from 'clsx'
 import Link from 'next/link'
 import React, { useState } from 'react'
 import { ContextMenu2 } from '../../../Common/Modal/ContextMenu2'
-import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
 import {
   SimulationInfoForHistoryMode,
   SimulationInfoForServerSrc,
@@ -30,9 +29,8 @@ export const PlanMenuServerHistoryMode = React.memo(
     simulationInfoForHistoryMode: SimulationInfoForHistoryMode
   }) => {
     const planColors = usePlanColors()
-    const { getZonedTime } = useIANATimezoneName()
-    const { planParamsId, currentTimestamp } = useSimulation()
-    const { plan, isSyncing } = simulationInfoForServerSrc
+    const { planParamsId } = useSimulation()
+    const { plan, syncState } = simulationInfoForServerSrc
     const [showCopyModal, setShowCopyModal] = useState(false)
     const label = plan.isMain ? 'Main Plan' : plan.label ?? 'Untitled'
 
@@ -41,7 +39,7 @@ export const PlanMenuServerHistoryMode = React.memo(
     return (
       <div className="flex gap-x-2">
         <ContextMenu2
-          className={clsx('px-3 py-1.5 rounded-lg')}
+          className={clix('px-3 py-1.5 rounded-lg')}
           align="right"
           style={{
             backgroundColor: planColors.results.bg,
@@ -103,7 +101,7 @@ export const PlanMenuServerHistoryMode = React.memo(
           onHide={() => setShowCopyModal(false)}
           hideOnSuccess={false}
           cutAfterId={planParamsId}
-          isSyncing={isSyncing}
+          isSyncing={syncState.type !== 'synced'}
         />
       </div>
     )

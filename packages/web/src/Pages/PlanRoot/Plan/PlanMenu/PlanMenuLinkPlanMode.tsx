@@ -9,7 +9,7 @@ import {
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
-import clsx from 'clsx'
+import clix from 'clsx'
 import Link from 'next/link'
 import React, { useState } from 'react'
 import { appPaths } from '../../../../AppPaths'
@@ -241,7 +241,7 @@ export const PlanMenuLinkPlanMode = React.memo(
               {isModified && (
                 <Menu.Item
                   as="button"
-                  className={clsx('context-menu-item text-errorFG')}
+                  className={clix('context-menu-item text-errorFG')}
                   onClick={() => setShowResetModal(true)}
                 >
                   <span className="inline-block w-[25px]">

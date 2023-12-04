@@ -1,6 +1,6 @@
 import { faSpinnerThird } from '@fortawesome/pro-light-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import clsx from 'clsx'
+import clix from 'clsx'
 import React from 'react'
 
 export const Spinner = React.memo(
@@ -13,7 +13,7 @@ export const Spinner = React.memo(
   }) => {
     return (
       <div
-        className={clsx(
+        className={clix(
           `${size}`,
           'absolute  top-[50%] -translate-y-1/2',
           !dontCenterHorizontally && 'left-[50%] -translate-x-1/2',

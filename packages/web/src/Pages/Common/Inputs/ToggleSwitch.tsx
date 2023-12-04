@@ -1,5 +1,5 @@
 import { Switch } from '@headlessui/react'
-import clsx from 'clsx'
+import clix from 'clsx'
 import React from 'react'
 import { gray } from '../../../Utils/ColorPalette'
 
@@ -41,7 +41,7 @@ export const ToggleSwitch = React.memo(
         checked={checked}
         onChange={setChecked}
         disabled={disabled}
-        className={clsx(
+        className={clix(
           className,
           'relative inline-flex items-center rounded-full transition-colors',
         )}
@@ -55,7 +55,7 @@ export const ToggleSwitch = React.memo(
         }}
       >
         <span
-          className={clsx(
+          className={clix(
             'inline-block transform bg-white rounded-full transition-transform',
           )}
           style={{

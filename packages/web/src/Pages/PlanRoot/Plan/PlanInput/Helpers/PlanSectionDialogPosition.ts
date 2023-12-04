@@ -1,35 +1,36 @@
-import { PlanParams, noCase } from '@tpaw/common'
+import { DialogPosition, PlanParams, noCase } from '@tpaw/common'
 
-export const planSectionDialogOrder: PlanParams['dialogPosition'][] = [
-  'age',
-  'current-portfolio-balance',
-  'future-savings',
-  'income-during-retirement',
-  'show-results',
-  'show-all-inputs',
-  'done',
-]
+// type DialogPosition = PlanParams['dialogPositionNominal']
+// export const planSectionDialogOrder: _DialogPosition[] = [
+//   'age',
+//   'current-portfolio-balance',
+//   'future-savings',
+//   'income-during-retirement',
+//   'show-results',
+//   'show-all-inputs',
+//   'done',
+// ]
 
-export function nextPlanSectionDialogPosition(
-  section: Exclude<PlanParams['dialogPosition'], 'done'>,
-  isFutureSavingsAllowed: boolean,
-): PlanParams['dialogPosition']
-export function nextPlanSectionDialogPosition(
-  section: 'show-results' | 'show-all-inputs',
-): PlanParams['dialogPosition']
-export function nextPlanSectionDialogPosition(
-  section: Exclude<PlanParams['dialogPosition'], 'done'>,
-  isFutureSavingsAllowed?: boolean,
-): PlanParams['dialogPosition'] {
-  const order =
-    isFutureSavingsAllowed ?? true
-      ? planSectionDialogOrder
-      : planSectionDialogOrder.filter((x) => x !== 'future-savings')
-  return order[order.indexOf(section) + 1]
-}
+// export function nextPlanSectionDialogPosition(
+//   section: Exclude<_DialogPosition, 'done'>,
+//   isFutureSavingsAllowed: boolean,
+// ): _DialogPosition
+// export function nextPlanSectionDialogPosition(
+//   section: 'show-results' | 'show-all-inputs',
+// ): _DialogPosition
+// export function nextPlanSectionDialogPosition(
+//   section: Exclude<_DialogPosition, 'done'>,
+//   isFutureSavingsAllowed?: boolean,
+// ): _DialogPosition {
+//   const order =
+//     isFutureSavingsAllowed ?? true
+//       ? planSectionDialogOrder
+//       : planSectionDialogOrder.filter((x) => x !== 'future-savings')
+//   return order[order.indexOf(section) + 1]
+// }
 
 export const isPlanSectionDialogInOverlayMode = (
-  dialogPosition: PlanParams['dialogPosition'],
+  dialogPosition: DialogPosition,
 ): dialogPosition is 'show-results' | 'show-all-inputs' => {
   switch (dialogPosition) {
     case 'age':

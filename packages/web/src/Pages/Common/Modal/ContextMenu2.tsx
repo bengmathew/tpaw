@@ -1,5 +1,5 @@
 import { Menu, Transition } from '@headlessui/react'
-import clsx from 'clsx'
+import clix from 'clsx'
 import React, {
   CSSProperties,
   ReactNode,
@@ -113,7 +113,7 @@ export const ContextMenu2 = React.memo(
                 // pointer-events-none was needed to get the onPointerLeave to get
                 // called on chart card to control the chart hover when the chart
                 // menu was open.
-                className={clsx('page fixed inset-0 pointer-events-none')}
+                className={clix('page fixed inset-0 pointer-events-none')}
               >
                 <Transition.Child
                   ref={setOuterElement}

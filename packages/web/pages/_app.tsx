@@ -39,10 +39,10 @@ const MyApp = React.memo(({ Component, pageProps }: AppProps) => {
               <WithWindowSize>
                 <Component {...pageProps} />
               </WithWindowSize>
-              <ToastContainer position="bottom-center" transition={Slide} />
             </Suspense>
           </WithMergeToServer>
         </WithRelayEnvironment>
+        <ToastContainer position="bottom-center" transition={Slide} />
       </WithFirebaseUser>
     </GlobalErrorBoundary>
   )

@@ -1,5 +1,5 @@
 import { assert } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import _ from 'lodash'
 import React, { ReactNode } from 'react'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
@@ -193,7 +193,7 @@ const _SectionHeading = React.memo(
   ({ className, children }: { className?: string; children: ReactNode }) => {
     return (
       <h2
-        className={clsx(
+        className={clix(
           className,
           'font-bold text-3xl text-right border-r-2 border-black px-5',
         )}
@@ -214,7 +214,7 @@ const _SubSectionHeading = React.memo(
     isFirst?: boolean
   }) => {
     return (
-      <h2 className={clsx(className, 'font-bold text-xl', !isFirst && 'mt-6')}>
+      <h2 className={clix(className, 'font-bold text-xl', !isFirst && 'mt-6')}>
         {children}
       </h2>
     )

@@ -1,6 +1,6 @@
 import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import clsx from 'clsx'
+import clix from 'clsx'
 import React, { useEffect, useState } from 'react'
 import { AmountInput } from './AmountInput'
 
@@ -45,7 +45,7 @@ export const NumberInput = React.memo(
     return (
       <div className={`${className} flex items-stretch`}>
         <AmountInput
-          className={clsx(
+          className={clix(
             'rounded-lg py-0.5 px-2 mr-3 transition-all duration-1000',
             textAlign === 'left'
               ? 'text-start'

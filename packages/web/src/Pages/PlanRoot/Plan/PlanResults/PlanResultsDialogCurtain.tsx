@@ -1,10 +1,10 @@
-import { PlanParams, noCase } from '@tpaw/common'
+import { DialogPosition, PlanParams, noCase } from '@tpaw/common'
 import React from 'react'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../UsePlanColors'
 
-const _state = (dialogPosition: PlanParams['dialogPosition']) => {
+const _state = (dialogPosition: DialogPosition) => {
   switch (dialogPosition) {
     case 'age':
     case 'current-portfolio-balance':
@@ -22,8 +22,9 @@ const _state = (dialogPosition: PlanParams['dialogPosition']) => {
 }
 export const PlanResultsDialogCurtain = React.memo(
   ({ layout }: { layout: 'mobile' | 'laptop' | 'desktop' }) => {
-    const { planParams } = useSimulation()
-    const state = _state(planParams.dialogPosition)
+    const { planParamsExt } = useSimulation()
+    const { dialogPositionEffective } = planParamsExt
+    const state = _state(dialogPositionEffective)
 
     const planColors = usePlanColors()
     return (

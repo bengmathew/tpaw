@@ -1,7 +1,7 @@
 import { faChevronRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { block, fGet, noCase } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import _ from 'lodash'
 import React, { useMemo } from 'react'
 import { PERCENTILES_STR } from '../../../../TPAWSimulator/Worker/TPAWRunInWorker'
@@ -78,7 +78,7 @@ const _Table = React.memo(
     )
 
     return (
-      <div className={clsx(className)}>
+      <div className={clix(className)}>
         <h2 className="flex items-center mt-4">
           {label.full.map((x, i) => (
             <React.Fragment key={i}>
@@ -174,7 +174,7 @@ const _Table = React.memo(
               return (
                 <tr
                   key={i}
-                  className={clsx(
+                  className={clix(
                     i === 0
                       ? 'border-t border-black'
                       : 'border-t border-gray-300',

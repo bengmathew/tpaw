@@ -1,11 +1,11 @@
-import clsx from 'clsx'
+import clix from 'clsx'
 import React from 'react'
 
 export const PlanPrintSVGBackground = React.memo(
   ({ className, fill }: { className?: string; fill: string }) => {
     return (
       <svg
-        className={(clsx(className), 'absolute h-full w-full')}
+        className={(clix(className), 'absolute h-full w-full')}
         viewBox="0 0 1 1"
         preserveAspectRatio="none"
       >

@@ -1,5 +1,6 @@
 export type AppErrorCode =
   | '404'
+  | '413'
   | 'concurrentChange'
   | 'networkError'
   | 'serverDownForMaintenance'

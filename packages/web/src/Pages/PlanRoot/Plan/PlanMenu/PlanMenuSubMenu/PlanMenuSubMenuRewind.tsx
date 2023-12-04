@@ -6,7 +6,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
 import { fGet } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useMemo, useState } from 'react'
@@ -40,7 +40,7 @@ export const PlanMenuSubMenuRewind = React.memo(
 
     return (
       <div
-        className={clsx('px-3 py-1.5 rounded-lg')}
+        className={clix('px-3 py-1.5 rounded-lg')}
         style={{
           backgroundColor: planColors.results.bg,
           color: planColors.results.fg,
@@ -142,7 +142,7 @@ export const _Calendar = React.memo(
       return weeks
     }, [month])
     return (
-      <div className={clsx(className, '')}>
+      <div className={clix(className, '')}>
         <div className="my-2">
           <div className="flex items-center">
             <button
@@ -213,7 +213,7 @@ export const _Calendar = React.memo(
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((x, i) => (
             <div
               key={i}
-              className={clsx(
+              className={clix(
                 'w-[45px] h-[45px]  border-b border-gray-600 rounded-m flex items-center justify-center font-medium',
                 x === 'S' && 'text-red-500',
               )}
@@ -292,7 +292,7 @@ const _CalendarDay = React.memo(
         onMouseLeave={() => setIsHover(false)}
       >
         <div
-          className={clsx(
+          className={clix(
             className,
             'w-[45px] h-[45px]   rounded-md flex items-center justify-center relative',
             isSelected
@@ -313,7 +313,7 @@ const _CalendarDay = React.memo(
           }}
         >
           <div
-            className={clsx(
+            className={clix(
               'w-[27px] h-[27px] flex items-center justify-center ',
               isUpdateDay && 'rounded-full border',
               isSelected ? 'border-gray-300' : 'border-gray-500',

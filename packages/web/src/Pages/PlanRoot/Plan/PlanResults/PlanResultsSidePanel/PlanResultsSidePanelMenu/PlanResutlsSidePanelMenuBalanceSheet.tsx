@@ -1,7 +1,7 @@
 import { faAsterisk } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { ValueForMonthRange, fGet, noCase } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import _ from 'lodash'
 import React, { useMemo } from 'react'
 
@@ -435,7 +435,7 @@ export const BalanceSheetContent = React.memo(
       }
     }, [forPrint, tpawResult])
     return (
-      <div className={clsx(className)}>
+      <div className={clix(className)}>
         {forPrint ? (
           <h2 className="text-center">Net Present Value</h2>
         ) : (
@@ -460,7 +460,7 @@ export const BalanceSheetContent = React.memo(
           />
         </div>
         <div
-          className={clsx(
+          className={clix(
             forPrint ? 'grid' : 'flex flex-col gap-y-16 md:grid',
             'gap-x-16',
           )}
@@ -525,9 +525,9 @@ export const BalanceSheetContent = React.memo(
             ]}
           />
         </div>
-        <div className={clsx('rounded-lg mt-10 ')}>
+        <div className={clix('rounded-lg mt-10 ')}>
           <FontAwesomeIcon
-            className={clsx(forPrint ? 'text-[10px]' : 'text-[11px]', ' mb-1')}
+            className={clix(forPrint ? 'text-[10px]' : 'text-[11px]', ' mb-1')}
             icon={faAsterisk}
           />{' '}
           <span className="">{`This spending breakdown reflects what spending would have been had it not been constrained by things like ceilings, unfunded floors, and borrowing constraints which can move spending across different categories. For example, a ceiling can redirect spending from the general spending category to legacy, and that will not be reflected in this breakdown.`}</span>
@@ -572,7 +572,7 @@ const _Section = React.memo(
     forPrint: boolean
   }) => {
     return (
-      <div className={clsx(className, 'border-gray-700 rounded-md')}>
+      <div className={clix(className, 'border-gray-700 rounded-md')}>
         <h2 className=" font-bold text-xl sm:text-2xl border-b-2 border-gray-700 pb-2 ">
           {label}
           {asterix && (
@@ -588,7 +588,7 @@ const _Section = React.memo(
               <h2 className="font-medium mr-6">{x.label}</h2>
               {x.value === 'None' ? (
                 <h2
-                  className={clsx(
+                  className={clix(
                     forPrint ? 'text-[11px]' : 'text-sm',
                     'lighten',
                   )}
@@ -639,14 +639,14 @@ const _ValueForMonthRangeDisplay = React.memo(
   }) => {
     const total = _.sumBy(data, (x) => x.netPresentValue)
     return (
-      <div className={clsx(className, ' rounded-lg ')}>
+      <div className={clix(className, ' rounded-lg ')}>
         <div className="flex justify-between ">
           <h2 className=" font-medium text-l mr-6">{label} </h2>
           {data.length > 0 ? (
             <h2 className=" font-mono font-bold">{formatCurrency(total)}</h2>
           ) : (
             <h2
-              className={clsx(forPrint ? 'text-[11px]' : 'text-sm', 'lighten')}
+              className={clix(forPrint ? 'text-[11px]' : 'text-sm', 'lighten')}
             >
               None
             </h2>
@@ -674,7 +674,7 @@ const _ValueForMonthRangeDisplayItem = React.memo(
     return (
       <div className="flex justify-between pl-4 pt-2 lighten">
         <h2 className="mr-6">{data.label}</h2>
-        <h2 className={clsx(forPrint ? 'text-[10px]' : 'text-sm', 'font-mono')}>
+        <h2 className={clix(forPrint ? 'text-[10px]' : 'text-sm', 'font-mono')}>
           {formatCurrency(data.netPresentValue)}
         </h2>
       </div>
@@ -694,7 +694,7 @@ const _ChartLabel = React.memo(
   }) => {
     return (
       <h2
-        className={clsx(
+        className={clix(
           className,
           // Thanks: https://stackoverflow.com/a/7993098
           ' whitespace-nowrap overflow-ellipsis overflow-hidden w-full',

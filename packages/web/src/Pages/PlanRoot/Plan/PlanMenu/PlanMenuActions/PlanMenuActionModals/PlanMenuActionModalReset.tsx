@@ -1,17 +1,18 @@
-import { captureException } from '@sentry/nextjs'
 import { PlanPaths, assertFalse, fGet, noCase } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import React, { useState } from 'react'
 import { useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
-import { errorToast, infoToast } from '../../../../../../Utils/CustomToasts'
 import { Spinner } from '../../../../../../Utils/View/Spinner'
 import { AppError } from '../../../../../App/AppError'
+import {
+  useDefaultErrorHandlerForNetworkCall,
+  useSetGlobalError,
+} from '../../../../../App/GlobalErrorBoundary'
 import { User, useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { useIANATimezoneName } from '../../../../PlanRootHelpers/WithNonPlanParams'
 import { PlanMenuActionModalResetMutation } from './__generated__/PlanMenuActionModalResetMutation.graphql'
-import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalErrorBoundary'
 
 export const PlanMenuActionModalReset = React.memo(
   ({
@@ -58,6 +59,7 @@ const _Body = React.memo(
   }) => {
     const { defaultErrorHandlerForNetworkCall } =
       useDefaultErrorHandlerForNetworkCall()
+    const { setGlobalError } = useSetGlobalError()
     const user = fGet(useUser())
     const { ianaTimezoneName } = useIANATimezoneName()
     // Intentionally not using isRunning from useMutation because we want to
@@ -100,9 +102,8 @@ const _Body = React.memo(
         onCompleted: ({ userPlanReset }) => {
           switch (userPlanReset.__typename) {
             case 'ConcurrentChangeError':
-              // TODO: throwing this error is not the right way to handle this.
-              // investigate all occurrences.
-              throw new AppError('concurrentChange')
+              setGlobalError(new AppError('concurrentChange'))
+              return
             case 'PlanAndUserResult':
               const now = Date.now()
               if (userPlanReset.plan.lastSyncAt > now) {
@@ -168,7 +169,7 @@ const _Body = React.memo(
                 disabled={state.type === 'running'}
                 onClick={() => setState({ type: 'running' })}
               >
-                <span className={clsx(state.type === 'running' && 'opacity-0')}>
+                <span className={clix(state.type === 'running' && 'opacity-0')}>
                   Reset
                 </span>
                 {state.type === 'running' && <Spinner size="text-xl" />}

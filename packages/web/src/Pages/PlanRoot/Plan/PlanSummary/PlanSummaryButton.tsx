@@ -1,7 +1,7 @@
 import { faExclamation } from '@fortawesome/pro-solid-svg-icons'
 import { faPlus } from '@fortawesome/pro-thin-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import clsx from 'clsx'
+import clix from 'clsx'
 import React from 'react'
 import { Padding, paddingCSSStyle } from '../../../../Utils/Geometry'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
@@ -55,7 +55,8 @@ export const PlanSummaryButton = React.memo(
       }: _Props,
       ref,
     ) => {
-      const { planParams } = useSimulation()
+      const { planParams, planParamsExt } = useSimulation()
+      const { dialogPositionEffective } = planParamsExt
       const getSectionURL = useGetSectionURL()
       const urlUpdater = useURLUpdater()
       const highlightColorDark = gray[400]
@@ -63,7 +64,7 @@ export const PlanSummaryButton = React.memo(
       const highlightColor =
         section === type
           ? highlightColorDark
-          : planParams.dialogPosition === type
+          : dialogPositionEffective === type
           ? orange[400]
           : gray[100]
 
@@ -73,10 +74,10 @@ export const PlanSummaryButton = React.memo(
 
       return (
         <button
-          className={clsx(
+          className={clix(
             'block rounded-2xl  text-left w-full border-[2px] overflow-hidden',
             visibility.grayOutButton && 'opacity-20',
-            planColors.summaryButtonOuter(planParams.dialogPosition === type),
+            planColors.summaryButtonOuter(dialogPositionEffective === type),
           )}
           ref={ref}
           style={{
@@ -92,7 +93,7 @@ export const PlanSummaryButton = React.memo(
             <div
               className={`relative  bg-gray-200/40  rounded-2xl -m-[2px] 
               ${
-                planParams.dialogPosition === type
+                dialogPositionEffective === type
                   ? 'border-[3px] border-gray-200'
                   : 'border-[4px] border-dotted border-gray-400'
               }`}

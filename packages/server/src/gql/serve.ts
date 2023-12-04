@@ -81,7 +81,7 @@ async function _impl() {
   server.get('/crash', (req, res) => {
     throw new Error('crash')
   })
-  
+
   server.get('/marketDataURL', async (req, res) => {
     const bucket = Clients.gcs.bucket(Config.google.marketDataBucket)
     const [currentLatest] = await bucket.getFiles({ prefix: 'latest/' })
@@ -114,12 +114,20 @@ async function _impl() {
       res.setHeader('x-app-error-code', 'clientNeedsUpdate')
       res.send('clientNeedsUpdate')
     } else {
+      const clientVersion = req.headers['x-app-client-version']
+      if (clientVersion !== API.clientVersion) {
+        res.setHeader(
+          'Access-Control-Expose-Headers',
+          'x-app-new-client-version',
+        )
+        res.setHeader('x-app-new-client-version', 'true')
+      }
       next()
     }
   })
   server.use(
     '/gql',
-    bodyParser.json({limit:'10mb'}),
+    bodyParser.json({ limit: '10mb' }), // 2kb per planParam allows 5k planParams.
     expressMiddleware<Context>(apollo, {
       context: async ({ req }) => {
         try {

@@ -43,7 +43,8 @@ export const PlanMenuServerPlanMode = React.memo(
   }) => {
     const planColors = usePlanColors()
     const { planPaths } = useSimulation()
-    const { plan, historyStatus, isSyncing } = simulationInfoForServerSrc
+    const { plan, historyStatus, syncState } = simulationInfoForServerSrc
+    const isSyncing = syncState.type !== 'synced'
     const label = plan.isMain ? 'Main Plan' : plan.label ?? 'Untitled'
 
     const [showCreatePlanModal, setShowCreatePlanModal] = useState(false)

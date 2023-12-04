@@ -75,7 +75,7 @@ export function getDefaultPlanParams(
   const params: PlanParams = {
     v: currentPlanParamsVersion,
     timestamp: currentTimestamp,
-    dialogPosition: 'age',
+    dialogPositionNominal: 'age',
     people: {
       withPartner: false,
       person1: {

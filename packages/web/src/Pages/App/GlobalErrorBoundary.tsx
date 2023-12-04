@@ -3,7 +3,7 @@ import { faCopy, faEnvelope } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as Sentry from '@sentry/nextjs'
 import { block, noCase } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import { useRouter } from 'next/dist/client/router'
 import Head from 'next/head'
 import Image from 'next/image'
@@ -138,7 +138,7 @@ export const _ErrorFallback = React.memo(({ error }: { error: Error }) => {
                   message="A new version of the planner is now available. Please reload to get the lastest version."
                   action="reload"
                 />
-              ) : error.code === 'networkError' ? (
+              ) : error.code === 'networkError' || error.code === '413' ? (
                 <_SomethingWentWrong errorId={errorId} />
               ) : (
                 noCase(error.code)
@@ -165,7 +165,7 @@ const _SomethingWentWrong = React.memo(
       return `mailto:ben@tpawplanner.com?subject=${subject}&body=${body}`
     })
     return (
-      <div className={clsx(className)}>
+      <div className={clix(className)}>
         <div className="flex items-center gap-x-4">
           <FontAwesomeIcon className="text-[40px] " icon={faSpider} />
           <p className="font-font2  text-xl">Something went wrong</p>

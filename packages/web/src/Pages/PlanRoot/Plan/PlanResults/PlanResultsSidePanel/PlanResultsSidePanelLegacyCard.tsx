@@ -1,4 +1,4 @@
-import clsx from 'clsx'
+import clix from 'clsx'
 import _ from 'lodash'
 import React, { CSSProperties, useMemo } from 'react'
 import { formatCurrency } from '../../../../../Utils/FormatCurrency'
@@ -22,7 +22,7 @@ export const PlanResultsSidePanelLegacyCard = React.memo(
     const planColors = usePlanColors()
     return (
       <div
-        className={clsx(className, 'rounded-2xl')}
+        className={clix(className, 'rounded-2xl')}
         style={{ ...style, backgroundColor: planColors.results.cardBG }}
       >
         <h2 className="font-bold text-[16px] sm:text-[22px]">Legacy</h2>

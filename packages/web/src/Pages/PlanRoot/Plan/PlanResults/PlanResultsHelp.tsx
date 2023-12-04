@@ -1,6 +1,6 @@
 import { faQuestion } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import clsx from 'clsx'
+import clix from 'clsx'
 import Link from 'next/link'
 import React, { useLayoutEffect, useState } from 'react'
 import { useAssertConst } from '../../../../Utils/UseAssertConst'
@@ -41,7 +41,7 @@ export const PlanResultsHelp = React.memo(
       <>
         <Link
           ref={setElement}
-          className={clsx('absolute flex items-center', planColors.results.fg)}
+          className={clix('absolute flex items-center', planColors.results.fg)}
           style={{
             transitionProperty: 'opacity, transform, left, bottom',
             transitionDuration: `${duration}ms`,
@@ -57,7 +57,7 @@ export const PlanResultsHelp = React.memo(
           shallow
         >
           <span
-            className={clsx(
+            className={clix(
               `flex items-center justify-center rounded-full  mr-2`,
               layout === 'mobile'
                 ? 'w-[20px] h-[20px] text-[12px]'

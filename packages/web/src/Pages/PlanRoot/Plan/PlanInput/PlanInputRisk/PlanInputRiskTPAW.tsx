@@ -14,7 +14,7 @@ import {
   letIn,
   monthlyToAnnualReturnRate,
 } from '@tpaw/common'
-import clsx from 'clsx'
+import clix from 'clsx'
 import _ from 'lodash'
 import React, { ReactNode, useState } from 'react'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
@@ -260,7 +260,7 @@ const _ExpandableNote = React.memo(
     const last = titleSplit.pop()
     const titleFirst = titleSplit.join(' ')
     return (
-      <div className={clsx(className)}>
+      <div className={clix(className)}>
         <button className="text-start mb-2" onClick={() => setOpen((x) => !x)}>
           <span className="font-medium ">{titleFirst}</span>{' '}
           {/* So carret is always with at least on word */}

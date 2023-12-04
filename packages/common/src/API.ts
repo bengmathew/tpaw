@@ -15,13 +15,10 @@ import {
 } from 'json-guard'
 import _ from 'lodash'
 import { Guards } from './Guards'
-import {
-  nonPlanParamsBackwardsCompatibleGuard,
-  nonPlanParamsGuard,
-} from './Params/NonPlanParams/NonPlanParams'
+import { nonPlanParamsBackwardsCompatibleGuard } from './Params/NonPlanParams/NonPlanParams'
 import {
   planParamsBackwardsCompatibleGuard,
-  planParamsGuard,
+  planParamsBackwardsUpToTimestampCompatibleGuard,
   planParamsMigrate,
 } from './Params/PlanParams/PlanParams'
 import {
@@ -33,6 +30,7 @@ import { fGet } from './Utils'
 
 export namespace API {
   export const version = '1'
+  export const clientVersion = '1'
   const { uuid, ianaTimezoneName } = Guards
 
   const trimmed: JSONGuard<string, string> = (x) =>
@@ -228,7 +226,14 @@ export namespace API {
           array(
             object({
               id: uuid,
-              params: chain(string, json, planParamsGuard),
+              // Allow backward compatible guard so we can support older clients.
+              // Eg. when server is updated, but user has not refreshed client.
+              // But need at at least timestamp.
+              params: chain(
+                string,
+                json,
+                planParamsBackwardsUpToTimestampCompatibleGuard,
+              ),
               change: chain(string, json, planParamsChangeActionGuardCurrent),
             }),
             10000,
@@ -239,6 +244,7 @@ export namespace API {
               if (index !== -1)
                 return failure(`Not valid change at index ${index}.`)
             }
+
             if (
               !_.compact(add).every(
                 (x, i) =>
@@ -297,7 +303,13 @@ export namespace API {
       object({
         userId,
         lastUpdatedAt: chain(number, integer),
-        nonPlanParams: chain(string, json, nonPlanParamsGuard),
+        nonPlanParams: chain(
+          string,
+          json,
+          // Allow backward compatible guard so we can support older clients.
+          // Eg. when server is updated, but user has not refreshed client.
+          nonPlanParamsBackwardsCompatibleGuard,
+        ),
       })(x)
   }
 
@@ -319,7 +331,7 @@ export namespace API {
   export namespace CreateLinkBasedPlan {
     export const check = (x: { params: string }) =>
       object({
-        params: chain(string, json, planParamsGuard),
+        params: chain(string, json, planParamsBackwardsCompatibleGuard),
       })(x)
   }
 }

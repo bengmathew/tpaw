@@ -1,4 +1,4 @@
-import clsx from 'clsx'
+import clix from 'clsx'
 import React, { CSSProperties, ReactNode } from 'react'
 
 export const PlanPrintSection = React.memo(
@@ -13,7 +13,7 @@ export const PlanPrintSection = React.memo(
   }) => {
     return (
       <div
-        className={clsx(
+        className={clix(
           className,
           'w-[21cm]',
           'min-h-[27.9cm] print:min-h-[100vh]',
