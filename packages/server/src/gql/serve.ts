@@ -77,6 +77,7 @@ async function _impl() {
 
   server.get('/', (req, res) => res.send('I am root!'))
   server.get('/ping', (req, res) => res.send('pong'))
+  server.get('/which', (req, res) => res.send('1'))
   server.get('/time', (req, res) => res.send(`${Date.now()}`))
   server.get('/crash', (req, res) => {
     throw new Error('crash')
