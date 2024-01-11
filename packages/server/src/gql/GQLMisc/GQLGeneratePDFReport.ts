@@ -64,16 +64,22 @@ export const generatePDFReport = async (input: API.GeneratePDFReport.Input) => {
 const _getPDFBufferFromPrintServer = async ({
   url,
   auth,
+  viewportWidth,
+  viewportHeight,
   devicePixelRatio,
 }: API.GeneratePDFReport.Input) => {
   type Args = {
     url: string
     auth: string | null
+    viewportWidth: number
+    viewportHeight: number
     devicePixelRatio: number
   }
   const args: Args = {
     url,
     auth,
+    viewportWidth,
+    viewportHeight,
     devicePixelRatio,
   }
   const response = await fetch(new URL(`/print`, Config.printServer.url), {
