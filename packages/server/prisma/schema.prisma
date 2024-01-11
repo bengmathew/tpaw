@@ -17,6 +17,9 @@ model User {
   planParamsChanges PlanParamsChange[]
 
   nonPlanParams              Json
+  // This is not the same as the timestamp of the nonPlanParams, which is the
+  // actual record of when it changed. This is the time it was last updated *on
+  // the server*.
   nonPlanParamsLastUpdatedAt DateTime
   clientIANATimezoneName     String  
 }

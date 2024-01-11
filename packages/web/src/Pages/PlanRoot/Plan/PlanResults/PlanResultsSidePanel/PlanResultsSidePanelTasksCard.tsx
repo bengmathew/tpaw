@@ -2,16 +2,22 @@ import { PlanParams, fGet } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import React, { CSSProperties, ReactNode, useState } from 'react'
-import { FirstMonthSavingsPortfolioDetail } from '../../../../../TPAWSimulator/Worker/FirstMonthSavingsPortfolioDetail'
-import { TPAWRunInWorkerByPercentileByMonthsFromNow } from '../../../../../TPAWSimulator/Worker/TPAWRunInWorker'
-import { UseTPAWWorkerResult } from '../../../../../TPAWSimulator/Worker/UseTPAWWorker'
+import { FirstMonthSavingsPortfolioDetail } from '../../../../../UseSimulator/Simulator/GetFirstMonthSavingsPortfolioDetail'
+import {
+  NumberArrByPercentileByMonthsFromNow,
+  SimulationResult,
+} from '../../../../../UseSimulator/Simulator/Simulator'
 import { formatCurrency } from '../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { Padding } from '../../../../../Utils/Geometry'
 import { getPrecision } from '../../../../../Utils/GetPrecision'
 import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulation,
+  useSimulationResult,
+} from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
+import clsx from 'clsx'
 
 export const PlanResultsSidePanelTasksCard = React.memo(
   ({
@@ -25,10 +31,10 @@ export const PlanResultsSidePanelTasksCard = React.memo(
     cardPadding: Padding
     layout: 'laptop' | 'desktop' | 'mobile'
   }) => {
-    const { tpawResult } = useSimulation()
+    const { simulationResult } = useSimulation()
     const [showModal, setShowModal] = useState(false)
     const { contributionToOrWithdrawalFromSavingsPortfolio, afterWithdrawals } =
-      _getProps(tpawResult)
+      _getProps(simulationResult)
     const withdrawOrContribute = (() =>
       contributionToOrWithdrawalFromSavingsPortfolio.type === 'withdrawal'
         ? {
@@ -125,15 +131,15 @@ type _Props = Omit<FirstMonthSavingsPortfolioDetail, 'withdrawals'> & {
   strategy: PlanParams['advanced']['strategy']
 }
 
-const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
-  const original = tpawResult.firstMonthOfSomeRun
-  const { params, planParamsExt } = tpawResult
+const _getProps = (simulationResult: SimulationResult): _Props => {
+  const original = simulationResult.firstMonthOfSomeRun
+  const { args } = simulationResult
 
-  const { withdrawalsStarted } = planParamsExt
+  const { withdrawalsStarted } = args.planParamsExt
 
   const firstMonthOfAnyPercentile = (
     id: string,
-    { byId }: { byId: Map<string, TPAWRunInWorkerByPercentileByMonthsFromNow> },
+    { byId }: { byId: Map<string, NumberArrByPercentileByMonthsFromNow> },
   ) => fGet(byId.get(id)).byPercentileByMonthsFromNow[0].data[0]
 
   return {
@@ -141,7 +147,7 @@ const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
     withdrawals: {
       ...original.withdrawals,
       essentialByEntry: _.values(
-        params.original.adjustmentsToSpending.extraSpending.essential,
+        args.planParams.adjustmentsToSpending.extraSpending.essential,
       )
         .sort((a, b) => a.sortIndex - b.sortIndex)
         .map(({ id, label }) => ({
@@ -149,11 +155,11 @@ const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
           label,
           amount: firstMonthOfAnyPercentile(
             id,
-            tpawResult.savingsPortfolio.withdrawals.essential,
+            simulationResult.savingsPortfolio.withdrawals.essential,
           ),
         })),
       discretionaryByEntry: _.values(
-        params.original.adjustmentsToSpending.extraSpending.discretionary,
+        args.planParams.adjustmentsToSpending.extraSpending.discretionary,
       )
         .sort((a, b) => a.sortIndex - b.sortIndex)
         .map(({ id, label }) => ({
@@ -161,12 +167,12 @@ const _getProps = (tpawResult: UseTPAWWorkerResult): _Props => {
           label,
           amount: firstMonthOfAnyPercentile(
             id,
-            tpawResult.savingsPortfolio.withdrawals.discretionary,
+            simulationResult.savingsPortfolio.withdrawals.discretionary,
           ),
         })),
     },
     withdrawalsStarted,
-    strategy: params.strategy,
+    strategy: args.planParamsProcessed.strategy,
   }
 }
 
@@ -178,12 +184,13 @@ export const TasksForThisMonthContent = React.memo(
     className?: string
     forPrint?: boolean
   }) => {
-    const { tpawResult } = useSimulation()
-    const props = _getProps(tpawResult)
+    const simulationResult = useSimulationResult()
+    const props = _getProps(simulationResult)
 
     const { withdrawals, withdrawalsStarted } = props
+    
     return (
-      <div className={clix(className, forPrint ? '' : 'font-font2 text-lg')}>
+      <div className={clsx(className, forPrint ? '' : 'font-font2 text-lg')}>
         {withdrawals.total !== 0 || withdrawalsStarted ? (
           <>
             <h2
@@ -605,14 +612,17 @@ const _AllocationTable = React.memo(
 
 const _Heading = React.memo(
   ({ children, forPrint }: { children: ReactNode; forPrint: boolean }) => {
-    const planColors = usePlanColors()
+    // Condition ok because forPrint is constant for the lifetime of the
+    // component.
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const planColors = !forPrint ? usePlanColors() : null
     return (
       <h2
         className={clix(
           'font-bold text-lg mb-1 font-font1 ',
           forPrint && 'text-black',
         )}
-        style={{ color: !forPrint ? planColors.results.fg : undefined }}
+        style={{ color: planColors?.results?.fg ?? undefined }}
       >
         {children}
       </h2>

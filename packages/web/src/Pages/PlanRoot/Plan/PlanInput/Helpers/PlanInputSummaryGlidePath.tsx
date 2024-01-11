@@ -1,8 +1,8 @@
 import { GlidePath } from '@tpaw/common'
 import React, { useMemo } from 'react'
-import { normalizeGlidePath } from '../../../../../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessRisk'
+import { normalizeGlidePath } from '../../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessRisk'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
-import { PlanParamsExtended } from '../../../../../TPAWSimulator/ExtentPlanParams'
+import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 import { monthToStringForGlidePath } from '../../../../Common/Inputs/GlidePathInput'
 
 export const PlanInputSummaryGlidePath = React.memo(

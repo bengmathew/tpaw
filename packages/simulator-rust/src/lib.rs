@@ -144,6 +144,7 @@ pub fn run(
     monte_carlo_sampling: bool,
     monte_carlo_block_size: usize,
     max_num_months: usize,
+    rand_seed: u64,
     test_truth: Option<Box<[f64]>>,
     test_index_into_historical_returns: Option<Box<[usize]>>,
 ) -> RunResult {
@@ -196,6 +197,7 @@ pub fn run(
         monte_carlo_sampling,
         monte_carlo_block_size,
         max_num_months,
+        rand_seed,
         test: if let Some(truth) = test_truth {
             Some(ParamsTest {
                 truth,
@@ -308,7 +310,7 @@ pub fn get_sampled_returns_stats(
 ) -> SampledReturnStats {
     // let indexes = &memoized_random(1, num_months, block_size, monthly_returns.len())[0];
     let indexes =
-        &generate_random_index_sequences(1, num_months, block_size, monthly_returns.len())[0];
+        &generate_random_index_sequences(0, 0, 1, num_months, block_size, monthly_returns.len())[0];
     let ln_one_plus_monthly: Vec<f64> = indexes
         .iter()
         .map(|i| (monthly_returns[*i] + 1.0).ln())

@@ -5,7 +5,7 @@ import './GQLCommon/GQLSuccess.js'
 import './GQLCommon/GQLUserSuccessResult.js'
 import './GQLLinkBasedPlan/GQLCreateLinkBasedPlan.js'
 import './GQLLinkBasedPlan/GQLLinkBasedPlan.js'
-
+import './GQLMisc/GQLGeneratePDFReport.js'
 import './GQLUser/GQLUserPlan/GQLUserMergeFromClient.js'
 import './GQLUser/GQLUserPlan/Mutations/GQLUserPlanCopy.js'
 import './GQLUser/GQLUserPlan/Mutations/GQLUserPlanReset.js'

@@ -187,7 +187,6 @@ const _Link = React.memo(
             </button>
           ) : state.type === 'copied' ? (
             <div className={className}>
-              {/* <FontAwesomeIcon className="mr-2" icon={faClipboard} /> */}
               <FontAwesomeIcon className="font-bold" icon={faCheck} />
               <h2 className="text-sm">Copied to Clipboard </h2>
             </div>

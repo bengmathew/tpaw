@@ -10,10 +10,10 @@ export type PrismaTransaction = Omit<
 export const serialTransaction = async <T>(
   fn: (tx: PrismaTransaction) => Promise<T>,
   {
-    retries = 0,
+    retries = 3,
     onConflict = () => {},
     label,
-  }: { retries?: number; onConflict?: () => void; label?: string } = {},
+  }: { retries?: number; onConflict?: () =>void; label?: string } = {},
 ): Promise<T> => {
   try {
     return await Clients.prisma.$transaction(fn, {

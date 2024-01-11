@@ -26,6 +26,7 @@ import { useWorkingPlan } from '../PlanRootHelpers/UseWorkingPlan'
 import { useIANATimezoneName } from '../PlanRootHelpers/WithNonPlanParams'
 import {
   SimulationInfoForServerSrc,
+  SimulationParams,
   WithSimulation,
   useSimulationParamsForHistoryMode,
   useSimulationParamsForPlanMode,
@@ -39,13 +40,14 @@ export const PlanServer = React.memo(
   ({
     plan: serverPlanIn,
     planPaths,
+    pdfReportInfo,
   }: {
     plan: Exclude<PlanRootServerQuery$data['user'], undefined>['plan']
     planPaths: (typeof appPaths)['plan']
+    pdfReportInfo: SimulationParams['pdfReportInfo']
   }) => {
     const user = fGet(useUser())
     const { getZonedTime } = useIANATimezoneName()
-
     const [startingServerPlan] = useState(() => ({
       planId: serverPlanIn.id,
       lastSyncAt: serverPlanIn.lastSyncAt,
@@ -154,40 +156,40 @@ export const PlanServer = React.memo(
         !rewindToStrParsed || isNaN(rewindToStrParsed)
           ? null
           : serverHistoryPreBaseInfo.state.type === 'failed'
-          ? assertFalse()
-          : serverHistoryPreBaseInfo.state.type === 'fetching'
-          ? { type: 'fetching' as const }
-          : serverHistoryPreBaseInfo.state.type === 'fetched'
-          ? block(() => {
-              const preBase = serverHistoryPreBaseInfo.state
-              assert(preBase.type === 'fetched')
-              const adjust = (x: number) =>
-                _.clamp(
-                  getZonedTime(x).endOf('day').toMillis(),
-                  preBase.planParamsHistory[0].params.timestamp,
-                  currentTimeInfo.currentTimestamp,
-                )
+            ? assertFalse()
+            : serverHistoryPreBaseInfo.state.type === 'fetching'
+              ? { type: 'fetching' as const }
+              : serverHistoryPreBaseInfo.state.type === 'fetched'
+                ? block(() => {
+                    const preBase = serverHistoryPreBaseInfo.state
+                    assert(preBase.type === 'fetched')
+                    const adjust = (x: number) =>
+                      _.clamp(
+                        getZonedTime(x).endOf('day').toMillis(),
+                        preBase.planParamsHistory[0].params.timestamp,
+                        currentTimeInfo.currentTimestamp,
+                      )
 
-              const rewindTo = adjust(rewindToStrParsed)
-              const setRewindTo = (rewindTo: number) => {
-                const clamped = adjust(rewindTo)
-                const url = new URL(window.location.href)
-                url.searchParams.set('rewindTo', `${rewindTo}`)
-                urlUpdater.push(url)
-                return clamped === rewindTo
-                  ? ('withinRange' as const)
-                  : ('fixedToRange' as const)
-              }
-              return {
-                type: 'fetched' as const,
-                rewindTo,
-                currentPortfolioBalanceInfoPreBase:
-                  preBase.currentPortfolioBalanceByMonthInfo,
-                planParamsHistoryPreBase: preBase.planParamsHistory,
-                setRewindTo,
-              }
-            })
-          : noCase(serverHistoryPreBaseInfo.state),
+                    const rewindTo = adjust(rewindToStrParsed)
+                    const setRewindTo = (rewindTo: number) => {
+                      const clamped = adjust(rewindTo)
+                      const url = new URL(window.location.href)
+                      url.searchParams.set('rewindTo', `${rewindTo}`)
+                      urlUpdater.push(url)
+                      return clamped === rewindTo
+                        ? ('withinRange' as const)
+                        : ('fixedToRange' as const)
+                    }
+                    return {
+                      type: 'fetched' as const,
+                      rewindTo,
+                      currentPortfolioBalanceInfoPreBase:
+                        preBase.currentPortfolioBalanceByMonthInfo,
+                      planParamsHistoryPreBase: preBase.planParamsHistory,
+                      setRewindTo,
+                    }
+                  })
+                : noCase(serverHistoryPreBaseInfo.state),
     )
 
     const simulationInfoBySrc: SimulationInfoForServerSrc = {
@@ -205,10 +207,11 @@ export const PlanServer = React.memo(
       serverHistoryPreBaseInfo.state.type === 'fetched'
         ? serverHistoryPreBaseInfo.state.currentPortfolioBalanceByMonthInfo
         : serverHistoryPreBaseInfo.state.type === 'fetching' ||
-          serverHistoryPreBaseInfo.state.type === 'failed'
-        ? null
-        : noCase(serverHistoryPreBaseInfo.state),
+            serverHistoryPreBaseInfo.state.type === 'failed'
+          ? null
+          : noCase(serverHistoryPreBaseInfo.state),
       simulationInfoBySrc,
+      pdfReportInfo,
     )
 
     const simulationParamsForHistoryMode = useSimulationParamsForHistoryMode(
@@ -218,6 +221,7 @@ export const PlanServer = React.memo(
       workingPlanInfo,
       planMigratedFromVersion,
       simulationInfoBySrc,
+      pdfReportInfo,
     )
 
     const { navGuardState, resetNavGuardState } = useNavGuard(

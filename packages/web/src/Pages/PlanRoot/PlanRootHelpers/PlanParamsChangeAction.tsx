@@ -10,9 +10,10 @@ import {
   fGet,
   noCase,
   planParamsFns,
+  planParamsMigrate,
 } from '@tpaw/common'
 import _ from 'lodash'
-import { PlanParamsExtended } from '../../../TPAWSimulator/ExtentPlanParams'
+import { PlanParamsExtended } from '../../../UseSimulator/ExtentPlanParams'
 import { calendarMonthStr } from '../../../Utils/CalendarMonthStr'
 import { formatCurrency } from '../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../Utils/FormatPercentage'
@@ -28,7 +29,7 @@ type _ActionFns = {
     clone: PlanParams,
     planParamsExt: PlanParamsExtended,
     defaultPlanParams: PlanParams,
-  ) => void
+  ) => void | PlanParams // If a value is returned, it supercedes the clone.
   render: (
     prevPlanParams: PlanParams,
     planParams: PlanParams,
@@ -157,8 +158,8 @@ export const processPlanParamsChangeActionCurrent = (
             personType === 'person2'
               ? true
               : clone.people.withPartner
-              ? isPersonRetired('person2')
-              : undefined,
+                ? isPersonRetired('person2')
+                : undefined,
           )
           if (!isFutureSavingsGoingToBeAllowed) {
             clone.wealth.futureSavings = {}
@@ -864,6 +865,7 @@ export const processPlanParamsChangeActionCurrent = (
         merge: null,
       }
     }
+
 
     // ---------
     // setHistoricalReturnsAdjustExpectedReturnDev

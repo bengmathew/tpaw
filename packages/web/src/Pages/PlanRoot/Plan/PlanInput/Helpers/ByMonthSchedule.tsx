@@ -7,6 +7,7 @@ import { SimpleRange } from '../../../../../Utils/SimpleRange'
 import { ValueForMonthRangeDisplay } from '../../../../Common/ValueForMonthRangeDisplay'
 import { getValueForMonthRangeEntriesByLocation } from '../../../PlanRootHelpers/PlanParamsChangeAction'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 
 export const ByMonthSchedule = React.memo(
   ({
@@ -28,7 +29,7 @@ export const ByMonthSchedule = React.memo(
       onEdit: (entryId: string, isAdd: boolean) => void
     }
   }) => {
-    const { planParams, updatePlanParams } = useSimulation()
+    const { planParams, updatePlanParams, planParamsExt } = useSimulation()
     const entries = useMemo(
       () =>
         _.values(
@@ -77,6 +78,7 @@ export const ByMonthSchedule = React.memo(
                   onEdit={
                     editProps ? () => editProps.onEdit(entry.id, false) : null
                   }
+                  planParamsExt={planParamsExt}
                 />
               ),
           )}
@@ -92,11 +94,13 @@ const _Entry = React.memo(
     rangeAsMFN,
     entry,
     onEdit,
+    planParamsExt,
   }: {
     className?: string
     rangeAsMFN: SimpleRange
     entry: ValueForMonthRange
     onEdit: (() => void) | null
+    planParamsExt: PlanParamsExtended
   }) => {
     return (
       <button
@@ -110,6 +114,7 @@ const _Entry = React.memo(
           entry={entry}
           rangeAsMFN={rangeAsMFN}
           skipLength={false}
+          planParamsExt={planParamsExt}
         />
       </button>
     )

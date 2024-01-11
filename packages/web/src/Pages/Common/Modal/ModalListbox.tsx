@@ -12,7 +12,7 @@ import React, {
 import ReactDOM from 'react-dom'
 import { Size, applyOriginToHTMLElement } from '../../../Utils/Geometry'
 import { tailwindScreens } from '../../../Utils/TailwindScreens'
-import { useWindowSize } from '../../App/WithWindowSize'
+import { useSystemInfo } from '../../App/WithSystemInfo'
 
 const duration = 300
 
@@ -100,7 +100,7 @@ const __Options = <T extends string | number>({
     groups = choicesIn as T[][]
   }
 
-  const {windowSize} = useWindowSize()
+  const {windowSize} = useSystemInfo()
 
   const [size, setSize] = useState<Size | null>(null)
   const [show, setShow] = useState(false)

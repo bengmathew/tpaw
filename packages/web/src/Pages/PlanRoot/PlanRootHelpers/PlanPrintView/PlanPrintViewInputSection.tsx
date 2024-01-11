@@ -1,0 +1,263 @@
+import { assert, getDefaultPlanParams } from '@tpaw/common'
+import clsx from 'clsx'
+import _ from 'lodash'
+import React, { ReactNode, useMemo } from 'react'
+import { useSimulationResult } from '../WithSimulation'
+import { useGetPlanInputVisibility } from '../../Plan/PlanInput/Helpers/UseGetPlanInputVisibility'
+import { PlanInputAgeSummary } from '../../Plan/PlanInput/PlanInputAge/PlanInputAge'
+import { PlanInputCurrentPortfolioBalanceSummary } from '../../Plan/PlanInput/PlanInputCurrentPortfolioBalance'
+import { PlanInputExpectedReturnsAndVolatilitySummary } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
+import { PlanInputExtraSpendingSummary } from '../../Plan/PlanInput/PlanInputExtraSpending'
+import { PlanInputFutureSavingsSummary } from '../../Plan/PlanInput/PlanInputFutureSavings'
+import { PlanInputIncomeDuringRetirementSummary } from '../../Plan/PlanInput/PlanInputIncomeDuringRetirement'
+import { PlanInputInflationSummary } from '../../Plan/PlanInput/PlanInputInflation'
+import { PlanInputLegacySummary } from '../../Plan/PlanInput/PlanInputLegacy'
+import { PlanInputRiskSummary } from '../../Plan/PlanInput/PlanInputRisk/PlanInputRisk'
+import { PlanInputSimulationSummary } from '../../Plan/PlanInput/PlanInputSimulation'
+import { PlanInputSpendingCeilingAndFloorSummary } from '../../Plan/PlanInput/PlanInputSpendingCeilingAndFloor'
+import { PlanInputStrategySummary } from '../../Plan/PlanInput/PlanInputStrategy'
+import { PlanPrintViewPageGroup } from './Helpers/PlanPrintViewPageGroup'
+import { PlanPrintViewSectionTitlePageGroup } from './Helpers/PlanPrintViewSectionTitlePageGroup'
+import { PlanPrintViewArgs } from './PlanPrintViewArgs'
+
+// Note: The show/hide should mirror PlanSummary. "None" displays should mirror
+// PlanSummaryButtons's empty attribute from PlanSummary.
+export const PlanPrintViewInputSection = React.memo(
+  ({ settings }: { settings: PlanPrintViewArgs['settings'] }) => {
+    const { args } = useSimulationResult()
+    const { ianaTimezoneName } = args.planParamsExt
+    const defaultPlanParams = useMemo(
+      () => getDefaultPlanParams(args.planParams.timestamp, ianaTimezoneName),
+      [args.planParams.timestamp, ianaTimezoneName],
+    )
+
+    const getVisibility = useGetPlanInputVisibility(args.planParamsExt)
+
+    const _assert = (condition: boolean) => {
+      assert(condition)
+      return true
+    }
+    return (
+      <>
+        <PlanPrintViewSectionTitlePageGroup
+          title="Your Inputs"
+          settings={settings}
+        />
+        <PlanPrintViewPageGroup
+          className="grid gap-y-12 gap-x-5"
+          style={{ grid: 'auto / auto 1fr' }}
+          settings={settings}
+        >
+          <_SectionHeading className="">Age</_SectionHeading>
+          {_assert(getVisibility('age').visible) && (
+            <div className="mt-1.5">
+              <PlanInputAgeSummary planParamsExt={args.planParamsExt} />
+            </div>
+          )}
+          <_SectionHeading className="">Wealth</_SectionHeading>
+          <div className="mt-1.5">
+            {_assert(getVisibility('current-portfolio-balance').visible) && (
+              <div className=" break-inside-avoid-page">
+                <_SubSectionHeading className="" isFirst>
+                  Current Portfolio Balance
+                </_SubSectionHeading>
+                <div className="mt-2">
+                  <PlanInputCurrentPortfolioBalanceSummary
+                    planParamsExt={args.planParamsExt}
+                    currentPortfolioBalance={
+                      args.planParamsProcessed.estimatedCurrentPortfolioBalance
+                    }
+                  />
+                </div>
+              </div>
+            )}
+            {getVisibility('future-savings') && (
+              <div className=" ">
+                <_SubSectionHeading className="">
+                  Future Savings
+                </_SubSectionHeading>
+                <div className="mt-2">
+                  {_.values(args.planParams.wealth.futureSavings).length > 0 ? (
+                    <PlanInputFutureSavingsSummary
+                      planParamsExt={args.planParamsExt}
+                    />
+                  ) : (
+                    <_None />
+                  )}
+                </div>
+              </div>
+            )}
+            {_assert(getVisibility('income-during-retirement').visible) && (
+              <div className=" ">
+                <_SubSectionHeading className="">
+                  Income During Retirement
+                </_SubSectionHeading>
+                <div className="mt-2">
+                  {_.values(args.planParams.wealth.incomeDuringRetirement)
+                    .length > 0 ? (
+                    <PlanInputIncomeDuringRetirementSummary
+                      planParamsExt={args.planParamsExt}
+                    />
+                  ) : (
+                    <_None />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <_SectionHeading className="">
+            Adjustments <br /> to <br /> Spending
+          </_SectionHeading>
+
+          <div className="mt-1.5">
+            <_SubSectionHeading className="" isFirst>
+              Extra Spending
+            </_SubSectionHeading>
+            <PlanInputExtraSpendingSummary
+              planParamsExt={args.planParamsExt}
+              forPrint
+            />
+
+            {getVisibility('legacy').visible && (
+              <>
+                <_SubSectionHeading className="">Legacy</_SubSectionHeading>
+                <div className="mt-2">
+                  {_.values(
+                    args.planParams.adjustmentsToSpending.tpawAndSPAW.legacy
+                      .external,
+                  ).length === 0 &&
+                  args.planParams.adjustmentsToSpending.tpawAndSPAW.legacy
+                    .total === 0 ? (
+                    <_None />
+                  ) : (
+                    <PlanInputLegacySummary
+                      planParamsProcessed={args.planParamsProcessed}
+                    />
+                  )}
+                </div>
+              </>
+            )}
+
+            {getVisibility('spending-ceiling-and-floor').visible && (
+              <>
+                <_SubSectionHeading className="">
+                  Spending Ceiling And Floor
+                </_SubSectionHeading>
+                <div className="mt-2">
+                  {args.planParams.adjustmentsToSpending.tpawAndSPAW
+                    .monthlySpendingCeiling === null &&
+                  args.planParams.adjustmentsToSpending.tpawAndSPAW
+                    .monthlySpendingFloor === null ? (
+                    <_None />
+                  ) : (
+                    <PlanInputSpendingCeilingAndFloorSummary
+                      planParams={args.planParams}
+                    />
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          {_assert(getVisibility('risk').visible) && (
+            <>
+              <_SectionHeading className="">Risk</_SectionHeading>
+              <div className=" break-inside-avoid-page mt-2">
+                <div className="">
+                  <PlanInputRiskSummary
+                    planParamsExt={args.planParamsExt}
+                    defaultPlanParams={defaultPlanParams}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          <_SectionHeading className="">Advanced</_SectionHeading>
+          <div className="mt-1.5">
+            {_assert(
+              getVisibility('expected-returns-and-volatility').visible,
+            ) && (
+              <div className="">
+                <_SubSectionHeading className="" isFirst>
+                  Expected Returns
+                </_SubSectionHeading>
+                <div className="mt-2">
+                  <PlanInputExpectedReturnsAndVolatilitySummary
+                    planParamsProcessed={args.planParamsProcessed}
+                  />
+                </div>
+              </div>
+            )}
+            {_assert(getVisibility('inflation').visible) && (
+              <div className="">
+                <_SubSectionHeading className="">Inflation</_SubSectionHeading>
+                <div className="mt-2">
+                  <PlanInputInflationSummary
+                    planParamsProcessed={args.planParamsProcessed}
+                  />
+                </div>
+              </div>
+            )}
+
+            {_assert(getVisibility('simulation').visible) && (
+              <div className="">
+                <_SubSectionHeading className="">Simulation</_SubSectionHeading>
+                <div className="mt-2">
+                  <PlanInputSimulationSummary planParams={args.planParams} />
+                </div>
+              </div>
+            )}
+
+            {_assert(getVisibility('strategy').visible) && (
+              <div className="">
+                <_SubSectionHeading className="">Strategy</_SubSectionHeading>
+                <div className="mt-2">
+                  <PlanInputStrategySummary planParams={args.planParams} />
+                </div>
+              </div>
+            )}
+          </div>
+        </PlanPrintViewPageGroup>
+      </>
+    )
+  },
+)
+
+const _SectionHeading = React.memo(
+  ({ className, children }: { className?: string; children: ReactNode }) => {
+    return (
+      <h2
+        className={clsx(
+          className,
+          'font-bold text-3xl text-right border-r-2 border-black px-5',
+        )}
+      >
+        {children}
+      </h2>
+    )
+  },
+)
+const _SubSectionHeading = React.memo(
+  ({
+    className,
+    children,
+    isFirst = false,
+  }: {
+    className?: string
+    children: ReactNode
+    isFirst?: boolean
+  }) => {
+    return (
+      <h2 className={clsx(className, 'font-bold text-xl', !isFirst && 'mt-6')}>
+        {children}
+      </h2>
+    )
+  },
+)
+
+const _None = React.memo(() => (
+  <div className="">
+    <h2 className="">None</h2>
+  </div>
+))

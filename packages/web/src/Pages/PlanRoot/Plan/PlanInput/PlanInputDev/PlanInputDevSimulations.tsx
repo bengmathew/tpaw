@@ -1,11 +1,7 @@
-import {
-  defaultNonPlanParams,
-  historicalReturns,
-  nonPlanParamsGuard,
-} from '@tpaw/common'
+import { getDefaultNonPlanParams, historicalReturns } from '@tpaw/common'
+import { clsx } from 'clsx'
 import _ from 'lodash'
-import React from 'react'
-import { getTPAWRunInWorkerSingleton } from '../../../../../TPAWSimulator/Worker/UseTPAWWorker'
+import React, { useMemo } from 'react'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { AmountInput } from '../../../../Common/Inputs/AmountInput'
@@ -19,7 +15,6 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from '../PlanInputBody/PlanInputBody'
-import { clsx } from 'clsx'
 
 export const PlanInputDevSimulations = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -41,8 +36,12 @@ const _SimulationsCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { tpawResult, reRun } = useSimulation()
+    const { simulationResult, randomSeed, reRun } = useSimulation()
     const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
+    const defaultNonPlanParams = useMemo(
+      () => getDefaultNonPlanParams(Date.now()),
+      [],
+    )
 
     const isModified = useIsPlanInputDevSimulationsModified()
 
@@ -68,21 +67,19 @@ const _SimulationsCard = React.memo(
         </div>
 
         <div className="mt-2 flex gap-x-4 items-center">
-          <h2 className="">Time To Run:</h2>
-          <h2 className="ml-2">{_timeToRun(tpawResult)}</h2>
+          <h2 className="">Time to Run:</h2>
+          <h2 className="ml-2">{_timeToRun(simulationResult)}</h2>
+        </div>
+        <div className="mt-2 flex gap-x-4 items-center">
+          <h2 className="">Random Seed:</h2>
+          <h2 className="ml-2">{randomSeed}</h2>
         </div>
         <div className="mt-2">
           <h2> Annual Return Stats:</h2>
           <_AnnualReturnStatsTable className="mt-2" />
         </div>
 
-        <button
-          className="underline pt-4"
-          onClick={() => {
-            void getTPAWRunInWorkerSingleton().clearMemoizedRandom()
-            reRun()
-          }}
-        >
+        <button className="underline pt-4" onClick={reRun}>
           Reset random draws
         </button>
         <button
@@ -104,6 +101,10 @@ const _SimulationsCard = React.memo(
 
 export const useIsPlanInputDevSimulationsModified = () => {
   const { nonPlanParams } = useNonPlanParams()
+  const defaultNonPlanParams = useMemo(
+    () => getDefaultNonPlanParams(Date.now()),
+    [],
+  )
   return (
     nonPlanParams.numOfSimulationForMonteCarloSampling !==
     defaultNonPlanParams.numOfSimulationForMonteCarloSampling
@@ -111,26 +112,30 @@ export const useIsPlanInputDevSimulationsModified = () => {
 }
 
 export const PlanInputDevSimulationsSummary = React.memo(() => {
-  const { tpawResult, planParamsProcessed } = useSimulation()
+  const { simulationResult, randomSeed } = useSimulation()
   const { nonPlanParams } = useNonPlanParams()
   return (
     <>
       <h2>
         Num of simulations: {nonPlanParams.numOfSimulationForMonteCarloSampling}
       </h2>
-      <h2>Time to run: {_timeToRun(tpawResult)}</h2>
+      <h2>Time to run: {_timeToRun(simulationResult)}</h2>
+      <h2>Random Seed: {randomSeed}</h2>
+      
       <h2> Annual Return Stats:</h2>
       <_AnnualReturnStatsTable className="" />
     </>
   )
 })
 
-const _timeToRun = (tpawResult: SimulationInfo['tpawResult']) =>
-  `${Math.round(tpawResult.perf.main[6][1])}ms (${tpawResult.perf.main[6][0]})`
+const _timeToRun = (simulationResult: SimulationInfo['simulationResult']) =>
+  `${Math.round(simulationResult.perf.main[6][1])}ms (${
+    simulationResult.perf.main[6][0]
+  })`
 
 const _AnnualReturnStatsTable = React.memo(
   ({ className }: { className?: string }) => {
-    const { tpawResult, planParamsProcessed } = useSimulation()
+    const { simulationResult, planParamsProcessed } = useSimulation()
 
     const forData = (stats: {
       ofBase: {
@@ -173,14 +178,15 @@ const _AnnualReturnStatsTable = React.memo(
           <h2>Stocks - Target</h2>
           {forData({
             ofBase: {
-              mean: tpawResult.params.expectedReturnsForPlanning.annual.stocks,
+              mean: simulationResult.args.planParamsProcessed
+                .expectedReturnsForPlanning.annual.stocks,
             },
             ofLog:
               planParamsProcessed.historicalReturnsAdjusted.monthly.annualStats
                 .estimatedSampledStats.stocks.ofLog,
           })}
           <h2>Stocks - Sampled</h2>
-          {forData(tpawResult.annualStatsForSampledReturns.stocks)}
+          {forData(simulationResult.annualStatsForSampledReturns.stocks)}
           <h2>Stocks - Historical - Adj </h2>
           {forData(
             planParamsProcessed.historicalReturnsAdjusted.monthly.annualStats
@@ -199,7 +205,7 @@ const _AnnualReturnStatsTable = React.memo(
             },
           })}
           <h2>Bonds - Sampled</h2>
-          {forData(tpawResult.annualStatsForSampledReturns.bonds)}
+          {forData(simulationResult.annualStatsForSampledReturns.bonds)}
           <h2>Bonds - Historical - Adj </h2>
           {forData(
             planParamsProcessed.historicalReturnsAdjusted.monthly.annualStats

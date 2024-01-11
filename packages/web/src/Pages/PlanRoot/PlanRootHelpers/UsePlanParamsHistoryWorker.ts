@@ -2,9 +2,9 @@ import { PlanParams, assert, fGet } from '@tpaw/common'
 import _ from 'lodash'
 import { useEffect, useState } from 'react'
 import {
-  TPAWWorkerArgs,
-  TPAWWorkerResult,
-} from '../../../TPAWSimulator/Worker/TPAWWorkerAPI'
+  SimulationWorkerArgs,
+  SimulationWorkerResult,
+} from '../../../UseSimulator/Simulator/SimulationWorkerAPI'
 import { CurrentPortfolioBalance } from './CurrentPortfolioBalance'
 import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName } from './WithNonPlanParams'
@@ -24,7 +24,7 @@ export const useParseAndMigratePlanParamsHistoryInWorker = (
     const taskID = _.uniqueId()
     const worker = _getWorkerSingleton()
     const start = performance.now()
-    const onMessage = ({ data }: MessageEvent<TPAWWorkerResult>): void =>
+    const onMessage = ({ data }: MessageEvent<SimulationWorkerResult>): void =>
       setState((prev) => {
         if (prev.type !== 'processing' || prev.taskID !== data.taskID)
           return prev
@@ -36,7 +36,7 @@ export const useParseAndMigratePlanParamsHistoryInWorker = (
 
     _planParamsCachedInWorker.clear()
     planParamsHistoryStr.forEach((x) => _planParamsCachedInWorker.add(x.id))
-    const message: TPAWWorkerArgs = {
+    const message: SimulationWorkerArgs = {
       type: 'parseAndMigratePlanParams',
       taskID: taskID,
       args: { isPreBase: true, planParamsHistoryStr },
@@ -77,7 +77,7 @@ export const useCurrentPortfolioBalanceGetMonthInfoInWorker = (
     const taskID = _.uniqueId()
     const worker = _getWorkerSingleton()
     const start = performance.now()
-    const onMessage = ({ data }: MessageEvent<TPAWWorkerResult>) =>
+    const onMessage = ({ data }: MessageEvent<SimulationWorkerResult>) =>
       setState((prev) => {
         if (prev.type !== 'processing' || prev.taskID !== data.taskID)
           return prev
@@ -94,7 +94,7 @@ export const useCurrentPortfolioBalanceGetMonthInfoInWorker = (
     _planParamsCachedInWorker.clear()
     planParamsHistory.forEach((x) => _planParamsCachedInWorker.add(x.id))
     const estimationTimestamp = fGet(_.last(planParamsHistory)).params.timestamp
-    const message: TPAWWorkerArgs = {
+    const message: SimulationWorkerArgs = {
       type: 'estimateCurrentPortfolioBalance',
       taskID,
       args: {
@@ -126,7 +126,7 @@ let _workerSingleton: Worker | null = null
 const _getWorkerSingleton = () => {
   if (!_workerSingleton)
     _workerSingleton = new Worker(
-      new URL('../../../TPAWSimulator/Worker/TPAWWorker.ts', import.meta.url),
+      new URL('../../../UseSimulator/Simulator/SimulationWorker.ts', import.meta.url),
     )
   return _workerSingleton
 }

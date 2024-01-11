@@ -1,7 +1,7 @@
 import { faCircle } from '@fortawesome/pro-light-svg-icons'
 import { faCircle as faCircleSolid } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { MAX_AGE_IN_MONTHS } from '@tpaw/common'
+import { MAX_AGE_IN_MONTHS, PlanParams } from '@tpaw/common'
 import React from 'react'
 import {
   paddingCSSStyle,
@@ -186,19 +186,20 @@ const useIsHistoricalSequenceCardModifed = () => {
   return planParams.advanced.sampling.type === 'historical'
 }
 
-export const PlanInputSimulationSummary = React.memo(() => {
-  const { planParams } = useSimulation()
-  return planParams.advanced.sampling.type === 'monteCarlo' ? (
-    <>
-      <h2>Monte Carlo Sequence</h2>
-      <h2>
-        Block Size:{' '}
-        {numMonthsStr(
-          planParams.advanced.sampling.blockSizeForMonteCarloSampling,
-        )}
-      </h2>
-    </>
-  ) : (
-    <h2>Historical Sequence</h2>
-  )
-})
+export const PlanInputSimulationSummary = React.memo(
+  ({ planParams }: { planParams: PlanParams }) => {
+    return planParams.advanced.sampling.type === 'monteCarlo' ? (
+      <>
+        <h2>Monte Carlo Sequence</h2>
+        <h2>
+          Block Size:{' '}
+          {numMonthsStr(
+            planParams.advanced.sampling.blockSizeForMonteCarloSampling,
+          )}
+        </h2>
+      </>
+    ) : (
+      <h2>Historical Sequence</h2>
+    )
+  },
+)

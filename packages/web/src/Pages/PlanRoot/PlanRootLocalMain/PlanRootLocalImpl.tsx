@@ -1,19 +1,27 @@
+import { assert, fGet } from '@tpaw/common'
+import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { appPaths } from '../../../AppPaths'
 import { useCurrentTime } from '../PlanRootHelpers/UseCurrentTime'
 import { useWorkingPlan } from '../PlanRootHelpers/UseWorkingPlan'
 import { useIANATimezoneName } from '../PlanRootHelpers/WithNonPlanParams'
 import {
+  SimulationParams,
   WithSimulation,
   useSimulationParamsForPlanMode,
 } from '../PlanRootHelpers/WithSimulation'
 import { PlanLocalStorage } from './PlanLocalStorage'
-import { assert, fGet } from '@tpaw/common'
-import _ from 'lodash'
 
 export const PlanRootLocalImpl = React.memo(
-  ({ reload }: { reload: () => void }) => {
+  ({
+    reload,
+    pdfReportInfo,
+  }: {
+    reload: () => void
+    pdfReportInfo: SimulationParams['pdfReportInfo']
+  }) => {
     const { ianaTimezoneName } = useIANATimezoneName()
+
     const [startingSrc] = useState(
       () =>
         PlanLocalStorage.read() ??
@@ -60,6 +68,7 @@ export const PlanRootLocalImpl = React.memo(
       startingSrc.planMigratedFromVersion,
       null,
       { src: 'localMain', reset },
+      pdfReportInfo,
     )
 
     return <WithSimulation params={simulationParams} />

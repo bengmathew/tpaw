@@ -33,6 +33,7 @@ import { PlanInputRisk } from './PlanInputRisk/PlanInputRisk'
 import { PlanInputSimulation } from './PlanInputSimulation'
 import { PlanInputSpendingCeilingAndFloor } from './PlanInputSpendingCeilingAndFloor'
 import { PlanInputStrategy } from './PlanInputStrategy'
+import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 
 type _FixedSizingByMode = {
   size: Size
@@ -53,19 +54,19 @@ export const toPlanInputTransitionStateByType = (type: PlanInputType) =>
   simplifyPlanTransitionState4(
     {
       label: 'dialogIn',
-      sections: [{ section: type, dialogMode: true}],
+      sections: [{ section: type, dialogMode: true }],
     },
     {
       label: 'dialogOut',
-      sections: [{ section: 'rest', dialogMode: true}],
+      sections: [{ section: 'rest', dialogMode: true }],
     },
     {
       label: 'notDialogIn',
-      sections: [{ section: type, dialogMode: false}],
+      sections: [{ section: type, dialogMode: false }],
     },
     {
       label: 'notDialogOut',
-      sections: [{ section: 'rest', dialogMode: false}],
+      sections: [{ section: 'rest', dialogMode: false }],
     },
   )
 
@@ -133,7 +134,8 @@ const _Body = React.memo(
     planInputType: PlanInputType
     props: PlanInputBodyPassThruProps
   }) => {
-    const visibility = useGetPlanInputVisibility()(planInputType)
+    const { planParamsExt } = useSimulation()
+    const visibility = useGetPlanInputVisibility(planParamsExt)(planInputType)
     const show = visibility.visible && !visibility.disabled
     const summarySectionURL = useGetSectionURL()('summary')
     const urlUpdater = useURLUpdater()

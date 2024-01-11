@@ -17,6 +17,7 @@ export class Config {
         app: (path = '') =>
           `${fGet(process.env.NEXT_PUBLIC_URL_WEBSITE)}${path}`,
         backend: fGet(process.env.NEXT_PUBLIC_URL_BACKEND),
+        deployment: `https://${fGet(process.env.NEXT_PUBLIC_VERCEL_URL)}`,
       },
       isProduction: process.env.NODE_ENV === 'production',
       google: {

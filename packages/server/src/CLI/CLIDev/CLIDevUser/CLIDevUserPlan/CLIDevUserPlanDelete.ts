@@ -5,7 +5,7 @@ import { cliDevUserPlan } from './CLIDevUserPlan.js'
 
 cliDevUserPlan
   .command('delete <email> <planSlug>')
-  .action(async (email, planSlug) => {
+  .action(async (email:string, planSlug:string) => {
     const userId = fGet(await Clients.firebaseAuth.getUserByEmail(email)).uid
     await serialTransaction(async (tx) => {
       assert(

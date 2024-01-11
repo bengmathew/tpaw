@@ -4,13 +4,15 @@ import {
   block,
   noCase,
 } from '@tpaw/common'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 import { PlanInputType } from './PlanInputType'
 import { isPlanSectionDialogInOverlayMode } from './PlanSectionDialogPosition'
 
-export const useGetPlanInputVisibility = () => {
-  const { planParams, planParamsExt } = useSimulation()
-  const { isFutureSavingsAllowed, dialogPositionEffective } = planParamsExt
+export const useGetPlanInputVisibility = (
+  planParamsExt: PlanParamsExtended,
+) => {
+  const { isFutureSavingsAllowed, dialogPositionEffective, planParams } =
+    planParamsExt
 
   const _helper = (
     showAtDialogPosition: Exclude<

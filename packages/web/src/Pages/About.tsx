@@ -41,7 +41,7 @@ export const About = React.memo(() => {
                     height="15"
                   />
                 </div>
-                <h2 className="">Bogleheads</h2>
+                Bogleheads
               </a>
               <a
                 className="block py-2 cursor-pointer"
@@ -70,7 +70,7 @@ export const About = React.memo(() => {
                     height="15"
                   />
                 </div>
-                <h2 className="">Substack</h2>
+                Substack
               </a>
               <a
                 className="block py-2 cursor-pointer"

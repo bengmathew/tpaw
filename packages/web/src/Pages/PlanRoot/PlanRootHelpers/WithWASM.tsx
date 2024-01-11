@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { WASM, getWASM } from '../../../TPAWSimulator/Worker/GetWASM'
+import { WASM, getWASM } from '../../../UseSimulator/Simulator/GetWASM'
 import { asyncEffect } from '../../../Utils/AsyncEffect'
 
 import { ReactNode } from 'react'

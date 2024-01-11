@@ -23,6 +23,7 @@ import { usePlanContent } from '../../../PlanRootHelpers/WithPlanContent'
 import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
 import { formatCurrency } from '../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
+import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 
 export const PlanInputRiskSWR = React.memo(
   ({ props }: { props: PlanInputBodyPassThruProps }) => {
@@ -152,7 +153,7 @@ const _Rate = React.memo(({ className = '' }: { className?: string }) => {
   )
 })
 const _Amount = React.memo(({ className = '' }: { className?: string }) => {
-  const { planParams, updatePlanParams, tpawResult, planParamsExt } =
+  const { planParams, updatePlanParams, simulationResult, planParamsExt } =
     useSimulation()
   const { withdrawal } = planParams.risk.swr
   const { asMFN, withdrawalStartMonth } = planParamsExt
@@ -160,7 +161,7 @@ const _Amount = React.memo(({ className = '' }: { className?: string }) => {
   const [lastEntry, setLastEntry] = useState(
     _.round(
       fGet(
-        tpawResult.savingsPortfolio.withdrawals.regular.byPercentileByMonthsFromNow.find(
+        simulationResult.savingsPortfolio.withdrawals.regular.byPercentileByMonthsFromNow.find(
           (x) => x.percentile === 50,
         ),
       ).data[asMFN(withdrawalStartMonth)],
@@ -240,35 +241,39 @@ const _Amount = React.memo(({ className = '' }: { className?: string }) => {
   )
 })
 
-export const PlanInputRiskSWRSummary = React.memo(() => {
-  const { planParams, planParamsExt } = useSimulation()
-  const { risk } = planParams
-  const { withdrawalsStarted } = planParamsExt
-  return (
-    <>
-      <h2>Stock Allocation</h2>
-      <div className="ml-4">
-        <PlanInputSummaryGlidePath
-          className=""
-          glidePath={risk.spawAndSWR.allocation}
-          format={(x) => formatPercentage(0)(x)}
-        />
-      </div>
-      <h2>Withdrawal</h2>
-      <h2 className="ml-4">
-        {risk.swr.withdrawal.type === 'asPercentPerYear'
-          ? `${formatPercentage(1)(risk.swr.withdrawal.percentPerYear)} of ${
-              withdrawalsStarted
-                ? 'current portfolio balance'
-                : 'savings portfolio at retirement'
-            }`
-          : risk.swr.withdrawal.type === 'asAmountPerMonth'
-          ? `${formatCurrency(risk.swr.withdrawal.amountPerMonth)} per month`
-          : risk.swr.withdrawal.type === 'default'
-          ? // Default should have been changed to asPercent if we are showing this.
-            assertFalse()
-          : noCase(risk.swr.withdrawal)}
-      </h2>
-    </>
-  )
-})
+export const PlanInputRiskSWRSummary = React.memo(
+  ({ planParamsExt }: { planParamsExt: PlanParamsExtended }) => {
+    const { planParams } = planParamsExt
+    const { risk } = planParams
+    const { withdrawalsStarted } = planParamsExt
+    return (
+      <>
+        <h2>Stock Allocation</h2>
+        <div className="ml-4">
+          <PlanInputSummaryGlidePath
+            className=""
+            glidePath={risk.spawAndSWR.allocation}
+            format={(x) => formatPercentage(0)(x)}
+          />
+        </div>
+        <h2>Withdrawal</h2>
+        <h2 className="ml-4">
+          {risk.swr.withdrawal.type === 'asPercentPerYear'
+            ? `${formatPercentage(1)(risk.swr.withdrawal.percentPerYear)} of ${
+                withdrawalsStarted
+                  ? 'current portfolio balance'
+                  : 'savings portfolio at retirement'
+              }`
+            : risk.swr.withdrawal.type === 'asAmountPerMonth'
+              ? `${formatCurrency(
+                  risk.swr.withdrawal.amountPerMonth,
+                )} per month`
+              : risk.swr.withdrawal.type === 'default'
+                ? // Default should have been changed to asPercent if we are showing this.
+                  assertFalse()
+                : noCase(risk.swr.withdrawal)}
+        </h2>
+      </>
+    )
+  },
+)

@@ -1,13 +1,13 @@
-import { SPAW_ANNUAL_SPENDING_TILT_VALUES } from '@tpaw/common'
+import { PlanParams, SPAW_ANNUAL_SPENDING_TILT_VALUES } from '@tpaw/common'
 import React from 'react'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSSStyle } from '../../../../../Utils/Geometry'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { SliderInput } from '../../../../Common/Inputs/SliderInput/SliderInput'
+import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
 import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
 import { PlanInputRiskLMPCard } from './PlanInputRiskLMPCard'
 import { PlanInputRiskSPAWAndSWRStockAllocationCard } from './PlanInputRiskSPAWAndSWRStockAllocation'
-import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
 
 export const PlanInputRiskSPAW = React.memo(
   ({ props }: { props: PlanInputBodyPassThruProps }) => {
@@ -73,22 +73,23 @@ const _SpendingTiltCard = React.memo(
   },
 )
 
-export const PlanInputRiskSPAWSummary = React.memo(() => {
-  const { planParams } = useSimulation()
-  const { risk } = planParams
-  return (
-    <>
-      <h2>Stock Allocation</h2>
-      <div className="ml-4">
-        <PlanInputSummaryGlidePath
-          className=""
-          glidePath={risk.spawAndSWR.allocation}
-          format={(x) => formatPercentage(0)(x)}
-        />
-      </div>
-      <h2>
-        Spending Tilt: {formatPercentage(1)(risk.spaw.annualSpendingTilt)}
-      </h2>
-    </>
-  )
-})
+export const PlanInputRiskSPAWSummary = React.memo(
+  ({ planParams }: { planParams: PlanParams }) => {
+    const { risk } = planParams
+    return (
+      <>
+        <h2>Stock Allocation</h2>
+        <div className="ml-4">
+          <PlanInputSummaryGlidePath
+            className=""
+            glidePath={risk.spawAndSWR.allocation}
+            format={(x) => formatPercentage(0)(x)}
+          />
+        </div>
+        <h2>
+          Spending Tilt: {formatPercentage(1)(risk.spaw.annualSpendingTilt)}
+        </h2>
+      </>
+    )
+  },
+)

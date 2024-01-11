@@ -1,7 +1,7 @@
-import { NonPlanParams, assert, defaultNonPlanParams } from '@tpaw/common'
+import { NonPlanParams, assert, getDefaultNonPlanParams } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { NumberInput } from '../../../../Common/Inputs/NumberInput'
 import { smartDeltaFnForMonthlyAmountInput } from '../../../../Common/Inputs/SmartDeltaFnForAmountInput'
@@ -37,6 +37,10 @@ const _MiscCard = React.memo(
   }) => {
     const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
     const isModified = useIsPlanInputDevMiscModified()
+    const defaultNonPlanParams = useMemo(
+      () => getDefaultNonPlanParams(Date.now()),
+      [],
+    )
 
     return (
       <div
@@ -157,14 +161,15 @@ export const useIsPlanInputDevMiscModified = () => {
   const { nonPlanParams } = useNonPlanParams()
   return _getIsPlanInputDevMiscModified(nonPlanParams)
 }
-const _getIsPlanInputDevMiscModified = (nonPlanParams: NonPlanParams) =>
-  nonPlanParams.dev.showSyncStatus !==
+const _getIsPlanInputDevMiscModified = (nonPlanParams: NonPlanParams) => {
+  const defaultNonPlanParams = getDefaultNonPlanParams(Date.now())
+  return nonPlanParams.dev.showSyncStatus !==
     defaultNonPlanParams.dev.showSyncStatus ||
-  nonPlanParams.dev.alwaysShowAllMonths !==
-    defaultNonPlanParams.dev.alwaysShowAllMonths ||
-  nonPlanParams.dev.overridePlanResultChartYRange !==
-    defaultNonPlanParams.dev.overridePlanResultChartYRange
-
+    nonPlanParams.dev.alwaysShowAllMonths !==
+      defaultNonPlanParams.dev.alwaysShowAllMonths ||
+    nonPlanParams.dev.overridePlanResultChartYRange !==
+      defaultNonPlanParams.dev.overridePlanResultChartYRange
+}
 export const PlanInputDevMiscSummary = React.memo(() => {
   const { nonPlanParams } = useNonPlanParams()
   return (

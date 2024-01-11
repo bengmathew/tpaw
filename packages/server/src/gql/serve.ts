@@ -2,7 +2,6 @@ import { ApolloServer, ApolloServerPlugin } from '@apollo/server'
 import { expressMiddleware } from '@apollo/server/express4'
 import { Prisma } from '@prisma/client'
 import Sentry from '@sentry/node'
-import Tracing from '@sentry/tracing'
 import {
   API,
   assert,
@@ -17,6 +16,7 @@ import chalk from 'chalk'
 import compression from 'compression'
 import cors from 'cors'
 import express from 'express'
+import asyncHandler from 'express-async-handler'
 import { writeFileSync } from 'fs'
 import { lexicographicSortSchema, printSchema } from 'graphql'
 import { DateTime } from 'luxon'
@@ -45,20 +45,24 @@ async function _impl() {
   Sentry.init({
     dsn: Config.sentry.dsn,
     integrations: [
-      // DO NOT enable HTTP calls tracing. This uses up quota pretty fast.
-      // new Sentry.Integrations.Http({tracing: true}),
-      // enable Express.js middleware tracing
-      new Tracing.Integrations.Express({ app: server }),
+      new Sentry.Integrations.Http({ tracing: true }),
+      new Sentry.Integrations.Express({ app: server }),
     ],
-
-    // We recommend adjusting this value in production, or using tracesSampler
-    // for finer control
-    tracesSampleRate: 1.0,
+    tracesSampleRate: 0.01,
   })
-  server.use(Sentry.Handlers.errorHandler({ shouldHandleError: () => true }))
+
+  // RequestHandler creates a separate execution context, so that all
+  // transactions/spans/breadcrumbs are isolated across requests
+  server.use(Sentry.Handlers.requestHandler())
+  // TracingHandler creates a trace for every incoming request
+  server.use(Sentry.Handlers.tracingHandler())
+
   if (!Config.isProduction) server.use(morgan('tiny'))
 
-  server.use(cors({ origin: Config.websiteURL }))
+  server.use(
+    // slice() to strip the trailing slash.
+    cors({ origin: Config.frontend.paths.root().toString().slice(0, -1) }),
+  )
   // GCP Cloud Run does not gzip for us so do it here.
   server.use(compression())
   server.use((req, res, next) => {
@@ -77,57 +81,73 @@ async function _impl() {
 
   server.get('/', (req, res) => res.send('I am root!'))
   server.get('/ping', (req, res) => res.send('pong'))
-  server.get('/which', (req, res) => res.send('1'))
+  server.get('/which', (req, res) => {
+    const lines = [`Version: 5`, `NODE_ENV: ${process.env['NODE_ENV']}`]
+    res.set('Content-Type', 'text/plain')
+    res.send(lines.join('\n'))
+  })
   server.get('/time', (req, res) => res.send(`${Date.now()}`))
-  server.get('/crash', (req, res) => {
+  server.get('/crash', () => {
     throw new Error('crash')
   })
+  server.get(
+    '/test',
+    asyncHandler(async (req, res) => {
+      res.send('tested')
+    }),
+  )
 
-  server.get('/marketDataURL', async (req, res) => {
-    const bucket = Clients.gcs.bucket(Config.google.marketDataBucket)
-    const [currentLatest] = await bucket.getFiles({ prefix: 'latest/' })
-    assert(currentLatest.length === 1)
-    const file = fGet(currentLatest[0])
-    const filename = await file.publicUrl()
-    res.send(filename)
-  })
+  server.get(
+    '/marketDataURL',
+    asyncHandler(async (req, res) => {
+      const bucket = Clients.gcs.bucket(Config.google.marketDataBucket)
+      const [currentLatest] = await bucket.getFiles({ prefix: 'latest/' })
+      assert(currentLatest.length === 1)
+      const file = fGet(currentLatest[0])
+      const filename = file.publicUrl()
+      res.send(filename)
+    }),
+  )
 
-  server.get('/deploy-frontend', async (req, res) => {
-    if (req.query['token'] !== Config.deployFrontEnd.token) {
-      res.status(401)
-      res.send('Unauthorized')
-    } else {
-      await pushMarketData()
-      await fetch(Config.deployFrontEnd.url)
-      res.send('ok')
-    }
-  })
+  server.get(
+    '/deploy-frontend',
+    asyncHandler(async (req, res) => {
+      if (req.query['token'] !== Config.frontend.deploy.token) {
+        res.status(401)
+        res.send('Unauthorized')
+      } else {
+        await pushMarketData()
+        await fetch(Config.frontend.deploy.url)
+        res.send('ok')
+      }
+    }),
+  )
   const apollo = new ApolloServer<Context>({
     schema,
     plugins: [loggingPlugin, sentryPlugin],
   })
   await apollo.start()
-  server.use('/gql', (req, res, next) => {
-    const apiVersion = req.headers['x-app-api-version']
-    if (apiVersion !== API.version) {
-      res.status(400)
-      res.setHeader('Access-Control-Expose-Headers', 'x-app-error-code')
-      res.setHeader('x-app-error-code', 'clientNeedsUpdate')
-      res.send('clientNeedsUpdate')
-    } else {
-      const clientVersion = req.headers['x-app-client-version']
-      if (clientVersion !== API.clientVersion) {
-        res.setHeader(
-          'Access-Control-Expose-Headers',
-          'x-app-new-client-version',
-        )
-        res.setHeader('x-app-new-client-version', 'true')
-      }
-      next()
-    }
-  })
   server.use(
     '/gql',
+    (req, res, next) => {
+      const apiVersion = req.headers['x-app-api-version']
+      if (apiVersion !== API.version) {
+        res.status(400)
+        res.setHeader('Access-Control-Expose-Headers', 'x-app-error-code')
+        res.setHeader('x-app-error-code', 'clientNeedsUpdate')
+        res.send('clientNeedsUpdate')
+      } else {
+        const clientVersion = req.headers['x-app-client-version']
+        if (clientVersion !== API.clientVersion) {
+          res.setHeader(
+            'Access-Control-Expose-Headers',
+            'x-app-new-client-version',
+          )
+          res.setHeader('x-app-new-client-version', 'true')
+        }
+        next()
+      }
+    },
     bodyParser.json({ limit: '10mb' }), // 2kb per planParam allows 5k planParams.
     expressMiddleware<Context>(apollo, {
       context: async ({ req }) => {
@@ -183,7 +203,7 @@ async function _impl() {
                 },
               },
               nonPlanParamsLastUpdatedAt: now,
-              nonPlanParams: getDefaultNonPlanParams(),
+              nonPlanParams: getDefaultNonPlanParams(now.getTime()),
               clientIANATimezoneName: ianaTimezoneName,
             }
 
@@ -212,6 +232,7 @@ async function _impl() {
                   const timeStr = DateTime.fromMillis(time, {
                     zone: 'America/Los_Angeles',
                   }).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)
+                  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                   const queryStr = (req.body.query as string) ?? ''
                   const queryStrLine1 = queryStr.slice(
                     0,
@@ -240,6 +261,8 @@ async function _impl() {
     }),
   )
 
+  // This should come after all routes.
+  server.use(Sentry.Handlers.errorHandler({ shouldHandleError: () => true }))
   server.listen(Config.port)
 }
 
@@ -247,7 +270,7 @@ async function _impl() {
 const loggingPlugin: ApolloServerPlugin = {
   // Fires whenever a GraphQL request is received from a client.
 
-  async requestDidStart(requestContext) {
+  async requestDidStart() {
     const startTime = Date.now()
 
     return {
@@ -318,11 +341,11 @@ const sentryPlugin: ApolloServerPlugin = {
             scope.setExtra('sessionId', sessionId)
             scope.setExtra('query', ctx.request.query)
             scope.setExtra('variables', ctx.request.variables)
-            if ((err as any).path) {
+            if ('path' in err) {
               // We can also add the path as breadcrumb
               scope.addBreadcrumb({
                 category: 'query-path',
-                message: (err as any).path.join(' > '),
+                message: (err.path as string[]).join(' > '),
                 level: 'debug',
               })
             }

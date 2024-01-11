@@ -64,5 +64,6 @@ pub struct Params {
     pub monte_carlo_sampling: bool,
     pub monte_carlo_block_size: usize,
     pub max_num_months: usize,
+    pub rand_seed:u64,
     pub test: Option<ParamsTest>,
 }

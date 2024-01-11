@@ -1,0 +1,41 @@
+steps:
+  # ---- DOCKER BUILD ----
+  - name: gcr.io/cloud-builders/docker
+    env:
+      - 'DOCKER_BUILDKIT=1' # Needed for the --mount=type=secret in the Dockerfile.
+    secretEnv:
+      - TPAW_NPM_AUTH_TOKEN
+    args:
+      [
+        'build',
+        '-t',
+        '$_TAG',
+        '--secret',
+        'type=env,env=TPAW_NPM_AUTH_TOKEN,id=TPAW_NPM_AUTH_TOKEN',
+        'packages/server',
+      ]
+
+  # ---- DOCKER PUSH ----
+  - name: gcr.io/cloud-builders/docker
+    args: ['push', '$_TAG']
+
+  # ---- DEPLOY ----
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      [
+        'run',
+        'deploy',
+        'apiserver',
+        '--image',
+        '$_TAG',
+        '--region',
+        'us-central1',
+      ]
+substitutions:
+  _TAG: us-central1-docker.pkg.dev/${PROJECT_ID}/apiserver-docker/apiserver:latest
+timeout: 1600s
+availableSecrets:
+  secretManager:
+    - versionName: 'projects/${PROJECT_ID}/secrets/TPAW_NPM_AUTH_TOKEN/versions/latest'
+      env: TPAW_NPM_AUTH_TOKEN

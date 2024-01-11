@@ -19,7 +19,8 @@ export const getAppPaths = (base: URL) => {
       result['spending-ceiling-and-floor'] = () =>
         urlFromPath(`${path}/spending-ceiling-and-floor`)
       result['strategy'] = () => urlFromPath(`${path}/strategy`)
-      result['expected-returns-and-volatility'] = () => urlFromPath(`${path}/expected-returns-and-volatility`)
+      result['expected-returns-and-volatility'] = () =>
+        urlFromPath(`${path}/expected-returns-and-volatility`)
       result['inflation'] = () => urlFromPath(`${path}/inflation`)
       result['simulation'] = () => urlFromPath(`${path}/simulation`)
       result['dev-misc'] = () => urlFromPath(`${path}/dev-misc`)
@@ -33,8 +34,14 @@ export const getAppPaths = (base: URL) => {
     })
 
   return {
+    root: () => urlFromPath('/'),
     account: () => urlFromPath('/account'),
     learn: () => urlFromPath('/learn'),
+    auth: block(() => {
+      const result = () => urlFromPath('/auth')
+      result.email = () => urlFromPath('/auth/email')
+      return result
+    }),
     logout: () => urlFromPath('/logout'),
     login: (destURL: URL) =>
       urlFromPath(
@@ -43,6 +50,7 @@ export const getAppPaths = (base: URL) => {
         }).toString()}`,
       ),
     guest: planFromPath('/guest'),
+    serverSidePrint: planFromPath('/server-side-print'),
     link: planFromPath('/link'),
     plans: () => urlFromPath('/plans'),
     plan: planFromPath('/plan'),

@@ -7,12 +7,16 @@ import { WithUser } from '../../App/WithUser'
 import { TARGET_UNDO_DEPTH } from '../PlanRootHelpers/UseWorkingPlan'
 import { PlanServer } from '../PlanServerImpl/PlanServerImpl'
 import { PlanRootServerQuery } from './__generated__/PlanRootServerQuery.graphql'
+import { PlanPrintViewArgs } from '../PlanRootHelpers/PlanPrintView/PlanPrintViewArgs'
+import { SimulationParams } from '../PlanRootHelpers/WithSimulation'
 
 export const PlanRootServer = React.memo(
   ({
     src,
+    pdfReportInfo,
   }: {
     src: { type: 'serverMain' } | { type: 'serverAlt'; slug: string }
+    pdfReportInfo: SimulationParams['pdfReportInfo']
   }) => {
     const userGQLArgs = useUserGQLArgs()
 
@@ -57,7 +61,6 @@ export const PlanRootServer = React.memo(
     )
     assert(data.user)
 
-      
     return (
       <WithUser userFragmentOnQueryKey={data}>
         <PlanServer
@@ -65,6 +68,7 @@ export const PlanRootServer = React.memo(
           planPaths={
             src.type === 'serverMain' ? appPaths.plan : appPaths['alt-plan']
           }
+          pdfReportInfo={pdfReportInfo}
         />
       </WithUser>
     )

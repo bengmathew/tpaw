@@ -2,7 +2,7 @@ import clix from 'clsx'
 import _ from 'lodash'
 import React, { CSSProperties, useMemo } from 'react'
 import { formatCurrency } from '../../../../../Utils/FormatCurrency'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { useSimulation, useSimulationResult } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
 
 export const PlanResultsSidePanelLegacyCard = React.memo(
@@ -68,19 +68,18 @@ export const PlanResultsSidePanelLegacyCard = React.memo(
 )
 
 export function usePlanResultsLegacyCardData() {
-  const simulation = useSimulation()
+  const simulationResult = useSimulationResult()
   return useMemo(() => {
-    const { tpawResult } = simulation
-    const { endingBalanceOfSavingsPortfolioByPercentile, params } = tpawResult
+    const { endingBalanceOfSavingsPortfolioByPercentile, args } = simulationResult
     return _.sortBy(
       endingBalanceOfSavingsPortfolioByPercentile.map((x) => ({
         amount:
-          x.data + params.adjustmentsToSpending.tpawAndSPAW.legacy.external,
+          x.data + args.planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.external,
         percentile: x.percentile,
       })),
       (x) => -x.percentile,
     )
-  }, [simulation])
+  }, [simulationResult])
 }
 
 export const planResultsLegacyCardFormat = (

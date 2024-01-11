@@ -12,6 +12,10 @@ import { PlanParams21 as V21 } from './Old/PlanParams21'
 import { PlanParams22 as V22 } from './Old/PlanParams22'
 import { PlanParams23 as V23 } from './Old/PlanParams23'
 import {
+  SomePlanParams,
+  planParamsBackwardsCompatibleGuard,
+} from './PlanParams'
+import {
   PlanParamsChangeActionDeprecated,
   planParamsChangeActionGuardDeprecated,
 } from './PlanParamsChangeActionDeprecated'
@@ -320,6 +324,7 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
     _guard('setExpectedReturns', v21CG.expectedAnnualReturns),
     _guard('setAnnualInflation', v21CG.annualInflation),
     _guard('setHistoricalStockReturnsAdjustmentVolatilityScale', number),
+    _guard('setHistoricalBondReturnsAdjustmentEnableVolatility', boolean),
     _guard('setHistoricalBondReturnsAdjustmentEnableVolatility', boolean),
 
     // -------------- DEV

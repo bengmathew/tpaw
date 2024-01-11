@@ -1,0 +1,78 @@
+steps:
+  # Cache use: https://cloud.google.com/build/docs/optimize-builds/speeding-up-builds#using_a_cached_docker_image
+
+  # ---- PULL IMAGE FOR CACHE ----
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args: ['-c', 'docker pull $_TAG || exit 0']
+
+  # ---- DOCKER BUILD ----
+  - name: gcr.io/cloud-builders/docker
+    args:
+      ['build', '-t', '$_TAG', '--cache-from', '$_TAG', 'packages/printserver']
+
+  # ---- DOCKER PUSH ----
+  - name: gcr.io/cloud-builders/docker
+    args: ['push', '$_TAG']
+
+  # ---- DEPLOY ----
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      [
+        'run',
+        'deploy',
+        'printserver',
+        '--image',
+        '$_TAG',
+        '--region',
+        'us-central1',
+      ]
+substitutions:
+  _TAG: us-central1-docker.pkg.dev/${PROJECT_ID}/printserver-docker/printserver:latest
+timeout: 1600s
+# steps:
+#   - name: gcr.io/cloud-builders/docker
+#     env:
+#       # - 'TAG=us-central1-docker.pkg.dev/${PROJECT_ID}/printserver-docker/printserver:latest'
+#       - TAG=tpawplanner/printserver
+#       - NODE_ENV=${_NODE_ENV}
+#       - PRINTSERVER_URL=${_PRINTSERVER_URL}
+#       - PRINTSERVER_FINGERPRINT=${_PRINTSERVER_FINGERPRINT}
+#     secretEnv:
+#       - SENTRY_DSN_PRINTSERVER
+#       - INTER_SERVER_TOKEN
+#       - PRINTSERVER_SSH_KEY_PRIVATE
+#     script: |
+#       #!/usr/bin/env bash
+#       docker build -t $TAG  packages/printserver
+#       # docker push $TAG
+#       docker save -o printserver.tar $TAG
+#       mkdir /root/.ssh
+#       echo "$PRINTSERVER_FINGERPRINT" > /root/.ssh/known_hosts
+#       eval `ssh-agent -s`
+#       ssh-add - <<< "${PRINTSERVER_SSH_KEY_PRIVATE}"
+#       scp printserver.tar root@$PRINTSERVER_URL:/root
+#       ssh root@$PRINTSERVER_URL "
+#         docker load -i printserver.tar;
+#         docker stop \$(docker ps -a -q);
+#         docker rm \$(docker ps -a -q);
+#         docker run \
+#           -d \
+#           -e NODE_ENV=$NODE_ENV \
+#           -e SENTRY_DSN_PRINTSERVER=$SENTRY_DSN_PRINTSERVER \
+#           -e INTER_SERVER_TOKEN=$INTER_SERVER_TOKEN \
+#           -p 8080:8080 \
+#           --name printserver \
+#           $TAG;
+#       "
+
+# availableSecrets:
+#   secretManager:
+#     - versionName: 'projects/${PROJECT_ID}/secrets/SENTRY_DSN_PRINTSERVER/versions/latest'
+#       env: SENTRY_DSN_PRINTSERVER
+#     - versionName: 'projects/${PROJECT_ID}/secrets/INTER_SERVER_TOKEN/versions/latest'
+#       env: INTER_SERVER_TOKEN
+#     - versionName: 'projects/${PROJECT_ID}/secrets/PRINTSERVER_SSH_KEY_PRIVATE/versions/latest'
+#       env: PRINTSERVER_SSH_KEY_PRIVATE
+# timeout: 1600s

@@ -1,9 +1,11 @@
-import { NonPlanParams, PlanParams, block, noCase } from '@tpaw/common'
+import { Month, PlanParams, block, noCase } from '@tpaw/common'
 import _ from 'lodash'
-import { PlanParamsExtended } from '../../../../../../TPAWSimulator/ExtentPlanParams'
-import { PlanParamsProcessed } from '../../../../../../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessed'
-import { TPAWRunInWorkerByPercentileByMonthsFromNow } from '../../../../../../TPAWSimulator/Worker/TPAWRunInWorker'
-import { UseTPAWWorkerResult } from '../../../../../../TPAWSimulator/Worker/UseTPAWWorker'
+import { PlanParamsExtended } from '../../../../../../UseSimulator/ExtentPlanParams'
+import { PlanParamsProcessed } from '../../../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
+import {
+  NumberArrByPercentileByMonthsFromNow,
+  SimulationResult,
+} from '../../../../../../UseSimulator/Simulator/Simulator'
 import { formatCurrency } from '../../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../../Utils/FormatPercentage'
 import { XY } from '../../../../../../Utils/Geometry'
@@ -15,24 +17,24 @@ import { PlanTransitionState } from '../../../PlanTransition'
 import { PlanColors } from '../../../UsePlanColors'
 import {
   PlanResultsChartType,
+  getPlanResultsChartSpendingTotalFundingSourcesPercentile,
   isPlanResultsChartSpendingDiscretionaryType,
   isPlanResultsChartSpendingEssentialType,
   isPlanResultsChartSpendingTotalFundingSourcesType,
   planResultsChartSpendingDiscretionaryTypeID,
   planResultsChartSpendingEssentialTypeID,
-  getPlanResultsChartSpendingTotalFundingSourcesPercentile,
 } from '../../PlanResultsChartType'
 
-export type PlanResultsChartData = {
+export type PlanResultsChartDataForPDF = {
   chartType: PlanResultsChartType
   planParams: PlanParams
   planParamsProcessed: PlanParamsProcessed
   planParamsExt: PlanParamsExtended
-  nonPlanParams: NonPlanParams
   displayRange: { x: SimpleRange; y: SimpleRange }
   formatY: (x: number) => string
-  planSizing: PlanSizing
-  planTransitionState: PlanTransitionState
+  layout: 'laptop' | 'mobile' | 'desktop'
+  // planSizing: PlanSizing
+  // planTransitionState: PlanTransitionState
   planColors: PlanColors
 } & (
   | {
@@ -69,20 +71,23 @@ export type PlanResultsChartData = {
     }
 )
 
+export type PlanResultsChartData = PlanResultsChartDataForPDF & {
+  planSizing: PlanSizing
+  planTransitionState: PlanTransitionState
+}
 
-export const getPlanResultsChartData = (
+export const getPlanResultsChartDataForPDF = (
   chartType: PlanResultsChartType,
-  tpawResult: UseTPAWWorkerResult,
-  planSizing: PlanSizing,
-  planTransitionState: PlanTransitionState,
+  simulationResult: SimulationResult,
+  layout: 'laptop' | 'mobile' | 'desktop',
+  // planSizing: PlanSizing,
+  // planTransitionState: PlanTransitionState,
   planColors: PlanColors,
-): PlanResultsChartData => {
-  const {
-    params: planParamsProcessed,
-    planParamsExt,
-    nonPlanParams,
-  } = tpawResult
-  const planParams = planParamsProcessed.original
+  alwaysShowAllMonths: boolean,
+): PlanResultsChartDataForPDF => {
+  const { planParamsProcessed, planParamsExt } = simulationResult.args
+
+  const planParams = planParamsProcessed.planParams
   const hasLegacy =
     planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.total !== 0 ||
     planParamsProcessed.adjustmentsToSpending.tpawAndSPAW
@@ -90,7 +95,7 @@ export const getPlanResultsChartData = (
 
   const xRangeAsMFN = block(() => {
     const { asMFN, withdrawalStartMonth, maxMaxAge } = planParamsExt
-    const retirementStartAsMFN = nonPlanParams.dev.alwaysShowAllMonths
+    const retirementStartAsMFN = alwaysShowAllMonths
       ? 0
       : asMFN(withdrawalStartMonth)
     const lastPlanningMonthAsMFN = asMFN(maxMaxAge)
@@ -121,7 +126,7 @@ export const getPlanResultsChartData = (
   })
 
   const _getPercentile = (
-    { byPercentileByMonthsFromNow }: TPAWRunInWorkerByPercentileByMonthsFromNow,
+    { byPercentileByMonthsFromNow }: NumberArrByPercentileByMonthsFromNow,
     percentile: number,
   ) =>
     fGet(byPercentileByMonthsFromNow.find((x) => x.percentile === percentile))
@@ -132,18 +137,18 @@ export const getPlanResultsChartData = (
     planParams,
     planParamsProcessed,
     planParamsExt,
-    nonPlanParams,
-    planSizing,
-    planTransitionState,
+    layout,
+    // planSizing,
+    // planTransitionState,
     planColors,
   }
 
   const _processRange = (x: {
-    range: TPAWRunInWorkerByPercentileByMonthsFromNow
+    range: NumberArrByPercentileByMonthsFromNow
     mfnRange: SimpleRange
     formatY: (x: number) => string
     minYDisplayRangeEnd: number
-  }): Extract<PlanResultsChartData, { type: 'range' }> => {
+  }): Extract<PlanResultsChartDataForPDF, { type: 'range' }> => {
     const { range, mfnRange, formatY, minYDisplayRangeEnd } = x
     const percentiles = {
       start: _getPercentile(range, 5),
@@ -184,7 +189,7 @@ export const getPlanResultsChartData = (
   const _processBreakdown = (x: {
     mfnRange: SimpleRange
     formatY: (x: number) => string
-    range: TPAWRunInWorkerByPercentileByMonthsFromNow
+    range: NumberArrByPercentileByMonthsFromNow
     total: number[] | Float64Array
     parts: {
       id: string
@@ -195,7 +200,7 @@ export const getPlanResultsChartData = (
       xRange: SimpleRange | null
     }[]
     minYDisplayRangeEnd: number
-  }): PlanResultsChartData => {
+  }): PlanResultsChartDataForPDF => {
     const { mfnRange, parts, formatY, total, range, minYDisplayRangeEnd } = x
     const dataXs = _.range(mfnRange.start, mfnRange.end + 1)
 
@@ -256,7 +261,7 @@ export const getPlanResultsChartData = (
   switch (chartType) {
     case 'spending-total':
       return _processRange({
-        range: tpawResult.savingsPortfolio.withdrawals.total,
+        range: simulationResult.savingsPortfolio.withdrawals.total,
         mfnRange: spendingMonthsAsMFN,
         formatY: (y) => formatCurrency(y),
         minYDisplayRangeEnd: 10,
@@ -264,7 +269,7 @@ export const getPlanResultsChartData = (
 
     case 'spending-general':
       return _processRange({
-        range: tpawResult.savingsPortfolio.withdrawals.regular,
+        range: simulationResult.savingsPortfolio.withdrawals.regular,
         mfnRange: xRangeAsMFN.retirementMonthsNoLegacy,
         formatY: (y) => formatCurrency(y),
         minYDisplayRangeEnd: 10,
@@ -273,8 +278,8 @@ export const getPlanResultsChartData = (
     case 'portfolio':
       return _processRange({
         range: _addMonth(
-          tpawResult.savingsPortfolio.start.balance,
-          tpawResult.endingBalanceOfSavingsPortfolioByPercentile,
+          simulationResult.savingsPortfolio.start.balance,
+          simulationResult.endingBalanceOfSavingsPortfolioByPercentile,
         ),
         mfnRange: xRangeAsMFN.allMonthsWithLegacy,
         formatY: (y) => formatCurrency(y),
@@ -282,7 +287,8 @@ export const getPlanResultsChartData = (
       })
     case 'asset-allocation-savings-portfolio':
       return _processRange({
-        range: tpawResult.savingsPortfolio.afterWithdrawals.allocation.stocks,
+        range:
+          simulationResult.savingsPortfolio.afterWithdrawals.allocation.stocks,
         mfnRange: hasLegacy
           ? xRangeAsMFN.allMonthsNoLegacy
           : xRangeAsMFN.allMonthsButLast,
@@ -291,7 +297,8 @@ export const getPlanResultsChartData = (
       })
     case 'asset-allocation-total-portfolio':
       return _processRange({
-        range: tpawResult.totalPortfolio.afterWithdrawals.allocation.stocks,
+        range:
+          simulationResult.totalPortfolio.afterWithdrawals.allocation.stocks,
         mfnRange: hasLegacy
           ? xRangeAsMFN.allMonthsNoLegacy
           : xRangeAsMFN.allMonthsButLast,
@@ -300,7 +307,9 @@ export const getPlanResultsChartData = (
       })
     case 'withdrawal':
       return _processRange({
-        range: tpawResult.savingsPortfolio.withdrawals.fromSavingsPortfolioRate,
+        range:
+          simulationResult.savingsPortfolio.withdrawals
+            .fromSavingsPortfolioRate,
         mfnRange: xRangeAsMFN.retirementMonthsNoLegacy,
         formatY: formatPercentage(2),
         minYDisplayRangeEnd: 1,
@@ -313,9 +322,9 @@ export const getPlanResultsChartData = (
         return _processBreakdown({
           mfnRange: spendingMonthsAsMFN,
           formatY: (y) => formatCurrency(y),
-          range: tpawResult.savingsPortfolio.withdrawals.total,
+          range: simulationResult.savingsPortfolio.withdrawals.total,
           total: fGet(
-            tpawResult.savingsPortfolio.withdrawals.total.byPercentileByMonthsFromNow.find(
+            simulationResult.savingsPortfolio.withdrawals.total.byPercentileByMonthsFromNow.find(
               (x) => x.percentile === percentile,
             ),
           ).data,
@@ -342,7 +351,9 @@ export const getPlanResultsChartData = (
         )
         return _processRange({
           range: fGet(
-            tpawResult.savingsPortfolio.withdrawals.essential.byId.get(id),
+            simulationResult.savingsPortfolio.withdrawals.essential.byId.get(
+              id,
+            ),
           ),
           mfnRange: spendingMonthsAsMFN,
           formatY: (y) => formatCurrency(y),
@@ -359,7 +370,9 @@ export const getPlanResultsChartData = (
         )
         return _processRange({
           range: fGet(
-            tpawResult.savingsPortfolio.withdrawals.discretionary.byId.get(id),
+            simulationResult.savingsPortfolio.withdrawals.discretionary.byId.get(
+              id,
+            ),
           ),
           mfnRange: spendingMonthsAsMFN,
           formatY: (y) => formatCurrency(y),
@@ -371,7 +384,7 @@ export const getPlanResultsChartData = (
 }
 
 const _addMonth = (
-  { byPercentileByMonthsFromNow }: TPAWRunInWorkerByPercentileByMonthsFromNow,
+  { byPercentileByMonthsFromNow }: NumberArrByPercentileByMonthsFromNow,
   numberByPercentile: { data: number; percentile: number }[],
 ) => ({
   byPercentileByMonthsFromNow: byPercentileByMonthsFromNow.map(

@@ -105,6 +105,8 @@ fn run_using_historical_returns(
     } else {
         if params.monte_carlo_sampling {
             &memoized_random(
+                params.rand_seed,
+                params.start_run,
                 params.end_run - params.start_run,
                 params.max_num_months,
                 params.monte_carlo_block_size,
@@ -405,15 +407,16 @@ fn calculate_target_withdrawals(
     pass_forward: &SingleMonthPassForward,
 ) -> TargetWithdrawals {
     let SingleMonthContext {
-        params, month_index, balance_starting, ..
+        params,
+        month_index,
+        balance_starting,
+        ..
     } = *context;
 
     let regular_without_lmp = match month_index.cmp(&params.withdrawal_start_month) {
         Ordering::Less => 0.0,
         Ordering::Equal => match params.swr_withdrawal {
-            ParamsSWRWithdrawal::AsPercent { percent } => {
-                balance_starting * percent
-            }
+            ParamsSWRWithdrawal::AsPercent { percent } => balance_starting * percent,
             ParamsSWRWithdrawal::AsAmount { amount } => amount,
         },
         Ordering::Greater => pass_forward.withdrawal,

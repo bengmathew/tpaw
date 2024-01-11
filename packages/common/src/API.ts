@@ -328,6 +328,25 @@ export namespace API {
     }
   }
 
+  export namespace GeneratePDFReport {
+    export const check = (x: {
+      url: string
+      auth?: string | null
+      viewportWidth: number
+      viewportHeight: number
+      devicePixelRatio: number
+    }) =>
+      object({
+        url: string,
+        auth: nullable(string),
+        viewportWidth: chain(number, integer, gte(1)),
+        viewportHeight: chain(number, integer, gte(1)),
+        devicePixelRatio: chain(number, integer, gte(1)),
+      })(x)
+
+    export type Input = InputTypeFromCheck<typeof check>
+  }
+
   export namespace CreateLinkBasedPlan {
     export const check = (x: { params: string }) =>
       object({
@@ -335,3 +354,5 @@ export namespace API {
       })(x)
   }
 }
+
+type InputTypeFromCheck<T> = T extends JSONGuard<infer U, infer V> ? U : never

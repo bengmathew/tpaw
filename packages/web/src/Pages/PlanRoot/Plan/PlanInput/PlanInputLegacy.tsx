@@ -17,6 +17,7 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
+import { PlanParamsProcessed } from '../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 
 type _EditState = { isAdd: boolean; entryId: string; hideInMain: boolean }
 
@@ -275,40 +276,43 @@ const _RemainderCard = React.memo(
   },
 )
 
-export const PlanInputLegacySummary = React.memo(() => {
-  const { planParams, planParamsProcessed } = useSimulation()
-  const { total, external } =
-    planParams.adjustmentsToSpending.tpawAndSPAW.legacy
-  return _.values(external).length === 0 ? (
-    <h2>Target: {formatCurrency(total)} (real dollars)</h2>
-  ) : (
-    <>
-      <div className="grid gap-x-2" style={{ grid: 'auto/1fr auto auto' }}>
-        <h2 className="mt-2">Total Target</h2>
-        <h2 className="text-right mt-2">{formatCurrency(total)}</h2>
-        <h2 className="mt-2">(real dollars)</h2>
-        <h2 className=" col-span-3 mt-2">Non-portfolio Sources</h2>
-        {_.values(external)
-          .sort((a, b) => a.sortIndex - b.sortIndex)
-          .map((x, i) => (
-            <React.Fragment key={i}>
-              <h2 className="ml-4 mt-1">
-                {trimAndNullify(x.label) ?? '<no label>'}
-              </h2>
-              <h2 className="mt-1 text-right">{formatCurrency(x.value)} </h2>
-              <h2 className="mt-1">
-                {x.nominal ? '(nominal dollars)' : '(real dollars)'}{' '}
-              </h2>
-            </React.Fragment>
-          ))}
-        <h2 className="mt-2">Remaining Target</h2>
-        <h2 className="mt-2 text-right">
-          {formatCurrency(
-            planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.target,
-          )}{' '}
-        </h2>
-        <h2 className="mt-2">(real dollars)</h2>
-      </div>
-    </>
-  )
-})
+export const PlanInputLegacySummary = React.memo(
+  ({ planParamsProcessed }: { planParamsProcessed: PlanParamsProcessed }) => {
+    const { planParams } = planParamsProcessed
+    const { total, external } =
+      planParams.adjustmentsToSpending.tpawAndSPAW.legacy
+    return _.values(external).length === 0 ? (
+      <h2>Target: {formatCurrency(total)} (real dollars)</h2>
+    ) : (
+      <>
+        <div className="grid gap-x-2" style={{ grid: 'auto/1fr auto auto' }}>
+          <h2 className="mt-2">Total Target</h2>
+          <h2 className="text-right mt-2">{formatCurrency(total)}</h2>
+          <h2 className="mt-2">(real dollars)</h2>
+          <h2 className=" col-span-3 mt-2">Non-portfolio Sources</h2>
+          {_.values(external)
+            .sort((a, b) => a.sortIndex - b.sortIndex)
+            .map((x, i) => (
+              <React.Fragment key={i}>
+                <h2 className="ml-4 mt-1">
+                  {trimAndNullify(x.label) ?? '<no label>'}
+                </h2>
+                <h2 className="mt-1 text-right">{formatCurrency(x.value)} </h2>
+                <h2 className="mt-1">
+                  {x.nominal ? '(nominal dollars)' : '(real dollars)'}{' '}
+                </h2>
+              </React.Fragment>
+            ))}
+          <h2 className="mt-2">Remaining Target</h2>
+          <h2 className="mt-2 text-right">
+            {formatCurrency(
+              planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy
+                .target,
+            )}{' '}
+          </h2>
+          <h2 className="mt-2">(real dollars)</h2>
+        </div>
+      </>
+    )
+  },
+)

@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import clix from 'clsx'
 import _ from 'lodash'
 import React, { useRef, useState } from 'react'
+import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 import { calendarMonthStr } from '../../../../../Utils/CalendarMonthStr'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { joinWithCommaAnd } from '../../../../../Utils/JoinWithAnd'
@@ -110,83 +111,85 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
   )
 })
 
-export const PlanInputAgeSummary = React.memo(() => {
-  const { planParams, planParamsExt } = useSimulation()
-  const {
-    isAgesNotRetired,
-    isPersonRetired,
-    pickPerson,
-    getCurrentAgeOfPerson,
-    dialogPositionEffective,
-  } = planParamsExt
-  if (dialogPositionEffective === 'age') {
-    return (
-      <>
-        <h2>Month of Birth: </h2>
-        <h2>Retirement: </h2>
-        <h2>Max: </h2>
-      </>
-    )
-  }
-  const forPerson = (person: 'person1' | 'person2', className = '') => {
-    const { ages } = pickPerson(person)
-    return isAgesNotRetired(ages) ? (
-      <>
-        <h2 className={`${className}`}>Month of Birth</h2>
-        <h2>
-          {calendarMonthStr(ages.monthOfBirth)} (Age:{' '}
-          {numMonthsStr(getCurrentAgeOfPerson(person).inMonths)})
-        </h2>
-        <h2 className={`${className}`}>Retirement</h2>
-        <h2> {numMonthsStr(ages.retirementAge.inMonths)}</h2>
-        <h2 className={`${className}`}>Max</h2>
-        <h2> {numMonthsStr(ages.maxAge.inMonths)}</h2>
-      </>
-    ) : (
-      <>
-        <h2 className={`${className} col-span-2`}>Retired</h2>
-        <h2 className={`${className}`}>Month of Birth</h2>
-        <h2>
-          {' '}
-          {calendarMonthStr(ages.monthOfBirth)} (Age:{' '}
-          {numMonthsStr(getCurrentAgeOfPerson(person).inMonths)})
-        </h2>
-        <h2 className={`${className}`}>Max</h2>
-        <h2> {numMonthsStr(ages.maxAge.inMonths)}</h2>
-      </>
-    )
-  }
-  if (planParams.people.withPartner) {
-    const withdrawalPerson = pickPerson(planParams.people.withdrawalStart)
-    return (
-      <div
-        className={clix('grid gap-x-3 gap-y-1')}
-        style={{ grid: 'auto/auto 1fr' }}
-      >
-        <h2 className="font-medium col-span-2">You</h2>
-        {forPerson('person1', 'ml-4')}
-        <h2 className="mt-2 font-medium  col-span-2">Your Partner</h2>
-        {forPerson('person2', 'ml-4')}
-        {!(isPersonRetired('person1') && isPersonRetired('person2')) && (
-          <h2 className="mt-2  col-span-2">
-            Withdrawals start{' '}
-            {isPersonRetired(withdrawalPerson)
-              ? 'now.'
-              : `at ${yourOrYourPartners(
-                  planParams.people.withdrawalStart,
-                )} retirement.`}
+export const PlanInputAgeSummary = React.memo(
+  ({ planParamsExt }: { planParamsExt: PlanParamsExtended }) => {
+    const { planParams } = planParamsExt
+    const {
+      isAgesNotRetired,
+      isPersonRetired,
+      pickPerson,
+      getCurrentAgeOfPerson,
+      dialogPositionEffective,
+    } = planParamsExt
+    if (dialogPositionEffective === 'age') {
+      return (
+        <>
+          <h2>Month of Birth: </h2>
+          <h2>Retirement: </h2>
+          <h2>Max: </h2>
+        </>
+      )
+    }
+    const forPerson = (person: 'person1' | 'person2', className = '') => {
+      const { ages } = pickPerson(person)
+      return isAgesNotRetired(ages) ? (
+        <>
+          <h2 className={`${className}`}>Month of Birth</h2>
+          <h2>
+            {calendarMonthStr(ages.monthOfBirth)} (Age:{' '}
+            {numMonthsStr(getCurrentAgeOfPerson(person).inMonths)})
           </h2>
-        )}
-      </div>
-    )
-  } else {
-    return (
-      <div
-        className={clix('grid gap-x-3 gap-y-1')}
-        style={{ grid: 'auto/auto 1fr' }}
-      >
-        {forPerson('person1')}
-      </div>
-    )
-  }
-})
+          <h2 className={`${className}`}>Retirement</h2>
+          <h2> {numMonthsStr(ages.retirementAge.inMonths)}</h2>
+          <h2 className={`${className}`}>Max</h2>
+          <h2> {numMonthsStr(ages.maxAge.inMonths)}</h2>
+        </>
+      ) : (
+        <>
+          <h2 className={`${className} col-span-2`}>Retired</h2>
+          <h2 className={`${className}`}>Month of Birth</h2>
+          <h2>
+            {' '}
+            {calendarMonthStr(ages.monthOfBirth)} (Age:{' '}
+            {numMonthsStr(getCurrentAgeOfPerson(person).inMonths)})
+          </h2>
+          <h2 className={`${className}`}>Max</h2>
+          <h2> {numMonthsStr(ages.maxAge.inMonths)}</h2>
+        </>
+      )
+    }
+    if (planParams.people.withPartner) {
+      const withdrawalPerson = pickPerson(planParams.people.withdrawalStart)
+      return (
+        <div
+          className={clix('grid gap-x-3 gap-y-1')}
+          style={{ grid: 'auto/auto 1fr' }}
+        >
+          <h2 className="font-medium col-span-2">You</h2>
+          {forPerson('person1', 'ml-4')}
+          <h2 className="mt-2 font-medium  col-span-2">Your Partner</h2>
+          {forPerson('person2', 'ml-4')}
+          {!(isPersonRetired('person1') && isPersonRetired('person2')) && (
+            <h2 className="mt-2  col-span-2">
+              Withdrawals start{' '}
+              {isPersonRetired(withdrawalPerson)
+                ? 'now.'
+                : `at ${yourOrYourPartners(
+                    planParams.people.withdrawalStart,
+                  )} retirement.`}
+            </h2>
+          )}
+        </div>
+      )
+    } else {
+      return (
+        <div
+          className={clix('grid gap-x-3 gap-y-1')}
+          style={{ grid: 'auto/auto 1fr' }}
+        >
+          {forPerson('person1')}
+        </div>
+      )
+    }
+  },
+)

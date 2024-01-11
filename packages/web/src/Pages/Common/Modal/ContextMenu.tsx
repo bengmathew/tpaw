@@ -8,7 +8,7 @@ import React, {
 } from 'react'
 import ReactDOM from 'react-dom'
 import { fGet } from '../../../Utils/Utils'
-import { useWindowSize } from '../../App/WithWindowSize'
+import { useSystemInfo } from '../../App/WithSystemInfo'
 
 // TODO: Deprecate in favor of ContextMenu2
 export const ContextMenu = React.memo(
@@ -25,7 +25,7 @@ export const ContextMenu = React.memo(
     children: (onHide: () => void) => ReactElement
     darkBG?: boolean
   }) => {
-    const {windowSize} = useWindowSize()
+    const {windowSize} = useSystemInfo()
     const menuRef = useRef<HTMLDivElement | null>(null)
 
     const handleResize = useCallback(

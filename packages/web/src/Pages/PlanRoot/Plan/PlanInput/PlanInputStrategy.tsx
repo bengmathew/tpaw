@@ -8,13 +8,12 @@ import { paddingCSS, paddingCSSStyleHorz } from '../../../../Utils/Geometry'
 import { noCase } from '../../../../Utils/Utils'
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import { PlanInputSummaryChoiceItem } from './Helpers/PlanInputSummaryChoiceItem'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
-import _ from 'lodash'
-import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 
 export const PlanInputStrategy = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -142,18 +141,19 @@ const useIsCardModified = (type: PlanParams['advanced']['strategy']) => {
   return type === 'TPAW' ? false : type === planParams.advanced.strategy
 }
 
-export const PlanInputStrategySummary = React.memo(() => {
-  const { planParams } = useSimulation()
-  return (
-    <>
-      {(['TPAW', 'SPAW', 'SWR'] as const).map((value) => (
-        <PlanInputSummaryChoiceItem
-          key={value}
-          value={value}
-          selected={(x) => planParams.advanced.strategy === x}
-          label={(x) => x}
-        />
-      ))}
-    </>
-  )
-})
+export const PlanInputStrategySummary = React.memo(
+  ({ planParams }: { planParams: PlanParams }) => {
+    return (
+      <>
+        {(['TPAW', 'SPAW', 'SWR'] as const).map((value) => (
+          <PlanInputSummaryChoiceItem
+            key={value}
+            value={value}
+            selected={(x) => planParams.advanced.strategy === x}
+            label={(x) => x}
+          />
+        ))}
+      </>
+    )
+  },
+)

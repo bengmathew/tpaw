@@ -11,6 +11,7 @@ import {
   useWorkingPlan,
 } from '../PlanRootHelpers/UseWorkingPlan'
 import {
+  SimulationParams,
   WithSimulation,
   useSimulationParamsForPlanMode,
 } from '../PlanRootHelpers/WithSimulation'
@@ -20,9 +21,11 @@ export const PlanRootLinkImpl = React.memo(
   ({
     startingParams,
     reset,
+    pdfReportInfo,
   }: {
     startingParams: SomePlanParams
     reset: () => void
+    pdfReportInfo: SimulationParams['pdfReportInfo']
   }) => {
     const planPaths = appPaths.link
     const [startingSrc] = useState<WorkingPlanSrc>(() => ({
@@ -74,6 +77,7 @@ export const PlanRootLinkImpl = React.memo(
         reset,
         setForceNav: () => setForceNav(true),
       },
+      pdfReportInfo,
     )
     const urlUpdater = useURLUpdater()
 

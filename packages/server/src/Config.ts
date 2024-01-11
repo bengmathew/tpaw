@@ -1,3 +1,4 @@
+import { block, getAppPaths } from '@tpaw/common'
 import dotenv from 'dotenv'
 import { fGet } from './Utils/Utils.js'
 
@@ -8,8 +9,22 @@ export const Config = {
     downForMaintenance: fGet(process.env['DOWN_FOR_MAINTENANCE']) === 'true',
     downForUpdate: fGet(process.env['DOWN_FOR_UPDATE']) === 'true',
   },
+  interServerToken: fGet(process.env['INTER_SERVER_TOKEN']),
   isProduction: process.env['NODE_ENV'] === 'production',
-  websiteURL: fGet(process.env['WEBSITE_URL']),
+  puppeteer: {
+    // Optional. Used by puppeteer. Not directly used.
+    executablePath: process.env['PUPPETEER_EXECUTABLE_PATH'],
+  },
+  printServer:{
+    url: fGet(process.env['PRINTSERVER_URL'])
+  },
+  frontend: {
+    paths: getAppPaths(new URL(fGet(process.env['WEBSITE_URL']))),
+    deploy: {
+      token: fGet(process.env['DEPLOY_FRONTEND_TOKEN']),
+      url: fGet(process.env['DEPLOY_FRONTEND_URL']),
+    },
+  },
   google: {
     sql: {
       // Used by prisma client.
@@ -20,6 +35,7 @@ export const Config = {
     applicationDefaultCredentials:
       process.env['GOOGLE_APPLICATION_CREDENTIALS'],
     marketDataBucket: fGet(process.env['MARKET_DATA_BUCKET']),
+    transientDataBucket: fGet(process.env['TRANSIENT_DATA_BUCKET']),
   },
   postmark: {
     apiToken: fGet(process.env['POSTMARK_API_TOKEN']),
@@ -33,8 +49,7 @@ export const Config = {
   stLouisFed: {
     apiKey: fGet(process.env['ST_LOUIS_FED_API_KEY']),
   },
-  deployFrontEnd: {
-    token: fGet(process.env['DEPLOY_FRONTEND_TOKEN']),
-    url: fGet(process.env['DEPLOY_FRONTEND_URL']),
+  debug: {
+    authHeader: process.env['DEBUG_AUTH_HEADER'],
   },
 }

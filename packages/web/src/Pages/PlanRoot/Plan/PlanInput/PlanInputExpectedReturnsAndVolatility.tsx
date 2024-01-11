@@ -12,6 +12,7 @@ import {
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useState } from 'react'
+import { PlanParamsProcessed } from '../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { paddingCSSStyle } from '../../../../Utils/Geometry'
@@ -538,8 +539,8 @@ export const _Manual = React.memo(
                 i % 10 === 0
                   ? ('large' as const)
                   : i % 2 === 0
-                  ? ('small' as const)
-                  : ('none' as const)
+                    ? ('small' as const)
+                    : ('none' as const)
               }
             />
 
@@ -562,8 +563,8 @@ export const _Manual = React.memo(
                 i % 10 === 0
                   ? ('large' as const)
                   : i % 2 === 0
-                  ? ('small' as const)
-                  : ('none' as const)
+                    ? ('small' as const)
+                    : ('none' as const)
               }
             />
             <p className="p-base ml-6">
@@ -730,7 +731,8 @@ export const _StockVolatilityCard = React.memo(
               planParamsProcessed.historicalReturnsAdjusted.monthly.annualStats
                 .estimatedSampledStats.stocks.ofLog.variance,
             ),
-          )}.
+          )}
+          .
         </p>
 
         <button
@@ -787,35 +789,39 @@ const useIsBondVolatilityCardModified = () => {
   )
 }
 
-export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(() => {
-  const { planParams, planParamsProcessed, currentMarketData } = useSimulation()
-  const { expectedReturnsForPlanning } = planParamsProcessed
-  const { historicalReturnsAdjustment } = planParams.advanced
-  const format = formatPercentage(1)
+export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(
+  ({ planParamsProcessed }: { planParamsProcessed: PlanParamsProcessed }) => {
+    const { planParams } = planParamsProcessed
+    const { expectedReturnsForPlanning } = planParamsProcessed
+    const { historicalReturnsAdjustment } = planParams.advanced
+    const format = formatPercentage(1)
 
-  return (
-    <>
-      <h2>
-        Expected Returns:{' '}
-        {expectedReturnTypeLabel(
-          planParams.advanced.expectedAnnualReturnForPlanning,
-        )}
-      </h2>
-      <h2 className="ml-4">
-        Stocks: {format(expectedReturnsForPlanning.annual.stocks)}
-      </h2>
-      <h2 className="ml-4">
-        Bonds: {format(expectedReturnsForPlanning.annual.bonds)}
-      </h2>
-      <h2 className="">Volatility</h2>
-      <h2 className="ml-4">
-        Allow Bond Volatility:{' '}
-        {`${historicalReturnsAdjustment.bonds.enableVolatility ? 'Yes' : 'No'}`}
-      </h2>
-      <h2 className="ml-4">
-        Scale Stock Volatility by{' '}
-        {`${historicalReturnsAdjustment.stocks.volatilityScale}`}
-      </h2>
-    </>
-  )
-})
+    return (
+      <>
+        <h2>
+          Expected Returns:{' '}
+          {expectedReturnTypeLabel(
+            planParams.advanced.expectedAnnualReturnForPlanning,
+          )}
+        </h2>
+        <h2 className="ml-4">
+          Stocks: {format(expectedReturnsForPlanning.annual.stocks)}
+        </h2>
+        <h2 className="ml-4">
+          Bonds: {format(expectedReturnsForPlanning.annual.bonds)}
+        </h2>
+        <h2 className="">Volatility</h2>
+        <h2 className="ml-4">
+          Allow Bond Volatility:{' '}
+          {`${
+            historicalReturnsAdjustment.bonds.enableVolatility ? 'Yes' : 'No'
+          }`}
+        </h2>
+        <h2 className="ml-4">
+          Scale Stock Volatility by{' '}
+          {`${historicalReturnsAdjustment.stocks.volatilityScale}`}
+        </h2>
+      </>
+    )
+  },
+)

@@ -6,6 +6,7 @@ import clix from 'clsx'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useMemo, useState } from 'react'
+import { PlanParamsExtended } from '../../../../UseSimulator/ExtentPlanParams'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../Utils/Geometry'
@@ -116,8 +117,7 @@ export const _CurrentPortfolioBalanceCard = React.memo(
                     className="underline block mt-1"
                     onClick={() => setShowHistory(true)}
                   >
-                    
-                  View Balance History
+                    View Balance History
                   </button>
                 </div>
               </div>
@@ -417,23 +417,26 @@ const _Action = React.memo(
   },
 )
 
-export const PlanInputCurrentPortfolioBalanceSummary = React.memo(() => {
-  const { planParamsExt, currentPortfolioBalanceInfo } = useSimulation()
-  const currentPortfolioBalance = CurrentPortfolioBalance.get(
-    currentPortfolioBalanceInfo,
-  )
-  // const isEstimate = useMemo(
-  //   () => _isReallyEstimate(currentPortfolioBalanceEstimate),
-  //   [currentPortfolioBalanceEstimate],
-  // )
-  const { getZonedTime } = planParamsExt
+export const PlanInputCurrentPortfolioBalanceSummary = React.memo(
+  ({
+    planParamsExt,
+    currentPortfolioBalance,
+  }: {
+    planParamsExt: PlanParamsExtended
+    currentPortfolioBalance: number
+  }) => {
+    // const isEstimate = useMemo(
+    //   () => _isReallyEstimate(currentPortfolioBalanceEstimate),
+    //   [currentPortfolioBalanceEstimate],
+    // )
+    const { getZonedTime } = planParamsExt
 
-  const formatTime = (x: number) => getZonedTime(x).toFormat('LLLL d, yyyy')
+    const formatTime = (x: number) => getZonedTime(x).toFormat('LLLL d, yyyy')
 
-  return (
-    <>
-      <h2>{formatCurrency(currentPortfolioBalance)}</h2>
-      {/* {isEstimate && (
+    return (
+      <>
+        <h2>{formatCurrency(currentPortfolioBalance)}</h2>
+        {/* {isEstimate && (
         <>
           <h2>
             Estimated from your last entry of {formatCurrency(entered.amount)}{' '}
@@ -441,6 +444,7 @@ export const PlanInputCurrentPortfolioBalanceSummary = React.memo(() => {
           </h2>
         </>
       )} */}
-    </>
-  )
-})
+      </>
+    )
+  },
+)

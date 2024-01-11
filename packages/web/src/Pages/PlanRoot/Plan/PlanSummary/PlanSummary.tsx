@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { assert } from '@tpaw/common'
 import _ from 'lodash'
 import React, { ReactNode, useMemo, useState } from 'react'
-import { PlanParamsExtended } from '../../../../TPAWSimulator/ExtentPlanParams'
+import { PlanParamsExtended } from '../../../../UseSimulator/ExtentPlanParams'
 import {
   Padding,
   Size,
@@ -449,7 +449,8 @@ const _Heading = React.memo(
     firstItem: Exclude<PlanInputType, 'history'>
     children: ReactNode
   }) => {
-    const visibility = useGetPlanInputVisibility()(firstItem)
+    const { planParamsExt } = useSimulation()
+    const visibility = useGetPlanInputVisibility(planParamsExt)(firstItem)
     // This just happens to be true for now. Will have to pass more than just
     // firstItem it if is not true. Deal with that when if we end up needing it
     // in the future.

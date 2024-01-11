@@ -3,7 +3,7 @@ import _ from 'lodash'
 import {
   PERCENTILES_STR,
   Percentile,
-} from '../../../../TPAWSimulator/Worker/TPAWRunInWorker'
+} from '../../../../UseSimulator/Simulator/Simulator'
 import { optGet } from '../../../../Utils/optGet'
 
 type SpendingTotalFundingSources =

@@ -1,6 +1,5 @@
 import {
   NonPlanParams,
-  currentNonPlanParamsVersion,
   fGet,
   getDefaultNonPlanParams,
   getZonedTimeFns,
@@ -10,19 +9,24 @@ import {
   nonPlanParamsMigrate,
 } from '@tpaw/common'
 import { chain, json, string } from 'json-guard'
+import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, {
   ReactNode,
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
-import { useMutation } from 'react-relay'
+import { useClientQuery, useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { createContext } from '../../../Utils/CreateContext'
-import { useAssertConst } from '../../../Utils/UseAssertConst'
-import { useDefaultErrorHandlerForNetworkCall } from '../../App/GlobalErrorBoundary'
+import { AppError } from '../../App/AppError'
+import {
+  useDefaultErrorHandlerForNetworkCall,
+  useSetGlobalError,
+} from '../../App/GlobalErrorBoundary'
 import { User, useUser } from '../../App/WithUser'
 import { WithNonPlanParamsMutation } from './__generated__/WithNonPlanParamsMutation.graphql'
 
@@ -30,6 +34,8 @@ const [Context, useNonPlanParams] = createContext<{
   nonPlanParams: NonPlanParams
   setNonPlanParams: (x: NonPlanParams) => void
 }>('NonPlanParams')
+
+export const NonPlanParamsContext = Context
 
 export { useNonPlanParams }
 
@@ -43,9 +49,13 @@ export const WithNonPlanParams = ({ children }: { children: ReactNode }) => {
 }
 
 const _NotLoggedIn = React.memo(({ children }: { children: ReactNode }) => {
-  const [nonPlanParams, setNonPlanParams] = useState(
-    () => NonPlanParamsLocalStorage.read() ?? getDefaultNonPlanParams(),
+  const [nonPlanParams, setNonPlanParamsIn] = useState(
+    () =>
+      NonPlanParamsLocalStorage.read() ?? getDefaultNonPlanParams(Date.now()),
   )
+  const setNonPlanParams = useCallback((x: NonPlanParams) => {
+    setNonPlanParamsIn({ ...x, timestamp: Date.now() })
+  }, [])
   useEffect(
     () => NonPlanParamsLocalStorage.write(nonPlanParams),
     [nonPlanParams],
@@ -59,9 +69,10 @@ const _NotLoggedIn = React.memo(({ children }: { children: ReactNode }) => {
 
 const _LoggedIn = React.memo(
   ({ children, user }: { children: ReactNode; user: User }) => {
+    const { setGlobalError } = useSetGlobalError()
     const { defaultErrorHandlerForNetworkCall } =
       useDefaultErrorHandlerForNetworkCall()
-    const nonPlanParams = useMemo(
+    const nonPlanParamsServer = useMemo(
       () =>
         nonPlanParamsMigrate(
           chain(
@@ -72,8 +83,18 @@ const _LoggedIn = React.memo(
         ),
       [user.nonPlanParams],
     )
+    const [nonPlanParams, setNonPlanParamsIn] = useState(nonPlanParamsServer)
 
-    const [commit] = useMutation<WithNonPlanParamsMutation>(graphql`
+    const setNonPlanParams = useCallback((x: NonPlanParams) => {
+      setNonPlanParamsIn({ ...x, timestamp: Date.now() })
+    }, [])
+
+    const isOutOfSync = useMemo(
+      () => !_.isEqual(nonPlanParamsServer, nonPlanParams),
+      [nonPlanParams, nonPlanParamsServer],
+    )
+
+    const [commit, isRunning] = useMutation<WithNonPlanParamsMutation>(graphql`
       mutation WithNonPlanParamsMutation($input: UserSetNonPlanParamsInput!) {
         userSetNonPlanParams(input: $input) {
           __typename
@@ -89,38 +110,46 @@ const _LoggedIn = React.memo(
       }
     `)
 
-    const setNonPlanParams = useCallback(
-      (nonPlanParams: NonPlanParams) => {
-        nonPlanParamsGuard(nonPlanParams).force()
-        const nonPlanParamsStr = JSON.stringify(nonPlanParams)
-        commit({
-          variables: {
-            input: {
-              userId: user.id,
-              lastUpdatedAt: user.nonPlanParamsLastUpdatedAt,
-              nonPlanParams: nonPlanParamsStr,
-            },
+    const sendToServerEvent = () => {
+      commit({
+        variables: {
+          input: {
+            userId: user.id,
+            lastUpdatedAt: user.nonPlanParamsLastUpdatedAt,
+            nonPlanParams: JSON.stringify(nonPlanParams),
           },
-          optimisticUpdater: (store) => {
-            const userRecord = fGet(store.get(user.id))
-            userRecord.setValue(nonPlanParamsStr, 'nonPlanParams')
-          },
-          onError: (e) => {
-            defaultErrorHandlerForNetworkCall({
-              e,
-              toast: 'Could not save changes to server.',
-            })
-          },
-        })
-      },
-      [
-        commit,
-        defaultErrorHandlerForNetworkCall,
-        user.id,
-        user.nonPlanParamsLastUpdatedAt,
-      ],
-    )
-    useAssertConst([defaultErrorHandlerForNetworkCall])
+        },
+        onCompleted: ({ userSetNonPlanParams }) => {
+          switch (userSetNonPlanParams.__typename) {
+            case 'UserSuccessResult':
+              break
+            case 'ConcurrentChangeError':
+              setGlobalError(new AppError('concurrentChange'))
+              break
+            case '%other':
+              setGlobalError(new Error())
+              break
+            default:
+              noCase(userSetNonPlanParams)
+          }
+        },
+        onError: (e) => {
+          setNonPlanParamsIn(nonPlanParamsServer)
+          defaultErrorHandlerForNetworkCall({
+            e,
+            toast: 'Could not save changes to server.',
+          })
+        },
+      })
+    }
+    const sendToServerEventRef = useRef(sendToServerEvent)
+    sendToServerEventRef.current = sendToServerEvent
+
+    useEffect(() => {
+      if (isOutOfSync && !isRunning) {
+        sendToServerEventRef.current()
+      }
+    }, [isOutOfSync, isRunning])
 
     const ianaTimezoneName = _getIANATimezoneName(nonPlanParams)
 
@@ -150,8 +179,8 @@ const _getIANATimezoneName = ({ timezone }: NonPlanParams) =>
   timezone.type === 'auto'
     ? fGet(DateTime.now().zoneName)
     : timezone.type === 'manual'
-    ? timezone.ianaTimezoneName
-    : noCase(timezone)
+      ? timezone.ianaTimezoneName
+      : noCase(timezone)
 
 export namespace NonPlanParamsLocalStorage {
   export const read = () => {

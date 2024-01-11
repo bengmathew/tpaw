@@ -1,16 +1,18 @@
 import {
+  DEFAULT_MONTE_CARLO_SIMULATION_SEED,
   NonPlanParams,
   assert,
   calendarMonthFromTime,
   currentPlanParamsVersion,
-  defaultNonPlanParams,
+  getDefaultNonPlanParams,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
-import React, { useEffect, useRef, useState } from 'react'
-import { extendPlanParams } from '../TPAWSimulator/ExtentPlanParams'
-import { processPlanParams } from '../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessed'
-import { TPAWRunInWorker } from '../TPAWSimulator/Worker/TPAWRunInWorker'
+import React, { useRef, useState } from 'react'
+import { extendPlanParams } from '../UseSimulator/ExtentPlanParams'
+import { processPlanParams } from '../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
+import { Simulator } from '../UseSimulator/Simulator/Simulator'
+import { getSimulatorSingleton } from '../UseSimulator/UseSimulator'
 import { fGet } from '../Utils/Utils'
 import { AppPage } from './App/AppPage'
 import { getMarketDataForTime } from './Common/GetMarketData'
@@ -18,16 +20,12 @@ import { AmountInput } from './Common/Inputs/AmountInput'
 import { useMarketData } from './PlanRoot/PlanRootHelpers/WithMarketData'
 
 export const Perf = React.memo(() => {
-  const [nonPlanParams, setNonPlanParams] =
-    useState<NonPlanParams>(defaultNonPlanParams)
-
   const { marketData } = useMarketData()
   const [currentTime] = useState(DateTime.local())
-  const workerRef = useRef<TPAWRunInWorker | null>(null)
-  useEffect(() => {
-    workerRef.current = new TPAWRunInWorker()
-    return () => workerRef.current?.terminate()
-  }, [])
+  const [nonPlanParams, setNonPlanParams] = useState<NonPlanParams>(() =>
+    getDefaultNonPlanParams(currentTime.toMillis()),
+  )
+  const workerRef = useRef<Simulator>(getSimulatorSingleton())
 
   const [result, setResult] = useState([''])
 
@@ -52,9 +50,14 @@ export const Perf = React.memo(() => {
               )
               const result = await fGet(workerRef.current).runSimulations(
                 { canceled: false },
-                planParamsProcessed,
-                planParamsExt,
-                nonPlanParams,
+                {
+                  planParams,
+                  planParamsProcessed,
+                  planParamsExt,
+                  numOfSimulationForMonteCarloSampling:
+                    nonPlanParams.numOfSimulationForMonteCarloSampling,
+                  randomSeed: DEFAULT_MONTE_CARLO_SIMULATION_SEED,
+                },
               )
 
               const toLine = ([label, amount]: [string, number]) =>

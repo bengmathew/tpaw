@@ -7,6 +7,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES,
+  PlanParams,
   RISK_TOLERANCE_VALUES,
   TIME_PREFERENCE_VALUES,
   block,
@@ -81,7 +82,7 @@ const _TPAWRiskToleranceCard = React.memo(
       planParamsExt,
       defaultPlanParams,
       updatePlanParams,
-      tpawResult,
+      simulationResult,
     } = useSimulation()
     const defaultRisk = defaultPlanParams.risk.tpaw
     const { asMFN, withdrawalStartMonth, withdrawalsStarted, maxMaxAge } =
@@ -89,7 +90,7 @@ const _TPAWRiskToleranceCard = React.memo(
 
     const get50thStockAllocation = (mfn: number) =>
       fGet(
-        tpawResult.savingsPortfolio.afterWithdrawals.allocation.stocks.byPercentileByMonthsFromNow.find(
+        simulationResult.savingsPortfolio.afterWithdrawals.allocation.stocks.byPercentileByMonthsFromNow.find(
           (x) => x.percentile === 50,
         ),
       ).data[mfn]
@@ -688,58 +689,67 @@ const useIsTimePreferenceCardModified = () => {
   )
 }
 
-export const PlanInputRiskTPAWSummary = React.memo(() => {
-  const { planParams, defaultPlanParams } = useSimulation()
-  const { risk } = planParams
-  const defaultRisk = defaultPlanParams.risk
-  const advancedCount = _.filter([
-    risk.tpaw.riskTolerance.deltaAtMaxAge !==
-      defaultRisk.tpaw.riskTolerance.deltaAtMaxAge,
-    risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 !==
-      defaultRisk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20,
-    risk.tpaw.timePreference !== defaultRisk.tpaw.timePreference,
-  ]).length
-  return (
-    <>
-      <h2>
-        {`Risk Tolerance: ${risk.tpaw.riskTolerance.at20} (${fGet(
-          RISK_TOLERANCE_VALUES.SEGMENTS.find((x) =>
-            x.containsIndex(risk.tpaw.riskTolerance.at20),
-          ),
-        ).label.toLowerCase()})`}
-      </h2>
-      <h2>
-         Spending Tilt:{' '} Base + {' '}
-        {formatPercentage(1)(planParams.risk.tpaw.additionalAnnualSpendingTilt)}
-
-      </h2>
-      {advancedCount > -0 && (
-        <>
-          <h2 className="">Advanced</h2>
-          {defaultRisk.tpaw.riskTolerance.deltaAtMaxAge !==
-            risk.tpaw.riskTolerance.deltaAtMaxAge && (
-            <h2 className="ml-4">
-              Decrease Risk Tolerance With Age:{' '}
-              {-risk.tpaw.riskTolerance.deltaAtMaxAge}
-            </h2>
+export const PlanInputRiskTPAWSummary = React.memo(
+  ({
+    planParams,
+    defaultPlanParams,
+  }: {
+    planParams: PlanParams
+    defaultPlanParams: PlanParams
+  }) => {
+    const { risk } = planParams
+    const defaultRisk = defaultPlanParams.risk
+    const advancedCount = _.filter([
+      risk.tpaw.riskTolerance.deltaAtMaxAge !==
+        defaultRisk.tpaw.riskTolerance.deltaAtMaxAge,
+      risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 !==
+        defaultRisk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20,
+      risk.tpaw.timePreference !== defaultRisk.tpaw.timePreference,
+    ]).length
+    return (
+      <>
+        <h2>
+          {`Risk Tolerance: ${risk.tpaw.riskTolerance.at20} (${fGet(
+            RISK_TOLERANCE_VALUES.SEGMENTS.find((x) =>
+              x.containsIndex(risk.tpaw.riskTolerance.at20),
+            ),
+          ).label.toLowerCase()})`}
+        </h2>
+        <h2>
+          Spending Tilt: Base +{' '}
+          {formatPercentage(1)(
+            planParams.risk.tpaw.additionalAnnualSpendingTilt,
           )}
-          {defaultRisk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 !==
-            risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 && (
-            <h2 className="ml-4">
-              Increase Risk Tolerance For Legacy:{' '}
-              {risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20}
-            </h2>
-          )}
-          {defaultRisk.tpaw.timePreference !== risk.tpaw.timePreference && (
-            <h2 className="ml-4">
-              Time Preference: {formatPercentage(1)(-risk.tpaw.timePreference)}
-            </h2>
-          )}
-        </>
-      )}
-    </>
-  )
-})
+        </h2>
+        {advancedCount > -0 && (
+          <>
+            <h2 className="">Advanced</h2>
+            {defaultRisk.tpaw.riskTolerance.deltaAtMaxAge !==
+              risk.tpaw.riskTolerance.deltaAtMaxAge && (
+              <h2 className="ml-4">
+                Decrease Risk Tolerance With Age:{' '}
+                {-risk.tpaw.riskTolerance.deltaAtMaxAge}
+              </h2>
+            )}
+            {defaultRisk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 !==
+              risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 && (
+              <h2 className="ml-4">
+                Increase Risk Tolerance For Legacy:{' '}
+                {risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20}
+              </h2>
+            )}
+            {defaultRisk.tpaw.timePreference !== risk.tpaw.timePreference && (
+              <h2 className="ml-4">
+                Time Preference:{' '}
+                {formatPercentage(1)(-risk.tpaw.timePreference)}
+              </h2>
+            )}
+          </>
+        )}
+      </>
+    )
+  },
+)
 
 const _rraToStr = (rra: number) =>
   rra === Infinity ? 'infinity' : `${rra.toFixed(2)}`

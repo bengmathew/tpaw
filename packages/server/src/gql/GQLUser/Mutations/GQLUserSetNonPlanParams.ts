@@ -1,5 +1,8 @@
-import { API } from '@tpaw/common'
-import { serialTransaction } from '../../../Utils/PrismaTransaction.js'
+import { API, SomeNonPlanParams } from '@tpaw/common'
+import {
+  PrismaTransaction,
+  serialTransaction,
+} from '../../../Utils/PrismaTransaction.js'
 import { concurrentChangeError } from '../../../impl/Common/ConcurrentChangeError.js'
 import { getUserSuccessResult } from '../../../impl/Common/UserSuccessResult.js'
 import { builder } from '../../builder.js'
@@ -29,15 +32,23 @@ builder.mutationField('userSetNonPlanParams', (t) =>
         })
         if (startingUser.nonPlanParamsLastUpdatedAt.getTime() !== lastUpdatedAt)
           return concurrentChangeError
-        await tx.user.update({
-          where: { id: userId },
-          data: {
-            nonPlanParams: nonPlanParams,
-            nonPlanParamsLastUpdatedAt: new Date(),
-          },
-        })
+        await userSetNonPlanParams(tx, userId, nonPlanParams)
         return getUserSuccessResult(userId)
       })
     },
   }),
 )
+
+export const userSetNonPlanParams = async (
+  tx: PrismaTransaction,
+  userId: string,
+  nonPlanParams: SomeNonPlanParams,
+) => {
+  await tx.user.update({
+    where: { id: userId },
+    data: {
+      nonPlanParams: nonPlanParams,
+      nonPlanParamsLastUpdatedAt: new Date(),
+    },
+  })
+}

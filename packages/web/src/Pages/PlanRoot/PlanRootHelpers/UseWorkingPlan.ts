@@ -13,7 +13,7 @@ import cloneJSON from 'fast-json-clone'
 import _ from 'lodash'
 import { useCallback, useMemo, useState } from 'react'
 import * as uuid from 'uuid'
-import { extendPlanParams } from '../../../TPAWSimulator/ExtentPlanParams'
+import { extendPlanParams } from '../../../UseSimulator/ExtentPlanParams'
 import { useAssertConst } from '../../../Utils/UseAssertConst'
 import { Config } from '../../Config'
 import { CurrentPortfolioBalance } from './CurrentPortfolioBalance'
@@ -57,7 +57,6 @@ export const useWorkingPlan = (
       getDefaultPlanParams(currentTimeInfo.currentTimestamp, ianaTimezoneName),
     [currentTimeInfo.currentTimestamp, ianaTimezoneName],
   )
-
 
   const [workingPlan, setWorkingPlan] = useState(src)
   assert(workingPlan.reverseHeadIndex <= TARGET_UNDO_DEPTH)
@@ -104,8 +103,9 @@ export const useWorkingPlan = (
       const { applyToClone, merge } =
         processPlanParamsChangeActionCurrent(change)
 
-      const clone = cloneJSON(planParams)
-      applyToClone(clone, planParamsExt, defaultPlanParams)
+      let clone = cloneJSON(planParams)
+      const altClone = applyToClone(clone, planParamsExt, defaultPlanParams)
+      if (altClone) clone = altClone
       if (
         _.isEqual(clone, planParams) &&
         // setCurrentPortfolio balance is a special case, because it is

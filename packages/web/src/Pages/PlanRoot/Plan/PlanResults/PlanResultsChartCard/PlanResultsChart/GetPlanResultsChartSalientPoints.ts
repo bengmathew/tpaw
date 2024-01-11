@@ -13,7 +13,6 @@ export const getPlanResultsChartSalientPoints = (
       salientPoints:
         data.type === 'range'
           ? block(() => {
-              const { asMFN, withdrawalStartMonth } = data.planParamsExt
               const getPointsAtX = (
                 xId: string,
                 dataX: number,

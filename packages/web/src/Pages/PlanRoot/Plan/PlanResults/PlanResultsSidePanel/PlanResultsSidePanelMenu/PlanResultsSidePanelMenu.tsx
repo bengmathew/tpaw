@@ -11,22 +11,16 @@ import { useRouter } from 'next/router'
 import React, { CSSProperties, useMemo } from 'react'
 import { ContextMenu2 } from '../../../../../Common/Modal/ContextMenu2'
 import { useSimulation } from '../../../../PlanRootHelpers/WithSimulation'
-import { setPrintOnDoneURL } from '../../../PlanPrint/PlanPrint'
 import { usePlanColors } from '../../../UsePlanColors'
-import { PlanResultsSidePanelMenuBalanceSheet } from './PlanResutlsSidePanelMenuBalanceSheet'
+import { PlanResultsSidePanelMenuBalanceSheet } from './PlanResultsSidePanelMenuBalanceSheet'
+import { PlanResultsSidePanelMenuPDFReportItem } from './PlanResultsSidePanelMenuPDFReportItem'
 
 export const PlanResultsSidePanelMenu = React.memo(
   ({ className, style }: { className?: string; style?: CSSProperties }) => {
     const [showBalanceSheet, setShowBalanceSheet] = React.useState(false)
     const { planParams } = useSimulation()
     const planColors = usePlanColors()
-    const path = useRouter().asPath
-    const printURL = useMemo(() => {
-      const result = new URL(path, window.location.origin)
-      result.searchParams.set('print', 'true')
-      return result
-    }, [path])
-
+    
     return (
       <>
         <ContextMenu2
@@ -61,18 +55,7 @@ export const PlanResultsSidePanelMenu = React.memo(
                 Balance Sheet
               </Menu.Item>
             )}
-            <Menu.Item>
-              <Link
-                className="context-menu-item"
-                href={printURL}
-                onClick={() => setPrintOnDoneURL()}
-              >
-                <span className="inline-block w-[30px]">
-                  <FontAwesomeIcon icon={faFilePdf} />
-                </span>
-                PDF Report
-              </Link>
-            </Menu.Item>
+            <PlanResultsSidePanelMenuPDFReportItem />
           </Menu.Items>
         </ContextMenu2>
         <PlanResultsSidePanelMenuBalanceSheet

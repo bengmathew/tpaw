@@ -1,11 +1,10 @@
 import { Month, MonthRange, noCase } from '@tpaw/common'
 import React from 'react'
-import { PlanParamsExtended } from '../../TPAWSimulator/ExtentPlanParams'
+import { PlanParamsExtended } from '../../UseSimulator/ExtentPlanParams'
 import { calendarMonthStr } from '../../Utils/CalendarMonthStr'
 import { numMonthsStr } from '../../Utils/NumMonthsStr'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { yourOrYourPartners } from '../../Utils/YourOrYourPartners'
-import { useSimulation } from '../PlanRoot/PlanRootHelpers/WithSimulation'
 
 export const MonthRangeDisplay = React.memo(
   ({
@@ -13,13 +12,14 @@ export const MonthRangeDisplay = React.memo(
     valueClamped,
     skipLength,
     range,
+    planParamsExt,
   }: {
     className?: string
     valueClamped: MonthRange | null
     range: SimpleRange | null
     skipLength: boolean
+    planParamsExt: PlanParamsExtended
   }) => {
-    const { planParamsExt } = useSimulation()
     const { monthRangeBoundsCheck } = planParamsExt
     const error =
       range &&

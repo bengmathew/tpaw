@@ -1,6 +1,6 @@
 import { GlidePath, Month, ValueForMonthRange } from '@tpaw/common'
 import _ from 'lodash'
-import { PlanParamsExtended } from '../../../../../TPAWSimulator/ExtentPlanParams'
+import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 import { noCase } from '../../../../../Utils/Utils'
 import { planSectionLabel } from './PlanSectionLabel'
 

@@ -5,21 +5,17 @@ type _RemoveZone<T> = T extends [arg1: infer U, arg2?: infer V]
   : never
 
 export const getZonedTimeFns = (ianaTimezoneName: string) => {
-  const setZone = (x: DateTime) => x.setZone(ianaTimezoneName)
-
   const result = (...x: _RemoveZone<Parameters<typeof DateTime.fromMillis>>) =>
-    setZone(DateTime.fromMillis(x[0], { ...x[1] }))
-  // function literal using object notation
+    DateTime.fromMillis(x[0], { ...x[1] }).setZone(ianaTimezoneName)
 
-  result.now = () => setZone(DateTime.now())
+  result.now = () => DateTime.now().setZone(ianaTimezoneName)
+
+  // Note. setZone() is WRONG for fromObject() because
+  // it needs to be *interpreted* in the given timezone, not *converted*.
   result.fromObject = (
     ...x: _RemoveZone<Parameters<typeof DateTime.fromObject>>
-  ) => setZone(DateTime.fromObject(x[0], { ...x[1] }))
-  
-  result.fromISO = (
-    ...x: _RemoveZone<Parameters<typeof DateTime.fromISO>>
-  ) => setZone(DateTime.fromISO(x[0], { ...x[1] }))
-  
+  ) => DateTime.fromObject(x[0], { ...x[1], zone: ianaTimezoneName })
+
   return result
 }
 

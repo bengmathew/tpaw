@@ -1,5 +1,5 @@
 import { ChartXAxis } from '../../../../../Common/Chart/ChartComponent/ChartXAxis'
-import { PlanResultsChartData } from './PlanResultsChartData'
+import { PlanResultsChartData, PlanResultsChartDataForPDF } from './PlanResultsChartData'
 
 export const getPlanResultsChartXAxis = (
   personType: 'person1' | 'person2',
@@ -9,9 +9,8 @@ export const getPlanResultsChartXAxis = (
     xAxis: { height: number; vertGapBetweenPeople: number }
   },
 ) =>
-  new ChartXAxis<{ data: PlanResultsChartData }>(
-    ({ data: { planParams, planParamsExt, planSizing, planColors } }) => {
-      const { layout } = planSizing.args
+  new ChartXAxis<{ data: PlanResultsChartDataForPDF }>(
+    ({ data: { planParams, planParamsExt, layout, planColors } }) => {
       if (personType === 'person2' && !planParams.people.withPartner)
         return null
       const { getCurrentAgeOfPerson, asMFN, months } = planParamsExt
@@ -24,7 +23,7 @@ export const getPlanResultsChartXAxis = (
             ? belowPlotAreaSizing.xAxis.height +
               belowPlotAreaSizing.xAxis.vertGapBetweenPeople
             : 0),
-        padding: { top: personType === 'person1'? 0: 1 },
+        padding: { top: personType === 'person1' ? 0 : 1 },
         height: belowPlotAreaSizing.xAxis.height,
         transformDataXDelta: getCurrentAgeOfPerson(personType).inMonths,
         markers: {
@@ -60,32 +59,32 @@ export const getPlanResultsChartXAxis = (
                 },
               }
             : ageInYears % 5 === 0
-            ? {
-                color: planColors.shades.main[13].hex,
-                line: {
-                  length: layout === 'mobile' ? 3 : 5,
-                },
-                label: {
-                  text,
-                  paddingTop: 2,
-                  fontSize: layout === 'mobile' ? 8 : 9,
-                  fontWeight: '',
-                  visible: pixelsPerYear > 15,
-                },
-              }
-            : {
-                color: planColors.shades.main[14].hex,
-                line: {
-                  length: layout === 'mobile' ? 1 : 2,
-                },
-                label: {
-                  text,
-                  paddingTop: 2,
-                  fontSize: layout === 'mobile' ? 8 : 9,
-                  fontWeight: '',
-                  visible: false,
-                },
-              }
+              ? {
+                  color: planColors.shades.main[13].hex,
+                  line: {
+                    length: layout === 'mobile' ? 3 : 5,
+                  },
+                  label: {
+                    text,
+                    paddingTop: 2,
+                    fontSize: layout === 'mobile' ? 8 : 9,
+                    fontWeight: '',
+                    visible: pixelsPerYear > 15,
+                  },
+                }
+              : {
+                  color: planColors.shades.main[14].hex,
+                  line: {
+                    length: layout === 'mobile' ? 1 : 2,
+                  },
+                  label: {
+                    text,
+                    paddingTop: 2,
+                    fontSize: layout === 'mobile' ? 8 : 9,
+                    fontWeight: '',
+                    visible: false,
+                  },
+                }
         },
       }
     },

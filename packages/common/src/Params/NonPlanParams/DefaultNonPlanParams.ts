@@ -1,9 +1,16 @@
 import { NonPlanParams } from './NonPlanParams'
 
-export const getDefaultNonPlanParams = (): NonPlanParams => ({
-  v: 23,
+export const getDefaultNonPlanParams = (
+  currentTimestamp: number,
+): NonPlanParams => ({
+  v: 24,
+  timestamp: currentTimestamp,
   timezone: { type: 'auto' },
   numOfSimulationForMonteCarloSampling: 500,
+  pdfReportSettings: {
+    pageSize: 'default',
+    embeddedLinkType: 'default',
+  },
   dev: {
     showSyncStatus: false,
     showDevFeatures: false,
@@ -12,4 +19,3 @@ export const getDefaultNonPlanParams = (): NonPlanParams => ({
   },
 })
 
-export const defaultNonPlanParams = getDefaultNonPlanParams()

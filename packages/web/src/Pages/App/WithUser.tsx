@@ -15,6 +15,7 @@ export type User = WithUser_user$data & {
   firebaseUser: FirebaseUser
 }
 const [Context, useUser] = createContext<User | null>('User')
+export const UserContext = Context
 export { useUser }
 export const WithUser = ({
   userFragmentOnQueryKey,

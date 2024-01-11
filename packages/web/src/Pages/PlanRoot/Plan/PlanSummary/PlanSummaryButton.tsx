@@ -3,6 +3,7 @@ import { faPlus } from '@fortawesome/pro-thin-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import clix from 'clsx'
 import React from 'react'
+import { gray, orange } from '../../../../Utils/ColorPalette'
 import { Padding, paddingCSSStyle } from '../../../../Utils/Geometry'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
 import { noCase } from '../../../../Utils/Utils'
@@ -29,7 +30,6 @@ import { PlanInputRiskSummary } from '../PlanInput/PlanInputRisk/PlanInputRisk'
 import { PlanInputSimulationSummary } from '../PlanInput/PlanInputSimulation'
 import { PlanInputSpendingCeilingAndFloorSummary } from '../PlanInput/PlanInputSpendingCeilingAndFloor'
 import { PlanInputStrategySummary } from '../PlanInput/PlanInputStrategy'
-import { gray, orange } from '../../../../Utils/ColorPalette'
 import { usePlanColors } from '../UsePlanColors'
 
 type _Props = {
@@ -55,18 +55,18 @@ export const PlanSummaryButton = React.memo(
       }: _Props,
       ref,
     ) => {
-      const { planParams, planParamsExt } = useSimulation()
+      const { planParamsExt } = useSimulation()
       const { dialogPositionEffective } = planParamsExt
       const getSectionURL = useGetSectionURL()
       const urlUpdater = useURLUpdater()
       const highlightColorDark = gray[400]
-      const visibility = useGetPlanInputVisibility()(type)
+      const visibility = useGetPlanInputVisibility(planParamsExt)(type)
       const highlightColor =
         section === type
           ? highlightColorDark
           : dialogPositionEffective === type
-          ? orange[400]
-          : gray[100]
+            ? orange[400]
+            : gray[100]
 
       const planColors = usePlanColors()
 
@@ -139,31 +139,65 @@ export const PlanSummaryButton = React.memo(
 
 const _SectionSummary = React.memo(
   ({ type }: { type: Exclude<PlanInputType, 'history'> }) => {
+    const {
+      planParams,
+      planParamsExt,
+      planParamsProcessed,
+      defaultPlanParams,
+    } = useSimulation()
     switch (type) {
       case 'age':
-        return <PlanInputAgeSummary />
+        return <PlanInputAgeSummary planParamsExt={planParamsExt} />
       case 'current-portfolio-balance':
-        return <PlanInputCurrentPortfolioBalanceSummary />
+        return (
+          <PlanInputCurrentPortfolioBalanceSummary
+            planParamsExt={planParamsExt}
+            currentPortfolioBalance={
+              planParamsProcessed.estimatedCurrentPortfolioBalance
+            }
+          />
+        )
       case 'future-savings':
-        return <PlanInputFutureSavingsSummary />
+        return <PlanInputFutureSavingsSummary planParamsExt={planParamsExt} />
       case 'income-during-retirement':
-        return <PlanInputIncomeDuringRetirementSummary />
+        return (
+          <PlanInputIncomeDuringRetirementSummary
+            planParamsExt={planParamsExt}
+          />
+        )
       case 'extra-spending':
-        return <PlanInputExtraSpendingSummary />
+        return <PlanInputExtraSpendingSummary planParamsExt={planParamsExt} />
       case 'legacy':
-        return <PlanInputLegacySummary />
+        return (
+          <PlanInputLegacySummary planParamsProcessed={planParamsProcessed} />
+        )
       case 'spending-ceiling-and-floor':
-        return <PlanInputSpendingCeilingAndFloorSummary />
+        return (
+          <PlanInputSpendingCeilingAndFloorSummary planParams={planParams} />
+        )
       case 'risk':
-        return <PlanInputRiskSummary />
+        return (
+          <PlanInputRiskSummary
+            planParamsExt={planParamsExt}
+            defaultPlanParams={defaultPlanParams}
+          />
+        )
       case 'expected-returns-and-volatility':
-        return <PlanInputExpectedReturnsAndVolatilitySummary />
+        return (
+          <PlanInputExpectedReturnsAndVolatilitySummary
+            planParamsProcessed={planParamsProcessed}
+          />
+        )
       case 'inflation':
-        return <PlanInputInflationSummary />
+        return (
+          <PlanInputInflationSummary
+            planParamsProcessed={planParamsProcessed}
+          />
+        )
       case 'strategy':
-        return <PlanInputStrategySummary />
+        return <PlanInputStrategySummary planParams={planParams} />
       case 'simulation':
-        return <PlanInputSimulationSummary />
+        return <PlanInputSimulationSummary planParams={planParams} />
       case 'dev-misc':
         return <PlanInputDevMiscSummary />
       case 'dev-simulations':

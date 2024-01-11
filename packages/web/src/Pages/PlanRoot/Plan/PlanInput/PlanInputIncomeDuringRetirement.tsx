@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import React, { useState } from 'react'
+import { PlanParamsExtended } from '../../../../UseSimulator/ExtentPlanParams'
 import { Contentful } from '../../../../Utils/Contentful'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import { EditValueForMonthRange } from '../../../Common/Inputs/EditValueForMonthRange'
@@ -117,13 +118,16 @@ export const PlanInputIncomeDuringRetirement = React.memo(
   },
 )
 
-export const PlanInputIncomeDuringRetirementSummary = React.memo(() => {
-  const { planParams, planParamsExt } = useSimulation()
-  const { validMonthRangeAsMFN } = planParamsExt
-  return (
-    <PlanInputSummaryValueForMonthRange
-      entries={planParams.wealth.incomeDuringRetirement}
-      range={validMonthRangeAsMFN('income-during-retirement')}
-    />
-  )
-})
+export const PlanInputIncomeDuringRetirementSummary = React.memo(
+  ({ planParamsExt }: { planParamsExt: PlanParamsExtended }) => {
+    const { planParams } = planParamsExt
+    const { validMonthRangeAsMFN } = planParamsExt
+    return (
+      <PlanInputSummaryValueForMonthRange
+        entries={planParams.wealth.incomeDuringRetirement}
+        range={validMonthRangeAsMFN('income-during-retirement')}
+        planParamsExt={planParamsExt}
+      />
+    )
+  },
+)

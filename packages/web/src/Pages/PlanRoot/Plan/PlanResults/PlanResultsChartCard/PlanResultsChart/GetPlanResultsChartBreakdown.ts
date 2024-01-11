@@ -2,13 +2,13 @@ import { getChartBandColor } from '../../../../../../Utils/ColorPalette'
 import { ChartBreakdown } from '../../../../../Common/Chart/ChartComponent/ChartBreakdown'
 import { ChartStyling } from '../../../../../Common/Chart/ChartUtils/ChartStyling'
 import { PlanColors } from '../../../UsePlanColors'
-import { PlanResultsChartData } from './PlanResultsChartData'
+import { PlanResultsChartDataForPDF } from './PlanResultsChartData'
 
 const { Stroke } = ChartStyling
 
 export const getPlanResultsChartBreakdown = () =>
   new ChartBreakdown<{
-    data: PlanResultsChartData
+    data: PlanResultsChartDataForPDF
   }>('breakdown', ({ data }) => {
     const { planColors } = data
     const { shades } = planColors

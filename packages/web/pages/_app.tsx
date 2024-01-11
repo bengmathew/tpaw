@@ -8,7 +8,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import { GlobalErrorBoundary } from '../src/Pages/App/GlobalErrorBoundary'
 import { WithFirebaseUser } from '../src/Pages/App/WithFirebaseUser'
 import { WithRelayEnvironment } from '../src/Pages/App/WithRelayEnvironment'
-import { WithWindowSize } from '../src/Pages/App/WithWindowSize'
+import { WithSystemInfo } from '../src/Pages/App/WithSystemInfo'
 import { Spinner } from '../src/Utils/View/Spinner'
 import '../styles/globals.css'
 import { WithMergeToServer } from '../src/Pages/App/WithMergeToServer'
@@ -36,9 +36,9 @@ const MyApp = React.memo(({ Component, pageProps }: AppProps) => {
                 </div>
               }
             >
-              <WithWindowSize>
+              <WithSystemInfo>
                 <Component {...pageProps} />
-              </WithWindowSize>
+              </WithSystemInfo>
             </Suspense>
           </WithMergeToServer>
         </WithRelayEnvironment>

@@ -1,4 +1,5 @@
 import {
+  DEFAULT_MONTE_CARLO_SIMULATION_SEED,
   MarketData,
   PlanParams,
   PlanParamsChangeActionCurrent,
@@ -8,36 +9,43 @@ import {
   block,
   fGet,
   getDefaultPlanParams,
+  noCase,
+  nonPlanParamFns,
 } from '@tpaw/common'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   PlanParamsExtended,
   extendPlanParams,
-} from '../../../TPAWSimulator/ExtentPlanParams'
+} from '../../../UseSimulator/ExtentPlanParams'
 import {
   PlanParamsProcessed,
   processPlanParams,
-} from '../../../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessed'
-import {
-  UseTPAWWorkerResult,
-  useTPAWWorker,
-} from '../../../TPAWSimulator/Worker/UseTPAWWorker'
+} from '../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
+import { useSimulator } from '../../../UseSimulator/UseSimulator'
 import { createContext } from '../../../Utils/CreateContext'
 
+import cloneJSON from 'fast-json-clone'
 import _ from 'lodash'
 import React from 'react'
 import { appPaths } from '../../../AppPaths'
+import { SimulationResult } from '../../../UseSimulator/Simulator/Simulator'
 import { infoToast } from '../../../Utils/CustomToasts'
 import { UnionToIntersection } from '../../../Utils/UnionToIntersection'
-import { User } from '../../App/WithUser'
+import { useURLParam } from '../../../Utils/UseURLParam'
+import { User, useUser } from '../../App/WithUser'
 import { getMarketDataForTime } from '../../Common/GetMarketData'
 import { Plan } from '../Plan/Plan'
+import { ServerSyncState } from '../PlanServerImpl/UseServerSyncPlan'
 import { CurrentPortfolioBalance } from './CurrentPortfolioBalance'
+import {
+  PlanPrintViewArgs,
+  PlanPrintViewSettingsClientSide,
+  PlanPrintViewSettingsControlledClientSide,
+} from './PlanPrintView/PlanPrintViewArgs'
 import { CurrentTimeInfo } from './UseCurrentTime'
 import { WorkingPlanInfo } from './UseWorkingPlan'
 import { useMarketData } from './WithMarketData'
-import { useIANATimezoneName } from './WithNonPlanParams'
-import { ServerSyncState } from '../PlanServerImpl/UseServerSyncPlan'
+import { useIANATimezoneName, useNonPlanParams } from './WithNonPlanParams'
 
 type UpdatePlanParamsFromAction<T> = UnionToIntersection<
   T extends PlanParamsChangeActionCurrent
@@ -101,7 +109,10 @@ export type SimulationInfo = {
         setRewindTo: (timestamp: number) => 'withinRange' | 'fixedToRange'
       }
 
-  tpawResult: UseTPAWWorkerResult
+  simulationResult: SimulationResult
+  simulationResultIsCurrent: boolean
+  numOfSimulationForMonteCarloSampling: number
+  randomSeed: number
   reRun: () => void
 }
 
@@ -121,6 +132,10 @@ export type SimulationInfoForLinkSrc = Extract<
   SimulationInfo['simulationInfoBySrc'],
   { src: 'link' }
 >
+export type SimulationInfoForServerSidePrintSrc = Extract<
+  SimulationInfo['simulationInfoBySrc'],
+  { src: 'serverSidePrint' }
+>
 
 export type SimulationInfoForPlanMode = Extract<
   SimulationInfo['simulationInfoByMode'],
@@ -137,12 +152,29 @@ export type SimulationParams = Omit<
   | 'currentMarketData'
   | 'planParamsExt'
   | 'planParamsProcessed'
-  | 'tpawResult'
+  | 'simulationResult'
+  | 'simulationResultIsCurrent'
   | 'reRun'
   | 'currentPortfolioBalanceInfo'
+  | 'numOfSimulationForMonteCarloSampling'
+  | 'randomSeed'
 > & {
   currentPortfolioBalanceInfoPreBase: CurrentPortfolioBalance.ByMonthInfo | null
   currentPortfolioBalanceInfoPostBase: CurrentPortfolioBalance.Info
+  pdfReportInfo:
+    | {
+        isShowing: true
+        onSettings: (settings: PlanPrintViewSettingsClientSide) => void
+      }
+    | {
+        isShowing: false
+        show: (args: {
+          fixed: PlanPrintViewArgs['fixed']
+          settings: PlanPrintViewSettingsClientSide
+          simulationResult: SimulationResult | null
+          updateSettings: (x: PlanPrintViewSettingsControlledClientSide) => void
+        }) => void
+      }
 }
 
 export const useSimulationParamsForPlanMode = (
@@ -152,6 +184,7 @@ export const useSimulationParamsForPlanMode = (
   planMigratedFromVersion: SomePlanParamsVersion,
   currentPortfolioBalanceInfoPreBase: CurrentPortfolioBalance.ByMonthInfo | null,
   simulationInfoBySrc: SimulationInfo['simulationInfoBySrc'],
+  pdfReportInfo: SimulationParams['pdfReportInfo'],
 ): SimulationParams => ({
   planId: workingPlanInfo.workingPlan.planId,
   planPaths,
@@ -178,6 +211,7 @@ export const useSimulationParamsForPlanMode = (
     planParamsUndoRedoStack: workingPlanInfo.planParamsUndoRedoStack,
     setPlanParamsHeadIndex: workingPlanInfo.setPlanParamsHeadIndex,
   },
+  pdfReportInfo,
 })
 
 export const useSimulationParamsForHistoryMode = (
@@ -193,6 +227,7 @@ export const useSimulationParamsForHistoryMode = (
   workingPlanInfo: WorkingPlanInfo,
   planMigratedFromVersion: SomePlanParamsVersion,
   simulationInfoBySrc: SimulationInfo['simulationInfoBySrc'],
+  pdfReportInfo: SimulationParams['pdfReportInfo'],
 ): SimulationParams | null => {
   // Note. Avoid computation if returning null. We don't want to slow things
   // down when not in history mode.
@@ -285,12 +320,32 @@ export const useSimulationParamsForHistoryMode = (
       planParamsHistoryEndOfDays,
       setRewindTo: rewindInfo.setRewindTo,
     },
+    pdfReportInfo,
   }
 }
 
-const [Context, useSimulation] = createContext<SimulationInfo>('Simulation')
+const [SimulationInfoContext, useSimulation] =
+  createContext<SimulationInfo>('SimulationInfo')
+const [SimulationResultContext, useSimulationResult] =
+  createContext<SimulationResult>('SimulationResult')
+
+// Get a random number.
+
+const _newRandomSeed = () => {
+  return Math.floor(Math.random() * 1000000000)
+}
+let globalRandomSeed = DEFAULT_MONTE_CARLO_SIMULATION_SEED
+
 export const WithSimulation = React.memo(
   ({ params }: { params: SimulationParams }) => {
+    const { nonPlanParams } = useNonPlanParams()
+    const { numOfSimulationForMonteCarloSampling } = nonPlanParams
+    const [randomSeed, setRandomSeed] = useState(globalRandomSeed)
+    const reRun = useCallback(() => {
+      globalRandomSeed = _newRandomSeed()
+      setRandomSeed(globalRandomSeed)
+    }, [])
+
     const {
       planParams,
       currentTimestamp,
@@ -345,29 +400,137 @@ export const WithSimulation = React.memo(
         planParams,
       ])
 
-    const { result: tpawResult, reRun } = useTPAWWorker(
+    const {
+      result: simulationResult,
+      resultIsCurrent: simulationResultIsCurrent,
+    } = useSimulator(
       planParamsProcessed,
       planParamsExt,
+      numOfSimulationForMonteCarloSampling,
+      randomSeed,
     )
 
+    const simulationInfo: SimulationInfo | null = simulationResult
+      ? {
+          ...params,
+          defaultPlanParams,
+          currentMarketData,
+          planParamsExt,
+          planParamsProcessed,
+          currentPortfolioBalanceInfo,
+          simulationResult,
+          simulationResultIsCurrent,
+          numOfSimulationForMonteCarloSampling,
+          reRun,
+          randomSeed,
+        }
+      : null
+
+    useShowPDFReportIfNeeded(simulationInfo, params.pdfReportInfo)
     return (
-      tpawResult && (
-        <Context.Provider
-          value={{
-            ...params,
-            defaultPlanParams,
-            currentMarketData,
-            planParamsExt,
-            planParamsProcessed,
-            currentPortfolioBalanceInfo,
-            tpawResult,
-            reRun,
-          }}
-        >
-          <Plan />
-        </Context.Provider>
+      simulationInfo && (
+        <SimulationInfoContext.Provider value={simulationInfo}>
+          <SimulationResultContext.Provider
+            value={simulationInfo.simulationResult}
+          >
+            <Plan />
+          </SimulationResultContext.Provider>
+        </SimulationInfoContext.Provider>
       )
     )
   },
 )
-export { useSimulation }
+export { SimulationResultContext, useSimulation, useSimulationResult }
+
+const useShowPDFReportIfNeeded = (
+  simulationInfo: SimulationInfo | null,
+  pdfReportInfo: SimulationParams['pdfReportInfo'],
+) => {
+  const isLoggedIn = useUser() !== null
+  const { ianaTimezoneName } = useIANATimezoneName()
+  const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
+  const shouldShowPrint =
+    useURLParam('pdf-report') === 'true' &&
+    !pdfReportInfo.isShowing &&
+    !!simulationInfo &&
+    simulationInfo.simulationResultIsCurrent
+
+  const settings = useMemo((): PlanPrintViewSettingsClientSide => {
+    const { pdfReportSettings } = nonPlanParams
+    return {
+      isServerSidePrint: false,
+      pageSize: nonPlanParamFns.resolvePDFReportSettingsDefaults.pageSize(
+        pdfReportSettings.pageSize,
+      ),
+
+      embeddedLinkType:
+        nonPlanParamFns.resolvePDFReportSettingsDefaults.embeddedLinkType(
+          pdfReportSettings.embeddedLinkType,
+          isLoggedIn,
+        ),
+      alwaysShowAllMonths: nonPlanParams.dev.alwaysShowAllMonths,
+    }
+  }, [isLoggedIn, nonPlanParams])
+
+  const handleShowPrintEvent = () => {
+    assert(simulationInfo && !pdfReportInfo.isShowing)
+
+    const printPlanParams = cloneJSON(simulationInfo.planParams)
+    printPlanParams.timestamp = simulationInfo.currentTimestamp
+    printPlanParams.wealth.portfolioBalance = {
+      updatedHere: true,
+      amount: CurrentPortfolioBalance.get(
+        simulationInfo.currentPortfolioBalanceInfo,
+      ),
+    }
+    const fixed: PlanPrintViewArgs['fixed'] = {
+      planLabel: block(() => {
+        switch (simulationInfo.simulationInfoBySrc.src) {
+          case 'link':
+          case 'localMain':
+            return null
+          case 'server':
+            return simulationInfo.simulationInfoBySrc.plan.label ?? null
+          default:
+            noCase(simulationInfo.simulationInfoBySrc)
+        }
+      }),
+      planParams: printPlanParams,
+      marketData: simulationInfo.currentMarketData,
+      numOfSimulationForMonteCarloSampling:
+        simulationInfo.numOfSimulationForMonteCarloSampling,
+      ianaTimezoneName,
+      randomSeed: simulationInfo.randomSeed,
+    }
+
+    pdfReportInfo.show({
+      fixed,
+      settings,
+      simulationResult: simulationInfo.simulationResult,
+      updateSettings: (settings) => {
+        const clone = cloneJSON(nonPlanParams)
+        clone.pdfReportSettings = {
+          pageSize: settings.pageSize,
+          embeddedLinkType: settings.embeddedLinkType,
+        }
+        setNonPlanParams(clone)
+      },
+    })
+  }
+  const handleShowPrintEventRef = useRef(handleShowPrintEvent)
+  handleShowPrintEventRef.current = handleShowPrintEvent
+  useLayoutEffect(() => {
+    if (shouldShowPrint) handleShowPrintEventRef.current()
+  }, [shouldShowPrint])
+
+  const handleUpdateSettingsEvent = (
+    settings: PlanPrintViewSettingsClientSide,
+  ) => {
+    if (pdfReportInfo.isShowing) pdfReportInfo.onSettings(settings)
+  }
+  const handleUpdateSettingsEventRef = useRef(handleUpdateSettingsEvent)
+  handleUpdateSettingsEventRef.current = handleUpdateSettingsEvent
+  useLayoutEffect(() => {
+    handleUpdateSettingsEventRef.current(settings)
+  }, [settings])
+}

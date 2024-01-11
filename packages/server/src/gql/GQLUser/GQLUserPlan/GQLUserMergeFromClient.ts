@@ -1,4 +1,12 @@
-import { API, PlanParamsChangeAction, assert, block, fGet } from '@tpaw/common'
+import {
+  API,
+  PlanParamsChangeAction,
+  SomeNonPlanParams,
+  assert,
+  block,
+  fGet,
+  nonPlanParamsMigrate,
+} from '@tpaw/common'
 import _ from 'lodash'
 import { Clients } from '../../../Clients.js'
 import {
@@ -13,6 +21,7 @@ import {
 } from './Mutations/GQLUserPlanCreate.js'
 import { userPlanDelete } from './Mutations/GQLUserPlanDelete.js'
 import { userPlanSetAsMain } from './Mutations/GQLUserPlanSetAsMain.js'
+import { userSetNonPlanParams } from '../Mutations/GQLUserSetNonPlanParams.js'
 
 const Input = builder.inputType('UserMergeFromClientInput', {
   fields: (t) => ({
@@ -79,8 +88,23 @@ builder.mutationField('userMergeFromClient', (t) =>
       const { userId, guestPlan, linkPlan, nonPlanParams } =
         API.UserMergeFromClient.check(input).force()
 
-      // FEATURE: Don't ignore nonPlanParams
       return await serialTransaction(async (tx) => {
+        // ---- NON PLAN PARAMS ----
+        await block(async () => {
+          if (!nonPlanParams) return
+          const startingUser = await tx.user.findUniqueOrThrow({
+            where: { id: userId },
+          })
+          const currNonPlanParams = nonPlanParamsMigrate(
+            startingUser.nonPlanParams as SomeNonPlanParams,
+          )
+          if (
+            currNonPlanParams.timestamp >=
+            nonPlanParamsMigrate(nonPlanParams).timestamp
+          )
+            return
+          await userSetNonPlanParams(tx, userId, nonPlanParams)
+        })
         return {
           userId,
           // ---- GUEST PLAN ----

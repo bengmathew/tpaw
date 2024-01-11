@@ -72,7 +72,7 @@ export const PlanResultsChartCard = React.memo(
     onChartHover: (hover: boolean) => void
     chartHover: boolean
   }) => {
-    const { planParams, tpawResult } = useSimulation()
+    const { planParams, simulationResult } = useSimulation()
     const type = usePlanResultsChartType()
     const yAxisDescriptionByLayout = planResultsChartLabel(
       planParams,
@@ -124,7 +124,7 @@ export const PlanResultsChartCard = React.memo(
         : null
     const showYAxisDescription = !!getYAxisDescription(layout === 'mobile')
     const showSuccessRate = planParams.advanced.strategy === 'SWR'
-    const hasPartner = tpawResult.params.people.withPartner
+    const hasPartner = simulationResult.args.planParamsProcessed.people.withPartner
 
     const sizing = useMemo(() => {
       const _map = (
@@ -222,8 +222,8 @@ export const PlanResultsChartCard = React.memo(
     }, [targetSizing, transition.duration])
 
     const numSuccessfullRuns =
-      tpawResult.numSimulationsActual - tpawResult.numRunsWithInsufficientFunds
-    const successRate = numSuccessfullRuns / tpawResult.numSimulationsActual
+      simulationResult.numSimulationsActual - simulationResult.numRunsWithInsufficientFunds
+    const successRate = numSuccessfullRuns / simulationResult.numSimulationsActual
     const planColors = usePlanColors()
 
     const isMobile = useMemo(() => getIsMobile(), [])
@@ -333,10 +333,10 @@ export const PlanResultsChartCard = React.memo(
               : successRate < 0.99
               ? formatPercentage(1)(successRate)
               : formatPercentage(2)(successRate)}
-            {tpawResult.params.original.advanced.sampling.type ===
+            {simulationResult.args.planParamsProcessed.planParams.advanced.sampling.type ===
               'historical' && (
               <span className="sm:inline hidden ml-2 font-normal text-sm lighten">
-                {numSuccessfullRuns} of {tpawResult.numSimulationsActual}
+                {numSuccessfullRuns} of {simulationResult.numSimulationsActual}
               </span>
             )}
           </div>

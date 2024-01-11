@@ -9,7 +9,7 @@ import React, {
 } from 'react'
 import ReactDOM from 'react-dom'
 import { fGet, noCase } from '../../../Utils/Utils'
-import { useWindowSize } from '../../App/WithWindowSize'
+import { useSystemInfo } from '../../App/WithSystemInfo'
 
 export const ContextMenu2 = React.memo(
   ({
@@ -40,7 +40,7 @@ export const ContextMenu2 = React.memo(
     onMenuClose?: () => void
     getMarginToWindow?: (windowWidthName: string) => number
   }) => {
-    const { windowSize, windowWidthName } = useWindowSize()
+    const { windowSize, windowWidthName } = useSystemInfo()
     const marginToWindow = getMarginToWindow(windowWidthName)
 
     const [referenceElement, setReferenceElement] =
@@ -117,7 +117,7 @@ export const ContextMenu2 = React.memo(
               >
                 <Transition.Child
                   ref={setOuterElement}
-                  className="absolute inset-0 bg-black transition-opacity duration-300 "
+                  className="absolute inset-0 bg-black transition-opacity duration-300 opacity-50 "
                   enterFrom="opacity-0 "
                   enterTo="opacity-50 "
                   leaveFrom="opacity-50 "

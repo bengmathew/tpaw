@@ -1,4 +1,4 @@
-import { noCase } from '@tpaw/common'
+import { PlanParams, noCase } from '@tpaw/common'
 import React from 'react'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import {
@@ -14,6 +14,7 @@ import {
   PlanInputRiskTPAW,
   PlanInputRiskTPAWSummary,
 } from './PlanInputRiskTPAW'
+import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 
 export const PlanInputRisk = React.memo((props: PlanInputBodyPassThruProps) => {
   const { planParams } = useSimulation()
@@ -35,16 +36,29 @@ export const PlanInputRisk = React.memo((props: PlanInputBodyPassThruProps) => {
   )
 })
 
-export const PlanInputRiskSummary = React.memo(() => {
-  const { planParams } = useSimulation()
-  switch (planParams.advanced.strategy) {
-    case 'TPAW':
-      return <PlanInputRiskTPAWSummary />
-    case 'SPAW':
-      return <PlanInputRiskSPAWSummary />
-    case 'SWR':
-      return <PlanInputRiskSWRSummary />
-    default:
-      noCase(planParams.advanced.strategy)
-  }
-})
+export const PlanInputRiskSummary = React.memo(
+  ({
+    planParamsExt,
+    defaultPlanParams,
+  }: {
+    planParamsExt: PlanParamsExtended
+    defaultPlanParams: PlanParams
+  }) => {
+    const { planParams } = planParamsExt
+    switch (planParams.advanced.strategy) {
+      case 'TPAW':
+        return (
+          <PlanInputRiskTPAWSummary
+            planParams={planParams}
+            defaultPlanParams={defaultPlanParams}
+          />
+        )
+      case 'SPAW':
+        return <PlanInputRiskSPAWSummary planParams={planParams} />
+      case 'SWR':
+        return <PlanInputRiskSWRSummary planParamsExt={planParamsExt} />
+      default:
+        noCase(planParams.advanced.strategy)
+    }
+  },
+)

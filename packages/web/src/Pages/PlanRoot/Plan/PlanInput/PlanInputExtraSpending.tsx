@@ -2,6 +2,7 @@ import { MonthRange } from '@tpaw/common'
 import { clsx } from 'clsx'
 import _ from 'lodash'
 import React, { useState } from 'react'
+import { PlanParamsExtended } from '../../../../UseSimulator/ExtentPlanParams'
 import { Contentful } from '../../../../Utils/Contentful'
 import { paddingCSS, paddingCSSStyleHorz } from '../../../../Utils/Geometry'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
@@ -235,8 +236,14 @@ export const PlanInputExtraSpending = React.memo(
 )
 
 export const PlanInputExtraSpendingSummary = React.memo(
-  ({ forPrint = false }: { forPrint?: boolean }) => {
-    const { planParams, planParamsExt } = useSimulation()
+  ({
+    forPrint = false,
+    planParamsExt,
+  }: {
+    forPrint?: boolean
+    planParamsExt: PlanParamsExtended
+  }) => {
+    const { planParams } = planParamsExt
     const { validMonthRangeAsMFN } = planParamsExt
     const { essential, discretionary } =
       planParams.adjustmentsToSpending.extraSpending
@@ -260,6 +267,7 @@ export const PlanInputExtraSpendingSummary = React.memo(
             <PlanInputSummaryValueForMonthRange
               entries={essential}
               range={validMonthRangeAsMFN('extra-spending')}
+              planParamsExt={planParamsExt}
             />
           </>
         )}
@@ -278,6 +286,7 @@ export const PlanInputExtraSpendingSummary = React.memo(
             <PlanInputSummaryValueForMonthRange
               entries={discretionary}
               range={validMonthRangeAsMFN('extra-spending')}
+              planParamsExt={planParamsExt}
             />
           </>
         )}

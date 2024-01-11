@@ -11,8 +11,9 @@ import {
   WithScrollbarWidth,
   useScrollbarWidth,
 } from '../../App/WithScrollbarWidth'
-import { useWindowSize } from '../../App/WithWindowSize'
+import { useSystemInfo } from '../../App/WithSystemInfo'
 import { ChartPointerPortal } from '../../Common/Chart/ChartComponent/ChartPointerPortal'
+import { useNonPlanParams } from '../PlanRootHelpers/WithNonPlanParams'
 import { useSimulation } from '../PlanRootHelpers/WithSimulation'
 import { PlanChartPointer } from './PlanChartPointer/PlanChartPointer'
 import { PlanContact } from './PlanContact/PlanContact'
@@ -27,7 +28,6 @@ import { PlanSectionName } from './PlanInput/Helpers/PlanSectionName'
 import { PlanInput } from './PlanInput/PlanInput'
 import { PlanMenu } from './PlanMenu/PlanMenu'
 import { PlanMigrationWarnings } from './PlanMigrationWarnings'
-import { PlanPrint } from './PlanPrint/PlanPrint'
 import { PlanResults } from './PlanResults/PlanResults'
 import { planResultsChartLabel } from './PlanResults/PlanResultsChartCard/PlanResultsChartLabel'
 import { isPlanResultsChartSpendingTotalFundingSourcesType } from './PlanResults/PlanResultsChartType'
@@ -38,7 +38,6 @@ import { PlanSummary } from './PlanSummary/PlanSummary'
 import { PlanSyncStateDev } from './PlanSyncStateDev'
 import { usePlanColors } from './UsePlanColors'
 import { WithPlanResultsChartData } from './WithPlanResultsChartData'
-import { PlanServerImplSyncState } from '../PlanServerImpl/PlanServerImplSyncState'
 
 export const Plan = React.memo(() => {
   return (
@@ -50,6 +49,7 @@ export const Plan = React.memo(() => {
 Plan.displayName = 'Plan'
 
 const _Plan = React.memo(() => {
+  const { nonPlanParams } = useNonPlanParams()
   const { planParams, simulationInfoByMode, simulationInfoBySrc } =
     useSimulation()
 
@@ -57,15 +57,15 @@ const _Plan = React.memo(() => {
   const isTallMenu =
     simulationInfoBySrc.src === 'localMain' ||
     simulationInfoByMode.mode === 'history'
-  const { windowSize, windowWidthName } = useWindowSize()
+  const { windowSize, windowWidthName } = useSystemInfo()
   const scrollbarWidth = useScrollbarWidth()
   const aspectRatio = windowSize.width / windowSize.height
   const layout =
     windowWidthName === 'xs'
       ? 'mobile'
       : aspectRatio > 1.2
-      ? 'laptop'
-      : 'desktop'
+        ? 'laptop'
+        : 'desktop'
 
   const _sizing = useMemo(
     () => planSizing(layout, windowSize, scrollbarWidth, isSWR, isTallMenu),
@@ -115,7 +115,7 @@ const _Plan = React.memo(() => {
   const [chartDiv, setChartDiv] = useState<HTMLElement | null>(null)
   const isIPhone = window.navigator.userAgent.match(/iPhone/i) !== null
   const planColors = usePlanColors()
-  const showPrint = useURLParam('print') === 'true'
+
   const planLabel = block(() => {
     switch (simulationInfoBySrc.src) {
       case 'link':
@@ -130,99 +130,108 @@ const _Plan = React.memo(() => {
         noCase(simulationInfoBySrc)
     }
   })
-  return (
-    <WithPlanResultsChartData
-      planSizing={_sizing}
-      planTransitionState={transition.target}
-    >
-      {showPrint && <PlanPrint planLabel={planLabel ?? null} />}
-      <AppPage
-        // iPhone viewport height is the max viewport height, but the scroll
-        // that results does not properly hide the address and nav bar, so it
-        // just does not work. Tested on iOS 15.4. So dont use h-screen for
-        // iPhone, max out based on windowSize.
-        // className={`${i  sIPhone ? '' : 'h-screen'} bg-planBG overflow-hidden`}
-        className={clix(
-          showPrint && 'hidden',
-          planColors.pageBG,
-          'overflow-hidden',
-          !isIPhone && 'h-screen',
-          // state.section === 'print' && 'hidden',
-        )}
-        style={{ height: isIPhone ? `${windowSize.height}px` : undefined }}
-        title={_.compact([
-          `Plan ${planLabel ? `(${planLabel}) ` : ''}`,
-          ...(showPrint
-            ? ['Print']
-            : [
-                planChartType === 'spending-total'
-                  ? undefined
-                  : `View: ${_.compact([
-                      ...chartLabel.label.full,
-                      chartLabel.subLabel,
-                    ]).join(' > ')}`,
-                state.section === 'summary'
-                  ? undefined
-                  : planSectionLabel(state.section),
-              ]),
-          'TPAW Planner',
-        ]).join(' - ')}
-      >
-        {({ setDarkHeader }) => (
-          <>
-            {paramsInputTypes.map((type) => (
-              <PlanInput
-                key={type}
-                layout={layout}
-                sizing={_sizing.input}
-                planTransition={transition}
-                planInputType={type}
-              />
-            ))}
-            <PlanHelp sizing={_sizing.help} planTransition={transition} />
 
-            <PlanSummary
-              section={state.section}
-              sizing={_sizing.summary}
-              planTransition={transition}
-            />
-            <PlanMenu sizing={_sizing.menu} planTransition={transition} />
-            <PlanContact sizing={_sizing.contact} planTransition={transition} />
-            <PlanMigrationWarnings />
-            <PlanDialogOverlay chartDiv={chartDiv} />
-            <div
-              className="absolute z-40 inset-0 pointer-events-none bg-black/60"
-              style={{
-                transitionProperty: 'opacity',
-                transitionDuration: '300ms',
-                opacity: `${getIsMobile() && chartHover ? 1 : 0}`,
-              }}
-            />
-            {/* Place this before PlanResults, so sizing changes propagate to it first. */}
-            <PlanChartPointer
-              sizing={_sizing.pointer}
-              planTransition={transition}
-              chartPointerPortal={chartPointerPortal}
-            />
-            <PlanResults
-              ref={setChartDiv}
-              layout={layout}
-              sizing={_sizing.chart}
-              planTransition={transition}
-              section={state.section}
-              chartPointerPortal={chartPointerPortal}
-              onChartHover={(hover) => {
-                if (getIsMobile()) setDarkHeader(hover)
-                setChartHover(hover)
-              }}
-              chartHover={chartHover}
-            />
-            {/* <PlanSyncState /> */}
-            <PlanSyncStateDev />
-          </>
-        )}
-      </AppPage>
-    </WithPlanResultsChartData>
+  const isPrintView = useURLParam('pdf-report') === 'true'
+  return (
+    <>
+      <WithPlanResultsChartData
+        planSizing={_sizing}
+        planTransitionState={transition.target}
+        planColors={planColors}
+        alwaysShowAllMonths={nonPlanParams.dev.alwaysShowAllMonths}
+      >
+        <AppPage
+          // iPhone viewport height is the max viewport height, but the scroll
+          // that results does not properly hide the address and nav bar, so it
+          // just does not work. Tested on iOS 15.4. So dont use h-screen for
+          // iPhone, max out based on windowSize.
+          // className={`${i  sIPhone ? '' : 'h-screen'} bg-planBG overflow-hidden`}
+          className={clix(
+            isPrintView && 'hidden',
+            planColors.pageBG,
+            'overflow-hidden',
+            !isIPhone && 'h-screen',
+          )}
+          style={{ height: isIPhone ? `${windowSize.height}px` : undefined }}
+          title={_.compact([
+            `Plan ${planLabel ? `(${planLabel}) ` : ''}`,
+            ...(isPrintView
+              ? ['PDF Report']
+              : [
+                  planChartType === 'spending-total'
+                    ? undefined
+                    : `View: ${_.compact([
+                        ...chartLabel.label.full,
+                        chartLabel.subLabel,
+                      ]).join(' > ')}`,
+                  state.section === 'summary'
+                    ? undefined
+                    : planSectionLabel(state.section),
+                ]),
+            'TPAW Planner',
+          ]).join(' - ')}
+          // Otherwise header will be hidden.
+          isHeaderAPortal={isPrintView}
+        >
+          {({ setDarkHeader }) => (
+            <>
+              {paramsInputTypes.map((type) => (
+                <PlanInput
+                  key={type}
+                  layout={layout}
+                  sizing={_sizing.input}
+                  planTransition={transition}
+                  planInputType={type}
+                />
+              ))}
+              <PlanHelp sizing={_sizing.help} planTransition={transition} />
+
+              <PlanSummary
+                section={state.section}
+                sizing={_sizing.summary}
+                planTransition={transition}
+              />
+              <PlanMenu sizing={_sizing.menu} planTransition={transition} />
+              <PlanContact
+                sizing={_sizing.contact}
+                planTransition={transition}
+              />
+              <PlanMigrationWarnings />
+              <PlanDialogOverlay chartDiv={chartDiv} />
+              <div
+                className="absolute z-40 inset-0 pointer-events-none bg-black/60"
+                style={{
+                  transitionProperty: 'opacity',
+                  transitionDuration: '300ms',
+                  opacity: `${getIsMobile() && chartHover ? 1 : 0}`,
+                }}
+              />
+              {/* Place this before PlanResults, so sizing changes propagate to it first. */}
+              <PlanChartPointer
+                sizing={_sizing.pointer}
+                planTransition={transition}
+                chartPointerPortal={chartPointerPortal}
+              />
+              <PlanResults
+                ref={setChartDiv}
+                layout={layout}
+                sizing={_sizing.chart}
+                planTransition={transition}
+                section={state.section}
+                chartPointerPortal={chartPointerPortal}
+                onChartHover={(hover) => {
+                  if (getIsMobile()) setDarkHeader(hover)
+                  setChartHover(hover)
+                }}
+                chartHover={chartHover}
+              />
+              {/* <PlanSyncState /> */}
+              <PlanSyncStateDev />
+            </>
+          )}
+        </AppPage>
+      </WithPlanResultsChartData>
+    </>
   )
 })
 _Plan.displayName = '_Plan'

@@ -1,12 +1,12 @@
 import { rectExt } from '../../../../../../Utils/Geometry'
 import { ChartComponent } from '../../../../../Common/Chart/ChartComponent/ChartComponent'
 import { ChartContext } from '../../../../../Common/Chart/ChartContext'
-import { PlanResultsChartData } from './PlanResultsChartData'
+import { PlanResultsChartData, PlanResultsChartDataForPDF } from './PlanResultsChartData'
 
 export class PlanResultsChartCustomComponenet
   implements
     ChartComponent<{
-      data: PlanResultsChartData
+      data: PlanResultsChartDataForPDF
     }>
 {
   constructor(private opts: { gapToLine: number; lineWidth: number }) {}
@@ -16,7 +16,7 @@ export class PlanResultsChartCustomComponenet
     currState,
     stateTransition,
   }: ChartContext<{
-    data: PlanResultsChartData
+    data: PlanResultsChartDataForPDF
   }>) {
     const { plotArea, viewport } = currState.derivedState
     const { planColors } = stateTransition.target.params.data

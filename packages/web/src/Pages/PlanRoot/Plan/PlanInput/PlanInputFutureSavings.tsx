@@ -1,4 +1,5 @@
 import { default as React, useRef, useState } from 'react'
+import { PlanParamsExtended } from '../../../../UseSimulator/ExtentPlanParams'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import {
   EditValueForMonthRange,
@@ -123,13 +124,16 @@ const _FutureSavingsCard = React.memo(
   },
 )
 
-export const PlanInputFutureSavingsSummary = React.memo(() => {
-  const { planParams, planParamsExt } = useSimulation()
-  const { validMonthRangeAsMFN } = planParamsExt
-  return (
-    <PlanInputSummaryValueForMonthRange
-      entries={planParams.wealth.futureSavings}
-      range={validMonthRangeAsMFN('future-savings')}
-    />
-  )
-})
+export const PlanInputFutureSavingsSummary = React.memo(
+  ({ planParamsExt }: { planParamsExt: PlanParamsExtended }) => {
+    const { planParams } = planParamsExt
+    const { validMonthRangeAsMFN } = planParamsExt
+    return (
+      <PlanInputSummaryValueForMonthRange
+        entries={planParams.wealth.futureSavings}
+        range={validMonthRangeAsMFN('future-savings')}
+        planParamsExt={planParamsExt}
+      />
+    )
+  },
+)

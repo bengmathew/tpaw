@@ -1,6 +1,7 @@
 import { faMinus, faPlus } from '@fortawesome/pro-light-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Switch } from '@headlessui/react'
+import { PlanParams } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useMemo, useState } from 'react'
 import { Contentful } from '../../../../Utils/Contentful'
@@ -20,21 +21,21 @@ import {
 
 export const PlanInputSpendingCeilingAndFloor = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const { planParams, tpawResult } = useSimulation()
+    const { planParams, simulationResult } = useSimulation()
     const { initialCeiling, initialFloor } = useMemo(() => {
       // planParamsExt from result because we use it to index into the result.
-      const withdrawalStartAsMFN = tpawResult.planParamsExt.asMFN(
-        tpawResult.planParamsExt.withdrawalStartMonth,
+      const withdrawalStartAsMFN = simulationResult.args.planParamsExt.asMFN(
+        simulationResult.args.planParamsExt.withdrawalStartMonth,
       )
       const last = fGet(
         _.last(
-          tpawResult.savingsPortfolio.withdrawals.total
+          simulationResult.savingsPortfolio.withdrawals.total
             .byPercentileByMonthsFromNow,
         ),
       ).data
       const first = fGet(
         _.first(
-          tpawResult.savingsPortfolio.withdrawals.total
+          simulationResult.savingsPortfolio.withdrawals.total
             .byPercentileByMonthsFromNow,
         ),
       ).data
@@ -52,7 +53,7 @@ export const PlanInputSpendingCeilingAndFloor = React.memo(
       )
 
       return { initialCeiling, initialFloor }
-    }, [tpawResult, planParams])
+    }, [simulationResult, planParams])
     return (
       <PlanInputBody {...props}>
         <>
@@ -294,24 +295,25 @@ const _roundUp = (x: number, step: number) => {
   return xPlusStep - (xPlusStep % step)
 }
 
-export const PlanInputSpendingCeilingAndFloorSummary = React.memo(() => {
-  const { planParams } = useSimulation()
-  const { monthlySpendingCeiling, monthlySpendingFloor } =
-    planParams.adjustmentsToSpending.tpawAndSPAW
-  return (
-    <>
-      <h2>
-        Ceiling:{' '}
-        {monthlySpendingCeiling !== null
-          ? `${formatCurrency(monthlySpendingCeiling)} per month`
-          : 'None'}
-      </h2>
-      <h2>
-        Floor:{' '}
-        {monthlySpendingFloor !== null
-          ? `${formatCurrency(monthlySpendingFloor)} per month`
-          : 'None'}
-      </h2>
-    </>
-  )
-})
+export const PlanInputSpendingCeilingAndFloorSummary = React.memo(
+  ({ planParams }: { planParams: PlanParams }) => {
+    const { monthlySpendingCeiling, monthlySpendingFloor } =
+      planParams.adjustmentsToSpending.tpawAndSPAW
+    return (
+      <>
+        <h2>
+          Ceiling:{' '}
+          {monthlySpendingCeiling !== null
+            ? `${formatCurrency(monthlySpendingCeiling)} per month`
+            : 'None'}
+        </h2>
+        <h2>
+          Floor:{' '}
+          {monthlySpendingFloor !== null
+            ? `${formatCurrency(monthlySpendingFloor)} per month`
+            : 'None'}
+        </h2>
+      </>
+    )
+  },
+)

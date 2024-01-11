@@ -299,10 +299,12 @@ export namespace Sankey {
       color: string
     }) => {
       const x = columnIndex * (sizing.nodeXGap + sizing.nodeWidth)
-      const labelWidth =
+      const labelWidth = Math.max(
+        0,
         labelPosition === 'top'
           ? sizing.width
-          : sizing.nodeXGap - sizing.nodeWidth - 2
+          : sizing.nodeXGap - sizing.nodeWidth - 2,
+      )
       return (
         <>
           <rect
@@ -319,17 +321,17 @@ export namespace Sankey {
               labelPosition === 'left'
                 ? x + sizing.nodeWidth + 2
                 : labelPosition === 'right'
-                ? x - labelWidth - 2
-                : labelPosition === 'top'
-                ? x + sizing.nodeWidth / 2 - labelWidth / 2
-                : noCase(labelPosition)
+                  ? x - labelWidth - 2
+                  : labelPosition === 'top'
+                    ? x + sizing.nodeWidth / 2 - labelWidth / 2
+                    : noCase(labelPosition)
             }
             y={
               labelPosition === 'left' || labelPosition === 'right'
                 ? y - sizing.nodeYGap / 2
                 : labelPosition === 'top'
-                ? y - sizing.paddingTop
-                : noCase(labelPosition)
+                  ? y - sizing.paddingTop
+                  : noCase(labelPosition)
             }
             width={labelWidth}
             height={height + sizing.nodeYGap}
@@ -340,10 +342,10 @@ export namespace Sankey {
                 labelPosition === 'right'
                   ? 'justify-center  items-end text-right'
                   : labelPosition === 'left'
-                  ? 'justify-center  items-start'
-                  : labelPosition === 'top'
-                  ? 'justify-start  items-center'
-                  : noCase(labelPosition),
+                    ? 'justify-center  items-start'
+                    : labelPosition === 'top'
+                      ? 'justify-start  items-center'
+                      : noCase(labelPosition),
               )}
             >
               {label}

@@ -8,7 +8,7 @@ import {
   PlanParams,
 } from './PlanParams'
 
-type MarketData = {
+export type DataForMarketBasedPlanParamValues = {
   CAPE: {
     suggested: number
     oneOverCAPE: number
@@ -23,7 +23,7 @@ export const EXPECTED_ANNUAL_RETURN_PRESETS = (
     PlanParams['advanced']['expectedAnnualReturnForPlanning']['type'],
     'manual'
   >,
-  { CAPE, bondRates }: MarketData,
+  { CAPE, bondRates }: DataForMarketBasedPlanParamValues,
 ) => {
   const suggested = {
     stocks: _.round(CAPE.suggested, 3),
@@ -53,8 +53,9 @@ export const EXPECTED_ANNUAL_RETURN_PRESETS = (
   }
 }
 
-export const SUGGESTED_ANNUAL_INFLATION = (marketData: MarketData) =>
-  _.round(marketData.inflation.value, 3)
+export const SUGGESTED_ANNUAL_INFLATION = (
+  marketData: DataForMarketBasedPlanParamValues,
+) => _.round(marketData.inflation.value, 3)
 
 export const DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT = (
   retirementLengthInMonths: number,

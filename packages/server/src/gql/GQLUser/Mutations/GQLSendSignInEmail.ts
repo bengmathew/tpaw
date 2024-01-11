@@ -18,7 +18,7 @@ builder.mutationField('sendSignInEmail', (t) =>
     resolve: async (_, { input }) => {
       const guard: JSONGuard<typeof input> = API.SendSignInEmail.check
       const { email, dest } = guard(input).force()
-      const url = new URL(`${Config.websiteURL}/auth/email`)
+      const url = Config.frontend.paths.auth.email()
       url.searchParams.set('dest', dest)
       const link = await Clients.firebaseAuth.generateSignInWithEmailLink(
         email,

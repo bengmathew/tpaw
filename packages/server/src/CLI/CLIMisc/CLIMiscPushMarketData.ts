@@ -20,7 +20,8 @@ cliMisc
   .command('pushMarketData')
   .option('--printOnly')
   .action(
-    async (options) => await pushMarketData({ printOnly: options.printOnly }),
+    async (options: { printOnly?: boolean }) =>
+      await pushMarketData({ printOnly: options.printOnly }),
   )
 
 const _printLatest = ({
@@ -87,7 +88,7 @@ export const pushMarketData = async (opts: { printOnly?: boolean } = {}) => {
 }
 
 async function _getMarketData() {
-  let [inflation, CAPE, bondRates, dailyStockMarketPerformance] =
+  const [inflation, CAPE, bondRates, dailyStockMarketPerformance] =
     await Promise.all([
       _getInflation(),
       _getCAPE(),
@@ -336,9 +337,6 @@ const fParsePercentString = (x: string) => {
 }
 
 // Date format ISO 2020-03-22
-// Don't user getNYZonedTime.fromISO(date) because that get the timestamp
-// as it local than just changes changes the zone. We want to get the timestamp
-// in NY zone.
 const dateToMarketClosingTime = (date: string) =>
   DateTime.fromISO(`${date}`, {
     zone: fGet(getNYZonedTime.now().zoneName),

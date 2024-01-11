@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/nextjs'
 import {
+  DEFAULT_MONTE_CARLO_SIMULATION_SEED,
   MarketData,
   PlanParams,
   PlanParamsHistoryFns,
@@ -13,14 +14,14 @@ import {
 import { getAuth } from 'firebase/auth'
 import _ from 'lodash'
 import * as uuid from 'uuid'
-import { extendPlanParams } from '../../../TPAWSimulator/ExtentPlanParams'
-import { processPlanParams } from '../../../TPAWSimulator/PlanParamsProcessed/PlanParamsProcessed'
+import { extendPlanParams } from '../../../UseSimulator/ExtentPlanParams'
+import { processPlanParams } from '../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import {
   FirstMonthSavingsPortfolioDetail,
-  firstMonthSavingsPortfolioDetail,
-} from '../../../TPAWSimulator/Worker/FirstMonthSavingsPortfolioDetail'
-import { WASM } from '../../../TPAWSimulator/Worker/GetWASM'
-import { runSimulationInWASM } from '../../../TPAWSimulator/Worker/RunSimulationInWASM'
+  getFirstMonthSavingsPortfolioDetail,
+} from '../../../UseSimulator/Simulator/GetFirstMonthSavingsPortfolioDetail'
+import { WASM } from '../../../UseSimulator/Simulator/GetWASM'
+import { runSimulationInWASM } from '../../../UseSimulator/Simulator/RunSimulationInWASM'
 import { groupBy } from '../../../Utils/GroupBy'
 import { getMarketDataIndexForTime } from '../../Common/GetMarketData'
 
@@ -175,12 +176,13 @@ export namespace CurrentPortfolioBalance {
               exactTimestamp: params.timestamp,
             }
           : params.wealth.portfolioBalance.updatedAtId !==
-            prevPortfolioBalanceChangedAtId
-          ? {
-              amount: params.wealth.portfolioBalance.updatedTo,
-              exactTimestamp: params.wealth.portfolioBalance.updatedAtTimestamp,
-            }
-          : null
+              prevPortfolioBalanceChangedAtId
+            ? {
+                amount: params.wealth.portfolioBalance.updatedTo,
+                exactTimestamp:
+                  params.wealth.portfolioBalance.updatedAtTimestamp,
+              }
+            : null
         return {
           timestamp,
           getArgs: (currEstimate) => {
@@ -343,10 +345,16 @@ export namespace CurrentPortfolioBalance {
       timing.t2 += performance.now() - start
       start = performance.now()
 
-      const result = firstMonthSavingsPortfolioDetail(
-        runSimulationInWASM(paramsProcessed, { start: 0, end: 1 }, wasm, {
-          forFirstMonth: true,
-        }).byMonthsFromNowByRun.savingsPortfolio,
+      const result = getFirstMonthSavingsPortfolioDetail(
+        runSimulationInWASM(
+          paramsProcessed,
+          { start: 0, end: 1 },
+          DEFAULT_MONTE_CARLO_SIMULATION_SEED, // Does not matter since first month is deterministic.
+          wasm,
+          {
+            forFirstMonth: true,
+          },
+        ).byMonthsFromNowByRun.savingsPortfolio,
         paramsProcessed,
       )
       timing.t3 += performance.now() - start

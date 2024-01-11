@@ -7,7 +7,7 @@ import {
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useState } from 'react'
-import { extendPlanParams } from '../TPAWSimulator/ExtentPlanParams'
+import { extendPlanParams } from '../UseSimulator/ExtentPlanParams'
 import { Config } from './Config'
 import { useMarketData } from './PlanRoot/PlanRootHelpers/WithMarketData'
 

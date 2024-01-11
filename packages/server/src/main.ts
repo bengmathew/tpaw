@@ -14,6 +14,7 @@ import './CLI/CLIDev/CLIDevUser/CLIDevUserPlan/CLIDevUserPlanCreateTestPlan.js'
 import './CLI/CLIDev/CLIDevUser/CLIDevUserPlan/CLIDevUserPlanDelete.js'
 import './CLI/CLIDev/CLIDevUser/CLIDevUserPlan/CLIDevUserPlanList.js'
 import './CLI/CLIDev/CLIDevUser/CLIDevUserScratch.js'
+import './CLI/CLIDev/CLIDevSendEmail.js'
 import './CLI/CLIDB/CLIDBMigrate.js'
 import './CLI/CLIScratch.js'
 
@@ -26,6 +27,7 @@ async function main() {
     console.log(chalk.green('DONE'))
   } catch (e) {
     console.error(e)
+
     process.exit(1)
   } finally {
     await Clients.prisma.$disconnect()

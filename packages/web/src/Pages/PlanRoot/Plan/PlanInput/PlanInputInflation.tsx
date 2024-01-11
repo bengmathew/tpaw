@@ -10,6 +10,7 @@ import {
 } from '@tpaw/common'
 import _ from 'lodash'
 import React from 'react'
+import { PlanParamsProcessed } from '../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import { SliderInput } from '../../../Common/Inputs/SliderInput/SliderInput'
@@ -130,8 +131,8 @@ export const _InflationCard = React.memo(
               i % 10 === 0
                 ? ('large' as const)
                 : i % 2 === 0
-                ? ('small' as const)
-                : ('none' as const)
+                  ? ('small' as const)
+                  : ('none' as const)
             }
           />
         )}
@@ -170,17 +171,15 @@ export const useIsPlanInputInflationModified = () => {
   )
 }
 
-export const PlanInputInflationSummary = React.memo(() => {
-  const { planParams, currentMarketData } = useSimulation()
-  const format = formatPercentage(1)
-  return (
-    <h2>
-      {inflationTypeLabel(planParams.advanced.annualInflation)}:{' '}
-      {format(
-        planParams.advanced.annualInflation.type === 'suggested'
-          ? SUGGESTED_ANNUAL_INFLATION(currentMarketData)
-          : planParams.advanced.annualInflation.value,
-      )}
-    </h2>
-  )
-})
+export const PlanInputInflationSummary = React.memo(
+  ({ planParamsProcessed }: { planParamsProcessed: PlanParamsProcessed }) => {
+    const { planParams } = planParamsProcessed
+    const format = formatPercentage(1)
+    return (
+      <h2>
+        {inflationTypeLabel(planParams.advanced.annualInflation)}:{' '}
+        {format(planParamsProcessed.inflation.annual)}
+      </h2>
+    )
+  },
+)

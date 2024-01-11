@@ -26,7 +26,7 @@
     // Input controls.
     "rootDir": "./src",
 
-    "lib": ["es2019", "DOM"],
+    "lib": ["es2019", "DOM", "ESNext"],
     "esModuleInterop": true
   }
 }

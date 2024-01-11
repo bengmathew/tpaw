@@ -14,10 +14,10 @@ type Props = {
 export const PlanResultsChartCardMenuButton = React.memo(
   React.forwardRef<HTMLDivElement, Props>(
     ({ className = '', style }: Props, ref) => {
-      const simulation = useSimulation()
-      const { params } = simulation.tpawResult
+      const { simulationResult } = useSimulation()
+      const { planParams } = simulationResult.args
       const type = usePlanResultsChartType()
-      const { label, subLabel } = planResultsChartLabel(params.original, type)
+      const { label, subLabel } = planResultsChartLabel(planParams, type)
 
       return (
         <div

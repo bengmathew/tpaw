@@ -5,12 +5,12 @@ import { isPlanResultsChartType } from './PlanResultsChartType'
 import { useGetPlanResultsChartURL } from './UseGetPlanResultsChartURL'
 
 export function usePlanResultsChartType() {
-  const { tpawResult } = useSimulation()
+  const { simulationResult } = useSimulation()
   const urlUpdater = useURLUpdater()
   const getPlanResultsChartURL = useGetPlanResultsChartURL()
 
   const typeStr = useURLParam('graph') ?? ''
-  let type = isPlanResultsChartType(tpawResult.params.original, typeStr)
+  let type = isPlanResultsChartType(simulationResult.args.planParamsProcessed.planParams, typeStr)
     ? typeStr
     : 'spending-total'
   if (typeStr.length > 0 && typeStr !== type)

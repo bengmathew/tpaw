@@ -394,6 +394,7 @@ const usePerson2DeleteWarnings = () => {
               entry={x.entry}
               rangeAsMFN={null}
               skipLength
+              planParamsExt={planParamsExt}
             />
           </li>
         ))}
@@ -445,6 +446,7 @@ const useRetireWarnings = (personType: 'person1' | 'person2') => {
                   entry={x}
                   rangeAsMFN={null}
                   skipLength
+                  planParamsExt={planParamsExt}
                 />
               </li>
             ))}
@@ -488,6 +490,7 @@ const useRetireWarnings = (personType: 'person1' | 'person2') => {
                 entry={x.entry}
                 rangeAsMFN={null}
                 skipLength
+                planParamsExt={planParamsExt}
               />
             </li>
           ))}

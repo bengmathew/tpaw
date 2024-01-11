@@ -7,7 +7,6 @@ import _ from 'lodash'
 import Link from 'next/link'
 import React, { CSSProperties, useEffect, useRef, useState } from 'react'
 import { Padding, RectExt, rectExt } from '../../../../../Utils/Geometry'
-import { useWindowSize } from '../../../../App/WithWindowSize'
 import {
   ChartReact,
   ChartReactStatefull,
@@ -28,6 +27,7 @@ import {
   getPlanResultsChartLabelInfoForSpending,
   planResultsChartLabel,
 } from './PlanResultsChartLabel'
+import { useSystemInfo } from '../../../../App/WithSystemInfo'
 
 const maxWidth = 700
 export type PlanChartMainCardMenuStateful = {
@@ -43,9 +43,9 @@ export const PlanResultsChartCardMenu = React.memo(
     style?: CSSProperties
     transition: { target: PlanResultsTransitionState; duration: number }
   }) => {
-    const { windowWidthName } = useWindowSize()
-    const { tpawResult } = useSimulation()
-    const { params } = tpawResult
+    const { windowWidthName } = useSystemInfo()
+    const { simulationResult } = useSimulation()
+    const { planParams } = simulationResult.args
     const planColors = usePlanColors()
     const { nonPlanParams } = useNonPlanParams()
 
@@ -55,16 +55,15 @@ export const PlanResultsChartCardMenu = React.memo(
     const chartH = windowWidthName === 'xs' ? 50 : 55
 
     const essentialArray = _.values(
-      params.original.adjustmentsToSpending.extraSpending.essential,
+      planParams.adjustmentsToSpending.extraSpending.essential,
     ).sort((a, b) => a.sortIndex - b.sortIndex)
 
     const discretionaryArray = _.values(
-      params.original.adjustmentsToSpending.extraSpending.discretionary,
+      planParams.adjustmentsToSpending.extraSpending.discretionary,
     ).sort((a, b) => a.sortIndex - b.sortIndex)
 
-    const spendingLabelInfo = getPlanResultsChartLabelInfoForSpending(
-      params.original,
-    )
+    const spendingLabelInfo =
+      getPlanResultsChartLabelInfoForSpending(planParams)
     const marginToWindow = windowWidthName === 'xs' ? 0 : 10
     return (
       <ContextMenu2
@@ -166,7 +165,7 @@ export const PlanResultsChartCardMenu = React.memo(
                   {expandEssential &&
                     [
                       ..._.values(
-                        params.original.adjustmentsToSpending.extraSpending
+                        planParams.adjustmentsToSpending.extraSpending
                           .essential,
                       ),
                     ]
@@ -182,7 +181,7 @@ export const PlanResultsChartCardMenu = React.memo(
                   {expandEssential &&
                     [
                       ..._.values(
-                        params.original.adjustmentsToSpending.extraSpending
+                        planParams.adjustmentsToSpending.extraSpending
                           .discretionary,
                       ),
                     ]
@@ -269,10 +268,10 @@ const _Button = React.memo(
                 indent === 0
                   ? 'pl-2'
                   : indent === 1
-                  ? 'pl-8'
-                  : indent === 2
-                  ? 'pl-16'
-                  : noCase(indent),
+                    ? 'pl-8'
+                    : indent === 2
+                      ? 'pl-16'
+                      : noCase(indent),
                 'text-start w-full  rounded-lg pr-2 py-1',
               )}
               style={{
@@ -324,13 +323,13 @@ const _Link = React.memo(
     indent: 0 | 1 | 2
     chartH: number
   }) => {
-    const { tpawResult } = useSimulation()
-    const { params } = tpawResult
+    const { simulationResult } = useSimulation()
+    const { planParams } = simulationResult.args
     const getPlanChartURL = useGetPlanResultsChartURL()
     const chartData = useChartData(type)
 
-    const { label, description } = planResultsChartLabel(params.original, type)
-    const { windowWidthName } = useWindowSize()
+    const { label, description } = planResultsChartLabel(planParams, type)
+    const { windowWidthName } = useSystemInfo()
     const width = windowWidthName === 'xs' ? 120 : 145
 
     const planColors = usePlanColors()
@@ -347,10 +346,10 @@ const _Link = React.memo(
                 indent === 0
                   ? 'pl-2'
                   : indent === 1
-                  ? 'pl-8'
-                  : indent === 2
-                  ? 'pl-16'
-                  : noCase(indent),
+                    ? 'pl-8'
+                    : indent === 2
+                      ? 'pl-16'
+                      : noCase(indent),
                 'grid gap-x-4 items-center  rounded-lg pr-2 py-1',
               )}
               style={{

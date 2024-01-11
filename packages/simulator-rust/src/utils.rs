@@ -1,4 +1,6 @@
 use lazy_static::lazy_static;
+use rand::SeedableRng;
+use rand_chacha::{ChaCha20Rng, ChaCha8Rng};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 
@@ -45,6 +47,10 @@ impl AccountForWithdrawal {
 
 struct Store {
     data: Vec<Vec<usize>>,
+    // This should be all the args into generate_random_index_sequences.
+    seed: u64,
+    start_run: usize,
+    num_runs: usize,
     max_num_months: usize,
     block_size: usize,
     max_value: usize,
@@ -53,6 +59,9 @@ struct Store {
 lazy_static! {
     static ref RANDOM_STORE: Mutex<Store> = Mutex::new(Store {
         data: Vec::new(),
+        seed: 0,
+        start_run: 0,
+        num_runs: 0,
         max_num_months: 0,
         block_size: 0,
         max_value: 0,
@@ -67,19 +76,26 @@ pub fn clear_memoized_random_store() {
 use rand::distributions::{Distribution, Uniform};
 
 pub fn generate_random_index_sequences(
-    num_sequences: usize,
+    seed: u64,
+    start_run: usize,
+    num_runs: usize,
     max_num_months: usize,
     block_size: usize,
     max_value: usize,
 ) -> Vec<Vec<usize>> {
-    let uniform = Uniform::from(0..(max_value));
-    let mut rng = rand::thread_rng();
+    let run_seeds: Vec<u64> = Uniform::from(0..u64::MAX)
+        .sample_iter(ChaCha20Rng::seed_from_u64(seed))
+        .take(start_run + num_runs)
+        .collect();
+    let uniform = Uniform::from(0..max_value);
     let num_blocks = max_num_months / block_size + 1 + 1; // Extra +1 to account for staggering.
 
-    return (0..num_sequences)
+    return (start_run..(start_run + num_runs))
         .map(|run_index| {
-            let block_starting_month: Vec<usize> =
-                uniform.sample_iter(&mut rng).take(num_blocks).collect();
+            let block_starting_month: Vec<usize> = uniform
+                .sample_iter(ChaCha8Rng::seed_from_u64(run_seeds[run_index]))
+                .take(num_blocks)
+                .collect();
             return (0..max_num_months)
                 .map(|i| {
                     // Staggering the i's so that block don't change at the same month
@@ -94,6 +110,8 @@ pub fn generate_random_index_sequences(
 }
 
 pub fn memoized_random(
+    seed: u64,
+    start_run: usize,
     num_runs: usize,
     max_num_months: usize,
     block_size: usize,
@@ -101,24 +119,34 @@ pub fn memoized_random(
 ) -> &'static Vec<Vec<usize>> {
     let mut store = RANDOM_STORE.lock().unwrap();
 
-    if store.data.len() < num_runs
+    if store.seed != seed
+        || store.start_run != start_run
+        || store.num_runs != num_runs
         || store.block_size != block_size
         || store.max_num_months != max_num_months
         || store.max_value != max_value
     {
+        store.seed = seed;
+        store.start_run = start_run;
+        store.num_runs = num_runs;
         store.max_num_months = max_num_months;
-        store.max_value = max_value;
         store.block_size = block_size;
+        store.max_value = max_value;
         store.data.clear();
 
-        let mut tail =
-            generate_random_index_sequences(num_runs, max_num_months, block_size, max_value);
+        let mut tail = generate_random_index_sequences(
+            seed,
+            start_run,
+            num_runs,
+            max_num_months,
+            block_size,
+            max_value,
+        );
 
         // web_sys::console::log_1(&wasm_bindgen::JsValue::from_serde(&(&tail)).unwrap());
         store.data.append(&mut tail);
     }
 
-    // let result = &store.data[run_index];
     unsafe { std::mem::transmute(&store.data) }
 }
 

@@ -43,8 +43,8 @@ export const getPlanResultsChartPointer = (
           planTransitionState.section === 'help'
             ? planSizing.pointer.fixed.help
             : planTransitionState.section === 'summary'
-            ? planSizing.pointer.fixed.summary
-            : planSizing.pointer.fixed.input
+              ? planSizing.pointer.fixed.summary
+              : planSizing.pointer.fixed.input
 
         switch (planSizing.args.layout) {
           case 'laptop': {
@@ -263,20 +263,20 @@ const _getHeaderSection = (
       dataX === numMonths
         ? labelBase({}, text({}, 'Legacy'))
         : planParams.people.withPartner
-        ? grid(
-            {
-              gap: { horz: 30, vert: 5 },
-              align: { horz: 'between', vert: 'end' },
-            },
-            [
-              getAgeLine('Your Age', 'person1'),
-              getAgeLine(`Partner's Age`, 'person2'),
-            ],
-          )
-        : oneRowGrid(
-            { gap: 30, align: { horz: 'between', vert: 'end' } },
-            getAgeLine('Age', 'person1'),
-          ),
+          ? grid(
+              {
+                gap: { horz: 30, vert: 5 },
+                align: { horz: 'between', vert: 'end' },
+              },
+              [
+                getAgeLine('Your Age', 'person1'),
+                getAgeLine(`Partner's Age`, 'person2'),
+              ],
+            )
+          : oneRowGrid(
+              { gap: 30, align: { horz: 'between', vert: 'end' } },
+              getAgeLine('Age', 'person1'),
+            ),
     ),
     gap(4),
     style(

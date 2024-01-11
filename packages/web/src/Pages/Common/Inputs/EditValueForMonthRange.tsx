@@ -438,6 +438,7 @@ const _MonthRangeSection = React.memo(
           valueClamped={monthRangeClamped}
           range={validRangeAsMFN}
           skipLength={false}
+          planParamsExt={planParamsExt}
         />
         <>
           {monthRangeClamped ? (
@@ -456,6 +457,7 @@ const _MonthRangeSection = React.memo(
                 valueClamped={monthRangeClamped}
                 range={validRangeAsMFN}
                 skipLength={false}
+                planParamsExt={planParamsExt}
               />
               <button
                 className="underline pt-2"

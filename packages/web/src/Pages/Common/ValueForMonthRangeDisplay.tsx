@@ -1,9 +1,9 @@
 import { ValueForMonthRange } from '@tpaw/common'
 import React from 'react'
+import { PlanParamsExtended } from '../../UseSimulator/ExtentPlanParams'
 import { formatCurrency } from '../../Utils/FormatCurrency'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { trimAndNullify } from '../../Utils/TrimAndNullify'
-import { useSimulation } from '../PlanRoot/PlanRootHelpers/WithSimulation'
 import { MonthRangeDisplay } from './MonthRangeDisplay'
 
 export const ValueForMonthRangeDisplay = React.memo(
@@ -13,14 +13,15 @@ export const ValueForMonthRangeDisplay = React.memo(
     entry,
     rangeAsMFN,
     skipLength,
+    planParamsExt,
   }: {
     className?: string
     labelClassName?: string
     entry: ValueForMonthRange
     rangeAsMFN: SimpleRange | null
     skipLength: boolean
+    planParamsExt: PlanParamsExtended
   }) => {
-    const { planParamsExt } = useSimulation()
     const { clampMonthRangeToNow } = planParamsExt
     return (
       <div className={`${className}`}>
@@ -35,6 +36,7 @@ export const ValueForMonthRangeDisplay = React.memo(
           valueClamped={clampMonthRangeToNow(entry.monthRange)}
           range={rangeAsMFN}
           skipLength={skipLength}
+          planParamsExt={planParamsExt}
         />
       </div>
     )

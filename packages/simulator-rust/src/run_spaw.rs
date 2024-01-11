@@ -105,6 +105,8 @@ fn run_using_historical_returns(
     } else {
         if params.monte_carlo_sampling {
             &memoized_random(
+                params.rand_seed,
+                params.start_run,
                 params.end_run - params.start_run,
                 params.max_num_months,
                 params.monte_carlo_block_size,

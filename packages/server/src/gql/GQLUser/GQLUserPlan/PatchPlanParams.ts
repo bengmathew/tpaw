@@ -26,7 +26,7 @@ export const patchPlanParams = (
   {checkTimestamps = true}: {checkTimestamps?: boolean} = {}
 ): PlanParamsChangePatched[] => {
   const result: (PlanParamsChangePatched | null)[] = []
-  let currParams = cloneJSON(endingParams)
+  const currParams = cloneJSON(endingParams)
   let prevTimestamp = Infinity
   planParamsHistoryReversed.forEach((x, reverseI) => {
     assert(x.timestamp.getTime() < prevTimestamp)

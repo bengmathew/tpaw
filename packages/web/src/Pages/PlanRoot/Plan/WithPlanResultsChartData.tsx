@@ -1,49 +1,61 @@
+import { fGet } from '@tpaw/common'
 import _ from 'lodash'
 import { ReactNode, useMemo } from 'react'
+import { PERCENTILES_STR } from '../../../UseSimulator/Simulator/Simulator'
 import { createContext } from '../../../Utils/CreateContext'
-import { useSimulation } from '../PlanRootHelpers/WithSimulation'
+import { useSimulationResult } from '../PlanRootHelpers/WithSimulation'
 import {
   PlanResultsChartData,
-  getPlanResultsChartData,
+  PlanResultsChartDataForPDF,
+  getPlanResultsChartDataForPDF,
 } from './PlanResults/PlanResultsChartCard/PlanResultsChart/PlanResultsChartData'
 import { PlanResultsChartType } from './PlanResults/PlanResultsChartType'
-import { PERCENTILES_STR } from '../../../TPAWSimulator/Worker/TPAWRunInWorker'
 import { PlanSizing } from './PlanSizing/PlanSizing'
 import { PlanTransitionState } from './PlanTransition'
-import { usePlanColors } from './UsePlanColors'
-import { fGet } from '@tpaw/common'
+import { PlanColors } from './UsePlanColors'
 
-type _Value = Map<PlanResultsChartType, PlanResultsChartData>
+type _Value = Map<PlanResultsChartType, PlanResultsChartDataForPDF>
 
-const [Context, useContext] = createContext<_Value>('ChartData')
-
-export const useChartData = (type: PlanResultsChartType) =>
-  fGet(useContext().get(type))
-
-export const WithPlanResultsChartData = ({
-  children,
-  planSizing,
-  planTransitionState,
-}: {
-  children: ReactNode
+const [PDFContext, usePDFContext] = createContext<_Value>('ChartDataForPDF')
+const [NonPDFContext, useNonPDFContext] = createContext<{
   planSizing: PlanSizing
   planTransitionState: PlanTransitionState
+}>('ChartDataForNonPDF')
+
+export const useChartDataForPDF = (
+  type: PlanResultsChartType,
+): PlanResultsChartDataForPDF => fGet(usePDFContext().get(type))
+
+export const useChartData = (
+  type: PlanResultsChartType,
+): PlanResultsChartData => {
+  return { ...useChartDataForPDF(type), ...useNonPDFContext() }
+}
+
+export const WithPlanResultsChartDataForPDF = ({
+  children,
+  planColors,
+  layout,
+  alwaysShowAllMonths,
+}: {
+  children: ReactNode
+  layout: 'laptop' | 'desktop' | 'mobile'
+  planColors: PlanColors
+  alwaysShowAllMonths: boolean
 }) => {
-  const simulation = useSimulation()
-  const { tpawResult } = simulation
-  const planColors = usePlanColors()
+  const simulationResult = useSimulationResult()
   const value = useMemo(() => {
-    const { params } = tpawResult
-    const result = new Map<PlanResultsChartType, PlanResultsChartData>()
+    const { planParams } = simulationResult.args
+    const result = new Map<PlanResultsChartType, PlanResultsChartDataForPDF>()
     const _add = (type: PlanResultsChartType) => {
       result.set(
         type,
-        getPlanResultsChartData(
+        getPlanResultsChartDataForPDF(
           type,
-          tpawResult,
-          planSizing,
-          planTransitionState,
+          simulationResult,
+          layout,
           planColors,
+          alwaysShowAllMonths,
         ),
       )
     }
@@ -53,11 +65,11 @@ export const WithPlanResultsChartData = ({
       _add(`spending-total-funding-sources-${percentile}`),
     )
     _add('spending-general')
+    _.values(planParams.adjustmentsToSpending.extraSpending.essential).forEach(
+      (x) => [x.id, _add(`spending-essential-${x.id}`)],
+    )
     _.values(
-      params.original.adjustmentsToSpending.extraSpending.essential,
-    ).forEach((x) => [x.id, _add(`spending-essential-${x.id}`)])
-    _.values(
-      params.original.adjustmentsToSpending.extraSpending.discretionary,
+      planParams.adjustmentsToSpending.extraSpending.discretionary,
     ).forEach((x) => [x.id, _add(`spending-discretionary-${x.id}`)])
     _add('portfolio')
     _add('asset-allocation-savings-portfolio')
@@ -65,8 +77,33 @@ export const WithPlanResultsChartData = ({
     _add('withdrawal')
 
     return result
-  }, [planColors, planSizing, planTransitionState, tpawResult])
+  }, [alwaysShowAllMonths, layout, planColors, simulationResult])
 
-  return <Context.Provider value={value}>{children}</Context.Provider>
+  return <PDFContext.Provider value={value}>{children}</PDFContext.Provider>
 }
-WithPlanResultsChartData.displayName = 'WithChartData'
+
+export const WithPlanResultsChartData = ({
+  children,
+  planColors,
+  alwaysShowAllMonths,
+  planSizing,
+  planTransitionState,
+}: {
+  children: ReactNode
+  planColors: PlanColors
+  alwaysShowAllMonths: boolean
+  planSizing: PlanSizing
+  planTransitionState: PlanTransitionState
+}) => {
+  return (
+    <NonPDFContext.Provider value={{ planSizing, planTransitionState }}>
+      <WithPlanResultsChartDataForPDF
+        planColors={planColors}
+        layout={planSizing.args.layout}
+        alwaysShowAllMonths={alwaysShowAllMonths}
+      >
+        {children}
+      </WithPlanResultsChartDataForPDF>
+    </NonPDFContext.Provider>
+  )
+}

@@ -6,6 +6,18 @@ input CreateLinkBasedPlanInput {
   params: String!
 }
 
+input GeneratePDFReportInput {
+  auth: String
+  devicePixelRatio: Int!
+  url: String!
+  viewportHeight: Int!
+  viewportWidth: Int!
+}
+
+type GeneratePDFReportOutput {
+  pdfURL: String!
+}
+
 type LinkBasedPlan {
   createdAt: Float!
   id: ID!
@@ -15,6 +27,7 @@ type LinkBasedPlan {
 type Mutation {
   crash: Success!
   createLinkBasedPlan(input: CreateLinkBasedPlanInput!): LinkBasedPlan!
+  generatePDFReport(input: GeneratePDFReportInput!): GeneratePDFReportOutput!
   sendSignInEmail(input: SendSignInEmailInput!): Success!
   userMergeFromClient(input: UserMergeFromClientInput!): UserMergeFromClientResult!
   userPlanCopy(input: UserPlanCopyInput!): PlanAndUserResult!

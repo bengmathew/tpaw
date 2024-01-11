@@ -9,11 +9,22 @@ type Props = {
     | ((x: { setDarkHeader: (x: boolean) => void }) => ReactNode)
   style?: React.CSSProperties
   className?: string
+  isHeaderAPortal?: boolean
   onClick?: () => void
 }
 export const AppPage = React.memo(
   React.forwardRef<HTMLDivElement, Props>(
-    ({ title = '', children, className = '', style, onClick }: Props, ref) => {
+    (
+      {
+        title = '',
+        children,
+        className = '',
+        style,
+        onClick,
+        isHeaderAPortal = false,
+      }: Props,
+      ref,
+    ) => {
       const [darkHeader, setDarkHeader] = useState(false)
       return (
         <div
@@ -28,7 +39,7 @@ export const AppPage = React.memo(
           {typeof children === 'function'
             ? children({ setDarkHeader })
             : children}
-          <Header isDark={darkHeader} />
+          <Header isDark={darkHeader} isPortal={isHeaderAPortal} />
         </div>
       )
     },

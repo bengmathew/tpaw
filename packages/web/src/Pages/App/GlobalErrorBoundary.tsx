@@ -9,6 +9,7 @@ import Head from 'next/head'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { ReactNode, useCallback, useEffect, useState } from 'react'
+import { ToastOptions } from 'react-toastify'
 import { createContext } from '../../Utils/CreateContext'
 import { errorToast } from '../../Utils/CustomToasts'
 import { ErrorBoundary } from '../../Utils/ErrorBoundary'
@@ -25,17 +26,28 @@ export { useSetGlobalError }
 export const useDefaultErrorHandlerForNetworkCall = () => {
   const { setGlobalError } = useSetGlobalError()
   const defaultErrorHandlerForNetworkCall = useCallback(
-    ({ e, toast }: { e: Error; toast: string | null }) => {
+    ({
+      e,
+      toast,
+      toastId,
+    }: {
+      e: Error
+      toast: string | null
+      toastId?: string
+    }) => {
       Sentry.captureException(e)
       if (e instanceof AppError) {
+        const toastOpts: ToastOptions = { toastId }
         if (e.code === 'serverDownForMaintenance') {
           errorToast(
             'Could not complete action. The server is down for maintenace.',
+            toastOpts,
           )
           return
         } else if (e.code === 'serverDownForUpdate') {
           errorToast(
             'Could not complete action. The server is updating to a new version.',
+            toastOpts,
           )
           return
         } else if (e.code === 'clientNeedsUpdate') {
@@ -47,7 +59,7 @@ export const useDefaultErrorHandlerForNetworkCall = () => {
     },
     [setGlobalError],
   )
-  useAssertConst([defaultErrorHandlerForNetworkCall])
+  useAssertConst([setGlobalError])
   return {
     defaultErrorHandlerForNetworkCall,
   }
@@ -98,6 +110,10 @@ export const _ErrorFallback = React.memo(({ error }: { error: Error }) => {
     setErrorId(Sentry.captureException(error))
     router.events.on('routeChangeComplete', () => window.location.reload())
   }, [error, router])
+
+  useEffect(() => {
+    ;(window as any).__APP_ERROR__ = true 
+  }, [])
 
   return (
     <div className="min-h-screen page">
