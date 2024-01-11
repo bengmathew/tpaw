@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.2
 
-FROM node:20-slim
+FROM node:20
 USER root
 WORKDIR /root
 
