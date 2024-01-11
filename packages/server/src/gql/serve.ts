@@ -96,6 +96,13 @@ async function _impl() {
       res.send('tested')
     }),
   )
+  server.get(
+    '/test-db',
+    asyncHandler(async (req, res) => {
+      await Clients.prisma.user.findMany({ take: 1 })
+      res.send('db test passed')
+    }),
+  )
 
   server.get(
     '/marketDataURL',

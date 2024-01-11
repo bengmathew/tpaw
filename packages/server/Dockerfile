@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.2
 
+# Primsa needs some libs not there in -slim images.
 FROM node:20
 USER root
 WORKDIR /root
