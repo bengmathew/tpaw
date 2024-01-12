@@ -21,6 +21,7 @@ import {
   red,
   amber,
 } from '../../../../../../Utils/ColorPalette'
+import clsx from 'clsx'
 
 export const PlanResultsSidePanelMenuBalanceSheet = React.memo(
   ({ show, onHide }: { show: boolean; onHide: () => void }) => {
@@ -262,7 +263,14 @@ export const BalanceSheetContent = React.memo(
                   />
                 </span>
               </h2>
-              <h2 className="font-medium text-[15px] mt-4">
+              {forPrint && <h2 className="text-[15px]">Net Present Value</h2>}
+
+              <h2
+                className={clsx(
+                  'font-medium text-[15px]',
+                  forPrint ? 'mt-2' : 'mt-4',
+                )}
+              >
                 {formatCurrency(totalWealth)}
               </h2>
             </div>
@@ -439,9 +447,7 @@ export const BalanceSheetContent = React.memo(
     }, [forPrint, simulationResult])
     return (
       <div className={clix(className)}>
-        {forPrint ? (
-          <h2 className="text-center">Net Present Value</h2>
-        ) : (
+        {!forPrint && (
           <>
             <h2 className="font-bold text-2xl sm:text-3xl">Balance Sheet</h2>
             <h2 className="mb-5">Net Present Value</h2>
@@ -457,7 +463,7 @@ export const BalanceSheetContent = React.memo(
               minNodeXGap: forPrint ? 0 : 190,
               nodeWidth: 10,
               nodeYGap: 30,
-              paddingTop: 70,
+              paddingTop: forPrint ? 85 : 70,
               paddingBottom: 40,
             }}
           />

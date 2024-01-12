@@ -43,7 +43,7 @@ export const PlanResultsSidePanelMenu = React.memo(
               color: planColors.results.fg,
             }}
           >
-            {planParams.advanced.strategy === 'TPAW' && (
+          {planParams.advanced.strategy === 'TPAW' && (
               <Menu.Item
                 as="button"
                 className="context-menu-item"

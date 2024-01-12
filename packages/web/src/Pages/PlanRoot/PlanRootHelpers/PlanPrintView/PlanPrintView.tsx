@@ -9,9 +9,7 @@ import { graphql, useMutation } from 'react-relay'
 import { appPaths } from '../../../../AppPaths'
 import { extendPlanParams } from '../../../../UseSimulator/ExtentPlanParams'
 import { processPlanParams } from '../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
-import {
-  SimulationResult
-} from '../../../../UseSimulator/Simulator/Simulator'
+import { SimulationResult } from '../../../../UseSimulator/Simulator/Simulator'
 import { getSimulatorSingleton } from '../../../../UseSimulator/UseSimulator'
 import { asyncEffect } from '../../../../Utils/AsyncEffect'
 import { setCSSPageValue } from '../../../../Utils/SetCSSPageValue'
@@ -32,7 +30,6 @@ import { PlanPrintViewInputSection } from './PlanPrintViewInputSection'
 import { PlanPrintViewResultsSection } from './PlanPrintViewResultsSection/PlanPrintViewResultsSection'
 import { PlanPrintViewTasksForThisMonthSection } from './PlanPrintViewTasksForThisMonthSection'
 import { PlanPrintViewGetShortLinkMutation } from './__generated__/PlanPrintViewGetShortLinkMutation.graphql'
-
 
 export type PlanPrintViewProps = {
   fixed: PlanPrintViewArgs['fixed']
@@ -265,7 +262,10 @@ export const PlanPrintView = React.memo(
                       <PlanPrintViewTasksForThisMonthSection
                         settings={settings}
                       />
-                      <PlanPrintViewBalanceSheetSection settings={settings} />
+                      {simulationResult.args.planParams.advanced.strategy ===
+                        'TPAW' && (
+                        <PlanPrintViewBalanceSheetSection settings={settings} />
+                      )}
                       <PlanPrintViewAppendixSection settings={settings} />
                     </div>
                   </div>
