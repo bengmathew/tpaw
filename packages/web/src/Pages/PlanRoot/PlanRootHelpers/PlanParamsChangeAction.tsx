@@ -10,7 +10,6 @@ import {
   fGet,
   noCase,
   planParamsFns,
-  planParamsMigrate,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { PlanParamsExtended } from '../../../UseSimulator/ExtentPlanParams'
@@ -199,17 +198,13 @@ export const processPlanParamsChangeActionCurrent = (
           const currPerson = _getPerson(clone, personType)
           const defaultPerson = defaultPlanParams.people.person1
           assert(defaultPerson.ages.type === 'retirementDateSpecified')
-          const retirementAge =
-            defaultPerson.ages.retirementAge.inMonths <=
-            getCurrentAgeOfPerson(personType).inMonths
-              ? {
-                  inMonths: Math.floor(
-                    (currPerson.ages.maxAge.inMonths +
-                      getCurrentAgeOfPerson(personType).inMonths) /
-                      2,
-                  ),
-                }
-              : defaultPerson.ages.retirementAge
+          const retirementAge = {
+            inMonths: _.clamp(
+              defaultPerson.ages.retirementAge.inMonths,
+              getCurrentAgeOfPerson(personType).inMonths + 1,
+              currPerson.ages.maxAge.inMonths - 1,
+            ),
+          }
           currPerson.ages = {
             type: 'retirementDateSpecified',
             monthOfBirth: currPerson.ages.monthOfBirth,
@@ -865,7 +860,6 @@ export const processPlanParamsChangeActionCurrent = (
         merge: null,
       }
     }
-
 
     // ---------
     // setHistoricalReturnsAdjustExpectedReturnDev
