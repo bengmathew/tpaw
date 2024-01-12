@@ -54,7 +54,7 @@ export const PlanInputRiskSummary = React.memo(
           />
         )
       case 'SPAW':
-        return <PlanInputRiskSPAWSummary planParams={planParams} />
+        return <PlanInputRiskSPAWSummary planParamsExt={planParamsExt} />
       case 'SWR':
         return <PlanInputRiskSWRSummary planParamsExt={planParamsExt} />
       default:

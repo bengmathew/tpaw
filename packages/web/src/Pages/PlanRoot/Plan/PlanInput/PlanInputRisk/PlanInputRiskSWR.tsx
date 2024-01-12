@@ -254,6 +254,7 @@ export const PlanInputRiskSWRSummary = React.memo(
             className=""
             glidePath={risk.spawAndSWR.allocation}
             format={(x) => formatPercentage(0)(x)}
+            planParamsExt={planParamsExt}
           />
         </div>
         <h2>Withdrawal</h2>

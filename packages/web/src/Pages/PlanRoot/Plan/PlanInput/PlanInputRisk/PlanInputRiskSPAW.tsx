@@ -8,6 +8,7 @@ import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
 import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
 import { PlanInputRiskLMPCard } from './PlanInputRiskLMPCard'
 import { PlanInputRiskSPAWAndSWRStockAllocationCard } from './PlanInputRiskSPAWAndSWRStockAllocation'
+import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 
 export const PlanInputRiskSPAW = React.memo(
   ({ props }: { props: PlanInputBodyPassThruProps }) => {
@@ -74,7 +75,8 @@ const _SpendingTiltCard = React.memo(
 )
 
 export const PlanInputRiskSPAWSummary = React.memo(
-  ({ planParams }: { planParams: PlanParams }) => {
+  ({ planParamsExt }: { planParamsExt: PlanParamsExtended }) => {
+    const { planParams } = planParamsExt
     const { risk } = planParams
     return (
       <>
@@ -84,6 +86,7 @@ export const PlanInputRiskSPAWSummary = React.memo(
             className=""
             glidePath={risk.spawAndSWR.allocation}
             format={(x) => formatPercentage(0)(x)}
+            planParamsExt={planParamsExt}
           />
         </div>
         <h2>

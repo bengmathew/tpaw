@@ -10,12 +10,13 @@ export const PlanInputSummaryGlidePath = React.memo(
     className = '',
     glidePath,
     format,
+    planParamsExt,
   }: {
     className?: string
     glidePath: GlidePath
     format: (x: number) => string
+    planParamsExt: PlanParamsExtended
   }) => {
-    const { planParamsExt } = useSimulation()
     const { intermediate, starting } = useMemo(
       () => ({
         intermediate: planParamsExt.glidePathIntermediateValidated(
@@ -38,12 +39,14 @@ export const PlanInputSummaryGlidePath = React.memo(
             (x) => x.issue !== 'before' && x.issue !== 'after',
           )}
           format={format}
+          planParamsExt={planParamsExt}
         />
         <h2>At max age</h2>
         <h2 className="text-right">{format(glidePath.end.stocks)}</h2>
         <_Intermediate
           intermediate={intermediate.filter((x) => x.issue === 'after')}
           format={format}
+          planParamsExt={planParamsExt}
         />
       </div>
     )
@@ -54,13 +57,14 @@ const _Intermediate = React.memo(
   ({
     intermediate,
     format,
+    planParamsExt,
   }: {
     intermediate: ReturnType<
       PlanParamsExtended['glidePathIntermediateValidated']
     >
     format: (x: number) => string
+    planParamsExt: PlanParamsExtended
   }) => {
-    const { planParamsExt } = useSimulation()
     return (
       <>
         {intermediate.map((x, i) => (
