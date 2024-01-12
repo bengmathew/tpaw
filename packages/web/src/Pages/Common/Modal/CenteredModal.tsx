@@ -38,10 +38,8 @@ export const CenteredModal = React.memo(
         afterLeave={onLeave}
       >
         <Transition.Child
-          className="absolute inset-0 bg-black transition-opacity duration-300 opacity-50"
+          className="absolute inset-0 bg-black/50 transition-opacity duration-300 "
           enterFrom="opacity-0 "
-          enterTo="opacity-50"
-          leaveFrom="opacity-50"
           leaveTo="opacity-0 "
           onClick={onOutsideClickOrEscape ?? undefined}
         />

@@ -117,10 +117,8 @@ export const ContextMenu2 = React.memo(
               >
                 <Transition.Child
                   ref={setOuterElement}
-                  className="absolute inset-0 bg-black transition-opacity duration-300 opacity-50 "
+                  className="absolute inset-0 bg-black/50 transition-opacity duration-300 "
                   enterFrom="opacity-0 "
-                  enterTo="opacity-50 "
-                  leaveFrom="opacity-50 "
                   leaveTo="opacity-0 "
                   afterLeave={() => {
                     if (onMenuClose) {

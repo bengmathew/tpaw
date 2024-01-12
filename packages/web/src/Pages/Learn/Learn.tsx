@@ -127,7 +127,7 @@ const _MobileOutline = React.memo(
         onClick={() => setShowContents(false)}
       >
         <Transition.Child
-          className="fixed inset-0 bg-black bg-opacity-50 "
+          className="fixed inset-0 bg-black/50 "
           enter="transition-opacity duration-300"
           enterFrom="opacity-0"
           leave="transition-opacity duration-300"
