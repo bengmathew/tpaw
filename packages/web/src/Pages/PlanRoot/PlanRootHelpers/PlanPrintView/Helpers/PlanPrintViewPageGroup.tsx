@@ -1,7 +1,6 @@
 import { noCase } from '@tpaw/common'
 import clsx from 'clsx'
 import React, { CSSProperties, ReactNode } from 'react'
-import { useSystemInfo } from '../../../../App/WithSystemInfo'
 import { PlanPrintViewArgs } from '../PlanPrintViewArgs'
 
 export const PlanPrintViewPageGroup = React.memo(
@@ -25,7 +24,7 @@ export const PlanPrintViewPageGroup = React.memo(
           // Horizontal margins have to be set here and not using css@page
           // margin property because chart sizing does not work correctly
           // otherwiser.
-          'px-[1in]  ',
+          'px-[1in]',
           // Vertical margins have to set using css @page margin property
           // because otherwise content that spans page breaks will not have any
           // vertical margins at the page break. Since they are set in css they
@@ -35,8 +34,9 @@ export const PlanPrintViewPageGroup = React.memo(
           pageSize === 'A4'
             ? 'min-h-[29.7cm] '
             : pageSize === 'Letter'
-              ? 'min-h-[27.94cm] print:min-h-[100vh]'
+              ? 'min-h-[11in]'
               : noCase(pageSize),
+          'print:min-h-[100vh]',
           'border border-gray-300 print:border-0',
           'rounded-lg print:rounded-none',
           'shadow-lg print:shadow-none',
