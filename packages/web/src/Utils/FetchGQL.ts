@@ -18,6 +18,7 @@ export const fetchGQL =
       firebaseUser ? `Bearer ${await firebaseUser.getIdToken(false)}` : null,
     ])
     const bodyStr = JSON.stringify({ query: text, variables })
+    const now = Date.now()
     const response = await fetch(`${Config.client.urls.backend}/gql`, {
       method: 'POST',
       headers: {
@@ -27,6 +28,7 @@ export const fetchGQL =
         'x-app-session-id': sessionId,
         'x-app-api-version': API.version,
         'x-app-client-version': API.clientVersion,
+        'x-app-client-timestamp': `${now}`,
       },
       body: bodyStr,
     })
@@ -46,6 +48,13 @@ export const fetchGQL =
       }
       throw new AppError('networkError')
     }
+    if (Config.client.google.analytics.tagId) {
+      fGet((window as any).gtag)('event', 'gql', {
+        clock_skew:
+          parseInt(response.headers.get('x-app-server-timestamp')!) - now,
+      })
+    }
+
     if (response.headers.get('x-app-new-client-version') === 'true') {
       toast(
         'A new version of the planner is available. Please reload to get the lateset version.',

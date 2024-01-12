@@ -1,9 +1,10 @@
+import * as Sentry from '@sentry/nextjs'
+import { fGet } from '@tpaw/common'
 import { initializeApp } from 'firebase/app'
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth'
 import React, { ReactNode, useEffect, useState } from 'react'
 import { createContext } from '../../Utils/CreateContext'
 import { Config } from '../Config'
-import * as Sentry from '@sentry/nextjs'
 
 export type FirebaseUser = User
 initializeApp({
@@ -34,13 +35,20 @@ type _State =
 export const WithFirebaseUser = React.memo(
   ({ children }: { children: ReactNode }) => {
     const [state, setState] = useState<_State>({ initialized: false })
-    
+
     useEffect(
       () =>
         onAuthStateChanged(getAuth(), (user) => {
           Sentry.setUser(
             user ? { id: user.uid, email: user.email ?? undefined } : null,
           )
+          if (Config.client.google.analytics.tagId) {
+            fGet((window as any).gtag)(
+              'config',
+              Config.client.google.analytics.tagId,
+              { user_id: user?.uid ?? null },
+            )
+          }
           setState({ initialized: true, user })
         }),
       [],

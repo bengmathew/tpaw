@@ -36,7 +36,7 @@ import { PlanServerImplSyncState } from './PlanServerImplSyncState'
 import { useServerHistoryPreBase } from './UseServerHistoryFromStart'
 import { useServerSyncPlan } from './UseServerSyncPlan'
 
-export const PlanServer = React.memo(
+export const PlanServerImpl = React.memo(
   ({
     plan: serverPlanIn,
     planPaths,
@@ -58,6 +58,17 @@ export const PlanServer = React.memo(
       })),
       reverseHeadIndex: serverPlanIn.reverseHeadIndex,
     }))
+    const [startTime] = useState(() => Date.now())
+    const firstParamsTime = fGet(_.last(startingServerPlan.planParamsPostBase))
+      .params.timestamp
+    if (startTime < firstParamsTime) {
+      throw new Error(
+        `startTime-firstParamsTime=${
+          startTime - firstParamsTime
+        }  is less than 0.`,
+      )
+    }
+
     const [planMigratedFromVersion] = useState<SomePlanParamsVersion>(() =>
       letIn(
         JSON.parse(
@@ -80,11 +91,13 @@ export const PlanServer = React.memo(
     )
     const planId = serverPlan.planId
 
-    const currentTimeInfo = useCurrentTime({ planId })
+    const currentTimeInfo = useCurrentTime({ planId, startTime })
+
     assert(
       currentTimeInfo.currentTimestamp >=
         fGet(_.last(startingServerPlan.planParamsPostBase)).params.timestamp,
     )
+
     const workingPlanInfo = useWorkingPlan(
       currentTimeInfo,
       startingServerPlan,
@@ -309,4 +322,4 @@ export const PlanServer = React.memo(
     )
   },
 )
-PlanServer.displayName = 'PlanServer'
+PlanServerImpl.displayName = 'PlanServer'

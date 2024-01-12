@@ -240,46 +240,13 @@ export const useWorkingPlan = (
       marketData,
       wasm,
     )
-    if (result.startTimestamp > result.endTimestamp) {
-      Sentry.captureMessage(
-        `startTimestamp: ${result.startTimestamp}
-         endTimestamp: ${result.endTimestamp}
-         nActions: ${result.actions.length}
-         nParams: ${planParamsUndoRedoStack.undos.length}
-         `,
-      )
-      Sentry.captureMessage(
-        `startTimestamp: ${result.startTimestamp}
-         endTimestamp: ${result.endTimestamp}
-         nActions: ${result.actions.length}
-         actionTimestamps: ${result.actions.map((x) => x.timestamp).join(', ')}
-         nParams: ${planParamsUndoRedoStack.undos.length}
-         paramTimestamps: ${planParamsUndoRedoStack.undos
-           .map((x) => x.params.timestamp)
-           .join(', ')}
-         `,
-      )
-      Sentry.captureMessage(
-        `startTimestamp: ${result.startTimestamp}
-         endTimestamp: ${result.endTimestamp}
-         nActions: ${result.actions.length}
-         actionTimestamps: ${result.actions.map((x) => x.timestamp).join(', ')}
-         actionTypes: ${result.actions.map((x) => x.args.type).join(', ')}
-         nParams: ${planParamsUndoRedoStack.undos.length}
-         paramTimestamps: ${planParamsUndoRedoStack.undos
-           .map((x) => x.params.timestamp)
-           .join(', ')}
-         paramChangeType: ${planParamsUndoRedoStack.undos
-           .map((x) => x.change.type)
-           .join(', ')}
-         `,
-      )
-    }
+
     const runTime = performance.now() - start
-    if (runTime > 100) {
-      Sentry.captureMessage(
-        `postBase currentPortfolioBalance estimation  took ${runTime} ms}`,
-        'warning',
+    if (Config.client.google.analytics.tagId) {
+      fGet((window as any).gtag)(
+        'event',
+        'current_portfolio_balance_estimation',
+        { runTime },
       )
     }
     return result

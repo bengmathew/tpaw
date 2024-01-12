@@ -5,24 +5,24 @@ import Document, {
   Main,
   NextScript,
 } from 'next/document'
-import {Config} from '../src/Pages/Config'
+import { Config } from '../src/Pages/Config'
 import React from 'react'
 
 class MyDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
     const initialProps = await Document.getInitialProps(ctx)
-    return {...initialProps}
+    return { ...initialProps }
   }
 
   render() {
     return (
       <Html>
         <Head>
-          {Config.client.isProduction && (
+          {Config.client.google.analytics.tagId && (
             <>
               <script
                 async
-                src={`https://www.googletagmanager.com/gtag/js?id=G-BV9M6SJ492`}
+                src={`https://www.googletagmanager.com/gtag/js?id=${Config.client.google.analytics.tagId}`}
               />
               <script
                 dangerouslySetInnerHTML={{
@@ -30,7 +30,7 @@ class MyDocument extends Document {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-BV9M6SJ492');
+            gtag('config', '${Config.client.google.analytics.tagId}');
         `,
                 }}
               />

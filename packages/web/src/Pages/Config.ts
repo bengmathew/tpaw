@@ -24,6 +24,9 @@ export class Config {
         cloud: {
           projectId: fGet(process.env.NEXT_PUBLIC_GOOGLE_CLOUD_PROJECT_ID),
         },
+        analytics: {
+          tagId: process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_TAG_ID ?? null,
+        },
         firebase: {
           apiKey: fGet(process.env.NEXT_PUBLIC_GOOGLE_FIREBASE_API_KEY),
           appId: fGet(process.env.NEXT_PUBLIC_GOOGLE_FIREBASE_APP_ID),

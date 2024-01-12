@@ -5,7 +5,7 @@ import { appPaths } from '../../../AppPaths'
 import { useUserGQLArgs } from '../../App/WithFirebaseUser'
 import { WithUser } from '../../App/WithUser'
 import { TARGET_UNDO_DEPTH } from '../PlanRootHelpers/UseWorkingPlan'
-import { PlanServer } from '../PlanServerImpl/PlanServerImpl'
+import { PlanServerImpl } from '../PlanServerImpl/PlanServerImpl'
 import { PlanRootServerQuery } from './__generated__/PlanRootServerQuery.graphql'
 import { PlanPrintViewArgs } from '../PlanRootHelpers/PlanPrintView/PlanPrintViewArgs'
 import { SimulationParams } from '../PlanRootHelpers/WithSimulation'
@@ -63,7 +63,7 @@ export const PlanRootServer = React.memo(
 
     return (
       <WithUser userFragmentOnQueryKey={data}>
-        <PlanServer
+        <PlanServerImpl
           plan={data.user.plan}
           planPaths={
             src.type === 'serverMain' ? appPaths.plan : appPaths['alt-plan']

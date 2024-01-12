@@ -5,11 +5,13 @@ import Sentry from '@sentry/node'
 import {
   API,
   assert,
+  assertFalse,
   block,
   fGet,
   getDefaultNonPlanParams,
   getDefaultPlanParams,
   getSlug,
+  letIn,
 } from '@tpaw/common'
 import bodyParser from 'body-parser'
 import chalk from 'chalk'
@@ -51,33 +53,43 @@ async function _impl() {
     tracesSampleRate: 0.01,
   })
 
-  // RequestHandler creates a separate execution context, so that all
-  // transactions/spans/breadcrumbs are isolated across requests
-  server.use(Sentry.Handlers.requestHandler())
-  // TracingHandler creates a trace for every incoming request
-  server.use(Sentry.Handlers.tracingHandler())
-
   if (!Config.isProduction) server.use(morgan('tiny'))
 
   server.use(
+    // RequestHandler creates a separate execution context, so that all
+    // transactions/spans/breadcrumbs are isolated across requests
+    Sentry.Handlers.requestHandler(),
+    // TracingHandler creates a trace for every incoming request
+    Sentry.Handlers.tracingHandler(),
     // slice() to strip the trailing slash.
     cors({ origin: Config.frontend.paths.root().toString().slice(0, -1) }),
-  )
-  // GCP Cloud Run does not gzip for us so do it here.
-  server.use(compression())
-  server.use((req, res, next) => {
-    if (Config.status.downForMaintenance || Config.status.downForUpdate) {
-      const code = Config.status.downForMaintenance
-        ? 'downForMaintenance'
-        : 'downForUpdate'
-      res.status(503)
-      res.setHeader('Access-Control-Expose-Headers', 'x-app-error-code')
-      res.setHeader('x-app-error-code', code)
-      res.send(code)
-    } else {
+    // GCP Cloud Run does not gzip for us so do it here.
+    compression(),
+    (req, res, next) => {
+      res.setHeader(
+        'Access-Control-Expose-Headers',
+        [
+          'x-app-error-code',
+          'x-app-new-client-version',
+          'x-app-server-timestamp',
+        ].join(', '),
+      )
+      res.setHeader('x-app-server-timestamp', `${Date.now()}`)
       next()
-    }
-  })
+    },
+    (req, res, next) => {
+      if (Config.status.downForMaintenance || Config.status.downForUpdate) {
+        const code = Config.status.downForMaintenance
+          ? 'downForMaintenance'
+          : 'downForUpdate'
+        res.status(503)
+        res.setHeader('x-app-error-code', code)
+        res.send(code)
+      } else {
+        next()
+      }
+    },
+  )
 
   server.get('/', (req, res) => res.send('I am root!'))
   server.get('/ping', (req, res) => res.send('pong'))
@@ -140,16 +152,11 @@ async function _impl() {
       const apiVersion = req.headers['x-app-api-version']
       if (apiVersion !== API.version) {
         res.status(400)
-        res.setHeader('Access-Control-Expose-Headers', 'x-app-error-code')
         res.setHeader('x-app-error-code', 'clientNeedsUpdate')
         res.send('clientNeedsUpdate')
       } else {
         const clientVersion = req.headers['x-app-client-version']
         if (clientVersion !== API.clientVersion) {
-          res.setHeader(
-            'Access-Control-Expose-Headers',
-            'x-app-new-client-version',
-          )
           res.setHeader('x-app-new-client-version', 'true')
         }
         next()

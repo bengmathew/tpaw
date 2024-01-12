@@ -34,13 +34,15 @@ export type CurrentTimeInfo = {
 
 export const useCurrentTime = ({
   planId,
+  startTime,
 }: {
   planId: string
+  startTime?: number
 }): CurrentTimeInfo => {
   const { ianaTimezoneName } = useIANATimezoneName()
 
   const [currentTimestampWithoutFastForward, setCurrentTimeWithoutFastForward] =
-    useState(() => Date.now())
+    useState(() => startTime ?? Date.now())
   useEffect(() => {
     const interval = window.setInterval(
       () => setCurrentTimeWithoutFastForward(Date.now()),
