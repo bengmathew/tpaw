@@ -1,6 +1,7 @@
 import { assert } from '@tpaw/common'
 import { useEffect, useMemo, useState } from 'react'
 import { asyncEffect } from '../Utils/AsyncEffect'
+import { sendAnalyticsEvent } from '../Utils/SendAnalyticsEvent'
 import { PlanParamsExtended } from './ExtentPlanParams'
 import { PlanParamsProcessed } from './PlanParamsProcessed/PlanParamsProcessed'
 import {
@@ -43,10 +44,9 @@ export function useSimulator(
       const data = await getSimulatorSingleton().runSimulations(status, args)
       if (status.canceled) return
       assert(data)
+      sendAnalyticsEvent('simulation_time', { runTime: data.perf.main[6][1] })
       setResult(data)
     })
   }, [args])
-
-  
   return { result, resultIsCurrent: !!result && result.args === args }
 }

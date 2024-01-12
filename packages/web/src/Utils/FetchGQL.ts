@@ -7,6 +7,7 @@ import * as uuid from 'uuid'
 import { AppError } from '../Pages/App/AppError'
 import { FirebaseUser } from '../Pages/App/WithFirebaseUser'
 import { Config } from '../Pages/Config'
+import { sendAnalyticsEvent } from './SendAnalyticsEvent'
 
 const sessionId = uuid.v4()
 
@@ -48,12 +49,10 @@ export const fetchGQL =
       }
       throw new AppError('networkError')
     }
-    if (Config.client.google.analytics.tagId) {
-      fGet((window as any).gtag)('event', 'gql', {
-        clock_skew:
-          parseInt(response.headers.get('x-app-server-timestamp')!) - now,
-      })
-    }
+    sendAnalyticsEvent('gql', {
+      clock_skew:
+        parseInt(response.headers.get('x-app-server-timestamp')!) - now,
+    })
 
     if (response.headers.get('x-app-new-client-version') === 'true') {
       toast(

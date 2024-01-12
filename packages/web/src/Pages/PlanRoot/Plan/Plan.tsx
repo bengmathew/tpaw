@@ -1,8 +1,14 @@
-import { DialogPosition, block, noCase } from '@tpaw/common'
+import {
+  DialogPosition,
+  block,
+  getDefaultPlanParams,
+  noCase,
+} from '@tpaw/common'
 import clix from 'clsx'
 import getIsMobile from 'is-mobile'
 import _ from 'lodash'
 import { useRouter } from 'next/router'
+import pako from 'pako'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useURLParam } from '../../../Utils/UseURLParam'
 import { useURLUpdater } from '../../../Utils/UseURLUpdater'
@@ -38,6 +44,7 @@ import { PlanSummary } from './PlanSummary/PlanSummary'
 import { PlanSyncStateDev } from './PlanSyncStateDev'
 import { usePlanColors } from './UsePlanColors'
 import { WithPlanResultsChartData } from './WithPlanResultsChartData'
+import * as lz from 'lz-string'
 
 export const Plan = React.memo(() => {
   return (

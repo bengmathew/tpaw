@@ -28,6 +28,7 @@ import { PlanPrintViewControls } from './PlanPrintViewControls'
 import { PlanPrintViewFrontSection } from './PlanPrintViewFrontSection'
 import { PlanPrintViewInputSection } from './PlanPrintViewInputSection'
 import { PlanPrintViewResultsSection } from './PlanPrintViewResultsSection/PlanPrintViewResultsSection'
+import { PlanPrintViewSettings } from './PlanPrintViewSettings'
 import { PlanPrintViewTasksForThisMonthSection } from './PlanPrintViewTasksForThisMonthSection'
 import { PlanPrintViewGetShortLinkMutation } from './__generated__/PlanPrintViewGetShortLinkMutation.graphql'
 
@@ -198,25 +199,25 @@ export const PlanPrintView = React.memo(
             />
             {/* relative z-0 makes this a stacking context */}
             <div className="relative z-0">
-              <div
-                className="print:hidden sticky top-0  z-10 page -mb-16 "
-                style={{
-                  backgroundColor: planColors.results.bg,
-                }}
-              >
-                <div className="m-auto" style={{ width: `${headerWidth}px` }}>
-                  <div className="flex items-center gap-x-4 pt-10 ">
-                    <Link
-                      className="block btn-dark btn-md "
-                      shallow
-                      href={doneURL}
-                    >
-                      <FontAwesomeIcon className="" icon={faLeftLong} /> Done
-                    </Link>
-                    <h2 className="font-bold text-2xl">PDF Report</h2>
-                  </div>
-                  <div className="">
-                    {!settings.isServerSidePrint && (
+              {!settings.isServerSidePrint && (
+                <div
+                  className="print:hidden sticky top-0  z-10 page -mb-16 "
+                  style={{
+                    backgroundColor: planColors.results.bg,
+                  }}
+                >
+                  <div className="m-auto" style={{ width: `${headerWidth}px` }}>
+                    <div className="flex items-center gap-x-4 pt-10 ">
+                      <Link
+                        className="block btn-dark btn-md "
+                        shallow
+                        href={doneURL}
+                      >
+                        <FontAwesomeIcon className="" icon={faLeftLong} /> Done
+                      </Link>
+                      <h2 className="font-bold text-2xl">PDF Report</h2>
+                    </div>
+                    <div className="">
                       <PlanPrintViewControls
                         className="mt-8"
                         fixedArgs={fixed}
@@ -224,13 +225,17 @@ export const PlanPrintView = React.memo(
                         settings={settings}
                         updateSettings={updateSettings}
                       />
-                    )}
+                    </div>
+                    <div className="flex justify-between items-end border-b-[2px] border-gray-400 pb-2">
+                      <h2 className=" mt-5 text-4xl font-bold opacity-40 ">
+                        Preview
+                      </h2>
+                      
+                    </div>
                   </div>
-                  <h2 className=" mt-5 text-4xl font-bold opacity-40 border-b-[2px] border-gray-500 pb-2">
-                    Preview
-                  </h2>
                 </div>
-              </div>
+              )}
+
               <div className={clsx('px-[10px] print:px-0')}>
                 <div
                   className={clsx(

@@ -91,13 +91,13 @@ export const getPlanResultsChartLabelInfoForSpending = (
         ) {
           return spendingTotalInfo
         }
-        assert(
-          !(
-            chartType === 'spending-general' ||
-            isPlanResultsChartSpendingDiscretionaryType(chartType) ||
-            isPlanResultsChartSpendingEssentialType(chartType)
-          ),
-        )
+        if (
+          chartType === 'spending-general' ||
+          isPlanResultsChartSpendingDiscretionaryType(chartType) ||
+          isPlanResultsChartSpendingEssentialType(chartType)
+        ) {
+          throw new Error(`Unexpected chart type ${chartType}.`)
+        }
         noCase(chartType)
       },
     } as const

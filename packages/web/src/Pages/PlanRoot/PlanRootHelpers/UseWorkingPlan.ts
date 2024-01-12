@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/nextjs'
 import {
   PlanParams,
   PlanParamsChangeAction,
@@ -14,6 +13,7 @@ import _ from 'lodash'
 import { useCallback, useMemo, useState } from 'react'
 import * as uuid from 'uuid'
 import { extendPlanParams } from '../../../UseSimulator/ExtentPlanParams'
+import { sendAnalyticsEvent } from '../../../Utils/SendAnalyticsEvent'
 import { useAssertConst } from '../../../Utils/UseAssertConst'
 import { Config } from '../../Config'
 import { CurrentPortfolioBalance } from './CurrentPortfolioBalance'
@@ -242,13 +242,12 @@ export const useWorkingPlan = (
     )
 
     const runTime = performance.now() - start
-    if (Config.client.google.analytics.tagId) {
-      fGet((window as any).gtag)(
-        'event',
-        'current_portfolio_balance_estimation',
-        { runTime },
-      )
-    }
+    if (_.random(25) === 0)
+      sendAnalyticsEvent('current_portfolio_balance_estimation', { runTime })
+    if (runTime > 1000)
+      sendAnalyticsEvent('current_portfolio_balance_estimation_slow', {
+        runTime,
+      })
     return result
   }, [
     currentTimeInfo.currentTimestamp,

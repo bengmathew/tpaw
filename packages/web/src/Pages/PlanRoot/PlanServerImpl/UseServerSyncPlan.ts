@@ -233,7 +233,11 @@ export const useServerSyncPlan = (
   // ---- TO THROTTLE STATE ----
   const handleClearThrottle = () => {
     assert(input)
-    assert(state.type === 'waitDueToThrottle')
+    if (state.type !== 'waitDueToThrottle') {
+      throw new Error(
+        `Expected state.type to be 'waitDueToThrottle', but was ${state.type}.`,
+      )
+    }
     state.dispose() // Safe even if timeout has already fired.
     toSyncingState({ input, failures: [] })
   }
