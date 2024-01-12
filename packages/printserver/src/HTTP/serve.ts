@@ -217,7 +217,11 @@ const _pdfFromPage = async (page: Page, args: Args) => {
   start = Date.now()
 
   // ---- Generate PDF ----
-  const pdfBuffer = await page.pdf({ timeout: TIMEOUT })
+  const pdfBuffer = await page.pdf({
+    timeout: TIMEOUT,
+    preferCSSPageSize: true,
+    printBackground: true,
+  })
   console.dir(`generatePDF:pdf ${Date.now() - start}`)
 
   const isError = await page.evaluate(
