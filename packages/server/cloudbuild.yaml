@@ -34,8 +34,6 @@ steps:
         'DOWN_FOR_MAINTENANCE=$_DOWN_FOR_MAINTENANCE',
         '--set-env-vars',
         'DOWN_FOR_UPDATE=$_DOWN_FOR_UPDATE',
-        '--no-traffic',
-        '$_DO_NOT_MIGRATE_TRAFFIC',
       ]
 substitutions:
   _TAG: us-central1-docker.pkg.dev/${PROJECT_ID}/apiserver-docker/apiserver:latest

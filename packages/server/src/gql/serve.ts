@@ -75,18 +75,6 @@ async function _impl() {
       res.setHeader('x-app-server-timestamp', `${Date.now()}`)
       next()
     },
-    (req, res, next) => {
-      if (Config.status.downForMaintenance || Config.status.downForUpdate) {
-        const code = Config.status.downForMaintenance
-          ? 'downForMaintenance'
-          : 'downForUpdate'
-        res.status(503)
-        res.setHeader('x-app-error-code', code)
-        res.send(code)
-      } else {
-        next()
-      }
-    },
   )
 
   server.get('/', (req, res) => res.send('I am root!'))
@@ -146,6 +134,21 @@ async function _impl() {
   await apollo.start()
   server.use(
     '/gql',
+    // Important that this comes after health checks, and marketDataURL etc.
+    // What we are really stopping is the actual API, not any access to the
+    // server.
+    (req, res, next) => {
+      if (Config.status.downForMaintenance || Config.status.downForUpdate) {
+        const code = Config.status.downForMaintenance
+          ? 'downForMaintenance'
+          : 'downForUpdate'
+        res.status(503)
+        res.setHeader('x-app-error-code', code)
+        res.send(code)
+      } else {
+        next()
+      }
+    },
     (req, res, next) => {
       const apiVersion = req.headers['x-app-api-version']
       if (apiVersion !== API.version) {
