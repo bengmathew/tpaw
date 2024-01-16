@@ -85,7 +85,7 @@ type User {
   id: ID!
   nonPlanParams: String!
   nonPlanParamsLastUpdatedAt: Float!
-  plan(planId: String, slug: String): PlanWithHistory!
+  plan(planId: String, slug: String): PlanWithHistory
   plans: [PlanWithHistory!]!
 }
 

@@ -328,8 +328,3 @@ pub fn get_sampled_returns_stats(
 pub fn test_log() {
     console::log_1(&"hello".to_string().into());
 }
-
-#[wasm_bindgen]
-pub fn clear_memoized_random() {
-    utils::clear_memoized_random_store();
-}

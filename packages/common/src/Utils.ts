@@ -1,3 +1,4 @@
+import { string } from 'json-guard'
 import _ from 'lodash'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -164,3 +165,5 @@ export const generateRandomString = (length: number) => {
 }
 
 export const generateSmallId = () => generateRandomString(10)
+
+export type FGet<T> = Exclude<T, null | undefined>

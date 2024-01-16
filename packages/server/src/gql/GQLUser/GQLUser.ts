@@ -1,4 +1,4 @@
-import { assert, fGet } from '@tpaw/common'
+import { assert, assertFalse, block, fGet, noCase } from '@tpaw/common'
 import { Clients } from '../../Clients.js'
 import { builder } from '../builder.js'
 
@@ -13,6 +13,8 @@ builder.queryField('user', (t) =>
       }),
   }),
 )
+
+
 
 export const PothosUser = builder.prismaObject('User', {
   authScopes: (user, context) => context.user?.id === user.id,
@@ -39,16 +41,34 @@ export const PothosUser = builder.prismaObject('User', {
         slug: t.arg.string({ required: false }),
         planId: t.arg.string({ required: false }),
       },
+      nullable: true,
       resolve: async (query, { id: userId }, { slug, planId }) => {
+        const whereAlt = planId
+          ? ({ type: 'planId', userId, planId } as const)
+          : slug
+            ? ({ type: 'slug', userId, slug } as const)
+            : ({ type: 'main', userId, isMain: true } as const)
+
         const plans = await Clients.prisma.planWithHistory.findMany({
           ...query,
-          where: planId
-          ? { userId, planId }
-          : slug
-          ? { userId, slug }
-          : { userId, isMain: true },
+          where: block(() => {
+            const { type, ...where } = whereAlt
+            return where
+          }),
         })
-        assert(plans.length === 1)
+
+        assert(plans.length <= 1)
+        if (plans.length === 0) {
+          switch (whereAlt.type) {
+            case 'main':
+              assertFalse()
+            case 'planId':
+            case 'slug':
+              return null
+            default:
+              noCase(whereAlt)
+          }
+        }
         return fGet(plans[0])
       },
     }),

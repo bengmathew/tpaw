@@ -112,7 +112,7 @@ export const _ErrorFallback = React.memo(({ error }: { error: Error }) => {
   }, [error, router])
 
   useEffect(() => {
-    ;(window as any).__APP_ERROR__ = true 
+    ;(window as any).__APP_ERROR__ = true
   }, [])
 
   return (
@@ -154,7 +154,9 @@ export const _ErrorFallback = React.memo(({ error }: { error: Error }) => {
                   message="A new version of the planner is now available. Please reload to get the lastest version."
                   action="reload"
                 />
-              ) : error.code === 'networkError' || error.code === '413' ? (
+              ) : error.code === 'networkError' ||
+                error.code === '413' ||
+                error.code === 'serverError' ? (
                 <_SomethingWentWrong errorId={errorId} />
               ) : (
                 noCase(error.code)

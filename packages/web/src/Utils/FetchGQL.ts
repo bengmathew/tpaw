@@ -64,5 +64,8 @@ export const fetchGQL =
         },
       )
     }
-    return await response.json()
+
+    const json = await response.json()
+    if (json.errors) throw new AppError('serverError')
+    return json
   }

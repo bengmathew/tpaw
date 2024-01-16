@@ -143,7 +143,7 @@ const useFetchFromServer = (planId: string, base: PlanParamsHistoryItem) => {
       next: (data) =>
         setState({
           type: 'fetched',
-          result: data.user.plan.planParamsPreBase,
+          result: fGet(data.user.plan).planParamsPreBase,
         }),
       error: () =>
         setState(

@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<2a37f591b3b2081c9693b45f8698412b>>
+ * @generated SignedSource<<2e062dc0eb1c633593d4839048b98736>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -24,7 +24,7 @@ export type UseServerHistoryFromStartQuery$data = {
         readonly id: string;
         readonly params: string;
       }>;
-    };
+    } | null | undefined;
   };
 };
 export type UseServerHistoryFromStartQuery = {

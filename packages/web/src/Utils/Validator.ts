@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import { assert } from './Utils'
 
 type MapType<Type> = {
   [Property in keyof Type]: Type[Property] extends (x: unknown) => infer U
@@ -18,7 +19,7 @@ export namespace Validator {
     }
     get fullLines() {
       return this.path
-        ? [`Property ${this.path}:`, ...this.lines.map(x => `   ${x}`)]
+        ? [`Property ${this.path}:`, ...this.lines.map((x) => `   ${x}`)]
         : this.lines
     }
     get fullMessage() {
@@ -64,10 +65,11 @@ export namespace Validator {
         try {
           return test(e)
         } catch (e) {
+          assert(e !== null)
           if (e instanceof Failed) {
             throw new Failed([
               `At index ${i}:`,
-              ...e.fullLines.map(x => `    ${x}`),
+              ...e.fullLines.map((x) => `    ${x}`),
             ])
           } else {
             throw e
@@ -87,13 +89,14 @@ export namespace Validator {
         throw new Failed(
           `Missing ${
             missingKeys.length === 1 ? 'property' : 'properties'
-          } ${missingKeys.join(', ')}.`
+          } ${missingKeys.join(', ')}.`,
         )
       }
       const result = _.mapValues(tests, (test, key) => {
         try {
           return test(anyX[key])
         } catch (e) {
+          assert(e !== null)
           if (e instanceof Failed) {
             throw new Failed(e.lines, `${key}${e.path ? `.${e.path}` : ''}`)
           } else {
@@ -114,10 +117,11 @@ export namespace Validator {
         try {
           return test(x)
         } catch (e) {
+          assert(e !== null)
           if (e instanceof Failed) {
             messages.push(
               `Option ${i + 1}:`,
-              ...e.fullLines.map(x => `    ${x}`)
+              ...e.fullLines.map((x) => `    ${x}`),
             )
           } else {
             throw e
@@ -138,7 +142,7 @@ export namespace Validator {
     return (x: any) => {
       let result: any = {}
       for (const test of tests) {
-        result = {...result, ...test(x)}
+        result = { ...result, ...test(x) }
       }
       return result
     }
@@ -158,7 +162,7 @@ export namespace Validator {
       Validator<T1, T0>,
       Validator<T2, T1>,
       Validator<T3, T2>,
-      Validator<T4, T3>
+      Validator<T4, T3>,
     ]
   ): Validator<T4, T0>
   export function chain(...tests: any[]) {

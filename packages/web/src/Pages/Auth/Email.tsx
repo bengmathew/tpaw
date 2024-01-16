@@ -5,11 +5,12 @@ import {
   signInWithEmailLink,
 } from 'firebase/auth'
 import React, { useEffect, useState } from 'react'
+import { appPaths } from '../../AppPaths'
 import { asyncEffect } from '../../Utils/AsyncEffect'
 import { useURLParam } from '../../Utils/UseURLParam'
 import { useURLUpdater } from '../../Utils/UseURLUpdater'
 import { useFirebaseUser } from '../App/WithFirebaseUser'
-import { appPaths } from '../../AppPaths'
+import { assert } from '../../Utils/Utils'
 
 type _State =
   | { type: 'error'; message: string }
@@ -26,13 +27,14 @@ export const Email = React.memo(() => {
     isLoggedIn
       ? { type: 'loggedIn' }
       : !isLink
-      ? { type: 'error', message: 'This link is no longer valid.' }
-      : !email
-      ? {
-          type: 'error',
-          message: 'Device changed. Please open the link on the same device.',
-        }
-      : { type: 'doSignIn', email },
+        ? { type: 'error', message: 'This link is no longer valid.' }
+        : !email
+          ? {
+              type: 'error',
+              message:
+                'Device changed. Please open the link on the same device.',
+            }
+          : { type: 'doSignIn', email },
   )
 
   const urlUpdater = useURLUpdater()
@@ -48,6 +50,7 @@ export const Email = React.memo(() => {
       try {
         await signInWithEmailLink(getAuth(), state.email, window.location.href)
       } catch (e) {
+        assert(e !== null)
         if (e instanceof FirebaseError) {
           if (e.code === 'auth/email-already-in-use') {
             // This is not an error but sometimes happens when we manually

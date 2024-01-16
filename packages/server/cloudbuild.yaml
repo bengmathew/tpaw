@@ -31,6 +31,10 @@ steps:
         '$_TAG',
         '--region',
         'us-central1',
+        '--set-env-vars',
+        'DOWN_FOR_MAINTENANCE=$_DOWN_FOR_MAINTENANCE',
+        '--set-env-vars',
+        'DOWN_FOR_UPDATE=$_DOWN_FOR_UPDATE',
       ]
 substitutions:
   _TAG: us-central1-docker.pkg.dev/${PROJECT_ID}/apiserver-docker/apiserver:latest

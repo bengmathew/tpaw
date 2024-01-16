@@ -24,8 +24,8 @@ import {
   PlanPrintViewSettingsControlledClientSide,
 } from './PlanPrintViewArgs'
 import { PlanPrintViewBalanceSheetSection } from './PlanPrintViewBalanceSheetSection'
-import { PlanPrintViewControls } from './PlanPrintViewControls'
 import { PlanPrintViewFrontSection } from './PlanPrintViewFrontSection'
+import { PlanPrintViewGenerate } from './PlanPrintViewGenerate'
 import { PlanPrintViewInputSection } from './PlanPrintViewInputSection'
 import { PlanPrintViewResultsSection } from './PlanPrintViewResultsSection/PlanPrintViewResultsSection'
 import { PlanPrintViewSettings } from './PlanPrintViewSettings'
@@ -207,7 +207,7 @@ export const PlanPrintView = React.memo(
                   }}
                 >
                   <div className="m-auto" style={{ width: `${headerWidth}px` }}>
-                    <div className="flex items-center gap-x-4 pt-10 ">
+                    <div className="flex items-center gap-x-4 pt-14 ">
                       <Link
                         className="block btn-dark btn-md "
                         shallow
@@ -217,22 +217,22 @@ export const PlanPrintView = React.memo(
                       </Link>
                       <h2 className="font-bold text-2xl">PDF Report</h2>
                     </div>
-                    <div className="">
-                      <PlanPrintViewControls
-                        className="mt-8"
-                        fixedArgs={fixed}
-                        linkToEmbed={linkToEmbed}
+                    <div className="flex justify-between items-end border-b-[2px] border-gray-400 pb-2 mt-2">
+                      <h2 className=" mt-5 text-3xl font-bold opacity-40 ">
+                        Preview
+                      </h2>
+                      <PlanPrintViewSettings
+                        className=""
                         settings={settings}
                         updateSettings={updateSettings}
                       />
                     </div>
-                    <div className="flex justify-between items-end border-b-[2px] border-gray-400 pb-2">
-                      <h2 className=" mt-5 text-4xl font-bold opacity-40 ">
-                        Preview
-                      </h2>
-                      
-                    </div>
                   </div>
+                  <PlanPrintViewGenerate
+                    fixedArgs={fixed}
+                    linkToEmbed={linkToEmbed}
+                    settings={settings}
+                  />
                 </div>
               )}
 
@@ -263,7 +263,6 @@ export const PlanPrintView = React.memo(
                       />
                       <PlanPrintViewInputSection settings={settings} />
                       <PlanPrintViewResultsSection settings={settings} />
-                      {/* // TODO: Check that all conditions are ok during print. */}
                       <PlanPrintViewTasksForThisMonthSection
                         settings={settings}
                       />

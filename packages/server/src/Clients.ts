@@ -19,12 +19,12 @@ export class Clients {
           { emit: 'event', level: 'query' },
         ],
       })
-      prisma.$on('error', (e) => {
-        Sentry.captureMessage(JSON.stringify(e))
-      })
-      prisma.$on('warn', (e) => {
-        Sentry.captureMessage(JSON.stringify(e))
-      })
+      // prisma.$on('error', (e) => {
+      //   Sentry.captureMessage(JSON.stringify(e))
+      // })
+      // prisma.$on('warn', (e) => {
+      //   Sentry.captureMessage(JSON.stringify(e))
+      // })
       this._prisma = prisma
     }
     return this._prisma

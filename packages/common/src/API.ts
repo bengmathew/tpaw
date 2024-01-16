@@ -29,7 +29,10 @@ import {
 import { fGet } from './Utils'
 
 export namespace API {
-  export const version = '1'
+  // Update this if the client needs to forced to update.
+  export const version = '2'
+  // Update this if the you want to inform the user there is a new version 
+  // available, if they want to update.
   export const clientVersion = '1'
   const { uuid, ianaTimezoneName } = Guards
 

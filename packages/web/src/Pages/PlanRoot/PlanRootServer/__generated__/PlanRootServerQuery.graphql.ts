@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<d8430297849585847b0ec473ba8c72a0>>
+ * @generated SignedSource<<20e9f208b0edeffdde9ebd8c97a6b640>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -32,7 +32,7 @@ export type PlanRootServerQuery$data = {
       readonly reverseHeadIndex: number;
       readonly slug: string;
       readonly sortTime: number;
-    };
+    } | null | undefined;
   };
   readonly " $fragmentSpreads": FragmentRefs<"WithUser_query">;
 };

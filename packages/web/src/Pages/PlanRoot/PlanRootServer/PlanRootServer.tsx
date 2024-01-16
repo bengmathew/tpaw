@@ -1,14 +1,14 @@
 import { assert } from '@tpaw/common'
-import React, { useEffect, useLayoutEffect } from 'react'
+import React from 'react'
 import { graphql, useLazyLoadQuery } from 'react-relay'
 import { appPaths } from '../../../AppPaths'
+import { AppError } from '../../App/AppError'
 import { useUserGQLArgs } from '../../App/WithFirebaseUser'
 import { WithUser } from '../../App/WithUser'
 import { TARGET_UNDO_DEPTH } from '../PlanRootHelpers/UseWorkingPlan'
+import { SimulationParams } from '../PlanRootHelpers/WithSimulation'
 import { PlanServerImpl } from '../PlanServerImpl/PlanServerImpl'
 import { PlanRootServerQuery } from './__generated__/PlanRootServerQuery.graphql'
-import { PlanPrintViewArgs } from '../PlanRootHelpers/PlanPrintView/PlanPrintViewArgs'
-import { SimulationParams } from '../PlanRootHelpers/WithSimulation'
 
 export const PlanRootServer = React.memo(
   ({
@@ -60,6 +60,10 @@ export const PlanRootServer = React.memo(
       { fetchPolicy: 'network-only' },
     )
     assert(data.user)
+    if (!data.user.plan) {
+      assert(src.type === 'serverAlt')
+      throw new AppError('404')
+    }
 
     return (
       <WithUser userFragmentOnQueryKey={data}>

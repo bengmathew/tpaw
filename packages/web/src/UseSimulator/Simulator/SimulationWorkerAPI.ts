@@ -47,9 +47,9 @@ export type SimulationWorkerArgs =
         marketData: MarketData.Data
       }
     }
-  | { type: 'clearMemoizedRandom'; taskID: string }
 
 export type SimulationWorkerResult =
+  | { type: 'error'; message: string }
   | {
       type: 'runSimulation'
       taskID: string
@@ -80,10 +80,6 @@ export type SimulationWorkerResult =
       type: 'estimateCurrentPortfolioBalance'
       taskID: string
       result: CurrentPortfolioBalance.ByMonthInfo
-    }
-  | {
-      type: 'clearMemoizedRandom'
-      taskID: string
     }
 
 export type SimulationWorkerSortResult = Extract<

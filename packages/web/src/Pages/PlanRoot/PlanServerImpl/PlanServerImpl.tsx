@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/nextjs'
 import {
+  FGet,
   PlanParams,
   PlanParamsChangeAction,
   SomePlanParams,
@@ -13,7 +14,7 @@ import {
   planParamsMigrate,
 } from '@tpaw/common'
 import _ from 'lodash'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { appPaths } from '../../../AppPaths'
 import { useNavGuard } from '../../../Utils/UseNavGuard'
 import { useURLParam } from '../../../Utils/UseURLParam'
@@ -35,14 +36,58 @@ import { PlanRootServerQuery$data } from '../PlanRootServer/__generated__/PlanRo
 import { PlanServerImplSyncState } from './PlanServerImplSyncState'
 import { useServerHistoryPreBase } from './UseServerHistoryFromStart'
 import { useServerSyncPlan } from './UseServerSyncPlan'
+import { sendAnalyticsEvent } from '../../../Utils/SendAnalyticsEvent'
 
-export const PlanServerImpl = React.memo(
+type _Props = {
+  plan: FGet<Exclude<PlanRootServerQuery$data['user'], undefined>['plan']>
+  planPaths: (typeof appPaths)['plan']
+  pdfReportInfo: SimulationParams['pdfReportInfo']
+}
+
+export const PlanServerImpl = React.memo((props: _Props) => {
+  const { plan } = props
+  const [time, setTime] = useState(() => Date.now())
+  const firstParamsTime = useMemo(
+    () =>
+      planParamsMigrate(
+        JSON.parse(
+          fGet(_.last(plan.planParamsPostBase)).params,
+        ) as SomePlanParams,
+      ).timestamp,
+    [plan],
+  )
+  assert(time >= firstParamsTime - 2 * 1000)
+
+  // Wait for clock to catch up to server.
+  const shouldWait = time < firstParamsTime
+  useEffect(() => {
+    if (!shouldWait) return
+    const timeout = setTimeout(() => setTime(Date.now()), 100)
+    return () => clearTimeout(timeout)
+  }, [shouldWait])
+
+  const createEvent = () => {
+    sendAnalyticsEvent('planServerImplCreation', {
+      clockSkew: time - firstParamsTime,
+    })
+  }
+  const createEventRef = useRef(createEvent)
+  createEventRef.current = createEvent
+  useEffect(() => {
+    createEventRef.current()
+  }, [])
+
+  if (shouldWait) return <></>
+  return <_Body {...props} />
+})
+
+const _Body = React.memo(
   ({
     plan: serverPlanIn,
     planPaths,
     pdfReportInfo,
   }: {
-    plan: Exclude<PlanRootServerQuery$data['user'], undefined>['plan']
+    plan: FGet<Exclude<PlanRootServerQuery$data['user'], undefined>['plan']>
     planPaths: (typeof appPaths)['plan']
     pdfReportInfo: SimulationParams['pdfReportInfo']
   }) => {

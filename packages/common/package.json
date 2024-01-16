@@ -1,6 +1,6 @@
 {
   "name": "@tpaw/common",
-  "version": "1.20.0",
+  "version": "1.21.0",
   "description": "",
   "main": "dist/main.js",
   "types": "dist/main.d.ts",
@@ -13,12 +13,12 @@
   "dependencies": {
     "json-guard": "^1.0.1",
     "lodash": "^4.17.21",
-    "luxon": "^3.3.0",
+    "luxon": "^3.4.4",
     "slugify": "^1.6.6"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.196",
-    "@types/luxon": "^3.3.1",
+    "@types/luxon": "^3.4.1",
     "@typescript-eslint/eslint-plugin": "^6.2.0",
     "@typescript-eslint/parser": "^6.2.0",
     "eslint": "^8.26.0",

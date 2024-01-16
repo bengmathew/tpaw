@@ -14,9 +14,7 @@ import {
 
 export const SERVER_SYNC_PLAN_THROTTLE_WAIT_TIME = 5 * 1000
 export const SERVER_SYNC_PLAN_ERROR_WAIT_TIME = 20 * 1000
-// TODO:
 const _TIMEOUT = 60 * 1000
-// const _MAX_NUM_FAILURES = 10
 
 type _ServerPlan = {
   planId: string
@@ -192,6 +190,7 @@ export const useServerSyncPlan = (
               return null
             case '404':
             case 'networkError':
+            case 'serverError':
               Sentry.captureException(e)
               return 'other'
             case 'serverDownForMaintenance':
@@ -282,24 +281,6 @@ export const useServerSyncPlan = (
         case 'other':
           return Date.now() + SERVER_SYNC_PLAN_ERROR_WAIT_TIME
         default:
-          // const isRetryable = (reason: _Failure['reason']): reason is 'other' =>
-          //   reason === 'other'
-          // if (isRetryable(failure.reason)) {
-          //   // Count from the last retryable failure.
-          //   const lastNotRetryableFailureIndex = _.findLastIndex(
-          //     state.failures,
-          //     (x) => !isRetryable(x.reason),
-          //   )
-          //   // const numFailures =
-          //   //   1 + // for the current failure.
-          //   //   state.failures.length -
-          //   //   (lastNotRetryableFailureIndex === -1
-          //   //     ? 0
-          //   //     : lastNotRetryableFailureIndex + 1)
-          //   return numFailures >= _MAX_NUM_FAILURES
-          //     ? ('never' as const)
-          //     : Date.now() + SERVER_SYNC_PLAN_ERROR_WAIT_TIME
-          // }
           noCase(failure.reason)
       }
     })

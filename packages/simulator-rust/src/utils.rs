@@ -68,11 +68,6 @@ lazy_static! {
     });
 }
 
-pub fn clear_memoized_random_store() {
-    let mut store = RANDOM_STORE.lock().unwrap();
-    store.data.clear()
-}
-
 use rand::distributions::{Distribution, Uniform};
 
 pub fn generate_random_index_sequences(

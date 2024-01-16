@@ -3,6 +3,7 @@ import PrismaPlugin from '@pothos/plugin-prisma'
 import type PrismaTypes from '@pothos/plugin-prisma/generated'
 import ScopeAuthPlugin from '@pothos/plugin-scope-auth'
 import { Clients } from '../Clients.js'
+// import { NotFoundError } from '../impl/Common/NotFoundError.js'
 import { ConcurrentChangeError } from '../impl/Common/ConcurrentChangeError.js'
 import { Success } from '../impl/Common/Success.js'
 import { UserSuccessResult } from '../impl/Common/UserSuccessResult.js'
@@ -14,6 +15,7 @@ export const builder = new SchemaBuilder<{
   DefaultInputFieldRequiredness: true
   Objects: {
     Success: Success
+    // NotFoundError: NotFoundError
     ConcurrentChangeError: ConcurrentChangeError
     UserSuccessResult: UserSuccessResult
     PlanParamsChangePatched: PlanParamsChangePatched

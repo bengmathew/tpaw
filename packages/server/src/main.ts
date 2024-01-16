@@ -16,7 +16,7 @@ import './CLI/CLIDev/CLIDevUser/CLIDevUserPlan/CLIDevUserPlanList.js'
 import './CLI/CLIDev/CLIDevUser/CLIDevUserScratch.js'
 import './CLI/CLIDev/CLIDevSendEmail.js'
 import './CLI/CLIDB/CLIDBMigrate.js'
-import './CLI/CLIScratch.js'
+import './CLI/CLIScratch/CLIScratch.js'
 
 import { Clients } from './Clients.js'
 import './gql/serve.js'

@@ -5,13 +5,11 @@ import Sentry from '@sentry/node'
 import {
   API,
   assert,
-  assertFalse,
   block,
   fGet,
   getDefaultNonPlanParams,
   getDefaultPlanParams,
   getSlug,
-  letIn,
 } from '@tpaw/common'
 import bodyParser from 'body-parser'
 import chalk from 'chalk'
@@ -166,9 +164,6 @@ async function _impl() {
     expressMiddleware<Context>(apollo, {
       context: async ({ req }) => {
         try {
-          const apiVersion = req.headers['x-app-api-version']
-          if (apiVersion !== API.version) {
-          }
           const ianaTimezoneName = req.headers['x-iana-timezone-name']
           assert(typeof ianaTimezoneName === 'string')
           const sessionId = req.headers['x-app-session-id'] ?? null
@@ -225,42 +220,19 @@ async function _impl() {
               clientIANATimezoneName: ianaTimezoneName,
             }
 
-            await serialTransaction(
-              async (tx) => {
-                const user = await tx.user.findUnique({
+            await serialTransaction(async (tx) => {
+              const user = await tx.user.findUnique({
+                where: { id: userId },
+              })
+              if (user) {
+                await tx.user.update({
                   where: { id: userId },
+                  data: updateData,
                 })
-                if (user) {
-                  await tx.user.update({
-                    where: { id: userId },
-                    data: updateData,
-                  })
-                } else {
-                  await tx.user.create({ data: createData })
-                }
-              },
-              {
-                retries: 3,
-                onConflict: () => {
-                  const time = Date.now()
-                  const timeStr = DateTime.fromMillis(time, {
-                    zone: 'America/Los_Angeles',
-                  }).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)
-                  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                  const queryStr = (req.body.query as string) ?? ''
-                  const queryStrLine1 = queryStr.slice(
-                    0,
-                    queryStr.indexOf('\n'),
-                  )
-                  const text = `Transaction conflict on context creation\nuser: ${userId}\ntime: ${time}\ntimeStr: ${timeStr}\nsessionId: ${sessionId}\nquery: \n${queryStrLine1})}`
-                  if (Config.isProduction) {
-                    Sentry.captureMessage(text)
-                  } else {
-                    console.log(text)
-                  }
-                },
-              },
-            )
+              } else {
+                await tx.user.create({ data: createData })
+              }
+            })
             return {
               user: { id: userId },
               sessionId: sessionId,

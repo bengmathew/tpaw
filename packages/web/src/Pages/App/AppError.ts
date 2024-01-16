@@ -3,6 +3,7 @@ export type AppErrorCode =
   | '413'
   | 'concurrentChange'
   | 'networkError'
+  | 'serverError'
   | 'serverDownForMaintenance'
   | 'serverDownForUpdate'
   | 'clientNeedsUpdate'

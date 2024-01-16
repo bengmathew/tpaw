@@ -17,15 +17,12 @@ export const PlanPrintViewSettings = React.memo(
     settings,
     updateSettings,
     className,
-    disabled,
   }: {
     settings: PlanPrintViewSettingsClientSide
     updateSettings: (args: PlanPrintViewSettingsControlledClientSide) => void
     className?: string
-    disabled: boolean
   }) => {
     const [showOptions, setShowOptions] = useState(false)
-
     const planColors = mainPlanColors
 
     return (
@@ -35,7 +32,6 @@ export const PlanPrintViewSettings = React.memo(
             className,
             ' border-gray-400 text-start  rounded-lg overflow-hidden  text-gray-20  px-4 py-2 ',
           )}
-          disabled={disabled}
           onClick={() => setShowOptions(true)}
           style={{
             backgroundColor: planColors.shades.light[2].hex,
@@ -83,7 +79,7 @@ const _embeddedLinkTypeStr = (
   x: PlanPrintViewSettingsClientSide['embeddedLinkType'],
 ) => (x === 'long' ? 'Long' : x === 'short' ? 'Short' : noCase(x))
 
- const _EditSettings = React.memo(
+const _EditSettings = React.memo(
   ({
     settings,
     updateSettings,

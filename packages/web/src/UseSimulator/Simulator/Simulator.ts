@@ -126,7 +126,6 @@ export class Simulator {
       string,
       (value: SimulationWorkerCalculateSampledAnnualReturn) => void
     >(),
-    clearMemoizedRandom: new Map<string, () => void>(),
   }
   constructor() {
     const numWorkers = MULTI_THREADED ? navigator.hardwareConcurrency || 4 : 1
@@ -135,17 +134,11 @@ export class Simulator {
     )
 
     this._workers.forEach((worker) => {
-      worker.onerror = (event) => {
-        console.dir(event)
-        // TODO: Confirm that this logs to sentry and switches to error page.
-        throw event.error
-      }
-      worker.addEventListener('unhandledrejection', (event) => {
-        // TODO: Confirm that this logs to sentry and switches to error page.
-        throw new Error(`unhandledrejection: ${(event as any).reason}`)
-      })
       worker.onmessage = (event) => {
         const data = event.data as SimulationWorkerResult
+        if (data.type === 'error') {
+          throw new Error(`Error in worker: ${data.message}`)
+        }
         const { taskID } = data
         switch (data.type) {
           case 'runSimulation': {
@@ -166,14 +159,6 @@ export class Simulator {
             )
             this._resolvers.getSampledReturnStats.delete(taskID)
             resolve(data.result)
-            break
-          }
-          case 'clearMemoizedRandom': {
-            const resolve = fGet(
-              this._resolvers.clearMemoizedRandom.get(taskID),
-            )
-            this._resolvers.clearMemoizedRandom.delete(taskID)
-            resolve()
             break
           }
           case 'parseAndMigratePlanParams':
@@ -238,28 +223,6 @@ export class Simulator {
     worker.postMessage(message)
     return new Promise<SimulationWorkerCalculateSampledAnnualReturn>(
       (resolve) => this._resolvers.getSampledReturnStats.set(taskID, resolve),
-    )
-  }
-
-  private _clearMemoizedRandom(worker: Worker): Promise<void> {
-    const taskID = _.uniqueId()
-    const message: Extract<
-      SimulationWorkerArgs,
-      { type: 'clearMemoizedRandom' }
-    > = {
-      type: 'clearMemoizedRandom',
-      taskID,
-    }
-    worker.postMessage(message)
-    return new Promise<void>((resolve) =>
-      this._resolvers.clearMemoizedRandom.set(taskID, resolve),
-    )
-  }
-
-  // TODO: Remove all the way up and down the chain.
-  async clearMemoizedRandom(): Promise<void> {
-    await Promise.all(
-      this._workers.map((worker) => this._clearMemoizedRandom(worker)),
     )
   }
 

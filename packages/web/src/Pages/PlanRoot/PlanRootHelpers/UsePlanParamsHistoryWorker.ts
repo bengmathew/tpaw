@@ -24,13 +24,19 @@ export const useParseAndMigratePlanParamsHistoryInWorker = (
     const taskID = _.uniqueId()
     const worker = _getWorkerSingleton()
     const start = performance.now()
-    const onMessage = ({ data }: MessageEvent<SimulationWorkerResult>): void =>
+    const onMessage = ({
+      data,
+    }: MessageEvent<SimulationWorkerResult>): void => {
+      if (data.type === 'error') {
+        throw new Error(`Error in worker: ${data.message}`)
+      }
       setState((prev) => {
         if (prev.type !== 'processing' || prev.taskID !== data.taskID)
           return prev
         assert(data.type === 'parseAndMigratePlanParams')
         return { type: 'processed', result: data.result }
       })
+    }
 
     worker.addEventListener('message', onMessage)
 
@@ -77,13 +83,17 @@ export const useCurrentPortfolioBalanceGetMonthInfoInWorker = (
     const taskID = _.uniqueId()
     const worker = _getWorkerSingleton()
     const start = performance.now()
-    const onMessage = ({ data }: MessageEvent<SimulationWorkerResult>) =>
+    const onMessage = ({ data }: MessageEvent<SimulationWorkerResult>) => {
+      if (data.type === 'error') {
+        throw new Error(`Error in worker: ${data.message}`)
+      }
       setState((prev) => {
         if (prev.type !== 'processing' || prev.taskID !== data.taskID)
           return prev
         assert(data.type === 'estimateCurrentPortfolioBalance')
         return { type: 'processed', result: data.result, planParamsHistory }
       })
+    }
     worker.addEventListener('message', onMessage)
 
     const planParamsHistoryWithCacheInfo = planParamsHistory.map((x) =>
@@ -126,7 +136,10 @@ let _workerSingleton: Worker | null = null
 const _getWorkerSingleton = () => {
   if (!_workerSingleton)
     _workerSingleton = new Worker(
-      new URL('../../../UseSimulator/Simulator/SimulationWorker.ts', import.meta.url),
+      new URL(
+        '../../../UseSimulator/Simulator/SimulationWorker.ts',
+        import.meta.url,
+      ),
     )
   return _workerSingleton
 }

@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<c5c3a66f20434c87ec85e571a1ccaf1c>>
+ * @generated SignedSource<<7773e25360e6ad737f742158376f0b47>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -16,17 +16,17 @@ export type GeneratePDFReportInput = {
   viewportHeight: number;
   viewportWidth: number;
 };
-export type PlanPrintViewControlsGeneratePDFReportMutation$variables = {
+export type PlanPrintViewGenerateGeneratePDFReportMutation$variables = {
   input: GeneratePDFReportInput;
 };
-export type PlanPrintViewControlsGeneratePDFReportMutation$data = {
+export type PlanPrintViewGenerateGeneratePDFReportMutation$data = {
   readonly generatePDFReport: {
     readonly pdfURL: string;
   };
 };
-export type PlanPrintViewControlsGeneratePDFReportMutation = {
-  response: PlanPrintViewControlsGeneratePDFReportMutation$data;
-  variables: PlanPrintViewControlsGeneratePDFReportMutation$variables;
+export type PlanPrintViewGenerateGeneratePDFReportMutation = {
+  response: PlanPrintViewGenerateGeneratePDFReportMutation$data;
+  variables: PlanPrintViewGenerateGeneratePDFReportMutation$variables;
 };
 
 const node: ConcreteRequest = (function(){
@@ -68,7 +68,7 @@ return {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Fragment",
     "metadata": null,
-    "name": "PlanPrintViewControlsGeneratePDFReportMutation",
+    "name": "PlanPrintViewGenerateGeneratePDFReportMutation",
     "selections": (v1/*: any*/),
     "type": "Mutation",
     "abstractKey": null
@@ -77,20 +77,20 @@ return {
   "operation": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
-    "name": "PlanPrintViewControlsGeneratePDFReportMutation",
+    "name": "PlanPrintViewGenerateGeneratePDFReportMutation",
     "selections": (v1/*: any*/)
   },
   "params": {
-    "cacheID": "d941f17841960764e7c9cb3da64c4054",
+    "cacheID": "92b004c950cba5f36dbccf3e69eb4076",
     "id": null,
     "metadata": {},
-    "name": "PlanPrintViewControlsGeneratePDFReportMutation",
+    "name": "PlanPrintViewGenerateGeneratePDFReportMutation",
     "operationKind": "mutation",
-    "text": "mutation PlanPrintViewControlsGeneratePDFReportMutation(\n  $input: GeneratePDFReportInput!\n) {\n  generatePDFReport(input: $input) {\n    pdfURL\n  }\n}\n"
+    "text": "mutation PlanPrintViewGenerateGeneratePDFReportMutation(\n  $input: GeneratePDFReportInput!\n) {\n  generatePDFReport(input: $input) {\n    pdfURL\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "8cfbe32c0b129f31cd6aa5baba9cd1aa";
+(node as any).hash = "c454cda951bfcf7a1909d0d3b5227f2d";
 
 export default node;

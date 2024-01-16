@@ -573,6 +573,7 @@ export namespace CurrentPortfolioBalance {
             postBase: null,
           } as const)
     } catch (e) {
+      assert(e !== null)
       getAuth()
       Sentry.captureException(e)
       Sentry.captureMessage(`
