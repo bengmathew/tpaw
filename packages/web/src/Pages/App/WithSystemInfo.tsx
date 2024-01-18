@@ -4,7 +4,7 @@ import { Size } from '../../Utils/Geometry'
 
 type SystemInfo = {
   windowSize: Size
-  windowWidthName: string
+  windowWidthName: 'xs' | 'md' | 'lg' | 'xl' | '2xl' | '3xl'
   isPrinting: boolean
 }
 

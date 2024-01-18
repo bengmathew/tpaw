@@ -6,8 +6,10 @@ import {
   MANUAL_STOCKS_BONDS_RETURNS_VALUES,
   PlanParams,
   STOCK_VOLATILITY_SCALE_VALUES,
+  assert,
   fGet,
   historicalReturns,
+  letIn,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
@@ -22,6 +24,7 @@ import { CenteredModal } from '../../../Common/Modal/CenteredModal'
 import { useMarketData } from '../../PlanRootHelpers/WithMarketData'
 import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { mainPlanColors } from '../UsePlanColors'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
   PlanInputBody,
@@ -59,7 +62,7 @@ export const _ExpectedReturnsCard = React.memo(
 
     const handleChange = (
       expected: PlanParams['advanced']['expectedAnnualReturnForPlanning'],
-    ) => updatePlanParams('setExpectedReturns', expected)
+    ) => updatePlanParams('setExpectedReturns2', expected)
 
     const isModified = useIsExpectedReturnsCardModified()
     const [showCalculationPopup, setShowCalculationPopup] = useState(false)
@@ -78,18 +81,18 @@ export const _ExpectedReturnsCard = React.memo(
           </p>
           <div className="mt-6">
             <_Preset
-              className="mt-4s"
-              type="suggested"
+              className="mt-4"
+              type="regressionPrediction,20YearTIPSYield"
               onChange={handleChange}
             />
             <_Preset
               className="mt-4"
-              type="oneOverCAPE"
+              type="conservativeEstimate,20YearTIPSYield"
               onChange={handleChange}
             />
             <_Preset
               className="mt-4"
-              type="regressionPrediction"
+              type="1/CAPE,20YearTIPSYield"
               onChange={handleChange}
             />
             <_Preset
@@ -419,7 +422,7 @@ export const _ExpectedReturnsCard = React.memo(
   },
 )
 
-export const _Preset = React.memo(
+const _Preset = React.memo(
   ({
     className = '',
     type,
@@ -431,11 +434,14 @@ export const _Preset = React.memo(
       expected: PlanParams['advanced']['expectedAnnualReturnForPlanning'],
     ) => void
   }) => {
-    const { planParams, currentMarketData } = useSimulation()
+    const { planParams, currentMarketData, defaultPlanParams } = useSimulation()
     const { stocks, bonds } = EXPECTED_ANNUAL_RETURN_PRESETS(
       type,
       currentMarketData,
     )
+    const isDefault =
+      defaultPlanParams.advanced.expectedAnnualReturnForPlanning.type === type
+    const labelInfo = expectedReturnTypeLabelInfo({ type })
 
     return (
       <button
@@ -450,13 +456,43 @@ export const _Preset = React.memo(
               : faCircleRegular
           }
         />
-        <div className="">
-          <h2 className="text-start">{expectedReturnTypeLabel({ type })}</h2>
-          <h2 className="text-start lighten-2 text-sm">
-            Stocks: {formatPercentage(1)(stocks)}, Bonds:{' '}
-            {formatPercentage(1)(bonds)}
-          </h2>
-        </div>
+        {labelInfo.isSplit ? (
+          <div className="">
+            <h2 className="text-start">
+              Stocks: {labelInfo.stocks}{' '}
+              {isDefault && (
+                <span
+                  className="hidden sm:inline-block px-2 bg-gray-200 rounded-full text-sm ml-2"
+                  style={{
+                    backgroundColor: mainPlanColors.shades.light[4].hex,
+                  }}
+                >
+                  default
+                </span>
+              )}
+            </h2>
+            <h2 className="text-start">Bonds: {labelInfo.bonds}</h2>
+            <h2 className="text-start lighten-2 text-sm">
+              Stocks: {formatPercentage(1)(stocks)}, Bonds:{' '}
+              {formatPercentage(1)(bonds)}
+            </h2>
+            {isDefault && (
+              <h2 className="sm:hidden text-start">
+                <span className="inline-block px-2 bg-gray-200 rounded-full text-sm">
+                  default
+                </span>
+              </h2>
+            )}
+          </div>
+        ) : (
+          <div className="">
+            <h2 className="text-start">{labelInfo.stocksAndBonds}</h2>
+            <h2 className="text-start lighten-2 text-sm">
+              Stocks: {formatPercentage(1)(stocks)}, Bonds:{' '}
+              {formatPercentage(1)(bonds)}
+            </h2>
+          </div>
+        )}
       </button>
     )
   },
@@ -513,7 +549,10 @@ export const _Manual = React.memo(
           />
           <div className="">
             <h2 className="text-start">
-              {expectedReturnTypeLabel({ type: 'manual' })}
+              {letIn(expectedReturnTypeLabelInfo({ type: 'manual' }), (x) => {
+                assert(!x.isSplit)
+                return x.stocksAndBonds
+              })}
             </h2>
           </div>
         </button>
@@ -576,22 +615,33 @@ export const _Manual = React.memo(
     )
   },
 )
-export const expectedReturnTypeLabel = ({
+
+export const expectedReturnTypeLabelInfo = ({
   type,
 }: {
   type: PlanParams['advanced']['expectedAnnualReturnForPlanning']['type']
-}) => {
+}):
+  | { isSplit: true; stocks: string; bonds: string; forUndoRedo: string }
+  | { isSplit: false; stocksAndBonds: string } => {
+  const bonds = '20 Year TIPS Yield'
+  const bondsForUndoRedo = '20 year TIPS yield'
+  const withTIPSBonds = (stocks: string, stocksForUndoRedo: string) => ({
+    isSplit: true as const,
+    stocks,
+    bonds: bonds,
+    forUndoRedo: `${stocksForUndoRedo} for stocks and ${bondsForUndoRedo} for bonds`,
+  })
   switch (type) {
-    case 'suggested':
-      return 'Suggested'
-    case 'oneOverCAPE':
-      return '1/CAPE for Stocks'
-    case 'regressionPrediction':
-      return 'Regression Prediction for Stocks'
+    case 'conservativeEstimate,20YearTIPSYield':
+      return withTIPSBonds('Conservative Estimate', 'conservative estimate')
+    case '1/CAPE,20YearTIPSYield':
+      return withTIPSBonds('1/CAPE', '1/CAPE')
+    case 'regressionPrediction,20YearTIPSYield':
+      return withTIPSBonds('Regression Prediction', 'regression prediction')
     case 'historical':
-      return 'Historical'
+      return { isSplit: false, stocksAndBonds: 'Historical' }
     case 'manual':
-      return 'Manual'
+      return { isSplit: false, stocksAndBonds: 'Manual' }
   }
 }
 
@@ -795,21 +845,33 @@ export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(
     const { expectedReturnsForPlanning } = planParamsProcessed
     const { historicalReturnsAdjustment } = planParams.advanced
     const format = formatPercentage(1)
+    const labelInfo = expectedReturnTypeLabelInfo(
+      planParams.advanced.expectedAnnualReturnForPlanning,
+    )
 
     return (
       <>
-        <h2>
-          Expected Returns:{' '}
-          {expectedReturnTypeLabel(
-            planParams.advanced.expectedAnnualReturnForPlanning,
-          )}
-        </h2>
-        <h2 className="ml-4">
-          Stocks: {format(expectedReturnsForPlanning.annual.stocks)}
-        </h2>
-        <h2 className="ml-4">
-          Bonds: {format(expectedReturnsForPlanning.annual.bonds)}
-        </h2>
+        <h2>Expected Returns</h2>
+        {labelInfo.isSplit ? (
+          <>
+            <h2 className="ml-4">
+              Stocks: {labelInfo.stocks},{' '}
+              {format(expectedReturnsForPlanning.annual.stocks)}
+            </h2>
+            <h2 className="ml-4">
+              Bonds: {labelInfo.bonds},{' '}
+              {format(expectedReturnsForPlanning.annual.bonds)}
+            </h2>
+          </>
+        ) : (
+          <>
+            <h2 className="ml-4">{labelInfo.stocksAndBonds}</h2>
+            <h2 className="ml-4">
+              Stocks: {format(expectedReturnsForPlanning.annual.stocks)}, Bonds:{' '}
+              {format(expectedReturnsForPlanning.annual.bonds)}
+            </h2>
+          </>
+        )}
         <h2 className="">Volatility</h2>
         <h2 className="ml-4">
           Allow Bond Volatility:{' '}

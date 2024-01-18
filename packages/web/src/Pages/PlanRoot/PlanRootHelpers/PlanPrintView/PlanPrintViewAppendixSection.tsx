@@ -262,19 +262,19 @@ const _Table = React.memo(
                               <td className="px-4 text-right  border-l border-black">
                                 {fromIncome !== null
                                   ? chartData.formatY(fromIncome)
-                                  : '–'}
+                                  : '—'}
                               </td>
                               <td className="text-center lighten-2">+</td>
                               <td className="px-4 text-right">
                                 {fromPortfolio !== null
                                   ? chartData.formatY(fromPortfolio)
-                                  : '–'}
+                                  : '—'}
                               </td>
                               <td className="text-center lighten-2">=</td>
                               <td className="px-4 text-right">
                                 {total !== null
                                   ? chartData.formatY(total)
-                                  : '–'}
+                                  : '—'}
                               </td>
                             </>
                           )

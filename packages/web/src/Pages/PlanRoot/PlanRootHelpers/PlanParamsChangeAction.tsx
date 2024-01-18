@@ -20,7 +20,7 @@ import { numMonthsStr } from '../../../Utils/NumMonthsStr'
 import { yourOrYourPartners } from '../../../Utils/YourOrYourPartners'
 import { optGet } from '../../../Utils/optGet'
 import { planSectionLabel } from '../Plan/PlanInput/Helpers/PlanSectionLabel'
-import { expectedReturnTypeLabel } from '../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
+import { expectedReturnTypeLabelInfo } from '../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { inflationTypeLabel } from '../Plan/PlanInput/PlanInputInflation'
 
 type _ActionFns = {
@@ -711,16 +711,19 @@ export const processPlanParamsChangeActionCurrent = (
     // ---------
     // SetExpectedReturns
     // ---------
-    case 'setExpectedReturns': {
+    case 'setExpectedReturns2': {
       const { value } = action
       return {
         applyToClone: (clone) => {
           clone.advanced.expectedAnnualReturnForPlanning = value
         },
         render: () => {
-          return `Set expected returns to ${_.lowerFirst(
-            expectedReturnTypeLabel(value),
-          )}${
+          const labelInfo = expectedReturnTypeLabelInfo(value)
+          const label = labelInfo.isSplit
+            ? labelInfo.forUndoRedo
+            : _.lowerCase(labelInfo.stocksAndBonds)
+
+          return `Set expected returns to ${label}${
             value.type === 'manual'
               ? ` (stocks: ${formatPercentage(1)(
                   value.stocks,

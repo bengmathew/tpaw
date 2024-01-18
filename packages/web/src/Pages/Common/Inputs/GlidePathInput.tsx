@@ -224,11 +224,11 @@ const _Intermediate = React.memo(
                       icon={faTurnDownLeft}
                     />{' '}
                     {x.issue === 'before'
-                      ? `Ignoring – out of range.`
+                      ? `Ignoring — out of range.`
                       : x.issue === 'duplicate'
-                      ? `Ignoring – duplicate entry for this month.`
+                      ? `Ignoring — duplicate entry for this month.`
                       : x.issue === 'after'
-                      ? 'Ignoring – out of range.'
+                      ? 'Ignoring — out of range.'
                       : noCase(x.issue)}
                   </div>
                 )}

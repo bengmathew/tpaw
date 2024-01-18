@@ -142,7 +142,7 @@ const _MenuItems = React.memo(
     }, [popUpElement])
     return (
       <Menu.Items
-        className="relative flex flex-col py-2 "
+        className="relative flex flex-col py-2 max-w-[600px] "
         ref={setPopUpElement}
       >
         <h2 className="text-xl font-bold px-5 py-2">

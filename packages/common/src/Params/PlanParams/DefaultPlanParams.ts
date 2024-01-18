@@ -30,14 +30,14 @@ export const EXPECTED_ANNUAL_RETURN_PRESETS = (
     bonds: _.round(bondRates.twentyYear, 3),
   }
   switch (type) {
-    case 'suggested':
+    case 'conservativeEstimate,20YearTIPSYield':
       return { ...suggested }
-    case 'oneOverCAPE':
+    case '1/CAPE,20YearTIPSYield':
       return {
         stocks: _.round(CAPE.oneOverCAPE, 3),
         bonds: suggested.bonds,
       }
-    case 'regressionPrediction':
+    case 'regressionPrediction,20YearTIPSYield':
       return {
         stocks: _.round(CAPE.regressionAverage, 3),
         bonds: suggested.bonds,
@@ -67,9 +67,6 @@ export function getDefaultPlanParams(
   currentTimestamp: number,
   ianaTimezoneName: string,
 ): PlanParams {
-  // const { getMonthOfBirth, currentMonth } =
-  //   getCurrentTimeFnsExt(currentTimeInfo)
-
   const currentDateTime =
     DateTime.fromMillis(currentTimestamp).setZone(ianaTimezoneName)
 
@@ -148,7 +145,9 @@ export function getDefaultPlanParams(
     },
 
     advanced: {
-      expectedAnnualReturnForPlanning: { type: 'suggested' },
+      expectedAnnualReturnForPlanning: {
+        type: 'regressionPrediction,20YearTIPSYield',
+      },
       historicalReturnsAdjustment: {
         stocks: {
           adjustExpectedReturn: {

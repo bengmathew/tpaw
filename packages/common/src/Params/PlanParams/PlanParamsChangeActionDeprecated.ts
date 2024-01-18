@@ -33,6 +33,10 @@ export type PlanParamsChangeActionDeprecated =
       type: 'setHistoricalReturnsBondsDev'
       value: V22.PlanParams['advanced']['annualReturns']['historical']['bonds']
     }
+  | {
+      type: 'setExpectedReturns'
+      value: V21.PlanParams['advanced']['annualReturns']['expected']
+    }
 
 const _guard = <T extends string, V>(
   type: T,
@@ -40,8 +44,7 @@ const _guard = <T extends string, V>(
 ): JSONGuard<{ type: T; value: V }> =>
   object({ type: constant(type), value: valueGuard })
 
-
-  const v22CG = V22.componentGuards
+const v22CG = V22.componentGuards
 export const planParamsChangeActionGuardDeprecated: JSONGuard<PlanParamsChangeActionDeprecated> =
   union(
     _guard(

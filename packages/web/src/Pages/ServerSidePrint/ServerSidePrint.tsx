@@ -28,7 +28,7 @@ const testParams: PlanPrintViewArgsServerSide = {
   fixed: {
     planLabel: 'Test Plan',
     planParams: {
-      v: 25,
+      v: 26,
       risk: {
         swr: {
           withdrawal: {

@@ -19,9 +19,9 @@ import {
 } from 'json-guard'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
-import { Guards } from '../../Guards'
-import { assert, block, fGet, preciseRange } from '../../Utils'
-import { PlanParams24 as PlanParamsPrev } from './Old/PlanParams24'
+import { Guards } from '../../../Guards'
+import { assert, block, fGet, preciseRange } from '../../../Utils'
+import { PlanParams24 as PlanParamsPrev } from './PlanParams24'
 
 export namespace PlanParams25 {
   export const currentVersion = 25 as const

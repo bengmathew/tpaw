@@ -85,11 +85,11 @@ const _StrategyCard = React.memo(
     const label = (() => {
       switch (strategy) {
         case 'TPAW':
-          return `TPAW – Total Portfolio Allocation and Withdrawal`
+          return `TPAW — Total Portfolio Allocation and Withdrawal`
         case 'SPAW':
-          return `SPAW – Savings Portfolio Allocation and Withdrawal`
+          return `SPAW — Savings Portfolio Allocation and Withdrawal`
         case 'SWR':
-          return `SWR – Safe Withdrawal Rate`
+          return `SWR — Safe Withdrawal Rate`
         default:
           noCase(strategy)
       }

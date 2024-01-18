@@ -1,4 +1,4 @@
-import { PlanParams25 as PlanParamsCurr } from './PlanParams25'
+import { PlanParams26 as PlanParamsCurr } from './PlanParams26'
 
 type _GetVersion<T> = T extends { v: infer V } ? V : 1
 

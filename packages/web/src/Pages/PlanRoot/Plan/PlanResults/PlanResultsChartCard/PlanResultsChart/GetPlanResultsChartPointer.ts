@@ -220,8 +220,8 @@ const _getHeaderSection = (
   const getAgeBreakdown = (person: 'person1' | 'person2') => {
     if (dataX > asMFN(months[person].max)) {
       return {
-        years: '–',
-        months: '–',
+        years: '—',
+        months: '—',
       }
     }
     const inMonths = getCurrentAgeOfPerson(person).inMonths + dataX
@@ -561,7 +561,7 @@ const _getBreakdownSection = (
       { font: ChartUtils.getMonoFont(fontSize.large.mono) },
       labelLarge(
         { align: 'end' },
-        text({}, item.value.inRange ? formatY(item.value.value) : '–'),
+        text({}, item.value.inRange ? formatY(item.value.value) : '—'),
       ),
     )
   const maxLabelWidth = block(() => {

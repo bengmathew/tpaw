@@ -11,6 +11,7 @@ import {
 import { PlanParams21 as V21 } from './Old/PlanParams21'
 import { PlanParams22 as V22 } from './Old/PlanParams22'
 import { PlanParams23 as V23 } from './Old/PlanParams23'
+import { PlanParams26 as V26 } from './PlanParams26'
 import {
   SomePlanParams,
   planParamsBackwardsCompatibleGuard,
@@ -167,8 +168,8 @@ export type PlanParamsChangeActionCurrent =
       value: number
     }
   | {
-      type: 'setExpectedReturns'
-      value: V21.PlanParams['advanced']['annualReturns']['expected']
+      type: 'setExpectedReturns2'
+      value: V26.PlanParams['advanced']['expectedAnnualReturnForPlanning']
     }
   | {
       type: 'setAnnualInflation'
@@ -202,6 +203,7 @@ export type PlanParamsChangeAction =
 const v21CG = V21.componentGuards
 const v22CG = V22.componentGuards
 const v23CG = V23.componentGuards
+const v26CG = V26.componentGuards
 const valueForMonthRangeLocation: JSONGuard<ValueForMonthRangeLocation> = union(
   constant('futureSavings'),
   constant('incomeDuringRetirement'),
@@ -321,7 +323,7 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
     _guard('setSamplingToDefault', constant(null)),
     _guard('setSampling', v22CG.samplingType),
     _guard('setMonteCarloSamplingBlockSize', number),
-    _guard('setExpectedReturns', v21CG.expectedAnnualReturns),
+    _guard('setExpectedReturns2', v26CG.expectedAnnualReturnForPlanning),
     _guard('setAnnualInflation', v21CG.annualInflation),
     _guard('setHistoricalStockReturnsAdjustmentVolatilityScale', number),
     _guard('setHistoricalBondReturnsAdjustmentEnableVolatility', boolean),
