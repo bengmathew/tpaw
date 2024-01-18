@@ -13,10 +13,6 @@ import { PlanParams22 as V22 } from './Old/PlanParams22'
 import { PlanParams23 as V23 } from './Old/PlanParams23'
 import { PlanParams26 as V26 } from './PlanParams26'
 import {
-  SomePlanParams,
-  planParamsBackwardsCompatibleGuard,
-} from './PlanParams'
-import {
   PlanParamsChangeActionDeprecated,
   planParamsChangeActionGuardDeprecated,
 } from './PlanParamsChangeActionDeprecated'

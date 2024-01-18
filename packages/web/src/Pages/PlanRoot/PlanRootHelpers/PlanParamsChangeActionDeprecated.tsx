@@ -1,5 +1,7 @@
-import { PlanParams, PlanParamsChangeAction, noCase } from '@tpaw/common'
+import { PlanParams, PlanParamsChangeAction, block, noCase } from '@tpaw/common'
+import _ from 'lodash'
 import { formatPercentage } from '../../../Utils/FormatPercentage'
+import { expectedReturnTypeLabelInfo } from '../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { processPlanParamsChangeActionCurrent } from './PlanParamsChangeAction'
 
 type _ActionFns = {
@@ -36,16 +38,16 @@ export const processPlanParamsChangeActionDeprecated = (
               ? value.adjustment.type === 'toExpected'
                 ? 'adjusted to expected'
                 : value.adjustment.type === 'to' ||
-                  value.adjustment.type === 'by'
-                ? `adjusted ${value.adjustment.type} ${stocksAndBondsStr(
-                    value.adjustment,
-                  )}`
-                : noCase(value.adjustment)
+                    value.adjustment.type === 'by'
+                  ? `adjusted ${value.adjustment.type} ${stocksAndBondsStr(
+                      value.adjustment,
+                    )}`
+                  : noCase(value.adjustment)
               : value.type === 'fixed'
-              ? `fixed at ${stocksAndBondsStr(value)}`
-              : value.type === 'unadjusted'
-              ? 'unadjusted'
-              : noCase(value)
+                ? `fixed at ${stocksAndBondsStr(value)}`
+                : value.type === 'unadjusted'
+                  ? 'unadjusted'
+                  : noCase(value)
           }`
         },
       }
@@ -74,8 +76,8 @@ export const processPlanParamsChangeActionDeprecated = (
           return value === 'adjustExpectedToExpectedUsedForPlanning'
             ? 'Bond volatility enabled'
             : value === 'fixedToExpectedUsedForPlanning'
-            ? 'Bond volatility disabled'
-            : noCase(value)
+              ? 'Bond volatility disabled'
+              : noCase(value)
         },
       }
     }
@@ -124,6 +126,40 @@ export const processPlanParamsChangeActionDeprecated = (
       }
     }
 
+    // ---------
+    // SetExpectedReturns2
+    // ---------
+    case 'setExpectedReturns': {
+      const { value } = action
+      return {
+        render: () => {
+          const labelInfo = expectedReturnTypeLabelInfo({
+            type: block(() => {
+              switch (value.type) {
+                case 'suggested':
+                  return 'conservativeEstimate,20YearTIPSYield' as const
+                case 'oneOverCAPE':
+                  return '1/CAPE,20YearTIPSYield' as const
+                case 'regressionPrediction':
+                  return 'regressionPrediction,20YearTIPSYield' as const
+                default:
+                  return value.type
+              }
+            }),
+          })
+          const label = labelInfo.isSplit
+            ? labelInfo.forUndoRedo
+            : _.lowerCase(labelInfo.stocksAndBonds)
+          return `Set expected returns to ${label}${
+            value.type === 'manual'
+              ? ` (stocks: ${formatPercentage(1)(
+                  value.stocks,
+                )}, bonds: ${formatPercentage(1)(value.bonds)})`
+              : ''
+          }`
+        },
+      }
+    }
     default:
       return processPlanParamsChangeActionCurrent(action)
   }

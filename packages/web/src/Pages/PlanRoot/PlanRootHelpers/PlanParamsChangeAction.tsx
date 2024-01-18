@@ -709,7 +709,7 @@ export const processPlanParamsChangeActionCurrent = (
     }
 
     // ---------
-    // SetExpectedReturns
+    // SetExpectedReturns2
     // ---------
     case 'setExpectedReturns2': {
       const { value } = action
