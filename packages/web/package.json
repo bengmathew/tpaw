@@ -32,7 +32,7 @@
     "@headlessui/tailwindcss": "^0.2.0",
     "@mojotech/json-type-validation": "^3.1.0",
     "@sentry/nextjs": "^7.3.0",
-    "@tpaw/common": "^1.21.0",
+    "@tpaw/common": "^1.22.0",
     "@tpaw/simulator": "^2.14.0",
     "@visx/event": "^3.3.0",
     "@visx/shape": "^3.3.0",
