@@ -30,9 +30,9 @@ steps:
         '$_TAG',
         '--region',
         'us-central1',
-        '--set-env-vars',
+        '--update-env-vars',
         'DOWN_FOR_MAINTENANCE=$_DOWN_FOR_MAINTENANCE',
-        '--set-env-vars',
+        '--update-env-vars',
         'DOWN_FOR_UPDATE=$_DOWN_FOR_UPDATE',
       ]
 substitutions:
