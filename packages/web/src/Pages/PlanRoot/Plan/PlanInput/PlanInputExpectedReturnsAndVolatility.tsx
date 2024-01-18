@@ -56,9 +56,6 @@ export const _ExpectedReturnsCard = React.memo(
     const { getZonedTime } = useIANATimezoneName()
     const { updatePlanParams, defaultPlanParams, currentMarketData } =
       useSimulation()
-    const { CAPE, bondRates } = currentMarketData
-    const formatDate = (timestamp: number) =>
-      getZonedTime(timestamp).toLocaleString(DateTime.DATE_MED)
 
     const handleChange = (
       expected: PlanParams['advanced']['expectedAnnualReturnForPlanning'],
@@ -128,296 +125,322 @@ export const _ExpectedReturnsCard = React.memo(
         >
           Reset to Default
         </button>
-        <CenteredModal
-          className=" dialog-outer-div"
+        <_ExpectedReturnsPresetPopup
           show={showCalculationPopup}
-          onOutsideClickOrEscape={() => setShowCalculationPopup(false)}
-        >
-          <div className="sm:p-4">
-            <h2 className="text-2xl sm:text-3xl font-bold">Expected Returns</h2>
-            <h2 className="text-xl sm:text-2xl font-bold mt-6">Stocks</h2>
-            <p className="p-base mt-3">
-              Earnings yield (E/P) measures such as 1/CAPE provide reasonable
-              estimates of the expected real return of stocks. The estimates
-              below are based on the CAPE ratio of the S&P 500 index, which is a
-              broad measure of the US stock market.
+          onHide={() => setShowCalculationPopup(false)}
+        />
+      </div>
+    )
+  },
+)
+
+const _ExpectedReturnsPresetPopup = React.memo(
+  ({ show, onHide }: { show: boolean; onHide: () => void }) => {
+    const { getZonedTime } = useIANATimezoneName()
+    const { currentMarketData } = useSimulation()
+
+    const { CAPE, bondRates } = currentMarketData
+    const formatDate = (timestamp: number) =>
+      getZonedTime(timestamp).toLocaleString(DateTime.DATE_MED)
+
+    const getPresetLabelForStocks = (
+      x: PlanParams['advanced']['expectedAnnualReturnForPlanning']['type'],
+    ) => {
+      const labelInfo = expectedReturnTypeLabelInfo({ type: x })
+      return labelInfo.isSplit ? labelInfo.stocks : labelInfo.stocksAndBonds
+    }
+    const getPresetLabelForBonds = (
+      x: PlanParams['advanced']['expectedAnnualReturnForPlanning']['type'],
+    ) => {
+      const labelInfo = expectedReturnTypeLabelInfo({ type: x })
+      return labelInfo.isSplit ? labelInfo.bonds : labelInfo.stocksAndBonds
+    }
+
+    return (
+      <CenteredModal
+        className=" dialog-outer-div"
+        show={show}
+        onOutsideClickOrEscape={onHide}
+      >
+        <div className="sm:p-4">
+          <h2 className="text-2xl sm:text-3xl font-bold">Expected Returns</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mt-6">Stocks</h2>
+          <p className="p-base mt-3">
+            Earnings yield (E/P) measures such as 1/CAPE provide reasonable
+            estimates of the expected real return of stocks. The estimates below
+            are based on the CAPE ratio of the S&P 500 index, which is a broad
+            measure of the US stock market.
+          </p>
+          <h2 className="p-base mt-3">
+            Data as of {formatDate(CAPE.closingTime)}:
+          </h2>
+          <h2 className=" font-bold mt-4">CAPE Ratio</h2>
+          <div className="p-base">
+            {/* <p className="mt-3">CAPE calculation for the S&P 500 index:</p> */}
+            <p className="mt-3 p-base">
+              Price: The S&P 500 price as of {formatDate(CAPE.closingTime)} was{' '}
+              <span className="font-bold">{formatCurrency(CAPE.sp500, 2)}</span>
+              .
             </p>
-            <h2 className="p-base mt-3">
-              Data as of {formatDate(CAPE.closingTime)}:
-            </h2>
-            <h2 className=" font-bold mt-4">CAPE Ratio</h2>
-            <div className="p-base">
-              {/* <p className="mt-3">CAPE calculation for the S&P 500 index:</p> */}
-              <p className="mt-3 p-base">
-                Price: The S&P 500 price as of {formatDate(CAPE.closingTime)}{' '}
-                was{' '}
-                <span className="font-bold">
-                  {formatCurrency(CAPE.sp500, 2)}
-                </span>
-                .
-              </p>
-              <p className="mt-3">
-                Earnings: The ten year average real annual earnings of the S&P
-                500 from{' '}
-                {getZonedTime
-                  .fromObject({
-                    year: CAPE.averageAnnualRealEarningsForSP500For10Years
-                      .tenYearDuration.start.year,
-                    month:
-                      CAPE.averageAnnualRealEarningsForSP500For10Years
-                        .tenYearDuration.start.month,
-                  })
-                  .toFormat('MMMM yyyy')}{' '}
-                to{' '}
-                {getZonedTime
-                  .fromObject({
-                    year: CAPE.averageAnnualRealEarningsForSP500For10Years
-                      .tenYearDuration.end.year,
-                    month:
-                      CAPE.averageAnnualRealEarningsForSP500For10Years
-                        .tenYearDuration.end.month,
-                  })
-                  .toFormat('MMMM yyyy')}{' '}
-                was{' '}
-                <span className="font-bold">
+            <p className="mt-3">
+              Earnings: The ten year average real annual earnings of the S&P 500
+              from{' '}
+              {getZonedTime
+                .fromObject({
+                  year: CAPE.averageAnnualRealEarningsForSP500For10Years
+                    .tenYearDuration.start.year,
+                  month:
+                    CAPE.averageAnnualRealEarningsForSP500For10Years
+                      .tenYearDuration.start.month,
+                })
+                .toFormat('MMMM yyyy')}{' '}
+              to{' '}
+              {getZonedTime
+                .fromObject({
+                  year: CAPE.averageAnnualRealEarningsForSP500For10Years
+                    .tenYearDuration.end.year,
+                  month:
+                    CAPE.averageAnnualRealEarningsForSP500For10Years
+                      .tenYearDuration.end.month,
+                })
+                .toFormat('MMMM yyyy')}{' '}
+              was{' '}
+              <span className="font-bold">
+                {formatCurrency(
+                  CAPE.averageAnnualRealEarningsForSP500For10Years.value,
+                  2,
+                )}
+              </span>
+              {`. This data was obtained from the "US Stock Markets 1871 -
+        Present and CAPE Ratio" spreadsheet available on Professor
+        Robert Shiller's `}
+              <a
+                href="http://www.econ.yale.edu/~shiller/data.htm"
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                website
+              </a>
+              .
+            </p>
+            <div
+              className="inline-grid mt-3 items-center gap-x-1.5 sm:gap-x-3"
+              style={{
+                grid: 'auto /auto auto auto auto auto auto auto',
+              }}
+            >
+              <h2 className="">CAPE ratio</h2>
+              <h2 className="">=</h2>
+              <div className="">
+                <h2 className="text-center">price</h2>
+                <h2 className="text-center border-t border-gray-700">
+                  earnings
+                </h2>
+              </div>
+              <h2 className="">=</h2>
+              <div className="">
+                <h2 className="text-center">{formatCurrency(CAPE.sp500, 2)}</h2>
+                <h2 className="text-center border-t border-gray-700">
                   {formatCurrency(
                     CAPE.averageAnnualRealEarningsForSP500For10Years.value,
                     2,
                   )}
+                </h2>
+              </div>
+              <h2 className="">=</h2>
+              <h2 className="text-center font-bold">{CAPE.value.toFixed(2)}</h2>
+            </div>
+          </div>
+          <h2 className=" font-bold mt-4">
+            Core Estimates Based on CAPE Ratio
+          </h2>
+          <div className="">
+            <p className="p-base mt-3">
+              The CAPE ratio is used to arrive at the following nine core
+              estimates of expected return:
+            </p>
+            <div className="p-base list-disc mt-3">
+              <div className="mt-3">
+                1/CAPE:{' '}
+                <span className="font-bold">
+                  {formatPercentage(1)(CAPE.oneOverCAPE)}
                 </span>
-                {`. This data was obtained from the "US Stock Markets 1871 -
-                Present and CAPE Ratio" spreadsheet available on Professor
-                Robert Shiller's `}
+              </div>
+              <div className="mt-3">
+                Regression of future log stock returns on log 1/CAPE yields:{' '}
+                <div className="">
+                  <div
+                    className="inline-grid mt-1 gap-x-2"
+                    style={{ grid: ' auto/ auto auto' }}
+                  >
+                    <h2 className="text-righ">5 year expected return: </h2>
+                    <h2 className="font-bold">
+                      {formatPercentage(1)(CAPE.regression.full.fiveYear)}
+                    </h2>{' '}
+                    <h2 className="text-righ">10 year expected return: </h2>
+                    <h2 className="font-bold">
+                      {formatPercentage(1)(CAPE.regression.full.tenYear)}
+                    </h2>{' '}
+                    <h2 className="text-righ">20 year expected return: </h2>
+                    <h2 className="font-bold">
+                      {formatPercentage(1)(CAPE.regression.full.twentyYear)}
+                    </h2>{' '}
+                    <h2 className="text-righ">30 year expected return: </h2>
+                    <h2 className="font-bold">
+                      {formatPercentage(1)(CAPE.regression.full.thirtyYear)}
+                    </h2>{' '}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3">
+                Restricting the regression to data from 1950 onwards yields:{' '}
+                <div className="">
+                  <div
+                    className="inline-grid mt-1 gap-x-2"
+                    style={{ grid: ' auto/ auto auto' }}
+                  >
+                    <h2 className="text-righ">5 year expected return: </h2>
+                    <h2 className="font-bold">
+                      {formatPercentage(1)(CAPE.regression.restricted.fiveYear)}
+                    </h2>{' '}
+                    <h2 className="text-righ">10 year expected return: </h2>
+                    <h2 className="font-bold">
+                      {formatPercentage(1)(CAPE.regression.restricted.tenYear)}
+                    </h2>{' '}
+                    <h2 className="text-righ">20 year expected return: </h2>
+                    <h2 className="font-bold">
+                      {formatPercentage(1)(
+                        CAPE.regression.restricted.twentyYear,
+                      )}
+                    </h2>{' '}
+                    <h2 className="text-righ">30 year expected return: </h2>
+                    <h2 className="font-bold">
+                      {formatPercentage(1)(
+                        CAPE.regression.restricted.thirtyYear,
+                      )}
+                    </h2>{' '}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <h2 className=" font-bold mt-4">Presets</h2>
+            <p className="p-base mt-3">The presets provided are as follows:</p>
+            <ul className="list-disc ml-5 mt-2 p-base">
+              <li className="mt-1">
+                {getPresetLabelForStocks(
+                  'regressionPrediction,20YearTIPSYield',
+                )}{' '}
+                — average of the eight regression based core estimates above:{' '}
+                <span className="font-bold">
+                  {formatPercentage(1)(CAPE.regressionAverage)}
+                </span>{' '}
+              </li>
+              <li className="mt-1">
+                {getPresetLabelForStocks(
+                  'conservativeEstimate,20YearTIPSYield',
+                )}{' '}
+                — average of the four lowest of the nine core estimates above:{' '}
+                <span className="font-bold">
+                  {formatPercentage(1)(CAPE.suggested)}
+                </span>{' '}
+              </li>
+              <li className="mt-1">
+                {getPresetLabelForStocks('1/CAPE,20YearTIPSYield')}{' '}
+                <span className="font-bold">
+                  {formatPercentage(1)(CAPE.oneOverCAPE)}
+                </span>
+              </li>
+              <li className="mt-1">
+                {getPresetLabelForStocks('historical')} — average of the
+                historical stock returns:{' '}
+                <span className="font-bold">
+                  {formatPercentage(1)(
+                    historicalReturns.monthly.annualStats.stocks.ofBase
+                      .expectedValue,
+                  )}
+                </span>{' '}
+              </li>
+            </ul>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold mt-10">Bonds</h2>
+          <div className="">
+            <div className="p-base">
+              <p className="mt-3">
+                TIPS yields provide reasonable estimates of the expected real
+                return of bonds. The data is available at{' '}
                 <a
-                  href="http://www.econ.yale.edu/~shiller/data.htm"
+                  href="https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics"
                   target="_blank"
                   rel="noreferrer"
                   className="underline"
                 >
-                  website
+                  treasury.gov
                 </a>
-                .
+                {` under "Daily Treasury Par Real Yield Curve Rates." Make sure you
+          click on the Real Yield Curve series, not the similarly named
+          Yield Curve series.`}
               </p>
+              <p className="mt-3">
+                Data as of {formatDate(bondRates.closingTime)}:
+              </p>
+            </div>
+
+            <h2 className=" font-bold mt-4">
+              Core Estimates Based on TIPS Yields
+            </h2>
+            <div className="mt-3 p-base">
               <div
-                className="inline-grid mt-3 items-center gap-x-1.5 sm:gap-x-3"
-                style={{
-                  grid: 'auto /auto auto auto auto auto auto auto',
-                }}
+                className="inline-grid gap-x-2"
+                style={{ grid: 'auto/auto auto' }}
               >
-                <h2 className="">CAPE ratio</h2>
-                <h2 className="">=</h2>
-                <div className="">
-                  <h2 className="text-center">price</h2>
-                  <h2 className="text-center border-t border-gray-700">
-                    earnings
-                  </h2>
-                </div>
-                <h2 className="">=</h2>
-                <div className="">
-                  <h2 className="text-center">
-                    {formatCurrency(CAPE.sp500, 2)}
-                  </h2>
-                  <h2 className="text-center border-t border-gray-700">
-                    {formatCurrency(
-                      CAPE.averageAnnualRealEarningsForSP500For10Years.value,
-                      2,
-                    )}
-                  </h2>
-                </div>
-                <h2 className="">=</h2>
-                <h2 className="text-center font-bold">
-                  {CAPE.value.toFixed(2)}
+                <h2 className="">5 year TIPS yield: </h2>
+                <h2 className="font-bold">
+                  {formatPercentage(1)(bondRates.fiveYear)}
+                </h2>
+                <h2 className="">10 year TIPS yield: </h2>
+                <h2 className="font-bold">
+                  {formatPercentage(1)(bondRates.tenYear)}
+                </h2>
+                <h2 className="">20 year TIPS yield: </h2>
+                <h2 className="font-bold">
+                  {formatPercentage(1)(bondRates.twentyYear)}
+                </h2>
+                <h2 className="">30 year TIPS yield: </h2>
+                <h2 className="font-bold">
+                  {formatPercentage(1)(bondRates.thirtyYear)}
                 </h2>
               </div>
             </div>
-            <h2 className=" font-bold mt-4">
-              Core Estimates Based on CAPE Ratio
-            </h2>
-            <div className="">
-              <p className="p-base mt-3">
-                The CAPE ratio is used to arrive at the following nine core
-                estimates of expected return:
-              </p>
-              <div className="p-base list-disc mt-3">
-                <div className="mt-3">
-                  1/CAPE:{' '}
-                  <span className="font-bold">
-                    {formatPercentage(1)(CAPE.oneOverCAPE)}
-                  </span>
-                </div>
-                <div className="mt-3">
-                  Regression of future log stock returns on log 1/CAPE yields:{' '}
-                  <div className="">
-                    <div
-                      className="inline-grid mt-1 gap-x-2"
-                      style={{ grid: ' auto/ auto auto' }}
-                    >
-                      <h2 className="text-righ">5 year expected return: </h2>
-                      <h2 className="font-bold">
-                        {formatPercentage(1)(CAPE.regression.full.fiveYear)}
-                      </h2>{' '}
-                      <h2 className="text-righ">10 year expected return: </h2>
-                      <h2 className="font-bold">
-                        {formatPercentage(1)(CAPE.regression.full.tenYear)}
-                      </h2>{' '}
-                      <h2 className="text-righ">20 year expected return: </h2>
-                      <h2 className="font-bold">
-                        {formatPercentage(1)(CAPE.regression.full.twentyYear)}
-                      </h2>{' '}
-                      <h2 className="text-righ">30 year expected return: </h2>
-                      <h2 className="font-bold">
-                        {formatPercentage(1)(CAPE.regression.full.thirtyYear)}
-                      </h2>{' '}
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3">
-                  Restricting the regression to data from 1950 onwards yields:{' '}
-                  <div className="">
-                    <div
-                      className="inline-grid mt-1 gap-x-2"
-                      style={{ grid: ' auto/ auto auto' }}
-                    >
-                      <h2 className="text-righ">5 year expected return: </h2>
-                      <h2 className="font-bold">
-                        {formatPercentage(1)(
-                          CAPE.regression.restricted.fiveYear,
-                        )}
-                      </h2>{' '}
-                      <h2 className="text-righ">10 year expected return: </h2>
-                      <h2 className="font-bold">
-                        {formatPercentage(1)(
-                          CAPE.regression.restricted.tenYear,
-                        )}
-                      </h2>{' '}
-                      <h2 className="text-righ">20 year expected return: </h2>
-                      <h2 className="font-bold">
-                        {formatPercentage(1)(
-                          CAPE.regression.restricted.twentyYear,
-                        )}
-                      </h2>{' '}
-                      <h2 className="text-righ">30 year expected return: </h2>
-                      <h2 className="font-bold">
-                        {formatPercentage(1)(
-                          CAPE.regression.restricted.thirtyYear,
-                        )}
-                      </h2>{' '}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <h2 className=" font-bold mt-4">Presets</h2>
+            <h2 className=" font-bold mt-4">Presets</h2>
+            <div className="p-base">
               <p className="p-base mt-3">
                 The presets provided are as follows:
               </p>
               <ul className="list-disc ml-5 mt-2 p-base">
                 <li className="mt-1">
-                  Suggested — average of the four lowest of the nine core
-                  estimates above:{' '}
+                  {getPresetLabelForBonds(
+                    'regressionPrediction,20YearTIPSYield',
+                  )}:{' '}
                   <span className="font-bold">
-                    {formatPercentage(1)(CAPE.suggested)}
+                    {formatPercentage(1)(bondRates.twentyYear)}
                   </span>{' '}
                 </li>
                 <li className="mt-1">
-                  1/CAPE:{' '}
-                  <span className="font-bold">
-                    {formatPercentage(1)(CAPE.oneOverCAPE)}
-                  </span>
-                </li>
-                <li className="mt-1">
-                  Regression Prediction — average of the eight regression based
-                  core estimates above:{' '}
-                  <span className="font-bold">
-                    {formatPercentage(1)(CAPE.regressionAverage)}
-                  </span>{' '}
-                </li>
-                <li className="mt-1">
-                  Historical — average of the historical stock returns:{' '}
+                  {getPresetLabelForBonds('historical')} — average of the
+                  historical bond returns:{' '}
                   <span className="font-bold">
                     {formatPercentage(1)(
-                      historicalReturns.monthly.annualStats.stocks.ofBase
+                      historicalReturns.monthly.annualStats.bonds.ofBase
                         .expectedValue,
                     )}
                   </span>{' '}
                 </li>
               </ul>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold mt-10">Bonds</h2>
-            <div className="">
-              <div className="p-base">
-                <p className="mt-3">
-                  TIPS yields provide reasonable estimates of the expected real
-                  return of bonds. The data is available at{' '}
-                  <a
-                    href="https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline"
-                  >
-                    treasury.gov
-                  </a>
-                  {` under "Daily Treasury Par Real Yield Curve Rates." Make sure you
-                  click on the Real Yield Curve series, not the similarly named
-                  Yield Curve series.`}
-                </p>
-                <p className="mt-3">
-                  Data as of {formatDate(bondRates.closingTime)}:
-                </p>
-              </div>
-
-              <h2 className=" font-bold mt-4">
-                Core Estimates Based on TIPS Yields
-              </h2>
-              <div className="mt-3 p-base">
-                <div
-                  className="inline-grid gap-x-2"
-                  style={{ grid: 'auto/auto auto' }}
-                >
-                  <h2 className="">5 year TIPS yield: </h2>
-                  <h2 className="font-bold">
-                    {formatPercentage(1)(bondRates.fiveYear)}
-                  </h2>
-                  <h2 className="">10 year TIPS yield: </h2>
-                  <h2 className="font-bold">
-                    {formatPercentage(1)(bondRates.tenYear)}
-                  </h2>
-                  <h2 className="">20 year TIPS yield: </h2>
-                  <h2 className="font-bold">
-                    {formatPercentage(1)(bondRates.twentyYear)}
-                  </h2>
-                  <h2 className="">30 year TIPS yield: </h2>
-                  <h2 className="font-bold">
-                    {formatPercentage(1)(bondRates.thirtyYear)}
-                  </h2>
-                </div>
-              </div>
-              <h2 className=" font-bold mt-4">Presets</h2>
-              <div className="p-base">
-                <p className="p-base mt-3">
-                  The presets provided are as follows:
-                </p>
-                <ul className="list-disc ml-5 mt-2 p-base">
-                  <li className="mt-1">
-                    Suggested — the 20 year TIPS yield:{' '}
-                    <span className="font-bold">
-                      {formatPercentage(1)(bondRates.twentyYear)}
-                    </span>{' '}
-                  </li>
-                  <li className="mt-1">
-                    Historical — average of the historical bond returns:{' '}
-                    <span className="font-bold">
-                      {formatPercentage(1)(
-                        historicalReturns.monthly.annualStats.bonds.ofBase
-                          .expectedValue,
-                      )}
-                    </span>{' '}
-                  </li>
-                </ul>
-              </div>
-            </div>
           </div>
-        </CenteredModal>
-      </div>
+        </div>
+      </CenteredModal>
     )
   },
 )
