@@ -44,7 +44,8 @@ const _guard = <T extends string, V>(
 ): JSONGuard<{ type: T; value: V }> =>
   object({ type: constant(type), value: valueGuard })
 
-const v22CG = V22.componentGuards
+  const v21CG = V21.componentGuards
+  const v22CG = V22.componentGuards
 export const planParamsChangeActionGuardDeprecated: JSONGuard<PlanParamsChangeActionDeprecated> =
   union(
     _guard(
@@ -63,4 +64,5 @@ export const planParamsChangeActionGuardDeprecated: JSONGuard<PlanParamsChangeAc
     ),
     _guard('setHistoricalReturnsStocksDev', v22CG.historicalAnnualReturns),
     _guard('setHistoricalReturnsBondsDev', v22CG.historicalAnnualReturns),
+    _guard('setExpectedReturns', v21CG.expectedAnnualReturns),
   )
