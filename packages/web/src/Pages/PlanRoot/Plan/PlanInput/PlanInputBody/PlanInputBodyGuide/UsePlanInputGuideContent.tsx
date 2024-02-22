@@ -39,7 +39,7 @@ export function usePlanInputGuideContent(type: PlanInputType) {
       presetInfo.stocks.historical,
     ),
     historicalExpectedBondReturn: formatPercentage(1)(
-      presetInfo.stocks.historical,
+      presetInfo.bonds.historical,
     ),
   }
   return Contentful.replaceVariables(variables, content)
