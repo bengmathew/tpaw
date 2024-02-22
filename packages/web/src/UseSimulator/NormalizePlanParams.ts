@@ -17,6 +17,7 @@ import {
 import { Record } from '../Utils/Record'
 import { PlanParamsExtended } from './ExtentPlanParams'
 import _ from 'lodash'
+import jsonpatch from 'fast-json-patch'
 
 // TODO: Replace as many planParamsExt uses with planParamsNorm as possible.
 export type PlanParamsNormalized = ReturnType<typeof normalizePlanParams>
@@ -33,7 +34,10 @@ export const normalizePlanParams = (planParamsExt: PlanParamsExtended) => {
   const result = normalizePlanParamsJS(planParams, nowAsCalendarMonth)
   // TODO
   const usingExt = _getUsingExt(planParamsExt)
-  assert(_.isEqual(result, usingExt))
+  if(!_.isEqual(result, usingExt)){
+    const diff = jsonpatch.compare(result, usingExt)
+    throw new Error(`normalizePlanParamsJS and _getUsingExt are not equal: ${JSON.stringify(diff)}`)
+  }
   return result
 }
 
