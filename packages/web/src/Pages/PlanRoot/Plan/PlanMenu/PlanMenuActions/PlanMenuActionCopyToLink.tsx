@@ -1,12 +1,11 @@
 import {
-  faCheck,
-  faCopy,
-  faLink,
-  faSpinnerThird,
+    faCheck,
+    faCopy,
+    faLink,
+    faSpinnerThird,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
-import { captureException } from '@sentry/nextjs'
 import { fGet, noCase } from '@tpaw/common'
 import clix from 'clsx'
 import cloneJSON from 'fast-json-clone'
@@ -14,12 +13,10 @@ import React, { ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { appPaths } from '../../../../../AppPaths'
-import { errorToast } from '../../../../../Utils/CustomToasts'
+import { useDefaultErrorHandlerForNetworkCall } from '../../../../App/GlobalErrorBoundary'
 import { CurrentPortfolioBalance } from '../../../PlanRootHelpers/CurrentPortfolioBalance'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionCopyToLinkShortLinkMutation } from './__generated__/PlanMenuActionCopyToLinkShortLinkMutation.graphql'
-import { AppError } from '../../../../App/AppError'
-import { useDefaultErrorHandlerForNetworkCall } from '../../../../App/GlobalErrorBoundary'
 
 export const PlanMenuActionCopyToLink = React.memo(
   ({ className, closeMenu }: { className?: string; closeMenu: () => void }) => {

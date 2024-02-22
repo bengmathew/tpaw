@@ -1,8 +1,8 @@
 import { assert } from '@tpaw/common'
 import _ from 'lodash'
+import { Record } from './Record'
 import { Transition } from './Transition'
 import { zeroOneInterpolate } from './ZeroOneInterpolate'
-import { Record } from './Record'
 
 // Thanks: https://stackoverflow.com/a/47842314
 // eslint-disable-next-line @typescript-eslint/no-empty-interface

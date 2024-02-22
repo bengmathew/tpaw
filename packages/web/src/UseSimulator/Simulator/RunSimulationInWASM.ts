@@ -1,9 +1,10 @@
 import {
-  DEFAULT_MONTE_CARLO_SIMULATION_SEED,
   MAX_AGE_IN_MONTHS,
+  annualToMonthlyReturnRate,
+  assert,
   block,
 } from '@tpaw/common'
-import { Stats, StatsForWindowSize } from '@tpaw/simulator'
+import { BaseAndLogStats, Stats } from '@tpaw/simulator'
 import _ from 'lodash'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { noCase } from '../../Utils/Utils'
@@ -13,7 +14,7 @@ import { WASM } from './GetWASM'
 import { RunSimulationInWASMResult } from './RunSimulationInWASMResult'
 
 export function runSimulationInWASM(
-  params: PlanParamsProcessed,
+  planParamsProcessed: PlanParamsProcessed,
   runsSpec: SimpleRange,
   randomSeed: number,
   wasm: WASM,
@@ -23,54 +24,61 @@ export function runSimulationInWASM(
   } = { forFirstMonth: false },
 ): RunSimulationInWASMResult {
   let start0 = performance.now()
+  const { planParams } = planParamsProcessed
   const { numMonths, asMFN, withdrawalStartMonth } = extendPlanParams(
-    params.planParams,
-    params.currentTime.epoch,
-    params.currentTime.zoneName,
+    planParams,
+    planParamsProcessed.currentTime.epoch,
+    planParamsProcessed.currentTime.zoneName,
   )
 
   const numMonthsToSimulate = opts.forFirstMonth ? 1 : numMonths
 
   let start = performance.now()
   let runs = wasm.run(
-    params.strategy,
+    planParams.advanced.strategy,
     runsSpec.start,
     runsSpec.end,
     numMonths,
     numMonthsToSimulate,
     asMFN(withdrawalStartMonth),
-    params.expectedReturnsForPlanning.monthly.stocks,
-    params.expectedReturnsForPlanning.monthly.bonds,
-    Float64Array.from(params.historicalReturnsAdjusted.monthly.stocks),
-    Float64Array.from(params.historicalReturnsAdjusted.monthly.bonds),
-    params.estimatedCurrentPortfolioBalance,
-    Float64Array.from(params.risk.tpaw.allocation),
-    Float64Array.from(params.risk.spawAndSWR.allocation),
-    params.risk.tpaw.allocationForLegacy.stocks,
-    params.risk.swr.monthlyWithdrawal.type,
-    params.risk.swr.monthlyWithdrawal.type === 'asAmount'
-      ? params.risk.swr.monthlyWithdrawal.amount
-      : params.risk.swr.monthlyWithdrawal.type === 'asPercent'
-        ? params.risk.swr.monthlyWithdrawal.percent
-        : noCase(params.risk.swr.monthlyWithdrawal),
-    params.byMonth.risk.tpawAndSPAW.lmp,
-    params.byMonth.wealth.total,
-    params.byMonth.adjustmentsToSpending.extraSpending.essential.total,
-    params.byMonth.adjustmentsToSpending.extraSpending.discretionary.total,
-    params.adjustmentsToSpending.tpawAndSPAW.legacy.target,
-    params.adjustmentsToSpending.tpawAndSPAW.legacy.external,
-    Float64Array.from(params.risk.tpawAndSPAW.monthlySpendingTilt),
-    params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling ??
-      undefined,
-    params.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor ?? undefined,
-    params.sampling.type === 'monteCarlo'
+    planParamsProcessed.expectedReturnsForPlanning.monthlyNonLogForSimulation
+      .stocks,
+    planParamsProcessed.expectedReturnsForPlanning.monthlyNonLogForSimulation
+      .bonds,
+    planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.logSeries,
+    planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.logSeries,
+    planParamsProcessed.estimatedCurrentPortfolioBalance,
+    Float64Array.from(planParamsProcessed.risk.tpaw.allocation),
+    Float64Array.from(planParamsProcessed.risk.spawAndSWR.allocation),
+    planParamsProcessed.risk.tpaw.allocationForLegacy.stocks,
+    planParamsProcessed.risk.swr.monthlyWithdrawal.type,
+    planParamsProcessed.risk.swr.monthlyWithdrawal.type === 'asAmount'
+      ? planParamsProcessed.risk.swr.monthlyWithdrawal.amount
+      : planParamsProcessed.risk.swr.monthlyWithdrawal.type === 'asPercent'
+        ? planParamsProcessed.risk.swr.monthlyWithdrawal.percent
+        : noCase(planParamsProcessed.risk.swr.monthlyWithdrawal),
+    planParamsProcessed.byMonth.risk.tpawAndSPAW.lmp,
+    planParamsProcessed.byMonth.wealth.total,
+    planParamsProcessed.byMonth.adjustmentsToSpending.extraSpending.essential
+      .total,
+    planParamsProcessed.byMonth.adjustmentsToSpending.extraSpending
+      .discretionary.total,
+    planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.target,
+    planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.external,
+    Float64Array.from(planParamsProcessed.risk.tpawAndSPAW.monthlySpendingTilt),
+    planParamsProcessed.adjustmentsToSpending.tpawAndSPAW
+      .monthlySpendingCeiling ?? undefined,
+    planParamsProcessed.adjustmentsToSpending.tpawAndSPAW
+      .monthlySpendingFloor ?? undefined,
+    planParams.advanced.sampling.type === 'monteCarlo'
       ? true
-      : params.sampling.type === 'historical'
+      : planParams.advanced.sampling.type === 'historical'
         ? false
-        : noCase(params.sampling.type),
-    params.samplingBlockSizeForMonteCarlo,
+        : noCase(planParams.advanced.sampling.type),
+    planParams.advanced.sampling.forMonteCarlo.blockSize,
+    planParams.advanced.sampling.forMonteCarlo.staggerRunStarts,
     MAX_AGE_IN_MONTHS,
-    BigInt(randomSeed), 
+    BigInt(randomSeed),
     opts.test?.truth ? Float64Array.from(opts.test.truth) : undefined,
     opts.test?.indexIntoHistoricalReturns
       ? Uint32Array.from(opts.test.indexIntoHistoricalReturns)
@@ -131,17 +139,16 @@ export function runSimulationInWASM(
       endingBalanceOfSavingsPortfolio: runs.by_run_ending_balance().slice(),
     },
     annualStatsForSampledReturns: block(() => {
-      const processStats = (stats: Stats) => ({
-        mean: stats.mean,
-        variance: stats.variance,
-        standardDeviation: stats.standard_deviation,
-        n: stats.n,
-      })
-      const processStatsForWindowSize = (stats: StatsForWindowSize) => ({
-        n: stats.n,
-        ofBase: processStats(stats.of_base),
-        ofLog: processStats(stats.of_log),
-      })
+      const processStatsForWindowSize = (
+        stats: BaseAndLogStats | null | undefined,
+      ) => {
+        if (stats) return { ofBase: stats.base, ofLog: stats.log }
+        else {
+          assert(opts.forFirstMonth)
+          let zero = { mean: 0, variance: 0, standardDeviation: 0, n: 0 }
+          return { ofBase: zero, ofLog: zero }
+        }
+      }
       return {
         stocks: processStatsForWindowSize(
           runs.annual_stats_for_sampled_stock_returns(),

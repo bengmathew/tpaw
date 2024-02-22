@@ -46,7 +46,10 @@ export const Perf = React.memo(() => {
               const planParamsProcessed = processPlanParams(
                 planParamsExt,
                 planParams.wealth.portfolioBalance.amount,
-                currMarketData,
+                {
+                  ...currMarketData,
+                  timestampMSForHistoricalReturns: Number.MAX_SAFE_INTEGER,
+                },
               )
               const result = await fGet(workerRef.current).runSimulations(
                 { canceled: false },
@@ -197,31 +200,25 @@ const getParams = (currentTime: DateTime) =>
       },
 
       advanced: {
-        expectedAnnualReturnForPlanning: {
+        expectedReturnsForPlanning: {
           type: 'manual',
           stocks: 0.04,
           bonds: 0.02,
         },
-        historicalReturnsAdjustment: {
-          stocks: {
-            adjustExpectedReturn: {
-              type: 'toExpectedUsedForPlanning',
-              correctForBlockSampling: true,
-            },
-            volatilityScale: 1,
+        historicalMonthlyLogReturnsAdjustment: {
+          standardDeviation: {
+            stocks: { scale: 1 },
+            bonds: { enableVolatility: true },
           },
-          bonds: {
-            adjustExpectedReturn: {
-              type: 'toExpectedUsedForPlanning',
-              correctForBlockSampling: true,
-            },
-            enableVolatility: true,
-          },
+          overrideToFixedForTesting: false,
         },
         annualInflation: { type: 'manual', value: 0.02 },
         sampling: {
           type: 'monteCarlo',
-          blockSizeForMonteCarloSampling: 12 * 5,
+          forMonteCarlo: {
+            blockSize: 12 * 5,
+            staggerRunStarts: true,
+          },
         },
         strategy: 'TPAW',
       },

@@ -1,29 +1,29 @@
 import {
-  faCircle as faCircleRegular,
-  faMinus,
-  faPlus,
+    faCircle as faCircleRegular,
+    faMinus,
+    faPlus,
 } from '@fortawesome/pro-regular-svg-icons'
 import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT,
-  assertFalse,
-  fGet,
-  noCase,
+    DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT,
+    assertFalse,
+    fGet,
+    noCase,
 } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
-import { paddingCSSStyle } from '../../../../../Utils/Geometry'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
-import { AmountInput } from '../../../../Common/Inputs/AmountInput'
-import { smartDeltaFnForAmountInput } from '../../../../Common/Inputs/SmartDeltaFnForAmountInput'
-import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
-import { PlanInputRiskSPAWAndSWRStockAllocationCard } from './PlanInputRiskSPAWAndSWRStockAllocation'
-import { usePlanContent } from '../../../PlanRootHelpers/WithPlanContent'
-import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
+import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 import { formatCurrency } from '../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
-import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
+import { paddingCSSStyle } from '../../../../../Utils/Geometry'
+import { AmountInput } from '../../../../Common/Inputs/AmountInput'
+import { smartDeltaFnForAmountInput } from '../../../../Common/Inputs/SmartDeltaFnForAmountInput'
+import { usePlanContent } from '../../../PlanRootHelpers/WithPlanContent'
+import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
+import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
+import { PlanInputRiskSPAWAndSWRStockAllocationCard } from './PlanInputRiskSPAWAndSWRStockAllocation'
 
 export const PlanInputRiskSWR = React.memo(
   ({ props }: { props: PlanInputBodyPassThruProps }) => {

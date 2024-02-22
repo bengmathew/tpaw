@@ -1,12 +1,14 @@
 import _ from 'lodash'
 import { nominalToReal } from '../../Utils/NominalToReal'
 import { PlanParamsExtended } from '../ExtentPlanParams'
+import { PlanParams } from '@tpaw/common'
+import { PlanParamsNormalized } from '../NormalizePlanParams'
 
 export function planParamsProcessAdjustmentsToSpending(
-  planParamsExt: PlanParamsExtended,
+  planParams: PlanParamsNormalized,
+  numMonths: number,
   monthlyInflation: number,
 ) {
-  const { planParams, numMonths } = planParamsExt
   return {
     tpawAndSPAW: (() => {
       const { monthlySpendingCeiling, monthlySpendingFloor, legacy } =

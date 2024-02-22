@@ -1,19 +1,19 @@
 import {
-  faArrowLeftLong,
-  faArrowRightLong,
-  faCaretDown,
-  faCaretRight,
+    faArrowLeftLong,
+    faArrowRightLong,
+    faCaretDown,
+    faCaretRight,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES,
-  PlanParams,
-  RISK_TOLERANCE_VALUES,
-  TIME_PREFERENCE_VALUES,
-  block,
-  fGet,
-  letIn,
-  monthlyToAnnualReturnRate,
+    ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES,
+    PlanParams,
+    RISK_TOLERANCE_VALUES,
+    TIME_PREFERENCE_VALUES,
+    block,
+    fGet,
+    letIn,
+    monthlyToAnnualReturnRate,
 } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'

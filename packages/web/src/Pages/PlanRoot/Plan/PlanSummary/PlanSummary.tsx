@@ -5,13 +5,13 @@ import _ from 'lodash'
 import React, { ReactNode, useMemo, useState } from 'react'
 import { PlanParamsExtended } from '../../../../UseSimulator/ExtentPlanParams'
 import {
-  Padding,
-  Size,
-  XY,
-  newPaddingHorz,
-  originCSSStyle,
-  paddingCSSStyleHorz,
-  sizeCSSStyle,
+    Padding,
+    Size,
+    XY,
+    newPaddingHorz,
+    originCSSStyle,
+    paddingCSSStyleHorz,
+    sizeCSSStyle,
 } from '../../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import { Config } from '../../../Config'
@@ -21,17 +21,16 @@ import { analyzeMonthsInParams } from '../PlanInput/Helpers/AnalyzeMonthsInParam
 import { PlanInputType } from '../PlanInput/Helpers/PlanInputType'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import { useGetPlanInputVisibility } from '../PlanInput/Helpers/UseGetPlanInputVisibility'
-import { useIsPlanInputDevHistoricalReturnsModified } from '../PlanInput/PlanInputDev/PlanInputDevHistoricalReturns'
 import { useIsPlanInputDevMiscModified } from '../PlanInput/PlanInputDev/PlanInputDevMisc'
-import { useIsPlanInputDevSimulationsModified } from '../PlanInput/PlanInputDev/PlanInputDevSimulations'
+import { useIsPlanInputDevSimulationsModified } from '../PlanInput/PlanInputDev/UseIsPlanInputDevSimulationsModified'
 import { useIsPlanInputDevTimeModified } from '../PlanInput/PlanInputDev/PlanInputDevTime'
 import { useIsPlanInputExpectedReturnsAndVolatilityModified } from '../PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { useIsPlanInputInflationModified } from '../PlanInput/PlanInputInflation'
 import { useIsPlanInputSimulationModifed } from '../PlanInput/PlanInputSimulation'
 import { useIsPlanInputStrategyModified } from '../PlanInput/PlanInputStrategy'
 import {
-  PlanTransitionState,
-  simplifyPlanTransitionState4,
+    PlanTransitionState,
+    simplifyPlanTransitionState4,
 } from '../PlanTransition'
 import { PlanSummaryButton } from './PlanSummaryButton'
 import { PlanSummaryDialog } from './PlanSummaryDialog'
@@ -118,7 +117,6 @@ export const PlanSummary = React.memo(
       'dev-misc': useIsPlanInputDevMiscModified(),
       'dev-simulations': useIsPlanInputDevSimulationsModified(),
       'dev-time': useIsPlanInputDevTimeModified(),
-      'dev-historical-returns': useIsPlanInputDevHistoricalReturnsModified(),
     }
     const devModifiedCount = _.values(devModifiedByType).filter((x) => x).length
 
@@ -410,14 +408,6 @@ export const PlanSummary = React.memo(
                         section={section}
                         padding={cardPadding}
                         flagAsModified={devModifiedByType['dev-simulations']}
-                      />
-                      <PlanSummaryButton
-                        type="dev-historical-returns"
-                        section={section}
-                        padding={cardPadding}
-                        flagAsModified={
-                          devModifiedByType['dev-historical-returns']
-                        }
                       />
                       <PlanSummaryButton
                         type="dev-time"

@@ -1,4 +1,4 @@
-import { DialogPosition, PlanParams, noCase } from '@tpaw/common'
+import { DialogPosition, noCase } from '@tpaw/common'
 
 // type DialogPosition = PlanParams['dialogPositionNominal']
 // export const planSectionDialogOrder: _DialogPosition[] = [

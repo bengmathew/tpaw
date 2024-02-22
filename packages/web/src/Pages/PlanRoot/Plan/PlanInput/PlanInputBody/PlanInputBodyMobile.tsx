@@ -1,14 +1,14 @@
 import React, {
-  ReactElement,
-  ReactNode,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
+    ReactElement,
+    ReactNode,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
 } from 'react'
 import {
-  newPaddingHorz,
-  paddingCSSStyleHorz,
+    newPaddingHorz,
+    paddingCSSStyleHorz,
 } from '../../../../../Utils/Geometry'
 import { fGet } from '../../../../../Utils/Utils'
 import { ModalBase } from '../../../../Common/Modal/ModalBase'

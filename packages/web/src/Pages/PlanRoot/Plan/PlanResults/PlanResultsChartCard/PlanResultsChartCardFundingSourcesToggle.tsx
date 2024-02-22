@@ -7,8 +7,8 @@ import { useURLUpdater } from '../../../../../Utils/UseURLUpdater'
 import { ToggleSwitch } from '../../../../Common/Inputs/ToggleSwitch'
 import { usePlanColors } from '../../UsePlanColors'
 import {
-  getPlanResultsChartSpendingTotalFundingSourcesPercentile,
-  isPlanResultsChartSpendingTotalFundingSourcesType,
+    getPlanResultsChartSpendingTotalFundingSourcesPercentile,
+    isPlanResultsChartSpendingTotalFundingSourcesType,
 } from '../PlanResultsChartType'
 import { useGetPlanResultsChartURL } from '../UseGetPlanResultsChartURL'
 import { usePlanResultsChartType } from '../UsePlanResultsChartType'

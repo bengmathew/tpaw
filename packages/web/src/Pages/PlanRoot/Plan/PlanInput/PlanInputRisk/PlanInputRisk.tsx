@@ -1,20 +1,20 @@
 import { PlanParams, noCase } from '@tpaw/common'
 import React from 'react'
+import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import {
-  PlanInputBody,
-  PlanInputBodyPassThruProps,
+    PlanInputBody,
+    PlanInputBodyPassThruProps,
 } from '../PlanInputBody/PlanInputBody'
 import {
-  PlanInputRiskSPAW,
-  PlanInputRiskSPAWSummary,
+    PlanInputRiskSPAW,
+    PlanInputRiskSPAWSummary,
 } from './PlanInputRiskSPAW'
 import { PlanInputRiskSWR, PlanInputRiskSWRSummary } from './PlanInputRiskSWR'
 import {
-  PlanInputRiskTPAW,
-  PlanInputRiskTPAWSummary,
+    PlanInputRiskTPAW,
+    PlanInputRiskTPAWSummary,
 } from './PlanInputRiskTPAW'
-import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 
 export const PlanInputRisk = React.memo((props: PlanInputBodyPassThruProps) => {
   const { planParams } = useSimulation()

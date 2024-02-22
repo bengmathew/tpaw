@@ -19,8 +19,8 @@ import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { planSectionLabel } from './Helpers/PlanSectionLabel'
 import {
-  PlanInputBody,
-  PlanInputBodyPassThruProps,
+    PlanInputBody,
+    PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 export const PlanInputCurrentPortfolioBalance = React.memo(

@@ -1,10 +1,10 @@
 import {
-  faCaretDown,
-  faCopy,
-  faEraser,
-  faGrid2,
-  faPlus,
-  faUser,
+    faCaretDown,
+    faCopy,
+    faEraser,
+    faGrid2,
+    faPlus,
+    faUser,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
@@ -14,8 +14,8 @@ import { appPaths } from '../../../../AppPaths'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
 import { ContextMenu2 } from '../../../Common/Modal/ContextMenu2'
 import {
-  SimulationInfoForLocalMainSrc,
-  SimulationInfoForPlanMode,
+    SimulationInfoForLocalMainSrc,
+    SimulationInfoForPlanMode,
 } from '../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../UsePlanColors'
 import { PlanMenuActionCopyToLink } from './PlanMenuActions/PlanMenuActionCopyToLink'

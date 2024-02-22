@@ -12,10 +12,11 @@ import {
   getZonedTimeFns,
   linearFnFomPoints,
   planParamsFns,
+  assert,
+  noCase,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { SimpleRange } from '../Utils/SimpleRange'
-import { assert, noCase } from '../Utils/Utils'
 import { yourOrYourPartners } from '../Utils/YourOrYourPartners'
 
 const {
@@ -120,6 +121,10 @@ export const extendPlanParams = (
       case 'numericAge':
         return fromAgeInMonths(month.age)
       case 'namedAge':
+        // Consider throwing instead of effectiveRetirementAge, because if a
+        // person is retired with no retirement date specified, then no month
+        // *should* be keyed to lastWorkingMonth or retirement (this is enforced
+        // by the planParamsGuard).
         const effectiveRetirementAge =
           person.ages.type === 'retiredWithNoRetirementDateSpecified'
             ? getCurrentAgeOfPerson(month.person)
@@ -378,6 +383,7 @@ export const extendPlanParams = (
       ? asMFN(monthRange.end) - asMFN(monthRange.start) + 1
       : monthRange.numMonths
 
+  
   // const monthRangeClamp = (
   //   bounds: { start: Month; end: Month },
   //   range: MonthRange,
@@ -453,6 +459,7 @@ export const extendPlanParams = (
     isAgesNotRetired,
     getCurrentAgeOfPerson,
     monthsFromNowToCalendarMonth,
+    calendarMonthToMonthsFromNow,
     currentMonth,
     numMonths,
     pickPerson,
@@ -469,7 +476,6 @@ export const extendPlanParams = (
     glidePathIntermediateValidated,
     months,
     monthRangeLength,
-    // monthRangeClamp,
     monthRangeEdge,
     monthRangeBoundsCheck,
     withdrawalStartMonth,

@@ -11,7 +11,7 @@ import {
 import { PlanParams21 as V21 } from './Old/PlanParams21'
 import { PlanParams22 as V22 } from './Old/PlanParams22'
 import { PlanParams23 as V23 } from './Old/PlanParams23'
-import { PlanParams26 as V26 } from './PlanParams26'
+import { PlanParams26 as V26 } from './Old/PlanParams26'
 import {
   PlanParamsChangeActionDeprecated,
   planParamsChangeActionGuardDeprecated,
@@ -164,6 +164,10 @@ export type PlanParamsChangeActionCurrent =
       value: number
     }
   | {
+      type: 'setMonteCarloStaggerRunStarts'
+      value: boolean
+    }
+  | {
       type: 'setExpectedReturns2'
       value: V26.PlanParams['advanced']['expectedAnnualReturnForPlanning']
     }
@@ -182,11 +186,8 @@ export type PlanParamsChangeActionCurrent =
 
   // -------------- DEV
   | {
-      type: 'setHistoricalReturnsAdjustExpectedReturnDev'
-      value: {
-        type: 'stocks' | 'bonds'
-        adjustExpectedReturn: V23.PlanParams['advanced']['historicalReturnsAdjustment']['stocks']['adjustExpectedReturn']
-      }
+      type: 'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting'
+      value: boolean
     }
 
 export type PlanParamsChangeAction =
@@ -319,19 +320,16 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
     _guard('setSamplingToDefault', constant(null)),
     _guard('setSampling', v22CG.samplingType),
     _guard('setMonteCarloSamplingBlockSize', number),
+    _guard('setMonteCarloStaggerRunStarts', boolean),
     _guard('setExpectedReturns2', v26CG.expectedAnnualReturnForPlanning),
     _guard('setAnnualInflation', v21CG.annualInflation),
     _guard('setHistoricalStockReturnsAdjustmentVolatilityScale', number),
     _guard('setHistoricalBondReturnsAdjustmentEnableVolatility', boolean),
-    _guard('setHistoricalBondReturnsAdjustmentEnableVolatility', boolean),
 
     // -------------- DEV
     _guard(
-      'setHistoricalReturnsAdjustExpectedReturnDev',
-      object({
-        type: union(constant('stocks'), constant('bonds')),
-        adjustExpectedReturn: v23CG.adjustExpectedReturn,
-      }),
+      'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting',
+      boolean,
     ),
   )
 

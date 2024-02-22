@@ -1,15 +1,15 @@
 import { MarketData, assert, fGet, getNYZonedTime, noCase } from '@tpaw/common'
 import {
-  JSONGuard,
-  chain,
-  constant,
-  gte,
-  integer,
-  json,
-  number,
-  object,
-  string,
-  union,
+    JSONGuard,
+    chain,
+    constant,
+    gte,
+    integer,
+    json,
+    number,
+    object,
+    string,
+    union,
 } from 'json-guard'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
@@ -144,7 +144,7 @@ namespace _SynthesizeMarketData {
       ].sort((a, b) => a.closingTime - b.closingTime)
     return {
       inflation: splitStream((x) => x.inflation),
-      CAPE: splitStream((x) => x.CAPE),
+      sp500: splitStream((x) => x.sp500),
       bondRates: splitStream((x) => x.bondRates),
       dailyStockMarketPerformance: splitStream(
         (x) => x.dailyStockMarketPerformance,
@@ -188,7 +188,7 @@ namespace _SynthesizeMarketData {
     }
 
     const inflation = helper(marketDataSplit.inflation)
-    const CAPE = helper(marketDataSplit.CAPE)
+    const sp500 = helper(marketDataSplit.sp500)
     const bondRates = helper(marketDataSplit.bondRates)
 
     const dailyStockMarketPerformance = helper(
@@ -223,7 +223,7 @@ namespace _SynthesizeMarketData {
 
     const result = MarketData.combineStreams(
       inflation,
-      CAPE,
+      sp500,
       bondRates,
       dailyStockMarketPerformance,
     )

@@ -3,16 +3,16 @@ import { SimpleRange } from '../../../../../../Utils/SimpleRange'
 import { ChartComponent } from '../../../../../Common/Chart/ChartComponent/ChartComponent'
 import { ChartPointerPortal } from '../../../../../Common/Chart/ChartComponent/ChartPointerPortal'
 import {
-  ChartReact,
-  ChartReactSizing,
-  ChartReactStatefull,
+    ChartReact,
+    ChartReactSizing,
+    ChartReactStatefull,
 } from '../../../../../Common/Chart/ChartReact'
-import { PlanResultsChartCustomComponenet } from './PlanResultsChartCustomComponent'
 import { getPlanResultsChartBreakdown } from './GetPlanResultsChartBreakdown'
 import { getPlanResultsChartPointer } from './GetPlanResultsChartPointer'
 import { getPlanResultsChartRange } from './GetPlanResultsChartRange'
 import { getPlanResultsChartSalientPoints } from './GetPlanResultsChartSalientPoints'
 import { getPlanResultsChartXAxis } from './GetPlanResultsChartXAxis'
+import { PlanResultsChartCustomComponenet } from './PlanResultsChartCustomComponent'
 import { PlanResultsChartData } from './PlanResultsChartData'
 
 type _ChartData = { data: PlanResultsChartData; yRange: SimpleRange }

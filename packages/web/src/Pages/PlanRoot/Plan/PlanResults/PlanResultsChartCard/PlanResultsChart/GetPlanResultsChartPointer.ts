@@ -8,9 +8,9 @@ import { SimpleRange } from '../../../../../../Utils/SimpleRange'
 import { Transition } from '../../../../../../Utils/Transition'
 import { ChartBreakdown } from '../../../../../Common/Chart/ChartComponent/ChartBreakdown'
 import {
-  ChartPointer,
-  ChartPointerBoxComponents,
-  ChartPointerProps,
+    ChartPointer,
+    ChartPointerBoxComponents,
+    ChartPointerProps,
 } from '../../../../../Common/Chart/ChartComponent/ChartPointer'
 import { ChartPointerPortal } from '../../../../../Common/Chart/ChartComponent/ChartPointerPortal'
 import { ChartRange } from '../../../../../Common/Chart/ChartComponent/ChartRange'
@@ -18,9 +18,9 @@ import { ChartStyling } from '../../../../../Common/Chart/ChartUtils/ChartStylin
 import { ChartUtils } from '../../../../../Common/Chart/ChartUtils/ChartUtils'
 import { PlanColors } from '../../../UsePlanColors'
 import {
-  PlanResultsChartType,
-  isPlanResultsChartSpendingDiscretionaryType,
-  isPlanResultsChartSpendingEssentialType,
+    PlanResultsChartType,
+    isPlanResultsChartSpendingDiscretionaryType,
+    isPlanResultsChartSpendingEssentialType,
 } from '../../PlanResultsChartType'
 import { PlanResultsChartData } from './PlanResultsChartData'
 

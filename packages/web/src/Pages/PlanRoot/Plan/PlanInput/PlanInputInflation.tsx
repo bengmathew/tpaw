@@ -2,24 +2,21 @@ import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
 import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  MANUAL_INFLATION_VALUES,
-  noCase,
-  PlanParams,
-  SUGGESTED_ANNUAL_INFLATION,
-} from '@tpaw/common'
+import { MANUAL_INFLATION_VALUES, noCase, PlanParams } from '@tpaw/common'
 import _ from 'lodash'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { PlanParamsProcessed } from '../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import { SliderInput } from '../../../Common/Inputs/SliderInput/SliderInput'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { useWASM } from '../../PlanRootHelpers/WithWASM'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
+import { fWASM } from '../../../../UseSimulator/Simulator/GetWASM'
 
 export const PlanInputInflation = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -45,6 +42,11 @@ export const _InflationCard = React.memo(
       defaultPlanParams,
       currentMarketData,
     } = useSimulation()
+
+    const suggestedInflation = useMemo(
+      () => fWASM().get_suggested_annual_inflation(currentMarketData),
+      [currentMarketData],
+    )
 
     const handleChange = (
       annualInflation: PlanParams['advanced']['annualInflation'],
@@ -80,9 +82,7 @@ export const _InflationCard = React.memo(
               {inflationTypeLabel({ type: 'suggested' })}
             </h2>
             <h2 className="text-left text-sm lighten-2">
-              {formatPercentage(1)(
-                SUGGESTED_ANNUAL_INFLATION(currentMarketData),
-              )}
+              {formatPercentage(1)(suggestedInflation)}
             </h2>
           </div>
         </button>
@@ -94,7 +94,7 @@ export const _InflationCard = React.memo(
               case 'suggested':
                 handleChange({
                   type: 'manual',
-                  value: SUGGESTED_ANNUAL_INFLATION(currentMarketData),
+                  value: suggestedInflation,
                 })
                 break
               case 'manual':

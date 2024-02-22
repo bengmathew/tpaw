@@ -15,8 +15,8 @@ import { ToggleSwitch } from '../../../Common/Inputs/ToggleSwitch'
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import {
-  PlanInputBody,
-  PlanInputBodyPassThruProps,
+    PlanInputBody,
+    PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 export const PlanInputSpendingCeilingAndFloor = React.memo(

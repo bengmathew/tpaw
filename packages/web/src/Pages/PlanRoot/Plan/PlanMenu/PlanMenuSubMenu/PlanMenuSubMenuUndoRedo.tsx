@@ -3,20 +3,20 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
 import { PlanParams, PlanParamsChangeAction, block, fGet } from '@tpaw/common'
 import clix from 'clsx'
+import { formatDistance } from 'date-fns'
 import _ from 'lodash'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { ContextMenu2 } from '../../../../Common/Modal/ContextMenu2'
 import { processPlanParamsChangeActionDeprecated } from '../../../PlanRootHelpers/PlanParamsChangeActionDeprecated'
 import {
-  TARGET_UNDO_DEPTH,
-  WorkingPlanInfo,
+    TARGET_UNDO_DEPTH,
+    WorkingPlanInfo,
 } from '../../../PlanRootHelpers/UseWorkingPlan'
 import {
-  SimulationInfoForPlanMode,
-  useSimulation,
+    SimulationInfoForPlanMode,
+    useSimulation,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
-import { formatDistance } from 'date-fns'
 
 export const PlanMenuSubMenuUndoRedo = React.memo(
   ({

@@ -1,7 +1,7 @@
 import _ from 'lodash'
-import {ReactNode, useLayoutEffect, useRef} from 'react'
-import {useAssertConst} from '../UseAssertConst'
-import {fGet} from '../Utils'
+import { ReactNode, useLayoutEffect, useRef } from 'react'
+import { useAssertConst } from '../UseAssertConst'
+import { fGet } from '../Utils'
 
 export const HeightsForWidths = <State extends string, Size>({
   sizing,

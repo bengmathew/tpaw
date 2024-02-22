@@ -9,8 +9,8 @@ import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { ByMonthSchedule } from './Helpers/ByMonthSchedule'
 import { PlanInputSummaryValueForMonthRange } from './Helpers/PlanInputSummaryValueForMonthRange'
 import {
-  PlanInputBody,
-  PlanInputBodyPassThruProps,
+    PlanInputBody,
+    PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 export const PlanInputIncomeDuringRetirement = React.memo(

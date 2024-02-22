@@ -1,24 +1,22 @@
 import { faTimes } from '@fortawesome/pro-light-svg-icons'
 import {
-  faCheck,
-  faPause,
-  faSpinnerThird,
-  faTriangleExclamation,
+    faCheck,
+    faPause,
+    faSpinnerThird,
+    faTriangleExclamation,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { block, noCase } from '@tpaw/common'
 import clsx from 'clsx'
+import { formatDistanceStrict, formatDuration, intervalToDuration } from 'date-fns'
 import _ from 'lodash'
 import React, { useState } from 'react'
 import { useNonPlanParams } from '../PlanRootHelpers/WithNonPlanParams'
 import {
-  SimulationInfoForServerSrc,
-  useSimulation,
+    SimulationInfoForServerSrc,
+    useSimulation,
 } from '../PlanRootHelpers/WithSimulation'
 import { ServerSyncState } from '../PlanServerImpl/UseServerSyncPlan'
-import { formatDistanceStrict } from 'date-fns'
-import { intervalToDuration } from 'date-fns'
-import { formatDuration } from 'date-fns'
 
 export const PlanSyncStateDev = React.memo(() => {
   const { nonPlanParams } = useNonPlanParams()

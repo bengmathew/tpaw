@@ -36,9 +36,9 @@ const _printLatest = ({
   console.log(`--------------------`)
   console.log(`        Overall: ${formatDate(x.closingTime)}`)
   console.log('')
-  console.log(`           CAPE: ${formatDate(x.CAPE.closingTime)}`)
+  console.log(`           SP500: ${formatDate(x.sp500.closingTime)}`)
   console.log(
-    `       CAPE-RAW: ${formatDate(fGet(_.last(raw.CAPE)).closingTime)}`,
+    `       SP500-RAW: ${formatDate(fGet(_.last(raw.sp500)).closingTime)}`,
   )
   console.log('')
   console.log(`      bondRates: ${formatDate(x.bondRates.closingTime)}`)
@@ -88,18 +88,18 @@ export const pushMarketData = async (opts: { printOnly?: boolean } = {}) => {
 }
 
 async function _getMarketData() {
-  const [inflation, CAPE, bondRates, dailyStockMarketPerformance] =
+  const [inflation, sp500, bondRates, dailyStockMarketPerformance] =
     await Promise.all([
       _getInflation(),
-      _getCAPE(),
+      _getSP500(),
       _getBondRates(),
       _getDailyStockMarketPerformance(),
     ])
   return {
-    raw: { inflation, CAPE, bondRates, dailyStockMarketPerformance },
+    raw: { inflation, sp500, bondRates, dailyStockMarketPerformance },
     combined: MarketData.combineStreams(
       inflation,
-      CAPE,
+      sp500,
       bondRates,
       dailyStockMarketPerformance,
     ),
@@ -223,105 +223,105 @@ async function _getInflation(): Promise<MarketData.Inflation[]> {
   )
 }
 
-// addedData is the date it was *added* to the array, not when it was true in the
-// world.
-const AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS = [
-  {
-    addedDate: DateTime.fromMillis(MIN_PLAN_PARAM_TIME)
-      .minus({ month: 30 })
-      .toMillis(),
-    tenYearDuration: {
-      start: { year: 2012, month: 10 },
-      end: { year: 2022, month: 9 },
-    },
-    value: 136.71,
-  },
-  {
-    // Monday, October 2, 2023 11:12:29.500 AM PDT
-    addedDate: 1696270349500,
-    tenYearDuration: {
-      start: { year: 2013, month: 4 },
-      end: { year: 2023, month: 3 },
-    },
-    value: 143.91,
-  },
-  {
-    // Sun Nov 05 2023 07:53:20 PST
-    addedDate: 1699199600576,
-    tenYearDuration: {
-      start: { year: 2013, month: 7 },
-      end: { year: 2023, month: 6 },
-    },
-    value: 146.14,
-  },
-]
+// // addedData is the date it was *added* to the array, not when it was true in the
+// // world.
+// const AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS = [
+//   {
+//     addedDate: DateTime.fromMillis(MIN_PLAN_PARAM_TIME)
+//       .minus({ month: 30 })
+//       .toMillis(),
+//     tenYearDuration: {
+//       start: { year: 2012, month: 10 },
+//       end: { year: 2022, month: 9 },
+//     },
+//     value: 136.71,
+//   },
+//   {
+//     // Monday, October 2, 2023 11:12:29.500 AM PDT
+//     addedDate: 1696270349500,
+//     tenYearDuration: {
+//       start: { year: 2013, month: 4 },
+//       end: { year: 2023, month: 3 },
+//     },
+//     value: 143.91,
+//   },
+//   {
+//     // Sun Nov 05 2023 07:53:20 PST
+//     addedDate: 1699199600576,
+//     tenYearDuration: {
+//       start: { year: 2013, month: 7 },
+//       end: { year: 2023, month: 6 },
+//     },
+//     value: 146.14,
+//   },
+// ]
 
-async function _getCAPE(): Promise<MarketData.CAPE[]> {
+async function _getSP500(): Promise<MarketData.SP500[]> {
   return (await _getFromEOD('GSPC.INDX')).map((sp500) => {
-    const averageEarnings = fGet(
-      _.findLast(
-        AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS,
-        (x) => sp500.closingTime > x.addedDate,
-      ),
-    )
-    const oneOverCAPE = averageEarnings.value / sp500.close
-    const lnOnePlusOneOverCAPE = Math.log(1 + oneOverCAPE)
-    const regressionLog = {
-      full: {
-        fiveYear: 1.0152 * lnOnePlusOneOverCAPE - 0.0036,
-        tenYear: 0.9279 * lnOnePlusOneOverCAPE + 0.00003,
-        twentyYear: 0.6399 * lnOnePlusOneOverCAPE + 0.0179,
-        thirtyYear: 0.2691 * lnOnePlusOneOverCAPE + 0.0434,
-      },
-      restricted: {
-        fiveYear: 1.0192 * lnOnePlusOneOverCAPE + 0.0105,
-        tenYear: 1.2114 * lnOnePlusOneOverCAPE - 0.0083,
-        twentyYear: 0.9566 * lnOnePlusOneOverCAPE - 0.0016,
-        thirtyYear: 0.3309 * lnOnePlusOneOverCAPE + 0.0396,
-      },
-    }
+    // const averageEarnings = fGet(
+    //   _.findLast(
+    //     AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS,
+    //     (x) => sp500.closingTime > x.addedDate,
+    //   ),
+    // )
+    // const oneOverCAPE = averageEarnings.value / sp500.close
+    // const lnOnePlusOneOverCAPE = Math.log(1 + oneOverCAPE)
+    // const regressionLog = {
+    //   full: {
+    //     fiveYear: 1.0152 * lnOnePlusOneOverCAPE - 0.0036,
+    //     tenYear: 0.9279 * lnOnePlusOneOverCAPE + 0.00003,
+    //     twentyYear: 0.6399 * lnOnePlusOneOverCAPE + 0.0179,
+    //     thirtyYear: 0.2691 * lnOnePlusOneOverCAPE + 0.0434,
+    //   },
+    //   restricted: {
+    //     fiveYear: 1.0192 * lnOnePlusOneOverCAPE + 0.0105,
+    //     tenYear: 1.2114 * lnOnePlusOneOverCAPE - 0.0083,
+    //     twentyYear: 0.9566 * lnOnePlusOneOverCAPE - 0.0016,
+    //     thirtyYear: 0.3309 * lnOnePlusOneOverCAPE + 0.0396,
+    //   },
+    // }
 
-    const exp = (x: number) => Math.exp(x + 0.0141418028757969) - 1
-    const regression = {
-      full: {
-        fiveYear: exp(regressionLog.full.fiveYear),
-        tenYear: exp(regressionLog.full.tenYear),
-        twentyYear: exp(regressionLog.full.twentyYear),
-        thirtyYear: exp(regressionLog.full.thirtyYear),
-      },
-      restricted: {
-        fiveYear: exp(regressionLog.restricted.fiveYear),
-        tenYear: exp(regressionLog.restricted.tenYear),
-        twentyYear: exp(regressionLog.restricted.twentyYear),
-        thirtyYear: exp(regressionLog.restricted.thirtyYear),
-      },
-    }
+    // const exp = (x: number) => Math.exp(x + 0.0141418028757969) - 1
+    // const regression = {
+    //   full: {
+    //     fiveYear: exp(regressionLog.full.fiveYear),
+    //     tenYear: exp(regressionLog.full.tenYear),
+    //     twentyYear: exp(regressionLog.full.twentyYear),
+    //     thirtyYear: exp(regressionLog.full.thirtyYear),
+    //   },
+    //   restricted: {
+    //     fiveYear: exp(regressionLog.restricted.fiveYear),
+    //     tenYear: exp(regressionLog.restricted.tenYear),
+    //     twentyYear: exp(regressionLog.restricted.twentyYear),
+    //     thirtyYear: exp(regressionLog.restricted.thirtyYear),
+    //   },
+    // }
 
-    const averageOfLowest4 = _.mean(
-      _.sortBy(
-        [
-          oneOverCAPE,
-          ..._.values(regression.full),
-          ..._.values(regression.restricted),
-        ],
-        (x) => x,
-      ).slice(0, 4),
-    )
+    // const averageOfLowest4 = _.mean(
+    //   _.sortBy(
+    //     [
+    //       oneOverCAPE,
+    //       ..._.values(regression.full),
+    //       ..._.values(regression.restricted),
+    //     ],
+    //     (x) => x,
+    //   ).slice(0, 4),
+    // )
 
-    const regressionAverage = _.mean([
-      ..._.values(regression.full),
-      ..._.values(regression.restricted),
-    ])
+    // const regressionAverage = _.mean([
+    //   ..._.values(regression.full),
+    //   ..._.values(regression.restricted),
+    // ])
 
     return {
       closingTime: sp500.closingTime,
-      sp500: sp500.close,
-      averageAnnualRealEarningsForSP500For10Years: averageEarnings,
-      value: 1 / oneOverCAPE,
-      oneOverCAPE,
-      regression,
-      regressionAverage,
-      suggested: averageOfLowest4,
+      value: sp500.close,
+      // averageAnnualRealEarningsForSP500For10Years: averageEarnings,
+      // value: 1 / oneOverCAPE,
+      // oneOverCAPE,
+      // regression,
+      // regressionAverage,
+      // suggested: averageOfLowest4,
     }
   })
 }

@@ -1,5 +1,4 @@
 import { block, fGet } from '@tpaw/common'
-import { SimpleRange } from '../../../../../../Utils/SimpleRange'
 import { ChartRange } from '../../../../../Common/Chart/ChartComponent/ChartRange'
 import { ChartSalientPoints } from '../../../../../Common/Chart/ChartComponent/ChartSalientPoints'
 import { PlanResultsChartData } from './PlanResultsChartData'

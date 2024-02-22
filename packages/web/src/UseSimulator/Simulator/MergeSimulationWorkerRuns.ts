@@ -114,7 +114,6 @@ export const mergeSimulationWorkerRuns = (
     const mergeStatsForWindowSize = (
       x: StatsForWindowSize[],
     ): StatsForWindowSize => ({
-      n: _.sumBy(x, (x) => x.n),
       ofBase: mergeStats(x.map((x) => x.ofBase)),
       ofLog: mergeStats(x.map((x) => x.ofLog)),
     })

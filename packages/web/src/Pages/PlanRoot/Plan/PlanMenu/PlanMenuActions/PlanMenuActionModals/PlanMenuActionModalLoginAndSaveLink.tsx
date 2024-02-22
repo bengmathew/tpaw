@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { appPaths } from '../../../../../../AppPaths'
 import { useURLUpdater } from '../../../../../../Utils/UseURLUpdater'
 import { MergeToServerLinkPlan } from '../../../../../App/WithMergeToServer'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import {
-  SimulationInfoForLinkSrc,
-  SimulationInfoForPlanMode,
+    SimulationInfoForLinkSrc,
+    SimulationInfoForPlanMode,
 } from '../../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionModalLabelInput } from './PlanMenuActionModalLabelInput'
 

@@ -1,7 +1,6 @@
 export { API } from './API'
 export * from './GetAppPaths'
 export * from './Guards'
-export * from './HistoricalReturns/HistoricalReturns'
 export * from './Misc/GetMonthBoundaries'
 export * from './Misc/GetSlug'
 export * from './Misc/GetZonedTimeFns'

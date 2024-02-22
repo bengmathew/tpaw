@@ -1,7 +1,7 @@
 import { rectExt } from '../../../../../../Utils/Geometry'
 import { ChartComponent } from '../../../../../Common/Chart/ChartComponent/ChartComponent'
 import { ChartContext } from '../../../../../Common/Chart/ChartContext'
-import { PlanResultsChartData, PlanResultsChartDataForPDF } from './PlanResultsChartData'
+import { PlanResultsChartDataForPDF } from './PlanResultsChartData'
 
 export class PlanResultsChartCustomComponenet
   implements

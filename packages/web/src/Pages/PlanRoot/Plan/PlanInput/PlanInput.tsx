@@ -1,25 +1,25 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Padding,
-  Size,
-  XY,
-  originCSSStyle,
-  sizeCSSStyle,
+    Padding,
+    Size,
+    XY,
+    originCSSStyle,
+    sizeCSSStyle,
 } from '../../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
 import { noCase } from '../../../../Utils/Utils'
+import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { useGetSectionURL } from '../Plan'
 import {
-  PlanTransitionState,
-  simplifyPlanTransitionState4,
+    PlanTransitionState,
+    simplifyPlanTransitionState4,
 } from '../PlanTransition'
 import { PlanInputType } from './Helpers/PlanInputType'
 import { useGetPlanInputVisibility } from './Helpers/UseGetPlanInputVisibility'
 import { PlanInputAge } from './PlanInputAge/PlanInputAge'
 import { PlanInputBodyPassThruProps } from './PlanInputBody/PlanInputBody'
 import { PlanInputCurrentPortfolioBalance } from './PlanInputCurrentPortfolioBalance'
-import { PlanInputDevHistoricalReturns } from './PlanInputDev/PlanInputDevHistoricalReturns'
 import { PlanInputDevMisc } from './PlanInputDev/PlanInputDevMisc'
 import { PlanInputDevSimulations } from './PlanInputDev/PlanInputDevSimulations'
 import { PlanInputDevFastForward } from './PlanInputDev/PlanInputDevTime'
@@ -33,7 +33,6 @@ import { PlanInputRisk } from './PlanInputRisk/PlanInputRisk'
 import { PlanInputSimulation } from './PlanInputSimulation'
 import { PlanInputSpendingCeilingAndFloor } from './PlanInputSpendingCeilingAndFloor'
 import { PlanInputStrategy } from './PlanInputStrategy'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 
 type _FixedSizingByMode = {
   size: Size
@@ -176,8 +175,6 @@ const _Body = React.memo(
         return <PlanInputDevMisc {...props} />
       case 'dev-simulations':
         return <PlanInputDevSimulations {...props} />
-      case 'dev-historical-returns':
-        return <PlanInputDevHistoricalReturns {...props} />
       case 'dev-time':
         return <PlanInputDevFastForward {...props} />
       default:

@@ -1,8 +1,8 @@
 import {
-  DialogPosition,
-  PLAN_PARAMS_CONSTANTS,
-  block,
-  noCase,
+    DialogPosition,
+    PLAN_PARAMS_CONSTANTS,
+    block,
+    noCase,
 } from '@tpaw/common'
 import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 import { PlanInputType } from './PlanInputType'
@@ -71,8 +71,6 @@ export const useGetPlanInputVisibility = (
       case 'dev-misc':
         return _helper('done')
       case 'dev-simulations':
-        return _helper('done')
-      case 'dev-historical-returns':
         return _helper('done')
       case 'dev-time':
         return _helper('done')

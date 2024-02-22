@@ -16,7 +16,6 @@ import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import { useGetPlanInputVisibility } from '../PlanInput/Helpers/UseGetPlanInputVisibility'
 import { PlanInputAgeSummary } from '../PlanInput/PlanInputAge/PlanInputAge'
 import { PlanInputCurrentPortfolioBalanceSummary } from '../PlanInput/PlanInputCurrentPortfolioBalance'
-import { PlanInputDevHistoricalReturnsSummary } from '../PlanInput/PlanInputDev/PlanInputDevHistoricalReturns'
 import { PlanInputDevMiscSummary } from '../PlanInput/PlanInputDev/PlanInputDevMisc'
 import { PlanInputDevSimulationsSummary } from '../PlanInput/PlanInputDev/PlanInputDevSimulations'
 import { PlanInputDevTimeSummary } from '../PlanInput/PlanInputDev/PlanInputDevTime'
@@ -202,8 +201,6 @@ const _SectionSummary = React.memo(
         return <PlanInputDevMiscSummary />
       case 'dev-simulations':
         return <PlanInputDevSimulationsSummary />
-      case 'dev-historical-returns':
-        return <PlanInputDevHistoricalReturnsSummary />
       case 'dev-time':
         return <PlanInputDevTimeSummary />
       default:

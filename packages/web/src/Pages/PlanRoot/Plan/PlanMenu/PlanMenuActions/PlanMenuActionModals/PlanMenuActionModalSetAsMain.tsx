@@ -1,17 +1,15 @@
-import { captureException } from '@sentry/nextjs'
 import { fGet } from '@tpaw/common'
 import clix from 'clsx'
 import React from 'react'
 import { useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { appPaths } from '../../../../../../AppPaths'
-import { errorToast } from '../../../../../../Utils/CustomToasts'
 import { useURLUpdater } from '../../../../../../Utils/UseURLUpdater'
 import { Spinner } from '../../../../../../Utils/View/Spinner'
+import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalErrorBoundary'
 import { User, useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { PlanMenuActionModalSetAsMainPlanMutation } from './__generated__/PlanMenuActionModalSetAsMainPlanMutation.graphql'
-import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalErrorBoundary'
 
 export const PlanMenuActionModalSetAsMain = React.memo(
   ({

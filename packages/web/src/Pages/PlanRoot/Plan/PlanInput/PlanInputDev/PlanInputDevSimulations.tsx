@@ -1,10 +1,17 @@
-import { getDefaultNonPlanParams, historicalReturns } from '@tpaw/common'
+import { faDice, faEllipsis } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  DEFAULT_MONTE_CARLO_SIMULATION_SEED,
+  getDefaultNonPlanParams,
+} from '@tpaw/common'
 import { clsx } from 'clsx'
 import _ from 'lodash'
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { errorToast } from '../../../../../Utils/CustomToasts'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { AmountInput } from '../../../../Common/Inputs/AmountInput'
+import { ToggleSwitch } from '../../../../Common/Inputs/ToggleSwitch'
 import { useNonPlanParams } from '../../../PlanRootHelpers/WithNonPlanParams'
 import {
   SimulationInfo,
@@ -15,6 +22,7 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from '../PlanInputBody/PlanInputBody'
+import { useIsPlanInputDevSimulationsModified } from './UseIsPlanInputDevSimulationsModified'
 
 export const PlanInputDevSimulations = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -36,7 +44,15 @@ const _SimulationsCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { simulationResult, randomSeed, reRun } = useSimulation()
+    const {
+      simulationResult,
+      randomSeed,
+      reRun,
+      simulationResultIsCurrent,
+      updatePlanParams,
+      planParams,
+      defaultPlanParams,
+    } = useSimulation()
     const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
     const defaultNonPlanParams = useMemo(
       () => getDefaultNonPlanParams(Date.now()),
@@ -45,6 +61,11 @@ const _SimulationsCard = React.memo(
 
     const isModified = useIsPlanInputDevSimulationsModified()
 
+    const [randomSeedInput, setRandomSeedInput] = useState(`${randomSeed}`)
+    useEffect(() => {
+      setRandomSeedInput(`${randomSeed}`)
+    }, [randomSeed])
+
     return (
       <div
         className={`${className} params-card relative`}
@@ -52,7 +73,7 @@ const _SimulationsCard = React.memo(
       >
         <PlanInputModifiedBadge show={isModified} mainPage={false} />
         <div className="mt-2 flex gap-x-4 items-center">
-          <h2 className="">Number of simulations</h2>
+          <h2 className="">Num of Simulations</h2>
           <AmountInput
             className="text-input"
             value={nonPlanParams.numOfSimulationForMonteCarloSampling}
@@ -66,29 +87,97 @@ const _SimulationsCard = React.memo(
           />
         </div>
 
+        <div className="mt-2 flex items-center gap-x-2">
+          <h2 className="">Random Seed:</h2>
+          <input
+            type="number"
+            className="text-input"
+            value={randomSeedInput}
+            onChange={(x) => setRandomSeedInput(x.target.value)}
+          />
+          <button
+            className={clsx(' btn2-xs btn2-dark w-[50px] disabled:lighten-2')}
+            disabled={randomSeedInput === randomSeed.toString()}
+            onClick={() => {
+              let seed = parseInt(randomSeedInput)
+              if (isNaN(seed)) {
+                errorToast('Not a valid seed')
+                return
+              }
+              reRun(seed)
+            }}
+          >
+            Set
+          </button>
+          <button
+            className=" btn2-xs btn2-dark  w-[50px]"
+            onClick={() => reRun('random')}
+          >
+            <FontAwesomeIcon icon={faDice} />
+          </button>
+          <button
+            className=" disabled:hidden underline text-sm"
+            disabled={randomSeed === DEFAULT_MONTE_CARLO_SIMULATION_SEED}
+            onClick={() => reRun(DEFAULT_MONTE_CARLO_SIMULATION_SEED)}
+          >
+            {/* <FontAwesomeIcon icon={faClose} /> */}
+            reset
+          </button>
+        </div>
         <div className="mt-2 flex gap-x-4 items-center">
           <h2 className="">Time to Run:</h2>
           <h2 className="ml-2">{_timeToRun(simulationResult)}</h2>
+          <FontAwesomeIcon
+            className={clsx('fa-flip ', simulationResultIsCurrent && 'hidden')}
+            icon={faEllipsis}
+          />
         </div>
-        <div className="mt-2 flex gap-x-4 items-center">
-          <h2 className="">Random Seed:</h2>
-          <h2 className="ml-2">{randomSeed}</h2>
+        <div className="mt-2 flex items-center gap-x-2">
+          <h2 className="">Stagger Run Starts: </h2>
+          <ToggleSwitch
+            checked={
+              planParams.advanced.sampling.forMonteCarlo.staggerRunStarts
+            }
+            setChecked={(value) => {
+              updatePlanParams('setMonteCarloStaggerRunStarts', value)
+            }}
+          />
+        </div>
+        <div className="mt-2 flex items-center gap-x-2">
+          <h2 className="">Override Historical Returns To Fixed: </h2>
+          <ToggleSwitch
+            checked={
+              planParams.advanced.historicalMonthlyLogReturnsAdjustment
+                .overrideToFixedForTesting
+            }
+            setChecked={(value) => {
+              updatePlanParams(
+                'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting',
+                value,
+              )
+            }}
+          />
         </div>
         <div className="mt-2">
           <h2> Annual Return Stats:</h2>
           <_AnnualReturnStatsTable className="mt-2" />
         </div>
 
-        <button className="underline pt-4" onClick={reRun}>
-          Reset random draws
-        </button>
         <button
-          className="mt-6 underline disabled:lighten-2 block"
+          className="mt-4 underline disabled:lighten-2 block"
           onClick={() => {
-            const clone = _.cloneDeep(nonPlanParams)
-            clone.numOfSimulationForMonteCarloSampling =
-              defaultNonPlanParams.numOfSimulationForMonteCarloSampling
-            setNonPlanParams(clone)
+            {
+              const clone = _.cloneDeep(nonPlanParams)
+              clone.numOfSimulationForMonteCarloSampling =
+                defaultNonPlanParams.numOfSimulationForMonteCarloSampling
+              setNonPlanParams(clone)
+            }
+            reRun(DEFAULT_MONTE_CARLO_SIMULATION_SEED)
+            updatePlanParams(
+              'setMonteCarloStaggerRunStarts',
+              defaultPlanParams.advanced.sampling.forMonteCarlo
+                .staggerRunStarts,
+            )
           }}
           disabled={!isModified}
         >
@@ -99,29 +188,29 @@ const _SimulationsCard = React.memo(
   },
 )
 
-export const useIsPlanInputDevSimulationsModified = () => {
-  const { nonPlanParams } = useNonPlanParams()
-  const defaultNonPlanParams = useMemo(
-    () => getDefaultNonPlanParams(Date.now()),
-    [],
-  )
-  return (
-    nonPlanParams.numOfSimulationForMonteCarloSampling !==
-    defaultNonPlanParams.numOfSimulationForMonteCarloSampling
-  )
-}
-
 export const PlanInputDevSimulationsSummary = React.memo(() => {
-  const { simulationResult, randomSeed } = useSimulation()
+  const { simulationResult, randomSeed, planParams } = useSimulation()
   const { nonPlanParams } = useNonPlanParams()
   return (
     <>
       <h2>
-        Num of simulations: {nonPlanParams.numOfSimulationForMonteCarloSampling}
+        Num of Simulations: {nonPlanParams.numOfSimulationForMonteCarloSampling}
       </h2>
-      <h2>Time to run: {_timeToRun(simulationResult)}</h2>
       <h2>Random Seed: {randomSeed}</h2>
-      
+      <h2>Time to Run: {_timeToRun(simulationResult)}</h2>
+      <h2>
+        Stagger Run Starts:{' '}
+        {planParams.advanced.sampling.forMonteCarlo.staggerRunStarts
+          ? 'yes'
+          : 'no'}
+      </h2>
+      <h2>
+        Override Historical Returns To Fixed:{' '}
+        {planParams.advanced.historicalMonthlyLogReturnsAdjustment
+          .overrideToFixedForTesting
+          ? 'yes'
+          : 'no'}
+      </h2>
       <h2> Annual Return Stats:</h2>
       <_AnnualReturnStatsTable className="" />
     </>
@@ -142,7 +231,8 @@ const _AnnualReturnStatsTable = React.memo(
         mean: number
       }
       ofLog: {
-        variance: number | null
+        variance: number
+        standardDeviation?: number
       }
     }) => (
       <>
@@ -150,15 +240,56 @@ const _AnnualReturnStatsTable = React.memo(
           {formatPercentage(5)(stats.ofBase.mean)}
         </h2>
         <h2 className="text-right font-mono">
-          {stats.ofLog.variance?.toFixed(5) ?? '-'}
+          {stats.ofLog.variance.toFixed(5)}
         </h2>
         <h2 className="text-right font-mono">
-          {stats.ofLog.variance
-            ? Math.sqrt(stats.ofLog.variance).toFixed(5)
-            : '-'}
+          {(
+            stats.ofLog.standardDeviation ?? Math.sqrt(stats.ofLog.variance)
+          ).toFixed(5)}
         </h2>
       </>
     )
+
+    const targetData = {
+      stocks: {
+        ofBase: {
+          mean: simulationResult.args.planParamsProcessed
+            .expectedReturnsForPlanning.empiricalAnnualNonLogReturnInfo.stocks
+            .value,
+        },
+        ofLog: {
+          variance:
+            planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.stats
+              .empiricalAnnualLogVariance,
+        },
+      },
+      bonds: {
+        ofBase: {
+          mean: simulationResult.args.planParamsProcessed
+            .expectedReturnsForPlanning.empiricalAnnualNonLogReturnInfo.bonds
+            .value,
+        },
+        ofLog: {
+          variance:
+            planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.stats
+              .empiricalAnnualLogVariance,
+        },
+      },
+    }
+    const delta = (
+      a: (typeof targetData)['stocks'],
+      b: (typeof targetData)['stocks'],
+    ) => ({
+      ofBase: {
+        mean: a.ofBase.mean - b.ofBase.mean,
+      },
+      ofLog: {
+        variance: a.ofLog.variance - b.ofLog.variance,
+        standardDeviation:
+          Math.sqrt(a.ofLog.variance) - Math.sqrt(b.ofLog.variance),
+      },
+    })
+
     return (
       <div className={clsx(className)}>
         <div
@@ -168,51 +299,74 @@ const _AnnualReturnStatsTable = React.memo(
           <h2></h2>
           <h2 className="text-center">Mean</h2>
           <div className="text-center">
-            Variance <h2 className="text-xs -mt-1">(of Log)</h2>
+            <h2 className="">Variance</h2>{' '}
+            <h2 className="text-xs lighten -mt-1">(of Log)</h2>
           </div>
           <div className="text-center">
-            SD <h2 className="text-xs -mt-1">(of Log)</h2>
+            <h2 className="">SD</h2>
+            <h2 className="text-xs lighten -mt-1">(of Log)</h2>
           </div>
           <h2></h2>
-          <h2 className="col-span-3 border-t border-gray-300 my-2"></h2>
+          <h2 className="col-span-4 border-t border-gray-300 my-2"></h2>
           <h2>Stocks - Target</h2>
-          {forData({
-            ofBase: {
-              mean: simulationResult.args.planParamsProcessed
-                .expectedReturnsForPlanning.annual.stocks,
-            },
-            ofLog:
-              planParamsProcessed.historicalReturnsAdjusted.monthly.annualStats
-                .estimatedSampledStats.stocks.ofLog,
-          })}
+          {forData(targetData.stocks)}
           <h2>Stocks - Sampled</h2>
           {forData(simulationResult.annualStatsForSampledReturns.stocks)}
-          <h2>Stocks - Historical - Adj </h2>
+          <h2>Stocks - Sampled 𝚫</h2>
           {forData(
-            planParamsProcessed.historicalReturnsAdjusted.monthly.annualStats
-              .direct.stocks,
+            delta(
+              simulationResult.annualStatsForSampledReturns.stocks,
+              targetData.stocks,
+            ),
           )}
+          <h2>Stocks - Historical - Adj </h2>
+          {forData({
+            ofBase:
+              planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.stats
+                .annualized.nonLog,
+            ofLog:
+              planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.stats
+                .annualized.log,
+          })}
           <h2>Stocks - Historical - Raw</h2>
-          {forData(historicalReturns.monthly.annualStats.stocks)}
+          {forData({
+            ofBase:
+              planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.stats
+                .unadjustedAnnualized.nonLog,
+            ofLog:
+              planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.stats
+                .unadjustedAnnualized.log,
+          })}
           <h2 className="col-span-4 border-t border-gray-300 my-2"></h2>
           <h2>Bonds - Target</h2>
-          {forData({
-            ofBase: {
-              mean: planParamsProcessed.expectedReturnsForPlanning.annual.bonds,
-            },
-            ofLog: {
-              variance: null,
-            },
-          })}
+          {forData(targetData.bonds)}
           <h2>Bonds - Sampled</h2>
           {forData(simulationResult.annualStatsForSampledReturns.bonds)}
-          <h2>Bonds - Historical - Adj </h2>
+          <h2>Bonds - Sampled - 𝚫</h2>
           {forData(
-            planParamsProcessed.historicalReturnsAdjusted.monthly.annualStats
-              .direct.bonds,
+            delta(
+              simulationResult.annualStatsForSampledReturns.bonds,
+              targetData.bonds,
+            ),
           )}
+          <h2>Bonds - Historical - Adj </h2>
+          {forData({
+            ofBase:
+              planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.stats
+                .annualized.nonLog,
+            ofLog:
+              planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.stats
+                .annualized.log,
+          })}
           <h2>Bonds - Historical - Raw</h2>
-          {forData(historicalReturns.monthly.annualStats.bonds)}
+          {forData({
+            ofBase:
+              planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.stats
+                .unadjustedAnnualized.nonLog,
+            ofLog:
+              planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.stats
+                .unadjustedAnnualized.log,
+          })}
         </div>
       </div>
     )

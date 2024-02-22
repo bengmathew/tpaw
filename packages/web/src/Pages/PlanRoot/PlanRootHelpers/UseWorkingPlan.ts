@@ -1,12 +1,12 @@
 import {
-  PlanParams,
-  PlanParamsChangeAction,
-  PlanParamsChangeActionCurrent,
-  PlanPaths,
-  assert,
-  fGet,
-  getDefaultPlanParams,
-  planParamsGuard,
+    PlanParams,
+    PlanParamsChangeAction,
+    PlanParamsChangeActionCurrent,
+    PlanPaths,
+    assert,
+    fGet,
+    getDefaultPlanParams,
+    planParamsGuard,
 } from '@tpaw/common'
 import cloneJSON from 'fast-json-clone'
 import _ from 'lodash'
@@ -243,7 +243,7 @@ export const useWorkingPlan = (
 
     const runTime = performance.now() - start
     if (_.random(25) === 0)
-      sendAnalyticsEvent('current_portfolio_balance_estimation', { runTime })
+      // sendAnalyticsEvent('current_portfolio_balance_estimation', { runTime })
     if (runTime > 1000)
       sendAnalyticsEvent('current_portfolio_balance_estimation_slow', {
         runTime,

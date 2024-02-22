@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { PlanParams, generateSmallId } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useState } from 'react'
+import { PlanParamsProcessed } from '../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import { Contentful } from '../../../../Utils/Contentful'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { paddingCSSStyle } from '../../../../Utils/Geometry'
@@ -14,10 +15,9 @@ import { EditValueForMonthRange } from '../../../Common/Inputs/EditValueForMonth
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import {
-  PlanInputBody,
-  PlanInputBodyPassThruProps,
+    PlanInputBody,
+    PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
-import { PlanParamsProcessed } from '../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 
 type _EditState = { isAdd: boolean; entryId: string; hideInMain: boolean }
 

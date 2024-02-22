@@ -11,8 +11,8 @@ import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import { PlanInputSummaryChoiceItem } from './Helpers/PlanInputSummaryChoiceItem'
 import {
-  PlanInputBody,
-  PlanInputBodyPassThruProps,
+    PlanInputBody,
+    PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 export const PlanInputStrategy = React.memo(

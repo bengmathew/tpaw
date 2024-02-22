@@ -1,61 +1,11 @@
 import _ from 'lodash'
 import { DateTime } from 'luxon'
-import { historicalReturns } from '../../HistoricalReturns/HistoricalReturns'
-import { noCase } from '../../Utils'
 import {
   calendarMonthFromTime,
   currentPlanParamsVersion,
   PlanParams,
 } from './PlanParams'
 
-export type DataForMarketBasedPlanParamValues = {
-  CAPE: {
-    suggested: number
-    oneOverCAPE: number
-    regressionAverage: number
-  }
-  bondRates: { twentyYear: number }
-  inflation: { value: number }
-}
-
-export const EXPECTED_ANNUAL_RETURN_PRESETS = (
-  type: Exclude<
-    PlanParams['advanced']['expectedAnnualReturnForPlanning']['type'],
-    'manual'
-  >,
-  { CAPE, bondRates }: DataForMarketBasedPlanParamValues,
-) => {
-  const suggested = {
-    stocks: _.round(CAPE.suggested, 3),
-    bonds: _.round(bondRates.twentyYear, 3),
-  }
-  switch (type) {
-    case 'conservativeEstimate,20YearTIPSYield':
-      return { ...suggested }
-    case '1/CAPE,20YearTIPSYield':
-      return {
-        stocks: _.round(CAPE.oneOverCAPE, 3),
-        bonds: suggested.bonds,
-      }
-    case 'regressionPrediction,20YearTIPSYield':
-      return {
-        stocks: _.round(CAPE.regressionAverage, 3),
-        bonds: suggested.bonds,
-      }
-    case 'historical':
-      // Intentionally not rounding here.
-      return {
-        stocks: historicalReturns.monthly.annualStats.stocks.ofBase.mean,
-        bonds: historicalReturns.monthly.annualStats.bonds.ofBase.mean,
-      }
-    default:
-      noCase(type)
-  }
-}
-
-export const SUGGESTED_ANNUAL_INFLATION = (
-  marketData: DataForMarketBasedPlanParamValues,
-) => _.round(marketData.inflation.value, 3)
 
 export const DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT = (
   retirementLengthInMonths: number,
@@ -145,27 +95,24 @@ export function getDefaultPlanParams(
     },
 
     advanced: {
-      expectedAnnualReturnForPlanning: {
+      expectedReturnsForPlanning: {
         type: 'regressionPrediction,20YearTIPSYield',
       },
-      historicalReturnsAdjustment: {
-        stocks: {
-          adjustExpectedReturn: {
-            type: 'toExpectedUsedForPlanning',
-            correctForBlockSampling: true,
-          },
-          volatilityScale: 1,
+      historicalMonthlyLogReturnsAdjustment: {
+        standardDeviation: {
+          stocks: { scale: 1 },
+          bonds: { enableVolatility: true },
         },
-        bonds: {
-          adjustExpectedReturn: {
-            type: 'toExpectedUsedForPlanning',
-            correctForBlockSampling: true,
-          },
-          enableVolatility: true,
-        },
+        overrideToFixedForTesting: false,
       },
       annualInflation: { type: 'suggested' },
-      sampling: { type: 'monteCarlo', blockSizeForMonteCarloSampling: 12 * 5 },
+      sampling: {
+        type: 'monteCarlo',
+        forMonteCarlo: {
+          blockSize: 12 * 5,
+          staggerRunStarts: true,
+        },
+      },
       strategy: 'TPAW',
     },
     results: null,

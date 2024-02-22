@@ -13,7 +13,6 @@ import { mergeSimulationWorkerRuns } from './MergeSimulationWorkerRuns'
 import { RunSimulationInWASMResult } from './RunSimulationInWASMResult'
 import {
   SimulationWorkerArgs,
-  SimulationWorkerCalculateSampledAnnualReturn,
   SimulationWorkerResult,
   SimulationWorkerSortResult,
 } from './SimulationWorkerAPI'
@@ -68,7 +67,7 @@ export type SimulationResult = {
   firstMonthOfSomeRun: FirstMonthSavingsPortfolioDetail
   annualStatsForSampledReturns: Record<
     'stocks' | 'bonds',
-    { n: number } & Record<
+    Record<
       'ofBase' | 'ofLog',
       {
         mean: number
@@ -122,10 +121,6 @@ export class Simulator {
       (value: RunSimulationInWASMResult) => void
     >(),
     sort: new Map<string, (value: SimulationWorkerSortResult) => void>(),
-    getSampledReturnStats: new Map<
-      string,
-      (value: SimulationWorkerCalculateSampledAnnualReturn) => void
-    >(),
   }
   constructor() {
     const numWorkers = MULTI_THREADED ? navigator.hardwareConcurrency || 4 : 1
@@ -150,14 +145,6 @@ export class Simulator {
           case 'sort': {
             const resolve = fGet(this._resolvers.sort.get(taskID))
             this._resolvers.sort.delete(taskID)
-            resolve(data.result)
-            break
-          }
-          case 'getSampledReturnStats': {
-            const resolve = fGet(
-              this._resolvers.getSampledReturnStats.get(taskID),
-            )
-            this._resolvers.getSampledReturnStats.delete(taskID)
             resolve(data.result)
             break
           }
@@ -205,63 +192,6 @@ export class Simulator {
     )
   }
 
-  private _getSampledReturnStats(
-    worker: Worker,
-    monthlyReturns: number[],
-    blockSize: number,
-    numMonths: number,
-  ): Promise<SimulationWorkerCalculateSampledAnnualReturn> {
-    const taskID = _.uniqueId()
-    const message: Extract<
-      SimulationWorkerArgs,
-      { type: 'getSampledReturnStats' }
-    > = {
-      taskID,
-      type: 'getSampledReturnStats',
-      args: { monthlyReturns, blockSize, numMonths },
-    }
-    worker.postMessage(message)
-    return new Promise<SimulationWorkerCalculateSampledAnnualReturn>(
-      (resolve) => this._resolvers.getSampledReturnStats.set(taskID, resolve),
-    )
-  }
-
-  async getSampledReturnStats(
-    monthlyReturns: number[],
-    blockSize: number,
-    numMonths: number,
-  ) {
-    const byWorker = await Promise.all(
-      this._workers.map((worker, i) =>
-        this._getSampledReturnStats(
-          worker,
-          monthlyReturns,
-          blockSize,
-          _loadBalance(i, numMonths, this._workers.length).length,
-        ),
-      ),
-    )
-
-    const merge = (yearsByWorker: (typeof byWorker)[0]['oneYear'][]) => {
-      const totalN = _.sumBy(yearsByWorker, (x) => x.n)
-      return {
-        n: totalN,
-        mean: _.sumBy(yearsByWorker, (x) => x.mean * x.n) / totalN,
-        ofLog: {
-          mean: _.sumBy(yearsByWorker, (x) => x.ofLog.mean * x.n) / totalN,
-          varianceAveragedOverThread:
-            _.sumBy(yearsByWorker, (x) => x.ofLog.variance) / byWorker.length,
-        },
-      }
-    }
-
-    return {
-      oneYear: merge(byWorker.map((x) => x.oneYear)),
-      fiveYear: merge(byWorker.map((x) => x.fiveYear)),
-      tenYear: merge(byWorker.map((x) => x.tenYear)),
-      thirtyYear: merge(byWorker.map((x) => x.thirtyYear)),
-    }
-  }
 
   async runSimulations(
     status: { canceled: boolean },
@@ -626,7 +556,8 @@ const _getNumSimulationsActual = (
       return numOfSimulationForMonteCarloSampling
     case 'historical': {
       return (
-        planParamsProcessed.historicalReturnsAdjusted.monthly.stocks.length -
+        planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.logSeries
+          .length -
         numMonths +
         1
       )

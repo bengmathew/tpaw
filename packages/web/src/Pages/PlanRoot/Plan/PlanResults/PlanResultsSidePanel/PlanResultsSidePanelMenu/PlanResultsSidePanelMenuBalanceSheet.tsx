@@ -549,12 +549,12 @@ export const BalanceSheetContent = React.memo(
 const _processValueForMonthRange = (
   x: ValueForMonthRange,
   netPresentValue: {
-    byId: Record<string, ReturnType<typeof getNetPresentValue>>
+    byId: Record<string, { withCurrentMonth: number }>
   },
 ) => ({
   id: x.id,
   label: x.label ?? '<No label>',
-  netPresentValue: netPresentValue.byId[x.id].withCurrentMonth[0],
+  netPresentValue: netPresentValue.byId[x.id].withCurrentMonth,
 })
 
 const _Section = React.memo(

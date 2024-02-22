@@ -1,8 +1,8 @@
 import _ from 'lodash'
 import { assert, fGet } from '../../../Utils/Utils'
 import {
-  PlanSectionName,
-  planSectionNames,
+    PlanSectionName,
+    planSectionNames,
 } from './PlanInput/Helpers/PlanSectionName'
 
 export type PlanTransitionState = {

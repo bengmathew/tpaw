@@ -1,10 +1,10 @@
-import { Month, PlanParams, block, noCase } from '@tpaw/common'
+import { PlanParams, block, noCase } from '@tpaw/common'
 import _ from 'lodash'
 import { PlanParamsExtended } from '../../../../../../UseSimulator/ExtentPlanParams'
 import { PlanParamsProcessed } from '../../../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import {
-  NumberArrByPercentileByMonthsFromNow,
-  SimulationResult,
+    NumberArrByPercentileByMonthsFromNow,
+    SimulationResult,
 } from '../../../../../../UseSimulator/Simulator/Simulator'
 import { formatCurrency } from '../../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../../Utils/FormatPercentage'
@@ -16,13 +16,13 @@ import { PlanSizing } from '../../../PlanSizing/PlanSizing'
 import { PlanTransitionState } from '../../../PlanTransition'
 import { PlanColors } from '../../../UsePlanColors'
 import {
-  PlanResultsChartType,
-  getPlanResultsChartSpendingTotalFundingSourcesPercentile,
-  isPlanResultsChartSpendingDiscretionaryType,
-  isPlanResultsChartSpendingEssentialType,
-  isPlanResultsChartSpendingTotalFundingSourcesType,
-  planResultsChartSpendingDiscretionaryTypeID,
-  planResultsChartSpendingEssentialTypeID,
+    PlanResultsChartType,
+    getPlanResultsChartSpendingTotalFundingSourcesPercentile,
+    isPlanResultsChartSpendingDiscretionaryType,
+    isPlanResultsChartSpendingEssentialType,
+    isPlanResultsChartSpendingTotalFundingSourcesType,
+    planResultsChartSpendingDiscretionaryTypeID,
+    planResultsChartSpendingEssentialTypeID,
 } from '../../PlanResultsChartType'
 
 export type PlanResultsChartDataForPDF = {

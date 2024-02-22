@@ -3,9 +3,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React from 'react'
 import { paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { smartDeltaFn } from '../../../../../Utils/SmartDeltaFn'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { AmountInput } from '../../../../Common/Inputs/AmountInput'
 import { Config } from '../../../../Config'
+import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
 
 // TODO:

@@ -321,7 +321,10 @@ export namespace CurrentPortfolioBalance {
       }
 
       const historyItem = pickPlanParamsForTimestamp(timestamp)
-      const marketDataAtTime = pickMarketDataForTimestamp(timestamp)
+      const marketDataAtTime = {
+        ...pickMarketDataForTimestamp(timestamp),
+        timestampMSForHistoricalReturns: timestamp,
+      }
 
       const cacheKey = `${historyItem.id}/${timestamp}/${portfolioBalance}`
       const fromCache = simulationCache.map.get(cacheKey)

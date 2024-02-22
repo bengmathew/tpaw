@@ -1,17 +1,17 @@
 import {
-  PlanParams,
-  SomePlanParams,
-  assert,
-  fGet,
-  planParamsMigrate,
+    PlanParams,
+    SomePlanParams,
+    assert,
+    fGet,
+    planParamsMigrate,
 } from '@tpaw/common'
 import { CurrentPortfolioBalance } from '../../Pages/PlanRoot/PlanRootHelpers/CurrentPortfolioBalance'
 import { noCase } from '../../Utils/Utils'
 import { getWASM } from './GetWASM'
 import { runSimulationInWASM } from './RunSimulationInWASM'
 import {
-  SimulationWorkerArgs,
-  SimulationWorkerResult,
+    SimulationWorkerArgs,
+    SimulationWorkerResult,
 } from './SimulationWorkerAPI'
 
 import * as Sentry from '@sentry/nextjs'
@@ -85,46 +85,6 @@ addEventListener('message', async (event) => {
             result: { data: sorted, perf },
           },
           data: sorted.map((x) => x.buffer),
-        }
-      })
-      break
-    case 'getSampledReturnStats':
-      await _withErrorHandling(async () => {
-        let start = performance.now()
-        const { monthlyReturns, blockSize, numMonths } = eventData.args
-
-        const wasm = await getWASM()
-        const { one_year, five_year, ten_year, thirty_year } =
-          wasm.get_sampled_returns_stats(
-            Float64Array.from(monthlyReturns),
-            blockSize,
-            numMonths,
-          )
-
-        const processYear = ({ n, of_base, of_log }: typeof one_year) => ({
-          n,
-          mean: of_base.mean,
-          ofLog: {
-            n: of_log.n,
-            mean: of_log.mean,
-            variance: of_log.variance,
-            standardDeviation: of_log.standard_deviation,
-          },
-        })
-
-        const perf = performance.now() - start
-        return {
-          reply: {
-            type: 'getSampledReturnStats',
-            taskID,
-            result: {
-              oneYear: processYear(one_year),
-              fiveYear: processYear(five_year),
-              tenYear: processYear(ten_year),
-              thirtyYear: processYear(thirty_year),
-              perf,
-            },
-          },
         }
       })
       break
@@ -203,6 +163,7 @@ const _withErrorHandling = async <T>(
     const x = await fn()
     ;(postMessage as any)(x.reply, x.data)
   } catch (e) {
+  console.dir(e)
     Sentry.captureException(e)
     assert(e !== null)
     const message =

@@ -35,8 +35,6 @@ export function planSectionLabel(type: PlanSectionName): string {
       return 'Misc'
     case 'dev-simulations':
       return 'Simulations'
-    case 'dev-historical-returns':
-      return 'Historical Returns'
     case 'dev-time':
       return 'Time'
     default:

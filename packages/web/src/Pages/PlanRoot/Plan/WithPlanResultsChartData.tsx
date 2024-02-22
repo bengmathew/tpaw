@@ -5,9 +5,9 @@ import { PERCENTILES_STR } from '../../../UseSimulator/Simulator/Simulator'
 import { createContext } from '../../../Utils/CreateContext'
 import { useSimulationResult } from '../PlanRootHelpers/WithSimulation'
 import {
-  PlanResultsChartData,
-  PlanResultsChartDataForPDF,
-  getPlanResultsChartDataForPDF,
+    PlanResultsChartData,
+    PlanResultsChartDataForPDF,
+    getPlanResultsChartDataForPDF,
 } from './PlanResults/PlanResultsChartCard/PlanResultsChart/PlanResultsChartData'
 import { PlanResultsChartType } from './PlanResults/PlanResultsChartType'
 import { PlanSizing } from './PlanSizing/PlanSizing'

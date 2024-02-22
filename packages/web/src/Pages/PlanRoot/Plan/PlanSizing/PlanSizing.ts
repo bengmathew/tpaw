@@ -1,4 +1,3 @@
-import { add } from 'lodash'
 import { Size } from '../../../../Utils/Geometry'
 import { noCase } from '../../../../Utils/Utils'
 import { PlanChartPointerSizing } from '../PlanChartPointer/PlanChartPointer'

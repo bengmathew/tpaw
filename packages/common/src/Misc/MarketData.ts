@@ -5,35 +5,9 @@ export namespace MarketData {
     closingTime: number
     value: number
   }
-  export type CAPE = {
+  export type SP500 = {
     closingTime: number
-    sp500: number
-    averageAnnualRealEarningsForSP500For10Years: {
-      addedDate: number
-      tenYearDuration: {
-        start: { year: number; month: number }
-        end: { year: number; month: number }
-      }
-      value: number
-    }
     value: number
-    oneOverCAPE: number
-    regression: {
-      full: {
-        fiveYear: number
-        tenYear: number
-        twentyYear: number
-        thirtyYear: number
-      }
-      restricted: {
-        fiveYear: number
-        tenYear: number
-        twentyYear: number
-        thirtyYear: number
-      }
-    }
-    regressionAverage: number
-    suggested: number
   }
   export type BondRates = {
     closingTime: number
@@ -55,14 +29,14 @@ export namespace MarketData {
   export type Data = {
     closingTime: number
     inflation: Inflation
-    CAPE: CAPE
+    sp500: SP500
     bondRates: BondRates
     dailyStockMarketPerformance: DailyStockMarketPerformance
   }[]
 
   export const combineStreams = (
     inflation: Inflation[],
-    CAPE: CAPE[],
+    sp500: SP500[],
     bondRates: BondRates[],
     dailyStockMarketPerformance: DailyStockMarketPerformance[],
   ) => {
@@ -71,7 +45,7 @@ export namespace MarketData {
       {
         closingTime: number
         inflation: (typeof inflation)[0] | null
-        CAPE: (typeof CAPE)[0] | null
+        sp500: (typeof sp500)[0] | null
         bondRates: (typeof bondRates)[0] | null
         dailyStockMarketPerformance:
           | (typeof dailyStockMarketPerformance)[0]
@@ -91,7 +65,7 @@ export namespace MarketData {
         byClosingTimeWithMissing.set(closingTime, {
           closingTime,
           inflation: null,
-          CAPE: null,
+          sp500: null,
           bondRates: null,
           dailyStockMarketPerformance: null,
         })
@@ -99,7 +73,7 @@ export namespace MarketData {
       setter(fGet(byClosingTimeWithMissing.get(closingTime)))
     }
     inflation.forEach((x) => set(x.closingTime, (y) => (y.inflation = x)))
-    CAPE.forEach((x) => set(x.closingTime, (y) => (y.CAPE = x)))
+    sp500.forEach((x) => set(x.closingTime, (y) => (y.sp500 = x)))
     bondRates.forEach((x) => set(x.closingTime, (y) => (y.bondRates = x)))
     dailyStockMarketPerformance.forEach((x) =>
       set(x.closingTime, (y) => (y.dailyStockMarketPerformance = x)),
@@ -112,7 +86,7 @@ export namespace MarketData {
         x.slice(
           x.findIndex(
             (x) =>
-              x.CAPE !== null &&
+              x.sp500 !== null &&
               x.inflation !== null &&
               x.bondRates !== null &&
               x.dailyStockMarketPerformance !== null,
@@ -132,7 +106,7 @@ export namespace MarketData {
     return combinedNullable.map((x, i) => ({
       closingTime: x.closingTime,
       inflation: searchback((x) => x.inflation, i),
-      CAPE: searchback((x) => x.CAPE, i),
+      sp500: searchback((x) => x.sp500, i),
       bondRates: searchback((x) => x.bondRates, i),
       dailyStockMarketPerformance: searchback(
         (x) => x.dailyStockMarketPerformance,

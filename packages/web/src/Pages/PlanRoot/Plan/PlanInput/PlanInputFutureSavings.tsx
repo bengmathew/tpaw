@@ -2,15 +2,15 @@ import { default as React, useRef, useState } from 'react'
 import { PlanParamsExtended } from '../../../../UseSimulator/ExtentPlanParams'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import {
-  EditValueForMonthRange,
-  EditValueForMonthRangeStateful,
+    EditValueForMonthRange,
+    EditValueForMonthRangeStateful,
 } from '../../../Common/Inputs/EditValueForMonthRange'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { ByMonthSchedule } from './Helpers/ByMonthSchedule'
 import { PlanInputSummaryValueForMonthRange } from './Helpers/PlanInputSummaryValueForMonthRange'
 import {
-  PlanInputBody,
-  PlanInputBodyPassThruProps,
+    PlanInputBody,
+    PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 type _EditState = {

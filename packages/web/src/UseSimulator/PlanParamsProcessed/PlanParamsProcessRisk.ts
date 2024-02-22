@@ -13,19 +13,20 @@ import {
 import _ from 'lodash'
 import { formatPercentage } from '../../Utils/FormatPercentage'
 import { PlanParamsExtended } from '../ExtentPlanParams'
+import { CallRust } from './CallRust'
 
 export const planParamsProcessRisk = (
   planParamsExt: PlanParamsExtended,
-  expectedReturnsForPlanning: { annual: { stocks: number; bonds: number } },
-  estimatedSampledStatsOfStocks: { ofLog: { variance: number } },
+  expectedReturnsForPlanning: CallRust.PlanParamsProcessed['expectedReturnsForPlanning'],
+  empiricalAnnualLogVarianceOfStocks: number,
 ) => {
   const { planParams, numMonths, numRetirementMonths } = planParamsExt
-
-  const tpawGlidePath = _getTPAWGlidePath(
-    planParamsExt,
+  const rMuSigmaPow2 = _getRMuSigmaPow2(
     expectedReturnsForPlanning,
-    estimatedSampledStatsOfStocks,
+    empiricalAnnualLogVarianceOfStocks,
   )
+
+  const tpawGlidePath = _getTPAWGlidePath(planParamsExt, rMuSigmaPow2)
   // _logTPAWGlidePath(tpawGlidePath)
 
   const tpaw = {
@@ -35,9 +36,8 @@ export const planParamsProcessRisk = (
     ),
     allocationForLegacy: {
       stocks: _.clamp(
-        _pureMertonsFormula(
-          expectedReturnsForPlanning,
-          estimatedSampledStatsOfStocks,
+        _unclampedMertonsFormula(
+          rMuSigmaPow2,
           letIn(
             planParams.risk.tpaw.riskTolerance.at20 +
               planParams.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20,
@@ -103,8 +103,7 @@ export const planParamsProcessRisk = (
 
 const _getTPAWGlidePath = (
   planParamsExt: PlanParamsExtended,
-  expectedReturnsForPlanning: { annual: { stocks: number; bonds: number } },
-  estimatedSampledStatsOfStocks: { ofLog: { variance: number } },
+  rMuSigmaPow2: _RMuSigmaPow2,
 ): {
   minRRA: number
   unclamped: {
@@ -123,9 +122,8 @@ const _getTPAWGlidePath = (
   const { planParams, getRiskToleranceFromMFN, numMonths } = planParamsExt
 
   const _currMertonFormula = (rra: number) =>
-    _pureMertonsFormula(
-      expectedReturnsForPlanning,
-      estimatedSampledStatsOfStocks,
+    _unclampedMertonsFormula(
+      rMuSigmaPow2,
       rra,
       planParams.risk.tpaw.timePreference,
       planParams.risk.tpaw.additionalAnnualSpendingTilt,
@@ -170,26 +168,21 @@ const _getTPAWGlidePath = (
     }
   }
 
-  const equityPremium =
-    expectedReturnsForPlanning.annual.stocks -
-    expectedReturnsForPlanning.annual.bonds
-
+  // mu:stocks, r:bonds.
+  const equityPremium = rMuSigmaPow2.mu - rMuSigmaPow2.r
   if (equityPremium < 0) {
     // Mertons formula yields a stock allocation of -Infinity and 0 for rra of 0
     // and Infinity respectively. But we don't really want to handle this case
     // using Merton's formula, because negative stock allocation means leverage,
     // which we don't allow. We want instead to completely ignore stocks. We do
     // this by bringing equity premium to 0.
-    return _getTPAWGlidePath(
-      planParamsExt,
-      {
-        annual: {
-          stocks: expectedReturnsForPlanning.annual.bonds, // Note, this is bonds.
-          bonds: expectedReturnsForPlanning.annual.bonds,
-        },
-      },
-      estimatedSampledStatsOfStocks,
-    )
+    return _getTPAWGlidePath(planParamsExt, {
+      // bonds
+      r: rMuSigmaPow2.r,
+      // stocks
+      mu: rMuSigmaPow2.r, // Note this is r, not mu
+      sigmaPow2: rMuSigmaPow2.sigmaPow2,
+    })
   } else if (equityPremium === 0) {
     // Mertons formula yields a stock allocation of 0 for the full rra range
     // from 0 to Infinity. This is always in range, so no need to clamp.
@@ -198,9 +191,8 @@ const _getTPAWGlidePath = (
     // Mertons formula yields a stock allocation of Infinity and 0 for rra of 0
     // and Infinity respectively. We can go through mertons formula, but we clamp
     // rra to the rra that results in a stock allocation of 1.
-    const minRRA = _pureMertonsFormula.inverseFromStockAllocation(
-      expectedReturnsForPlanning,
-      estimatedSampledStatsOfStocks,
+    const minRRA = _unclampedMertonsFormula.inverseFromStockAllocation(
+      rMuSigmaPow2,
       1,
     ).rra
 
@@ -208,10 +200,24 @@ const _getTPAWGlidePath = (
   }
 }
 
-// Note: This is pure. It does not clamp stock allocation.
-export const _pureMertonsFormula = (
-  expectedReturnsForPlanning: { annual: { stocks: number; bonds: number } },
-  estimatedSampledStatsOfStocks: { ofLog: { variance: number } },
+type _RMuSigmaPow2 = {
+  r: number
+  mu: number
+  sigmaPow2: number
+}
+
+const _getRMuSigmaPow2 = (
+  expectedReturnsForPlanning: CallRust.PlanParamsProcessed['expectedReturnsForPlanning'],
+  empiricalAnnualLogVarianceOfStocks: number,
+) => ({
+  r: expectedReturnsForPlanning.empiricalAnnualNonLogReturnInfo.bonds.value,
+  mu: expectedReturnsForPlanning.empiricalAnnualNonLogReturnInfo.stocks.value,
+  sigmaPow2: empiricalAnnualLogVarianceOfStocks,
+})
+
+// Does not clamp stock allocation.
+const _unclampedMertonsFormula = (
+  { r, mu, sigmaPow2 }: _RMuSigmaPow2,
   // Take in rra not riskTolerance because we need to support rra that are not
   // in range of the defined riskTolerances because we might get this rra from
   // running the inverse().
@@ -232,9 +238,7 @@ export const _pureMertonsFormula = (
     return result({ annualSpendingTilt: 0, stockAllocation: 0 })
 
   const gamma = rra
-  const r = expectedReturnsForPlanning.annual.bonds
-  const mu = expectedReturnsForPlanning.annual.stocks
-  const sigmaPow2 = estimatedSampledStatsOfStocks.ofLog.variance
+
   const stockAllocation = (mu - r) / (sigmaPow2 * gamma)
 
   const rho = timePreference
@@ -247,14 +251,10 @@ export const _pureMertonsFormula = (
   return result({ annualSpendingTilt, stockAllocation })
 }
 
-_pureMertonsFormula.inverseFromStockAllocation = (
-  expectedReturnsForPlanning: { annual: { stocks: number; bonds: number } },
-  estimatedSampledStatsOfStocks: { ofLog: { variance: number } },
+_unclampedMertonsFormula.inverseFromStockAllocation = (
+  { r, mu, sigmaPow2 }: _RMuSigmaPow2,
   stockAllocation: number,
 ) => {
-  const r = expectedReturnsForPlanning.annual.bonds
-  const mu = expectedReturnsForPlanning.annual.stocks
-  const sigmaPow2 = estimatedSampledStatsOfStocks.ofLog.variance
   const gamma = (mu - r) / (sigmaPow2 * stockAllocation)
   // Not returning riskTolerance because it may be < 0.
   return { rra: gamma }

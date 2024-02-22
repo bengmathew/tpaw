@@ -1,7 +1,7 @@
 import {
-  faCalendarAlt,
-  faCaretLeft,
-  faCaretRight,
+    faCalendarAlt,
+    faCaretLeft,
+    faCaretRight,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
@@ -13,8 +13,8 @@ import React, { useMemo, useState } from 'react'
 import { ContextMenu2 } from '../../../../Common/Modal/ContextMenu2'
 import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
 import {
-  SimulationInfoForHistoryMode,
-  useSimulation,
+    SimulationInfoForHistoryMode,
+    useSimulation,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
 

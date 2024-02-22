@@ -11,10 +11,6 @@ export const Config = {
   },
   interServerToken: fGet(process.env['INTER_SERVER_TOKEN']),
   isProduction: process.env['NODE_ENV'] === 'production',
-  puppeteer: {
-    // Optional. Used by puppeteer. Not directly used.
-    executablePath: process.env['PUPPETEER_EXECUTABLE_PATH'],
-  },
   printServer:{
     url: fGet(process.env['PRINTSERVER_URL'])
   },

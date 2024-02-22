@@ -46,6 +46,8 @@ import { CurrentTimeInfo } from './UseCurrentTime'
 import { WorkingPlanInfo } from './UseWorkingPlan'
 import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName, useNonPlanParams } from './WithNonPlanParams'
+import * as Rust from '@tpaw/simulator'
+import { PlanParamsNormalized } from '../../../UseSimulator/NormalizePlanParams'
 
 type UpdatePlanParamsFromAction<T> = UnionToIntersection<
   T extends PlanParamsChangeActionCurrent
@@ -63,7 +65,9 @@ export type SimulationInfo = {
   fastForwardInfo: CurrentTimeInfo['fastForwardInfo']
 
   defaultPlanParams: PlanParams
-  currentMarketData: MarketData.Data[0]
+  currentMarketData: MarketData.Data[0] & {
+    timestampMSForHistoricalReturns: number
+  }
 
   currentPortfolioBalanceInfo: ReturnType<
     typeof CurrentPortfolioBalance.cutInfo
@@ -72,6 +76,7 @@ export type SimulationInfo = {
   planParamsId: string
   planParams: PlanParams
   planParamsExt: PlanParamsExtended
+  planParamsNorm: PlanParamsNormalized
   planParamsProcessed: PlanParamsProcessed
   planMigratedFromVersion: SomePlanParamsVersion
 
@@ -113,7 +118,7 @@ export type SimulationInfo = {
   simulationResultIsCurrent: boolean
   numOfSimulationForMonteCarloSampling: number
   randomSeed: number
-  reRun: () => void
+  reRun: (seed: 'random' | number) => void
 }
 
 export type SimulationInfoForLocalMainSrc = Extract<
@@ -151,6 +156,7 @@ export type SimulationParams = Omit<
   | 'defaultPlanParams'
   | 'currentMarketData'
   | 'planParamsExt'
+  | 'planParamsNorm'
   | 'planParamsProcessed'
   | 'simulationResult'
   | 'simulationResultIsCurrent'
@@ -341,8 +347,8 @@ export const WithSimulation = React.memo(
     const { nonPlanParams } = useNonPlanParams()
     const { numOfSimulationForMonteCarloSampling } = nonPlanParams
     const [randomSeed, setRandomSeed] = useState(globalRandomSeed)
-    const reRun = useCallback(() => {
-      globalRandomSeed = _newRandomSeed()
+    const reRun = useCallback((seed: 'random' | number) => {
+      globalRandomSeed = seed === 'random' ? _newRandomSeed() : seed
       setRandomSeed(globalRandomSeed)
     }, [])
 
@@ -361,7 +367,10 @@ export const WithSimulation = React.memo(
     )
 
     const currentMarketData = useMemo(
-      () => getMarketDataForTime(currentTimestamp, marketData),
+      () => ({
+        ...getMarketDataForTime(currentTimestamp, marketData),
+        timestampMSForHistoricalReturns: currentTimestamp,
+      }),
       [currentTimestamp, marketData],
     )
 
@@ -416,6 +425,7 @@ export const WithSimulation = React.memo(
           defaultPlanParams,
           currentMarketData,
           planParamsExt,
+          planParamsNorm: planParamsProcessed.planParamsNorm,
           planParamsProcessed,
           currentPortfolioBalanceInfo,
           simulationResult,

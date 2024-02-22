@@ -7,9 +7,10 @@ import _ from 'lodash'
 import Link from 'next/link'
 import React, { CSSProperties, useEffect, useRef, useState } from 'react'
 import { Padding, RectExt, rectExt } from '../../../../../Utils/Geometry'
+import { useSystemInfo } from '../../../../App/WithSystemInfo'
 import {
-  ChartReact,
-  ChartReactStatefull,
+    ChartReact,
+    ChartReactStatefull,
 } from '../../../../Common/Chart/ChartReact'
 import { ContextMenu2 } from '../../../../Common/Modal/ContextMenu2'
 import { Config } from '../../../../Config'
@@ -24,10 +25,9 @@ import { getPlanResultsChartRange } from './PlanResultsChart/GetPlanResultsChart
 import { PlanResultsChartData } from './PlanResultsChart/PlanResultsChartData'
 import { PlanResultsChartCardMenuButton } from './PlanResultsChartCardMenuButton'
 import {
-  getPlanResultsChartLabelInfoForSpending,
-  planResultsChartLabel,
+    getPlanResultsChartLabelInfoForSpending,
+    planResultsChartLabel,
 } from './PlanResultsChartLabel'
-import { useSystemInfo } from '../../../../App/WithSystemInfo'
 
 const maxWidth = 700
 export type PlanChartMainCardMenuStateful = {

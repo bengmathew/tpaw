@@ -2,19 +2,26 @@ import _ from 'lodash'
 import { blendReturns } from '../../Utils/BlendReturns'
 import { getNetPresentValue } from '../../Utils/GetNetPresentValue'
 
-import { planParamsProcessByMonthParams } from './PlanParamsProcessByMonthParams'
+import { annualToMonthlyReturnRate } from '@tpaw/common'
+import { CallRust } from './CallRust'
 import { planParamsProcessRisk } from './PlanParamsProcessRisk'
-import { PlanParamsExtended } from '../ExtentPlanParams'
+import * as Rust from '@tpaw/simulator'
+import { Record } from '../../Utils/Record'
 
-// TODO: Should we get this from wasm?
 export const planParamsProcessNetPresentValue = (
-  paramsExt: PlanParamsExtended,
+  numMonths: number,
   risk: ReturnType<typeof planParamsProcessRisk>,
   legacyTarget: number,
-  byMonth: ReturnType<typeof planParamsProcessByMonthParams>,
-  monthlyExpectedReturns: { stocks: number; bonds: number },
+  byMonth: ReturnType<(typeof CallRust)['processPlanParams']>['byMonth'],
+  expectedReturnsForPlanning: CallRust.PlanParamsProcessed['expectedReturnsForPlanning'],
 ) => {
-  const { numMonths } = paramsExt
+  const monthlyExpectedReturns = annualToMonthlyReturnRate({
+    stocks:
+      expectedReturnsForPlanning.empiricalAnnualNonLogReturnInfo.stocks.value,
+    bonds:
+      expectedReturnsForPlanning.empiricalAnnualNonLogReturnInfo.bonds.value,
+  })
+
   const bondRateArr = _.times(
     byMonth.wealth.total.length,
     () => monthlyExpectedReturns.bonds,
@@ -27,25 +34,19 @@ export const planParamsProcessNetPresentValue = (
   const _calcObj = (
     x: {
       total: Float64Array
-      byId: Record<string, {values:Float64Array}>
+      byId: Record<string, { values: Float64Array }>
     },
     rate: number[],
   ) => ({
-    byId: _.mapValues(x.byId, (x) => getNetPresentValue(rate, x.values)),
-    total: getNetPresentValue(rate, x.total),
+    byId: _.mapValues(x.byId, (x) =>
+      Record.map(getNetPresentValue(rate, x.values), (k, v) => [k, v[0]]),
+    ),
   })
 
   return {
     tpaw: {
       wealth: {
-        total: getNetPresentValue(
-          bondRateArr,
-          byMonth.wealth.total,
-        ),
-        futureSavings: _calcObj(
-          byMonth.wealth.futureSavings,
-          bondRateArr,
-        ),
+        futureSavings: _calcObj(byMonth.wealth.futureSavings, bondRateArr),
         incomeDuringRetirement: _calcObj(
           byMonth.wealth.incomeDuringRetirement,
           bondRateArr,
@@ -65,10 +66,7 @@ export const planParamsProcessNetPresentValue = (
         legacy:
           legacyTarget /
           Math.pow(
-            1.0 +
-              blendReturns(monthlyExpectedReturns)(
-                risk.tpaw.allocationForLegacy,
-              ),
+            1.0 + regularReturns(risk.tpaw.allocationForLegacy),
             numMonths,
           ),
       },

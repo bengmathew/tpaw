@@ -15,15 +15,7 @@ export type SimulationWorkerArgs =
       }
     }
   | { type: 'sort'; taskID: string; args: { data: Float64Array[] } }
-  | {
-      type: 'getSampledReturnStats'
-      taskID: string
-      args: {
-        monthlyReturns: number[]
-        blockSize: number
-        numMonths: number
-      }
-    }
+
   | {
       type: 'parseAndMigratePlanParams'
       taskID: string
@@ -60,17 +52,7 @@ export type SimulationWorkerResult =
       taskID: string
       result: { data: Float64Array[]; perf: number }
     }
-  | {
-      type: 'getSampledReturnStats'
-      taskID: string
-      result: {
-        oneYear: _SampleReturnsStatsForWindowSize
-        fiveYear: _SampleReturnsStatsForWindowSize
-        tenYear: _SampleReturnsStatsForWindowSize
-        thirtyYear: _SampleReturnsStatsForWindowSize
-        perf: number
-      }
-    }
+
   | {
       type: 'parseAndMigratePlanParams'
       taskID: string
@@ -87,18 +69,4 @@ export type SimulationWorkerSortResult = Extract<
   { type: 'sort' }
 >['result']
 
-export type SimulationWorkerCalculateSampledAnnualReturn = Extract<
-  SimulationWorkerResult,
-  { type: 'getSampledReturnStats' }
->['result']
 
-type _SampleReturnsStatsForWindowSize = {
-  n: number
-  mean: number
-  ofLog: {
-    mean: number
-    variance: number
-    standardDeviation: number
-    n: number
-  }
-}

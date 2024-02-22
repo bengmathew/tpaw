@@ -1,4 +1,4 @@
-import { MarketData, block, fGet } from '@tpaw/common'
+import { MarketData, block } from '@tpaw/common'
 import _ from 'lodash'
 import { assert } from '../../Utils/Utils'
 import { Config } from '../Config'

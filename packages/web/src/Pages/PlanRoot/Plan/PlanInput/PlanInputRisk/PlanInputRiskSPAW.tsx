@@ -1,5 +1,6 @@
-import { PlanParams, SPAW_ANNUAL_SPENDING_TILT_VALUES } from '@tpaw/common'
+import { SPAW_ANNUAL_SPENDING_TILT_VALUES } from '@tpaw/common'
 import React from 'react'
+import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { SliderInput } from '../../../../Common/Inputs/SliderInput/SliderInput'
@@ -8,7 +9,6 @@ import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
 import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
 import { PlanInputRiskLMPCard } from './PlanInputRiskLMPCard'
 import { PlanInputRiskSPAWAndSWRStockAllocationCard } from './PlanInputRiskSPAWAndSWRStockAllocation'
-import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 
 export const PlanInputRiskSPAW = React.memo(
   ({ props }: { props: PlanInputBodyPassThruProps }) => {

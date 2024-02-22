@@ -3,8 +3,8 @@ import React, { useMemo } from 'react'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import {
-  PlanTransitionState,
-  simplifyPlanTransitionState5,
+    PlanTransitionState,
+    simplifyPlanTransitionState5,
 } from '../PlanTransition'
 import { PlanMenuLinkPlanMode } from './PlanMenuLinkPlanMode'
 import { PlanMenuLocalPlanMode } from './PlanMenuLocalPlanMode'

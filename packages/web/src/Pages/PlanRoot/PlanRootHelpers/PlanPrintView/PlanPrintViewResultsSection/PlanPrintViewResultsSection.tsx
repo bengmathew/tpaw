@@ -201,7 +201,7 @@ const _Chart = React.memo(
     const chartData = useChartDataForPDF(type)
     const outerDivRef = useRef<HTMLDivElement>(null)
 
-    const hasPartner = args.planParamsProcessed.people.withPartner
+    const hasPartner = args.planParams.people.withPartner
     const [chart, setChart] = useState<ChartReactStatefull<{
       data: PlanResultsChartDataForPDF
     }> | null>(null)

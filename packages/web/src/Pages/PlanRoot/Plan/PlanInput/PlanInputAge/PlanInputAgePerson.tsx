@@ -1,16 +1,16 @@
 import {
-  faCaretDown,
-  faCaretRight,
-  faTrash,
+    faCaretDown,
+    faCaretRight,
+    faTrash,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Switch } from '@headlessui/react'
 import {
-  MAX_AGE_IN_MONTHS,
-  PlanParams,
-  block,
-  noCase,
-  planParamsFns,
+    MAX_AGE_IN_MONTHS,
+    PlanParams,
+    block,
+    noCase,
+    planParamsFns,
 } from '@tpaw/common'
 import _ from 'lodash'
 import React, { ReactNode, useMemo, useRef, useState } from 'react'

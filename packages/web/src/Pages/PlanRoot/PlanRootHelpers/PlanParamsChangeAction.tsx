@@ -715,7 +715,7 @@ export const processPlanParamsChangeActionCurrent = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.expectedAnnualReturnForPlanning = value
+          clone.advanced.expectedReturnsForPlanning = value
         },
         render: () => {
           const labelInfo = expectedReturnTypeLabelInfo(value)
@@ -744,7 +744,7 @@ export const processPlanParamsChangeActionCurrent = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.historicalReturnsAdjustment.stocks.volatilityScale =
+          clone.advanced.historicalMonthlyLogReturnsAdjustment.standardDeviation.stocks.scale =
             value
         },
 
@@ -761,7 +761,7 @@ export const processPlanParamsChangeActionCurrent = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.historicalReturnsAdjustment.bonds.enableVolatility =
+          clone.advanced.historicalMonthlyLogReturnsAdjustment.standardDeviation.bonds.enableVolatility =
             value
         },
 
@@ -834,11 +834,26 @@ export const processPlanParamsChangeActionCurrent = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.sampling.blockSizeForMonteCarloSampling = value
+          clone.advanced.sampling.forMonteCarlo.blockSize = value
         },
         render: () =>
           `Set block size for Monte Carlo simulation to ${numMonthsStr(value)}`,
         merge: (prev) => prev.type === 'setMonteCarloSamplingBlockSize',
+      }
+    }
+
+    // ---------
+    // SetMonteCarloSamplingStaggerRunStarts
+    // ---------
+    case 'setMonteCarloStaggerRunStarts': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.advanced.sampling.forMonteCarlo.staggerRunStarts = value
+        },
+        render: () =>
+          `Set stagger run starts for Monte Carlo simulation to ${value ? 'true' : 'false'}`,
+        merge: null,
       }
     }
 
@@ -865,20 +880,17 @@ export const processPlanParamsChangeActionCurrent = (
     }
 
     // ---------
-    // setHistoricalReturnsAdjustExpectedReturnDev
+    // setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting
     // ---------
-    case 'setHistoricalReturnsAdjustExpectedReturnDev': {
-      const { type, adjustExpectedReturn } = action.value
+    case 'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting': {
+      const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.historicalReturnsAdjustment[
-            type
-          ].adjustExpectedReturn = adjustExpectedReturn
+          clone.advanced.historicalMonthlyLogReturnsAdjustment.overrideToFixedForTesting =
+            value
         },
         render: () =>
-          `DEV: Set historical returns expected value adjustment for ${
-            type === 'stocks' ? 'stocks' : 'bonds'
-          }`,
+          `Set historical monthly log returns adjustment override to fixed for testing to ${value}`,
         merge: null,
       }
     }

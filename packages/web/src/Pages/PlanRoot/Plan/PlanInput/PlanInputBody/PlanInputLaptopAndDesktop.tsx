@@ -1,16 +1,16 @@
 import { Transition } from '@headlessui/react'
 import React, {
-  MouseEvent,
-  ReactElement,
-  ReactNode,
-  useLayoutEffect,
-  useRef,
-  useState,
+    MouseEvent,
+    ReactElement,
+    ReactNode,
+    useLayoutEffect,
+    useRef,
+    useState,
 } from 'react'
 import {
-  newPaddingHorz,
-  paddingCSS,
-  paddingCSSStyleHorz,
+    newPaddingHorz,
+    paddingCSS,
+    paddingCSSStyleHorz,
 } from '../../../../../Utils/Geometry'
 import { assert, fGet } from '../../../../../Utils/Utils'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'

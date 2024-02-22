@@ -8,8 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Mutation } from 'relay-runtime';
-import { FragmentRefs } from "relay-runtime";
+import { ConcreteRequest, FragmentRefs } from 'relay-runtime';
 export type UserPlanDeleteInput = {
   planId: string;
   userId: string;

@@ -1,14 +1,14 @@
 import { assert } from '@tpaw/common'
 import React from 'react'
 import { graphql, useLazyLoadQuery } from 'react-relay'
-import { appPaths } from '../../../AppPaths'
 import { AppError } from '../../App/AppError'
 import { useUserGQLArgs } from '../../App/WithFirebaseUser'
-import { WithUser } from '../../App/WithUser'
 import { TARGET_UNDO_DEPTH } from '../PlanRootHelpers/UseWorkingPlan'
 import { SimulationParams } from '../PlanRootHelpers/WithSimulation'
-import { PlanServerImpl } from '../PlanServerImpl/PlanServerImpl'
 import { PlanRootServerQuery } from './__generated__/PlanRootServerQuery.graphql'
+import { WithUser } from '../../App/WithUser'
+import { PlanServerImpl } from '../PlanServerImpl/PlanServerImpl'
+import { appPaths } from '../../../AppPaths'
 
 export const PlanRootServer = React.memo(
   ({

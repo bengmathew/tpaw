@@ -10,18 +10,18 @@ import { EditValueForMonthRange } from '../../../Common/Inputs/EditValueForMonth
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import {
-  isPlanResultsChartSpendingDiscretionaryType,
-  isPlanResultsChartSpendingEssentialType,
-  planResultsChartSpendingDiscretionaryTypeID,
-  planResultsChartSpendingEssentialTypeID,
+    isPlanResultsChartSpendingDiscretionaryType,
+    isPlanResultsChartSpendingEssentialType,
+    planResultsChartSpendingDiscretionaryTypeID,
+    planResultsChartSpendingEssentialTypeID,
 } from '../PlanResults/PlanResultsChartType'
 import { useGetPlanResultsChartURL } from '../PlanResults/UseGetPlanResultsChartURL'
 import { usePlanResultsChartType } from '../PlanResults/UsePlanResultsChartType'
 import { ByMonthSchedule } from './Helpers/ByMonthSchedule'
 import { PlanInputSummaryValueForMonthRange } from './Helpers/PlanInputSummaryValueForMonthRange'
 import {
-  PlanInputBody,
-  PlanInputBodyPassThruProps,
+    PlanInputBody,
+    PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 export const PlanInputExtraSpending = React.memo(

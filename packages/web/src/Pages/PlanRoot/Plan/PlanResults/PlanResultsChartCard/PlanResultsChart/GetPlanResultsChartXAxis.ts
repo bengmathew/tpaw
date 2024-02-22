@@ -1,5 +1,5 @@
 import { ChartXAxis } from '../../../../../Common/Chart/ChartComponent/ChartXAxis'
-import { PlanResultsChartData, PlanResultsChartDataForPDF } from './PlanResultsChartData'
+import { PlanResultsChartDataForPDF } from './PlanResultsChartData'
 
 export const getPlanResultsChartXAxis = (
   personType: 'person1' | 'person2',

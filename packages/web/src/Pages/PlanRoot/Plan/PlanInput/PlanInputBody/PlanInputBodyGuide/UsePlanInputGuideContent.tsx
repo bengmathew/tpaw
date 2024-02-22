@@ -1,20 +1,16 @@
-import { historicalReturns } from '@tpaw/common'
+import { CallRust } from '../../../../../../UseSimulator/PlanParamsProcessed/CallRust'
+import { fWASM } from '../../../../../../UseSimulator/Simulator/GetWASM'
 import { Contentful } from '../../../../../../Utils/Contentful'
-import { formatCurrency } from '../../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../../Utils/FormatPercentage'
-import {
-  useIANATimezoneName,
-  useNonPlanParams,
-} from '../../../../PlanRootHelpers/WithNonPlanParams'
+import { useNonPlanParams } from '../../../../PlanRootHelpers/WithNonPlanParams'
 import { usePlanContent } from '../../../../PlanRootHelpers/WithPlanContent'
 import { useSimulation } from '../../../../PlanRootHelpers/WithSimulation'
 import { PlanInputType } from '../../Helpers/PlanInputType'
 
 export function usePlanInputGuideContent(type: PlanInputType) {
-  const { getZonedTime } = useIANATimezoneName()
   const { nonPlanParams } = useNonPlanParams()
-  const { planParams, currentMarketData } = useSimulation()
-  const {  inflation } = currentMarketData
+  const { planParams, defaultPlanParams, currentMarketData } = useSimulation()
+  const { inflation } = currentMarketData
 
   const formatDate = (epoch: number) =>
     new Date(epoch).toLocaleDateString('en-US', {
@@ -24,6 +20,14 @@ export function usePlanInputGuideContent(type: PlanInputType) {
       timeZone: 'UTC',
     })
 
+  const presetInfo =
+    fWASM().process_market_data_for_expected_returns_for_planning_presets(
+      planParams.advanced.sampling,
+      planParams.advanced.historicalMonthlyLogReturnsAdjustment
+        .standardDeviation,
+      currentMarketData,
+    )
+
   const contentForType = usePlanContent()[type]
   if (!('guide' in contentForType)) return null
   const content = contentForType.guide[planParams.advanced.strategy]
@@ -32,10 +36,10 @@ export function usePlanInputGuideContent(type: PlanInputType) {
     inflationDate: formatDate(inflation.closingTime),
     inflation: formatPercentage(1)(inflation.value),
     historicalExpectedStockReturn: formatPercentage(1)(
-      historicalReturns.monthly.annualStats.stocks.ofBase.mean,
+      presetInfo.stocks.historical,
     ),
     historicalExpectedBondReturn: formatPercentage(1)(
-      historicalReturns.monthly.annualStats.bonds.ofBase.mean,
+      presetInfo.stocks.historical,
     ),
   }
   return Contentful.replaceVariables(variables, content)

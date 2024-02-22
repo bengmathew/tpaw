@@ -7,8 +7,8 @@ import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalE
 import { useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import {
-  SimulationInfoForLinkSrc,
-  SimulationInfoForPlanMode,
+    SimulationInfoForLinkSrc,
+    SimulationInfoForPlanMode,
 } from '../../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionModalLabelInput } from './PlanMenuActionModalLabelInput'
 import { PlanMenuActionModalSaveLinkPlanToAccountMutation } from './__generated__/PlanMenuActionModalSaveLinkPlanToAccountMutation.graphql'

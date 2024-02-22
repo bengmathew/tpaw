@@ -3,11 +3,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { MonthRange, ValueForMonthRange, generateSmallId } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useMemo } from 'react'
+import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 import { SimpleRange } from '../../../../../Utils/SimpleRange'
 import { ValueForMonthRangeDisplay } from '../../../../Common/ValueForMonthRangeDisplay'
 import { getValueForMonthRangeEntriesByLocation } from '../../../PlanRootHelpers/PlanParamsChangeAction'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
-import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
 
 export const ByMonthSchedule = React.memo(
   ({

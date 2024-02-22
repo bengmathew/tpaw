@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import {
-  PlanTransitionState,
-  simplifyPlanTransitionState5,
+    PlanTransitionState,
+    simplifyPlanTransitionState5,
 } from '../PlanTransition'
 import { usePlanColors } from '../UsePlanColors'
 import { PlanContactContent } from './PlanContactContent'

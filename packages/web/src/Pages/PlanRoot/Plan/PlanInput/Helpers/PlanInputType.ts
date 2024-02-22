@@ -13,7 +13,6 @@ export const paramsInputTypes = [
   'simulation',
   'dev-misc',
   'dev-simulations',
-  'dev-historical-returns',
   'dev-time',
 ] as const
 export type PlanInputType = (typeof paramsInputTypes)[number]

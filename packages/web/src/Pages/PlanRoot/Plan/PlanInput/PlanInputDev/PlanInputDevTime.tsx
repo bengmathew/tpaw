@@ -14,13 +14,13 @@ import { ToggleSwitch } from '../../../../Common/Inputs/ToggleSwitch'
 import { useMarketData } from '../../../PlanRootHelpers/WithMarketData'
 import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
 import {
-  SimulationInfo,
-  useSimulation,
+    SimulationInfo,
+    useSimulation,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputModifiedBadge } from '../Helpers/PlanInputModifiedBadge'
 import {
-  PlanInputBody,
-  PlanInputBodyPassThruProps,
+    PlanInputBody,
+    PlanInputBodyPassThruProps,
 } from '../PlanInputBody/PlanInputBody'
 
 export const PlanInputDevFastForward = React.memo(
@@ -300,11 +300,11 @@ const _SynthesizeMarketDataCard = React.memo(
                     dailyStockMarketPerformance: {
                       type: 'constant',
                       annualBND:
-                        planParamsProcessed.expectedReturnsForPlanning.annual
-                          .bonds,
+                        planParamsProcessed.expectedReturnsForPlanning
+                          .empiricalAnnualNonLogReturnInfo.bonds.value,
                       annualVT:
-                        planParamsProcessed.expectedReturnsForPlanning.annual
-                          .stocks,
+                        planParamsProcessed.expectedReturnsForPlanning
+                          .empiricalAnnualNonLogReturnInfo.stocks.value,
                     },
                   },
                 })
@@ -330,8 +330,6 @@ const _SynthesizeMarketDataCard = React.memo(
                       const strategy = fGet(synthesizeMarketDataSpec).strategy
                         .dailyStockMarketPerformance
                       assert(strategy.type === 'constant')
-                      const expectedReturns =
-                        planParams.advanced.expectedAnnualReturnForPlanning
 
                       return (
                         <>
@@ -349,7 +347,8 @@ const _SynthesizeMarketDataCard = React.memo(
                             </h2>
                           </div>
                           <div className="mt-2">
-                            {expectedReturns.type === 'manual' ? (
+                            {planParams.advanced.expectedReturnsForPlanning
+                              .type === 'manual' ? (
                               <h2 className="">
                                 NOTE: Expected return is manual.
                               </h2>

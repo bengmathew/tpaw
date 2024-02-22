@@ -25,7 +25,7 @@ export type RunSimulationInWASMResult = {
   }
   annualStatsForSampledReturns: Record<
     'stocks' | 'bonds',
-    { n: number } & Record<
+     Record<
       'ofBase' | 'ofLog',
       {
         mean: number

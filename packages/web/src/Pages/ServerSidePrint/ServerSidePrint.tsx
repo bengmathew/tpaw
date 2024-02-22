@@ -1,4 +1,4 @@
-import { assertFalse, fGet } from '@tpaw/common'
+import { assertFalse, currentPlanParamsVersion, fGet } from '@tpaw/common'
 import React, { useMemo } from 'react'
 import { useURLParam } from '../../Utils/UseURLParam'
 import { PlanPrintView } from '../PlanRoot/PlanRootHelpers/PlanPrintView/PlanPrintView'
@@ -28,7 +28,7 @@ const testParams: PlanPrintViewArgsServerSide = {
   fixed: {
     planLabel: 'Test Plan',
     planParams: {
-      v: 26,
+      v: currentPlanParamsVersion,
       risk: {
         swr: {
           withdrawal: {
@@ -97,32 +97,26 @@ const testParams: PlanPrintViewArgsServerSide = {
       advanced: {
         sampling: {
           type: 'monteCarlo',
-          blockSizeForMonteCarloSampling: 60,
+          forMonteCarlo: {
+            blockSize: 12 * 5,
+            staggerRunStarts: true,
+          },
         },
         strategy: 'TPAW',
         annualInflation: {
           type: 'suggested',
         },
-        historicalReturnsAdjustment: {
-          bonds: {
-            enableVolatility: true,
-            adjustExpectedReturn: {
-              type: 'toExpectedUsedForPlanning',
-              correctForBlockSampling: true,
-            },
-          },
-          stocks: {
-            volatilityScale: 1.01,
-            adjustExpectedReturn: {
-              type: 'toExpectedUsedForPlanning',
-              correctForBlockSampling: true,
-            },
-          },
-        },
-        expectedAnnualReturnForPlanning: {
+        expectedReturnsForPlanning: {
           type: 'manual',
           bonds: 0.022,
           stocks: 0.03,
+        },
+        historicalMonthlyLogReturnsAdjustment: {
+          standardDeviation: {
+            stocks: { scale: 1.0 },
+            bonds: { enableVolatility: true },
+          },
+          overrideToFixedForTesting:false
         },
       },
       timestamp: 1704489409432,
@@ -146,14 +140,20 @@ const testParams: PlanPrintViewArgsServerSide = {
       inflation: {
         value: 0.0239,
       },
-      CAPE: {
-        oneOverCAPE: 0.03301945387553307,
-        regressionAverage: 0.0536822832663609,
-        suggested: 0.04184934611061025,
+      sp500: {
+        closingTime: 1706648400000,
+        value: 4924.9702,
       },
       bondRates: {
-        twentyYear: 0.0224,
+        closingTime: 1706648400000,
+        fiveYear: 0.0157,
+        sevenYear: 0.0152,
+        tenYear: 0.0149,
+        twentyYear: 0.015,
+        thirtyYear: 0.0154,
       },
+      
+      timestampMSForHistoricalReturns: Number.MAX_SAFE_INTEGER,
     },
     numOfSimulationForMonteCarloSampling: 500,
     ianaTimezoneName: 'America/Los_Angeles',

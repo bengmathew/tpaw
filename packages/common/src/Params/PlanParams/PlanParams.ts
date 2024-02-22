@@ -1,4 +1,4 @@
-import { PlanParams26 as PlanParamsCurr } from './PlanParams26'
+import { PlanParams27 as PlanParamsCurr } from './PlanParams27'
 
 type _GetVersion<T> = T extends { v: infer V } ? V : 1
 
@@ -43,8 +43,8 @@ export const ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES =
 export const SPAW_ANNUAL_SPENDING_TILT_VALUES =
   PlanParamsCurr.SPAW_ANNUAL_SPENDING_TILT_VALUES
 export const MANUAL_INFLATION_VALUES = PlanParamsCurr.MANUAL_INFLATION_VALUES
-export const MANUAL_STOCKS_BONDS_RETURNS_VALUES =
-  PlanParamsCurr.MANUAL_STOCKS_BONDS_RETURNS_VALUES
+export const MANUAL_STOCKS_BONDS_NON_LOG_ANNUAL_RETURNS_VALUES =
+  PlanParamsCurr.MANUAL_STOCKS_BONDS_NON_LOG_ANNUAL_RETURNS_VALUES
 export const MIN_PLAN_PARAM_TIME = PlanParamsCurr.MIN_PLAN_PARAM_TIME
 export const calendarMonthFromTime = PlanParamsCurr.calendarMonthFromTime
 export const PLAN_PARAMS_CONSTANTS = PlanParamsCurr.CONSTANTS

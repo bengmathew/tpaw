@@ -160,6 +160,18 @@ export const processPlanParamsChangeActionDeprecated = (
         },
       }
     }
+    // ---------
+    // setHistoricalReturnsAdjustExpectedReturnDev
+    // ---------
+    case 'setHistoricalReturnsAdjustExpectedReturnDev': {
+      const { type } = action.value
+      return {
+        render: () =>
+          `DEV: Set historical returns expected value adjustment for ${
+            type === 'stocks' ? 'stocks' : 'bonds'
+          }`,
+      }
+    }
     default:
       return processPlanParamsChangeActionCurrent(action)
   }

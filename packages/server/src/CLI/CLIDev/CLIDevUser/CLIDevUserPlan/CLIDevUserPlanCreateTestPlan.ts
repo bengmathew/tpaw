@@ -130,7 +130,7 @@ const _applyChange = (value: number, timestamp: number, params: PlanParams) => {
 }
 
 const startingParams = (timestamp: number): PlanParams => ({
-  v: 26,
+  v: 27,
   risk: {
     swr: {
       withdrawal: {
@@ -304,26 +304,23 @@ const startingParams = (timestamp: number): PlanParams => ({
     }),
   },
   advanced: {
-    sampling: { type: 'monteCarlo', blockSizeForMonteCarloSampling: 12 * 5 },
+    sampling: {
+      type: 'monteCarlo',
+      forMonteCarlo: {
+        blockSize: 12 * 5,
+        staggerRunStarts: true,
+      },
+    },
     strategy: 'TPAW',
-    expectedAnnualReturnForPlanning: {
+    expectedReturnsForPlanning: {
       type: 'regressionPrediction,20YearTIPSYield',
     },
-    historicalReturnsAdjustment: {
-      stocks: {
-        adjustExpectedReturn: {
-          type: 'toExpectedUsedForPlanning',
-          correctForBlockSampling: true,
-        },
-        volatilityScale: 1,
+    historicalMonthlyLogReturnsAdjustment: {
+      standardDeviation: {
+        stocks: { scale: 1 },
+        bonds: { enableVolatility: true },
       },
-      bonds: {
-        adjustExpectedReturn: {
-          type: 'toExpectedUsedForPlanning',
-          correctForBlockSampling: true,
-        },
-        enableVolatility: true,
-      },
+      overrideToFixedForTesting:false,
     },
     annualInflation: {
       type: 'suggested',

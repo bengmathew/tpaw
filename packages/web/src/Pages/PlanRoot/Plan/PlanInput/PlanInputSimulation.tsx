@@ -4,16 +4,16 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { MAX_AGE_IN_MONTHS, PlanParams } from '@tpaw/common'
 import React from 'react'
 import {
-  paddingCSSStyle,
-  paddingCSSStyleHorz,
+    paddingCSSStyle,
+    paddingCSSStyleHorz,
 } from '../../../../Utils/Geometry'
 import { numMonthsStr } from '../../../../Utils/NumMonthsStr'
 import { NumMonthsInput } from '../../../Common/Inputs/NumMonthsInput'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
-  PlanInputBody,
-  PlanInputBodyPassThruProps,
+    PlanInputBody,
+    PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 export const PlanInputSimulation = React.memo(
@@ -81,7 +81,7 @@ const _MonteCarloCard = React.memo(
           <NumMonthsInput
             className={` ml-8`}
             modalLabel="Sampling Block Size"
-            value={planParams.advanced.sampling.blockSizeForMonteCarloSampling}
+            value={planParams.advanced.sampling.forMonteCarlo.blockSize}
             onChange={handleBlockSize}
             rangeAsMFN={{ start: 1, end: MAX_AGE_IN_MONTHS }}
             disabled={!isEnabled}
@@ -92,7 +92,7 @@ const _MonteCarloCard = React.memo(
             onClick={() => {
               handleBlockSize(
                 defaultPlanParams.advanced.sampling
-                  .blockSizeForMonteCarloSampling,
+                  .forMonteCarlo.blockSize,
               )
             }}
           >
@@ -177,8 +177,8 @@ export const useIsPlanInputSimulationModifed = () => {
 const useIsMonteCarloCardModifed = () => {
   const { planParams, defaultPlanParams } = useSimulation()
   return (
-    planParams.advanced.sampling.blockSizeForMonteCarloSampling !==
-    defaultPlanParams.advanced.sampling.blockSizeForMonteCarloSampling
+    planParams.advanced.sampling.forMonteCarlo.blockSize !==
+    defaultPlanParams.advanced.sampling.forMonteCarlo.blockSize
   )
 }
 const useIsHistoricalSequenceCardModifed = () => {
@@ -194,7 +194,7 @@ export const PlanInputSimulationSummary = React.memo(
         <h2>
           Block Size:{' '}
           {numMonthsStr(
-            planParams.advanced.sampling.blockSizeForMonteCarloSampling,
+            planParams.advanced.sampling.forMonteCarlo.blockSize,
           )}
         </h2>
       </>

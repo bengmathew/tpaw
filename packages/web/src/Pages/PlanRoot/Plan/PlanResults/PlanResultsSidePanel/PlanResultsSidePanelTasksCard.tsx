@@ -172,7 +172,7 @@ const _getProps = (simulationResult: SimulationResult): _Props => {
         })),
     },
     withdrawalsStarted,
-    strategy: args.planParamsProcessed.strategy,
+    strategy: args.planParams.advanced.strategy,
   }
 }
 
@@ -188,7 +188,7 @@ export const TasksForThisMonthContent = React.memo(
     const props = _getProps(simulationResult)
 
     const { withdrawals, withdrawalsStarted } = props
-    
+
     return (
       <div className={clsx(className, forPrint ? '' : 'font-font2 text-lg')}>
         {withdrawals.total !== 0 || withdrawalsStarted ? (

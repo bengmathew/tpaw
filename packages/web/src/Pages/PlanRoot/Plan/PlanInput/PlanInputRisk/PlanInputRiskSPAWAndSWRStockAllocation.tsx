@@ -1,8 +1,8 @@
 import { GlidePath } from '@tpaw/common'
 import React from 'react'
 import { paddingCSSStyle } from '../../../../../Utils/Geometry'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { GlidePathInput } from '../../../../Common/Inputs/GlidePathInput'
+import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { AssetAllocationChart } from '../Helpers/AssetAllocationChart'
 import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
 

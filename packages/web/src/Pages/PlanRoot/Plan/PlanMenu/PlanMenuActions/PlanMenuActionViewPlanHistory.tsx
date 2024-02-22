@@ -1,11 +1,11 @@
+import { faHistory } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
 import { assertFalse, noCase } from '@tpaw/common'
 import clix from 'clsx'
 import React, { useEffect, useRef, useState } from 'react'
 import { useURLUpdater } from '../../../../../Utils/UseURLUpdater'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faHistory } from '@fortawesome/pro-solid-svg-icons'
 
 export const PlanMenuActionViewPlanHistory = React.memo(
   ({

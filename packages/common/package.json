@@ -1,6 +1,6 @@
 {
   "name": "@tpaw/common",
-  "version": "1.23.0",
+  "version": "1.24.0",
   "description": "",
   "main": "dist/main.js",
   "types": "dist/main.d.ts",
@@ -19,8 +19,8 @@
   "devDependencies": {
     "@types/lodash": "^4.14.196",
     "@types/luxon": "^3.4.1",
-    "@typescript-eslint/eslint-plugin": "^6.2.0",
-    "@typescript-eslint/parser": "^6.2.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
     "eslint": "^8.26.0",
     "eslint-plugin-promise": "^6.1.1",
     "prettier": "^3.0.0",

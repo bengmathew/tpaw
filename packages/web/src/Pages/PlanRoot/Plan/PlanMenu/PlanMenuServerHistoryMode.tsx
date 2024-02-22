@@ -1,7 +1,7 @@
 import {
-  faArrowRightFromBracket,
-  faCaretDown,
-  faCopy,
+    faArrowRightFromBracket,
+    faCaretDown,
+    faCopy,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
@@ -10,9 +10,9 @@ import Link from 'next/link'
 import React, { useState } from 'react'
 import { ContextMenu2 } from '../../../Common/Modal/ContextMenu2'
 import {
-  SimulationInfoForHistoryMode,
-  SimulationInfoForServerSrc,
-  useSimulation,
+    SimulationInfoForHistoryMode,
+    SimulationInfoForServerSrc,
+    useSimulation,
 } from '../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../UsePlanColors'
 import { PlanMenuActionCopyToLink } from './PlanMenuActions/PlanMenuActionCopyToLink'

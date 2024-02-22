@@ -124,7 +124,8 @@ export const PlanResultsChartCard = React.memo(
         : null
     const showYAxisDescription = !!getYAxisDescription(layout === 'mobile')
     const showSuccessRate = planParams.advanced.strategy === 'SWR'
-    const hasPartner = simulationResult.args.planParamsProcessed.people.withPartner
+    const hasPartner =
+      simulationResult.args.planParams.people.withPartner
 
     const sizing = useMemo(() => {
       const _map = (
@@ -222,8 +223,10 @@ export const PlanResultsChartCard = React.memo(
     }, [targetSizing, transition.duration])
 
     const numSuccessfullRuns =
-      simulationResult.numSimulationsActual - simulationResult.numRunsWithInsufficientFunds
-    const successRate = numSuccessfullRuns / simulationResult.numSimulationsActual
+      simulationResult.numSimulationsActual -
+      simulationResult.numRunsWithInsufficientFunds
+    const successRate =
+      numSuccessfullRuns / simulationResult.numSimulationsActual
     const planColors = usePlanColors()
 
     const isMobile = useMemo(() => getIsMobile(), [])
@@ -331,10 +334,10 @@ export const PlanResultsChartCard = React.memo(
             {successRate < 0.95
               ? formatPercentage(0)(successRate)
               : successRate < 0.99
-              ? formatPercentage(1)(successRate)
-              : formatPercentage(2)(successRate)}
-            {simulationResult.args.planParamsProcessed.planParams.advanced.sampling.type ===
-              'historical' && (
+                ? formatPercentage(1)(successRate)
+                : formatPercentage(2)(successRate)}
+            {simulationResult.args.planParamsProcessed.planParams.advanced
+              .sampling.type === 'historical' && (
               <span className="sm:inline hidden ml-2 font-normal text-sm lighten">
                 {numSuccessfullRuns} of {simulationResult.numSimulationsActual}
               </span>

@@ -1,8 +1,8 @@
 import {
-  DataForMarketBasedPlanParamValues,
-  NonPlanParams,
-  PlanParams,
+    NonPlanParams,
+    PlanParams,
 } from '@tpaw/common'
+import * as Rust from '@tpaw/simulator'
 
 type _PageSize_NoDefault = Exclude<
   NonPlanParams['pdfReportSettings']['pageSize'],
@@ -13,7 +13,7 @@ export type PlanPrintViewArgs = {
   fixed: {
     planLabel: string | null
     planParams: PlanParams
-    marketData: DataForMarketBasedPlanParamValues
+    marketData: Rust.DataForMarketBasedPlanParamValues
     numOfSimulationForMonteCarloSampling: number
     ianaTimezoneName: string
     randomSeed: number
