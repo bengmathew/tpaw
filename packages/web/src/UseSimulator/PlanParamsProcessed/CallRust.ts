@@ -12,7 +12,7 @@ export namespace CallRust {
   ) => {
     const wasm = fWASM()
     let start = performance.now()
-
+    
     const fromRust = wasm.process_plan_params(planParamsNorm, marketData)
 
     // console.log('process_plan_params:part1:', performance.now() - start)

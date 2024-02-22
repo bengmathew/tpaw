@@ -3,6 +3,7 @@ import React, { useMemo } from 'react'
 import { useURLParam } from '../../Utils/UseURLParam'
 import { PlanPrintView } from '../PlanRoot/PlanRootHelpers/PlanPrintView/PlanPrintView'
 import { PlanPrintViewArgsServerSide } from '../PlanRoot/PlanRootHelpers/PlanPrintView/PlanPrintViewArgs'
+import { WithWASM } from '../PlanRoot/PlanRootHelpers/WithWASM'
 
 export const ServerSidePrint = React.memo(() => {
   const urlParams = useURLParam('params')
@@ -15,12 +16,14 @@ export const ServerSidePrint = React.memo(() => {
   )
 
   return (
-    <PlanPrintView
-      fixed={fixed}
-      settings={settings}
-      simulationResult={null}
-      updateSettings={() => assertFalse()}
-    />
+    <WithWASM>
+      <PlanPrintView
+        fixed={fixed}
+        settings={settings}
+        simulationResult={null}
+        updateSettings={() => assertFalse()}
+      />
+    </WithWASM>
   )
 })
 
@@ -116,7 +119,7 @@ const testParams: PlanPrintViewArgsServerSide = {
             stocks: { scale: 1.0 },
             bonds: { enableVolatility: true },
           },
-          overrideToFixedForTesting:false
+          overrideToFixedForTesting: false,
         },
       },
       timestamp: 1704489409432,
@@ -152,7 +155,7 @@ const testParams: PlanPrintViewArgsServerSide = {
         twentyYear: 0.015,
         thirtyYear: 0.0154,
       },
-      
+
       timestampMSForHistoricalReturns: Number.MAX_SAFE_INTEGER,
     },
     numOfSimulationForMonteCarloSampling: 500,
