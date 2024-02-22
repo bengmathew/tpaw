@@ -41,6 +41,9 @@ export function usePlanInputGuideContent(type: PlanInputType) {
     historicalExpectedBondReturn: formatPercentage(1)(
       presetInfo.bonds.historical,
     ),
+    tipsYield20Year: formatPercentage(1)(
+      currentMarketData.bondRates.twentyYear,
+    ),
   }
   return Contentful.replaceVariables(variables, content)
 }
