@@ -34,9 +34,10 @@ export const normalizePlanParams = (planParamsExt: PlanParamsExtended) => {
   const result = normalizePlanParamsJS(planParams, nowAsCalendarMonth)
   // TODO
   const usingExt = _getUsingExt(planParamsExt)
-  if(!_.isEqual(result, usingExt)){
-    const diff = jsonpatch.compare(result, usingExt)
-    throw new Error(`normalizePlanParamsJS and _getUsingExt are not equal: ${JSON.stringify(diff)}`)
+  if (!_.isEqual(result, usingExt)) {
+    throw new Error(
+      `normalizePlanParamsJS and _getUsingExt are not equal\n: ${JSON.stringify(jsonpatch.compare(result, usingExt))}\n${JSON.stringify(jsonpatch.compare(usingExt, result))}`,
+    )
   }
   return result
 }
@@ -441,8 +442,9 @@ const _getUsingExt = (
           validMonthRangeAsMFN('future-savings'),
           (orig) => (orig.end < 0 ? null : orig),
         ),
-        incomeDuringRetirementAsMFN: validMonthRangeAsMFN(
-          'income-during-retirement',
+        incomeDuringRetirementAsMFN: letIn(
+          validMonthRangeAsMFN('income-during-retirement'),
+          (orig) => ({ start: Math.max(orig.start, 0), end: orig.end }),
         ),
         extraSpending: validMonthRangeAsMFN('extra-spending'),
       },
