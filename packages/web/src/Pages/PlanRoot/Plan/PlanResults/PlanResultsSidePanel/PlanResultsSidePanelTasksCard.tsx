@@ -322,7 +322,7 @@ const _HowMuchYouHave = React.memo(
           you{' '}
           {!withdrawalsStarted ? (
             <span>
-              plan to contribute and additional{' '}
+              plan to contribute an additional{' '}
               <_Value>{contributions.total}</_Value>
             </span>
           ) : (
@@ -355,8 +355,9 @@ const _HowMuchToSpend = React.memo(
       <div className={className}>
         <_Heading forPrint={forPrint}>How Much To Spend</_Heading>
         <p className="">
-          Out of your <_Value>{props.start.balance}</_Value>, you plan to spend{' '}
-          <_Value className="">{withdrawals.total}</_Value> this month
+          Out of your <_Value>{props.afterContributions.balance}</_Value>, you
+          plan to spend <_Value className="">{withdrawals.total}</_Value> this
+          month
           {needsBreakdown
             ? `,
           broken down as follows:`
