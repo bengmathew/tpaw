@@ -202,7 +202,7 @@ export const extendPlanParams = (
   ): ages is Extract<Person['ages'], { type: 'retirementDateSpecified' }> => {
     return (
       ages.type === 'retirementDateSpecified' &&
-      ages.retirementAge.inMonths >= getCurrentAge(ages.monthOfBirth).inMonths
+      ages.retirementAge.inMonths > getCurrentAge(ages.monthOfBirth).inMonths
     )
   }
 
