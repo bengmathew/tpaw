@@ -97,30 +97,24 @@ const _getPlanContent = async () =>
     age: {
       introRetired: '1dZPTbtQfLz3cyDrMGrAQB',
       introNotRetired: '43EyTxBVHWOPcA6rgBpsnG',
-      // guide: ('5EtkcdtSIg0rS8AETEsgnm'),
     },
     'current-portfolio-balance': {
       intro: '3iLyyrQAhHnzuc4IdftWT3',
-      // guide: ('5RE7wTwvtTAsF1sWpKrFW2'),
     },
     'future-savings': {
       intro: '2rPr5mMTcScftXhletDeb4',
-      // guide: ('5aJN2Z4tZ7zQ6Tw69VelRt'),
     },
     'income-during-retirement': {
       intro: '3OqUTPDVRGzgQcVkJV7Lew',
-      // guide: ('1MHvhL8ImdOL9FxE5qxK6F'),
     },
     'extra-spending': {
       intro: '01kv7sKzniBagrcIwX86tJ',
       essential: '2SFPqFDpLMmxO1VTOK8Fuh',
       discretionary: '5pwXrjG0Vu1SkMrDqqrrsC',
-      // guide: ('5zDvtk4dDOonIkoIyOeQH8'),
     },
     legacy: {
       introAmount: 'aSdQuriQu9ztfs812MRJj',
       introAssets: '5glA8ryQcNh7SHP9ZlkZ2y',
-      // guide: ('5nCHpNy6ReAEtBQTvDTwBf'),
     },
     'spending-ceiling-and-floor': {
       ceiling: '5qYghkV44aNpw9ynVl6UBN',
@@ -130,18 +124,6 @@ const _getPlanContent = async () =>
     risk: {
       intro: '5ROsQ76o7dv8rpmMCiuCMd',
     },
-    // 'stock-allocation': {
-    //   guide: '3ofgPmJFLgtJpjl26E7jpB',
-    //   intro: 'xWXcgVScUfdK1PaTNQeKz',
-    // },
-    // 'spending-tilt': {
-    //   guide: '6Dv02w4fUuFQUjyWxnR7Vq',
-    //   intro: '4UwuCPjuTz3SbwUcZIrLEG',
-    // },
-    // lmp: {
-    //   guide: '3ofgPmJFLgtJpjl26E7jpB',
-    //   intro: '5FiPQS04F4uFngEMJium3B',
-    // },
     withdrawal: {
       guide: '7eGRhX0KpxK2wKCzDTHLOs',
       intro: '3H8rgiVzmnyD6H3ZUjvgp8',

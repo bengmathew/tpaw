@@ -20,6 +20,9 @@ import {
   PlanTransitionState,
   simplifyPlanTransitionState2,
 } from './PlanTransition'
+import { block } from '@tpaw/common'
+import { fWASM } from '../../../UseSimulator/Simulator/GetWASM'
+import { formatPercentage } from '../../../Utils/FormatPercentage'
 
 export type PlanHelpSizing = {
   dynamic: Record<_PlanHelpTransitionState, { origin: XY; opacity: number }>
@@ -71,12 +74,32 @@ export const PlanHelp = React.memo(
 )
 
 const _Body = React.memo(({ sizing }: { sizing: PlanHelpSizing }) => {
-  const { planParams } = useSimulation()
+  const { planParams, currentMarketData } = useSimulation()
+  const contentBeforeVars = usePlanContent().help[planParams.advanced.strategy]
+  const contentAfterVars = block(() => {
+    const presetInfo =
+      fWASM().process_market_data_for_expected_returns_for_planning_presets(
+        planParams.advanced.sampling,
+        planParams.advanced.historicalMonthlyLogReturnsAdjustment
+          .standardDeviation,
+        currentMarketData,
+      )
+    const variables = {
+      historicalExpectedStockReturn: formatPercentage(1)(
+        presetInfo.stocks.historical,
+      ),
+      historicalExpectedBondReturn: formatPercentage(1)(
+        presetInfo.bonds.historical,
+      ),
+      tipsYield20Year: formatPercentage(1)(
+        currentMarketData.bondRates.twentyYear,
+      ),
+    }
+    // return contentBeforeVars
+    return Contentful.replaceVariables(variables, contentBeforeVars)
+  })
 
-  const content = Contentful.splitDocument(
-    usePlanContent().help[planParams.advanced.strategy],
-    'faq',
-  )
+  const content = Contentful.splitDocument(contentAfterVars, 'faq')
 
   return (
     <div

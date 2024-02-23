@@ -176,7 +176,7 @@ export namespace Contentful {
     if (helpers.isText(node)) {
       const keys = _.keys(variables)
       const replace = (x: string) =>
-        keys.reduce((a, c) => a.replace(`{{${c}}}`, variables[c]), x)
+        keys.reduce((a, c) => a.replaceAll(`{{${c}}}`, variables[c]), x)
       return { ...node, value: replace(node.value) }
     } else {
       return {
