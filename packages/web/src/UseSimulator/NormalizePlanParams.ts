@@ -258,7 +258,7 @@ export const _getAgesForPerson = (
           return {
             ageAsMFNIfInFutureElseNull,
             ageAsMFNIfSpecifiedElseNull,
-            isRetired: ageAsMFNIfInFutureElseNull ?? 0 === 0,
+            isRetired: ageAsMFNIfInFutureElseNull === null,
           }
         default:
           noCase(orig)
