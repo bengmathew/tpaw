@@ -131,7 +131,7 @@ const _Collapsable = React.memo(
     return (
       <div className={`${className}`}>
         <button
-          className={`font-semibold  text-start ${show ? 'mb-1' : 'mb-4'}`}
+          className={`font-semibold  text-start ${show ? 'mb-3' : 'mb-4'}`}
           onClick={() => setShow(!show)}
         >
           {heading}
