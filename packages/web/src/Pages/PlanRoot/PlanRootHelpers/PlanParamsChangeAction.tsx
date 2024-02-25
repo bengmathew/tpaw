@@ -22,6 +22,7 @@ import { optGet } from '../../../Utils/optGet'
 import { planSectionLabel } from '../Plan/PlanInput/Helpers/PlanSectionLabel'
 import { expectedReturnTypeLabelInfo } from '../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { inflationTypeLabel } from '../Plan/PlanInput/PlanInputInflation'
+import * as Sentry from '@sentry/nextjs'
 
 type _ActionFns = {
   applyToClone: (
@@ -382,16 +383,19 @@ export const processPlanParamsChangeActionCurrent = (
           delete entries[entryId]
         },
         render: (prevParams) => {
+          let label = optGet(
+            getLabeledAmountEntriesByLocation(prevParams, location),
+            entryId,
+          )?.label
+          if (!label) {
+            Sentry.captureException(
+              new Error('No label for deleteLabeledAmount'),
+            )
+          }
+
           return `Deleted ${_getLabeledAmountLocationStr(
             location,
-          )} entry "${_truncateLabel(
-            fGet(
-              optGet(
-                getLabeledAmountEntriesByLocation(prevParams, location),
-                entryId,
-              ),
-            ).label,
-          )}" `
+          )} entry${label ? ` "${_truncateLabel(label)}"` : ``}`
         },
         merge: null,
       }
