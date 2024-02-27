@@ -154,9 +154,13 @@ export const _ErrorFallback = React.memo(({ error }: { error: Error }) => {
                   message="A new version of the planner is now available. Please reload to get the lastest version."
                   action="reload"
                 />
-              ) : error.code === 'networkError' ||
-                error.code === '413' ||
-                error.code === 'serverError' ? (
+              ) : error.code === 'networkError' ? (
+                <_Custom
+                  title=" Network Error"
+                  message="Cloud not access the network. Please check your internet connection."
+                  action="reload"
+                />
+              ) : error.code === '413' || error.code === 'serverError' ? (
                 <_SomethingWentWrong errorId={errorId} />
               ) : (
                 noCase(error.code)

@@ -20,19 +20,24 @@ export const fetchGQL =
     ])
     const bodyStr = JSON.stringify({ query: text, variables })
     const now = Date.now()
-    const response = await fetch(`${Config.client.urls.backend}/gql`, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        ...(authHeaders ? { authorization: authHeaders.join(', ') } : {}),
-        'x-iana-timezone-name': fGet(DateTime.local().zoneName),
-        'x-app-session-id': sessionId,
-        'x-app-api-version': API.version,
-        'x-app-client-version': API.clientVersion,
-        'x-app-client-timestamp': `${now}`,
-      },
-      body: bodyStr,
-    })
+    let response
+    try {
+      response = await fetch(`${Config.client.urls.backend}/gql`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(authHeaders ? { authorization: authHeaders.join(', ') } : {}),
+          'x-iana-timezone-name': fGet(DateTime.local().zoneName),
+          'x-app-session-id': sessionId,
+          'x-app-api-version': API.version,
+          'x-app-client-version': API.clientVersion,
+          'x-app-client-timestamp': `${now}`,
+        },
+        body: bodyStr,
+      })
+    } catch (e) {
+      throw new AppError('networkError')
+    }
 
     if (!response.ok) {
       if (response.status === 413) {
