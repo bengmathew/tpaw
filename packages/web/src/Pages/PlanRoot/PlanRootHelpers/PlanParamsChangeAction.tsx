@@ -383,19 +383,23 @@ export const processPlanParamsChangeActionCurrent = (
           delete entries[entryId]
         },
         render: (prevParams) => {
-          let label = optGet(
+          let prevEntry = optGet(
             getLabeledAmountEntriesByLocation(prevParams, location),
             entryId,
-          )?.label
-          if (!label) {
-            Sentry.captureException(
-              new Error('No label for deleteLabeledAmount'),
-            )
-          }
+          )
+          let label = block(() => {
+            if (!prevEntry) {
+              Sentry.captureException(
+                new Error('No entry match for deleteLabeledAmount'),
+              )
+              return ''
+            }
+            return ` "${_truncateLabel(prevEntry.label)}"`
+          })
 
           return `Deleted ${_getLabeledAmountLocationStr(
             location,
-          )} entry${label ? ` "${_truncateLabel(label)}"` : ``}`
+          )} entry${label}`
         },
         merge: null,
       }
