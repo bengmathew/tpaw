@@ -1,6 +1,7 @@
 import { assert, fGet } from '@tpaw/common'
 import { Clients } from '../../../../Clients.js'
 import { cliDevUserPlan } from './CLIDevUserPlan.js'
+import { table } from 'table'
 
 cliDevUserPlan
   .command('list <email>')
@@ -10,5 +11,8 @@ cliDevUserPlan
       where: { userId },
     })
 
-    console.dir(plans.map((x) => `${x.label} - (${x.slug})`))
+    const headers = ['Label', 'Slug', 'Id']
+    console.log(
+      table([headers, ...plans.map((x) => [x.label, x.slug, x.planId])]),
+    )
   })
