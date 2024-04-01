@@ -1,17 +1,13 @@
 use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
+use serde::{de::value, Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    blend_returns,
-    get_net_present_value_by_mfn::get_net_present_value_by_mfn,
     nominal_to_real::nominal_to_real,
-    plan_params::normalize_plan_params::plan_params_normalized::{
-        PlanParamsNormalized, ValueForMonthRange,
-    },
-    shared_types::{SimpleRange, StocksAndBonds},
+    plan_params::plan_params_rust::{AmountAndTiming, LabeledAmountTimed, PlanParamsRust},
+    shared_types::SimpleRange,
 };
 
 #[derive(Serialize, Deserialize, Tsify)]
@@ -58,7 +54,7 @@ pub struct ProcessedByMonthParams {
 }
 
 pub fn process_by_month_params(
-    plan_params_norm: &PlanParamsNormalized,
+    plan_params_norm: &PlanParamsRust,
     monthly_inflation: f64,
     // expected_monthly_non_log_returns: &StocksAndBonds<f64>,
 ) -> ProcessedByMonthParams {
@@ -71,22 +67,12 @@ pub fn process_by_month_params(
         wealth: {
             let future_savings = from_value_for_month_ranges(
                 &plan_params_norm.wealth.future_savings,
-                &plan_params_norm
-                    .ages
-                    .valid_month_ranges
-                    .future_savings_as_mfn,
                 num_months,
                 monthly_inflation,
                 // &bonds_rate_by_mfn,
             );
             let income_during_retirement = from_value_for_month_ranges(
                 &plan_params_norm.wealth.income_during_retirement,
-                &Some(
-                    plan_params_norm
-                        .ages
-                        .valid_month_ranges
-                        .income_during_retirement_as_mfn,
-                ),
                 num_months,
                 monthly_inflation,
                 // &bonds_rate_by_mfn,
@@ -109,7 +95,6 @@ pub fn process_by_month_params(
                         .adjustments_to_spending
                         .extra_spending
                         .essential,
-                    &Some(plan_params_norm.ages.valid_month_ranges.extra_spending),
                     num_months,
                     monthly_inflation,
                     // &bonds_rate_by_mfn
@@ -119,7 +104,6 @@ pub fn process_by_month_params(
                         .adjustments_to_spending
                         .extra_spending
                         .discretionary,
-                    &Some(plan_params_norm.ages.valid_month_ranges.extra_spending),
                     num_months,
                     monthly_inflation,
                 ),
@@ -159,6 +143,7 @@ pub struct ProcessedValueForMonthRange_NetPresentValue {
 #[derive(Serialize, Deserialize, Tsify)]
 #[serde(rename_all = "camelCase")]
 pub struct ProcessedValueForMonthRange {
+    pub id: String,
     #[serde(skip)]
     pub values: Vec<f64>,
     pub valid_range: Option<SimpleRange<i64>>,
@@ -166,8 +151,9 @@ pub struct ProcessedValueForMonthRange {
 }
 
 impl ProcessedValueForMonthRange {
-    pub fn zeros(num_months: i64) -> Self {
+    pub fn zeros(id: String, num_months: i64) -> Self {
         Self {
+            id,
             values: vec![0.0; num_months as usize],
             valid_range: None,
             // net_present_value: ProcessedValueForMonthRange_NetPresentValue {
@@ -182,88 +168,100 @@ impl ProcessedValueForMonthRange {
 #[derive(Serialize, Deserialize, Tsify)]
 #[serde(rename_all = "camelCase")]
 pub struct ProcessedValueForMonthRanges {
-    pub by_id: HashMap<String, ProcessedValueForMonthRange>,
+    pub by_id: Vec<ProcessedValueForMonthRange>,
     #[serde(skip)]
     pub total: Vec<f64>,
 }
 
 fn from_value_for_month_range(
-    value_for_month_range: &ValueForMonthRange,
-    allowable_month_range: &Option<SimpleRange<i64>>,
+    value_for_month_range: &LabeledAmountTimed,
     num_months: i64,
     monthly_inflation: f64,
     // tpaw_rate_array_for_net_present_value: &[f64],
 ) -> ProcessedValueForMonthRange {
-    let ValueForMonthRange {
-        month_range,
-        value,
+    let LabeledAmountTimed {
+        amount_and_timing: value_and_timing,
         nominal: is_nominal,
+        id,
         ..
     } = value_for_month_range;
     let mut values = vec![0.0; num_months as usize];
 
-    match allowable_month_range {
-        None => ProcessedValueForMonthRange::zeros(num_months),
-        Some(allowable_month_range) => {
-            if allowable_month_range.end < month_range.start {
-                return ProcessedValueForMonthRange::zeros(num_months);
-            }
+    match value_and_timing {
+        AmountAndTiming::OneTime {
+            amount: value,
+            month,
+        } => {
+            unimplemented!()
+        }
+        AmountAndTiming::Recurring {
+            base_amount: value,
+            month_range,
+            valid_month_range,
+        } => {
+            match month_range {
+                None => {
+                    return ProcessedValueForMonthRange::zeros(id.clone(), num_months);
+                }
+                Some(month_range) => {
+                    if valid_month_range.end < month_range.start {
+                        return ProcessedValueForMonthRange::zeros(id.clone(), num_months);
+                    }
 
-            let start = month_range.start.max(allowable_month_range.start);
-            if month_range.end < start {
-                return ProcessedValueForMonthRange::zeros(num_months);
-            }
-            let end = month_range.end.min(allowable_month_range.end);
+                    let start = month_range.start.max(valid_month_range.start);
+                    if month_range.end < start {
+                        return ProcessedValueForMonthRange::zeros(id.clone(), num_months);
+                    }
+                    let end = month_range.end.min(valid_month_range.end);
 
-            for mfn in start..=end {
-                values[mfn as usize] = nominal_to_real(*value, *is_nominal, monthly_inflation, mfn);
-            }
+                    for mfn in start..=end {
+                        values[mfn as usize] =
+                            nominal_to_real(*value, *is_nominal, monthly_inflation, mfn);
+                    }
 
-            // let net_present_value = ProcessedValueForMonthRange_NetPresentValue {
-            //     tpaw: ProcessedValueForMonthRange_NetPresentValue_WithCurrentMonth {
-            //         with_current_month: get_net_present_value_by_mfn(
-            //             tpaw_rate_array_for_net_present_value,
-            //             &values,
-            //         )
-            //         .with_current_month[0],
-            //     },
-            // };
+                    // let net_present_value = ProcessedValueForMonthRange_NetPresentValue {
+                    //     tpaw: ProcessedValueForMonthRange_NetPresentValue_WithCurrentMonth {
+                    //         with_current_month: get_net_present_value_by_mfn(
+                    //             tpaw_rate_array_for_net_present_value,
+                    //             &values,
+                    //         )
+                    //         .with_current_month[0],
+                    //     },
+                    // };
 
-            ProcessedValueForMonthRange {
-                values,
-                valid_range: Some(SimpleRange { start, end }),
-                // net_present_value,
+                    ProcessedValueForMonthRange {
+                        id: id.clone(),
+                        values,
+                        valid_range: Some(SimpleRange { start, end }),
+                        // net_present_value,
+                    }
+                }
             }
         }
     }
 }
 
 fn from_value_for_month_ranges(
-    value_for_month_ranges: &HashMap<String, ValueForMonthRange>,
-    allowable_month_range: &Option<SimpleRange<i64>>,
+    value_for_month_ranges: &[LabeledAmountTimed],
     num_months: i64,
     monthly_inflation: f64,
     // tpaw_rate_array_for_net_present_value: &[f64],
 ) -> ProcessedValueForMonthRanges {
-    let by_id: HashMap<String, ProcessedValueForMonthRange> = value_for_month_ranges
+    let by_id: Vec<ProcessedValueForMonthRange> = value_for_month_ranges
         .iter()
-        .map(|(id, value_for_month_range)| {
-            (
-                id.clone(),
-                from_value_for_month_range(
-                    value_for_month_range,
-                    allowable_month_range,
-                    num_months,
-                    monthly_inflation,
-                    // tpaw_rate_array_for_net_present_value,
-                ),
+        .map(|value_for_month_range| {
+            from_value_for_month_range(
+                value_for_month_range,
+                num_months,
+                monthly_inflation,
+                // tpaw_rate_array_for_net_present_value,
             )
         })
         .collect();
 
     let mut total = vec![0.0; num_months as usize];
     for i in 0..(num_months as usize) {
-        total[i] = by_id.values().map(|x| x.values[i]).sum();
+        total[i] = by_id.iter().map(|x| x.values[i]).sum();
     }
     ProcessedValueForMonthRanges { by_id, total }
 }
@@ -275,24 +273,25 @@ mod test {
     use rstest::*;
 
     use crate::{
-        nominal_to_real::nominal_to_real,
-        plan_params::normalize_plan_params::plan_params_normalized::ValueForMonthRange,
+        nominal_to_real::nominal_to_real, plan_params::plan_params_rust::LabeledAmountTimed,
         shared_types::SimpleRange,
     };
 
     const VALUE: f64 = 100.0;
     const MONTHLY_INFLATION: f64 = 0.01;
     const NUM_MONTHS: i64 = 10;
-    const VALID_MONTH_RANGE: Option<SimpleRange<i64>> = Some(SimpleRange { start: 2, end: 5 });
-    fn get_value_for_month_range(month_range: SimpleRange<i64>) -> ValueForMonthRange {
-        ValueForMonthRange {
-            month_range,
-            value: VALUE,
+    fn get_value_for_month_range(
+        month_range: SimpleRange<i64>,
+        valid_month_range: SimpleRange<i64>,
+    ) -> LabeledAmountTimed {
+        LabeledAmountTimed {
             nominal: true,
-            label: None,
             id: "".to_string(),
-            sort_index: 1,
-            color_index: 1,
+            amount_and_timing: crate::plan_params::plan_params_rust::AmountAndTiming::Recurring {
+                base_amount: VALUE,
+                month_range: Some(month_range),
+                valid_month_range: valid_month_range,
+            },
         }
     }
     fn get_expected_value(mfn: usize) -> (usize, f64) {
@@ -320,11 +319,11 @@ mod test {
         #[case] non_zero_expected_values: &[(usize, f64)],
         #[case] expected_valid_range: Option<SimpleRange<i64>>,
     ) {
-        let value_for_month_range = get_value_for_month_range(month_range);
+        let value_for_month_range =
+            get_value_for_month_range(month_range, SimpleRange { start: 2, end: 5 });
 
         let result = super::from_value_for_month_range(
             &value_for_month_range,
-            &VALID_MONTH_RANGE,
             NUM_MONTHS,
             MONTHLY_INFLATION,
         );
@@ -344,37 +343,19 @@ mod test {
     }
 
     #[rstest]
-    fn test_from_value_for_month_range_no_range() {
-        let value_for_month_range = get_value_for_month_range(SimpleRange { start: 0, end: 5 });
-
-        let result = super::from_value_for_month_range(
-            &value_for_month_range,
-            &None,
-            NUM_MONTHS,
-            MONTHLY_INFLATION,
-        );
-
-        for (i, v) in result.values.iter().enumerate() {
-            assert_eq!(*v, 0.0);
-        }
-        assert_eq!(result.values.len(), NUM_MONTHS as usize);
-        assert_eq!(result.valid_range, None);
-    }
-
-    #[rstest]
     fn test_from_value_for_month_ranges() {
-        let mut value_for_month_ranges: HashMap<String, ValueForMonthRange> = HashMap::new();
-        value_for_month_ranges.insert(
-            "1".to_string(),
-            get_value_for_month_range(SimpleRange { start: 0, end: 0 }),
-        );
-        value_for_month_ranges.insert(
-            "2".to_string(),
-            get_value_for_month_range(SimpleRange { start: 0, end: 0 }),
-        );
+        let value_for_month_ranges: Vec<LabeledAmountTimed> = vec![
+            get_value_for_month_range(
+                SimpleRange { start: 0, end: 0 },
+                SimpleRange { start: 0, end: 0 },
+            ),
+            get_value_for_month_range(
+                SimpleRange { start: 0, end: 0 },
+                SimpleRange { start: 0, end: 0 },
+            ),
+        ];
         let result = super::from_value_for_month_ranges(
             &value_for_month_ranges,
-            &Some(SimpleRange { start: 0, end: 0 }),
             NUM_MONTHS,
             MONTHLY_INFLATION,
         );

@@ -1,4 +1,4 @@
-import React, { CSSProperties, ReactNode, useEffect, useState } from 'react';
+import React, { CSSProperties, ReactNode, useEffect, useState } from 'react'
 
 type CSSPropertiesWithOpacity = Exclude<CSSProperties, 'opacity'> & {
   opacity: string

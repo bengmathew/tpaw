@@ -1,37 +1,39 @@
-import { MonthRange } from '@tpaw/common'
+import { LabeledAmountTimed } from '@tpaw/common'
 import { clsx } from 'clsx'
 import _ from 'lodash'
-import React, { useState } from 'react'
-import { PlanParamsExtended } from '../../../../UseSimulator/ExtentPlanParams'
+import React, { useRef, useState } from 'react'
+import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { Contentful } from '../../../../Utils/Contentful'
 import { paddingCSS, paddingCSSStyleHorz } from '../../../../Utils/Geometry'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
-import { EditValueForMonthRange } from '../../../Common/Inputs/EditValueForMonthRange'
+import {
+  LabelAmountOptMonthRangeInput,
+  LabelAmountOptMonthRangeInputStateful,
+} from '../../../Common/Inputs/LabelAmountTimedOrUntimedInput/LabeledAmountTimedOrUntimedInput'
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import {
-    isPlanResultsChartSpendingDiscretionaryType,
-    isPlanResultsChartSpendingEssentialType,
-    planResultsChartSpendingDiscretionaryTypeID,
-    planResultsChartSpendingEssentialTypeID,
+  isPlanResultsChartSpendingDiscretionaryType,
+  isPlanResultsChartSpendingEssentialType,
+  planResultsChartSpendingDiscretionaryTypeID,
+  planResultsChartSpendingEssentialTypeID,
 } from '../PlanResults/PlanResultsChartType'
 import { useGetPlanResultsChartURL } from '../PlanResults/UseGetPlanResultsChartURL'
 import { usePlanResultsChartType } from '../PlanResults/UsePlanResultsChartType'
-import { ByMonthSchedule } from './Helpers/ByMonthSchedule'
-import { PlanInputSummaryValueForMonthRange } from './Helpers/PlanInputSummaryValueForMonthRange'
+import { LabeledAmountTimedListInput } from '../../../Common/Inputs/LabeledAmountTimedListInput'
+import { PlanInputSummaryLabeledAmountTimedList } from './Helpers/PlanInputSummaryLabeledAmountTimedList'
 import {
-    PlanInputBody,
-    PlanInputBodyPassThruProps,
+  PlanInputBody,
+  PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 export const PlanInputExtraSpending = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const { planParamsExt, planParams } = useSimulation()
+    const { planParamsNorm } = useSimulation()
+    const { ages } = planParamsNorm
     const getPlanChartURL = useGetPlanResultsChartURL()
     const chartType = usePlanResultsChartType()
     const urlUpdater = useURLUpdater()
-    const { months, validMonthRangeAsMFN, maxMaxAge, asMFN, isPersonRetired } =
-      planParamsExt
     const content = usePlanContent()
     const [editState, setEditState] = useState<{
       isEssential: boolean
@@ -40,25 +42,33 @@ export const PlanInputExtraSpending = React.memo(
       hideInMain: boolean
     } | null>(null)
 
-    const allowableRange = validMonthRangeAsMFN('extra-spending')
-    const defaultRange: MonthRange = {
-      type: 'startAndNumMonths',
-      start: isPersonRetired('person1')
-        ? months.now
-        : months.person1.retirement,
-      numMonths: Math.min(
-        5 * 12,
-        asMFN(maxMaxAge) + 1 - asMFN(months.person1.retirement),
-      ),
+    const defaultAmountAndTiming: LabeledAmountTimed['amountAndTiming'] = {
+      type: 'recurring',
+      baseAmount: 0,
+      delta: null,
+      everyXMonths: 1,
+      monthRange: {
+        type: 'startAndDuration',
+        start: ages.person1.retirement.isRetired
+          ? planParamsNorm.nowAs.month
+          : { type: 'namedAge', age: 'retirement', person: 'person1' },
+        duration: {
+          inMonths: Math.min(5 * 12, ages.person1.retirement.numMonthsLeft),
+        },
+      },
     }
 
     const showDiscretionary =
-      planParams.advanced.strategy !== 'SWR' ||
-      _.values(planParams.adjustmentsToSpending.extraSpending.discretionary)
-        .length > 0
+      planParamsNorm.advanced.strategy !== 'SWR' ||
+      planParamsNorm.adjustmentsToSpending.extraSpending.discretionary.length >
+        0
 
+    const editRef = useRef<LabelAmountOptMonthRangeInputStateful>(null)
     return (
-      <PlanInputBody {...props}>
+      <PlanInputBody
+        {...props}
+        onBackgroundClick={() => editRef.current?.closeSections()}
+      >
         <div className="">
           <div
             className=""
@@ -68,17 +78,20 @@ export const PlanInputExtraSpending = React.memo(
           >
             <Contentful.RichText
               body={
-                content['extra-spending'].intro[planParams.advanced.strategy]
+                content['extra-spending'].intro[
+                  planParamsNorm.advanced.strategy
+                ]
               }
               p="p-base"
             />
-            {showDiscretionary && planParams.advanced.strategy === 'SWR' && (
-              <div className="p-base mt-2">
-                <span className="bg-gray-300 px-2 rounded-lg ">Note</span> You
-                have selected the SWR strategy. This strategy treats essential
-                and discretionary expenses the same.
-              </div>
-            )}
+            {showDiscretionary &&
+              planParamsNorm.advanced.strategy === 'SWR' && (
+                <div className="p-base mt-2">
+                  <span className="bg-gray-300 px-2 rounded-lg ">Note</span> You
+                  have selected the SWR strategy. This strategy treats essential
+                  and discretionary expenses the same.
+                </div>
+              )}
           </div>
           <div
             className="params-card mt-8"
@@ -90,15 +103,15 @@ export const PlanInputExtraSpending = React.memo(
             <Contentful.RichText
               body={
                 content['extra-spending'].essential[
-                  planParams.advanced.strategy
+                  planParamsNorm.advanced.strategy
                 ]
               }
               p="p-base"
             />
-            <ByMonthSchedule
+            <LabeledAmountTimedListInput
               className="mt-6"
               editProps={{
-                defaultMonthRange: defaultRange,
+                defaultAmountAndTiming,
                 onEdit: (entryId, isAdd) =>
                   setEditState({
                     isEssential: true,
@@ -114,7 +127,6 @@ export const PlanInputExtraSpending = React.memo(
                   ? editState.entryId
                   : null
               }
-              allowableMonthRangeAsMFN={allowableRange}
             />
           </div>
           {showDiscretionary && (
@@ -126,15 +138,15 @@ export const PlanInputExtraSpending = React.memo(
               <Contentful.RichText
                 body={
                   content['extra-spending'].discretionary[
-                    planParams.advanced.strategy
+                    planParamsNorm.advanced.strategy
                   ]
                 }
                 p="p-base"
               />
-              <ByMonthSchedule
+              <LabeledAmountTimedListInput
                 className="mt-6"
                 editProps={{
-                  defaultMonthRange: defaultRange,
+                  defaultAmountAndTiming,
                   onEdit: (entryId, isAdd) =>
                     setEditState({
                       isEssential: false,
@@ -151,7 +163,6 @@ export const PlanInputExtraSpending = React.memo(
                     ? editState.entryId
                     : null
                 }
-                allowableMonthRangeAsMFN={allowableRange}
               />
             </div>
           )}
@@ -159,7 +170,8 @@ export const PlanInputExtraSpending = React.memo(
         {{
           input: editState
             ? (transitionOut) => (
-                <EditValueForMonthRange
+                <LabelAmountOptMonthRangeInput
+                  ref={editRef}
                   hasMonthRange
                   addOrEdit={editState.isAdd ? 'add' : 'edit'}
                   title={
@@ -208,21 +220,13 @@ export const PlanInputExtraSpending = React.memo(
                       : 'extraSpendingDiscretionary'
                   }
                   entryId={editState.entryId}
-                  validRangeAsMFN={allowableRange}
-                  choices={{
-                    start: [
-                      'now',
-                      'retirement',
-                      'numericAge',
-                      'calendarMonth',
-                      'forNumOfMonths',
-                    ],
+                  choicesPreFilter={{
+                    start: ['now', 'retirement', 'numericAge', 'calendarMonth'],
                     end: [
                       'retirement',
                       'maxAge',
                       'numericAge',
                       'calendarMonth',
-                      'forNumOfMonths',
                     ],
                   }}
                   cardPadding={props.sizing.cardPadding}
@@ -238,21 +242,18 @@ export const PlanInputExtraSpending = React.memo(
 export const PlanInputExtraSpendingSummary = React.memo(
   ({
     forPrint = false,
-    planParamsExt,
+    planParamsNorm,
   }: {
     forPrint?: boolean
-    planParamsExt: PlanParamsExtended
+    planParamsNorm: PlanParamsNormalized
   }) => {
-    const { planParams } = planParamsExt
-    const { validMonthRangeAsMFN } = planParamsExt
     const { essential, discretionary } =
-      planParams.adjustmentsToSpending.extraSpending
-    const showLabels = planParams.advanced.strategy !== 'SWR'
+      planParamsNorm.adjustmentsToSpending.extraSpending
+    const showLabels = planParamsNorm.advanced.strategy !== 'SWR'
     return (
       <>
-        {_.values(essential).length === 0 &&
-          _.values(discretionary).length === 0 && <h2>None</h2>}
-        {_.values(essential).length > 0 && (
+        {essential.length === 0 && discretionary.length === 0 && <h2>None</h2>}
+        {essential.length > 0 && (
           <>
             {showLabels && (
               <h2
@@ -264,14 +265,10 @@ export const PlanInputExtraSpendingSummary = React.memo(
                 Essential
               </h2>
             )}
-            <PlanInputSummaryValueForMonthRange
-              entries={essential}
-              range={validMonthRangeAsMFN('extra-spending')}
-              planParamsExt={planParamsExt}
-            />
+            <PlanInputSummaryLabeledAmountTimedList entries={essential} />
           </>
         )}
-        {_.values(discretionary).length > 0 && (
+        {discretionary.length > 0 && (
           <>
             {showLabels && (
               <h2
@@ -283,11 +280,7 @@ export const PlanInputExtraSpendingSummary = React.memo(
                 Discretionary
               </h2>
             )}
-            <PlanInputSummaryValueForMonthRange
-              entries={discretionary}
-              range={validMonthRangeAsMFN('extra-spending')}
-              planParamsExt={planParamsExt}
-            />
+            <PlanInputSummaryLabeledAmountTimedList entries={discretionary} />
           </>
         )}
       </>

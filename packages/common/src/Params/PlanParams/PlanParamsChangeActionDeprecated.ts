@@ -1,7 +1,26 @@
-import { JSONGuard, boolean, number, union, object, constant } from 'json-guard'
+import {
+  JSONGuard,
+  boolean,
+  number,
+  union,
+  object,
+  constant,
+  string,
+  nullable,
+} from 'json-guard'
 import { PlanParams21 as V21 } from './Old/PlanParams21'
 import { PlanParams22 as V22 } from './Old/PlanParams22'
 import { PlanParams23 as V23 } from './Old/PlanParams23'
+
+type Pre28ValueForMonthRangeLocation =
+  | 'futureSavings'
+  | 'incomeDuringRetirement'
+  | 'extraSpendingEssential'
+  | 'extraSpendingDiscretionary'
+
+type Pre28LabeledAmountLocation =
+  | Pre28ValueForMonthRangeLocation
+  | 'legacyExternalSources'
 
 export type PlanParamsChangeActionDeprecated =
   | {
@@ -45,12 +64,92 @@ export type PlanParamsChangeActionDeprecated =
         adjustExpectedReturn: V23.PlanParams['advanced']['historicalReturnsAdjustment']['stocks']['adjustExpectedReturn']
       }
     }
+  // ----------- Deprecated in v28
+  | {
+      type: 'addValueForMonthRange'
+      value: {
+        location: Pre28ValueForMonthRangeLocation
+        entryId: string
+        sortIndex: number
+        monthRange: V21.MonthRange
+      }
+    }
+  | {
+      type: 'deleteLabeledAmount'
+      value: {
+        location: Pre28LabeledAmountLocation
+        entryId: string
+      }
+    }
+  | {
+      type: 'addLabeledAmount'
+      value: {
+        // This should not have included ValueForMonthRangeLocation, but it did.
+        // However this action was never called for any location other than
+        // 'legacyExternalSources'.
+        location: Pre28LabeledAmountLocation
+        entryId: string
+        sortIndex: number
+      }
+    }
+  | {
+      type: 'setLabelForLabeledAmount'
+      value: {
+        location: Pre28LabeledAmountLocation
+        entryId: string
+        label: string | null
+      }
+    }
+  | {
+      type: 'setAmountForLabeledAmount'
+      value: {
+        location: Pre28LabeledAmountLocation
+        entryId: string
+        amount: number
+      }
+    }
+  | {
+      type: 'setNominalForLabeledAmount'
+      value: {
+        location: Pre28LabeledAmountLocation
+        entryId: string
+        nominal: boolean
+      }
+    }
+  | {
+      type: 'setMonthRangeForValueForMonthRange'
+      value: {
+        location: Pre28ValueForMonthRangeLocation
+        entryId: string
+        monthRange: V21.MonthRange
+      }
+    }
+  | {
+      type: 'setPersonMonthOfBirth'
+      value: { person: 'person1' | 'person2'; monthOfBirth: V21.CalendarMonth }
+    }
+  | {
+      type: 'setMonteCarloSamplingBlockSize'
+      value: number
+    }
+// ------- end Deprecated in v28
 
 const _guard = <T extends string, V>(
   type: T,
   valueGuard: JSONGuard<V>,
 ): JSONGuard<{ type: T; value: V }> =>
   object({ type: constant(type), value: valueGuard })
+
+const pre28ValueForMonthRangeLocationGuard: JSONGuard<Pre28ValueForMonthRangeLocation> =
+  union(
+    constant('futureSavings'),
+    constant('incomeDuringRetirement'),
+    constant('extraSpendingEssential'),
+    constant('extraSpendingDiscretionary'),
+  )
+
+const pre28LabeledAmountLocationGuard: JSONGuard<Pre28LabeledAmountLocation> =
+  union(pre28ValueForMonthRangeLocationGuard, constant('legacyExternalSources'))
 
 const v21CG = V21.componentGuards
 const v22CG = V22.componentGuards
@@ -81,4 +180,64 @@ export const planParamsChangeActionGuardDeprecated: JSONGuard<PlanParamsChangeAc
         adjustExpectedReturn: v23CG.adjustExpectedReturn,
       }),
     ),
+    // -------------- Deprecated in v28
+    _guard(
+      'addValueForMonthRange',
+      object({
+        location: pre28ValueForMonthRangeLocationGuard,
+        entryId: string,
+        sortIndex: number,
+        monthRange: v21CG.monthRange(null),
+      }),
+    ),
+    _guard(
+      'deleteLabeledAmount',
+      object({ location: pre28LabeledAmountLocationGuard, entryId: string }),
+    ),
+    _guard(
+      'addLabeledAmount',
+      object({
+        location: pre28LabeledAmountLocationGuard,
+        entryId: string,
+        sortIndex: number,
+      }),
+    ),
+    _guard(
+      'setLabelForLabeledAmount',
+      object({
+        location: pre28LabeledAmountLocationGuard,
+        entryId: string,
+        label: nullable(string),
+      }),
+    ),
+    _guard(
+      'setAmountForLabeledAmount',
+      object({
+        location: pre28LabeledAmountLocationGuard,
+        entryId: string,
+        amount: number,
+      }),
+    ),
+    _guard(
+      'setNominalForLabeledAmount',
+      object({
+        location: pre28LabeledAmountLocationGuard,
+        entryId: string,
+        nominal: boolean,
+      }),
+    ),
+    _guard(
+      'setMonthRangeForValueForMonthRange',
+      object({
+        location: pre28ValueForMonthRangeLocationGuard,
+        entryId: string,
+        monthRange: v21CG.monthRange(null),
+      }),
+    ),
+    _guard(
+      'setPersonMonthOfBirth',
+      object({ person: v21CG.personType, monthOfBirth: v21CG.calendarMonth }),
+    ),
+    _guard('setMonteCarloSamplingBlockSize', number),
+    // ------- end Deprecated in v28
   )

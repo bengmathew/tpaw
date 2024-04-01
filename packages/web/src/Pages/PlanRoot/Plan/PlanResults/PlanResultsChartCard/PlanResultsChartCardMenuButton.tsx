@@ -15,9 +15,9 @@ export const PlanResultsChartCardMenuButton = React.memo(
   React.forwardRef<HTMLDivElement, Props>(
     ({ className = '', style }: Props, ref) => {
       const { simulationResult } = useSimulation()
-      const { planParams } = simulationResult.args
+      const { planParamsNorm } = simulationResult.args
       const type = usePlanResultsChartType()
-      const { label, subLabel } = planResultsChartLabel(planParams, type)
+      const { label, subLabel } = planResultsChartLabel(planParamsNorm, type)
 
       return (
         <div

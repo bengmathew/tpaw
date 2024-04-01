@@ -1,75 +1,81 @@
+import * as Sentry from '@sentry/nextjs'
 import {
+  CalendarMonthFns,
   DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT,
-  Month,
+  LabeledAmountUntimed,
+  LabeledAmountUntimedLocation,
   PlanParams,
   PlanParamsChangeAction,
   PlanParamsChangeActionCurrent,
+  LabeledAmountTimed,
+  LabeledAmountTimedLocation,
   assert,
   assertFalse,
-  block,
   fGet,
   noCase,
-  planParamsFns,
+  LabeledAmountTimedOrUntimedLocation,
 } from '@tpaw/common'
 import _ from 'lodash'
-import { PlanParamsExtended } from '../../../UseSimulator/ExtentPlanParams'
-import { calendarMonthStr } from '../../../Utils/CalendarMonthStr'
-import { formatCurrency } from '../../../Utils/FormatCurrency'
-import { formatPercentage } from '../../../Utils/FormatPercentage'
-import { numMonthsStr } from '../../../Utils/NumMonthsStr'
-import { yourOrYourPartners } from '../../../Utils/YourOrYourPartners'
-import { optGet } from '../../../Utils/optGet'
-import { planSectionLabel } from '../Plan/PlanInput/Helpers/PlanSectionLabel'
-import { expectedReturnTypeLabelInfo } from '../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
-import { inflationTypeLabel } from '../Plan/PlanInput/PlanInputInflation'
-import * as Sentry from '@sentry/nextjs'
+import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsHelperFns } from '../../../../UseSimulator/PlanParamsHelperFns'
+import { formatCurrency } from '../../../../Utils/FormatCurrency'
+import { formatPercentage } from '../../../../Utils/FormatPercentage'
+import { yourOrYourPartners } from '../../../../Utils/YourOrYourPartners'
+import { optGet } from '../../../../Utils/optGet'
+import { planSectionLabel } from '../../Plan/PlanInput/Helpers/PlanSectionLabel'
+import { expectedReturnTypeLabelInfo } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
+import { inflationTypeLabel } from '../../Plan/PlanInput/PlanInputInflation'
+import { getDeletePartnerChangeActionImpl } from './GetDeletePartnerChangeActionImpl'
+import { getSetPersonRetiredChangeActionImpl } from './GetSetPersonRetiredChangeActionImpl'
+import { InMonthsFns } from '../../../../Utils/InMonthsFns'
 
-type _ActionFns = {
+const { getPerson } = PlanParamsHelperFns
+export type PlanParamsChangeActionImpl = {
   applyToClone: (
     clone: PlanParams,
-    planParamsExt: PlanParamsExtended,
+    planParamsNorm: PlanParamsNormalized,
     defaultPlanParams: PlanParams,
   ) => void | PlanParams // If a value is returned, it supercedes the clone.
   render: (
     prevPlanParams: PlanParams,
     planParams: PlanParams,
   ) => React.ReactNode
-  merge: null | ((prev: PlanParamsChangeAction) => boolean)
+  merge: false | true | ((prev: PlanParamsChangeAction) => boolean)
 }
 
-export const processPlanParamsChangeActionCurrent = (
+export const getPlanParamsChangeActionImpl = (
   action: PlanParamsChangeActionCurrent,
-): _ActionFns => {
+): PlanParamsChangeActionImpl => {
   switch (action.type) {
     case 'start':
       return {
         applyToClone: () => assertFalse(),
         render: () => assertFalse(),
-        merge: null,
+        merge: false,
       }
     case 'startCopiedFromBeforeHistory':
       return {
         applyToClone: () => assertFalse(),
         render: () => assertFalse(),
-        merge: null,
+        merge: false,
       }
     case 'startCutByClient':
       return {
         applyToClone: () => assertFalse(),
         render: () => assertFalse(),
-        merge: null,
+        merge: false,
       }
     case 'startFromURL':
       return {
         applyToClone: () => assertFalse(),
         render: () => assertFalse(),
-        merge: null,
+        merge: false,
       }
     case 'noOpToMarkMigration':
       return {
         applyToClone: () => {}, // Do nothing.
         render: () => `Accepted migration to new inputs`,
-        merge: null,
+        merge: false,
       }
     // ---------
     // SetDialogPosition
@@ -89,17 +95,17 @@ export const processPlanParamsChangeActionCurrent = (
               return `Completed "${planSectionLabel(
                 prevParams.dialogPositionNominal,
               )}" section`
-            case 'done':
-              return assertFalse()
             case 'show-results':
               return 'Show Results'
             case 'show-all-inputs':
               return 'Show All Inputs'
+            case 'done':
+              return assertFalse()
             default:
               noCase(prevParams.dialogPositionNominal)
           }
         },
-        merge: null,
+        merge: false,
       }
     }
 
@@ -118,7 +124,7 @@ export const processPlanParamsChangeActionCurrent = (
           }
         },
         render: () => `Added partner`,
-        merge: null,
+        merge: false,
       }
     }
 
@@ -126,63 +132,13 @@ export const processPlanParamsChangeActionCurrent = (
     // DeletePartner
     // ---------
     case 'deletePartner': {
-      return {
-        applyToClone: (clone, planParamsExt: PlanParamsExtended) => {
-          assert(clone.people.withPartner)
-          // There might be references in the past, that can be converted to
-          // a calendar month, and references in glide paths that are not currently
-          // active for the strategy that won't show up in the validation
-          // errors.
-          _convertPerson2MonthReferencesToCalendarMonth(clone, planParamsExt)
-          clone.people = {
-            withPartner: false,
-            person1: clone.people.person1,
-          }
-        },
-        render: () => `Deleted partner`,
-        merge: null,
-      }
+      return getDeletePartnerChangeActionImpl()
     }
     // ---------
     // SetPersonRetired
     // ---------
-    case 'setPersonRetired': {
-      const personType = action.value
-      return {
-        applyToClone: (clone, planParamsExt: PlanParamsExtended) => {
-          const { isPersonRetired } = planParamsExt
-          const { getDialogPositionEffective, getIsFutureSavingsAllowed } =
-            planParamsFns
-          const isFutureSavingsGoingToBeAllowed = getIsFutureSavingsAllowed(
-            personType === 'person1' ? true : isPersonRetired('person1'),
-            personType === 'person2'
-              ? true
-              : clone.people.withPartner
-                ? isPersonRetired('person2')
-                : undefined,
-          )
-          if (!isFutureSavingsGoingToBeAllowed) {
-            clone.wealth.futureSavings = {}
-          }
-          _convertRetirementReferencesToNow(clone, planParamsExt, personType)
-          clone.dialogPositionNominal = getDialogPositionEffective(
-            clone.dialogPositionNominal,
-            isFutureSavingsGoingToBeAllowed,
-          )
-          const person = _getPerson(clone, personType)
-          person.ages = {
-            type: 'retiredWithNoRetirementDateSpecified',
-            monthOfBirth: person.ages.monthOfBirth,
-            maxAge: person.ages.maxAge,
-          }
-        },
-        render: () =>
-          `Marked ${
-            personType === 'person1' ? 'yourself' : 'your partner'
-          } as retired`,
-        merge: null,
-      }
-    }
+    case 'setPersonRetired':
+      return getSetPersonRetiredChangeActionImpl(action)
 
     // ---------
     // SetPersonNotRetired
@@ -190,19 +146,14 @@ export const processPlanParamsChangeActionCurrent = (
     case 'setPersonNotRetired': {
       const personType = action.value
       return {
-        applyToClone: (
-          clone,
-          planParamsExt: PlanParamsExtended,
-          defaultPlanParams: PlanParams,
-        ) => {
-          const { getCurrentAgeOfPerson } = planParamsExt
-          const currPerson = _getPerson(clone, personType)
+        applyToClone: (clone, planParamsNorm, defaultPlanParams) => {
+          const currPerson = getPerson(clone, personType)
           const defaultPerson = defaultPlanParams.people.person1
           assert(defaultPerson.ages.type === 'retirementDateSpecified')
           const retirementAge = {
             inMonths: _.clamp(
               defaultPerson.ages.retirementAge.inMonths,
-              getCurrentAgeOfPerson(personType).inMonths + 1,
+              fGet(planParamsNorm.ages[personType]).currentAge.inMonths + 1,
               currPerson.ages.maxAge.inMonths - 1,
             ),
           }
@@ -217,22 +168,22 @@ export const processPlanParamsChangeActionCurrent = (
           `Marked ${
             personType === 'person1' ? 'yourself' : 'your partner'
           } as not retired`,
-        merge: null,
+        merge: false,
       }
     }
     // ---------
     // SetPersonMonthOfBirth
     // ---------
-    case 'setPersonMonthOfBirth': {
+    case 'setPersonMonthOfBirth2': {
       const { person, monthOfBirth } = action.value
       return {
         applyToClone: (clone) => {
-          _getPerson(clone, person).ages.monthOfBirth = monthOfBirth
+          getPerson(clone, person).ages.monthOfBirth = monthOfBirth
         },
         render: () =>
           `Set ${yourOrYourPartners(
             person,
-          )} month of birth to ${calendarMonthStr(monthOfBirth)}`,
+          )} month of birth to ${CalendarMonthFns.toStr(monthOfBirth)}`,
         merge: (prev) =>
           prev.type === 'setPersonMonthOfBirth' && prev.value.person === person,
       }
@@ -245,14 +196,14 @@ export const processPlanParamsChangeActionCurrent = (
       const { person: personType, retirementAge } = action.value
       return {
         applyToClone: (clone) => {
-          const person = _getPerson(clone, personType)
+          const person = getPerson(clone, personType)
           assert(person.ages.type === 'retirementDateSpecified')
           person.ages.retirementAge = retirementAge
         },
         render: () =>
           `Set ${yourOrYourPartners(
             personType,
-          )} retirement age to ${numMonthsStr(retirementAge.inMonths)}`,
+          )} retirement age to ${InMonthsFns.toStr(retirementAge)}`,
         merge: (prev) =>
           prev.type === 'setPersonRetirementAge' &&
           prev.value.person === personType,
@@ -266,12 +217,12 @@ export const processPlanParamsChangeActionCurrent = (
       const { person: personType, maxAge } = action.value
       return {
         applyToClone: (clone) => {
-          const person = _getPerson(clone, personType)
+          const person = getPerson(clone, personType)
           person.ages.maxAge = maxAge
         },
         render: () =>
-          `Set ${yourOrYourPartners(personType)} max age to ${numMonthsStr(
-            maxAge.inMonths,
+          `Set ${yourOrYourPartners(personType)} max age to ${InMonthsFns.toStr(
+            maxAge,
           )}`,
         merge: (prev) =>
           prev.type === 'setPersonMaxAge' && prev.value.person === personType,
@@ -290,10 +241,298 @@ export const processPlanParamsChangeActionCurrent = (
         },
         render: () =>
           `Set withdrawals to start at ${yourOrYourPartners(value)} retirement`,
-        merge: null,
+        merge: false,
       }
     }
 
+    // -------------- LABELED AMOUNT TIMED/UNTIMED -------------------
+    // ---------
+    // addLabeledAmountUntimed
+    // ---------
+    case 'addLabeledAmountUntimed': {
+      const { location, entryId, sortIndex } = action.value
+      return {
+        applyToClone: (clone) => {
+          const entries =
+            PlanParamsHelperFns.getLabeledAmountUntimedListFromLocation(
+              clone,
+              location,
+            )
+          assert(!optGet(entries, entryId))
+          entries[entryId] = {
+            id: entryId,
+            label: null,
+            amount: 0,
+            nominal: false,
+            sortIndex,
+            colorIndex: _getNextColorIndex(
+              _getUsedColorIndexesByLocation(clone, location),
+            ),
+          }
+        },
+        render: () => {
+          return `Added ${getLabeledAmountUntimedLocationStr(location)} entry `
+        },
+        merge: false,
+      }
+    }
+    // ---------
+    // addLabeledAmountTimed
+    // ---------
+    case 'addLabeledAmountTimed': {
+      const { location, entryId, amountAndTiming, sortIndex } = action.value
+      return {
+        applyToClone: (clone) => {
+          const values =
+            PlanParamsHelperFns.getLabeledAmountTimedListFromLocation(
+              clone,
+              location,
+            )
+          assert(!optGet(values, entryId))
+
+          values[entryId] = {
+            id: entryId,
+            sortIndex,
+            label: null,
+            nominal: false,
+            colorIndex: _getNextColorIndex(
+              _getUsedColorIndexesByLocation(clone, location),
+            ),
+            amountAndTiming,
+          }
+        },
+        render: () => {
+          return `Added ${getLabeledAmountTimedLocationStr(location)} entry`
+        },
+        merge: false,
+      }
+    }
+
+    // ---------
+    // DeleteLabeledAmount
+    // ---------
+    case 'deleteLabeledAmountTimedOrUntimed': {
+      const { location, entryId } = action.value
+      return {
+        applyToClone: (clone) => {
+          const entries: Record<
+            string,
+            LabeledAmountTimed | LabeledAmountUntimed
+          > =
+            PlanParamsHelperFns.getLabeledAmountTimedOrUntimedListFromLocation(
+              clone,
+              location,
+            )
+          assert(optGet(entries, entryId))
+          delete entries[entryId]
+        },
+        render: (prevParams) => {
+          const prevEntries: Record<
+            string,
+            LabeledAmountTimed | LabeledAmountUntimed
+          > =
+            PlanParamsHelperFns.getLabeledAmountTimedOrUntimedListFromLocation(
+              prevParams,
+              location,
+            )
+          const prevEntry = optGet(prevEntries, entryId)
+          if (!prevEntry) {
+            Sentry.captureException(
+              new Error('No entry for deleteLabeledAmount'),
+            )
+          }
+          const label = prevEntry ? getLabelStrTruncated(prevEntry.label) : ''
+
+          return `Deleted ${getLabeledAmountTimedOrUntimedLocationStr(
+            location,
+          )} entry ${label}`
+        },
+        merge: false,
+      }
+    }
+    // ---------
+    // setLabelForLabeledAmountTimedOrUntimed
+    // ---------
+    case 'setLabelForLabeledAmountTimedOrUntimed': {
+      const { location, entryId, label } = action.value
+      return {
+        applyToClone: (clone) => {
+          const entries: Record<
+            string,
+            LabeledAmountTimed | LabeledAmountUntimed
+          > =
+            PlanParamsHelperFns.getLabeledAmountTimedOrUntimedListFromLocation(
+              clone,
+              location,
+            )
+          fGet(optGet(entries, entryId)).label = label
+        },
+        render: () => {
+          return `Set ${getLabeledAmountTimedOrUntimedLocationStr(
+            location,
+          )} entry label to "${getLabelStrTruncated(label)}'" `
+        },
+        merge: (prev) =>
+          prev.type === 'setLabelForLabeledAmount' &&
+          prev.value.entryId === entryId,
+      }
+    }
+
+    // ---------
+    // setAmountForLabeledAmountUntimed
+    // ---------
+    case 'setAmountForLabeledAmountUntimed': {
+      const { location, entryId, amount } = action.value
+      return {
+        applyToClone: (clone) => {
+          fGet(
+            optGet(
+              PlanParamsHelperFns.getLabeledAmountUntimedListFromLocation(
+                clone,
+                location,
+              ),
+              entryId,
+            ),
+          ).amount = amount
+        },
+        render: (_: PlanParams, planParams: PlanParams) => {
+          return `Set ${getLabeledAmountUntimedLocationStr(
+            location,
+          )} entry "${getLabelStrTruncated(
+            fGet(
+              optGet(
+                PlanParamsHelperFns.getLabeledAmountUntimedListFromLocation(
+                  planParams,
+                  location,
+                ),
+                entryId,
+              ),
+            ).label,
+          )}" amount to ${formatCurrency(amount)} per month`
+        },
+
+        merge: (prev) =>
+          prev.type === 'setAmountForLabeledAmount' &&
+          prev.value.entryId === entryId,
+      }
+    }
+
+    // ---------
+    // setBaseAmountForLabeledAmountTimed
+    // ---------
+    case 'setBaseAmountForLabeledAmountTimed': {
+      const { location, entryId, baseAmount } = action.value
+      return {
+        applyToClone: (clone) => {
+          const entry = fGet(
+            optGet(
+              PlanParamsHelperFns.getLabeledAmountTimedListFromLocation(
+                clone,
+                location,
+              ),
+              entryId,
+            ),
+          )
+          assert(entry.amountAndTiming.type === 'recurring')
+          entry.amountAndTiming.baseAmount = baseAmount
+        },
+        render: (_: PlanParams, planParams: PlanParams) => {
+          const entries =
+            PlanParamsHelperFns.getLabeledAmountTimedListFromLocation(
+              planParams,
+              location,
+            )
+          return `Set ${getLabeledAmountTimedLocationStr(
+            location,
+          )} entry "${getLabelStrTruncated(
+            fGet(optGet(entries, entryId)).label,
+          )}" amount to ${formatCurrency(baseAmount)} per month`
+        },
+
+        merge: (prev) =>
+          prev.type === 'setAmountForLabeledAmount' &&
+          prev.value.entryId === entryId,
+      }
+    }
+
+    // ---------
+    // setNominalForLabeledAmountTimedOrUntimed
+    // ---------
+    case 'setNominalForLabeledAmountTimedOrUntimed': {
+      const { location, entryId, nominal } = action.value
+      return {
+        applyToClone: (clone) => {
+          const entries: Record<
+            string,
+            LabeledAmountTimed | LabeledAmountUntimed
+          > =
+            PlanParamsHelperFns.getLabeledAmountTimedOrUntimedListFromLocation(
+              clone,
+              location,
+            )
+          fGet(optGet(entries, entryId)).nominal = nominal
+        },
+        render: (_: PlanParams, planParams: PlanParams) => {
+          const entries: Record<
+            string,
+            LabeledAmountTimed | LabeledAmountUntimed
+          > =
+            PlanParamsHelperFns.getLabeledAmountTimedOrUntimedListFromLocation(
+              planParams,
+              location,
+            )
+
+          return `Set ${getLabeledAmountTimedOrUntimedLocationStr(
+            location,
+          )} entry "${getLabelStrTruncated(
+            fGet(optGet(entries, entryId)).label,
+          )}" amount as ${nominal ? 'nominal' : 'rea'} dollars`
+        },
+        merge: false,
+      }
+    }
+    // ---------
+    // setMonthRangeForLabeledAmountTimed
+    // ---------
+    case 'setMonthRangeForLabeledAmountTimed': {
+      const { location, entryId, monthRange } = action.value
+      return {
+        applyToClone: (clone) => {
+          const entry = fGet(
+            optGet(
+              PlanParamsHelperFns.getLabeledAmountTimedListFromLocation(
+                clone,
+                location,
+              ),
+              entryId,
+            ),
+          )
+          assert(entry.amountAndTiming.type !== 'oneTime')
+          assert(entry.amountAndTiming.type !== 'inThePast')
+          entry.amountAndTiming.monthRange = monthRange
+        },
+        render: (_: PlanParams, planParams: PlanParams) => {
+          return `Set ${getLabeledAmountTimedLocationStr(
+            location,
+          )} entry "${getLabelStrTruncated(
+            fGet(
+              optGet(
+                PlanParamsHelperFns.getLabeledAmountTimedListFromLocation(
+                  planParams,
+                  location,
+                ),
+                entryId,
+              ),
+            ).label,
+          )}" month range`
+        },
+        merge: (prev) =>
+          prev.type === 'setMonthRangeForLabeledAmountTimed' &&
+          prev.value.entryId === entryId,
+      }
+    }
+
+    // --------------------------- WEALTH --------------------------------
     // ---------
     // SetCurrentPortfolioBalance
     // ---------
@@ -308,361 +547,9 @@ export const processPlanParamsChangeActionCurrent = (
         },
         render: () =>
           `Set current portfolio balance to ${formatCurrency(value)}`,
-        merge: (prev) => prev.type === 'setCurrentPortfolioBalance',
+        merge: () => true,
       }
     }
-
-    // ---------
-    // AddValueForMonthRange
-    // ---------
-    case 'addValueForMonthRange': {
-      const { location, entryId, monthRange, sortIndex } = action.value
-      return {
-        applyToClone: (clone) => {
-          const values = getValueForMonthRangeEntriesByLocation(clone, location)
-          assert(!optGet(values, entryId))
-
-          values[entryId] = {
-            id: entryId,
-            sortIndex,
-            label: null,
-            value: 0,
-            nominal: false,
-            monthRange,
-            colorIndex: _getNextColorIndex(
-              _getUsedColorIndexesByLocation(clone, location),
-            ),
-          }
-        },
-        render: () => {
-          return `Added ${_getValueForMonthRangeLocationStr(location)} entry`
-        },
-        merge: null,
-      }
-    }
-
-    // ---------
-    // AddLabeledAmount
-    // ---------
-    case 'addLabeledAmount': {
-      const { location, entryId, sortIndex } = action.value
-      return {
-        applyToClone: (clone) => {
-          assert(
-            !optGet(
-              getLabeledAmountEntriesByLocation(clone, location),
-              entryId,
-            ),
-          )
-          getLabeledAmountEntriesByLocation(clone, location)[entryId] = {
-            id: entryId,
-            label: null,
-            value: 0,
-            nominal: false,
-            sortIndex,
-            colorIndex: _getNextColorIndex(
-              _getUsedColorIndexesByLocation(clone, location),
-            ),
-          }
-        },
-        render: () => {
-          return `Added ${_getLabeledAmountLocationStr(location)} entry `
-        },
-        merge: null,
-      }
-    }
-    // ---------
-    // DeleteLabeledAmount
-    // ---------
-    case 'deleteLabeledAmount': {
-      const { location, entryId } = action.value
-      return {
-        applyToClone: (clone) => {
-          const entries = getLabeledAmountEntriesByLocation(clone, location)
-          assert(optGet(entries, entryId))
-          delete entries[entryId]
-        },
-        render: (prevParams) => {
-          let prevEntry = optGet(
-            getLabeledAmountEntriesByLocation(prevParams, location),
-            entryId,
-          )
-          let label = block(() => {
-            if (!prevEntry) {
-              Sentry.captureException(
-                new Error('No entry match for deleteLabeledAmount'),
-              )
-              return ''
-            }
-            return ` "${_truncateLabel(prevEntry.label)}"`
-          })
-
-          return `Deleted ${_getLabeledAmountLocationStr(
-            location,
-          )} entry${label}`
-        },
-        merge: null,
-      }
-    }
-    // ---------
-    // SetLabelForLabeledAmount
-    // ---------
-    case 'setLabelForLabeledAmount': {
-      const { location, entryId, label } = action.value
-      return {
-        applyToClone: (clone) => {
-          fGet(
-            optGet(getLabeledAmountEntriesByLocation(clone, location), entryId),
-          ).label = label
-        },
-        render: () => {
-          return `Set ${_getLabeledAmountLocationStr(
-            location,
-          )} entry label to "${_truncateLabel(label)}'" `
-        },
-        merge: (prev) =>
-          prev.type === 'setLabelForLabeledAmount' &&
-          prev.value.entryId === entryId,
-      }
-    }
-
-    // ---------
-    // SetAmountForLabeledAmount
-    // ---------
-    case 'setAmountForLabeledAmount': {
-      const { location, entryId, amount } = action.value
-      return {
-        applyToClone: (clone) => {
-          fGet(
-            optGet(getLabeledAmountEntriesByLocation(clone, location), entryId),
-          ).value = amount
-        },
-        render: (_: PlanParams, planParams: PlanParams) => {
-          return `Set ${_getLabeledAmountLocationStr(
-            location,
-          )} entry "${_truncateLabel(
-            fGet(
-              optGet(
-                getLabeledAmountEntriesByLocation(planParams, location),
-                entryId,
-              ),
-            ).label,
-          )}" amount to ${formatCurrency(amount)} per month`
-        },
-
-        merge: (prev) =>
-          prev.type === 'setAmountForLabeledAmount' &&
-          prev.value.entryId === entryId,
-      }
-    }
-
-    // ---------
-    // SetNominalForLabeledAmount
-    // ---------
-    case 'setNominalForLabeledAmount': {
-      const { location, entryId, nominal } = action.value
-      return {
-        applyToClone: (clone) => {
-          fGet(
-            optGet(getLabeledAmountEntriesByLocation(clone, location), entryId),
-          ).nominal = nominal
-        },
-        render: (_: PlanParams, planParams: PlanParams) => {
-          return `Set ${_getLabeledAmountLocationStr(
-            location,
-          )} entry "${_truncateLabel(
-            fGet(
-              optGet(
-                getLabeledAmountEntriesByLocation(planParams, location),
-                entryId,
-              ),
-            ).label,
-          )}" amount as ${nominal ? 'nominal' : 'rea'} dollars`
-        },
-        merge: null,
-      }
-    }
-    // ---------
-    // SetMonthRangeForValueForMonthRange
-    // ---------
-    case 'setMonthRangeForValueForMonthRange': {
-      const { location, entryId, monthRange } = action.value
-      return {
-        applyToClone: (clone) => {
-          fGet(
-            optGet(
-              getValueForMonthRangeEntriesByLocation(clone, location),
-              entryId,
-            ),
-          ).monthRange = monthRange
-        },
-        render: (_: PlanParams, planParams: PlanParams) => {
-          return `Set ${_getLabeledAmountLocationStr(
-            location,
-          )} entry "${_truncateLabel(
-            fGet(
-              optGet(
-                getLabeledAmountEntriesByLocation(planParams, location),
-                entryId,
-              ),
-            ).label,
-          )}" month range`
-        },
-        merge: (prev) =>
-          prev.type === 'setAmountForLabeledAmount' &&
-          prev.value.entryId === entryId,
-      }
-    }
-
-    // ---------
-    // SetTPAWRiskTolerance
-    // ---------
-    case 'setTPAWRiskTolerance': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          clone.risk.tpaw.riskTolerance.at20 = value
-        },
-        render: () => `Set risk tolerance to ${value}`,
-        merge: (prev) => prev.type === 'setTPAWRiskTolerance',
-      }
-    }
-    // ---------
-    // SetTPAWAdditionalSpendingTilt
-    // ---------
-    case 'setTPAWAdditionalSpendingTilt': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          clone.risk.tpaw.additionalAnnualSpendingTilt = value
-        },
-        render: () =>
-          `Set extra spending tilt to ${formatPercentage(1)(value)}`,
-        merge: (prev) => prev.type === 'setTPAWAdditionalSpendingTilt',
-      }
-    }
-
-    // ---------
-    // SetTPAWRiskDeltaAtMaxAge
-    // ---------
-    case 'setTPAWRiskDeltaAtMaxAge': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          clone.risk.tpaw.riskTolerance.deltaAtMaxAge = value
-        },
-        render: () => `Set decease risk tolerance with age to ${-value}`,
-        merge: (prev) => prev.type === 'setTPAWRiskDeltaAtMaxAge',
-      }
-    }
-
-    // ---------
-    // SetTPAWRiskToleranceForLegacyAsDeltaFromAt20
-    // ---------
-    case 'setTPAWRiskToleranceForLegacyAsDeltaFromAt20': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          clone.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 = value
-        },
-        render: () => `Set increase risk tolerance for legacy to ${value}`,
-        merge: (prev) =>
-          prev.type === 'setTPAWRiskToleranceForLegacyAsDeltaFromAt20',
-      }
-    }
-
-    // ---------
-    // SetTPAWTimePreference
-    // ---------
-    case 'setTPAWTimePreference': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          clone.risk.tpaw.timePreference = value
-        },
-        render: () => `Set time preference to ${formatPercentage(1)(-value)}`,
-        merge: (prev) => prev.type === 'setTPAWTimePreference',
-      }
-    }
-
-    // ---------
-    // SetSWRWithdrawalAsPercentPerYear
-    // ---------
-    case 'setSWRWithdrawalAsPercentPerYear': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          clone.risk.swr.withdrawal = {
-            type: 'asPercentPerYear',
-            percentPerYear: value,
-          }
-        },
-        render: () =>
-          `Set withdrawal rate to ${formatPercentage(1)(value)} per year`,
-        merge: (prev) => prev.type === 'setSWRWithdrawalAsPercentPerYear',
-      }
-    }
-
-    // ---------
-    // SetSWRWithdrawalAsAmountPerMonth
-    // ---------
-    case 'setSWRWithdrawalAsAmountPerMonth': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          clone.risk.swr.withdrawal = {
-            type: 'asAmountPerMonth',
-            amountPerMonth: value,
-          }
-        },
-        render: () =>
-          `Set withdrawal amount to ${formatCurrency(value)} per month`,
-        merge: (prev) => prev.type === 'setSWRWithdrawalAsAmountPerMonth',
-      }
-    }
-
-    // ---------
-    // SetSPAWAndSWRAllocation
-    // ---------
-    case 'setSPAWAndSWRAllocation': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          clone.risk.spawAndSWR.allocation = value
-        },
-        render: () => `Updated stock allocation`,
-        merge: (prev) => prev.type === 'setSPAWAndSWRAllocation',
-      }
-    }
-    // ---------
-    // SetSPAWAnnualSpendingTilt
-    // ---------
-    case 'setSPAWAnnualSpendingTilt': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          clone.risk.spaw.annualSpendingTilt = value
-        },
-        render: () => `Set spending tilt to ${formatPercentage(1)(value)}`,
-        merge: (prev) => prev.type === 'setSPAWAnnualSpendingTilt',
-      }
-    }
-
-    // ---------
-    // SetTPAWAndSPAWLMP
-    // ---------
-    case 'setTPAWAndSPAWLMP': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          clone.risk.tpawAndSPAW.lmp = value
-        },
-
-        render: () => `Set LMP to ${formatCurrency(value)}`,
-        merge: (prev) => prev.type === 'setTPAWAndSPAWLMP',
-      }
-    }
-
     // ---------
     // SetSpendingCeiling
     // ---------
@@ -712,7 +599,155 @@ export const processPlanParamsChangeActionCurrent = (
           clone.adjustmentsToSpending.tpawAndSPAW.legacy.total = value
         },
         render: () => `Set total legacy target to ${formatCurrency(value)}`,
-        merge: (prev) => prev.type === 'setLegacyTotal',
+        merge: () => true,
+      }
+    }
+    // --------------------------- ADVANCED --------------------------------
+    // ---------
+    // SetTPAWRiskTolerance
+    // ---------
+    case 'setTPAWRiskTolerance': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.risk.tpaw.riskTolerance.at20 = value
+        },
+        render: () => `Set risk tolerance to ${value}`,
+        merge: () => true,
+      }
+    }
+    // ---------
+    // SetTPAWAdditionalSpendingTilt
+    // ---------
+    case 'setTPAWAdditionalSpendingTilt': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.risk.tpaw.additionalAnnualSpendingTilt = value
+        },
+        render: () =>
+          `Set extra spending tilt to ${formatPercentage(1)(value)}`,
+        merge: () => true,
+      }
+    }
+
+    // ---------
+    // SetTPAWRiskDeltaAtMaxAge
+    // ---------
+    case 'setTPAWRiskDeltaAtMaxAge': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.risk.tpaw.riskTolerance.deltaAtMaxAge = value
+        },
+        render: () => `Set decease risk tolerance with age to ${-value}`,
+        merge: () => true,
+      }
+    }
+
+    // ---------
+    // SetTPAWRiskToleranceForLegacyAsDeltaFromAt20
+    // ---------
+    case 'setTPAWRiskToleranceForLegacyAsDeltaFromAt20': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 = value
+        },
+        render: () => `Set increase risk tolerance for legacy to ${value}`,
+        merge: () => true,
+      }
+    }
+
+    // ---------
+    // SetTPAWTimePreference
+    // ---------
+    case 'setTPAWTimePreference': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.risk.tpaw.timePreference = value
+        },
+        render: () => `Set time preference to ${formatPercentage(1)(-value)}`,
+        merge: () => true,
+      }
+    }
+
+    // ---------
+    // SetSWRWithdrawalAsPercentPerYear
+    // ---------
+    case 'setSWRWithdrawalAsPercentPerYear': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.risk.swr.withdrawal = {
+            type: 'asPercentPerYear',
+            percentPerYear: value,
+          }
+        },
+        render: () =>
+          `Set withdrawal rate to ${formatPercentage(1)(value)} per year`,
+        merge: () => true,
+      }
+    }
+
+    // ---------
+    // SetSWRWithdrawalAsAmountPerMonth
+    // ---------
+    case 'setSWRWithdrawalAsAmountPerMonth': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.risk.swr.withdrawal = {
+            type: 'asAmountPerMonth',
+            amountPerMonth: value,
+          }
+        },
+        render: () =>
+          `Set withdrawal amount to ${formatCurrency(value)} per month`,
+        merge: () => true,
+      }
+    }
+
+    // ---------
+    // SetSPAWAndSWRAllocation
+    // ---------
+    case 'setSPAWAndSWRAllocation': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.risk.spawAndSWR.allocation = value
+        },
+        render: () => `Updated stock allocation`,
+        merge: () => true,
+      }
+    }
+    // ---------
+    // SetSPAWAnnualSpendingTilt
+    // ---------
+    case 'setSPAWAnnualSpendingTilt': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.risk.spaw.annualSpendingTilt = value
+        },
+        render: () => `Set spending tilt to ${formatPercentage(1)(value)}`,
+        merge: () => true,
+      }
+    }
+
+    // ---------
+    // SetTPAWAndSPAWLMP
+    // ---------
+    case 'setTPAWAndSPAWLMP': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.risk.tpawAndSPAW.lmp = value
+        },
+
+        render: () => `Set LMP to ${formatCurrency(value)}`,
+        merge: () => true,
       }
     }
 
@@ -757,8 +792,7 @@ export const processPlanParamsChangeActionCurrent = (
         },
 
         render: () => `Set stocks volatility scaling to ${value}`,
-        merge: (prev) =>
-          prev.type === 'setHistoricalStockReturnsAdjustmentVolatilityScale',
+        merge: () => true,
       }
     }
 
@@ -774,7 +808,7 @@ export const processPlanParamsChangeActionCurrent = (
         },
 
         render: () => `Bond volatility ${value ? 'enabled' : 'disabled'}`,
-        merge: null,
+        merge: false,
       }
     }
 
@@ -805,16 +839,12 @@ export const processPlanParamsChangeActionCurrent = (
     // ---------
     case 'setSamplingToDefault': {
       return {
-        applyToClone: (
-          clone,
-          planParamsExt: PlanParamsExtended,
-          defaultPlanParams: PlanParams,
-        ) => {
+        applyToClone: (clone, __, defaultPlanParams: PlanParams) => {
           clone.advanced.sampling = defaultPlanParams.advanced.sampling
         },
         render: (_: PlanParams, planParams: PlanParams) =>
           `Set simulation to Monte Carlo sequence`,
-        merge: null,
+        merge: false,
       }
     }
 
@@ -831,22 +861,22 @@ export const processPlanParamsChangeActionCurrent = (
           `Set simulation to ${
             value === 'historical' ? 'historical' : ' Monte Carlo'
           } sequence`,
-        merge: null,
+        merge: false,
       }
     }
 
     // ---------
-    // SetMonteCarloSamplingBlockSize
+    // SetMonteCarloSamplingBlockSize2
     // ---------
-    case 'setMonteCarloSamplingBlockSize': {
+    case 'setMonteCarloSamplingBlockSize2': {
       const { value } = action
       return {
         applyToClone: (clone) => {
           clone.advanced.sampling.forMonteCarlo.blockSize = value
         },
         render: () =>
-          `Set block size for Monte Carlo simulation to ${numMonthsStr(value)}`,
-        merge: (prev) => prev.type === 'setMonteCarloSamplingBlockSize',
+          `Set block size for Monte Carlo simulation to ${InMonthsFns.toStr(value)}`,
+        merge: () => true,
       }
     }
 
@@ -861,7 +891,7 @@ export const processPlanParamsChangeActionCurrent = (
         },
         render: () =>
           `Set stagger run starts for Monte Carlo simulation to ${value ? 'true' : 'false'}`,
-        merge: null,
+        merge: false,
       }
     }
 
@@ -871,19 +901,19 @@ export const processPlanParamsChangeActionCurrent = (
     case 'setStrategy': {
       const { value } = action
       return {
-        applyToClone: (clone, planParamsExt: PlanParamsExtended) => {
+        applyToClone: (clone, planParamsNorm) => {
           clone.advanced.strategy = value
           if (value === 'SWR' && clone.risk.swr.withdrawal.type === 'default') {
             clone.risk.swr.withdrawal = {
               type: 'asPercentPerYear',
               percentPerYear: DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT(
-                planParamsExt.numRetirementMonths,
+                planParamsNorm.ages.simulationMonths.numWithdrawalMonths,
               ),
             }
           }
         },
         render: () => `Set strategy to ${value}`,
-        merge: null,
+        merge: false,
       }
     }
 
@@ -899,40 +929,15 @@ export const processPlanParamsChangeActionCurrent = (
         },
         render: () =>
           `Set historical monthly log returns adjustment override to fixed for testing to ${value}`,
-        merge: null,
+        merge: false,
       }
     }
   }
 }
 
-type ValueForMonthRangeLocation =
-  | 'futureSavings'
-  | 'incomeDuringRetirement'
-  | 'extraSpendingEssential'
-  | 'extraSpendingDiscretionary'
-
-type LabeledAmountLocation =
-  | ValueForMonthRangeLocation
-  | 'legacyExternalSources'
-export const getValueForMonthRangeEntriesByLocation = (
-  planParams: PlanParams,
-  location: ValueForMonthRangeLocation,
-) => {
-  switch (location) {
-    case 'extraSpendingEssential':
-      return planParams.adjustmentsToSpending.extraSpending.essential
-    case 'extraSpendingDiscretionary':
-      return planParams.adjustmentsToSpending.extraSpending.discretionary
-    case 'futureSavings':
-    case 'incomeDuringRetirement':
-      return planParams.wealth[location]
-    default:
-      noCase(location)
-  }
-}
 const _getUsedColorIndexesByLocation = (
   planParams: PlanParams,
-  location: LabeledAmountLocation,
+  location: LabeledAmountUntimedLocation | LabeledAmountTimedLocation,
 ): Set<number> => {
   switch (location) {
     case 'extraSpendingEssential':
@@ -974,8 +979,8 @@ const _getNextColorIndex = (usedColorIndexes: Set<number>) => {
   }
 }
 
-const _getValueForMonthRangeLocationStr = (
-  location: ValueForMonthRangeLocation,
+export const getLabeledAmountTimedLocationStr = (
+  location: LabeledAmountTimedLocation,
 ) => {
   switch (location) {
     case 'extraSpendingEssential':
@@ -991,114 +996,26 @@ const _getValueForMonthRangeLocationStr = (
   }
 }
 
-export const getLabeledAmountEntriesByLocation = (
-  planParams: PlanParams,
-  location: LabeledAmountLocation,
+export const getLabeledAmountUntimedLocationStr = (
+  location: LabeledAmountUntimedLocation,
 ) => {
-  switch (location) {
-    case 'legacyExternalSources':
-      return planParams.adjustmentsToSpending.tpawAndSPAW.legacy.external
-    default:
-      return getValueForMonthRangeEntriesByLocation(planParams, location)
-  }
-}
-
-const _getLabeledAmountLocationStr = (location: LabeledAmountLocation) => {
   switch (location) {
     case 'legacyExternalSources':
       return 'legacy non-portfolio source'
     default:
-      return _getValueForMonthRangeLocationStr(location)
+      noCase(location)
+  }
+}
+export const getLabeledAmountTimedOrUntimedLocationStr = (
+  location: LabeledAmountTimedOrUntimedLocation,
+) => {
+  switch (location) {
+    case 'legacyExternalSources':
+      return getLabeledAmountUntimedLocationStr(location)
+    default:
+      return getLabeledAmountTimedLocationStr(location)
   }
 }
 
-const _truncateLabel = (label: string | null) =>
+export const getLabelStrTruncated = (label: string | null) =>
   label ? _.truncate(label, { length: 30 }) : '<no label>'
-
-// Uses MasterListOfMonths
-const _modifyMonthsInPlanParams = (
-  planParams: PlanParams,
-  fn: (x: Month) => Month,
-) => {
-  ;[
-    ..._.values(planParams.wealth.futureSavings),
-    ..._.values(planParams.wealth.incomeDuringRetirement),
-    ..._.values(planParams.adjustmentsToSpending.extraSpending.essential),
-    ..._.values(planParams.adjustmentsToSpending.extraSpending.discretionary),
-  ].forEach((x) => {
-    x.monthRange = block(() => {
-      switch (x.monthRange.type) {
-        case 'startAndEnd':
-          return {
-            type: 'startAndEnd',
-            start: fn(x.monthRange.start),
-            end: fn(x.monthRange.end),
-          }
-        case 'endAndNumMonths':
-          return {
-            type: 'endAndNumMonths',
-            end: fn(x.monthRange.end),
-            numMonths: x.monthRange.numMonths,
-          }
-        case 'startAndNumMonths':
-          return {
-            type: 'startAndNumMonths',
-            start: fn(x.monthRange.start),
-            numMonths: x.monthRange.numMonths,
-          }
-        default:
-          noCase(x.monthRange)
-      }
-    })
-  })
-  ;[..._.values(planParams.risk.spawAndSWR.allocation.intermediate)].forEach(
-    (x) => {
-      x.month = fn(x.month)
-    },
-  )
-}
-
-const _convertPerson2MonthReferencesToCalendarMonth = (
-  clone: PlanParams,
-  planParamsExt: PlanParamsExtended,
-) => {
-  const { months, asMFN, monthsFromNowToCalendarMonth } = planParamsExt
-  _modifyMonthsInPlanParams(clone, (month) =>
-    month.type !== 'calendarMonth' &&
-    month.type !== 'calendarMonthAsNow' &&
-    month.person === 'person2'
-      ? months.calendarMonth(monthsFromNowToCalendarMonth(asMFN(month)))
-      : month,
-  )
-}
-
-const _convertRetirementReferencesToNow = (
-  clone: PlanParams,
-  planParamsExt: PlanParamsExtended,
-  personType: 'person1' | 'person2',
-) => {
-  const { months } = planParamsExt
-  _modifyMonthsInPlanParams(clone, (month) =>
-    month.type === 'namedAge' &&
-    month.person === personType &&
-    (month.age === 'retirement' || month.age === 'lastWorkingMonth')
-      ? months.now
-      : month,
-  )
-}
-
-const _getPerson = (params: PlanParams, personType: 'person1' | 'person2') => {
-  if (personType === 'person1') return params.people.person1
-  assert(params.people.withPartner)
-  return params.people.person2
-}
-
-export const doesURLMatch = (baseURL: URL, currURL: URL) => {
-  const path = currURL.pathname === baseURL.pathname
-  const searchParams = [...baseURL.searchParams.keys()].every(
-    (key) => currURL.searchParams.get(key) === baseURL.searchParams.get(key),
-  )
-  return path && searchParams
-    ? ({ full: true, path: true, searchParams: true } as const)
-    : ({ full: false, path, searchParams } as const)
-}

@@ -92,6 +92,9 @@ module.exports = {
         },
 
         // ---- Context Menu ----
+        '.context-menu-outer-div': {
+          '@apply py-2.5 rounded-lg': {},
+        },
         '.context-menu-item': {
           '@apply block px-4 py-2.5 text-start ui-active:bg-gray-200 w-full':
             {},

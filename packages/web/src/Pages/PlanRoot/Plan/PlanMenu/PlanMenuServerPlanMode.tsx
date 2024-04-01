@@ -1,25 +1,25 @@
 import {
-    faArrowUp,
-    faCaretDown,
-    faCopy,
-    faEraser,
-    faGrid2,
-    faHome,
-    faPlus,
-    faTag,
-    faTrash,
+  faArrowUp,
+  faCaretDown,
+  faCopy,
+  faEraser,
+  faGrid2,
+  faHome,
+  faPlus,
+  faTag,
+  faTrash,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
 import Link from 'next/link'
 import React, { useState } from 'react'
 import { appPaths } from '../../../../AppPaths'
-import { ContextMenu2 } from '../../../Common/Modal/ContextMenu2'
+import { ContextModal } from '../../../Common/Modal/ContextModal'
 import { setPlansOnDoneURL } from '../../../Plans/Plans'
 import {
-    SimulationInfoForPlanMode,
-    SimulationInfoForServerSrc,
-    useSimulation,
+  SimulationInfoForPlanMode,
+  SimulationInfoForServerSrc,
+  useSimulation,
 } from '../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../UsePlanColors'
 import { PlanMenuActionCopyToLink } from './PlanMenuActions/PlanMenuActionCopyToLink'
@@ -47,6 +47,8 @@ export const PlanMenuServerPlanMode = React.memo(
     const isSyncing = syncState.type !== 'synced'
     const label = plan.isMain ? 'Main Plan' : plan.label ?? 'Untitled'
 
+    const [buttonRef, setButtonRef] = useState<HTMLElement | null>(null)
+
     const [showCreatePlanModal, setShowCreatePlanModal] = useState(false)
     const [showEditLabelModal, setShowEditLabelModal] = useState(false)
     const [showSetAsMainModal, setShowSetAsMainModal] = React.useState(false)
@@ -56,130 +58,136 @@ export const PlanMenuServerPlanMode = React.memo(
 
     return (
       <div className="flex gap-x-2">
-        <ContextMenu2
-          className="px-3 py-1.5 rounded-lg"
-          align="right"
-          style={{
-            backgroundColor: planColors.results.bg,
-            color: planColors.results.fg,
-          }}
-        >
-          <div className="relative  flex items-center gap-x-2" title={label}>
-            <h2 className="max-w-[200px] overflow-hidden whitespace-nowrap text-ellipsis">
-              {label}
-            </h2>
-            <FontAwesomeIcon icon={faCaretDown} />
-          </div>
-
-          {({ close, onMenuClose }) => (
-            <Menu.Items className="flex flex-col py-2.5 rounded-lg min-w-[275px]">
-              <Menu.Item
-                as="button"
-                className="context-menu-item"
-                onClick={() => setShowCreatePlanModal(true)}
-              >
-                <span className="inline-block w-[25px]">
-                  <FontAwesomeIcon icon={faPlus} />
-                </span>{' '}
-                Create a New Plan
-              </Menu.Item>
-              <Menu.Item
-                as="button"
-                className="context-menu-item"
-                onClick={() => setShowCopyModal(true)}
-              >
-                <span className="inline-block w-[25px]">
-                  <FontAwesomeIcon icon={faCopy} />
-                </span>{' '}
-                Copy to New Plan
-              </Menu.Item>
-              {!plan.isMain && (
-                <>
-                  <Menu.Item
-                    as="button"
-                    className=" context-menu-item "
-                    onClick={() => setShowSetAsMainModal(true)}
-                  >
-                    <span className="inline-block w-[25px]">
-                      <FontAwesomeIcon icon={faArrowUp} />
-                    </span>{' '}
-                    Make This the Main Plan
-                  </Menu.Item>
-                  <Menu.Item>
-                    <Link
-                      className={'context-menu-item '}
-                      href={appPaths.plan()}
-                    >
-                      <span className="inline-block w-[25px] ">
-                        <FontAwesomeIcon className="" icon={faHome} />
-                      </span>{' '}
-                      Switch to Main Plan
-                    </Link>
-                  </Menu.Item>
-                </>
-              )}
-              <Menu.Item>
-                <Link
-                  className={'context-menu-item '}
-                  href={appPaths.plans()}
-                  onClick={() => setPlansOnDoneURL()}
+        <Menu>
+          {({ open, close }) => (
+            <ContextModal align="right" open={open}>
+              {({ ref }) => (
+                <Menu.Button
+                  ref={ref}
+                  className="px-3 py-1.5 rounded-lg"
+                  style={{
+                    backgroundColor: planColors.results.bg,
+                    color: planColors.results.fg,
+                  }}
                 >
-                  <span className="inline-block w-[25px]">
-                    <FontAwesomeIcon icon={faGrid2} />
-                  </span>{' '}
-                  View All Plans
-                </Link>
-              </Menu.Item>
-              <PlanMenuDivider />
-
-              {!plan.isMain && (
+                  <div
+                    className="relative  flex items-center gap-x-2"
+                    title={label}
+                  >
+                    <h2 className="max-w-[200px] overflow-hidden whitespace-nowrap text-ellipsis">
+                      {label}
+                    </h2>
+                    <FontAwesomeIcon icon={faCaretDown} />
+                  </div>
+                </Menu.Button>
+              )}
+              <Menu.Items className="flex flex-col py-2.5 rounded-lg min-w-[275px]">
                 <Menu.Item
                   as="button"
                   className="context-menu-item"
-                  onClick={() => setShowEditLabelModal(true)}
+                  onClick={() => setShowCreatePlanModal(true)}
                 >
                   <span className="inline-block w-[25px]">
-                    <FontAwesomeIcon icon={faTag} />
+                    <FontAwesomeIcon icon={faPlus} />
                   </span>{' '}
-                  Edit Label
+                  Create a New Plan
                 </Menu.Item>
-              )}
+                <Menu.Item
+                  as="button"
+                  className="context-menu-item"
+                  onClick={() => setShowCopyModal(true)}
+                >
+                  <span className="inline-block w-[25px]">
+                    <FontAwesomeIcon icon={faCopy} />
+                  </span>{' '}
+                  Copy to New Plan
+                </Menu.Item>
+                {!plan.isMain && (
+                  <>
+                    <Menu.Item
+                      as="button"
+                      className=" context-menu-item "
+                      onClick={() => setShowSetAsMainModal(true)}
+                    >
+                      <span className="inline-block w-[25px]">
+                        <FontAwesomeIcon icon={faArrowUp} />
+                      </span>{' '}
+                      Make This the Main Plan
+                    </Menu.Item>
+                    <Menu.Item>
+                      <Link
+                        className={'context-menu-item '}
+                        href={appPaths.plan()}
+                      >
+                        <span className="inline-block w-[25px] ">
+                          <FontAwesomeIcon className="" icon={faHome} />
+                        </span>{' '}
+                        Switch to Main Plan
+                      </Link>
+                    </Menu.Item>
+                  </>
+                )}
+                <Menu.Item>
+                  <Link
+                    className={'context-menu-item '}
+                    href={appPaths.plans()}
+                    onClick={() => setPlansOnDoneURL()}
+                  >
+                    <span className="inline-block w-[25px]">
+                      <FontAwesomeIcon icon={faGrid2} />
+                    </span>{' '}
+                    View All Plans
+                  </Link>
+                </Menu.Item>
+                <PlanMenuDivider />
 
-              <PlanMenuActionCopyToLink
-                className="context-menu-item"
-                closeMenu={close}
-              />
-              <PlanMenuActionViewPlanHistory
-                className="context-menu-item"
-                historyStatus={historyStatus}
-                onMenuClose={onMenuClose}
-                closeMenu={close}
-              />
-              <Menu.Item
-                as="button"
-                className="context-menu-item text-errorFG"
-                onClick={() => setShowResetModal(true)}
-              >
-                <span className="inline-block w-[25px]">
-                  <FontAwesomeIcon icon={faEraser} />
-                </span>{' '}
-                Reset
-              </Menu.Item>
-              {!plan.isMain && (
+                {!plan.isMain && (
+                  <Menu.Item
+                    as="button"
+                    className="context-menu-item"
+                    onClick={() => setShowEditLabelModal(true)}
+                  >
+                    <span className="inline-block w-[25px]">
+                      <FontAwesomeIcon icon={faTag} />
+                    </span>{' '}
+                    Edit Label
+                  </Menu.Item>
+                )}
+
+                <PlanMenuActionCopyToLink
+                  className="context-menu-item"
+                  closeMenu={close}
+                />
+                <PlanMenuActionViewPlanHistory
+                  className="context-menu-item"
+                  historyStatus={historyStatus}
+                />
                 <Menu.Item
                   as="button"
                   className="context-menu-item text-errorFG"
-                  onClick={() => setShowDeleteModal(true)}
+                  onClick={() => setShowResetModal(true)}
                 >
                   <span className="inline-block w-[25px]">
-                    <FontAwesomeIcon icon={faTrash} />
+                    <FontAwesomeIcon icon={faEraser} />
                   </span>{' '}
-                  Delete
+                  Reset
                 </Menu.Item>
-              )}
-            </Menu.Items>
+                {!plan.isMain && (
+                  <Menu.Item
+                    as="button"
+                    className="context-menu-item text-errorFG"
+                    onClick={() => setShowDeleteModal(true)}
+                  >
+                    <span className="inline-block w-[25px]">
+                      <FontAwesomeIcon icon={faTrash} />
+                    </span>{' '}
+                    Delete
+                  </Menu.Item>
+                )}
+              </Menu.Items>
+            </ContextModal>
           )}
-        </ContextMenu2>
+        </Menu>
         <PlanMenuSubMenuUndoRedo
           simulationDetailForPlanMode={simulationInfoForPlanMode}
           className={{ undo: 'pl-6 pr-3', redo: 'pl-3 pr-6' }}

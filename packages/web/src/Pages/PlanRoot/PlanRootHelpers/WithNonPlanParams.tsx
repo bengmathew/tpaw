@@ -19,7 +19,7 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { useClientQuery, useMutation } from 'react-relay'
+import { useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { createContext } from '../../../Utils/CreateContext'
 import { AppError } from '../../App/AppError'

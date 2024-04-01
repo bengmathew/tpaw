@@ -7,7 +7,7 @@ use simulator::{
     },
     params::ParamsStrategy,
     plan_params::{
-        normalize_plan_params::plan_params_normalized,
+        normalize_plan_params::plan_params_rust,
         process_plan_params::{
             process_by_month_params::process_by_month_params,
             process_expected_returns_for_planning::{
@@ -23,7 +23,7 @@ use simulator::{
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let plan_params_norm =
-        serde_json::from_str::<plan_params_normalized::PlanParamsNormalized>(PLAN_PARAMS_NORM_STR)
+        serde_json::from_str::<plan_params_rust::PlanParamsNormalized2>(PLAN_PARAMS_NORM_STR)
             .unwrap();
     let market_data = serde_json::from_str::<
         simulator::data_for_market_based_plan_param_values::DataForMarketBasedPlanParamValues,

@@ -3,18 +3,22 @@ import {
   faMinus,
   faPlus as faPlusRegular,
   faTurnDownLeft,
-} from '@fortawesome/pro-regular-svg-icons'
+} from '@fortawesome/pro-solid-svg-icons'
 import { faTrash } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { GlidePath, Month, generateSmallId } from '@tpaw/common'
+import { GlidePath, fGet, generateSmallId } from '@tpaw/common'
+import clsx from 'clsx'
 import _ from 'lodash'
 import React, { useMemo, useState } from 'react'
-import { PlanParamsExtended } from '../../../UseSimulator/ExtentPlanParams'
-import { normalizeGlidePath } from '../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessRisk'
-import { calendarMonthStr } from '../../../Utils/CalendarMonthStr'
-import { numMonthsStr } from '../../../Utils/NumMonthsStr'
-import { assert, noCase } from '../../../Utils/Utils'
+import {
+  NormalizedGlidePath,
+  NormalizedGlidePathEntry,
+  normalizeGlidePath,
+} from '../../../UseSimulator/NormalizePlanParams/NormalizeGlidePath'
+import { getToMFN } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsAges'
+import { assert } from '../../../Utils/Utils'
 import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { getNormalizedMonthStr } from '../MonthOrDurationDisplay'
 import { AmountInput } from './AmountInput'
 import { MonthInput } from './MonthInput/MonthInput'
 
@@ -25,31 +29,9 @@ export const GlidePathInput = React.memo(
     onChange,
   }: {
     className?: string
-    value: GlidePath
+    value: NormalizedGlidePath
     onChange: (glidePath: GlidePath) => void
   }) => {
-    const { planParamsExt } = useSimulation()
-    const [newEntry, setNewEntry] = useState<null | _Entry>(null)
-
-    const { getCurrentAgeOfPerson, currentMonth } = planParamsExt
-
-    const intermediate = useMemo(
-      () => planParamsExt.glidePathIntermediateValidated(value.intermediate),
-      [planParamsExt, value],
-    )
-
-    const handleIntermediateChanged = (
-      intermediate: GlidePath['intermediate'],
-    ) => {
-      const clone = _.cloneDeep(value)
-      clone.intermediate = intermediate
-      onChange(clone)
-    }
-    const effectiveStart = useMemo(
-      () => normalizeGlidePath(value, planParamsExt)[0],
-      [planParamsExt, value],
-    )
-
     return (
       <div className={`${className}`}>
         <div className="flex justify-between pb-3 border-b border-gray-500 mb-3">
@@ -64,26 +46,34 @@ export const GlidePathInput = React.memo(
           <h2 className="">Now</h2>
           <_Percent
             className=""
-            value={effectiveStart}
+            value={value.now.stocks}
             onChange={(stocks) => {
-              const clone = _.cloneDeep(value)
-              clone.start = { month: currentMonth, stocks }
+              const clone = normalizeGlidePath.inverse(value)
+              clone.start.stocks = stocks
               onChange(clone)
             }}
             modalLabel="Stock Allocation Now"
           />
           <h2 className=""></h2>
           <_Intermediate
-            value={intermediate}
-            onChange={handleIntermediateChanged}
-            filter={(x) => x !== 'before' && x !== 'after'}
+            values={value.intermediate}
+            onChange={(intermediate) => {
+              const clone = normalizeGlidePath.inverse(value)
+              clone.intermediate = _.fromPairs(
+                [
+                  ...intermediate,
+                  ...value.atOrPastEnd.map(_deNormalizeEntry),
+                ].map((x) => [x.id, x]),
+              )
+              onChange(clone)
+            }}
           />
-          <h2 className="">At max age</h2>
+          <h2 className="">Max age</h2>
           <_Percent
             className=""
             value={value.end.stocks}
             onChange={(stocks) => {
-              const clone = _.cloneDeep(value)
+              const clone = normalizeGlidePath.inverse(value)
               clone.end.stocks = stocks
               onChange(clone)
             }}
@@ -92,177 +82,208 @@ export const GlidePathInput = React.memo(
 
           <h2 className=""></h2>
           <_Intermediate
-            value={intermediate}
-            onChange={handleIntermediateChanged}
-            filter={(x) => x === 'after'}
+            values={value.atOrPastEnd}
+            onChange={(atOrPastEnd) => {
+              const clone = normalizeGlidePath.inverse(value)
+              clone.intermediate = _.fromPairs(
+                [
+                  ...atOrPastEnd,
+                  ...value.intermediate.map(_deNormalizeEntry),
+                ].map((x) => [x.id, x]),
+              )
+              onChange(clone)
+            }}
           />
         </div>
-        {newEntry ? (
-          <div className="border-t border-gray-300 rounded-x pt-4 mt-4">
-            <div
-              className="grid gap-y-2 gap-x-2 items-center"
-              style={{ grid: 'auto/1fr auto auto' }}
-            >
-              <_EntryInput
-                value={newEntry}
-                onChange={(x) => setNewEntry(x)}
-                onDelete={() => setNewEntry(null)}
-                alwaysOpen
-              />
-            </div>
-            <div className="flex justify-end mt-4 gap-x-1">
-              <button
-                className="btn-dark btn-sm"
-                onClick={() => {
-                  const clone = _.cloneDeep(value)
-                  clone.intermediate[newEntry.id] = newEntry
-                  onChange(clone)
-                  setNewEntry(null)
-                }}
-              >
-                Add
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            className=" mt-4 flex justify-center items-center gap-x-2  rounded-full "
-            onClick={() =>
-              setNewEntry({
-                id: generateSmallId(),
-                month: {
-                  type: 'numericAge',
-                  person: 'person1',
-                  age: {
-                    inMonths: getCurrentAgeOfPerson('person1').inMonths + 1,
-                  },
-                },
-                stocks: 0.5,
-                indexToSortByAdded:
-                  Math.max(
-                    -1,
-                    ..._.values(value.intermediate).map(
-                      (x) => x.indexToSortByAdded,
-                    ),
-                  ) + 1,
-              })
-            }
-          >
-            <FontAwesomeIcon className="text-xl" icon={faPlus} />
-            Add entry
-          </button>
-        )}
+        <_NewEntry
+          onAdd={(x) => {
+            const clone = normalizeGlidePath.inverse(value)
+            clone.intermediate[x.id] = x
+            onChange(clone)
+          }}
+        />
       </div>
     )
   },
 )
 
-type _ProcessedIntermediate = ReturnType<
-  PlanParamsExtended['glidePathIntermediateValidated']
->
+const _NewEntry = React.memo(
+  ({ onAdd }: { onAdd: (x: GlidePath['intermediate']['string']) => void }) => {
+    const { planParamsNorm } = useSimulation()
+    const { nowAs, ages } = planParamsNorm
+    const [dummyGlidePath, setDummyGlidePath] = useState<GlidePath | null>(
+      () => null,
+    )
+    const handleAdd = () => {
+      const id = generateSmallId()
+      setDummyGlidePath({
+        start: { month: nowAs.calendarMonth, stocks: 0.5 },
+        intermediate: {
+          [id]: {
+            id,
+            indexToSortByAdded: 0,
+            month:
+              ages.person1.currentAge.inMonths <
+              ages.person1.maxAge.baseValue.inMonths - 1
+                ? {
+                    type: 'numericAge',
+                    person: 'person1',
+                    age: {
+                      inMonths: ages.person1.currentAge.inMonths + 1,
+                    },
+                  }
+                : {
+                    type: 'numericAge',
+                    person: 'person2',
+                    age: {
+                      inMonths: fGet(ages.person2).currentAge.inMonths + 1,
+                    },
+                  },
+            stocks: 0.5,
+          },
+        },
+        end: { stocks: 0.5 },
+      })
+    }
+
+    const normalizedEntry = useMemo((): NormalizedGlidePathEntry | null => {
+      if (!dummyGlidePath) return null
+      const { ages } = planParamsNorm
+      const { intermediate, atOrPastEnd } = normalizeGlidePath(
+        dummyGlidePath,
+        getToMFN(planParamsNorm),
+        ages,
+      )
+      const norm = fGet(_.first([...intermediate, ...atOrPastEnd]))
+      // Don't display errors during entry creation.
+      return { ...norm, month: { ...norm.month, errorMsg: null } }
+    }, [dummyGlidePath, planParamsNorm])
+
+    return dummyGlidePath ? (
+      <div className="border-t border-gray-300 rounded-x pt-4 mt-4">
+        <div
+          className="grid gap-y-2 gap-x-2 items-center"
+          style={{ grid: 'auto/1fr auto auto' }}
+        >
+          <_EntryInput
+            normValue={fGet(normalizedEntry)}
+            onChange={(x) =>
+              setDummyGlidePath({
+                ...dummyGlidePath,
+                intermediate: { [x.id]: x },
+              })
+            }
+            onDelete={() => setDummyGlidePath(null)}
+            alwaysOpen
+          />
+        </div>
+        <div className="flex justify-end mt-4 gap-x-1">
+          <button
+            className="btn-dark btn-sm"
+            onClick={() => {
+              onAdd(fGet(_.first(_.values(dummyGlidePath.intermediate))))
+              setDummyGlidePath(null)
+            }}
+          >
+            Add
+          </button>
+        </div>
+      </div>
+    ) : (
+      <button
+        className=" btn2-dark btn2-sm flex justify-center items-center gap-x-1 mt-6 "
+        onClick={handleAdd}
+      >
+        <FontAwesomeIcon className="text-base" icon={faPlus} />
+        Add Entry
+      </button>
+    )
+  },
+)
+
+const _deNormalizeEntry = (
+  n: NormalizedGlidePathEntry,
+): GlidePath['intermediate']['string'] => ({
+  id: n.id,
+  indexToSortByAdded: n.indexToSortByAdded,
+  month: n.month.baseValue,
+  stocks: n.stocks,
+})
 
 const _Intermediate = React.memo(
   ({
-    value,
+    values,
     onChange,
-    filter,
   }: {
-    value: _ProcessedIntermediate
-    onChange: (value: GlidePath['intermediate']) => void
-    filter: (issue: _ProcessedIntermediate[number]['issue']) => boolean
+    values: NormalizedGlidePathEntry[]
+    onChange: (values: GlidePath['intermediate']['string'][]) => void
   }) => {
     return (
       <>
-        {value.map(
-          (x) =>
-            filter(x.issue) && (
-              <React.Fragment key={x.id}>
-                <_EntryInput
-                  value={x}
-                  onChange={(x) => {
-                    // Don't use _.cloneDeep because value is _ProcessedIntermediate.
-                    const result = _.fromPairs(
-                      value.map(({ month, stocks, id, indexToSortByAdded }) => [
-                        id,
-                        {
-                          month,
-                          stocks,
-                          id,
-                          indexToSortByAdded,
-                        },
-                      ]),
-                    )
-                    result[x.id] = {
-                      month: x.month,
-                      stocks: x.stocks,
-                      id: x.id,
-                      indexToSortByAdded: x.indexToSortByAdded,
-                    }
-                    onChange(result)
-                  }}
-                  onDelete={() => {
-                    const result = _.fromPairs(
-                      value.map(({ month, stocks, id, indexToSortByAdded }) => [
-                        id,
-                        {
-                          month,
-                          stocks,
-                          id,
-                          indexToSortByAdded,
-                        },
-                      ]),
-                    )
-                    delete result[x.id]
-                    onChange(result)
-                  }}
-                  alwaysOpen={false}
-                />
-                {x.issue !== 'none' && (
-                  <div className=" col-span-3 text-red-500">
-                    <FontAwesomeIcon
-                      className="fa-rotate-90"
-                      icon={faTurnDownLeft}
-                    />{' '}
-                    {x.issue === 'before'
-                      ? `Ignoring — out of range.`
-                      : x.issue === 'duplicate'
-                      ? `Ignoring — duplicate entry for this month.`
-                      : x.issue === 'after'
-                      ? 'Ignoring — out of range.'
-                      : noCase(x.issue)}
-                  </div>
-                )}
-              </React.Fragment>
-            ),
-        )}
+        {values.map((x) => {
+          return (
+            <React.Fragment key={x.id}>
+              <_EntryInput
+                normValue={x}
+                onChange={(x) => {
+                  onChange(
+                    values.map((y) =>
+                      y.id === x.id ? x : _deNormalizeEntry(y),
+                    ),
+                  )
+                }}
+                onDelete={() => {
+                  onChange(
+                    _.compact(
+                      values.map((y) =>
+                        y.id === x.id ? null : _deNormalizeEntry(y),
+                      ),
+                    ),
+                  )
+                }}
+                alwaysOpen={false}
+              />
+              {x.month.errorMsg && (
+                <div className=" col-span-3 text-red-500 pl-4">
+                  <FontAwesomeIcon
+                    className="fa-rotate-90 mb-1 mr-1"
+                    icon={faTurnDownLeft}
+                  />{' '}
+                  {x.month.errorMsg}
+                </div>
+              )}
+            </React.Fragment>
+          )
+        })}
       </>
     )
   },
 )
 
-type _Entry = GlidePath['intermediate'][number]
-
+// Does not display error message, but text-errorFG for month error.
 const _EntryInput = React.memo(
   ({
-    value,
+    normValue,
     onChange,
     onDelete,
     alwaysOpen,
   }: {
-    value: _Entry
-    onChange: (value: _Entry) => void
+    normValue: NormalizedGlidePathEntry
+    onChange: (value: GlidePath['intermediate'][string]) => void
     onDelete: (() => void) | null
     alwaysOpen: boolean
   }) => {
     const [open, setOpen] = useState(alwaysOpen)
-    const { planParamsExt } = useSimulation()
-    const { asMFN, months, maxMaxAge } = planParamsExt
-
     return (
       <>
         {!open ? (
-          <div className="text-start">
-            {monthToStringForGlidePath(value.month, planParamsExt).full}
+          <div
+            className={clsx(
+              normValue.month.errorMsg && ' text-errorFG',
+              'text-start',
+            )}
+          >
+            {getNormalizedMonthStr(normValue.month).full}
             <button
               className="text-sm px-2 py-0.5 bg-gray-200 rounded-full ml-2"
               onClick={() => setOpen(true)}
@@ -271,33 +292,29 @@ const _EntryInput = React.memo(
             </button>
           </div>
         ) : (
-          <div className={`${alwaysOpen ? '' : 'bg-gray-100 rounded-xl p-2'}`}>
+          <div
+            className={clsx(
+              !alwaysOpen && 'bg-gray-100 rounded-xl p-2',
+              normValue.month.errorMsg && ' text-errorFG',
+            )}
+          >
             <MonthInput
-              location={'standalone'}
-              valueClamped={value.month}
+              normValue={{
+                ...normValue.month,
+                // Error message is displayed outside _EntryInput, so don't duplicate it.
+                errorMsg: null,
+              }}
               onChange={(month) => {
                 assert(!('numMonths' in month))
                 onChange({
-                  id: value.id,
+                  id: normValue.id,
                   month,
-                  stocks: value.stocks,
-                  indexToSortByAdded: value.indexToSortByAdded,
+                  indexToSortByAdded: normValue.indexToSortByAdded,
+                  stocks: normValue.stocks,
                 })
               }}
-              toMFN={(x) => {
-                assert(!('numMonths' in x))
-                return asMFN(x)
-              }}
-              range={{
-                start: asMFN(months.now) + 1,
-                end: asMFN(maxMaxAge) - 1,
-              }}
-              choices={['retirement', 'numericAge', 'calendarMonth']}
+              choicesPreFilter={['retirement', 'numericAge', 'calendarMonth']}
               modalTextInputOnMobile
-              getMonthLabel={(value) => {
-                assert('type' in value)
-                return monthToStringForGlidePath(value, planParamsExt).start
-              }}
             />
             {!alwaysOpen && (
               <div className="flex justify-end mt-2">
@@ -312,13 +329,21 @@ const _EntryInput = React.memo(
           </div>
         )}
         <_Percent
-          className=""
-          value={value.stocks}
-          onChange={(stocks) => onChange({ ...value, stocks })}
+          className={clsx(normValue.month.errorMsg && 'text-errorFG')}
+          value={normValue.stocks}
+          onChange={(stocks) =>
+            onChange({ ..._deNormalizeEntry(normValue), stocks })
+          }
           modalLabel={`Stock Allocation`}
         />
         {onDelete && (
-          <button className="px-2 py-1.5 -mr-2" onClick={onDelete}>
+          <button
+            className={clsx(
+              normValue.month.errorMsg && 'text-errorFG',
+              'px-2 py-1.5 -mr-2',
+            )}
+            onClick={onDelete}
+          >
             <FontAwesomeIcon icon={faTrash} />
           </button>
         )}
@@ -366,49 +391,3 @@ const _Percent = React.memo(
     )
   },
 )
-
-export const monthToStringForGlidePath = (
-  month: Month,
-  planParamsExt: PlanParamsExtended,
-) => {
-  const { planParams } = planParamsExt
-
-  const result = (startIn: string, date: string | null) => {
-    const start = _.capitalize(startIn)
-    return {
-      start,
-      date,
-      full: date === null ? start : `${start} ${date}`,
-    }
-  }
-  switch (month.type) {
-    case 'calendarMonthAsNow':
-      return result('now', null)
-    case 'calendarMonth':
-      return result('calendar month', calendarMonthStr(month.calendarMonth))
-    case 'numericAge':
-      return result(
-        `when ${month.person === 'person1' ? 'you are' : 'your partner is'}`,
-        numMonthsStr(month.age.inMonths),
-      )
-    case 'namedAge': {
-      const withPerson = (x: string) =>
-        planParams.people.withPartner
-          ? `${month.person === 'person1' ? 'your' : `your partner's`} ${x}`
-          : x
-
-      switch (month.age) {
-        case 'lastWorkingMonth':
-          return result(withPerson('last working month'), null)
-        case 'retirement':
-          return result(`at ${withPerson('retirement')}`, null)
-        case 'max':
-          return result(`at ${withPerson('max age')}`, null)
-        default:
-          noCase(month)
-      }
-    }
-    default:
-      noCase(month)
-  }
-}

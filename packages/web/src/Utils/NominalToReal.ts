@@ -1,9 +1,9 @@
 export const nominalToReal = ({
-  value: { value, nominal },
+  value: { amount, nominal },
   monthlyInflation,
   monthsFromNow,
 }: {
-  value: { value: number; nominal: boolean }
+  value: { amount: number; nominal: boolean }
   monthlyInflation: number
   monthsFromNow: number
-}) => (nominal ? value / Math.pow(1 + monthlyInflation, monthsFromNow) : value)
+}) => (nominal ? amount / Math.pow(1 + monthlyInflation, monthsFromNow) : amount)

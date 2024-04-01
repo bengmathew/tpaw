@@ -1,8 +1,6 @@
 import _ from 'lodash'
 import { nominalToReal } from '../../Utils/NominalToReal'
-import { PlanParamsExtended } from '../ExtentPlanParams'
-import { PlanParams } from '@tpaw/common'
-import { PlanParamsNormalized } from '../NormalizePlanParams'
+import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
 
 export function planParamsProcessAdjustmentsToSpending(
   planParams: PlanParamsNormalized,
@@ -22,7 +20,7 @@ export function planParamsProcessAdjustmentsToSpending(
         legacy: (() => {
           const { total } = planParams.adjustmentsToSpending.tpawAndSPAW.legacy
           const external = _.sum(
-            _.values(legacy.external).map((x) =>
+            legacy.external.map((x) =>
               nominalToReal({
                 value: x,
                 monthlyInflation,

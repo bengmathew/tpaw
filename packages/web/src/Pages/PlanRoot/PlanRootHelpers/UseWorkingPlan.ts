@@ -1,23 +1,25 @@
 import {
-    PlanParams,
-    PlanParamsChangeAction,
-    PlanParamsChangeActionCurrent,
-    PlanPaths,
-    assert,
-    fGet,
-    getDefaultPlanParams,
-    planParamsGuard,
+  PlanParams,
+  PlanParamsChangeAction,
+  PlanParamsChangeActionCurrent,
+  PlanPaths,
+  assert,
+  fGet,
+  getDefaultPlanParams,
+  letIn,
+  planParamsGuard,
 } from '@tpaw/common'
 import cloneJSON from 'fast-json-clone'
 import _ from 'lodash'
 import { useCallback, useMemo, useState } from 'react'
 import * as uuid from 'uuid'
-import { extendPlanParams } from '../../../UseSimulator/ExtentPlanParams'
+import { normalizePlanParams } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { normalizePlanParamsInverse } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
 import { sendAnalyticsEvent } from '../../../Utils/SendAnalyticsEvent'
 import { useAssertConst } from '../../../Utils/UseAssertConst'
 import { Config } from '../../Config'
 import { CurrentPortfolioBalance } from './CurrentPortfolioBalance'
-import { processPlanParamsChangeActionCurrent } from './PlanParamsChangeAction'
+import { getPlanParamsChangeActionImpl } from './GetPlanParamsChangeActionImpl/GetPlanParamsChangeActionImpl'
 import { CurrentTimeInfo } from './UseCurrentTime'
 import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName } from './WithNonPlanParams'
@@ -81,16 +83,6 @@ export const useWorkingPlan = (
     }
   }, [headIndex, workingPlan])
 
-  const planParamsExt = useMemo(
-    () =>
-      extendPlanParams(
-        planParams,
-        currentTimeInfo.currentTimestamp,
-        ianaTimezoneName,
-      ),
-    [planParams, currentTimeInfo.currentTimestamp, ianaTimezoneName],
-  )
-
   const updatePlanParams = useCallback(
     <T extends PlanParamsChangeActionCurrent>(
       type: T['type'],
@@ -100,14 +92,21 @@ export const useWorkingPlan = (
       assert(planParams === currHistoryItem.params)
 
       const change = { type, value } as T
-      const { applyToClone, merge } =
-        processPlanParamsChangeActionCurrent(change)
+      const { applyToClone, merge } = getPlanParamsChangeActionImpl(change)
 
-      let clone = cloneJSON(planParams)
-      const altClone = applyToClone(clone, planParamsExt, defaultPlanParams)
-      if (altClone) clone = altClone
+      const planParamsNorm = normalizePlanParams(
+        planParams,
+        currentTimeInfo.nowAsCalendarMonth,
+      )
+
+      const planParamsFromNorm = normalizePlanParamsInverse(planParamsNorm)
+      const nextPlanParams = letIn(
+        cloneJSON(planParamsFromNorm),
+        (clone) =>
+          applyToClone(clone, planParamsNorm, defaultPlanParams) ?? clone,
+      )
       if (
-        _.isEqual(clone, planParams) &&
+        _.isEqual(nextPlanParams, planParamsFromNorm) &&
         // setCurrentPortfolio balance is a special case, because it is
         // is sensitive to timestamps. So even if the value is the same
         // but timestamp is different we need to update it.
@@ -115,47 +114,47 @@ export const useWorkingPlan = (
       ) {
         return
       }
-      clone.timestamp = currentTimeInfo.forceUpdateCurrentTime()
+
+      nextPlanParams.timestamp = currentTimeInfo.forceUpdateCurrentTime()
       if (change.type !== 'setCurrentPortfolioBalance') {
-        clone.wealth.portfolioBalance = planParams.wealth.portfolioBalance
-          .updatedHere
+        nextPlanParams.wealth.portfolioBalance = planParamsFromNorm.wealth
+          .portfolioBalance.updatedHere
           ? {
               updatedHere: false,
               updatedAtId: currHistoryItem.id,
-              updatedTo: planParams.wealth.portfolioBalance.amount,
-              updatedAtTimestamp: planParams.timestamp,
+              updatedTo: planParamsFromNorm.wealth.portfolioBalance.amount,
+              updatedAtTimestamp: planParamsFromNorm.timestamp,
             }
-          : _.cloneDeep(planParams.wealth.portfolioBalance)
+          : _.cloneDeep(planParamsFromNorm.wealth.portfolioBalance)
       }
 
       const planParamsPostBase = [
         ...planParamsUndoRedoStack.undos,
-        { id: uuid.v4(), params: clone, change },
+        { id: uuid.v4(), params: nextPlanParams, change },
       ]
       if (
         currHistoryItem.change.type === change.type &&
-        clone.timestamp - planParams.timestamp < 1000 &&
-        merge &&
-        merge(currHistoryItem.change)
+        nextPlanParams.timestamp - planParamsFromNorm.timestamp < 1000 &&
+        (typeof merge === 'function' ? merge(currHistoryItem.change) : merge)
       )
         planParamsPostBase.splice(-2, 1)
 
-      clone.results = null
+      nextPlanParams.results = null
       const displayedAssetAllocation = fGet(
         _.last(
           CurrentPortfolioBalance.getInfo(
             workingPlan.planId,
             planParamsPostBase,
-            clone.timestamp,
+            nextPlanParams.timestamp,
             ianaTimezoneName,
             marketData,
             wasm,
           ).actions,
         ),
       ).stateChange.end.allocation
-      clone.results = { displayedAssetAllocation }
+      nextPlanParams.results = { displayedAssetAllocation }
 
-      planParamsGuard(clone).force()
+      planParamsGuard(nextPlanParams).force()
 
       setWorkingPlan({
         planId: workingPlan.planId,
@@ -169,7 +168,6 @@ export const useWorkingPlan = (
       ianaTimezoneName,
       marketData,
       planParams,
-      planParamsExt,
       planParamsUndoRedoStack.undos,
       wasm,
       workingPlan.planId,
@@ -243,11 +241,11 @@ export const useWorkingPlan = (
 
     const runTime = performance.now() - start
     if (_.random(25) === 0)
-      // sendAnalyticsEvent('current_portfolio_balance_estimation', { runTime })
-    if (runTime > 1000)
-      sendAnalyticsEvent('current_portfolio_balance_estimation_slow', {
-        runTime,
-      })
+      if (runTime > 1000)
+        // sendAnalyticsEvent('current_portfolio_balance_estimation', { runTime })
+        sendAnalyticsEvent('current_portfolio_balance_estimation_slow', {
+          runTime,
+        })
     return result
   }, [
     currentTimeInfo.currentTimestamp,

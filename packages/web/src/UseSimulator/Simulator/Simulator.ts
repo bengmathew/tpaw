@@ -1,9 +1,10 @@
-import { assertFalse, PlanParams, ValueForMonthRange } from '@tpaw/common'
+import { assertFalse } from '@tpaw/common'
 import _ from 'lodash'
+import { Record } from '../../Utils/Record'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { StatsTools } from '../../Utils/StatsTools'
 import { assert, fGet, noCase } from '../../Utils/Utils'
-import { PlanParamsExtended } from '../ExtentPlanParams'
+import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 import {
   FirstMonthSavingsPortfolioDetail,
@@ -18,6 +19,10 @@ import {
 } from './SimulationWorkerAPI'
 
 export type NumberArrByPercentileByMonthsFromNow = {
+  byPercentileByMonthsFromNow: { data: number[]; percentile: number }[]
+}
+export type NumberArrWithIdByPercentileByMonthsFromNow = {
+  id: string
   byPercentileByMonthsFromNow: { data: number[]; percentile: number }[]
 }
 
@@ -37,11 +42,11 @@ export type SimulationResult = {
     withdrawals: {
       essential: {
         total: NumberArrByPercentileByMonthsFromNow
-        byId: Map<string, NumberArrByPercentileByMonthsFromNow>
+        byId: NumberArrWithIdByPercentileByMonthsFromNow[]
       }
       discretionary: {
         total: NumberArrByPercentileByMonthsFromNow
-        byId: Map<string, NumberArrByPercentileByMonthsFromNow>
+        byId: NumberArrWithIdByPercentileByMonthsFromNow[]
       }
       regular: NumberArrByPercentileByMonthsFromNow
       total: NumberArrByPercentileByMonthsFromNow
@@ -106,9 +111,9 @@ export type SimulationResult = {
 }
 
 export type SimulationArgs = {
-  planParams: PlanParams
+  currentPortfolioBalanceAmount: number
+  planParamsNorm: PlanParamsNormalized
   planParamsProcessed: PlanParamsProcessed
-  planParamsExt: PlanParamsExtended
   numOfSimulationForMonteCarloSampling: number
   randomSeed: number
 }
@@ -162,13 +167,21 @@ export class Simulator {
     worker: Worker,
     runs: SimpleRange,
     randomSeed: number,
-    params: PlanParamsProcessed,
+    currentPortfolioBalanceAmount: number,
+    planParamsNorm: PlanParamsNormalized,
+    planParamsProcessed: PlanParamsProcessed,
   ): Promise<RunSimulationInWASMResult> {
     const taskID = _.uniqueId()
     const message: Extract<SimulationWorkerArgs, { type: 'runSimulation' }> = {
       taskID,
       type: 'runSimulation',
-      args: { runs, params, randomSeed },
+      args: {
+        currentPortfolioBalanceAmount,
+        runs,
+        planParamsNorm,
+        planParamsProcessed,
+        randomSeed,
+      },
     }
     worker.postMessage(message)
     return new Promise<RunSimulationInWASMResult>((resolve) =>
@@ -192,14 +205,14 @@ export class Simulator {
     )
   }
 
-
   async runSimulations(
     status: { canceled: boolean },
     args: SimulationArgs,
   ): Promise<SimulationResult | null> {
     const {
+      currentPortfolioBalanceAmount,
+      planParamsNorm,
       planParamsProcessed,
-      planParamsExt,
       numOfSimulationForMonteCarloSampling,
       randomSeed,
     } = args
@@ -207,7 +220,7 @@ export class Simulator {
     let start = performance.now()
     const numSimulationsActual = _getNumSimulationsActual(
       planParamsProcessed,
-      planParamsExt,
+      planParamsNorm,
       numOfSimulationForMonteCarloSampling,
     )
     const percentiles = PERCENTILES
@@ -220,6 +233,8 @@ export class Simulator {
           worker,
           _loadBalance(i, numSimulationsActual, this._workers.length),
           randomSeed,
+          currentPortfolioBalanceAmount,
+          planParamsNorm,
           planParamsProcessed,
         ),
       ),
@@ -283,34 +298,16 @@ export class Simulator {
       runsByWorker[0].byMonthsFromNowByRun.savingsPortfolio,
       planParamsProcessed,
     )
-    const withdrawlsEssentialById = new Map(
-      _.values(
-        planParamsExt.planParams.adjustmentsToSpending.extraSpending.essential,
-      ).map((x) => [
-        x.id,
-        _separateExtraWithdrawal(
-          x,
-          planParamsProcessed,
-          planParamsExt,
-          withdrawalsEssential,
-          'essential',
-        ),
-      ]),
+
+    const withdrawalsEssentialById = _separateExtraWithdrawals(
+      planParamsProcessed.byMonth.adjustmentsToSpending.extraSpending.essential,
+      withdrawalsEssential,
     )
-    const withdrawlsDiscretionaryById = new Map(
-      _.values(
-        planParamsExt.planParams.adjustmentsToSpending.extraSpending
-          .discretionary,
-      ).map((x) => [
-        x.id,
-        _separateExtraWithdrawal(
-          x,
-          planParamsProcessed,
-          planParamsExt,
-          withdrawalsDiscretionary,
-          'discretionary',
-        ),
-      ]),
+
+    const withdrawlsDiscretionaryById = _separateExtraWithdrawals(
+      planParamsProcessed.byMonth.adjustmentsToSpending.extraSpending
+        .discretionary,
+      withdrawalsDiscretionary,
     )
 
     const numRunsWithInsufficientFunds = byRun.numInsufficientFundMonths.filter(
@@ -339,7 +336,7 @@ export class Simulator {
         withdrawals: {
           essential: {
             total: withdrawalsEssential,
-            byId: withdrawlsEssentialById,
+            byId: withdrawalsEssentialById,
           },
           discretionary: {
             total: withdrawalsDiscretionary,
@@ -503,34 +500,31 @@ const _loadBalance = (worker: number, numJobs: number, numWorkers: number) => {
   return { start, end, length }
 }
 
-const _separateExtraWithdrawal = (
-  valueForMonthRange: ValueForMonthRange,
-  params: PlanParamsProcessed,
-  planParamsExt: PlanParamsExtended,
-  x: NumberArrByPercentileByMonthsFromNow,
-  type: 'discretionary' | 'essential',
-): NumberArrByPercentileByMonthsFromNow => {
-  const monthRange = planParamsExt.asMFN(valueForMonthRange.monthRange)
-
-  return _mapByPercentileByMonthsFromNow(x, (value, monthsFromNow) => {
-    if (monthsFromNow < monthRange.start || monthsFromNow > monthRange.end) {
-      return 0
-    }
-    const currMonthParams =
-      params.byMonth.adjustmentsToSpending.extraSpending[type].total[
-        monthsFromNow
-      ]
-    const withdrawalTargetForThisMonth = fGet(
-      params.byMonth.adjustmentsToSpending.extraSpending[type].byId[
-        valueForMonthRange.id
-      ].values,
-    )[monthsFromNow]
-    if (withdrawalTargetForThisMonth === 0) return 0
-    const ratio = withdrawalTargetForThisMonth / currMonthParams
-    assert(!isNaN(ratio)) // withdrawalTargetForThisMonth ?>0 imples denominator is not 0.
-    return value * ratio
-  })
-}
+const _separateExtraWithdrawals = (
+  processedEntries: PlanParamsProcessed['byMonth']['adjustmentsToSpending']['extraSpending']['essential'],
+  combinedExtraWithdrawals: Omit<NumberArrByPercentileByMonthsFromNow, 'id'>,
+): NumberArrWithIdByPercentileByMonthsFromNow[] =>
+  processedEntries.byId.map((processedEntry) => ({
+    id: processedEntry.id,
+    ..._mapByPercentileByMonthsFromNow(
+      combinedExtraWithdrawals,
+      (value, monthsFromNow) => {
+        if (
+          !SimpleRange.Closed.isIn(monthsFromNow, processedEntry.validRange)
+        ) {
+          return 0
+        }
+        const currMonthParams = processedEntries.total[monthsFromNow]
+        const withdrawalTargetForThisMonth = fGet(processedEntry.values)[
+          monthsFromNow
+        ]
+        if (withdrawalTargetForThisMonth === 0) return 0
+        const ratio = withdrawalTargetForThisMonth / currMonthParams
+        assert(!isNaN(ratio)) // withdrawalTargetForThisMonth ?>0 imples denominator is not 0.
+        return value * ratio
+      },
+    ),
+  }))
 
 const _mapByPercentileByMonthsFromNow = (
   x: NumberArrByPercentileByMonthsFromNow,
@@ -547,22 +541,21 @@ const _mapByPercentileByMonthsFromNow = (
 
 const _getNumSimulationsActual = (
   planParamsProcessed: PlanParamsProcessed,
-  planParamsExt: PlanParamsExtended,
+  planParamsNorm: PlanParamsNormalized,
   numOfSimulationForMonteCarloSampling: number,
 ) => {
-  const { planParams, numMonths } = planParamsExt
-  switch (planParams.advanced.sampling.type) {
+  switch (planParamsNorm.advanced.sampling.type) {
     case 'monteCarlo':
       return numOfSimulationForMonteCarloSampling
     case 'historical': {
       return (
         planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.logSeries
           .length -
-        numMonths +
+        planParamsNorm.ages.simulationMonths.numMonths +
         1
       )
     }
     default:
-      noCase(planParams.advanced.sampling.type)
+      noCase(planParamsNorm.advanced.sampling.type)
   }
 }

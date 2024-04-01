@@ -1,4 +1,4 @@
-import { fGet, RISK_TOLERANCE_VALUES } from '@tpaw/common'
+import { fGet, PLAN_PARAMS_CONSTANTS } from '@tpaw/common'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { PaddingHorz } from '../../../../../Utils/Geometry'
 import { lineFromPoints } from '../../../../../Utils/SVG/LineFromPoints'
@@ -58,7 +58,7 @@ export const PlanInputRiskRRASlider = React.memo(
     const segment = useMemo(
       () =>
         fGet(
-          RISK_TOLERANCE_VALUES.SEGMENTS.find((x) =>
+          PLAN_PARAMS_CONSTANTS.riskToleranceValues.SEGMENTS.find((x) =>
             x.containsIndex(pointerIndex),
           ),
         ),

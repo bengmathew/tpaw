@@ -16,6 +16,7 @@ import { useSystemInfo } from '../../App/WithSystemInfo'
 
 const duration = 300
 
+// TODO: Deprecated in favor of ContextModal & HeadlessUI Listbox
 const _ModalListbox = <T extends string | number>({
   className = '',
   choices,

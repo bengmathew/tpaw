@@ -1,16 +1,12 @@
 import {
   MonthRange,
   PlanParams,
-  ValueForMonthRanges,
-  assert,
+  LabeledAmountTimedList,
+  currentPlanParamsVersion,
   getZonedTimeFns,
   letIn,
 } from '@tpaw/common'
-import { SimulationArgs } from './Simulator'
-import { processPlanParams } from '../PlanParamsProcessed/PlanParamsProcessed'
-import { extendPlanParams } from '../ExtentPlanParams'
 import * as Rust from '@tpaw/simulator'
-import { getSimulatorSingleton } from '../UseSimulator'
 
 describe('simulator', () => {
   let now = Date.now()
@@ -32,26 +28,31 @@ describe('simulator', () => {
     withdrawalStart: 'person1' | 'person2',
     strategy: 'TPAW' | 'SPAW' | 'SWR',
   ): PlanParams => {
-    const getValueForMonthRanges = (
-      x: { monthRange: MonthRange; value: number }[],
-    ): ValueForMonthRanges => {
-      let result: ValueForMonthRanges = {}
-      x.forEach(({ monthRange, value }, i) => {
+    const getLabeledAmountTimedList = (
+      x: { monthRange: MonthRange; amount: number }[],
+    ): LabeledAmountTimedList => {
+      let result: LabeledAmountTimedList = {}
+      x.forEach(({ monthRange, amount }, i) => {
         let id = `${i}`
         result[id] = {
           id,
           sortIndex: i,
           colorIndex: i,
           label: id,
-          monthRange,
-          value,
           nominal: false,
+          amountAndTiming: {
+            type: 'recurring',
+            everyXMonths: 1,
+            delta: null,
+            baseAmount: amount,
+            monthRange,
+          },
         }
       })
       return result
     }
     return {
-      v: 27,
+      v: currentPlanParamsVersion,
       timestamp: now,
       dialogPositionNominal: 'done',
       people: {
@@ -79,7 +80,7 @@ describe('simulator', () => {
           updatedHere: true,
           amount: 100000,
         },
-        futureSavings: getValueForMonthRanges([
+        futureSavings: getLabeledAmountTimedList([
           {
             monthRange: {
               type: 'startAndEnd',
@@ -93,7 +94,7 @@ describe('simulator', () => {
                 age: 'lastWorkingMonth',
               },
             },
-            value: 1000,
+            amount: 1000,
           },
           {
             monthRange: {
@@ -108,11 +109,11 @@ describe('simulator', () => {
                 age: 'lastWorkingMonth',
               },
             },
-            value: 2000,
+            amount: 2000,
           },
         ]),
 
-        incomeDuringRetirement: getValueForMonthRanges([
+        incomeDuringRetirement: getLabeledAmountTimedList([
           {
             monthRange: {
               type: 'startAndEnd',
@@ -123,7 +124,7 @@ describe('simulator', () => {
               },
               end: { type: 'namedAge', person: 'person1', age: 'max' },
             },
-            value: 3000,
+            amount: 3000,
           },
           {
             monthRange: {
@@ -135,13 +136,13 @@ describe('simulator', () => {
               },
               end: { type: 'namedAge', person: 'person2', age: 'max' },
             },
-            value: 4000,
+            amount: 4000,
           },
         ]),
       },
       adjustmentsToSpending: {
         extraSpending: {
-          essential: getValueForMonthRanges([
+          essential: getLabeledAmountTimedList([
             {
               monthRange: {
                 type: 'startAndEnd',
@@ -151,7 +152,7 @@ describe('simulator', () => {
                 },
                 end: { type: 'namedAge', person: 'person1', age: 'max' },
               },
-              value: 500,
+              amount: 500,
             },
             {
               monthRange: {
@@ -162,10 +163,10 @@ describe('simulator', () => {
                 },
                 end: { type: 'namedAge', person: 'person2', age: 'max' },
               },
-              value: 600,
+              amount: 600,
             },
           ]),
-          discretionary: getValueForMonthRanges([
+          discretionary: getLabeledAmountTimedList([
             {
               monthRange: {
                 type: 'startAndEnd',
@@ -175,7 +176,7 @@ describe('simulator', () => {
                 },
                 end: { type: 'namedAge', person: 'person1', age: 'max' },
               },
-              value: 700,
+              amount: 700,
             },
             {
               monthRange: {
@@ -186,7 +187,7 @@ describe('simulator', () => {
                 },
                 end: { type: 'namedAge', person: 'person2', age: 'max' },
               },
-              value: 800,
+              amount: 800,
             },
           ]),
         },
@@ -245,7 +246,7 @@ describe('simulator', () => {
         sampling: {
           type: 'monteCarlo',
           forMonteCarlo: {
-            blockSize: 12 * 5,
+            blockSize: { inMonths: 12 * 5 },
             staggerRunStarts: true,
           },
         },
@@ -276,7 +277,6 @@ describe('simulator', () => {
   }
 
   test('with fixed historical returns', async () => {
-    
     // const planParams = getPlanParams('person1', 'TPAW')
     // assert(planParams.wealth.portfolioBalance.updatedHere)
     // const planParamsExt = extendPlanParams(planParams, now, ianaTimezoneName)

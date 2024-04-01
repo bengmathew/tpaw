@@ -15,13 +15,13 @@ export const PlanDialogOverlay = React.memo(
     // Because this resizes with animation on window resizing.
     chartDiv: HTMLElement | null
   }) => {
-    const { planParamsExt, updatePlanParams, simulationInfoByMode } =
+    const { planParamsNorm, updatePlanParams, simulationInfoByMode } =
       useSimulation()
-    const { dialogPositionEffective, nextDialogPosition } = planParamsExt
+    const { dialogPosition } = planParamsNorm
     if (
       !(
-        isPlanSectionDialogInOverlayMode(dialogPositionEffective) ||
-        dialogPositionEffective === 'done'
+        isPlanSectionDialogInOverlayMode(dialogPosition.effective) ||
+        dialogPosition.effective === 'done'
       ) ||
       // Don't show in history mode because it hides the calendar input, so
       // they will get stuck.
@@ -29,15 +29,15 @@ export const PlanDialogOverlay = React.memo(
     )
       return <></>
     const handleNext = () => {
-      if (dialogPositionEffective === 'done') return
-      updatePlanParams('setDialogPosition', nextDialogPosition)
+      if (dialogPosition.effective === 'done') return
+      updatePlanParams('setDialogPosition', dialogPosition.next)
     }
     const body = (() => {
-      switch (dialogPositionEffective) {
+      switch (dialogPosition.effective) {
         case 'show-results':
           return (
             <_Overlay
-              dialogPosition={dialogPositionEffective}
+              dialogPosition={dialogPosition.effective}
               chartDiv={chartDiv}
               elementId="planResultsDialogCurtionShowResultsButton"
               padding={{ horz: 0, vert: 0 }}
@@ -76,7 +76,7 @@ export const PlanDialogOverlay = React.memo(
               // fill="none"
               border={null}
               rounding={() => 25}
-              hidden={dialogPositionEffective === 'done'}
+              hidden={dialogPosition.effective === 'done'}
               onClick={null}
             >
               {(targetSize) => (

@@ -20,8 +20,8 @@ export const PlanResultsChartRescale = React.memo(
     mainYRange: SimpleRange
     setMainYRange: (x: SimpleRange) => void
   }) => {
-    const { planParamsExt } = useSimulation()
-    const { dialogPositionEffective } = planParamsExt
+    const { planParamsNorm } = useSimulation()
+    const { dialogPosition } = planParamsNorm
     const { nonPlanParams } = useNonPlanParams()
     const chartData = useChartData(chartType)
     const targetYRange = nonPlanParams.dev.overridePlanResultChartYRange
@@ -42,10 +42,10 @@ export const PlanResultsChartRescale = React.memo(
 
     // This is so chart will be scaled when results are first shown.
     useEffect(() => {
-      if (dialogPositionEffective === 'show-results') handleRescale()
+      if (dialogPosition.effective === 'show-results') handleRescale()
       // Additional section dep and ignore handleRescale.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [section, dialogPositionEffective])
+    }, [section, dialogPosition.effective])
 
     return (
       <button

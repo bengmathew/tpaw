@@ -1,19 +1,16 @@
-import {
-  MAX_AGE_IN_MONTHS,
-  annualToMonthlyReturnRate,
-  assert,
-  block,
-} from '@tpaw/common'
-import { BaseAndLogStats, Stats } from '@tpaw/simulator'
+import { PLAN_PARAMS_CONSTANTS, assert, block } from '@tpaw/common'
+import { BaseAndLogStats } from '@tpaw/simulator'
 import _ from 'lodash'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { noCase } from '../../Utils/Utils'
-import { extendPlanParams } from '../ExtentPlanParams'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 import { WASM } from './GetWASM'
 import { RunSimulationInWASMResult } from './RunSimulationInWASMResult'
+import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
 
 export function runSimulationInWASM(
+  currentPortfolioBalanceAmount: number,
+  planParamsNorm: PlanParamsNormalized,
   planParamsProcessed: PlanParamsProcessed,
   runsSpec: SimpleRange,
   randomSeed: number,
@@ -24,30 +21,27 @@ export function runSimulationInWASM(
   } = { forFirstMonth: false },
 ): RunSimulationInWASMResult {
   let start0 = performance.now()
-  const { planParams } = planParamsProcessed
-  const { numMonths, asMFN, withdrawalStartMonth } = extendPlanParams(
-    planParams,
-    planParamsProcessed.currentTime.epoch,
-    planParamsProcessed.currentTime.zoneName,
-  )
+  const { ages } = planParamsNorm
 
-  const numMonthsToSimulate = opts.forFirstMonth ? 1 : numMonths
+  const numMonthsToSimulate = opts.forFirstMonth
+    ? 1
+    : ages.simulationMonths.numMonths
 
   let start = performance.now()
   let runs = wasm.run(
-    planParams.advanced.strategy,
+    planParamsNorm.advanced.strategy,
     runsSpec.start,
     runsSpec.end,
-    numMonths,
+    ages.simulationMonths.numMonths,
     numMonthsToSimulate,
-    asMFN(withdrawalStartMonth),
+    ages.simulationMonths.withdrawalStartMonth.asMFN,
     planParamsProcessed.expectedReturnsForPlanning.monthlyNonLogForSimulation
       .stocks,
     planParamsProcessed.expectedReturnsForPlanning.monthlyNonLogForSimulation
       .bonds,
     planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.logSeries,
     planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.logSeries,
-    planParamsProcessed.estimatedCurrentPortfolioBalance,
+    currentPortfolioBalanceAmount,
     Float64Array.from(planParamsProcessed.risk.tpaw.allocation),
     Float64Array.from(planParamsProcessed.risk.spawAndSWR.allocation),
     planParamsProcessed.risk.tpaw.allocationForLegacy.stocks,
@@ -70,14 +64,14 @@ export function runSimulationInWASM(
       .monthlySpendingCeiling ?? undefined,
     planParamsProcessed.adjustmentsToSpending.tpawAndSPAW
       .monthlySpendingFloor ?? undefined,
-    planParams.advanced.sampling.type === 'monteCarlo'
+    planParamsNorm.advanced.sampling.type === 'monteCarlo'
       ? true
-      : planParams.advanced.sampling.type === 'historical'
+      : planParamsNorm.advanced.sampling.type === 'historical'
         ? false
-        : noCase(planParams.advanced.sampling.type),
-    planParams.advanced.sampling.forMonteCarlo.blockSize,
-    planParams.advanced.sampling.forMonteCarlo.staggerRunStarts,
-    MAX_AGE_IN_MONTHS,
+        : noCase(planParamsNorm.advanced.sampling.type),
+    planParamsNorm.advanced.sampling.forMonteCarlo.blockSize.inMonths,
+    planParamsNorm.advanced.sampling.forMonteCarlo.staggerRunStarts,
+    PLAN_PARAMS_CONSTANTS.maxAgeInMonths,
     BigInt(randomSeed),
     opts.test?.truth ? Float64Array.from(opts.test.truth) : undefined,
     opts.test?.indexIntoHistoricalReturns

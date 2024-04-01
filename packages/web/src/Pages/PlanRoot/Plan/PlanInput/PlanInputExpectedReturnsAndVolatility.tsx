@@ -2,9 +2,8 @@ import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
 import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  MANUAL_STOCKS_BONDS_NON_LOG_ANNUAL_RETURNS_VALUES,
   PlanParams,
-  STOCK_VOLATILITY_SCALE_VALUES,
+  PLAN_PARAMS_CONSTANTS,
   assert,
   fGet,
   letIn,
@@ -32,6 +31,7 @@ import {
 } from './PlanInputBody/PlanInputBody'
 import { fWASM } from '../../../../UseSimulator/Simulator/GetWASM'
 import * as Rust from '@tpaw/simulator'
+import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 
 export const PlanInputExpectedReturnsAndVolatility = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -58,7 +58,7 @@ export const _ExpectedReturnsCard = React.memo(
     const { getZonedTime } = useIANATimezoneName()
     const {
       updatePlanParams,
-      planParams,
+      planParamsNorm,
       defaultPlanParams,
       currentMarketData,
     } = useSimulation()
@@ -66,12 +66,12 @@ export const _ExpectedReturnsCard = React.memo(
     const data = useMemo(
       () =>
         fWASM().process_market_data_for_expected_returns_for_planning_presets(
-          planParams.advanced.sampling,
-          planParams.advanced.historicalMonthlyLogReturnsAdjustment
+          CallRust.getPlanParamsRust(planParamsNorm).advanced.sampling,
+          planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
             .standardDeviation,
           currentMarketData,
         ),
-      [planParams, currentMarketData],
+      [planParamsNorm, currentMarketData],
     )
 
     const handleChange = (
@@ -170,7 +170,6 @@ const _ExpectedReturnsPresetPopup = React.memo(
     data: Rust.DataForExpectedReturnsForPlanningPresets
   }) => {
     const { getZonedTime } = useIANATimezoneName()
-    const { planParams, currentMarketData } = useSimulation()
 
     const formatDate = (timestamp: number) =>
       getZonedTime(timestamp).toLocaleString(DateTime.DATE_MED)
@@ -516,7 +515,7 @@ const _Preset = React.memo(
     ) => void
     data: Rust.DataForExpectedReturnsForPlanningPresets
   }) => {
-    const { planParams, defaultPlanParams } = useSimulation()
+    const { planParamsNorm, defaultPlanParams } = useSimulation()
     const { stocks, bonds } = _resolveExpectedReturnPreset(type, data)
     const isDefault =
       defaultPlanParams.advanced.expectedReturnsForPlanning.type === type
@@ -530,7 +529,7 @@ const _Preset = React.memo(
         <FontAwesomeIcon
           className="mt-1"
           icon={
-            planParams.advanced.expectedReturnsForPlanning.type === type
+            planParamsNorm.advanced.expectedReturnsForPlanning.type === type
               ? faCircleSelected
               : faCircleRegular
           }
@@ -591,21 +590,21 @@ export const _Manual = React.memo(
     props: PlanInputBodyPassThruProps
     data: Rust.DataForExpectedReturnsForPlanningPresets
   }) => {
-    const { marketData } = useMarketData()
-    const { planParams, currentMarketData } = useSimulation()
+    const { planParamsNorm } = useSimulation()
 
     const curr =
-      planParams.advanced.expectedReturnsForPlanning.type === 'manual'
-        ? { ...planParams.advanced.expectedReturnsForPlanning }
+      planParamsNorm.advanced.expectedReturnsForPlanning.type === 'manual'
+        ? { ...planParamsNorm.advanced.expectedReturnsForPlanning }
         : _resolveExpectedReturnPreset(
-            planParams.advanced.expectedReturnsForPlanning.type,
+            planParamsNorm.advanced.expectedReturnsForPlanning.type,
             data,
           )
 
     const findClosest = (curr: number) =>
       fGet(
-        _.minBy(MANUAL_STOCKS_BONDS_NON_LOG_ANNUAL_RETURNS_VALUES, (x) =>
-          Math.abs(x - curr),
+        _.minBy(
+          PLAN_PARAMS_CONSTANTS.manualStocksBondsNonLogAnnualReturnsValues,
+          (x) => Math.abs(x - curr),
         ),
       )
 
@@ -624,7 +623,8 @@ export const _Manual = React.memo(
           <FontAwesomeIcon
             className="mt-1"
             icon={
-              planParams.advanced.expectedReturnsForPlanning.type === 'manual'
+              planParamsNorm.advanced.expectedReturnsForPlanning.type ===
+              'manual'
                 ? faCircleSelected
                 : faCircleRegular
             }
@@ -638,7 +638,8 @@ export const _Manual = React.memo(
             </h2>
           </div>
         </button>
-        {planParams.advanced.expectedReturnsForPlanning.type === 'manual' && (
+        {planParamsNorm.advanced.expectedReturnsForPlanning.type ===
+          'manual' && (
           <div className="mt-4">
             <h2 className="ml-6 mt-2 ">Stocks</h2>
             <SliderInput
@@ -646,8 +647,10 @@ export const _Manual = React.memo(
               height={60}
               maxOverflowHorz={props.sizing.cardPadding}
               format={formatPercentage(1)}
-              data={MANUAL_STOCKS_BONDS_NON_LOG_ANNUAL_RETURNS_VALUES}
-              value={planParams.advanced.expectedReturnsForPlanning.stocks}
+              data={
+                PLAN_PARAMS_CONSTANTS.manualStocksBondsNonLogAnnualReturnsValues
+              }
+              value={planParamsNorm.advanced.expectedReturnsForPlanning.stocks}
               onChange={(stocks) =>
                 onChange({
                   type: 'manual',
@@ -670,8 +673,10 @@ export const _Manual = React.memo(
               height={60}
               maxOverflowHorz={props.sizing.cardPadding}
               format={formatPercentage(1)}
-              data={MANUAL_STOCKS_BONDS_NON_LOG_ANNUAL_RETURNS_VALUES}
-              value={planParams.advanced.expectedReturnsForPlanning.bonds}
+              data={
+                PLAN_PARAMS_CONSTANTS.manualStocksBondsNonLogAnnualReturnsValues
+              }
+              value={planParamsNorm.advanced.expectedReturnsForPlanning.bonds}
               onChange={(bonds) =>
                 onChange({
                   type: 'manual',
@@ -767,7 +772,8 @@ export const _BondVolatilityCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParams, updatePlanParams, defaultPlanParams } = useSimulation()
+    const { planParamsNorm, updatePlanParams, defaultPlanParams } =
+      useSimulation()
     const isModified = useIsBondVolatilityCardModified()
     const handleChange = (enableVolatility: boolean) => {
       updatePlanParams(
@@ -797,7 +803,7 @@ export const _BondVolatilityCard = React.memo(
           <ToggleSwitch
             className=""
             checked={
-              planParams.advanced.historicalMonthlyLogReturnsAdjustment
+              planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
                 .standardDeviation.bonds.enableVolatility
             }
             setChecked={(enabled) => {
@@ -836,7 +842,7 @@ export const _StockVolatilityCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const {
-      planParams,
+      planParamsNorm,
       planParamsProcessed,
       updatePlanParams,
       defaultPlanParams,
@@ -877,9 +883,9 @@ export const _StockVolatilityCard = React.memo(
           className={`-mx-3 mt-2 `}
           height={60}
           maxOverflowHorz={props.sizing.cardPadding}
-          data={STOCK_VOLATILITY_SCALE_VALUES}
+          data={PLAN_PARAMS_CONSTANTS.stockVolatilityScaleValues}
           value={
-            planParams.advanced.historicalMonthlyLogReturnsAdjustment
+            planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
               .standardDeviation.stocks.scale
           }
           onChange={(x) => handleChange(x)}
@@ -929,40 +935,45 @@ export const useIsPlanInputExpectedReturnsAndVolatilityModified = () => {
 }
 
 const useIsExpectedReturnsCardModified = () => {
-  const { planParams, defaultPlanParams } = useSimulation()
+  const { planParamsNorm, defaultPlanParams } = useSimulation()
   return !_.isEqual(
     defaultPlanParams.advanced.expectedReturnsForPlanning,
-    planParams.advanced.expectedReturnsForPlanning,
+    planParamsNorm.advanced.expectedReturnsForPlanning,
   )
 }
 const useIsStockVolatilityCardModified = () => {
-  const { planParams, defaultPlanParams } = useSimulation()
+  const { planParamsNorm, defaultPlanParams } = useSimulation()
   return !_.isEqual(
     defaultPlanParams.advanced.historicalMonthlyLogReturnsAdjustment
       .standardDeviation.stocks.scale,
-    planParams.advanced.historicalMonthlyLogReturnsAdjustment.standardDeviation
-      .stocks.scale,
+    planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
+      .standardDeviation.stocks.scale,
   )
 }
 
 const useIsBondVolatilityCardModified = () => {
-  const { planParams, defaultPlanParams } = useSimulation()
+  const { planParamsNorm, defaultPlanParams } = useSimulation()
   return !_.isEqual(
     defaultPlanParams.advanced.historicalMonthlyLogReturnsAdjustment
       .standardDeviation.bonds.enableVolatility,
-    planParams.advanced.historicalMonthlyLogReturnsAdjustment.standardDeviation
-      .bonds.enableVolatility,
+    planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
+      .standardDeviation.bonds.enableVolatility,
   )
 }
 
 export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(
-  ({ planParamsProcessed }: { planParamsProcessed: PlanParamsProcessed }) => {
-    const { planParams } = planParamsProcessed
+  ({
+    planParamsNorm,
+    planParamsProcessed,
+  }: {
+    planParamsNorm: PlanParamsNormalized
+    planParamsProcessed: PlanParamsProcessed
+  }) => {
     const { expectedReturnsForPlanning } = planParamsProcessed
-    const { historicalMonthlyLogReturnsAdjustment } = planParams.advanced
+    const { historicalMonthlyLogReturnsAdjustment } = planParamsNorm.advanced
     const format = formatPercentage(1)
     const labelInfo = expectedReturnTypeLabelInfo(
-      planParams.advanced.expectedReturnsForPlanning,
+      planParamsNorm.advanced.expectedReturnsForPlanning,
     )
 
     return (

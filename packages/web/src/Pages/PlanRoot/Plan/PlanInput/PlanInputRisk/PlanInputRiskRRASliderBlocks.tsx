@@ -1,4 +1,4 @@
-import { RISK_TOLERANCE_VALUES } from '@tpaw/common'
+import { PLAN_PARAMS_CONSTANTS } from '@tpaw/common'
 import React from 'react'
 import { SliderPointerState } from '../../../../Common/Inputs/SliderInput/UseSliderPointerState'
 import { SliderSizing } from '../../../../Common/Inputs/SliderInput/UseSliderSizing'
@@ -17,22 +17,24 @@ export const PlanInputRiskRRASliderBlocks = React.memo(
     const pointerIndex = pointerState.drag?.index ?? index
     return (
       <>
-        {RISK_TOLERANCE_VALUES.SEGMENTS.map((segment, i) => (
-          <rect
-            key={i}
-            className={`fill-current 
+        {PLAN_PARAMS_CONSTANTS.riskToleranceValues.SEGMENTS.map(
+          (segment, i) => (
+            <rect
+              key={i}
+              className={`fill-current 
             ${
               segment.containsIndex(pointerIndex)
                 ? 'text-gray-600'
                 : 'text-gray-300'
             }
             `}
-            x={pixelXToDataX.inverse(segment.startIndex)}
-            y={-6}
-            width={pixelXToDataX.inverse(segment.count - 1)}
-            height={6}
-          />
-        ))}
+              x={pixelXToDataX.inverse(segment.startIndex)}
+              y={-6}
+              width={pixelXToDataX.inverse(segment.count - 1)}
+              height={6}
+            />
+          ),
+        )}
       </>
     )
   },

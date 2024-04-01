@@ -1,8 +1,7 @@
-import { assert, getDefaultPlanParams } from '@tpaw/common'
+import { assert } from '@tpaw/common'
 import clsx from 'clsx'
 import _ from 'lodash'
-import React, { ReactNode, useMemo } from 'react'
-import { useSimulationResult } from '../WithSimulation'
+import React, { ReactNode } from 'react'
 import { useGetPlanInputVisibility } from '../../Plan/PlanInput/Helpers/UseGetPlanInputVisibility'
 import { PlanInputAgeSummary } from '../../Plan/PlanInput/PlanInputAge/PlanInputAge'
 import { PlanInputCurrentPortfolioBalanceSummary } from '../../Plan/PlanInput/PlanInputCurrentPortfolioBalance'
@@ -16,22 +15,25 @@ import { PlanInputRiskSummary } from '../../Plan/PlanInput/PlanInputRisk/PlanInp
 import { PlanInputSimulationSummary } from '../../Plan/PlanInput/PlanInputSimulation'
 import { PlanInputSpendingCeilingAndFloorSummary } from '../../Plan/PlanInput/PlanInputSpendingCeilingAndFloor'
 import { PlanInputStrategySummary } from '../../Plan/PlanInput/PlanInputStrategy'
+import { useSimulationResult } from '../WithSimulation'
 import { PlanPrintViewPageGroup } from './Helpers/PlanPrintViewPageGroup'
 import { PlanPrintViewSectionTitlePageGroup } from './Helpers/PlanPrintViewSectionTitlePageGroup'
 import { PlanPrintViewArgs } from './PlanPrintViewArgs'
+import { CurrentPortfolioBalance } from '../CurrentPortfolioBalance'
 
 // Note: The show/hide should mirror PlanSummary. "None" displays should mirror
 // PlanSummaryButtons's empty attribute from PlanSummary.
 export const PlanPrintViewInputSection = React.memo(
-  ({ settings }: { settings: PlanPrintViewArgs['settings'] }) => {
+  ({
+    settings,
+    currentPortfolioBalanceAmountInfo,
+  }: {
+    currentPortfolioBalanceAmountInfo: CurrentPortfolioBalance.AmountInfo
+    settings: PlanPrintViewArgs['settings']
+  }) => {
     const { args } = useSimulationResult()
-    const { ianaTimezoneName } = args.planParamsExt
-    const defaultPlanParams = useMemo(
-      () => getDefaultPlanParams(args.planParams.timestamp, ianaTimezoneName),
-      [args.planParams.timestamp, ianaTimezoneName],
-    )
 
-    const getVisibility = useGetPlanInputVisibility(args.planParamsExt)
+    const getVisibility = useGetPlanInputVisibility(args.planParamsNorm)
 
     const _assert = (condition: boolean) => {
       assert(condition)
@@ -51,7 +53,7 @@ export const PlanPrintViewInputSection = React.memo(
           <_SectionHeading className="">Age</_SectionHeading>
           {_assert(getVisibility('age').visible) && (
             <div className="mt-1.5">
-              <PlanInputAgeSummary planParamsExt={args.planParamsExt} />
+              <PlanInputAgeSummary planParamsNorm={args.planParamsNorm} />
             </div>
           )}
           <_SectionHeading className="">Wealth</_SectionHeading>
@@ -63,10 +65,8 @@ export const PlanPrintViewInputSection = React.memo(
                 </_SubSectionHeading>
                 <div className="mt-2">
                   <PlanInputCurrentPortfolioBalanceSummary
-                    planParamsExt={args.planParamsExt}
-                    currentPortfolioBalance={
-                      args.planParamsProcessed.estimatedCurrentPortfolioBalance
-                    }
+                    amountInfo={currentPortfolioBalanceAmountInfo}
+                    forPrint
                   />
                 </div>
               </div>
@@ -77,9 +77,9 @@ export const PlanPrintViewInputSection = React.memo(
                   Future Savings
                 </_SubSectionHeading>
                 <div className="mt-2">
-                  {_.values(args.planParams.wealth.futureSavings).length > 0 ? (
+                  {args.planParamsNorm.wealth.futureSavings.length > 0 ? (
                     <PlanInputFutureSavingsSummary
-                      planParamsExt={args.planParamsExt}
+                      planParamsNorm={args.planParamsNorm}
                     />
                   ) : (
                     <_None />
@@ -93,10 +93,10 @@ export const PlanPrintViewInputSection = React.memo(
                   Income During Retirement
                 </_SubSectionHeading>
                 <div className="mt-2">
-                  {_.values(args.planParams.wealth.incomeDuringRetirement)
-                    .length > 0 ? (
+                  {args.planParamsNorm.wealth.incomeDuringRetirement.length >
+                  0 ? (
                     <PlanInputIncomeDuringRetirementSummary
-                      planParamsExt={args.planParamsExt}
+                      planParamsNorm={args.planParamsNorm}
                     />
                   ) : (
                     <_None />
@@ -115,7 +115,7 @@ export const PlanPrintViewInputSection = React.memo(
               Extra Spending
             </_SubSectionHeading>
             <PlanInputExtraSpendingSummary
-              planParamsExt={args.planParamsExt}
+              planParamsNorm={args.planParamsNorm}
               forPrint
             />
 
@@ -123,15 +123,14 @@ export const PlanPrintViewInputSection = React.memo(
               <>
                 <_SubSectionHeading className="">Legacy</_SubSectionHeading>
                 <div className="mt-2">
-                  {_.values(
-                    args.planParams.adjustmentsToSpending.tpawAndSPAW.legacy
-                      .external,
-                  ).length === 0 &&
-                  args.planParams.adjustmentsToSpending.tpawAndSPAW.legacy
+                  {args.planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy
+                    .external.length === 0 &&
+                  args.planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy
                     .total === 0 ? (
                     <_None />
                   ) : (
                     <PlanInputLegacySummary
+                      planParamsNorm={args.planParamsNorm}
                       planParamsProcessed={args.planParamsProcessed}
                     />
                   )}
@@ -145,14 +144,14 @@ export const PlanPrintViewInputSection = React.memo(
                   Spending Ceiling And Floor
                 </_SubSectionHeading>
                 <div className="mt-2">
-                  {args.planParams.adjustmentsToSpending.tpawAndSPAW
+                  {args.planParamsNorm.adjustmentsToSpending.tpawAndSPAW
                     .monthlySpendingCeiling === null &&
-                  args.planParams.adjustmentsToSpending.tpawAndSPAW
+                  args.planParamsNorm.adjustmentsToSpending.tpawAndSPAW
                     .monthlySpendingFloor === null ? (
                     <_None />
                   ) : (
                     <PlanInputSpendingCeilingAndFloorSummary
-                      planParams={args.planParams}
+                      planParamsNorm={args.planParamsNorm}
                     />
                   )}
                 </div>
@@ -164,10 +163,7 @@ export const PlanPrintViewInputSection = React.memo(
               <_SectionHeading className="">Risk</_SectionHeading>
               <div className=" break-inside-avoid-page mt-2">
                 <div className="">
-                  <PlanInputRiskSummary
-                    planParamsExt={args.planParamsExt}
-                    defaultPlanParams={defaultPlanParams}
-                  />
+                  <PlanInputRiskSummary planParamsNorm={args.planParamsNorm} />
                 </div>
               </div>
             </>
@@ -184,6 +180,7 @@ export const PlanPrintViewInputSection = React.memo(
                 </_SubSectionHeading>
                 <div className="mt-2">
                   <PlanInputExpectedReturnsAndVolatilitySummary
+                    planParamsNorm={args.planParamsNorm}
                     planParamsProcessed={args.planParamsProcessed}
                   />
                 </div>
@@ -194,6 +191,7 @@ export const PlanPrintViewInputSection = React.memo(
                 <_SubSectionHeading className="">Inflation</_SubSectionHeading>
                 <div className="mt-2">
                   <PlanInputInflationSummary
+                    planParamsNorm={args.planParamsNorm}
                     planParamsProcessed={args.planParamsProcessed}
                   />
                 </div>
@@ -204,7 +202,9 @@ export const PlanPrintViewInputSection = React.memo(
               <div className="">
                 <_SubSectionHeading className="">Simulation</_SubSectionHeading>
                 <div className="mt-2">
-                  <PlanInputSimulationSummary planParams={args.planParams} />
+                  <PlanInputSimulationSummary
+                    planParamsNorm={args.planParamsNorm}
+                  />
                 </div>
               </div>
             )}
@@ -213,7 +213,9 @@ export const PlanPrintViewInputSection = React.memo(
               <div className="">
                 <_SubSectionHeading className="">Strategy</_SubSectionHeading>
                 <div className="mt-2">
-                  <PlanInputStrategySummary planParams={args.planParams} />
+                  <PlanInputStrategySummary
+                    planParamsNorm={args.planParamsNorm}
+                  />
                 </div>
               </div>
             )}

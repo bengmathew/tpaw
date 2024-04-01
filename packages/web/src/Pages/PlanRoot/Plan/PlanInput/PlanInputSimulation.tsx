@@ -1,20 +1,21 @@
 import { faCircle } from '@fortawesome/pro-light-svg-icons'
 import { faCircle as faCircleSolid } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { MAX_AGE_IN_MONTHS, PlanParams } from '@tpaw/common'
+import { PLAN_PARAMS_CONSTANTS } from '@tpaw/common'
 import React from 'react'
+import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import {
-    paddingCSSStyle,
-    paddingCSSStyleHorz,
+  paddingCSSStyle,
+  paddingCSSStyleHorz,
 } from '../../../../Utils/Geometry'
-import { numMonthsStr } from '../../../../Utils/NumMonthsStr'
-import { NumMonthsInput } from '../../../Common/Inputs/NumMonthsInput'
+import { InMonthsInput } from '../../../Common/Inputs/MonthInput/InMonthsInput'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
-    PlanInputBody,
-    PlanInputBodyPassThruProps,
+  PlanInputBody,
+  PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
+import { InMonthsFns } from '../../../../Utils/InMonthsFns'
 
 export const PlanInputSimulation = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -56,11 +57,12 @@ const _MonteCarloCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParams, updatePlanParams, defaultPlanParams } = useSimulation()
+    const { planParamsNorm, updatePlanParams, defaultPlanParams } =
+      useSimulation()
     const isModified = useIsMonteCarloCardModifed()
-    const isEnabled = planParams.advanced.sampling.type === 'monteCarlo'
-    const handleBlockSize = (x: number) =>
-      updatePlanParams('setMonteCarloSamplingBlockSize', x)
+    const isEnabled = planParamsNorm.advanced.sampling.type === 'monteCarlo'
+    const handleBlockSize = (x: { inMonths: number }) =>
+      updatePlanParams('setMonteCarloSamplingBlockSize2', x)
 
     const body = (
       <div className="">
@@ -78,12 +80,20 @@ const _MonteCarloCard = React.memo(
         </p>
         <div className={`${isEnabled ? '' : 'lighten-2'} mt-2`}>
           <h2 className="p-base mb-2">Pick returns in blocks of:</h2>
-          <NumMonthsInput
+          <InMonthsInput
             className={` ml-8`}
             modalLabel="Sampling Block Size"
-            value={planParams.advanced.sampling.forMonteCarlo.blockSize}
-            onChange={handleBlockSize}
-            rangeAsMFN={{ start: 1, end: MAX_AGE_IN_MONTHS }}
+            normValue={{
+              baseValue:
+                planParamsNorm.advanced.sampling.forMonteCarlo.blockSize,
+              validRangeInMonths: {
+                includingLocalConstraints: {
+                  start: 1,
+                  end: PLAN_PARAMS_CONSTANTS.maxAgeInMonths,
+                },
+              },
+            }}
+            onChange={(blockSize) => handleBlockSize(blockSize)}
             disabled={!isEnabled}
           />
           <button
@@ -91,8 +101,7 @@ const _MonteCarloCard = React.memo(
             disabled={!isModified}
             onClick={() => {
               handleBlockSize(
-                defaultPlanParams.advanced.sampling
-                  .forMonteCarlo.blockSize,
+                defaultPlanParams.advanced.sampling.forMonteCarlo.blockSize,
               )
             }}
           >
@@ -129,9 +138,9 @@ const _HistoricalCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParams, updatePlanParams } = useSimulation()
+    const { planParamsNorm, updatePlanParams } = useSimulation()
 
-    const isEnabled = planParams.advanced.sampling.type === 'historical'
+    const isEnabled = planParamsNorm.advanced.sampling.type === 'historical'
     const isModified = useIsHistoricalSequenceCardModifed()
     const body = (
       <div className="">
@@ -175,26 +184,26 @@ export const useIsPlanInputSimulationModifed = () => {
 }
 
 const useIsMonteCarloCardModifed = () => {
-  const { planParams, defaultPlanParams } = useSimulation()
+  const { planParamsNorm, defaultPlanParams } = useSimulation()
   return (
-    planParams.advanced.sampling.forMonteCarlo.blockSize !==
+    planParamsNorm.advanced.sampling.forMonteCarlo.blockSize !==
     defaultPlanParams.advanced.sampling.forMonteCarlo.blockSize
   )
 }
 const useIsHistoricalSequenceCardModifed = () => {
-  const { planParams } = useSimulation()
-  return planParams.advanced.sampling.type === 'historical'
+  const { planParamsNorm } = useSimulation()
+  return planParamsNorm.advanced.sampling.type === 'historical'
 }
 
 export const PlanInputSimulationSummary = React.memo(
-  ({ planParams }: { planParams: PlanParams }) => {
-    return planParams.advanced.sampling.type === 'monteCarlo' ? (
+  ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
+    return planParamsNorm.advanced.sampling.type === 'monteCarlo' ? (
       <>
         <h2>Monte Carlo Sequence</h2>
         <h2>
           Block Size:{' '}
-          {numMonthsStr(
-            planParams.advanced.sampling.forMonteCarlo.blockSize,
+          {InMonthsFns.toStr(
+            planParamsNorm.advanced.sampling.forMonteCarlo.blockSize,
           )}
         </h2>
       </>

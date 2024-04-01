@@ -1,10 +1,10 @@
 import {
-    faCaretDown,
-    faCopy,
-    faEraser,
-    faGrid2,
-    faPlus,
-    faUser,
+  faCaretDown,
+  faCopy,
+  faEraser,
+  faGrid2,
+  faPlus,
+  faUser,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
@@ -12,10 +12,10 @@ import Link from 'next/link'
 import React, { useState } from 'react'
 import { appPaths } from '../../../../AppPaths'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
-import { ContextMenu2 } from '../../../Common/Modal/ContextMenu2'
+import { ContextModal } from '../../../Common/Modal/ContextModal'
 import {
-    SimulationInfoForLocalMainSrc,
-    SimulationInfoForPlanMode,
+  SimulationInfoForLocalMainSrc,
+  SimulationInfoForPlanMode,
 } from '../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../UsePlanColors'
 import { PlanMenuActionCopyToLink } from './PlanMenuActions/PlanMenuActionCopyToLink'
@@ -44,119 +44,126 @@ export const PlanMenuLocalPlanMode = React.memo(
 
     return (
       <div className="flex gap-x-2">
-        <ContextMenu2
-          className="px-3 py-1.5 rounded-lg"
-          align="right"
-          style={{
-            backgroundColor: planColors.results.bg,
-            color: planColors.results.fg,
-          }}
-        >
-          <div className="relative ">
-            <h2 className="text-start font-semibold">Guest Plan</h2>
-            <div className="flex items-center">
-              <h2 className="mt-1 max-w-[200px] whitespace-nowrap text-ellipsis overflow-hidden ">
-                Saved on Browser
-              </h2>
-              <FontAwesomeIcon className=" -mb-1 ml-2" icon={faCaretDown} />
-            </div>
-          </div>
-          {({ close, onMenuClose }) => (
-            <Menu.Items className="flex flex-col py-2.5 rounded-lg min-w-[250px] max-w-[400px]">
-              <Menu.Item>
-                <Link
-                  className={'context-menu-item '}
-                  href={appPaths.login(appPaths.plan())}
+        <Menu>
+          {({ open, close }) => (
+            <ContextModal align="right" open={open}>
+              {({ ref }) => (
+                <Menu.Button
+                  ref={ref}
+                  className="px-3 py-1.5 rounded-lg relative "
+                  style={{
+                    backgroundColor: planColors.results.bg,
+                    color: planColors.results.fg,
+                  }}
                 >
-                  <span className="inline-block w-[25px] ">
-                    <FontAwesomeIcon className="" icon={faUser} />
+                  <h2 className="text-start font-semibold">Guest Plan</h2>
+                  <div className="flex items-center">
+                    <h2 className="mt-1 max-w-[200px] whitespace-nowrap text-ellipsis overflow-hidden ">
+                      Saved on Browser
+                    </h2>
+                    <FontAwesomeIcon
+                      className=" -mb-1 ml-2"
+                      icon={faCaretDown}
+                    />
+                  </div>
+                </Menu.Button>
+              )}
+              <Menu.Items className="flex flex-col py-2.5 rounded-lg min-w-[250px] max-w-[400px]">
+                <Menu.Item>
+                  <Link
+                    className={'context-menu-item '}
+                    href={appPaths.login(appPaths.plan())}
+                  >
+                    <span className="inline-block w-[25px] ">
+                      <FontAwesomeIcon className="" icon={faUser} />
+                    </span>{' '}
+                    Save Plan to Account
+                  </Link>
+                </Menu.Item>
+                <Menu.Item
+                  as="button"
+                  className="context-menu-item "
+                  onClick={() =>
+                    setLoginModalState({
+                      heading: 'Login for Multiple Plans',
+                      message:
+                        'You need to be logged in to have more than one plan.',
+                    })
+                  }
+                >
+                  <span className="inline-block w-[25px]">
+                    <FontAwesomeIcon icon={faPlus} />
                   </span>{' '}
-                  Save Plan to Account
-                </Link>
-              </Menu.Item>
-              <Menu.Item
-                as="button"
-                className="context-menu-item "
-                onClick={() =>
-                  setLoginModalState({
-                    heading: 'Login for Multiple Plans',
-                    message:
-                      'You need to be logged in to have more than one plan.',
-                  })
-                }
-              >
-                <span className="inline-block w-[25px]">
-                  <FontAwesomeIcon icon={faPlus} />
-                </span>{' '}
-                Create a New Plan
-              </Menu.Item>
-              <Menu.Item
-                as="button"
-                className="context-menu-item "
-                onClick={() =>
-                  setLoginModalState({
-                    heading: 'Login for Multiple Plans',
-                    message:
-                      'You need to be logged in to have more than one plan.',
-                  })
-                }
-              >
-                <span className="inline-block w-[25px]">
-                  <FontAwesomeIcon icon={faCopy} />
-                </span>{' '}
-                Copy to New Plan
-              </Menu.Item>
-              <Menu.Item
-                as="button"
-                className="context-menu-item "
-                onClick={() =>
-                  setLoginModalState({
-                    heading: 'Login for Multiple Plans',
-                    message:
-                      'You need to be logged in to have more than one plan.',
-                  })
-                }
-              >
-                <span className="inline-block w-[25px]">
-                  <FontAwesomeIcon icon={faGrid2} />
-                </span>{' '}
-                View All Plans
-              </Menu.Item>
-              <PlanMenuDivider />
-              <PlanMenuActionCopyToLink
-                className="context-menu-item "
-                closeMenu={close}
-              />
+                  Create a New Plan
+                </Menu.Item>
+                <Menu.Item
+                  as="button"
+                  className="context-menu-item "
+                  onClick={() =>
+                    setLoginModalState({
+                      heading: 'Login for Multiple Plans',
+                      message:
+                        'You need to be logged in to have more than one plan.',
+                    })
+                  }
+                >
+                  <span className="inline-block w-[25px]">
+                    <FontAwesomeIcon icon={faCopy} />
+                  </span>{' '}
+                  Copy to New Plan
+                </Menu.Item>
+                <Menu.Item
+                  as="button"
+                  className="context-menu-item "
+                  onClick={() =>
+                    setLoginModalState({
+                      heading: 'Login for Multiple Plans',
+                      message:
+                        'You need to be logged in to have more than one plan.',
+                    })
+                  }
+                >
+                  <span className="inline-block w-[25px]">
+                    <FontAwesomeIcon icon={faGrid2} />
+                  </span>{' '}
+                  View All Plans
+                </Menu.Item>
+                <PlanMenuDivider />
+                <PlanMenuActionCopyToLink
+                  className="context-menu-item "
+                  closeMenu={close}
+                />
 
-              <Menu.Item
-                as="button"
-                className="context-menu-item "
-                onClick={() =>
-                  setLoginModalState({
-                    heading: 'Login to Track Plan History',
-                    message:
-                      'History is availabe only for plans saved to your account. Login to start tracking history for this plan.',
-                  })
-                }
-              >
-                <span className="inline-block w-[25px]">
-                  <FontAwesomeIcon icon={faCopy} />
-                </span>{' '}
-                View Plan History
-              </Menu.Item>
-              <Menu.Item
-                as="button"
-                className="context-menu-item text-errorFG"
-                onClick={() => setShowResetModal(true)}
-              >
-                <span className="inline-block w-[25px]">
-                  <FontAwesomeIcon icon={faEraser} />
-                </span>{' '}
-                Reset
-              </Menu.Item>
-            </Menu.Items>
+                <Menu.Item
+                  as="button"
+                  className="context-menu-item "
+                  onClick={() =>
+                    setLoginModalState({
+                      heading: 'Login to Track Plan History',
+                      message:
+                        'History is availabe only for plans saved to your account. Login to start tracking history for this plan.',
+                    })
+                  }
+                >
+                  <span className="inline-block w-[25px]">
+                    <FontAwesomeIcon icon={faCopy} />
+                  </span>{' '}
+                  View Plan History
+                </Menu.Item>
+                <Menu.Item
+                  as="button"
+                  className="context-menu-item text-errorFG"
+                  onClick={() => setShowResetModal(true)}
+                >
+                  <span className="inline-block w-[25px]">
+                    <FontAwesomeIcon icon={faEraser} />
+                  </span>{' '}
+                  Reset
+                </Menu.Item>
+              </Menu.Items>
+            </ContextModal>
           )}
-        </ContextMenu2>
+        </Menu>
         <PlanMenuSubMenuUndoRedo
           simulationDetailForPlanMode={simulationInfoForPlanMode}
           className={{ undo: 'pl-6 pr-3', redo: 'pl-3 pr-6' }}

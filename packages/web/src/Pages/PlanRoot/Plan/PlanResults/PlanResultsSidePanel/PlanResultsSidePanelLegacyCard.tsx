@@ -15,7 +15,7 @@ export const PlanResultsSidePanelLegacyCard = React.memo(
     style: CSSProperties
     layout: 'laptop' | 'desktop' | 'mobile'
   }) => {
-    const { planParams } = useSimulation()
+    const { planParamsNorm } = useSimulation()
     const data = usePlanResultsLegacyCardData()
     const maxLegacy = Math.max(...data.map((x) => x.amount))
 
@@ -27,7 +27,7 @@ export const PlanResultsSidePanelLegacyCard = React.memo(
       >
         <h2 className="font-bold text-[16px] sm:text-[22px]">Legacy</h2>
         {maxLegacy > 0 ||
-        planParams.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0 ? (
+        planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0 ? (
           <>
             <h2
               className="text-xs sm:text-sm border-b mt-1 "

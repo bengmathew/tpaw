@@ -14,13 +14,13 @@ import { ToggleSwitch } from '../../../../Common/Inputs/ToggleSwitch'
 import { useMarketData } from '../../../PlanRootHelpers/WithMarketData'
 import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
 import {
-    SimulationInfo,
-    useSimulation,
+  SimulationInfo,
+  useSimulation,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputModifiedBadge } from '../Helpers/PlanInputModifiedBadge'
 import {
-    PlanInputBody,
-    PlanInputBodyPassThruProps,
+  PlanInputBody,
+  PlanInputBodyPassThruProps,
 } from '../PlanInputBody/PlanInputBody'
 
 export const PlanInputDevFastForward = React.memo(
@@ -44,12 +44,12 @@ const _FastForwardCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { currentTimestamp, planParams, fastForwardInfo } = useSimulation()
+    const { currentTimestamp, planParamsNorm, fastForwardInfo } = useSimulation()
     const { getZonedTime } = useIANATimezoneName()
     const currentTime: DateTime = getZonedTime(currentTimestamp)
-    const { portfolioBalance } = planParams.wealth
+    const { portfolioBalance } = planParamsNorm.wealth
     const portfolioBalanceUpdatedAt = portfolioBalance.updatedHere
-      ? planParams.timestamp
+      ? planParamsNorm.timestamp
       : portfolioBalance.updatedAtTimestamp
 
     const isModified = useIsFastForwardCardModified()
@@ -84,10 +84,10 @@ const _FastForwardCard = React.memo(
           <h2 className="text-right">Params</h2>
           <div className="">
             <h2 className="font-mono text-sm">
-              {_formatDateTime(getZonedTime(planParams.timestamp))}
+              {_formatDateTime(getZonedTime(planParamsNorm.timestamp))}
             </h2>
             <h2 className="text-sm font-font1 lighten">
-              {formatDistanceFromNow(planParams.timestamp)} ago
+              {formatDistanceFromNow(planParamsNorm.timestamp)} ago
             </h2>
           </div>
           <h2 className="text-right">Portfolio</h2>
@@ -199,7 +199,7 @@ const _SynthesizeMarketDataCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const isModified = useIsSynthesizeMarketDataCardModified()
-    const { planParams, planParamsProcessed } = useSimulation()
+    const { planParamsNorm, planParamsProcessed } = useSimulation()
     const {
       synthesizeMarketDataSpec,
       setSynthesizeMarketDataSpec,
@@ -347,7 +347,7 @@ const _SynthesizeMarketDataCard = React.memo(
                             </h2>
                           </div>
                           <div className="mt-2">
-                            {planParams.advanced.expectedReturnsForPlanning
+                            {planParamsNorm.advanced.expectedReturnsForPlanning
                               .type === 'manual' ? (
                               <h2 className="">
                                 NOTE: Expected return is manual.
@@ -454,8 +454,8 @@ const useIsSynthesizeMarketDataCardModified = () => {
 
 export const PlanInputDevTimeSummary = React.memo(() => {
   const { synthesizeMarketDataSpec } = useMarketData()
-  const { fastForwardInfo, currentTimestamp, planParamsExt } = useSimulation()
-  const { getZonedTime } = planParamsExt
+  const { getZonedTime } = useIANATimezoneName()
+  const { fastForwardInfo, currentTimestamp } = useSimulation()
 
   return (
     <>

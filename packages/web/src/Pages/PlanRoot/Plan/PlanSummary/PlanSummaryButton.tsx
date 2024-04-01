@@ -30,6 +30,7 @@ import { PlanInputSimulationSummary } from '../PlanInput/PlanInputSimulation'
 import { PlanInputSpendingCeilingAndFloorSummary } from '../PlanInput/PlanInputSpendingCeilingAndFloor'
 import { PlanInputStrategySummary } from '../PlanInput/PlanInputStrategy'
 import { usePlanColors } from '../UsePlanColors'
+import { CurrentPortfolioBalance } from '../../PlanRootHelpers/CurrentPortfolioBalance'
 
 type _Props = {
   padding: Padding
@@ -54,16 +55,16 @@ export const PlanSummaryButton = React.memo(
       }: _Props,
       ref,
     ) => {
-      const { planParamsExt } = useSimulation()
-      const { dialogPositionEffective } = planParamsExt
+      const { planParamsNorm } = useSimulation()
+      const { dialogPosition } = planParamsNorm
       const getSectionURL = useGetSectionURL()
       const urlUpdater = useURLUpdater()
       const highlightColorDark = gray[400]
-      const visibility = useGetPlanInputVisibility(planParamsExt)(type)
+      const visibility = useGetPlanInputVisibility(planParamsNorm)(type)
       const highlightColor =
         section === type
           ? highlightColorDark
-          : dialogPositionEffective === type
+          : dialogPosition.effective === type
             ? orange[400]
             : gray[100]
 
@@ -76,7 +77,7 @@ export const PlanSummaryButton = React.memo(
           className={clix(
             'block rounded-2xl  text-left w-full border-[2px] overflow-hidden',
             visibility.grayOutButton && 'opacity-20',
-            planColors.summaryButtonOuter(dialogPositionEffective === type),
+            planColors.summaryButtonOuter(dialogPosition.effective === type),
           )}
           ref={ref}
           style={{
@@ -92,7 +93,7 @@ export const PlanSummaryButton = React.memo(
             <div
               className={`relative  bg-gray-200/40  rounded-2xl -m-[2px] 
               ${
-                dialogPositionEffective === type
+                dialogPosition.effective === type
                   ? 'border-[3px] border-gray-200'
                   : 'border-[4px] border-dotted border-gray-400'
               }`}
@@ -138,65 +139,63 @@ export const PlanSummaryButton = React.memo(
 
 const _SectionSummary = React.memo(
   ({ type }: { type: Exclude<PlanInputType, 'history'> }) => {
-    const {
-      planParams,
-      planParamsExt,
-      planParamsProcessed,
-      defaultPlanParams,
-    } = useSimulation()
+    const { planParamsNorm, planParamsProcessed, currentPortfolioBalanceInfo } =
+      useSimulation()
     switch (type) {
       case 'age':
-        return <PlanInputAgeSummary planParamsExt={planParamsExt} />
+        return <PlanInputAgeSummary planParamsNorm={planParamsNorm} />
       case 'current-portfolio-balance':
         return (
           <PlanInputCurrentPortfolioBalanceSummary
-            planParamsExt={planParamsExt}
-            currentPortfolioBalance={
-              planParamsProcessed.estimatedCurrentPortfolioBalance
-            }
+            amountInfo={CurrentPortfolioBalance.getAmountInfo(
+              currentPortfolioBalanceInfo,
+            )}
+            forPrint={false}
           />
         )
       case 'future-savings':
-        return <PlanInputFutureSavingsSummary planParamsExt={planParamsExt} />
+        return <PlanInputFutureSavingsSummary planParamsNorm={planParamsNorm} />
       case 'income-during-retirement':
         return (
           <PlanInputIncomeDuringRetirementSummary
-            planParamsExt={planParamsExt}
+            planParamsNorm={planParamsNorm}
           />
         )
       case 'extra-spending':
-        return <PlanInputExtraSpendingSummary planParamsExt={planParamsExt} />
+        return <PlanInputExtraSpendingSummary planParamsNorm={planParamsNorm} />
       case 'legacy':
         return (
-          <PlanInputLegacySummary planParamsProcessed={planParamsProcessed} />
+          <PlanInputLegacySummary
+            planParamsNorm={planParamsNorm}
+            planParamsProcessed={planParamsProcessed}
+          />
         )
       case 'spending-ceiling-and-floor':
         return (
-          <PlanInputSpendingCeilingAndFloorSummary planParams={planParams} />
-        )
-      case 'risk':
-        return (
-          <PlanInputRiskSummary
-            planParamsExt={planParamsExt}
-            defaultPlanParams={defaultPlanParams}
+          <PlanInputSpendingCeilingAndFloorSummary
+            planParamsNorm={planParamsNorm}
           />
         )
+      case 'risk':
+        return <PlanInputRiskSummary planParamsNorm={planParamsNorm} />
       case 'expected-returns-and-volatility':
         return (
           <PlanInputExpectedReturnsAndVolatilitySummary
+            planParamsNorm={planParamsNorm}
             planParamsProcessed={planParamsProcessed}
           />
         )
       case 'inflation':
         return (
           <PlanInputInflationSummary
+            planParamsNorm={planParamsNorm}
             planParamsProcessed={planParamsProcessed}
           />
         )
       case 'strategy':
-        return <PlanInputStrategySummary planParams={planParams} />
+        return <PlanInputStrategySummary planParamsNorm={planParamsNorm} />
       case 'simulation':
-        return <PlanInputSimulationSummary planParams={planParams} />
+        return <PlanInputSimulationSummary planParamsNorm={planParamsNorm} />
       case 'dev-misc':
         return <PlanInputDevMiscSummary />
       case 'dev-simulations':

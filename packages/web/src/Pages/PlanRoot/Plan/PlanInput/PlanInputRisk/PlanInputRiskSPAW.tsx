@@ -1,6 +1,6 @@
-import { SPAW_ANNUAL_SPENDING_TILT_VALUES } from '@tpaw/common'
+import { PLAN_PARAMS_CONSTANTS } from '@tpaw/common'
 import React from 'react'
-import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
+import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { SliderInput } from '../../../../Common/Inputs/SliderInput/SliderInput'
@@ -33,7 +33,8 @@ const _SpendingTiltCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParams, defaultPlanParams, updatePlanParams } = useSimulation()
+    const { planParamsNorm, defaultPlanParams, updatePlanParams } =
+      useSimulation()
     const handleChange = (value: number) =>
       updatePlanParams('setSPAWAnnualSpendingTilt', value)
 
@@ -53,8 +54,8 @@ const _SpendingTiltCard = React.memo(
           className="-mx-3 mt-2"
           height={60}
           maxOverflowHorz={props.sizing.cardPadding}
-          data={SPAW_ANNUAL_SPENDING_TILT_VALUES}
-          value={planParams.risk.spaw.annualSpendingTilt}
+          data={PLAN_PARAMS_CONSTANTS.spawAnnualSpendingTiltValues}
+          value={planParamsNorm.risk.spaw.annualSpendingTilt}
           onChange={handleChange}
           format={formatPercentage(1)}
           ticks={(value, i) =>
@@ -75,18 +76,15 @@ const _SpendingTiltCard = React.memo(
 )
 
 export const PlanInputRiskSPAWSummary = React.memo(
-  ({ planParamsExt }: { planParamsExt: PlanParamsExtended }) => {
-    const { planParams } = planParamsExt
-    const { risk } = planParams
+  ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
+    const { risk } = planParamsNorm
     return (
       <>
         <h2>Stock Allocation</h2>
         <div className="ml-4">
           <PlanInputSummaryGlidePath
             className=""
-            glidePath={risk.spawAndSWR.allocation}
-            format={(x) => formatPercentage(0)(x)}
-            planParamsExt={planParamsExt}
+            normValue={risk.spawAndSWR.allocation}
           />
         </div>
         <h2>

@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { RectExt, newPadding, regionCSSStyle } from '../../../../Utils/Geometry'
 import { ChartPointerPortal } from '../../../Common/Chart/ChartComponent/ChartPointerPortal'
 import {
-    ChartReact,
-    ChartReactStatefull,
+  ChartReact,
+  ChartReactStatefull,
 } from '../../../Common/Chart/ChartReact'
 import { PlanTransitionState } from '../PlanTransition'
 

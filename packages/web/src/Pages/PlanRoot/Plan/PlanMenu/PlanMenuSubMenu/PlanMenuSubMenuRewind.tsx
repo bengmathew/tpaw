@@ -1,7 +1,7 @@
 import {
-    faCalendarAlt,
-    faCaretLeft,
-    faCaretRight,
+  faCalendarAlt,
+  faCaretLeft,
+  faCaretRight,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
@@ -10,11 +10,11 @@ import clix from 'clsx'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useMemo, useState } from 'react'
-import { ContextMenu2 } from '../../../../Common/Modal/ContextMenu2'
+import { ContextModal } from '../../../../Common/Modal/ContextModal'
 import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
 import {
-    SimulationInfoForHistoryMode,
-    useSimulation,
+  SimulationInfoForHistoryMode,
+  useSimulation,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
 
@@ -74,29 +74,35 @@ export const PlanMenuSubMenuRewind = React.memo(
               <FontAwesomeIcon className="text-xl" icon={faCaretRight} />
             </button>
           </div>
-          <ContextMenu2
-            align="right"
-            className="border rounded-lg px-2 "
-            style={{
-              borderColor: planColors.results.darkBG,
-            }}
-          >
-            <div>
-              <FontAwesomeIcon className="text-lg" icon={faCalendarAlt} />
-            </div>
-            {({ close }) => (
-              <Menu.Items className="">
-                <div className="p-2" onClick={(e) => {}}>
-                  <h2 className="font-bold text-xl">Rewind To</h2>
-                  <_Calendar
-                    className=""
-                    simulationInfoForHistoryMode={simulationInfoForHistoryMode}
-                    onClose={close}
-                  />
-                </div>
-              </Menu.Items>
+          <Menu>
+            {({ open, close }) => (
+              <ContextModal align="right" open={open}>
+                {({ ref }) => (
+                  <Menu.Button
+                    ref={ref}
+                    className="border rounded-lg px-2 "
+                    style={{
+                      borderColor: planColors.results.darkBG,
+                    }}
+                  >
+                    <FontAwesomeIcon className="text-lg" icon={faCalendarAlt} />
+                  </Menu.Button>
+                )}
+                <Menu.Items className="">
+                  <div className="p-2" onClick={(e) => {}}>
+                    <h2 className="font-bold text-xl">Rewind To</h2>
+                    <_Calendar
+                      className=""
+                      simulationInfoForHistoryMode={
+                        simulationInfoForHistoryMode
+                      }
+                      onClose={close}
+                    />
+                  </div>
+                </Menu.Items>
+              </ContextModal>
             )}
-          </ContextMenu2>
+          </Menu>
         </div>
       </div>
     )
@@ -298,8 +304,8 @@ const _CalendarDay = React.memo(
             isSelected
               ? 'bg-gray-600 text-white'
               : isHover
-              ? 'bg-gray-300'
-              : '',
+                ? 'bg-gray-300'
+                : '',
           )}
           // From: https://www.magicpattern.design/tools/css-backgrounds
           style={{

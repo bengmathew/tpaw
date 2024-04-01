@@ -1,3 +1,4 @@
+import { fGet } from '@tpaw/common'
 import { ChartXAxis } from '../../../../../Common/Chart/ChartComponent/ChartXAxis'
 import { PlanResultsChartDataForPDF } from './PlanResultsChartData'
 
@@ -10,26 +11,26 @@ export const getPlanResultsChartXAxis = (
   },
 ) =>
   new ChartXAxis<{ data: PlanResultsChartDataForPDF }>(
-    ({ data: { planParams, planParamsExt, layout, planColors } }) => {
-      if (personType === 'person2' && !planParams.people.withPartner)
-        return null
-      const { getCurrentAgeOfPerson, asMFN, months } = planParamsExt
+    ({ data: { planParamsNorm, layout, planColors } }) => {
+      const { ages } = planParamsNorm
+      if (personType === 'person2' && !ages.person2) return null
+      const person = fGet(ages[personType])
       return {
         colors: planColors,
         marginTop:
           belowPlotAreaSizing.gapToLine +
           belowPlotAreaSizing.lineWidth +
-          (planParams.people.withPartner && personType === 'person2'
+          (personType === 'person2'
             ? belowPlotAreaSizing.xAxis.height +
               belowPlotAreaSizing.xAxis.vertGapBetweenPeople
             : 0),
         padding: { top: personType === 'person1' ? 0 : 1 },
         height: belowPlotAreaSizing.xAxis.height,
-        transformDataXDelta: getCurrentAgeOfPerson(personType).inMonths,
+        transformDataXDelta: person.currentAge.inMonths,
         markers: {
           start: 0,
-          retirement: asMFN(months[personType].retirement),
-          end: asMFN(months[personType].max),
+          retirement: person.retirement.ageIfInFuture?.asMFN ?? 0,
+          end: person.maxAge.asMFN,
         },
         label: {
           text: personType === 'person1' ? 'Your Age' : `Partner's Age`,

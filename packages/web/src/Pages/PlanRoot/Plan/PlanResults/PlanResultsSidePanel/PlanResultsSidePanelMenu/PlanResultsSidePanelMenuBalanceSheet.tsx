@@ -1,6 +1,6 @@
 import { faAsterisk } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { ValueForMonthRange, fGet, noCase } from '@tpaw/common'
+import { LabeledAmountTimed, fGet, noCase } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import React, { useMemo } from 'react'
@@ -22,6 +22,7 @@ import {
   amber,
 } from '../../../../../../Utils/ColorPalette'
 import clsx from 'clsx'
+import { NormalizedLabeledAmountTimed } from '../../../../../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 
 export const PlanResultsSidePanelMenuBalanceSheet = React.memo(
   ({ show, onHide }: { show: boolean; onHide: () => void }) => {
@@ -52,34 +53,30 @@ export const BalanceSheetContent = React.memo(
   }) => {
     const simulationResult = useSimulationResult()
     const {
+      estimatedCurrentPortfolioBalance,
       sankeyModel,
       totalWealth,
       hasLegacy,
-      estimatedCurrentPortfolioBalance,
       byMonthData,
       netPresentValue,
       generalSpending,
     } = useMemo(() => {
       const { args } = simulationResult
-      const { netPresentValue, estimatedCurrentPortfolioBalance } =
-        args.planParamsProcessed
+      const { netPresentValue } = args.planParamsProcessed
+      const estimatedCurrentPortfolioBalance =
+        args.currentPortfolioBalanceAmount
 
       const byMonthData = {
         wealth: {
-          futureSavings: _.values(args.planParams.wealth.futureSavings)
-            .sort((a, b) => a.sortIndex - b.sortIndex)
-            .map((x) =>
-              _processValueForMonthRange(
-                x,
-                netPresentValue.tpaw.wealth.futureSavings,
-              ),
+          futureSavings: args.planParamsNorm.wealth.futureSavings.map((x) =>
+            _processLabeledAmountTimed(
+              x,
+              netPresentValue.tpaw.wealth.futureSavings,
             ),
-          incomeDuringRetirement: _.values(
-            args.planParams.wealth.incomeDuringRetirement,
-          )
-            .sort((a, b) => a.sortIndex - b.sortIndex)
-            .map((x) =>
-              _processValueForMonthRange(
+          ),
+          incomeDuringRetirement:
+            args.planParamsNorm.wealth.incomeDuringRetirement.map((x) =>
+              _processLabeledAmountTimed(
                 x,
                 netPresentValue.tpaw.wealth.incomeDuringRetirement,
               ),
@@ -87,27 +84,23 @@ export const BalanceSheetContent = React.memo(
         },
         adjustmentsToSpending: {
           extraSpending: {
-            essential: _.values(
-              args.planParams.adjustmentsToSpending.extraSpending.essential,
-            )
-              .sort((a, b) => a.sortIndex - b.sortIndex)
-              .map((x) =>
-                _processValueForMonthRange(
-                  x,
-                  netPresentValue.tpaw.adjustmentsToSpending.extraSpending
-                    .essential,
-                ),
+            essential:
+              args.planParamsNorm.adjustmentsToSpending.extraSpending.essential.map(
+                (x) =>
+                  _processLabeledAmountTimed(
+                    x,
+                    netPresentValue.tpaw.adjustmentsToSpending.extraSpending
+                      .essential,
+                  ),
               ),
-            discretionary: _.values(
-              args.planParams.adjustmentsToSpending.extraSpending.discretionary,
-            )
-              .sort((a, b) => a.sortIndex - b.sortIndex)
-              .map((x) =>
-                _processValueForMonthRange(
-                  x,
-                  netPresentValue.tpaw.adjustmentsToSpending.extraSpending
-                    .discretionary,
-                ),
+            discretionary:
+              args.planParamsNorm.adjustmentsToSpending.extraSpending.discretionary.map(
+                (x) =>
+                  _processLabeledAmountTimed(
+                    x,
+                    netPresentValue.tpaw.adjustmentsToSpending.extraSpending
+                      .discretionary,
+                  ),
               ),
           },
         },
@@ -437,11 +430,11 @@ export const BalanceSheetContent = React.memo(
       ])
       return {
         sankeyModel,
-        estimatedCurrentPortfolioBalance,
         byMonthData,
         netPresentValue,
         generalSpending,
         totalWealth,
+        estimatedCurrentPortfolioBalance,
         hasLegacy,
       }
     }, [forPrint, simulationResult])
@@ -546,15 +539,16 @@ export const BalanceSheetContent = React.memo(
   },
 )
 
-const _processValueForMonthRange = (
-  x: ValueForMonthRange,
+const _processLabeledAmountTimed = (
+  x: NormalizedLabeledAmountTimed,
   netPresentValue: {
-    byId: Record<string, { withCurrentMonth: number }>
+    byId: { id: string; values: { withCurrentMonth: number } }[]
   },
 ) => ({
   id: x.id,
   label: x.label ?? '<No label>',
-  netPresentValue: netPresentValue.byId[x.id].withCurrentMonth,
+  netPresentValue: fGet(netPresentValue.byId.find(({ id }) => id === x.id))
+    .values.withCurrentMonth,
 })
 
 const _Section = React.memo(
@@ -574,7 +568,7 @@ const _Section = React.memo(
       | {
           type: 'valueForMonthRange'
           label: string
-          value: ReturnType<typeof _processValueForMonthRange>[]
+          value: ReturnType<typeof _processLabeledAmountTimed>[]
         }
     )[]
     asterix: boolean
@@ -611,7 +605,7 @@ const _Section = React.memo(
               )}
             </div>
           ) : x.type === 'valueForMonthRange' ? (
-            <_ValueForMonthRangeDisplay
+            <_LabeledAmountTimedDisplay
               key={i}
               className="mt-6"
               label={x.label}
@@ -634,14 +628,14 @@ const _Section = React.memo(
   },
 )
 
-const _ValueForMonthRangeDisplay = React.memo(
+const _LabeledAmountTimedDisplay = React.memo(
   ({
     data,
     label,
     className,
     forPrint,
   }: {
-    data: ReturnType<typeof _processValueForMonthRange>[]
+    data: ReturnType<typeof _processLabeledAmountTimed>[]
     label: string
     className?: string
     forPrint: boolean
@@ -662,7 +656,7 @@ const _ValueForMonthRangeDisplay = React.memo(
           )}
         </div>
         {data.map((x, i) => (
-          <_ValueForMonthRangeDisplayItem
+          <_LabeledAmountTimedDisplayItem
             key={x.id}
             data={x}
             forPrint={forPrint}
@@ -672,12 +666,12 @@ const _ValueForMonthRangeDisplay = React.memo(
     )
   },
 )
-const _ValueForMonthRangeDisplayItem = React.memo(
+const _LabeledAmountTimedDisplayItem = React.memo(
   ({
     data,
     forPrint,
   }: {
-    data: ReturnType<typeof _processValueForMonthRange>
+    data: ReturnType<typeof _processLabeledAmountTimed>
     forPrint: boolean
   }) => {
     return (

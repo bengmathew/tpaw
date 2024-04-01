@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
-    Padding,
-    Size,
-    XY,
-    originCSSStyle,
-    sizeCSSStyle,
+  Padding,
+  Size,
+  XY,
+  originCSSStyle,
+  sizeCSSStyle,
 } from '../../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
@@ -12,8 +12,8 @@ import { noCase } from '../../../../Utils/Utils'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { useGetSectionURL } from '../Plan'
 import {
-    PlanTransitionState,
-    simplifyPlanTransitionState4,
+  PlanTransitionState,
+  simplifyPlanTransitionState4,
 } from '../PlanTransition'
 import { PlanInputType } from './Helpers/PlanInputType'
 import { useGetPlanInputVisibility } from './Helpers/UseGetPlanInputVisibility'
@@ -133,8 +133,8 @@ const _Body = React.memo(
     planInputType: PlanInputType
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsExt } = useSimulation()
-    const visibility = useGetPlanInputVisibility(planParamsExt)(planInputType)
+    const { planParamsNorm } = useSimulation()
+    const visibility = useGetPlanInputVisibility(planParamsNorm)(planInputType)
     const show = visibility.visible && !visibility.disabled
     const summarySectionURL = useGetSectionURL()('summary')
     const urlUpdater = useURLUpdater()

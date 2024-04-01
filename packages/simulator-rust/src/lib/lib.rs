@@ -13,7 +13,7 @@ pub mod utils;
 use crate::{
     constants::MAX_AGE_IN_MONTHS,
     plan_params::{
-        normalize_plan_params::plan_params_normalized::PlanParamsNormalized,
+        plan_params_rust::PlanParamsRust,
         process_plan_params::{
             plan_params_processed::PlanParamsProcessed,
             process_expected_returns_for_planning::DataForExpectedReturnsForPlanningPresets,
@@ -28,7 +28,7 @@ use historical_monthly_returns::{
 };
 use params::*;
 use plan_params::{
-    normalize_plan_params::plan_params_normalized,
+    plan_params_rust,
     process_plan_params::{
         get_suggested_annual_inflation,
         plan_params_processed::StocksAndBondsHistoricalMonthlyLogReturnsAdjustedInfo,
@@ -331,7 +331,7 @@ pub fn test() {
 
 #[wasm_bindgen]
 pub fn process_plan_params(
-    plan_params_norm: PlanParamsNormalized,
+    plan_params_norm: PlanParamsRust,
     market_data: DataForMarketBasedPlanParamValues,
 ) -> PlanParamsProcessedJS {
     plan_params::process_plan_params::process_plan_params(&plan_params_norm, &market_data)
@@ -350,8 +350,8 @@ pub fn process_plan_params(
 
 #[wasm_bindgen]
 pub fn process_market_data_for_expected_returns_for_planning_presets(
-    sampling: plan_params_normalized::Sampling,
-    scaling: plan_params_normalized::HistoricalMonthlyLogReturnsAdjustment_StandardDeviation,
+    sampling: plan_params_rust::Sampling,
+    scaling: plan_params_rust::HistoricalMonthlyLogReturnsAdjustment_StandardDeviation,
     market_data: DataForMarketBasedPlanParamValues,
 ) -> DataForExpectedReturnsForPlanningPresets {
     process_expected_returns_for_planning::process_market_data_for_expected_returns_for_planning_presets(

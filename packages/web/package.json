@@ -34,8 +34,8 @@
     "@headlessui/tailwindcss": "^0.2.0",
     "@mojotech/json-type-validation": "^3.1.0",
     "@sentry/nextjs": "^7.3.0",
-    "@tpaw/common": "^1.24.0",
-    "@tpaw/simulator": "^2.15.0",
+    "@tpaw/common": "^2.0.0",
+    "@tpaw/simulator": "^3.0.0",
     "@visx/event": "^3.3.0",
     "@visx/shape": "^3.3.0",
     "clsx": "^2.0.0",
@@ -87,6 +87,6 @@
     "rimraf": "^5.0.1",
     "tailwindcss": "^3.1.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.1.6"
+    "typescript": "^5.4.2"
   }
 }

@@ -4,6 +4,8 @@ export type SimpleRange = { start: number; end: number }
 
 export namespace SimpleRange {
   export namespace Closed {
+    export const create = (start: number, end: number): SimpleRange | null =>
+      end < start ? null : { start, end }
     export const isIn = (x: number, range: SimpleRange | null) =>
       range && range.start <= x && x <= range.end
 
@@ -12,6 +14,18 @@ export namespace SimpleRange {
 
     export const clamp = (x: number, range: SimpleRange) =>
       _.clamp(x, range.start, range.end)
+
+    export const intersection = (
+      a: SimpleRange | null,
+      b: SimpleRange | null,
+    ): SimpleRange | null => {
+      if (!a || !b) return null
+      const candidate = {
+        start: Math.max(a.start, b.start),
+        end: Math.min(a.end, b.end),
+      }
+      return candidate.start <= candidate.end ? candidate : null
+    }
   }
 
   export function union(a: SimpleRange, b: SimpleRange): SimpleRange
@@ -26,19 +40,7 @@ export namespace SimpleRange {
     return !a
       ? b
       : !b
-      ? a
-      : { start: Math.min(a.start, b.start), end: Math.max(a.end, b.end) }
-  }
-
-  export const intersection = (
-    a: SimpleRange | null,
-    b: SimpleRange | null,
-  ): SimpleRange | null => {
-    if (!a || !b) return null
-    const candidate = {
-      start: Math.max(a.start, b.start),
-      end: Math.min(a.end, b.end),
-    }
-    return candidate.start < candidate.end ? candidate : null
+        ? a
+        : { start: Math.min(a.start, b.start), end: Math.max(a.end, b.end) }
   }
 }

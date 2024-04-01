@@ -23,6 +23,7 @@ import {
 import { block } from '@tpaw/common'
 import { fWASM } from '../../../UseSimulator/Simulator/GetWASM'
 import { formatPercentage } from '../../../Utils/FormatPercentage'
+import { CallRust } from '../../../UseSimulator/PlanParamsProcessed/CallRust'
 
 export type PlanHelpSizing = {
   dynamic: Record<_PlanHelpTransitionState, { origin: XY; opacity: number }>
@@ -74,13 +75,14 @@ export const PlanHelp = React.memo(
 )
 
 const _Body = React.memo(({ sizing }: { sizing: PlanHelpSizing }) => {
-  const { planParams, currentMarketData } = useSimulation()
-  const contentBeforeVars = usePlanContent().help[planParams.advanced.strategy]
+  const { planParamsNorm, currentMarketData } = useSimulation()
+  const contentBeforeVars =
+    usePlanContent().help[planParamsNorm.advanced.strategy]
   const contentAfterVars = block(() => {
     const presetInfo =
       fWASM().process_market_data_for_expected_returns_for_planning_presets(
-        planParams.advanced.sampling,
-        planParams.advanced.historicalMonthlyLogReturnsAdjustment
+        CallRust.getPlanParamsRust(planParamsNorm).advanced.sampling,
+        planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
           .standardDeviation,
         currentMarketData,
       )

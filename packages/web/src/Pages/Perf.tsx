@@ -1,15 +1,16 @@
 import {
+  CalendarMonthFns,
   DEFAULT_MONTE_CARLO_SIMULATION_SEED,
   NonPlanParams,
+  PlanParams,
   assert,
-  calendarMonthFromTime,
   currentPlanParamsVersion,
   getDefaultNonPlanParams,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useRef, useState } from 'react'
-import { extendPlanParams } from '../UseSimulator/ExtentPlanParams'
+import { normalizePlanParams } from '../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { processPlanParams } from '../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import { Simulator } from '../UseSimulator/Simulator/Simulator'
 import { getSimulatorSingleton } from '../UseSimulator/UseSimulator'
@@ -36,27 +37,34 @@ export const Perf = React.memo(() => {
           className="rounded-full text-xl px-6 py-2 border-2 border-gray-700"
           onClick={() => {
             void (async () => {
-              const planParamsExt = getParams(currentTime)
-              const { planParams } = planParamsExt
+              const planParams = getParams(
+                currentTime.toMillis(),
+                currentTime.zoneName,
+              )
+
               assert(planParams.wealth.portfolioBalance.updatedHere)
               const currMarketData = getMarketDataForTime(
                 currentTime.toMillis(),
                 marketData,
               )
-              const planParamsProcessed = processPlanParams(
-                planParamsExt,
-                planParams.wealth.portfolioBalance.amount,
-                {
-                  ...currMarketData,
-                  timestampMSForHistoricalReturns: Number.MAX_SAFE_INTEGER,
-                },
+              const planParamsNorm = normalizePlanParams(
+                planParams,
+                CalendarMonthFns.fromTimestamp(
+                  currentTime.toMillis(),
+                  currentTime.zoneName,
+                ),
               )
+              const planParamsProcessed = processPlanParams(planParamsNorm, {
+                ...currMarketData,
+                timestampMSForHistoricalReturns: Number.MAX_SAFE_INTEGER,
+              })
               const result = await fGet(workerRef.current).runSimulations(
                 { canceled: false },
                 {
-                  planParams,
+                  currentPortfolioBalanceAmount:
+                    planParams.wealth.portfolioBalance.amount,
+                  planParamsNorm,
                   planParamsProcessed,
-                  planParamsExt,
                   numOfSimulationForMonteCarloSampling:
                     nonPlanParams.numOfSimulationForMonteCarloSampling,
                   randomSeed: DEFAULT_MONTE_CARLO_SIMULATION_SEED,
@@ -128,101 +136,105 @@ export const Perf = React.memo(() => {
   )
 })
 
-const getParams = (currentTime: DateTime) =>
-  extendPlanParams(
-    {
-      v: currentPlanParamsVersion,
-      results: null,
-      timestamp: currentTime.valueOf(),
-      dialogPositionNominal: 'done',
-      people: {
-        withPartner: false,
-        person1: {
-          ages: {
-            type: 'retirementDateSpecified',
-            monthOfBirth: calendarMonthFromTime(
-              currentTime.minus({ month: 35 * 12 }),
-            ),
-            retirementAge: { inMonths: 65 * 12 },
-            maxAge: { inMonths: 100 * 12 },
-          },
+const getParams = (
+  currentTimestamp: number,
+  ianaTimezoneName: string,
+): PlanParams => {
+  const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
+    currentTimestamp,
+    ianaTimezoneName,
+  )
+  return {
+    v: currentPlanParamsVersion,
+    results: null,
+    timestamp: currentTimestamp,
+    dialogPositionNominal: 'done',
+    people: {
+      withPartner: false,
+      person1: {
+        ages: {
+          type: 'retirementDateSpecified',
+          monthOfBirth: CalendarMonthFns.getFromMFN(nowAsCalendarMonth)(
+            -35 * 12,
+          ),
+          retirementAge: { inMonths: 65 * 12 },
+          maxAge: { inMonths: 100 * 12 },
         },
-      },
-      wealth: {
-        portfolioBalance: {
-          updatedHere: true,
-          amount: 100000,
-        },
-        futureSavings: {},
-        incomeDuringRetirement: {},
-      },
-      adjustmentsToSpending: {
-        tpawAndSPAW: {
-          monthlySpendingCeiling: null,
-          monthlySpendingFloor: null,
-          legacy: {
-            total: 1000000000,
-            external: {},
-          },
-        },
-        extraSpending: {
-          essential: {},
-          discretionary: {},
-        },
-      },
-      risk: {
-        tpaw: {
-          riskTolerance: {
-            at20: 0,
-            deltaAtMaxAge: 0,
-            forLegacyAsDeltaFromAt20: 0,
-          },
-          timePreference: 0,
-          additionalAnnualSpendingTilt: 0,
-        },
-        tpawAndSPAW: {
-          lmp: 0,
-        },
-        spaw: { annualSpendingTilt: 0.0 },
-        spawAndSWR: {
-          allocation: {
-            start: {
-              month: calendarMonthFromTime(currentTime),
-              stocks: 0.5,
-            },
-            intermediate: {},
-            end: { stocks: 0.5 },
-          },
-        },
-        swr: {
-          withdrawal: { type: 'default' },
-        },
-      },
-
-      advanced: {
-        expectedReturnsForPlanning: {
-          type: 'manual',
-          stocks: 0.04,
-          bonds: 0.02,
-        },
-        historicalMonthlyLogReturnsAdjustment: {
-          standardDeviation: {
-            stocks: { scale: 1 },
-            bonds: { enableVolatility: true },
-          },
-          overrideToFixedForTesting: false,
-        },
-        annualInflation: { type: 'manual', value: 0.02 },
-        sampling: {
-          type: 'monteCarlo',
-          forMonteCarlo: {
-            blockSize: 12 * 5,
-            staggerRunStarts: true,
-          },
-        },
-        strategy: 'TPAW',
       },
     },
-    currentTime.toMillis(),
-    fGet(currentTime.zoneName),
-  )
+    wealth: {
+      portfolioBalance: {
+        updatedHere: true,
+        amount: 100000,
+      },
+      futureSavings: {},
+      incomeDuringRetirement: {},
+    },
+    adjustmentsToSpending: {
+      tpawAndSPAW: {
+        monthlySpendingCeiling: null,
+        monthlySpendingFloor: null,
+        legacy: {
+          total: 1000000000,
+          external: {},
+        },
+      },
+      extraSpending: {
+        essential: {},
+        discretionary: {},
+      },
+    },
+    risk: {
+      tpaw: {
+        riskTolerance: {
+          at20: 0,
+          deltaAtMaxAge: 0,
+          forLegacyAsDeltaFromAt20: 0,
+        },
+        timePreference: 0,
+        additionalAnnualSpendingTilt: 0,
+      },
+      tpawAndSPAW: {
+        lmp: 0,
+      },
+      spaw: { annualSpendingTilt: 0.0 },
+      spawAndSWR: {
+        allocation: {
+          start: {
+            month: nowAsCalendarMonth,
+            stocks: 0.5,
+          },
+          intermediate: {},
+          end: { stocks: 0.5 },
+        },
+      },
+      swr: {
+        withdrawal: { type: 'default' },
+      },
+    },
+
+    advanced: {
+      expectedReturnsForPlanning: {
+        type: 'manual',
+        stocks: 0.04,
+        bonds: 0.02,
+      },
+      historicalMonthlyLogReturnsAdjustment: {
+        standardDeviation: {
+          stocks: { scale: 1 },
+          bonds: { enableVolatility: true },
+        },
+        overrideToFixedForTesting: false,
+      },
+      annualInflation: { type: 'manual', value: 0.02 },
+      sampling: {
+        type: 'monteCarlo',
+        forMonteCarlo: {
+          blockSize: { inMonths: 12 * 5 },
+          staggerRunStarts: true,
+        },
+      },
+      strategy: 'TPAW',
+    },
+  }
+}

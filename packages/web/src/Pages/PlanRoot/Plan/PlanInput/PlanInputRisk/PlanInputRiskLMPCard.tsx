@@ -20,8 +20,8 @@ export const PlanInputRiskLMPCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParams, updatePlanParams } = useSimulation()
-    const currLMP = planParams.risk.tpawAndSPAW.lmp
+    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const currLMP = planParamsNorm.risk.tpawAndSPAW.lmp
 
     const handleAmount = (amount: number) =>
       updatePlanParams('setTPAWAndSPAWLMP', amount)
@@ -42,7 +42,7 @@ export const PlanInputRiskLMPCard = React.memo(
             value={currLMP}
             onChange={handleAmount}
             decimals={0}
-            modalLabel={`LMP: TODO: rename?`}
+            modalLabel={`LMP`}
           />
           <button
             className={`flex items-center px-2 `}

@@ -50,7 +50,7 @@ const _SimulationsCard = React.memo(
       reRun,
       simulationResultIsCurrent,
       updatePlanParams,
-      planParams,
+      planParamsNorm,
       defaultPlanParams,
     } = useSimulation()
     const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
@@ -136,7 +136,7 @@ const _SimulationsCard = React.memo(
           <h2 className="">Stagger Run Starts: </h2>
           <ToggleSwitch
             checked={
-              planParams.advanced.sampling.forMonteCarlo.staggerRunStarts
+              planParamsNorm.advanced.sampling.forMonteCarlo.staggerRunStarts
             }
             setChecked={(value) => {
               updatePlanParams('setMonteCarloStaggerRunStarts', value)
@@ -147,7 +147,7 @@ const _SimulationsCard = React.memo(
           <h2 className="">Override Historical Returns To Fixed: </h2>
           <ToggleSwitch
             checked={
-              planParams.advanced.historicalMonthlyLogReturnsAdjustment
+              planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
                 .overrideToFixedForTesting
             }
             setChecked={(value) => {
@@ -189,7 +189,7 @@ const _SimulationsCard = React.memo(
 )
 
 export const PlanInputDevSimulationsSummary = React.memo(() => {
-  const { simulationResult, randomSeed, planParams } = useSimulation()
+  const { simulationResult, randomSeed, planParamsNorm } = useSimulation()
   const { nonPlanParams } = useNonPlanParams()
   return (
     <>
@@ -200,13 +200,13 @@ export const PlanInputDevSimulationsSummary = React.memo(() => {
       <h2>Time to Run: {_timeToRun(simulationResult)}</h2>
       <h2>
         Stagger Run Starts:{' '}
-        {planParams.advanced.sampling.forMonteCarlo.staggerRunStarts
+        {planParamsNorm.advanced.sampling.forMonteCarlo.staggerRunStarts
           ? 'yes'
           : 'no'}
       </h2>
       <h2>
         Override Historical Returns To Fixed:{' '}
-        {planParams.advanced.historicalMonthlyLogReturnsAdjustment
+        {planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
           .overrideToFixedForTesting
           ? 'yes'
           : 'no'}

@@ -5,16 +5,17 @@ import {
   getPlanResultsChartSpendingTotalFundingSourcesPercentile,
   isPlanResultsChartSpendingTotalFundingSourcesType,
 } from '../../../Plan/PlanResults/PlanResultsChartType'
+import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 
 export const getPlanPrintChartLabel = (
-  planParams: PlanParams,
+  planParamsNorm: PlanParamsNormalized,
   type: PlanResultsChartType,
 ) => {
   const {
     label: labelIn,
     subLabel: subLabelIn,
     yAxisDescription,
-  } = planResultsChartLabel(planParams, type)
+  } = planResultsChartLabel(planParamsNorm, type)
   const label = labelIn
   const subLabel = isPlanResultsChartSpendingTotalFundingSourcesType(type)
     ? `Funding Sources for the ${getPlanResultsChartSpendingTotalFundingSourcesPercentile(

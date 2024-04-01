@@ -1,5 +1,5 @@
-import _ from 'lodash';
-import { fGet } from './Utils';
+import _ from 'lodash'
+import { fGet } from './Utils'
 
 export const smartDeltaFn = (
   breakpoints: { value: number; delta: number }[],

@@ -50,10 +50,10 @@ Plan.displayName = 'Plan'
 
 const _Plan = React.memo(() => {
   const { nonPlanParams } = useNonPlanParams()
-  const { planParams, simulationInfoByMode, simulationInfoBySrc } =
+  const { planParamsNorm, simulationInfoByMode, simulationInfoBySrc } =
     useSimulation()
 
-  const isSWR = planParams.advanced.strategy === 'SWR'
+  const isSWR = planParamsNorm.advanced.strategy === 'SWR'
   const isTallMenu =
     simulationInfoBySrc.src === 'localMain' ||
     simulationInfoByMode.mode === 'history'
@@ -75,7 +75,7 @@ const _Plan = React.memo(() => {
   const planChartType = usePlanResultsChartType()
   const spendingTotalURL = useGetPlanResultsChartURL()('spending-total')
   const urlUpdater = useURLUpdater()
-  const chartLabel = planResultsChartLabel(planParams, planChartType)
+  const chartLabel = planResultsChartLabel(planParamsNorm, planChartType)
   const state = usePlanState()
 
   const [transition, setTransition] = useState(() => {
@@ -237,9 +237,8 @@ const _Plan = React.memo(() => {
 _Plan.displayName = '_Plan'
 
 function usePlanState() {
-  const { planParams, updatePlanParams, planParamsExt, simulationInfoByMode } =
+  const { planParamsNorm, updatePlanParams, simulationInfoByMode } =
     useSimulation()
-  const { dialogPositionEffective, nextDialogPosition } = planParamsExt
 
   const urlSection = useURLSection()
 
@@ -249,7 +248,7 @@ function usePlanState() {
   // this?)
   const [state, setState] = useState({
     section: urlSection,
-    dialogPosition: dialogPositionEffective,
+    dialogPosition: planParamsNorm.dialogPosition.effective,
   })
   const handleURLSectionChange = (section: typeof urlSection) =>
     setState({
@@ -258,7 +257,7 @@ function usePlanState() {
         state.dialogPosition !== 'done' &&
         urlSection === 'summary' &&
         state.section === state.dialogPosition
-          ? nextDialogPosition
+          ? planParamsNorm.dialogPosition.next
           : state.dialogPosition,
     })
   const handleURLSectionChangeRef = useRef(handleURLSectionChange)
@@ -267,7 +266,7 @@ function usePlanState() {
 
   const handleDialogPosition = (dialogPosition: DialogPosition) => {
     if (simulationInfoByMode.mode === 'history') return
-    if (planParams.dialogPositionNominal === dialogPosition) return
+    if (planParamsNorm.dialogPosition.effective === dialogPosition) return
     updatePlanParams('setDialogPosition', dialogPosition)
   }
   const handleDialogPositionRef = useRef(handleDialogPosition)
@@ -279,11 +278,14 @@ function usePlanState() {
 
   useEffect(() => {
     setState((prev) =>
-      dialogPositionEffective === prev.dialogPosition
+      planParamsNorm.dialogPosition.effective === prev.dialogPosition
         ? prev
-        : { section: prev.section, dialogPosition: dialogPositionEffective },
+        : {
+            section: prev.section,
+            dialogPosition: planParamsNorm.dialogPosition.effective,
+          },
     )
-  }, [dialogPositionEffective])
+  }, [planParamsNorm.dialogPosition.effective])
 
   return state
 }

@@ -1,16 +1,16 @@
 import { Transition } from '@headlessui/react'
 import React, {
-    MouseEvent,
-    ReactElement,
-    ReactNode,
-    useLayoutEffect,
-    useRef,
-    useState,
+  MouseEvent,
+  ReactElement,
+  ReactNode,
+  useLayoutEffect,
+  useRef,
+  useState,
 } from 'react'
 import {
-    newPaddingHorz,
-    paddingCSS,
-    paddingCSSStyleHorz,
+  newPaddingHorz,
+  paddingCSS,
+  paddingCSSStyleHorz,
 } from '../../../../../Utils/Geometry'
 import { assert, fGet } from '../../../../../Utils/Utils'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
@@ -46,8 +46,8 @@ export const PlanInputLaptopAndDesktop = React.memo(
       | { mainOrInput: 'main'; onDone: (() => void) | null }
       | { mainOrInput: 'input' }
     >({ mainOrInput: 'main', onDone: null })
-    const { planParams, planParamsExt } = useSimulation()
-    const { dialogPositionEffective } = planParamsExt
+    const { planParamsNorm } = useSimulation()
+    const { dialogPosition } = planParamsNorm
     const hasInput = children?.input !== undefined
     useLayoutEffect(() => {
       if (hasInput) {
@@ -61,7 +61,7 @@ export const PlanInputLaptopAndDesktop = React.memo(
     const inputScrollRef = useRef<HTMLDivElement>(null)
 
     const { padding } =
-      dialogPositionEffective !== 'done'
+      dialogPosition.effective !== 'done'
         ? sizing.dialogMode
         : sizing.notDialogMode
     const { cardPadding } = sizing

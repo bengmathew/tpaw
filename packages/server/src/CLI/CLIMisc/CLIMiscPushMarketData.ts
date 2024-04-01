@@ -1,6 +1,6 @@
 import { File } from '@google-cloud/storage'
 import {
-  MIN_PLAN_PARAM_TIME,
+  PLAN_PARAMS_CONSTANTS,
   MarketData,
   block,
   getNYZonedTime,
@@ -166,7 +166,7 @@ async function _getBondRates(): Promise<MarketData.BondRates[]> {
     _.flatten(
       await Promise.all(
         _.range(
-          DateTime.fromMillis(MIN_PLAN_PARAM_TIME).minus({
+          DateTime.fromMillis(PLAN_PARAMS_CONSTANTS.minPlanParamTime).minus({
             days: lookBackInDays,
           }).year,
           // NY timezone since the data is coming from there.
@@ -188,7 +188,7 @@ async function _getInflation(): Promise<MarketData.Inflation[]> {
   url.searchParams.set(
     'observation_start',
     fGet(
-      DateTime.fromMillis(MIN_PLAN_PARAM_TIME)
+      DateTime.fromMillis(PLAN_PARAMS_CONSTANTS.minPlanParamTime)
         .minus({ days: lookBackInDays })
         .toISODate(),
     ),
@@ -227,7 +227,7 @@ async function _getInflation(): Promise<MarketData.Inflation[]> {
 // // world.
 // const AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS = [
 //   {
-//     addedDate: DateTime.fromMillis(MIN_PLAN_PARAM_TIME)
+//     addedDate: DateTime.fromMillis(PLAN_PARAMS_CONSTANTS.minPlanParamTime)
 //       .minus({ month: 30 })
 //       .toMillis(),
 //     tenYearDuration: {
@@ -353,7 +353,7 @@ const _getFromEOD = async (name: string) => {
   url.searchParams.set(
     'from',
     fGet(
-      DateTime.fromMillis(MIN_PLAN_PARAM_TIME)
+      DateTime.fromMillis(PLAN_PARAMS_CONSTANTS.minPlanParamTime)
         .minus({ days: lookBackInDays })
         .toISODate(),
     ),

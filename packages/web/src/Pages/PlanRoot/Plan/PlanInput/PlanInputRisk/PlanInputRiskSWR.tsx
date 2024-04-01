@@ -1,19 +1,19 @@
 import {
-    faCircle as faCircleRegular,
-    faMinus,
-    faPlus,
+  faCircle as faCircleRegular,
+  faMinus,
+  faPlus,
 } from '@fortawesome/pro-regular-svg-icons'
 import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-    DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT,
-    assertFalse,
-    fGet,
-    noCase,
+  DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT,
+  assertFalse,
+  fGet,
+  noCase,
 } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
-import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
+import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { formatCurrency } from '../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSSStyle } from '../../../../../Utils/Geometry'
@@ -47,9 +47,6 @@ const _WithdrawalCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParams } = useSimulation()
-    const content = usePlanContent()['withdrawal']
-
     return (
       <div
         className={`${className} params-card`}
@@ -69,16 +66,16 @@ const _WithdrawalCard = React.memo(
 )
 
 const _Rate = React.memo(({ className = '' }: { className?: string }) => {
-  const { planParams, updatePlanParams, planParamsExt } = useSimulation()
-  const { withdrawal } = planParams.risk.swr
-  const { withdrawalsStarted } = planParamsExt
-
-  const { numRetirementMonths } = planParamsExt
+  const {  updatePlanParams, planParamsNorm } = useSimulation()
+  const { withdrawal } = planParamsNorm.risk.swr
+  const { ages } = planParamsNorm
 
   const [lastEntry, setLastEntry] = useState(
     withdrawal.type === 'asPercentPerYear'
       ? withdrawal.percentPerYear
-      : DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT(numRetirementMonths),
+      : DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT(
+          ages.simulationMonths.numWithdrawalMonths,
+        ),
   )
   useEffect(() => {
     if (withdrawal.type === 'asPercentPerYear') {
@@ -86,15 +83,16 @@ const _Rate = React.memo(({ className = '' }: { className?: string }) => {
     }
   }, [withdrawal])
 
-  const rateLabel = withdrawalsStarted
-    ? {
-        normal: 'Percentage of current portfolio balance',
-        title: 'Percentage of current portfolio balance',
-      }
-    : {
-        normal: 'Percentage of savings portfolio at retirement',
-        title: 'Percentage of Savings Portfolio at Retirement',
-      }
+  const rateLabel =
+    ages.simulationMonths.withdrawalStartMonth.asMFN === 0
+      ? {
+          normal: 'Percentage of current portfolio balance',
+          title: 'Percentage of current portfolio balance',
+        }
+      : {
+          normal: 'Percentage of savings portfolio at retirement',
+          title: 'Percentage of Savings Portfolio at Retirement',
+        }
 
   const handleChange = (percentPerYear: number) =>
     updatePlanParams(
@@ -153,10 +151,9 @@ const _Rate = React.memo(({ className = '' }: { className?: string }) => {
   )
 })
 const _Amount = React.memo(({ className = '' }: { className?: string }) => {
-  const { planParams, updatePlanParams, simulationResult, planParamsExt } =
-    useSimulation()
-  const { withdrawal } = planParams.risk.swr
-  const { asMFN, withdrawalStartMonth } = planParamsExt
+  const { planParamsNorm, updatePlanParams, simulationResult } = useSimulation()
+  const { ages } = planParamsNorm
+  const { withdrawal } = planParamsNorm.risk.swr
 
   const [lastEntry, setLastEntry] = useState(
     _.round(
@@ -164,15 +161,15 @@ const _Amount = React.memo(({ className = '' }: { className?: string }) => {
         simulationResult.savingsPortfolio.withdrawals.regular.byPercentileByMonthsFromNow.find(
           (x) => x.percentile === 50,
         ),
-      ).data[asMFN(withdrawalStartMonth)],
+      ).data[ages.simulationMonths.withdrawalStartMonth.asMFN],
       -2,
     ),
   )
   useEffect(() => {
-    if (planParams.risk.swr.withdrawal.type === 'asAmountPerMonth') {
-      setLastEntry(planParams.risk.swr.withdrawal.amountPerMonth)
+    if (withdrawal.type === 'asAmountPerMonth') {
+      setLastEntry(withdrawal.amountPerMonth)
     }
-  }, [planParams])
+  }, [withdrawal])
 
   const handleChange = (amountPerMonth: number) =>
     updatePlanParams('setSWRWithdrawalAsAmountPerMonth', amountPerMonth)
@@ -186,7 +183,7 @@ const _Amount = React.memo(({ className = '' }: { className?: string }) => {
         <FontAwesomeIcon
           className="mr-2"
           icon={
-            planParams.risk.swr.withdrawal.type === 'asAmountPerMonth'
+            withdrawal.type === 'asAmountPerMonth'
               ? faCircleSelected
               : faCircleRegular
           }
@@ -242,26 +239,24 @@ const _Amount = React.memo(({ className = '' }: { className?: string }) => {
 })
 
 export const PlanInputRiskSWRSummary = React.memo(
-  ({ planParamsExt }: { planParamsExt: PlanParamsExtended }) => {
-    const { planParams } = planParamsExt
-    const { risk } = planParams
-    const { withdrawalsStarted } = planParamsExt
+  ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
+    const { risk } = planParamsNorm
+
     return (
       <>
         <h2>Stock Allocation</h2>
         <div className="ml-4">
           <PlanInputSummaryGlidePath
             className=""
-            glidePath={risk.spawAndSWR.allocation}
-            format={(x) => formatPercentage(0)(x)}
-            planParamsExt={planParamsExt}
+            normValue={risk.spawAndSWR.allocation}
           />
         </div>
         <h2>Withdrawal</h2>
         <h2 className="ml-4">
           {risk.swr.withdrawal.type === 'asPercentPerYear'
             ? `${formatPercentage(1)(risk.swr.withdrawal.percentPerYear)} of ${
-                withdrawalsStarted
+                planParamsNorm.ages.simulationMonths.withdrawalStartMonth
+                  .asMFN === 0
                   ? 'current portfolio balance'
                   : 'savings portfolio at retirement'
               }`

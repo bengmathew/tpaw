@@ -1,18 +1,8 @@
-import { PlanParams, getDefaultPlanParams, letIn } from '@tpaw/common'
+import { PlanParams, currentPlanParamsVersion, letIn } from '@tpaw/common'
+import * as Rust from '@tpaw/simulator'
 import clsx from 'clsx'
 import React from 'react'
-import { extendPlanParams } from '../UseSimulator/ExtentPlanParams'
-import {
-  PlanParamsNormalized,
-  normalizePlanParams,
-} from '../UseSimulator/NormalizePlanParams'
 import { WithWASM, useWASM } from './PlanRoot/PlanRootHelpers/WithWASM'
-import * as Rust from '@tpaw/simulator'
-import { nominalToReal } from '../Utils/NominalToReal'
-import _ from 'lodash'
-import { processPlanParams } from '../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
-import { CallRust } from '../UseSimulator/PlanParamsProcessed/CallRust'
-import { fWASM } from '../UseSimulator/Simulator/GetWASM'
 
 export const Scratch = React.memo(({ className }: { className?: string }) => {
   return (
@@ -49,39 +39,6 @@ export const _Body = React.memo(({ className }: { className?: string }) => {
             timestampMSForHistoricalReturns: Number.MAX_SAFE_INTEGER,
           }
           const planParams = testPlanParams
-          const planParamsExt = extendPlanParams(
-            planParams,
-            Date.now(),
-            'America/Los_Angeles',
-          )
-          const nowAsCalendarMonth = letIn(
-            planParamsExt.getZonedTime(Date.now()),
-            (zonedTime) => ({
-              year: zonedTime.year,
-              month: zonedTime.month,
-            }),
-          )
-
-          let start = performance.now()
-          let n = 1000
-          for (let i = 0; i < n; i++) {
-            const planParamsNorm = normalizePlanParams(planParamsExt)
-            // CallRust.processPlanParams(planParamsNorm, marketData)
-            // const planParamsProcessed = processPlanParams(
-            //   planParamsExt,
-            //   1000000,
-            //   marketData,
-            // )
-          }
-          console.log('process_plan_params1', (performance.now() - start) / n)
-          // start = performance.now()
-          // let p = JSON.parse(planParamsProcessed.without_arrays())
-          // let a1 = planParamsProcessed.array('historicalMonthlyLogReturnsAdjustedBonds').slice()
-          // let a2 = planParamsProcessed.array('historicalMonthlyLogReturnsAdjustedStocks').slice()
-          // console.log('process_plan_params2', performance.now() - start)
-          // start = performance.now()
-          // console.dir(p)
-          // planParamsProcessed.free()
         }}
       >
         run
@@ -91,7 +48,7 @@ export const _Body = React.memo(({ className }: { className?: string }) => {
 })
 
 const testPlanParams: PlanParams = {
-  v: 27,
+  v: currentPlanParamsVersion,
   risk: {
     swr: {
       withdrawal: {
@@ -169,25 +126,30 @@ const testPlanParams: PlanParams = {
       feebiphizs: {
         id: 'feebiphizs',
         label: 'Total',
-        value: 10000,
-        nominal: false,
-        sortIndex: 0,
-        colorIndex: 1,
-        monthRange: {
-          end: {
-            age: 'lastWorkingMonth',
-            type: 'namedAge',
-            person: 'person1',
-          },
-          type: 'startAndEnd',
-          start: {
-            type: 'calendarMonthAsNow',
-            monthOfEntry: {
-              year: 2023,
-              month: 9,
+        amountAndTiming: {
+          type: 'recurring',
+          everyXMonths: 1,
+          delta: null,
+          baseAmount: 10000,
+          monthRange: {
+            type: 'startAndEnd',
+            end: {
+              age: 'lastWorkingMonth',
+              type: 'namedAge',
+              person: 'person1',
+            },
+            start: {
+              type: 'calendarMonthAsNow',
+              monthOfEntry: {
+                year: 2023,
+                month: 9,
+              },
             },
           },
         },
+        nominal: false,
+        sortIndex: 0,
+        colorIndex: 1,
       },
     },
     portfolioBalance: {
@@ -198,23 +160,28 @@ const testPlanParams: PlanParams = {
       hrzsmdujpd: {
         id: 'hrzsmdujpd',
         label: 'Social Security',
-        value: 5000,
+        amountAndTiming: {
+          type: 'recurring',
+          everyXMonths: 1,
+          delta: null,
+          baseAmount: 5000,
+          monthRange: {
+            end: {
+              age: 'max',
+              type: 'namedAge',
+              person: 'person1',
+            },
+            type: 'startAndEnd',
+            start: {
+              age: 'retirement',
+              type: 'namedAge',
+              person: 'person1',
+            },
+          },
+        },
         nominal: false,
         sortIndex: 0,
         colorIndex: 0,
-        monthRange: {
-          end: {
-            age: 'max',
-            type: 'namedAge',
-            person: 'person1',
-          },
-          type: 'startAndEnd',
-          start: {
-            age: 'retirement',
-            type: 'namedAge',
-            person: 'person1',
-          },
-        },
       },
     },
   },
@@ -228,7 +195,7 @@ const testPlanParams: PlanParams = {
     sampling: {
       type: 'monteCarlo',
       forMonteCarlo: {
-        blockSize: 60,
+        blockSize: { inMonths: 60 },
         staggerRunStarts: true,
       },
     },
@@ -262,7 +229,7 @@ const testPlanParams: PlanParams = {
           eunijmppod: {
             id: 'eunijmppod',
             label: null,
-            value: 0,
+            amount: 0,
             nominal: false,
             sortIndex: 0,
             colorIndex: 0,
@@ -277,135 +244,170 @@ const testPlanParams: PlanParams = {
         fvpxstjfml: {
           id: 'fvpxstjfml',
           label: 'Kids College',
-          value: 2000,
+          amountAndTiming: {
+            type: 'recurring',
+            everyXMonths: 1,
+            delta: null,
+            baseAmount: 2000,
+            monthRange: {
+              type: 'startAndDuration',
+              start: {
+                type: 'calendarMonthAsNow',
+                monthOfEntry: {
+                  year: 2023,
+                  month: 9,
+                },
+              },
+              duration: { inMonths: 180 },
+            },
+          },
           nominal: false,
           sortIndex: 1,
           colorIndex: 1,
-          monthRange: {
-            type: 'startAndNumMonths',
-            start: {
-              type: 'calendarMonthAsNow',
-              monthOfEntry: {
-                year: 2023,
-                month: 9,
-              },
-            },
-            numMonths: 180,
-          },
         },
         ibcehvmksf: {
           id: 'ibcehvmksf',
           label: 'Kaavini Activities',
-          value: 800,
+          amountAndTiming: {
+            type: 'recurring',
+            everyXMonths: 1,
+            delta: null,
+            baseAmount: 800,
+            monthRange: {
+              type: 'startAndDuration',
+              start: {
+                type: 'calendarMonthAsNow',
+                monthOfEntry: {
+                  year: 2023,
+                  month: 9,
+                },
+              },
+              duration: { inMonths: 180 },
+            },
+          },
           nominal: false,
           sortIndex: 6,
           colorIndex: 6,
-          monthRange: {
-            type: 'startAndNumMonths',
-            start: {
-              type: 'calendarMonthAsNow',
-              monthOfEntry: {
-                year: 2023,
-                month: 9,
-              },
-            },
-            numMonths: 180,
-          },
         },
         lzykdntqcg: {
           id: 'lzykdntqcg',
           label: 'Theera School',
-          value: 500,
+          amountAndTiming: {
+            type: 'recurring',
+            everyXMonths: 1,
+            delta: null,
+            baseAmount: 500,
+            monthRange: {
+              type: 'startAndDuration',
+              start: {
+                type: 'calendarMonthAsNow',
+                monthOfEntry: {
+                  year: 2023,
+                  month: 9,
+                },
+              },
+              duration: { inMonths: 156 },
+            },
+          },
           nominal: false,
           sortIndex: 2,
           colorIndex: 2,
-          monthRange: {
-            type: 'startAndNumMonths',
-            start: {
-              type: 'calendarMonthAsNow',
-              monthOfEntry: {
-                year: 2023,
-                month: 9,
-              },
-            },
-            numMonths: 156,
-          },
         },
         srjjqswpnk: {
           id: 'srjjqswpnk',
           label: 'Mortgage',
-          value: 4000,
+          amountAndTiming: {
+            type: 'recurring',
+            everyXMonths: 1,
+            delta: null,
+            baseAmount: 4000,
+            monthRange: {
+              type: 'startAndDuration',
+              start: {
+                type: 'calendarMonthAsNow',
+                monthOfEntry: {
+                  year: 2023,
+                  month: 9,
+                },
+              },
+              duration: { inMonths: 360 },
+            },
+          },
           nominal: false,
           sortIndex: 0,
           colorIndex: 0,
-          monthRange: {
-            type: 'startAndNumMonths',
-            start: {
-              type: 'calendarMonthAsNow',
-              monthOfEntry: {
-                year: 2023,
-                month: 9,
-              },
-            },
-            numMonths: 360,
-          },
         },
         uqavaxaxyg: {
           id: 'uqavaxaxyg',
           label: 'Kaavini School',
-          value: 500,
+          amountAndTiming: {
+            type: 'recurring',
+            everyXMonths: 1,
+            delta: null,
+            baseAmount: 500,
+            monthRange: {
+              type: 'startAndDuration',
+              start: {
+                type: 'calendarMonthAsNow',
+                monthOfEntry: {
+                  year: 2023,
+                  month: 9,
+                },
+              },
+              duration: { inMonths: 156 },
+            },
+          },
           nominal: false,
           sortIndex: 4,
           colorIndex: 4,
-          monthRange: {
-            type: 'startAndNumMonths',
-            start: {
-              type: 'calendarMonth',
-              calendarMonth: {
-                year: 2024,
-                month: 9,
-              },
-            },
-            numMonths: 168,
-          },
         },
         vicjhlgzau: {
           id: 'vicjhlgzau',
           label: 'Theera Activities',
-          value: 800,
+          amountAndTiming: {
+            type: 'recurring',
+            everyXMonths: 1,
+            delta: null,
+            baseAmount: 800,
+            monthRange: {
+              type: 'startAndDuration',
+              start: {
+                type: 'calendarMonthAsNow',
+                monthOfEntry: {
+                  year: 2023,
+                  month: 9,
+                },
+              },
+              duration: { inMonths: 156 },
+            },
+          },
           nominal: false,
           sortIndex: 5,
           colorIndex: 5,
-          monthRange: {
-            type: 'startAndNumMonths',
-            start: {
-              type: 'calendarMonthAsNow',
-              monthOfEntry: {
-                year: 2023,
-                month: 9,
-              },
-            },
-            numMonths: 156,
-          },
         },
         vkwtzracsk: {
           id: 'vkwtzracsk',
           label: 'Kaavini NWMS',
-          value: 2000,
+          amountAndTiming: {
+            type: 'recurring',
+            everyXMonths: 1,
+            delta: null,
+            baseAmount: 2000,
+            monthRange: {
+              type: 'startAndDuration',
+              start: {
+                type: 'calendarMonthAsNow',
+                monthOfEntry: {
+                  year: 2023,
+                  month: 9,
+                },
+              },
+              duration: { inMonths: 12 },
+            },
+          },
           nominal: false,
           sortIndex: 3,
           colorIndex: 3,
-          monthRange: {
-            type: 'startAndNumMonths',
-            start: {
-              type: 'calendarMonthAsNow',
-              monthOfEntry: {
-                year: 2023,
-                month: 9,
-              },
-            },
-            numMonths: 12,
-          },
         },
       },
       discretionary: {},

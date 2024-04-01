@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/nextjs'
-import { assert, block, noCase } from '@tpaw/common'
+import { assert, assertFalse, block, noCase } from '@tpaw/common'
 import _ from 'lodash'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { use, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { AppError } from '../../App/AppError'
@@ -84,6 +84,13 @@ export const useServerSyncPlan = (
   const { setGlobalError } = useSetGlobalError()
   const [state, setState] = useState<_State>({ type: 'synced' })
 
+  const stateHistoryForDebugRef = useRef([] as _State[])
+
+  useEffect(() => {
+    stateHistoryForDebugRef.current.push(state)
+    stateHistoryForDebugRef.current = stateHistoryForDebugRef.current.slice(-10)
+  }, [state])
+
   // ---- INPUT ----
   const input = useMemo(
     () => _getInput(serverPlan, workingPlan),
@@ -151,6 +158,9 @@ export const useServerSyncPlan = (
         disposeTimeout()
         switch (userPlanSync.__typename) {
           case 'ConcurrentChangeError':
+            Sentry.captureMessage(
+              `ConcurrentChangeError\n: ${JSON.stringify(stateHistoryForDebugRef.current)}`,
+            )
             setGlobalError(new AppError('concurrentChange'))
             break
           case 'PlanAndUserResult':
@@ -179,6 +189,9 @@ export const useServerSyncPlan = (
           }
           switch (e.code) {
             case 'concurrentChange':
+              // FetchGQL will not throw this. It will show up as
+              // 'ConcurrentChangeError' in onCompleted().
+              assertFalse()
             case 'clientNeedsUpdate':
             case '413':
               if (e.code === '413') {
@@ -363,7 +376,7 @@ export const useServerSyncPlan = (
   // change that an input change will cause. This is necessary because rebasing
   // uses this to determine if it should run or not. If we don't update
   // immediately, rebasing and syncing can trigger simultaneously, which in an
-  // invariant violation.∑
+  // invariant violation.
   return useMemo((): ServerSyncState => {
     const synced = { type: 'synced' } as const
     switch (state.type) {

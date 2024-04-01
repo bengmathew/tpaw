@@ -1,35 +1,35 @@
-import { PlanParams, noCase } from '@tpaw/common'
+import { noCase } from '@tpaw/common'
 import React from 'react'
-import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
+import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import {
-    PlanInputBody,
-    PlanInputBodyPassThruProps,
+  PlanInputBody,
+  PlanInputBodyPassThruProps,
 } from '../PlanInputBody/PlanInputBody'
 import {
-    PlanInputRiskSPAW,
-    PlanInputRiskSPAWSummary,
+  PlanInputRiskSPAW,
+  PlanInputRiskSPAWSummary,
 } from './PlanInputRiskSPAW'
 import { PlanInputRiskSWR, PlanInputRiskSWRSummary } from './PlanInputRiskSWR'
 import {
-    PlanInputRiskTPAW,
-    PlanInputRiskTPAWSummary,
+  PlanInputRiskTPAW,
+  PlanInputRiskTPAWSummary,
 } from './PlanInputRiskTPAW'
 
 export const PlanInputRisk = React.memo((props: PlanInputBodyPassThruProps) => {
-  const { planParams } = useSimulation()
+  const { planParamsNorm } = useSimulation()
 
   return (
     <PlanInputBody {...props}>
       <>
-        {planParams.advanced.strategy === 'TPAW' ? (
+        {planParamsNorm.advanced.strategy === 'TPAW' ? (
           <PlanInputRiskTPAW props={props} />
-        ) : planParams.advanced.strategy === 'SPAW' ? (
+        ) : planParamsNorm.advanced.strategy === 'SPAW' ? (
           <PlanInputRiskSPAW props={props} />
-        ) : planParams.advanced.strategy === 'SWR' ? (
+        ) : planParamsNorm.advanced.strategy === 'SWR' ? (
           <PlanInputRiskSWR props={props} />
         ) : (
-          noCase(planParams.advanced.strategy)
+          noCase(planParamsNorm.advanced.strategy)
         )}
       </>
     </PlanInputBody>
@@ -37,28 +37,16 @@ export const PlanInputRisk = React.memo((props: PlanInputBodyPassThruProps) => {
 })
 
 export const PlanInputRiskSummary = React.memo(
-  ({
-    planParamsExt,
-    defaultPlanParams,
-  }: {
-    planParamsExt: PlanParamsExtended
-    defaultPlanParams: PlanParams
-  }) => {
-    const { planParams } = planParamsExt
-    switch (planParams.advanced.strategy) {
+  ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
+    switch (planParamsNorm.advanced.strategy) {
       case 'TPAW':
-        return (
-          <PlanInputRiskTPAWSummary
-            planParams={planParams}
-            defaultPlanParams={defaultPlanParams}
-          />
-        )
+        return <PlanInputRiskTPAWSummary planParamsNorm={planParamsNorm} />
       case 'SPAW':
-        return <PlanInputRiskSPAWSummary planParamsExt={planParamsExt} />
+        return <PlanInputRiskSPAWSummary planParamsNorm={planParamsNorm} />
       case 'SWR':
-        return <PlanInputRiskSWRSummary planParamsExt={planParamsExt} />
+        return <PlanInputRiskSWRSummary planParamsNorm={planParamsNorm} />
       default:
-        noCase(planParams.advanced.strategy)
+        noCase(planParamsNorm.advanced.strategy)
     }
   },
 )

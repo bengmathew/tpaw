@@ -1,12 +1,11 @@
 import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { faTurnDownLeft } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { block, noCase } from '@tpaw/common'
-import clix from 'clsx'
+import { block, getZonedTimeFns, noCase } from '@tpaw/common'
+import { default as clix, default as clsx } from 'clsx'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useMemo, useState } from 'react'
-import { PlanParamsExtended } from '../../../../UseSimulator/ExtentPlanParams'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../Utils/Geometry'
@@ -19,8 +18,8 @@ import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { planSectionLabel } from './Helpers/PlanSectionLabel'
 import {
-    PlanInputBody,
-    PlanInputBodyPassThruProps,
+  PlanInputBody,
+  PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 export const PlanInputCurrentPortfolioBalance = React.memo(
@@ -41,13 +40,9 @@ export const _CurrentPortfolioBalanceCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { getZonedTime } = useIANATimezoneName()
     const [showExplanation, setShowHistory] = useState(false)
     const { currentPortfolioBalanceInfo, updatePlanParams } = useSimulation()
-    const currentPortfolioBalance = CurrentPortfolioBalance.get(
-      currentPortfolioBalanceInfo,
-    )
-    const estimateInfo = CurrentPortfolioBalance.getEstimateInfo(
+    const amountInfo = CurrentPortfolioBalance.getAmountInfo(
       currentPortfolioBalanceInfo,
     )
 
@@ -69,8 +64,15 @@ export const _CurrentPortfolioBalanceCard = React.memo(
             <AmountInput
               className="text-input"
               prefix="$"
-              value={currentPortfolioBalance}
-              onChange={handleChange}
+              value={amountInfo.amount}
+              onChange={(x) => {
+                // This happens on blur and enter. The check for real change is
+                // especially important when amountInfo.amount is an estimate when
+                // handleChange() is called, we mark it as not a estimate, which
+                // is materially different. We don't want to do that on blur and
+                // enter if the value has not changed.
+                if (x !== amountInfo.amount) handleChange(x)
+              }}
               decimals={0}
               modalLabel={planSectionLabel('current-portfolio-balance')}
             />
@@ -78,7 +80,7 @@ export const _CurrentPortfolioBalanceCard = React.memo(
               className="ml-2 px-3"
               onClick={() => {
                 handleChange(
-                  smartDeltaFnForAmountInput.increment(currentPortfolioBalance),
+                  smartDeltaFnForAmountInput.increment(amountInfo.amount),
                 )
               }}
             >
@@ -88,18 +90,16 @@ export const _CurrentPortfolioBalanceCard = React.memo(
               className="px-3"
               onClick={() => {
                 handleChange(
-                  smartDeltaFnForAmountInput.decrement(currentPortfolioBalance),
+                  smartDeltaFnForAmountInput.decrement(amountInfo.amount),
                 )
               }}
             >
               <FontAwesomeIcon icon={faMinus} />
             </button>
           </div>
-          <div className="mt-4 ml-2">
-            {estimateInfo &&
-            estimateInfo.lastEnteredAmount !== currentPortfolioBalance ? (
-              <div className="flex items-top gap-x-1">
-                {' '}
+          {amountInfo.isEstimate &&
+            amountInfo.lastEnteredAmount !== amountInfo.amount && (
+              <div className={'mt-4 ml-2 flex items-top gap-x-1'}>
                 <FontAwesomeIcon
                   className="rotate-90 mr-1"
                   icon={faTurnDownLeft}
@@ -107,9 +107,9 @@ export const _CurrentPortfolioBalanceCard = React.memo(
                 <div className="">
                   <p className="p-base">
                     This is an estimate calculated from your last entry of{' '}
-                    {formatCurrency(estimateInfo.lastEnteredAmount)} on{' '}
-                    {getZonedTime(
-                      estimateInfo.lastEnteredTimestamp,
+                    {formatCurrency(amountInfo.lastEnteredAmount)} on{' '}
+                    {getZonedTimeFns(amountInfo.ianaTimezoneName)(
+                      amountInfo.lastEnteredTimestamp,
                     ).toLocaleString(DateTime.DATE_MED)}
                     .{' '}
                   </p>
@@ -121,17 +121,7 @@ export const _CurrentPortfolioBalanceCard = React.memo(
                   </button>
                 </div>
               </div>
-            ) : (
-              <div>
-                <button
-                  className="underline block"
-                  onClick={() => setShowHistory(true)}
-                >
-                  View Balance History
-                </button>
-              </div>
             )}
-          </div>
         </div>
         <CenteredModal
           className=" dialog-outer-div"
@@ -148,7 +138,7 @@ export const _CurrentPortfolioBalanceCard = React.memo(
 const _Popup = React.memo(() => {
   const { currentTimestamp, simulationInfoBySrc, currentPortfolioBalanceInfo } =
     useSimulation()
-  const currentPortfolioBalance = CurrentPortfolioBalance.get(
+  const amountInfo = CurrentPortfolioBalance.getAmountInfo(
     currentPortfolioBalanceInfo,
   )
   const historyModeInfo = block(() => {
@@ -192,10 +182,8 @@ const _Popup = React.memo(() => {
         <div className="">
           <h2>
             {' '}
-            <span className="">
-              {formatCurrency(currentPortfolioBalance)}
-            </span>{' '}
-            as of {formatTime(currentTimestamp)}
+            <span className="">{formatCurrency(amountInfo.amount)}</span> as of{' '}
+            {formatTime(currentTimestamp)}
           </h2>
         </div>
         <h2 className="mt-2">This estimate assumes you are invested in:</h2>
@@ -419,31 +407,34 @@ const _Action = React.memo(
 
 export const PlanInputCurrentPortfolioBalanceSummary = React.memo(
   ({
-    planParamsExt,
-    currentPortfolioBalance,
+    amountInfo,
+    forPrint,
   }: {
-    planParamsExt: PlanParamsExtended
-    currentPortfolioBalance: number
+    amountInfo: CurrentPortfolioBalance.AmountInfo
+    forPrint: boolean
   }) => {
-    // const isEstimate = useMemo(
-    //   () => _isReallyEstimate(currentPortfolioBalanceEstimate),
-    //   [currentPortfolioBalanceEstimate],
-    // )
-    const { getZonedTime } = planParamsExt
-
-    const formatTime = (x: number) => getZonedTime(x).toFormat('LLLL d, yyyy')
-
     return (
       <>
-        <h2>{formatCurrency(currentPortfolioBalance)}</h2>
-        {/* {isEstimate && (
-        <>
-          <h2>
-            Estimated from your last entry of {formatCurrency(entered.amount)}{' '}
-            on {formatTime(entered.timestamp)}
-          </h2>
-        </>
-      )} */}
+        <h2>{formatCurrency(amountInfo.amount)}</h2>
+        {amountInfo.isEstimate &&
+          amountInfo.lastEnteredAmount !== amountInfo.amount && (
+            <div className={'ml-2 flex items-top gap-x-1'}>
+              <FontAwesomeIcon
+                className={clsx("rotate-90 mr-1", forPrint && 'text-[10px]')}
+                icon={faTurnDownLeft}
+              />
+              <div className="">
+                <p className={clsx(forPrint ? '' : 'font-font2 text-base')}>
+                  This is an estimate calculated from your last entry of{' '}
+                  {formatCurrency(amountInfo.lastEnteredAmount)} on{' '}
+                  {getZonedTimeFns(amountInfo.ianaTimezoneName)(
+                    amountInfo.lastEnteredTimestamp,
+                  ).toLocaleString(DateTime.DATE_MED)}
+                  .{' '}
+                </p>
+              </div>
+            </div>
+          )}
       </>
     )
   },

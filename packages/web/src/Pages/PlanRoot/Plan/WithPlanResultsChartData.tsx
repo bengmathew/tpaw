@@ -1,13 +1,13 @@
 import { fGet } from '@tpaw/common'
 import _ from 'lodash'
-import { ReactNode, useMemo } from 'react'
+import { ReactNode, use, useEffect, useMemo } from 'react'
 import { PERCENTILES_STR } from '../../../UseSimulator/Simulator/Simulator'
 import { createContext } from '../../../Utils/CreateContext'
 import { useSimulationResult } from '../PlanRootHelpers/WithSimulation'
 import {
-    PlanResultsChartData,
-    PlanResultsChartDataForPDF,
-    getPlanResultsChartDataForPDF,
+  PlanResultsChartData,
+  PlanResultsChartDataForPDF,
+  getPlanResultsChartDataForPDF,
 } from './PlanResults/PlanResultsChartCard/PlanResultsChart/PlanResultsChartData'
 import { PlanResultsChartType } from './PlanResults/PlanResultsChartType'
 import { PlanSizing } from './PlanSizing/PlanSizing'
@@ -29,7 +29,13 @@ export const useChartDataForPDF = (
 export const useChartData = (
   type: PlanResultsChartType,
 ): PlanResultsChartData => {
-  return { ...useChartDataForPDF(type), ...useNonPDFContext() }
+  const chartDataForPDF = useChartDataForPDF(type)
+  const nonPDFContext = useNonPDFContext()
+
+  return useMemo(
+    () => ({ ...chartDataForPDF, ...nonPDFContext }),
+    [chartDataForPDF, nonPDFContext],
+  )
 }
 
 export const WithPlanResultsChartDataForPDF = ({
@@ -45,7 +51,7 @@ export const WithPlanResultsChartDataForPDF = ({
 }) => {
   const simulationResult = useSimulationResult()
   const value = useMemo(() => {
-    const { planParams } = simulationResult.args
+    const { planParamsProcessed } = simulationResult.args
     const result = new Map<PlanResultsChartType, PlanResultsChartDataForPDF>()
     const _add = (type: PlanResultsChartType) => {
       result.set(
@@ -65,12 +71,17 @@ export const WithPlanResultsChartDataForPDF = ({
       _add(`spending-total-funding-sources-${percentile}`),
     )
     _add('spending-general')
-    _.values(planParams.adjustmentsToSpending.extraSpending.essential).forEach(
-      (x) => [x.id, _add(`spending-essential-${x.id}`)],
+    // Get keys from planParamsProcessed, not planParamsNorm because some keys
+    // might be in the past, and not show up in planParamsProcessed. We don't
+    // want to surface those in the UI.
+
+    planParamsProcessed.byMonth.adjustmentsToSpending.extraSpending.essential.byId.forEach(
+      ({ id }) => [id, _add(`spending-essential-${id}`)],
     )
-    _.values(
-      planParams.adjustmentsToSpending.extraSpending.discretionary,
-    ).forEach((x) => [x.id, _add(`spending-discretionary-${x.id}`)])
+
+    planParamsProcessed.byMonth.adjustmentsToSpending.extraSpending.discretionary.byId.forEach(
+      ({ id }) => [id, _add(`spending-discretionary-${id}`)],
+    )
     _add('portfolio')
     _add('asset-allocation-savings-portfolio')
     _add('asset-allocation-total-portfolio')
@@ -95,8 +106,12 @@ export const WithPlanResultsChartData = ({
   planSizing: PlanSizing
   planTransitionState: PlanTransitionState
 }) => {
+  const nonPDFContext = useMemo(
+    () => ({ planSizing, planTransitionState }),
+    [planSizing, planTransitionState],
+  )
   return (
-    <NonPDFContext.Provider value={{ planSizing, planTransitionState }}>
+    <NonPDFContext.Provider value={nonPDFContext}>
       <WithPlanResultsChartDataForPDF
         planColors={planColors}
         layout={planSizing.args.layout}

@@ -3,30 +3,32 @@ import {
   assert,
   block,
   DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT,
-  GlidePath,
+  fGet,
   letIn,
   linearFnFomPoints,
   monthlyToAnnualReturnRate,
   noCase,
-  RISK_TOLERANCE_VALUES,
+  PLAN_PARAMS_CONSTANTS,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { formatPercentage } from '../../Utils/FormatPercentage'
-import { PlanParamsExtended } from '../ExtentPlanParams'
+import { NormalizedGlidePath } from '../NormalizePlanParams/NormalizeGlidePath'
+import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
 import { CallRust } from './CallRust'
 
 export const planParamsProcessRisk = (
-  planParamsExt: PlanParamsExtended,
+  planParamsNorm: PlanParamsNormalized,
   expectedReturnsForPlanning: CallRust.PlanParamsProcessed['expectedReturnsForPlanning'],
   empiricalAnnualLogVarianceOfStocks: number,
 ) => {
-  const { planParams, numMonths, numRetirementMonths } = planParamsExt
+  const { ages, risk } = planParamsNorm
+
   const rMuSigmaPow2 = _getRMuSigmaPow2(
     expectedReturnsForPlanning,
     empiricalAnnualLogVarianceOfStocks,
   )
 
-  const tpawGlidePath = _getTPAWGlidePath(planParamsExt, rMuSigmaPow2)
+  const tpawGlidePath = _getTPAWGlidePath(planParamsNorm, rMuSigmaPow2)
   // _logTPAWGlidePath(tpawGlidePath)
 
   const tpaw = {
@@ -39,10 +41,12 @@ export const planParamsProcessRisk = (
         _unclampedMertonsFormula(
           rMuSigmaPow2,
           letIn(
-            planParams.risk.tpaw.riskTolerance.at20 +
-              planParams.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20,
+            risk.tpaw.riskTolerance.at20 +
+              risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20,
             (rra) =>
-              RISK_TOLERANCE_VALUES.riskToleranceToRRA.withInfinityAtZero(rra),
+              PLAN_PARAMS_CONSTANTS.riskToleranceValues.riskToleranceToRRA.withInfinityAtZero(
+                rra,
+              ),
           ),
           0, // Does not matter.
           0, // Does not matter.
@@ -55,45 +59,44 @@ export const planParamsProcessRisk = (
 
   const tpawAndSPAW = {
     monthlySpendingTilt:
-      planParams.advanced.strategy === 'SPAW'
-        ? _.times(numMonths, (x) =>
-            annualToMonthlyReturnRate(planParams.risk.spaw.annualSpendingTilt),
+      planParamsNorm.advanced.strategy === 'SPAW'
+        ? _.times(ages.simulationMonths.numMonths, (x) =>
+            annualToMonthlyReturnRate(risk.spaw.annualSpendingTilt),
           )
         : tpawGlidePath.map(
             (x) =>
               x.clamped?.monthlySpendingTilt ?? x.unclamped.monthlySpendingTilt,
           ),
-    lmp: planParams.risk.tpawAndSPAW.lmp,
+    lmp: risk.tpawAndSPAW.lmp,
   }
 
   const spawAndSWR = {
-    allocation: normalizeGlidePath(
-      planParams.risk.spawAndSWR.allocation,
-      planParamsExt,
-    ),
+    allocation: processGlidePath(risk.spawAndSWR.allocation, planParamsNorm),
   }
 
   const swr = {
     monthlyWithdrawal: (() => {
-      switch (planParams.risk.swr.withdrawal.type) {
+      switch (risk.swr.withdrawal.type) {
         case 'default':
           return {
             type: 'asPercent' as const,
             percent:
-              DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT(numRetirementMonths) / 12,
+              DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT(
+                ages.simulationMonths.numWithdrawalMonths,
+              ) / 12,
           }
         case 'asPercentPerYear':
           return {
             type: 'asPercent' as const,
-            percent: planParams.risk.swr.withdrawal.percentPerYear / 12,
+            percent: risk.swr.withdrawal.percentPerYear / 12,
           }
         case 'asAmountPerMonth':
           return {
             type: 'asAmount' as const,
-            amount: planParams.risk.swr.withdrawal.amountPerMonth,
+            amount: risk.swr.withdrawal.amountPerMonth,
           }
         default:
-          noCase(planParams.risk.swr.withdrawal)
+          noCase(risk.swr.withdrawal)
       }
     })(),
   }
@@ -102,7 +105,7 @@ export const planParamsProcessRisk = (
 }
 
 const _getTPAWGlidePath = (
-  planParamsExt: PlanParamsExtended,
+  planParamsNorm: PlanParamsNormalized,
   rMuSigmaPow2: _RMuSigmaPow2,
 ): {
   minRRA: number
@@ -119,21 +122,37 @@ const _getTPAWGlidePath = (
     rra: number
   } | null
 }[] => {
-  const { planParams, getRiskToleranceFromMFN, numMonths } = planParamsExt
+  const { ages, risk } = planParamsNorm
+  const { numMonths } = planParamsNorm.ages.simulationMonths
+  const getRiskToleranceFromMFN = (mfn: number) => {
+    const longerLivedPerson = fGet(ages[ages.longerLivedPersonType])
+    return Math.max(
+      0,
+      longerLivedPerson.maxAge.baseValue.inMonths > 20 * 12
+        ? linearFnFomPoints(
+            20 * 12,
+            risk.tpaw.riskTolerance.at20,
+            longerLivedPerson.maxAge.baseValue.inMonths,
+            risk.tpaw.riskTolerance.at20 +
+              risk.tpaw.riskTolerance.deltaAtMaxAge,
+          )(mfn + longerLivedPerson.currentAge.inMonths)
+        : risk.tpaw.riskTolerance.at20,
+    )
+  }
 
   const _currMertonFormula = (rra: number) =>
     _unclampedMertonsFormula(
       rMuSigmaPow2,
       rra,
-      planParams.risk.tpaw.timePreference,
-      planParams.risk.tpaw.additionalAnnualSpendingTilt,
+      risk.tpaw.timePreference,
+      risk.tpaw.additionalAnnualSpendingTilt,
     )
 
   const mertonsFormulaByMFN = (mfn: number, minRRA: number) => {
     const unclamped = block(() => {
       const riskTolerance = getRiskToleranceFromMFN(mfn)
       const rra =
-        RISK_TOLERANCE_VALUES.riskToleranceToRRA.withInfinityAtZero(
+        PLAN_PARAMS_CONSTANTS.riskToleranceValues.riskToleranceToRRA.withInfinityAtZero(
           riskTolerance,
         )
       return { riskTolerance, rra, ..._currMertonFormula(rra) }
@@ -152,7 +171,7 @@ const _getTPAWGlidePath = (
         return {
           rra,
           riskToleranceByInversion:
-            RISK_TOLERANCE_VALUES.riskToleranceToRRA.withoutInfinityAtZero.inverse(
+            PLAN_PARAMS_CONSTANTS.riskToleranceValues.riskToleranceToRRA.withoutInfinityAtZero.inverse(
               rra,
             ),
           stockAllocation,
@@ -176,7 +195,7 @@ const _getTPAWGlidePath = (
     // using Merton's formula, because negative stock allocation means leverage,
     // which we don't allow. We want instead to completely ignore stocks. We do
     // this by bringing equity premium to 0.
-    return _getTPAWGlidePath(planParamsExt, {
+    return _getTPAWGlidePath(planParamsNorm, {
       // bonds
       r: rMuSigmaPow2.r,
       // stocks
@@ -260,53 +279,29 @@ _unclampedMertonsFormula.inverseFromStockAllocation = (
   return { rra: gamma }
 }
 
-export const normalizeGlidePath = (
-  { start, intermediate, end }: GlidePath,
-  planParamsExt: PlanParamsExtended,
+export const processGlidePath = (
+  { now, intermediate, end }: NormalizedGlidePath,
+  planParamsNorm: PlanParamsNormalized,
 ) => {
-  const { asMFN, numMonths } = planParamsExt
-  // Keeps only the first  of duplicates and prioritizes "start" and "end", over
-  // intermediate if they refer to same month.
-  const stage1 = [
-    //  Keeps the *first* of duplicate element, per documentation.
-    ..._.uniqBy(
-      // Stable sort, per documentation.
-      _.sortBy(
-        [
-          {
-            month: asMFN(start.month),
-            stocks: start.stocks,
-          },
-          { month: numMonths - 1, stocks: end.stocks },
-          ..._.values(intermediate)
-            .sort((a, b) => a.indexToSortByAdded - b.indexToSortByAdded)
-            .map(({ month, stocks }) => ({
-              month: asMFN(month),
-              stocks,
-            })),
-        ],
-        (x) => x.month,
-      ),
-      (x) => x.month,
-    ),
+  const { ages } = planParamsNorm
+  const simplifiedPath = [
+    { mfn: 0, stocks: now.stocks },
+    ...intermediate
+      .filter((x) => !x.ignore)
+      .map((x) => ({ mfn: x.month.asMFN, stocks: x.stocks })),
+    { mfn: ages.simulationMonths.lastMonthAsMFN, stocks: end.stocks },
   ]
-  assert(stage1[0].month <= 0)
 
   let result = [] as number[]
-  _.times(stage1.length - 1, (i) => {
-    const curr = stage1[i]
-    const next = stage1[i + 1]
-    const fn = linearFnFomPoints(
-      curr.month,
-      curr.stocks,
-      next.month,
-      next.stocks,
-    )
-    _.range(curr.month, next.month + 1).forEach((x) => {
-      if (x >= 0 && x < numMonths) result[x] = fn(x)
-    })
+  simplifiedPath.forEach((x, i) => {
+    if (i === 0) return
+    const from = simplifiedPath[i - 1]
+    const to = x
+    const fn = linearFnFomPoints(from.mfn, from.stocks, to.mfn, to.stocks)
+    result.push(..._.range(from.mfn, to.mfn).map(fn))
   })
-  assert(result.length === numMonths)
+  result.push(end.stocks)
+  assert(result.length === ages.simulationMonths.numMonths)
   return result
 }
 

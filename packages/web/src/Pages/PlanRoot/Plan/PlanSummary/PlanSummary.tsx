@@ -1,36 +1,37 @@
 import { faCaretDown, faCaretRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { assert } from '@tpaw/common'
+import { MonthLocation, assert, noCase } from '@tpaw/common'
 import _ from 'lodash'
 import React, { ReactNode, useMemo, useState } from 'react'
-import { PlanParamsExtended } from '../../../../UseSimulator/ExtentPlanParams'
+import { NormalizedGlidePath } from '../../../../UseSimulator/NormalizePlanParams/NormalizeGlidePath'
+import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { NormalizedLabeledAmountTimed } from '../../../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 import {
-    Padding,
-    Size,
-    XY,
-    newPaddingHorz,
-    originCSSStyle,
-    paddingCSSStyleHorz,
-    sizeCSSStyle,
+  Padding,
+  Size,
+  XY,
+  newPaddingHorz,
+  originCSSStyle,
+  paddingCSSStyleHorz,
+  sizeCSSStyle,
 } from '../../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import { Config } from '../../../Config'
 import { useNonPlanParams } from '../../PlanRootHelpers/WithNonPlanParams'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
-import { analyzeMonthsInParams } from '../PlanInput/Helpers/AnalyzeMonthsInParams'
 import { PlanInputType } from '../PlanInput/Helpers/PlanInputType'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import { useGetPlanInputVisibility } from '../PlanInput/Helpers/UseGetPlanInputVisibility'
 import { useIsPlanInputDevMiscModified } from '../PlanInput/PlanInputDev/PlanInputDevMisc'
-import { useIsPlanInputDevSimulationsModified } from '../PlanInput/PlanInputDev/UseIsPlanInputDevSimulationsModified'
 import { useIsPlanInputDevTimeModified } from '../PlanInput/PlanInputDev/PlanInputDevTime'
+import { useIsPlanInputDevSimulationsModified } from '../PlanInput/PlanInputDev/UseIsPlanInputDevSimulationsModified'
 import { useIsPlanInputExpectedReturnsAndVolatilityModified } from '../PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { useIsPlanInputInflationModified } from '../PlanInput/PlanInputInflation'
 import { useIsPlanInputSimulationModifed } from '../PlanInput/PlanInputSimulation'
 import { useIsPlanInputStrategyModified } from '../PlanInput/PlanInputStrategy'
 import {
-    PlanTransitionState,
-    simplifyPlanTransitionState4,
+  PlanTransitionState,
+  simplifyPlanTransitionState4,
 } from '../PlanTransition'
 import { PlanSummaryButton } from './PlanSummaryButton'
 import { PlanSummaryDialog } from './PlanSummaryDialog'
@@ -95,8 +96,8 @@ export const PlanSummary = React.memo(
     const [adjustmentsToSpendingElement, setAdjustmentsToSpendingElement] =
       useState<HTMLElement | null>(null)
 
-    const { planParams, planParamsExt } = useSimulation()
-    const { isFutureSavingsAllowed, dialogPositionEffective } = planParamsExt
+    const { planParamsNorm } = useSimulation()
+    const { dialogPosition } = planParamsNorm
 
     const [expandAdvanced, setExpandAdvanced] = useState(false)
     const [showDevClickCount, setShowDevClickCount] = useState(0)
@@ -162,7 +163,7 @@ export const PlanSummary = React.memo(
         }}
       >
         <div className="mt-0" ref={setBodyElement}>
-          {dialogPositionEffective !== 'done' && (
+          {dialogPosition.effective !== 'done' && (
             <PlanSummaryDialog
               elements={{
                 outer: outerElement,
@@ -174,7 +175,7 @@ export const PlanSummary = React.memo(
                 adjustmentsToSpending: adjustmentsToSpendingElement,
               }}
               fixedSizing={fixedSizing}
-              dialogPosition={dialogPositionEffective}
+              dialogPosition={dialogPosition.effective}
             />
           )}
 
@@ -210,16 +211,14 @@ export const PlanSummary = React.memo(
                   section={section}
                   padding={cardPadding}
                 />
-                {isFutureSavingsAllowed ? (
+                {planParamsNorm.ages.validMonthRangesAsMFN.futureSavings ? (
                   <PlanSummaryButton
                     ref={setFutureSavingsElement}
                     type="future-savings"
                     section={section}
-                    warn={!_paramsOk(planParamsExt, 'future-savings')}
+                    warn={!_paramsOk(planParamsNorm, 'future-savings')}
                     padding={cardPadding}
-                    empty={
-                      _.values(planParams.wealth.futureSavings).length === 0
-                    }
+                    empty={planParamsNorm.wealth.futureSavings.length === 0}
                   />
                 ) : (
                   // This avoids managing null/non-null future savings element
@@ -233,11 +232,10 @@ export const PlanSummary = React.memo(
                   ref={setIncomeDuringRetirementElement}
                   type="income-during-retirement"
                   section={section}
-                  warn={!_paramsOk(planParamsExt, 'income-during-retirement')}
+                  warn={!_paramsOk(planParamsNorm, 'income-during-retirement')}
                   padding={cardPadding}
                   empty={
-                    _.values(planParams.wealth.incomeDuringRetirement)
-                      .length === 0
+                    planParamsNorm.wealth.incomeDuringRetirement.length === 0
                   }
                 />
               </div>
@@ -256,44 +254,38 @@ export const PlanSummary = React.memo(
                   <PlanSummaryButton
                     type="extra-spending"
                     section={section}
-                    warn={!_paramsOk(planParamsExt, 'extra-spending')}
+                    warn={!_paramsOk(planParamsNorm, 'extra-spending')}
                     padding={cardPadding}
                     empty={
-                      _.values(
-                        planParams.adjustmentsToSpending.extraSpending
-                          .discretionary,
-                      ).length === 0 &&
-                      _.values(
-                        planParams.adjustmentsToSpending.extraSpending
-                          .essential,
-                      ).length === 0
+                      planParamsNorm.adjustmentsToSpending.extraSpending
+                        .discretionary.length === 0 &&
+                      planParamsNorm.adjustmentsToSpending.extraSpending
+                        .essential.length === 0
                     }
                   />
 
-                  {planParams.advanced.strategy !== 'SWR' && (
+                  {planParamsNorm.advanced.strategy !== 'SWR' && (
                     <PlanSummaryButton
                       type="legacy"
                       section={section}
                       padding={cardPadding}
                       empty={
-                        _.values(
-                          planParams.adjustmentsToSpending.tpawAndSPAW.legacy
-                            .external,
-                        ).length === 0 &&
-                        planParams.adjustmentsToSpending.tpawAndSPAW.legacy
+                        planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy
+                          .external.length === 0 &&
+                        planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy
                           .total === 0
                       }
                     />
                   )}
-                  {planParams.advanced.strategy !== 'SWR' && (
+                  {planParamsNorm.advanced.strategy !== 'SWR' && (
                     <PlanSummaryButton
                       type="spending-ceiling-and-floor"
                       section={section}
                       padding={cardPadding}
                       empty={
-                        planParams.adjustmentsToSpending.tpawAndSPAW
+                        planParamsNorm.adjustmentsToSpending.tpawAndSPAW
                           .monthlySpendingCeiling === null &&
-                        planParams.adjustmentsToSpending.tpawAndSPAW
+                        planParamsNorm.adjustmentsToSpending.tpawAndSPAW
                           .monthlySpendingFloor === null
                       }
                     />
@@ -310,7 +302,7 @@ export const PlanSummary = React.memo(
                     type="risk"
                     section={section}
                     padding={cardPadding}
-                    warn={!_paramsOk(planParamsExt, 'risk')}
+                    warn={!_paramsOk(planParamsNorm, 'risk')}
                     hideTitle
                   />
                 </div>
@@ -321,7 +313,7 @@ export const PlanSummary = React.memo(
                   className="disabled:opacity-20"
                   style={{ ...paddingCSSStyleHorz(cardPadding) }}
                   onClick={() => setExpandAdvanced(!expandAdvanced)}
-                  disabled={dialogPositionEffective !== 'done'}
+                  disabled={dialogPosition.effective !== 'done'}
                 >
                   <div className="text-[20px] sm:text-[26px] font-bold text-left">
                     Advanced
@@ -378,7 +370,7 @@ export const PlanSummary = React.memo(
                     className="disabled:opacity-20"
                     style={{ ...paddingCSSStyleHorz(cardPadding) }}
                     onClick={() => setExpandDev(!expandDev)}
-                    disabled={dialogPositionEffective !== 'done'}
+                    disabled={dialogPosition.effective !== 'done'}
                   >
                     <div className="text-[20px] sm:text-[26px] font-bold text-left">
                       Dev
@@ -439,8 +431,8 @@ const _Heading = React.memo(
     firstItem: Exclude<PlanInputType, 'history'>
     children: ReactNode
   }) => {
-    const { planParamsExt } = useSimulation()
-    const visibility = useGetPlanInputVisibility(planParamsExt)(firstItem)
+    const { planParamsNorm } = useSimulation()
+    const visibility = useGetPlanInputVisibility(planParamsNorm)(firstItem)
     // This just happens to be true for now. Will have to pass more than just
     // firstItem it if is not true. Deal with that when if we end up needing it
     // in the future.
@@ -462,21 +454,75 @@ type _Type =
   | 'income-during-retirement'
   | 'extra-spending'
   | 'risk'
-export const _paramsOk = (planParamsExt: PlanParamsExtended, type: _Type) => {
-  const { valueForMonthRange, glidePath } = analyzeMonthsInParams(
-    planParamsExt,
-    { type: 'asVisible' },
-  )
-  return (
-    valueForMonthRange
-      .filter((x) => x.section === type)
-      .every((x) =>
-        x.boundsCheck
-          ? x.boundsCheck.start === 'ok' && x.boundsCheck.end === 'ok'
-          : true,
-      ) &&
-    glidePath
-      .filter((x) => x.section === type)
-      .every((x) => x.analyzed.every((x) => x.issue === 'none'))
-  )
+export const _paramsOk = (
+  planParamsNorm: PlanParamsNormalized,
+  type: _Type,
+) => {
+  // To make ensure when new month locations are added we don't forget to
+  // update this function.
+  const __ = (x: MonthLocation) => {
+    switch (x) {
+      case 'futureSavings':
+      case 'incomeDuringRetirement':
+      case 'extraSpendingEssential':
+      case 'extraSpendingDiscretionary':
+      case 'spawAndSWRStockAllocation':
+        return
+      default:
+        noCase(x)
+    }
+  }
+
+  const _forLabeledAmountTimed = (x: NormalizedLabeledAmountTimed[]) =>
+    x.every((x) => {
+      switch (x.amountAndTiming.type) {
+        case 'inThePast':
+          return true
+        case 'oneTime':
+          return !!x.amountAndTiming.month.errorMsg
+        case 'recurring':
+          switch (x.amountAndTiming.monthRange.type) {
+            case 'startAndEnd':
+              return (
+                !x.amountAndTiming.monthRange.start.errorMsg &&
+                !x.amountAndTiming.monthRange.end.errorMsg
+              )
+            case 'startAndDuration':
+              return (
+                !x.amountAndTiming.monthRange.start.errorMsg &&
+                !x.amountAndTiming.monthRange.duration.errorMsg
+              )
+            case 'endAndDuration':
+              return (
+                !x.amountAndTiming.monthRange.end.errorMsg &&
+                !x.amountAndTiming.monthRange.duration.errorMsg
+              )
+            default:
+              noCase(x.amountAndTiming.monthRange)
+          }
+        default:
+          noCase(x.amountAndTiming)
+      }
+    })
+  const _forGlidePath = (glidePath: NormalizedGlidePath) =>
+    glidePath.atOrPastEnd.length === 0 &&
+    glidePath.intermediate.every((x) => !x.month.errorMsg)
+
+  switch (type) {
+    case 'future-savings':
+      return _forLabeledAmountTimed(planParamsNorm.wealth.futureSavings)
+    case 'income-during-retirement':
+      return _forLabeledAmountTimed(
+        planParamsNorm.wealth.incomeDuringRetirement,
+      )
+    case 'extra-spending':
+      return _forLabeledAmountTimed([
+        ...planParamsNorm.adjustmentsToSpending.extraSpending.essential,
+        ...planParamsNorm.adjustmentsToSpending.extraSpending.discretionary,
+      ])
+    case 'risk':
+      return _forGlidePath(planParamsNorm.risk.spawAndSWR.allocation)
+    default:
+      noCase(type)
+  }
 }

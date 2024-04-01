@@ -14,7 +14,8 @@ export const PlanInputRiskSPAWAndSWRStockAllocationCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParams, updatePlanParams, defaultPlanParams } = useSimulation()
+    const { planParamsNorm, updatePlanParams, defaultPlanParams } =
+      useSimulation()
     const handleChange = (x: GlidePath) =>
       updatePlanParams('setSPAWAndSWRAllocation', x)
 
@@ -26,7 +27,7 @@ export const PlanInputRiskSPAWAndSWRStockAllocationCard = React.memo(
         <h2 className="font-bold text-lg">Stock Allocation</h2>
         <GlidePathInput
           className="mt-4 border border-gray-300 p-2 rounded-lg"
-          value={planParams.risk.spawAndSWR.allocation}
+          value={planParamsNorm.risk.spawAndSWR.allocation}
           onChange={handleChange}
         />
         <h2 className="mt-6">Graph of this asset allocation:</h2>
@@ -36,7 +37,9 @@ export const PlanInputRiskSPAWAndSWRStockAllocationCard = React.memo(
         />
         <button
           className="mt-6 underline"
-          onClick={() => handleChange(defaultPlanParams.risk.spawAndSWR.allocation)}
+          onClick={() =>
+            handleChange(defaultPlanParams.risk.spawAndSWR.allocation)
+          }
         >
           Reset to Default
         </button>

@@ -3,19 +3,21 @@ import { CurrentPortfolioBalance } from '../../Pages/PlanRoot/PlanRootHelpers/Cu
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 import { RunSimulationInWASMResult } from './RunSimulationInWASMResult'
+import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
 
 export type SimulationWorkerArgs =
   | {
       type: 'runSimulation'
       taskID: string
       args: {
-        params: PlanParamsProcessed
+        currentPortfolioBalanceAmount: number
+        planParamsNorm: PlanParamsNormalized
+        planParamsProcessed: PlanParamsProcessed
         runs: SimpleRange
         randomSeed: number
       }
     }
   | { type: 'sort'; taskID: string; args: { data: Float64Array[] } }
-
   | {
       type: 'parseAndMigratePlanParams'
       taskID: string
@@ -52,7 +54,6 @@ export type SimulationWorkerResult =
       taskID: string
       result: { data: Float64Array[]; perf: number }
     }
-
   | {
       type: 'parseAndMigratePlanParams'
       taskID: string
@@ -68,5 +69,3 @@ export type SimulationWorkerSortResult = Extract<
   SimulationWorkerResult,
   { type: 'sort' }
 >['result']
-
-

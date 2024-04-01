@@ -6,15 +6,15 @@ import clix from 'clsx'
 import { formatDistance } from 'date-fns'
 import _ from 'lodash'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { ContextMenu2 } from '../../../../Common/Modal/ContextMenu2'
-import { processPlanParamsChangeActionDeprecated } from '../../../PlanRootHelpers/PlanParamsChangeActionDeprecated'
+import { ContextModal } from '../../../../Common/Modal/ContextModal'
+import { processPlanParamsChangeActionDeprecated } from '../../../PlanRootHelpers/GetPlanParamsChangeActionImpl/GetPlanParamsChangeActionImplDeprecated'
 import {
-    TARGET_UNDO_DEPTH,
-    WorkingPlanInfo,
+  TARGET_UNDO_DEPTH,
+  WorkingPlanInfo,
 } from '../../../PlanRootHelpers/UseWorkingPlan'
 import {
-    SimulationInfoForPlanMode,
-    useSimulation,
+  SimulationInfoForPlanMode,
+  useSimulation,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
 
@@ -65,22 +65,31 @@ const _Menu = React.memo(
   }) => {
     const { planParamsUndoRedoStack } = simulationDetailForPlanMode
     return (
-      <ContextMenu2
-        className={clix(className, ' disabled:lighten-2')}
-        disabled={
-          _processUndoRedoStack(planParamsUndoRedoStack)[type].length === 0
-        }
-        align="right"
-      >
-        <FontAwesomeIcon
-          className=""
-          icon={type === 'undo' ? faUndo : faRedo}
-        />
-        <_MenuItems
-          type={type}
-          simulationDetailForPlanMode={simulationDetailForPlanMode}
-        />
-      </ContextMenu2>
+      <Menu>
+        {({ open }) => (
+          <ContextModal align="right" open={open}>
+            {({ ref }) => (
+              <Menu.Button
+                ref={ref}
+                className={clix(className, ' disabled:lighten-2')}
+                disabled={
+                  _processUndoRedoStack(planParamsUndoRedoStack)[type]
+                    .length === 0
+                }
+              >
+                <FontAwesomeIcon
+                  className=""
+                  icon={type === 'undo' ? faUndo : faRedo}
+                />
+              </Menu.Button>
+            )}
+            <_MenuItems
+              type={type}
+              simulationDetailForPlanMode={simulationDetailForPlanMode}
+            />
+          </ContextModal>
+        )}
+      </Menu>
     )
   },
 )

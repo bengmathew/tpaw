@@ -33,17 +33,17 @@ export const PlanPrintViewResultsSection = React.memo(
   ({ settings }: { settings: PlanPrintViewArgs['settings'] }) => {
     const { args, numSimulationsActual, numRunsWithInsufficientFunds } =
       useSimulationResult()
-    const { extraSpending } = args.planParams.adjustmentsToSpending
+    const { extraSpending } = args.planParamsNorm.adjustmentsToSpending
 
     const secondaryCharts: PlanResultsChartType[] = _.compact([
-      _.values(extraSpending.discretionary).length > 0 ||
-      _.values(extraSpending.essential).length > 0
+      extraSpending.discretionary.length > 0 ||
+      extraSpending.essential.length > 0
         ? 'spending-general'
         : undefined,
-      ..._.values(extraSpending.essential)
+      ...extraSpending.essential
         .sort((a, b) => a.sortIndex - b.sortIndex)
         .map((x) => `spending-essential-${x.id}` as const),
-      ..._.values(extraSpending.discretionary)
+      ...extraSpending.discretionary
         .sort((a, b) => a.sortIndex - b.sortIndex)
         .map((x) => `spending-discretionary-${x.id}` as const),
       'portfolio' as const,
@@ -61,7 +61,7 @@ export const PlanPrintViewResultsSection = React.memo(
         </PlanPrintViewPageGroup>
         <PlanPrintViewPageGroup settings={settings}>
           <_Chart className="mt-8" type="spending-total" />
-          {args.planParams.advanced.strategy === 'SWR' && (
+          {args.planParamsNorm.advanced.strategy === 'SWR' && (
             <h2 className=" mt-4 text-right">
               Success Rate:{' '}
               <span className="text-xl">
@@ -73,7 +73,7 @@ export const PlanPrintViewResultsSection = React.memo(
             </h2>
           )}
           <_Legacy className="mt-12" />
-          {_.keys(args.planParams.wealth.incomeDuringRetirement).length > 0 && (
+          {args.planParamsNorm.wealth.incomeDuringRetirement.length > 0 && (
             <div className=" break-inside-avoid-page">
               <_Chart
                 className="mt-12"
@@ -155,7 +155,7 @@ const _Legacy = React.memo(({ className }: { className?: string }) => {
   const maxLegacy = Math.max(...data.map((x) => x.amount))
   const hasLegacy =
     maxLegacy > 0 ||
-    args.planParams.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0
+    args.planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0
   return (
     <div className={clix(className)}>
       <h2 className="text-xl font-bold">Legacy</h2>
@@ -201,7 +201,7 @@ const _Chart = React.memo(
     const chartData = useChartDataForPDF(type)
     const outerDivRef = useRef<HTMLDivElement>(null)
 
-    const hasPartner = args.planParams.people.withPartner
+    const hasPartner = !!args.planParamsNorm.ages.person2
     const [chart, setChart] = useState<ChartReactStatefull<{
       data: PlanResultsChartDataForPDF
     }> | null>(null)
@@ -219,7 +219,7 @@ const _Chart = React.memo(
     }, [chart, hasPartner])
 
     const { label, subLabel, yAxisDescriptionStr, description } =
-      getPlanPrintChartLabel(args.planParams, type)
+      getPlanPrintChartLabel(args.planParamsNorm, type)
 
     return (
       <div className={clix(className, ' break-inside-avoid-page')}>

@@ -1,11 +1,6 @@
 import _ from 'lodash'
-import { DateTime } from 'luxon'
-import {
-  calendarMonthFromTime,
-  currentPlanParamsVersion,
-  PlanParams,
-} from './PlanParams'
-
+import { CalendarMonthFns } from '../../Misc/CalendarMonthFns'
+import { currentPlanParamsVersion, PlanParams } from './PlanParams'
 
 export const DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT = (
   retirementLengthInMonths: number,
@@ -13,12 +8,24 @@ export const DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT = (
   return _.round(0.7125 * Math.pow(retirementLengthInMonths / 12, -0.859), 3)
 }
 
+export const DEFAULT_RISK_TPAW = {
+  riskTolerance: {
+    at20: 12,
+    deltaAtMaxAge: -2,
+    forLegacyAsDeltaFromAt20: 2,
+  },
+  timePreference: 0,
+  additionalAnnualSpendingTilt: 0,
+}
+
 export function getDefaultPlanParams(
   currentTimestamp: number,
   ianaTimezoneName: string,
 ): PlanParams {
-  const currentDateTime =
-    DateTime.fromMillis(currentTimestamp).setZone(ianaTimezoneName)
+  const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
+    currentTimestamp,
+    ianaTimezoneName,
+  )
 
   const params: PlanParams = {
     v: currentPlanParamsVersion,
@@ -29,8 +36,9 @@ export function getDefaultPlanParams(
       person1: {
         ages: {
           type: 'retirementDateSpecified',
-          monthOfBirth: calendarMonthFromTime(
-            currentDateTime.minus({ month: 35 * 12 }),
+          monthOfBirth: CalendarMonthFns.addMonths(
+            nowAsCalendarMonth,
+            -35 * 12,
           ),
           retirementAge: { inMonths: 65 * 12 },
           maxAge: { inMonths: 100 * 12 },
@@ -63,15 +71,7 @@ export function getDefaultPlanParams(
     },
 
     risk: {
-      tpaw: {
-        riskTolerance: {
-          at20: 12,
-          deltaAtMaxAge: -2,
-          forLegacyAsDeltaFromAt20: 2,
-        },
-        timePreference: 0,
-        additionalAnnualSpendingTilt: 0,
-      },
+      tpaw: DEFAULT_RISK_TPAW,
       tpawAndSPAW: {
         lmp: 0,
       },
@@ -82,7 +82,7 @@ export function getDefaultPlanParams(
       spawAndSWR: {
         allocation: {
           start: {
-            month: calendarMonthFromTime(currentDateTime),
+            month: nowAsCalendarMonth,
             stocks: 0.5,
           },
           intermediate: {},
@@ -109,7 +109,7 @@ export function getDefaultPlanParams(
       sampling: {
         type: 'monteCarlo',
         forMonteCarlo: {
-          blockSize: 12 * 5,
+          blockSize: { inMonths: 12 * 5 },
           staggerRunStarts: true,
         },
       },

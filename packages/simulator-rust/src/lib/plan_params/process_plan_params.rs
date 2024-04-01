@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
-use super::normalize_plan_params::plan_params_normalized::PlanParamsNormalized;
+use super::plan_params_rust::PlanParamsRust;
 
 #[wasm_bindgen]
 pub struct PlanParamsProcessedJS {
@@ -108,7 +108,8 @@ impl PlanParamsProcessedJS {
                     .wealth
                     .future_savings
                     .by_id
-                    .get(&id)
+                    .iter()
+                    .find(|&x| x.id == id)
                     .unwrap()
                     .values,
             ),
@@ -128,7 +129,8 @@ impl PlanParamsProcessedJS {
                         .wealth
                         .income_during_retirement
                         .by_id
-                        .get(&id)
+                        .iter()
+                        .find(|&x| x.id == id)
                         .unwrap()
                         .values,
                 )
@@ -153,7 +155,8 @@ impl PlanParamsProcessedJS {
                     .extra_spending
                     .essential
                     .by_id
-                    .get(&id)
+                    .iter()
+                    .find(|&x| x.id == id)
                     .unwrap()
                     .values,
             ),
@@ -176,7 +179,8 @@ impl PlanParamsProcessedJS {
                     .extra_spending
                     .discretionary
                     .by_id
-                    .get(&id)
+                    .iter()
+                    .find(|&x| x.id == id)
                     .unwrap()
                     .values,
             ),
@@ -197,7 +201,7 @@ impl PlanParamsProcessedJS {
 }
 
 pub fn process_plan_params(
-    plan_params_norm: &PlanParamsNormalized,
+    plan_params_norm: &PlanParamsRust,
     market_data: &DataForMarketBasedPlanParamValues,
 ) -> PlanParamsProcessedJS {
     let expected_returns_for_planning = process_expected_returns_for_planning(

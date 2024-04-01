@@ -4,7 +4,7 @@ use crate::expected_value_of_returns::annual_non_log_to_monthly_non_log_return_r
 use crate::historical_monthly_returns::data::average_annual_real_earnings_for_sp500_for_10_years::AverageAnnualRealEarningsForSP500For10Years;
 use crate::historical_monthly_returns::get_historical_monthly_returns;
 use crate::plan_params;
-use crate::plan_params_normalized;
+use crate::plan_params_rust;
 use crate::{
     data_for_market_based_plan_param_values::DataForMarketBasedPlanParamValues,
     expected_value_of_returns::EmpiricalAnnualNonLogExpectedValueInfo,
@@ -31,9 +31,9 @@ pub struct ExpectedReturnsForPlanningProcessed {
 }
 
 pub fn process_expected_returns_for_planning(
-    expected_returns_for_planning: &plan_params_normalized::ExpectedReturnsForPlanning,
-    sampling: &plan_params_normalized::Sampling,
-    scaling: &plan_params_normalized::HistoricalMonthlyLogReturnsAdjustment_StandardDeviation,
+    expected_returns_for_planning: &plan_params_rust::ExpectedReturnsForPlanning,
+    sampling: &plan_params_rust::Sampling,
+    scaling: &plan_params_rust::HistoricalMonthlyLogReturnsAdjustment_StandardDeviation,
     market_data: &DataForMarketBasedPlanParamValues,
 ) -> ExpectedReturnsForPlanningProcessed {
     let data = process_market_data_for_expected_returns_for_planning_presets(
@@ -56,26 +56,26 @@ pub fn process_expected_returns_for_planning(
     };
 
     let empirical_annual_non_log_return_info = match &&expected_returns_for_planning {
-        &plan_params_normalized::ExpectedReturnsForPlanning::RegressionPrediction_20YearTIPSYield => {
+        &plan_params_rust::ExpectedReturnsForPlanning::RegressionPrediction_20YearTIPSYield => {
             result(
                 data.stocks.regression_prediction,
                 data.bonds.tips_yield_20_year,
             )
         }
-        &plan_params_normalized::ExpectedReturnsForPlanning::ConservativeEstimate_20YearTIPSYield => {
+        &plan_params_rust::ExpectedReturnsForPlanning::ConservativeEstimate_20YearTIPSYield => {
             result(
                 data.stocks.conservative_estimate,
                 data.bonds.tips_yield_20_year,
             )
         }
-        &plan_params_normalized::ExpectedReturnsForPlanning::OneOverCAPE_20YearTIPSYield => result(
+        &plan_params_rust::ExpectedReturnsForPlanning::OneOverCAPE_20YearTIPSYield => result(
             data.stocks.one_over_cape_rounded,
             data.bonds.tips_yield_20_year,
         ),
-        &plan_params_normalized::ExpectedReturnsForPlanning::Historical => {
+        &plan_params_rust::ExpectedReturnsForPlanning::Historical => {
             result(data.stocks.historical, data.bonds.historical)
         }
-        &plan_params_normalized::ExpectedReturnsForPlanning::Manual { stocks, bonds } => {
+        &plan_params_rust::ExpectedReturnsForPlanning::Manual { stocks, bonds } => {
             result(*stocks, *bonds)
         }
     };
@@ -133,14 +133,14 @@ pub struct DataForExpectedReturnsForPlanningPresets {
 
 pub fn process_market_data_for_expected_returns_for_planning_presets(
     market_data: &DataForMarketBasedPlanParamValues,
-    sampling: &plan_params_normalized::Sampling,
-    scaling: &plan_params_normalized::HistoricalMonthlyLogReturnsAdjustment_StandardDeviation,
+    sampling: &plan_params_rust::Sampling,
+    scaling: &plan_params_rust::HistoricalMonthlyLogReturnsAdjustment_StandardDeviation,
 ) -> DataForExpectedReturnsForPlanningPresets {
     let block_size_actual = match sampling.kind {
-        plan_params_normalized::SamplingType::MonteCarlo => {
+        plan_params_rust::SamplingType::MonteCarlo => {
             Some(sampling.for_monte_carlo.block_size as usize)
         }
-        plan_params_normalized::SamplingType::Historical => None,
+        plan_params_rust::SamplingType::Historical => None,
     };
     let log_volatility_scale_actual = {
         StocksAndBonds {

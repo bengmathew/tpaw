@@ -1,7 +1,14 @@
 import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { faCaretDown, faCaretRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { MonthRange, fGet, noCase } from '@tpaw/common'
+import {
+  LabeledAmountUntimedLocation,
+  MonthRange,
+  LabeledAmountTimedLocation,
+  assert,
+  fGet,
+  noCase,
+} from '@tpaw/common'
 import React, {
   useEffect,
   useImperativeHandle,
@@ -9,43 +16,37 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { formatCurrency } from '../../../Utils/FormatCurrency'
-import { Padding } from '../../../Utils/Geometry'
-import { SimpleRange } from '../../../Utils/SimpleRange'
-import { optGet } from '../../../Utils/optGet'
-import {
-  getLabeledAmountEntriesByLocation,
-  getValueForMonthRangeEntriesByLocation,
-} from '../../PlanRoot/PlanRootHelpers/PlanParamsChangeAction'
-import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
-import { CenteredModal } from '../Modal/CenteredModal'
-import { MonthRangeDisplay } from '../MonthRangeDisplay'
-import { AmountInput } from './AmountInput'
+import { PlanParamsHelperFns } from '../../../../UseSimulator/PlanParamsHelperFns'
+import { formatCurrency } from '../../../../Utils/FormatCurrency'
+import { Padding } from '../../../../Utils/Geometry'
+import { useSimulation } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { CenteredModal } from '../../Modal/CenteredModal'
+import { MonthRangeDisplay } from '../../MonthRangeDisplay'
+import { AmountInput } from '../AmountInput'
+import { RealOrNominalInput } from '../RealOrNominalInput'
+import { smartDeltaFnForMonthlyAmountInput } from '../SmartDeltaFnForAmountInput'
 import { MonthRangeInput, MonthRangeInputProps } from './MonthRangeInput'
-import { RealOrNominalInput } from './RealOrNominalInput'
-import { smartDeltaFnForMonthlyAmountInput } from './SmartDeltaFnForAmountInput'
 
 type _PropsCommon = {
   addOrEdit: 'add' | 'edit'
+  entryId: string
   title: string
+  labelPlaceholder: string
   setHideInMain: (visible: boolean) => void
   onDone: () => void
   onBeforeDelete?: (id: string) => void
   transitionOut: (onDone: () => void) => void
-  entryId: string
-  labelPlaceholder: string
   cardPadding: Padding
 }
 type _Props =
   | ({
       hasMonthRange: false
-      location: Parameters<typeof getLabeledAmountEntriesByLocation>[1]
+      location: LabeledAmountUntimedLocation | LabeledAmountTimedLocation
     } & _PropsCommon)
   | ({
       hasMonthRange: true
-      location: Parameters<typeof getValueForMonthRangeEntriesByLocation>[1]
-      choices: MonthRangeInputProps['choices']
-      validRangeAsMFN: SimpleRange
+      location: LabeledAmountTimedLocation
+      choicesPreFilter: MonthRangeInputProps['choicesPreFilter']
     } & _PropsCommon)
 
 type _Section = 'label' | 'amount' | 'monthRange' | 'none'
@@ -68,9 +69,11 @@ const _sectionOrder = (
   }
 }
 
-export type EditValueForMonthRangeStateful = { closeSections: () => void }
+export type LabelAmountOptMonthRangeInputStateful = {
+  closeSections: () => void
+}
 
-export const EditValueForMonthRange = React.forwardRef(
+export const LabelAmountOptMonthRangeInput = React.forwardRef(
   (
     {
       addOrEdit,
@@ -84,13 +87,13 @@ export const EditValueForMonthRange = React.forwardRef(
       cardPadding,
       ...props
     }: _Props,
-    forwardedRef: React.ForwardedRef<EditValueForMonthRangeStateful>,
+    forwardedRef: React.ForwardedRef<LabelAmountOptMonthRangeInputStateful>,
   ) => {
     const { updatePlanParams } = useSimulation()
     const outerDivRef = useRef<HTMLDivElement>(null)
     const buttonDivRef = useRef<HTMLDivElement>(null)
 
-    const { planParams } = useSimulation()
+    const { planParamsNorm } = useSimulation()
     const [{ dialogMode, currSection }, setState] = useState({
       dialogMode: addOrEdit === 'add',
       currSection: addOrEdit === 'add' ? 'label' : ('none' as _Section),
@@ -117,8 +120,7 @@ export const EditValueForMonthRange = React.forwardRef(
       ? {
           location: props.location,
           hasMonthRange: true as const,
-          choices: props.choices,
-          validRangeAsMFN: props.validRangeAsMFN,
+          choices: props.choicesPreFilter,
           ...sectionPropsCommon,
         }
       : {
@@ -140,7 +142,7 @@ export const EditValueForMonthRange = React.forwardRef(
       onBeforeDelete?.(sectionProps.entryId)
       transitionOut(() => {
         onDone()
-        updatePlanParams('deleteLabeledAmount', {
+        updatePlanParams('deleteLabeledAmountTimedOrUntimed', {
           location: props.location,
           entryId,
         })
@@ -148,19 +150,22 @@ export const EditValueForMonthRange = React.forwardRef(
     }
 
     // Handle the case where entry is missing. This can happen through undo/redo.
-    const entry = useMemo(
-      () =>
-        getLabeledAmountEntriesByLocation(planParams, props.location)[entryId],
-      [entryId, planParams, props.location],
-    )
+    const hasEntry = useMemo(() => {
+      const entries =
+        PlanParamsHelperFns.getLabeledAmountTimedOrUntimedListFromLocation(
+          planParamsNorm,
+          props.location,
+        )
+      return !!entries.find((x) => x.id === entryId)
+    }, [entryId, planParamsNorm, props.location])
     const handleNoEntry = () => transitionOut(() => {})
     const handleNoEntryRef = useRef(handleNoEntry)
     handleNoEntryRef.current = handleNoEntry
     useEffect(() => {
-      if (!entry) handleNoEntryRef.current()
-    }, [entry])
+      if (!hasEntry) handleNoEntryRef.current()
+    }, [hasEntry])
 
-    if (!entry) return <></>
+    if (!hasEntry) return <></>
     return (
       <div
         ref={outerDivRef}
@@ -266,32 +271,32 @@ type _SectionPropsCommon = {
 type _SectionProps =
   | ({
       hasMonthRange: true
-      location: Parameters<typeof getValueForMonthRangeEntriesByLocation>[1]
+      location: LabeledAmountTimedLocation
     } & _SectionPropsCommon)
   | ({
       hasMonthRange: false
-      location: Parameters<typeof getLabeledAmountEntriesByLocation>[1]
+      location: LabeledAmountUntimedLocation | LabeledAmountTimedLocation
     } & _SectionPropsCommon)
 
 const _LabelSection = React.memo(
   (props: _SectionProps & { labelPlaceholder: string }) => {
-    const { planParams, updatePlanParams } = useSimulation()
+    const { planParamsNorm, updatePlanParams } = useSimulation()
     const { entryId, labelPlaceholder, location } = props
     const entry = useMemo(
       () =>
         fGet(
-          optGet(
-            getLabeledAmountEntriesByLocation(planParams, location),
-            entryId,
-          ),
+          PlanParamsHelperFns.getLabeledAmountTimedOrUntimedListFromLocation(
+            planParamsNorm,
+            location,
+          ).find((x) => x.id === entryId),
         ),
-      [entryId, location, planParams],
+      [entryId, location, planParamsNorm],
     )
 
     const [value, setValue] = useState(entry.label ?? '')
     const handleChangeEntry = () => {
       const trimmed = value.trim()
-      updatePlanParams('setLabelForLabeledAmount', {
+      updatePlanParams('setLabelForLabeledAmountTimedOrUntimed', {
         location,
         entryId,
         label: trimmed.length === 0 ? null : trimmed,
@@ -324,23 +329,60 @@ const _LabelSection = React.memo(
   },
 )
 const _AmountSection = React.memo((props: _SectionProps) => {
-  const { planParams, updatePlanParams } = useSimulation()
+  const { planParamsNorm, updatePlanParams } = useSimulation()
   const { entryId, location, hasMonthRange } = props
   const { increment, decrement } = smartDeltaFnForMonthlyAmountInput
-  const entry = useMemo(
-    () =>
-      fGet(
-        optGet(
-          getLabeledAmountEntriesByLocation(planParams, location),
-          entryId,
-        ),
-      ),
-    [entryId, location, planParams],
-  )
+  const { amount, nominal } = useMemo((): {
+    nominal: boolean
+    amount: number
+  } => {
+    switch (location) {
+      case 'legacyExternalSources': {
+        const entry = fGet(
+          PlanParamsHelperFns.getLabeledAmountUntimedListFromLocation(
+            planParamsNorm,
+            location,
+          ).find((x) => x.id === entryId),
+        )
+        return entry
+      }
+      default: {
+        const entry = fGet(
+          PlanParamsHelperFns.getLabeledAmountTimedListFromLocation(
+            planParamsNorm,
+            location,
+          ).find((x) => x.id === entryId),
+        )
+        assert(entry.amountAndTiming.type !== 'inThePast')
+        assert(entry.amountAndTiming.type !== 'oneTime')
+        assert(entry.amountAndTiming.delta === null)
+        assert(entry.amountAndTiming.everyXMonths === 1)
+        return {
+          nominal: entry.nominal,
+          amount: entry.amountAndTiming.baseAmount,
+        }
+      }
+    }
+  }, [entryId, location, planParamsNorm])
 
   const handleAmountChange = (amount: number) => {
-    updatePlanParams('setAmountForLabeledAmount', { location, entryId, amount })
+    switch (location) {
+      case 'legacyExternalSources':
+        updatePlanParams('setAmountForLabeledAmountUntimed', {
+          location,
+          entryId,
+          amount,
+        })
+        break
+      default:
+        updatePlanParams('setBaseAmountForLabeledAmountTimed', {
+          location,
+          entryId,
+          baseAmount: amount,
+        })
+    }
   }
+
   return (
     <_Section
       {...props}
@@ -348,8 +390,8 @@ const _AmountSection = React.memo((props: _SectionProps) => {
       sectionName={hasMonthRange ? 'Amount per Month' : 'Amount'}
     >
       <h2 className="">
-        {formatCurrency(entry.value)} {entry.nominal ? 'not' : ''} adjusted for
-        inflation ({entry.nominal ? 'nominal' : 'real'} dollars)
+        {formatCurrency(amount)} {nominal ? 'not' : ''} adjusted for inflation (
+        {nominal ? 'nominal' : 'real'} dollars)
       </h2>
       <div
         className="grid gap-x-2  mt-2"
@@ -359,31 +401,31 @@ const _AmountSection = React.memo((props: _SectionProps) => {
       >
         <div className="flex">
           <AmountInput
-            className="w-[100px] text-input"
+            className="w-[150px] text-input"
             prefix="$"
-            value={entry.value}
+            value={amount}
             onChange={handleAmountChange}
             decimals={0}
             modalLabel={null}
           />
           <button
             className="ml-3 px-3"
-            onClick={() => handleAmountChange(increment(entry.value))}
+            onClick={() => handleAmountChange(increment(amount))}
           >
             <FontAwesomeIcon icon={faPlus} />
           </button>
           <button
             className="px-3"
-            onClick={() => handleAmountChange(decrement(entry.value))}
+            onClick={() => handleAmountChange(decrement(amount))}
           >
             <FontAwesomeIcon icon={faMinus} />
           </button>
         </div>
         <RealOrNominalInput
           className="mt-4"
-          nominal={entry.nominal}
+          nominal={nominal}
           onChange={(nominal) =>
-            updatePlanParams('setNominalForLabeledAmount', {
+            updatePlanParams('setNominalForLabeledAmountTimedOrUntimed', {
               location,
               entryId,
               nominal,
@@ -397,89 +439,48 @@ const _AmountSection = React.memo((props: _SectionProps) => {
 
 const _MonthRangeSection = React.memo(
   ({
-    validRangeAsMFN,
     choices,
     ...props
   }: Extract<_SectionProps, { hasMonthRange: true }> & {
-    validRangeAsMFN: SimpleRange
-    choices: MonthRangeInputProps['choices']
+    choices: MonthRangeInputProps['choicesPreFilter']
   }) => {
-    const { planParams, planParamsExt, updatePlanParams } = useSimulation()
-    const { clampMonthRangeToNow, months } = planParamsExt
+    const { planParamsNorm, updatePlanParams } = useSimulation()
     const { location, entryId } = props
-    const entry = useMemo(
+    const { amountAndTiming } = useMemo(
       () =>
         fGet(
-          optGet(
-            getValueForMonthRangeEntriesByLocation(planParams, location),
+          PlanParamsHelperFns.getLabeledAmountTimedListFromLocationAndId(
+            planParamsNorm,
+            location,
             entryId,
           ),
         ),
-      [entryId, location, planParams],
+      [entryId, location, planParamsNorm],
     )
+    assert(amountAndTiming.type !== 'inThePast')
+    assert(amountAndTiming.type !== 'oneTime')
 
-    const monthRangeClamped = clampMonthRangeToNow(entry.monthRange)
     const handleChange = (monthRange: MonthRange) => {
-      updatePlanParams('setMonthRangeForValueForMonthRange', {
+      updatePlanParams('setMonthRangeForLabeledAmountTimed', {
         location,
         entryId,
         monthRange,
       })
     }
-
     return (
       <_Section
         {...props}
         sectionType="monthRange"
         sectionName="For These Months "
       >
-        <MonthRangeDisplay
+        <MonthRangeDisplay className="" value={amountAndTiming.monthRange} />
+        <MonthRangeInput
           className=""
-          valueClamped={monthRangeClamped}
-          range={validRangeAsMFN}
-          skipLength={false}
-          planParamsExt={planParamsExt}
+          normValue={amountAndTiming.monthRange}
+          onChange={handleChange}
+          choicesPreFilter={choices}
         />
-        <>
-          {monthRangeClamped ? (
-            <MonthRangeInput
-              className=""
-              valueClamped={monthRangeClamped}
-              setValue={handleChange}
-              rangeAsMFN={validRangeAsMFN}
-              choices={choices}
-              modalTextInputOnMobile={false}
-            />
-          ) : (
-            <div>
-              <MonthRangeDisplay
-                className=""
-                valueClamped={monthRangeClamped}
-                range={validRangeAsMFN}
-                skipLength={false}
-                planParamsExt={planParamsExt}
-              />
-              <button
-                className="underline pt-2"
-                onClick={() =>
-                  handleChange({
-                    type: 'startAndNumMonths',
-                    start: months.now,
-                    numMonths: 1,
-                  })
-                }
-              >
-                Edit dates
-              </button>
-            </div>
-          )}
-        </>
       </_Section>
-      // ) : (
-      // <div className={`${props.className ?? ''}`}>
-      //   <h2 className="inline bg-gray-300 px-2 py-0.5 rounded-lg ">Completed</h2>
-      //   <h2 className="mt-2">The duration for this entry is in the past.</h2>
-      // </div>
     )
   },
 )

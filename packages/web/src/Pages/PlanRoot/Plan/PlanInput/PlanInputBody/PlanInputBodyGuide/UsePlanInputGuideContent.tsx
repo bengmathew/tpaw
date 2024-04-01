@@ -9,7 +9,7 @@ import { PlanInputType } from '../../Helpers/PlanInputType'
 
 export function usePlanInputGuideContent(type: PlanInputType) {
   const { nonPlanParams } = useNonPlanParams()
-  const { planParams, defaultPlanParams, currentMarketData } = useSimulation()
+  const { planParamsNorm, currentMarketData } = useSimulation()
   const { inflation } = currentMarketData
 
   const formatDate = (epoch: number) =>
@@ -22,15 +22,15 @@ export function usePlanInputGuideContent(type: PlanInputType) {
 
   const presetInfo =
     fWASM().process_market_data_for_expected_returns_for_planning_presets(
-      planParams.advanced.sampling,
-      planParams.advanced.historicalMonthlyLogReturnsAdjustment
+      CallRust.getPlanParamsRust(planParamsNorm).advanced.sampling,
+      planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
         .standardDeviation,
       currentMarketData,
     )
 
   const contentForType = usePlanContent()[type]
   if (!('guide' in contentForType)) return null
-  const content = contentForType.guide[planParams.advanced.strategy]
+  const content = contentForType.guide[planParamsNorm.advanced.strategy]
   const variables = {
     numRuns: `${nonPlanParams.numOfSimulationForMonteCarloSampling}`,
     inflationDate: formatDate(inflation.closingTime),

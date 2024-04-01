@@ -21,7 +21,6 @@ import {
 import _ from 'lodash'
 import { fGet, noCase, preciseRange } from '../../../Utils'
 import { PlanParams16 } from './PlanParams16'
-import { TIME_PREFERENCE_VALUES } from '../PlanParams'
 
 export namespace PlanParams17 {
   export const MAX_LABEL_LENGTH = 150
@@ -597,19 +596,21 @@ namespace ForOld {
       timePreferenceOld,
     )
 
-    const newTimeToDeltaGs = TIME_PREFERENCE_VALUES.map((timePreference) => {
-      const newMerton = _applyMertonNew(
-        processedReturns,
-        riskTolerance,
-        timePreference,
-      )
+    const newTimeToDeltaGs = PlanParams17.TIME_PREFERENCE_VALUES.map(
+      (timePreference) => {
+        const newMerton = _applyMertonNew(
+          processedReturns,
+          riskTolerance,
+          timePreference,
+        )
 
-      return {
-        timePreference,
-        newMerton,
-        gDelta: Math.abs(newMerton.spendingTilt - oldMerton.spendingTilt),
-      }
-    })
+        return {
+          timePreference,
+          newMerton,
+          gDelta: Math.abs(newMerton.spendingTilt - oldMerton.spendingTilt),
+        }
+      },
+    )
 
     const min = fGet(_.minBy(newTimeToDeltaGs, (x) => x.gDelta))
     return min.timePreference
@@ -712,12 +713,12 @@ namespace ForOld {
               adjustment.type === 'to'
                 ? adjustment[type]
                 : adjustment.type === 'toExpected'
-                ? expected[type]
-                : adjustment.type === 'none'
-                ? historical.expectedValue
-                : adjustment.type === 'by'
-                ? historical.expectedValue - adjustment[type]
-                : noCase(adjustment)
+                  ? expected[type]
+                  : adjustment.type === 'none'
+                    ? historical.expectedValue
+                    : adjustment.type === 'by'
+                      ? historical.expectedValue - adjustment[type]
+                      : noCase(adjustment)
 
             return historical.adjust(targetExpected)
           }

@@ -22,8 +22,7 @@ export const PlanSummaryDialog = React.memo(
     dialogPosition: Exclude<DialogPosition, 'done'>
     fixedSizing: { padding: { top: number } }
   }) => {
-    const { updatePlanParams, planParamsExt } = useSimulation()
-    const { nextDialogPosition } = planParamsExt
+    const { updatePlanParams, planParamsNorm } = useSimulation()
 
     const [measures, setMeasures] = useState({
       age: rectExt(0),
@@ -193,7 +192,10 @@ export const PlanSummaryDialog = React.memo(
                   <button
                     className="btn-sm bg-orange-200  rounded-full text-base"
                     onClick={() =>
-                      updatePlanParams('setDialogPosition', nextDialogPosition)
+                      updatePlanParams(
+                        'setDialogPosition',
+                        planParamsNorm.dialogPosition.next,
+                      )
                     }
                   >
                     Skip This Section

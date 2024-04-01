@@ -11,8 +11,11 @@ cliDevUserPlan
       where: { userId },
     })
 
-    const headers = ['Label', 'Slug', 'Id']
+    const headers = ['Label', 'Slug', 'Id', 'Is Main']
     console.log(
-      table([headers, ...plans.map((x) => [x.label, x.slug, x.planId])]),
+      table([
+        headers,
+        ...plans.map((x) => [x.label, x.slug, x.planId, `${x.isMain}`]),
+      ]),
     )
   })

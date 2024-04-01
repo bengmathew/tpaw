@@ -7,7 +7,7 @@ import { useNonPlanParams } from '../../../PlanRootHelpers/WithNonPlanParams'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 
 export const useIsPlanInputDevSimulationsModified = () => {
-  const { randomSeed, planParams, defaultPlanParams } = useSimulation()
+  const { randomSeed, planParamsNorm, defaultPlanParams } = useSimulation()
   const { nonPlanParams } = useNonPlanParams()
   const defaultNonPlanParams = useMemo(
     () => getDefaultNonPlanParams(Date.now()),
@@ -15,11 +15,11 @@ export const useIsPlanInputDevSimulationsModified = () => {
   )
   return (
     randomSeed !== DEFAULT_MONTE_CARLO_SIMULATION_SEED ||
-    planParams.advanced.sampling.forMonteCarlo.staggerRunStarts !==
+    planParamsNorm.advanced.sampling.forMonteCarlo.staggerRunStarts !==
       defaultPlanParams.advanced.sampling.forMonteCarlo.staggerRunStarts ||
     nonPlanParams.numOfSimulationForMonteCarloSampling !==
       defaultNonPlanParams.numOfSimulationForMonteCarloSampling ||
-    planParams.advanced.historicalMonthlyLogReturnsAdjustment
+    planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
       .overrideToFixedForTesting !==
       defaultPlanParams.advanced.historicalMonthlyLogReturnsAdjustment
         .overrideToFixedForTesting

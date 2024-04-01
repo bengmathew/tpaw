@@ -1,4 +1,4 @@
-import { DialogPosition, PlanParams, noCase } from '@tpaw/common'
+import { DialogPosition, noCase } from '@tpaw/common'
 import React from 'react'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
@@ -22,9 +22,9 @@ const _state = (dialogPosition: DialogPosition) => {
 }
 export const PlanResultsDialogCurtain = React.memo(
   ({ layout }: { layout: 'mobile' | 'laptop' | 'desktop' }) => {
-    const { planParamsExt } = useSimulation()
-    const { dialogPositionEffective } = planParamsExt
-    const state = _state(dialogPositionEffective)
+    const { planParamsNorm } = useSimulation()
+    const { dialogPosition } = planParamsNorm
+    const state = _state(dialogPosition.effective)
 
     const planColors = usePlanColors()
     return (

@@ -1,17 +1,17 @@
 import {
-    PlanParams,
-    SomePlanParams,
-    assert,
-    fGet,
-    planParamsMigrate,
+  PlanParams,
+  SomePlanParams,
+  assert,
+  fGet,
+  planParamsMigrate,
 } from '@tpaw/common'
 import { CurrentPortfolioBalance } from '../../Pages/PlanRoot/PlanRootHelpers/CurrentPortfolioBalance'
 import { noCase } from '../../Utils/Utils'
 import { getWASM } from './GetWASM'
 import { runSimulationInWASM } from './RunSimulationInWASM'
 import {
-    SimulationWorkerArgs,
-    SimulationWorkerResult,
+  SimulationWorkerArgs,
+  SimulationWorkerResult,
 } from './SimulationWorkerAPI'
 
 import * as Sentry from '@sentry/nextjs'
@@ -35,7 +35,9 @@ addEventListener('message', async (event) => {
     case 'runSimulation':
       await _withErrorHandling(async () => {
         const result = runSimulationInWASM(
-          eventData.args.params,
+          eventData.args.currentPortfolioBalanceAmount,
+          eventData.args.planParamsNorm,
+          eventData.args.planParamsProcessed,
           eventData.args.runs,
           eventData.args.randomSeed,
           await getWASM(),
@@ -163,7 +165,7 @@ const _withErrorHandling = async <T>(
     const x = await fn()
     ;(postMessage as any)(x.reply, x.data)
   } catch (e) {
-  console.dir(e)
+    console.dir(e)
     Sentry.captureException(e)
     assert(e !== null)
     const message =

@@ -1,18 +1,19 @@
 import {
-    DialogPosition,
-    PLAN_PARAMS_CONSTANTS,
-    block,
-    noCase,
+  DialogPosition,
+  PLAN_PARAMS_CONSTANTS,
+  block,
+  noCase,
 } from '@tpaw/common'
-import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
+import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { PlanInputType } from './PlanInputType'
 import { isPlanSectionDialogInOverlayMode } from './PlanSectionDialogPosition'
 
 export const useGetPlanInputVisibility = (
-  planParamsExt: PlanParamsExtended,
+  planParamsNorm: PlanParamsNormalized,
 ) => {
-  const { isFutureSavingsAllowed, dialogPositionEffective, planParams } =
-    planParamsExt
+  const { dialogPosition } = planParamsNorm
+  const isFutureSavingsAllowed =
+    planParamsNorm.ages.validMonthRangesAsMFN.futureSavings !== null
 
   const _helper = (
     showAtDialogPosition: Exclude<
@@ -24,10 +25,11 @@ export const useGetPlanInputVisibility = (
     if (!visible) return { visible: false } as const
 
     const disabled = block(() => {
-      if (isPlanSectionDialogInOverlayMode(dialogPositionEffective)) return true
+      if (isPlanSectionDialogInOverlayMode(dialogPosition.effective))
+        return true
       return (
         PLAN_PARAMS_CONSTANTS.dialogPositionOrder.indexOf(
-          dialogPositionEffective,
+          dialogPosition.effective,
         ) <
         PLAN_PARAMS_CONSTANTS.dialogPositionOrder.indexOf(showAtDialogPosition)
       )
@@ -38,7 +40,7 @@ export const useGetPlanInputVisibility = (
       // In overlay mode, the curtain will effectively do the lightening, so don't
       // lighten the button directly.
       grayOutButton:
-        disabled && !isPlanSectionDialogInOverlayMode(dialogPositionEffective),
+        disabled && !isPlanSectionDialogInOverlayMode(dialogPosition.effective),
     }
   }
 
@@ -55,9 +57,9 @@ export const useGetPlanInputVisibility = (
       case 'extra-spending':
         return _helper('done')
       case 'legacy':
-        return _helper('done', planParams.advanced.strategy !== 'SWR')
+        return _helper('done', planParamsNorm.advanced.strategy !== 'SWR')
       case 'spending-ceiling-and-floor':
-        return _helper('done', planParams.advanced.strategy !== 'SWR')
+        return _helper('done', planParamsNorm.advanced.strategy !== 'SWR')
       case 'risk':
         return _helper('done')
       case 'expected-returns-and-volatility':

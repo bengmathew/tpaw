@@ -5,79 +5,96 @@ import {
   faCheck,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { assert, CalendarMonth } from '@tpaw/common'
+import { CalendarMonth, CalendarMonthFns, assert } from '@tpaw/common'
+import clsx from 'clsx'
 import _ from 'lodash'
 import React, { useEffect, useMemo, useState } from 'react'
-import { calendarMonthStr } from '../../../Utils/CalendarMonthStr'
-import { SimpleRange } from '../../../Utils/SimpleRange'
-import { ModalListbox } from '../Modal/ModalListbox'
-import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { SimpleRange } from '../../../../Utils/SimpleRange'
+import { useSimulation } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { ModalListbox } from '../../Modal/ModalListbox'
 
+// TODO: Handle validRangeAsMFN = null (currently crashes)
 export const CalendarMonthInput = React.memo(
   ({
-    className = '',
-    value,
+    className,
+    normValue: { baseValue, validRangeAsMFN },
     onChange: onChangeIn,
-    rangeAsMFN,
   }: {
     className?: string
-    value: CalendarMonth
+    normValue: {
+      baseValue: CalendarMonth
+      validRangeAsMFN: { includingLocalConstraints: SimpleRange | null }
+    }
     onChange: (x: CalendarMonth) => void
-    rangeAsMFN: SimpleRange
   }) => {
-    const { planParamsExt } = useSimulation()
-    const { monthsFromNowToCalendarMonth, asMFN } = planParamsExt
-
-    const rangeAsCalendarMonth = useMemo(
-      () => ({
-        start: monthsFromNowToCalendarMonth(rangeAsMFN.start),
-        end: monthsFromNowToCalendarMonth(rangeAsMFN.end),
-      }),
-      [monthsFromNowToCalendarMonth, rangeAsMFN.end, rangeAsMFN.start],
-    )
-
-    const monthRange = _.inRange(
-      value.year,
-      rangeAsCalendarMonth.start.year,
-      rangeAsCalendarMonth.end.year + 1,
-    )
+    const { planParamsNorm } = useSimulation()
+    const { nowAs } = planParamsNorm
+    const toMFN = CalendarMonthFns.getToMFN(nowAs.calendarMonth)
+    const fromMFN = CalendarMonthFns.getFromMFN(nowAs.calendarMonth)
+    const rangeAsCalendarMonth = validRangeAsMFN.includingLocalConstraints
       ? {
-          start:
-            rangeAsCalendarMonth.start.year === value.year
-              ? rangeAsCalendarMonth.start.month
-              : 1,
-          end:
-            rangeAsCalendarMonth.end.year === value.year
-              ? rangeAsCalendarMonth.end.month
-              : 12,
+          start: fromMFN(validRangeAsMFN.includingLocalConstraints.start),
+          end: fromMFN(validRangeAsMFN.includingLocalConstraints.end),
         }
       : null
+
+    const monthRange =
+      rangeAsCalendarMonth &&
+      SimpleRange.Closed.isIn(baseValue.year, {
+        start: rangeAsCalendarMonth.start.year,
+        end: rangeAsCalendarMonth.end.year,
+      })
+        ? {
+            start:
+              rangeAsCalendarMonth.start.year === baseValue.year
+                ? rangeAsCalendarMonth.start.month
+                : 1,
+            end:
+              rangeAsCalendarMonth.end.year === baseValue.year
+                ? rangeAsCalendarMonth.end.month
+                : 12,
+          }
+        : null
     const monthChoices = useMemo(() => _.range(1, 13), [])
 
-    const yearRange = {
-      start: rangeAsCalendarMonth.start.year,
-      end: rangeAsCalendarMonth.end.year,
-    }
-    const yearChoices = _.chunk(
-      _.range(
-        Math.min(value.year, _.floor(yearRange.start, -1)),
-        Math.max(value.year, _.ceil(yearRange.end, -1)),
-      ),
-      10,
+    const yearRange = rangeAsCalendarMonth
+      ? {
+          start: rangeAsCalendarMonth.start.year,
+          end: rangeAsCalendarMonth.end.year,
+        }
+      : null
+    const yearChoices = yearRange
+      ? _.chunk(
+          _.range(
+            Math.min(baseValue.year, _.floor(yearRange.start, -1)),
+            Math.max(baseValue.year, _.ceil(yearRange.end, -1)),
+          ),
+          10,
+        )
+      : []
+
+    const isInRange = SimpleRange.Closed.isIn(
+      toMFN(baseValue),
+      validRangeAsMFN.includingLocalConstraints,
     )
 
-    const getIsInRange = (x: CalendarMonth) =>
-      _.inRange(asMFN(x), rangeAsMFN.start, rangeAsMFN.end + 1)
-    const isInRange = getIsInRange(value)
-
     const handleChange = (x: CalendarMonth) => {
-      if (getIsInRange(x)) {
+      assert(validRangeAsMFN.includingLocalConstraints)
+      if (
+        SimpleRange.Closed.isIn(
+          toMFN(x),
+          validRangeAsMFN.includingLocalConstraints,
+        )
+      ) {
         onChangeIn(x)
         return false
       } else {
         onChangeIn(
-          monthsFromNowToCalendarMonth(
-            _.clamp(asMFN(x), rangeAsMFN.start, rangeAsMFN.end),
+          fromMFN(
+            SimpleRange.Closed.clamp(
+              toMFN(x),
+              validRangeAsMFN.includingLocalConstraints,
+            ),
           ),
         )
         return true
@@ -85,16 +102,14 @@ export const CalendarMonthInput = React.memo(
     }
     return (
       <div
-        className={`${className} grid gap-y-2 gap-x-2 `}
+        className={clsx(className, `grid gap-y-2 gap-x-2 `)}
         style={{ grid: 'auto/auto 1fr' }}
       >
         <_Listbox
           choices={yearChoices}
-          value={value.year}
-          onChange={(year) => handleChange({ ...value, year })}
-          isDisabled={(year) =>
-            !_.inRange(year, yearRange.start, yearRange.end + 1)
-          }
+          value={baseValue.year}
+          onChange={(year) => handleChange({ ...baseValue, year })}
+          isDisabled={(year) => !SimpleRange.Closed.isIn(year, yearRange)}
           toStr={(x) => `${x}`}
           error={!isInRange}
           type="year"
@@ -102,15 +117,15 @@ export const CalendarMonthInput = React.memo(
 
         <_Listbox
           choices={monthChoices}
-          value={value.month}
+          value={baseValue.month}
           onChange={(month) => {
             assert(_.inRange(month, 0, 14))
             const newValue =
               month === 0
-                ? { year: value.year - 1, month: 12 }
+                ? { year: baseValue.year - 1, month: 12 }
                 : month === 13
-                ? { year: value.year + 1, month: 1 }
-                : { year: value.year, month }
+                  ? { year: baseValue.year + 1, month: 1 }
+                  : { year: baseValue.year, month }
             return handleChange(newValue)
           }}
           isDisabled={(month) =>
@@ -118,7 +133,7 @@ export const CalendarMonthInput = React.memo(
               ? !_.inRange(month, monthRange.start, monthRange.end + 1)
               : false
           }
-          toStr={(month) => calendarMonthStr.justMonth({ month })}
+          toStr={(month) => CalendarMonthFns.toStr.justMonth({ month })}
           error={!isInRange}
           type="month"
         />

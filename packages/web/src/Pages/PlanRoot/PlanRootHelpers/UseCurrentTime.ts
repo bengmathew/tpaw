@@ -1,13 +1,13 @@
-import { Guards, getZonedTimeFns } from '@tpaw/common'
+import { CalendarMonth, Guards, getZonedTimeFns, letIn } from '@tpaw/common'
 import {
-    chain,
-    constant,
-    gte,
-    integer,
-    json,
-    number,
-    object,
-    string,
+  chain,
+  constant,
+  gte,
+  integer,
+  json,
+  number,
+  object,
+  string,
 } from 'json-guard'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useIANATimezoneName } from './WithNonPlanParams'
@@ -18,6 +18,7 @@ type SetFastForwardSpec = (
 
 export type CurrentTimeInfo = {
   currentTimestamp: number
+  nowAsCalendarMonth: CalendarMonth
   forceUpdateCurrentTime: () => number
   fastForwardInfo:
     | {
@@ -39,7 +40,7 @@ export const useCurrentTime = ({
   planId: string
   startTime?: number
 }): CurrentTimeInfo => {
-  const { ianaTimezoneName } = useIANATimezoneName()
+  const { ianaTimezoneName, getZonedTime } = useIANATimezoneName()
 
   const [currentTimestampWithoutFastForward, setCurrentTimeWithoutFastForward] =
     useState(() => startTime ?? Date.now())
@@ -89,8 +90,17 @@ export const useCurrentTime = ({
     return _FastForward.apply(newTime, ianaTimezoneName, fastForwardSpec)
   }, [fastForwardSpec, ianaTimezoneName])
 
+  const nowAsCalendarMonth = useMemo(
+    () =>
+      letIn(getZonedTime(currentTimestamp), (nowAsDateTime) => ({
+        year: nowAsDateTime.year,
+        month: nowAsDateTime.month,
+      })),
+    [currentTimestamp, getZonedTime],
+  )
   return {
     currentTimestamp,
+    nowAsCalendarMonth,
     forceUpdateCurrentTime,
     fastForwardInfo,
   }

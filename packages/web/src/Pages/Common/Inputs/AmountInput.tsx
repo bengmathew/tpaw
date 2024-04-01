@@ -108,10 +108,12 @@ const _AmountInput = React.memo(
       }: _Props,
       forwardRef,
     ) => {
+      const [outOfDate, setOutOfDate] = useState(false)
       const [internalValue, setInternalValue] = useState<number | null>(value)
       useEffect(() => {
         setInternalValue(value)
-      }, [value])
+        setOutOfDate(false)
+      }, [value, outOfDate])
       const outputValue = internalValue === null ? 0 : internalValue
 
       return (
@@ -137,9 +139,10 @@ const _AmountInput = React.memo(
             setInternalValue(x.floatValue === undefined ? null : x.floatValue)
           }}
           onBlur={() => {
-            // Don't rely on effect to change interval value. If inputValue is null
-            // and outputValue is 0, and value is 0, inputValue won't update to 0.
-            setInternalValue(outputValue)
+            // Don't rely on useEffect with dep on external value to change
+            // interval value. There might not be a change in the external value,
+            // but wil still have to copy it over.
+            setOutOfDate(true)
             onChange(outputValue)
           }}
           onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
@@ -148,9 +151,10 @@ const _AmountInput = React.memo(
           }}
           onKeyDown={(e: React.KeyboardEvent) => {
             if (e.key === 'Enter') {
-              // Don't rely on effect to change interval value. If inputValue is null
-              // and outputValue is 0, and value is 0, inputValue won't update to 0.
-              setInternalValue(outputValue)
+              // Don't rely on useEffect with dep on external value to change
+              // interval value. There might not be a change in the external value,
+              // but wil still have to copy it over.
+              setOutOfDate(true)
               onChange(outputValue)
               onEnter?.(outputValue)
             }

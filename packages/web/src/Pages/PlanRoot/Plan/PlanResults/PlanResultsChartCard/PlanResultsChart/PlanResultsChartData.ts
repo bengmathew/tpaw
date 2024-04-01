@@ -1,40 +1,36 @@
-import { PlanParams, block, noCase } from '@tpaw/common'
+import { assert, block, noCase } from '@tpaw/common'
 import _ from 'lodash'
-import { PlanParamsExtended } from '../../../../../../UseSimulator/ExtentPlanParams'
+import { PlanParamsNormalized } from '../../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { PlanParamsProcessed } from '../../../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import {
-    NumberArrByPercentileByMonthsFromNow,
-    SimulationResult,
+  NumberArrByPercentileByMonthsFromNow,
+  SimulationResult,
 } from '../../../../../../UseSimulator/Simulator/Simulator'
 import { formatCurrency } from '../../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../../Utils/FormatPercentage'
 import { XY } from '../../../../../../Utils/Geometry'
 import { SimpleRange } from '../../../../../../Utils/SimpleRange'
 import { fGet } from '../../../../../../Utils/Utils'
-import { optGet } from '../../../../../../Utils/optGet'
 import { PlanSizing } from '../../../PlanSizing/PlanSizing'
 import { PlanTransitionState } from '../../../PlanTransition'
 import { PlanColors } from '../../../UsePlanColors'
 import {
-    PlanResultsChartType,
-    getPlanResultsChartSpendingTotalFundingSourcesPercentile,
-    isPlanResultsChartSpendingDiscretionaryType,
-    isPlanResultsChartSpendingEssentialType,
-    isPlanResultsChartSpendingTotalFundingSourcesType,
-    planResultsChartSpendingDiscretionaryTypeID,
-    planResultsChartSpendingEssentialTypeID,
+  PlanResultsChartType,
+  getPlanResultsChartSpendingTotalFundingSourcesPercentile,
+  isPlanResultsChartSpendingDiscretionaryType,
+  isPlanResultsChartSpendingEssentialType,
+  isPlanResultsChartSpendingTotalFundingSourcesType,
+  planResultsChartSpendingDiscretionaryTypeID,
+  planResultsChartSpendingEssentialTypeID,
 } from '../../PlanResultsChartType'
 
 export type PlanResultsChartDataForPDF = {
   chartType: PlanResultsChartType
-  planParams: PlanParams
+  planParamsNorm: PlanParamsNormalized
   planParamsProcessed: PlanParamsProcessed
-  planParamsExt: PlanParamsExtended
   displayRange: { x: SimpleRange; y: SimpleRange }
   formatY: (x: number) => string
   layout: 'laptop' | 'mobile' | 'desktop'
-  // planSizing: PlanSizing
-  // planTransitionState: PlanTransitionState
   planColors: PlanColors
 } & (
   | {
@@ -85,42 +81,60 @@ export const getPlanResultsChartDataForPDF = (
   planColors: PlanColors,
   alwaysShowAllMonths: boolean,
 ): PlanResultsChartDataForPDF => {
-  const { planParamsProcessed, planParamsExt } = simulationResult.args
+  const { planParamsProcessed, planParamsNorm } = simulationResult.args
+  const { ages } = planParamsNorm
+  const { lastMonthAsMFN, withdrawalStartMonth } = ages.simulationMonths
 
-  const planParams = planParamsProcessed.planParams
   const hasLegacy =
     planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.total !== 0 ||
     planParamsProcessed.adjustmentsToSpending.tpawAndSPAW
       .monthlySpendingCeiling !== null
 
   const xRangeAsMFN = block(() => {
-    const { asMFN, withdrawalStartMonth, maxMaxAge } = planParamsExt
     const retirementStartAsMFN = alwaysShowAllMonths
       ? 0
-      : asMFN(withdrawalStartMonth)
-    const lastPlanningMonthAsMFN = asMFN(maxMaxAge)
+      : withdrawalStartMonth.asMFN
     return {
-      allMonthsButLast: { start: 0, end: lastPlanningMonthAsMFN - 1 },
-      allMonthsNoLegacy: { start: 0, end: lastPlanningMonthAsMFN },
-      allMonthsWithLegacy: { start: 0, end: lastPlanningMonthAsMFN + 1 },
+      allMonthsButLast: { start: 0, end: lastMonthAsMFN - 1 },
+      allMonthsNoLegacy: { start: 0, end: lastMonthAsMFN },
+      allMonthsWithLegacy: { start: 0, end: lastMonthAsMFN + 1 },
       retirementMonthsNoLegacy: {
         start: retirementStartAsMFN,
-        end: lastPlanningMonthAsMFN,
+        end: lastMonthAsMFN,
       },
       retirementMonthsWithLegacy: {
         start: retirementStartAsMFN,
-        end: lastPlanningMonthAsMFN + 1,
+        end: lastMonthAsMFN + 1,
       },
     }
   })
 
   const spendingMonthsAsMFN = block(() => {
-    const { asMFN, withdrawalStartMonth } = planParamsExt
-    const withdrawalStartAsMFN = asMFN(withdrawalStartMonth)
+    const withdrawalStartAsMFN = withdrawalStartMonth.asMFN
     return [
-      ..._.values(planParams.adjustmentsToSpending.extraSpending.essential),
-      ..._.values(planParams.adjustmentsToSpending.extraSpending.discretionary),
-    ].some((x) => asMFN(x.monthRange).start < withdrawalStartAsMFN)
+      ...planParamsNorm.adjustmentsToSpending.extraSpending.essential,
+      ...planParamsNorm.adjustmentsToSpending.extraSpending.discretionary,
+    ].some((x) => {
+      switch (x.amountAndTiming.type) {
+        case 'inThePast':
+          return false
+        case 'oneTime':
+          return x.amountAndTiming.month.asMFN < withdrawalStartAsMFN
+        case 'recurring': {
+          const { monthRange } = x.amountAndTiming
+          return (
+            (monthRange.type === 'startAndEnd' ||
+            monthRange.type === 'startAndDuration'
+              ? monthRange.start.asMFN
+              : monthRange.type === 'endAndDuration'
+                ? monthRange.duration.asMFN
+                : noCase(monthRange)) < withdrawalStartAsMFN
+          )
+        }
+        default:
+          noCase(x.amountAndTiming)
+      }
+    })
       ? xRangeAsMFN.allMonthsNoLegacy
       : xRangeAsMFN.retirementMonthsNoLegacy
   })
@@ -134,12 +148,9 @@ export const getPlanResultsChartDataForPDF = (
 
   const common = {
     chartType,
-    planParams,
     planParamsProcessed,
-    planParamsExt,
+    planParamsNorm,
     layout,
-    // planSizing,
-    // planTransitionState,
     planColors,
   }
 
@@ -328,31 +339,33 @@ export const getPlanResultsChartDataForPDF = (
               (x) => x.percentile === percentile,
             ),
           ).data,
-          parts: [
-            ..._.toPairs(
-              planParamsProcessed.byMonth.wealth.incomeDuringRetirement.byId,
-            ).map(([id, x]) => ({
-              yByX: x.values,
-              xRange: x.validRange,
-              id: `incomeDuringRetirement-${id}`,
-              label: planParams.wealth.incomeDuringRetirement[id].label,
-              sortIndex: planParams.wealth.incomeDuringRetirement[id].sortIndex,
-              colorIndex:
-                planParams.wealth.incomeDuringRetirement[id].colorIndex,
-            })),
-          ],
+          parts:
+            planParamsProcessed.byMonth.wealth.incomeDuringRetirement.byId.map(
+              (x) => {
+                const normEntry = fGet(
+                  planParamsNorm.wealth.incomeDuringRetirement.find(
+                    (y) => y.id === x.id,
+                  ),
+                )
+                return {
+                  yByX: x.values,
+                  xRange: x.validRange,
+                  id: `incomeDuringRetirement-${x.id}`,
+                  label: normEntry.label,
+                  sortIndex: normEntry.sortIndex,
+                  colorIndex: normEntry.colorIndex,
+                }
+              },
+            ),
           minYDisplayRangeEnd: 10,
         })
       }
       if (isPlanResultsChartSpendingEssentialType(chartType)) {
         const id = planResultsChartSpendingEssentialTypeID(chartType)
-        fGet(
-          optGet(planParams.adjustmentsToSpending.extraSpending.essential, id),
-        )
         return _processRange({
           range: fGet(
-            simulationResult.savingsPortfolio.withdrawals.essential.byId.get(
-              id,
+            simulationResult.savingsPortfolio.withdrawals.essential.byId.find(
+              (x) => x.id === id,
             ),
           ),
           mfnRange: spendingMonthsAsMFN,
@@ -362,16 +375,10 @@ export const getPlanResultsChartDataForPDF = (
       }
       if (isPlanResultsChartSpendingDiscretionaryType(chartType)) {
         const id = planResultsChartSpendingDiscretionaryTypeID(chartType)
-        fGet(
-          optGet(
-            planParams.adjustmentsToSpending.extraSpending.discretionary,
-            id,
-          ),
-        )
         return _processRange({
           range: fGet(
-            simulationResult.savingsPortfolio.withdrawals.discretionary.byId.get(
-              id,
+            simulationResult.savingsPortfolio.withdrawals.discretionary.byId.find(
+              (x) => x.id === id,
             ),
           ),
           mfnRange: spendingMonthsAsMFN,

@@ -13,16 +13,16 @@ export const PlanInputAgeWithdrawalStart = React.memo(
     className?: string
     style?: React.CSSProperties
   }) => {
-    const { planParams, updatePlanParams, planParamsExt } = useSimulation()
-    const { people } = planParams
-    const { isPersonRetired } = planParamsExt
-    if (!people.withPartner) return <></>
-    if (isPersonRetired('person1') && isPersonRetired('person2')) return <></>
+    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const { person1, person2, simulationMonths } = planParamsNorm.ages
+    if (!person2) return <></>
+    if (person1.retirement.isRetired && person2.retirement.isRetired)
+      return <></>
 
     return (
       <div className={`${className}`} style={style}>
         <RadioGroup<'div', 'person1' | 'person2'>
-          value={people.withdrawalStart}
+          value={simulationMonths.withdrawalStartMonth.atRetirementOf}
           onChange={(x: 'person1' | 'person2') =>
             updatePlanParams('setWithdrawalStart', x)
           }
@@ -39,7 +39,7 @@ export const PlanInputAgeWithdrawalStart = React.memo(
                 <>
                   <FontAwesomeIcon icon={checked ? faCircleSolid : faCircle} />
                   <RadioGroup.Description as="h2" className={`py-1`}>
-                    {isPersonRetired('person1') ? 'Now' : 'Your retirement'}
+                    {person1.retirement.isRetired ? 'Now' : 'Your retirement'}
                   </RadioGroup.Description>
                 </>
               )}
@@ -52,7 +52,7 @@ export const PlanInputAgeWithdrawalStart = React.memo(
                 <>
                   <FontAwesomeIcon icon={checked ? faCircleSolid : faCircle} />
                   <RadioGroup.Description as="h2" className={`py-1`}>
-                    {isPersonRetired('person2')
+                    {person2.retirement.isRetired
                       ? 'Now'
                       : `Your partner's retirement`}
                   </RadioGroup.Description>

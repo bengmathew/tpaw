@@ -30,7 +30,12 @@ export const ServerSidePrint = React.memo(() => {
 const testParams: PlanPrintViewArgsServerSide = {
   fixed: {
     planLabel: 'Test Plan',
+
+    timestamp: 1704489409432,
+    ianaTimezoneName: 'America/Los_Angeles',
+    currentPortfolioBalanceAmount: 1547440,
     planParams: {
+      timestamp: 1704489409432,
       v: currentPlanParamsVersion,
       risk: {
         swr: {
@@ -88,7 +93,7 @@ const testParams: PlanPrintViewArgsServerSide = {
         futureSavings: {},
         portfolioBalance: {
           updatedHere: true,
-          amount: 1547440.637135193,
+          amount: 1547440,
         },
         incomeDuringRetirement: {},
       },
@@ -101,7 +106,7 @@ const testParams: PlanPrintViewArgsServerSide = {
         sampling: {
           type: 'monteCarlo',
           forMonteCarlo: {
-            blockSize: 12 * 5,
+            blockSize: { inMonths: 12 * 5 },
             staggerRunStarts: true,
           },
         },
@@ -122,7 +127,6 @@ const testParams: PlanPrintViewArgsServerSide = {
           overrideToFixedForTesting: false,
         },
       },
-      timestamp: 1704489409432,
       adjustmentsToSpending: {
         tpawAndSPAW: {
           legacy: {
@@ -159,7 +163,7 @@ const testParams: PlanPrintViewArgsServerSide = {
       timestampMSForHistoricalReturns: Number.MAX_SAFE_INTEGER,
     },
     numOfSimulationForMonteCarloSampling: 500,
-    ianaTimezoneName: 'America/Los_Angeles',
+
     randomSeed: 0,
   },
   settings: {

@@ -72,10 +72,10 @@ export const PlanResultsChartCard = React.memo(
     onChartHover: (hover: boolean) => void
     chartHover: boolean
   }) => {
-    const { planParams, simulationResult } = useSimulation()
+    const { planParamsNorm, simulationResult } = useSimulation()
     const type = usePlanResultsChartType()
     const yAxisDescriptionByLayout = planResultsChartLabel(
-      planParams,
+      planParamsNorm,
       type,
     ).yAxisDescription
 
@@ -123,9 +123,8 @@ export const PlanResultsChartCard = React.memo(
           : yAxisDescriptionByLayout.notMobile
         : null
     const showYAxisDescription = !!getYAxisDescription(layout === 'mobile')
-    const showSuccessRate = planParams.advanced.strategy === 'SWR'
-    const hasPartner =
-      simulationResult.args.planParams.people.withPartner
+    const showSuccessRate = planParamsNorm.advanced.strategy === 'SWR'
+    const hasPartner = !!simulationResult.args.planParamsNorm.ages.person2
 
     const sizing = useMemo(() => {
       const _map = (
@@ -179,6 +178,7 @@ export const PlanResultsChartCard = React.memo(
     )
 
     const chartData = useChartData(type)
+
     useEffect(() => {
       const chart = chartRef.current
       if (!chart) return
@@ -336,8 +336,8 @@ export const PlanResultsChartCard = React.memo(
               : successRate < 0.99
                 ? formatPercentage(1)(successRate)
                 : formatPercentage(2)(successRate)}
-            {simulationResult.args.planParamsProcessed.planParams.advanced
-              .sampling.type === 'historical' && (
+            {simulationResult.args.planParamsNorm.advanced.sampling.type ===
+              'historical' && (
               <span className="sm:inline hidden ml-2 font-normal text-sm lighten">
                 {numSuccessfullRuns} of {simulationResult.numSimulationsActual}
               </span>

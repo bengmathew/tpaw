@@ -1,7 +1,5 @@
 import {
-  PlanParams,
   PlanParamsChangeActionCurrent,
-  ValueForMonthRange,
   assert,
   block,
   fGet,
@@ -17,6 +15,7 @@ import * as uuid from 'uuid'
 import { Clients } from '../../../../Clients.js'
 import { cloneJSON } from '../../../../Utils/CloneJSON.js'
 import { cliDevUserPlan } from './CLIDevUserPlan.js'
+import { PlanParams27 } from '@tpaw/common/dist/Params/PlanParams/Old/PlanParams27.js'
 
 cliDevUserPlan
   .command('createTestPlan <emailOrId> <actionsPerDay> <numDays>')
@@ -106,7 +105,11 @@ cliDevUserPlan
     },
   )
 
-const _applyChange = (value: number, timestamp: number, params: PlanParams) => {
+const _applyChange = (
+  value: number,
+  timestamp: number,
+  params: PlanParams27.PlanParams,
+) => {
   const clone = cloneJSON(params)
   clone.timestamp = timestamp
   clone.wealth.portfolioBalance = { updatedHere: true, amount: value }
@@ -129,7 +132,7 @@ const _applyChange = (value: number, timestamp: number, params: PlanParams) => {
   }
 }
 
-const startingParams = (timestamp: number): PlanParams => ({
+const startingParams = (timestamp: number): PlanParams27.PlanParams => ({
   v: 27,
   risk: {
     swr: {
@@ -190,7 +193,7 @@ const startingParams = (timestamp: number): PlanParams => ({
     futureSavings: block(() => {
       const id1 = generateSmallId()
       const id2 = generateSmallId()
-      const result: Record<string, ValueForMonthRange> = {}
+      const result: Record<string, PlanParams27.ValueForMonthRange> = {}
       result[id1] = {
         id: id1,
         sortIndex: 0,
@@ -236,7 +239,7 @@ const startingParams = (timestamp: number): PlanParams => ({
       const id1 = generateSmallId()
       const id2 = generateSmallId()
       const id3 = generateSmallId()
-      const result: Record<string, ValueForMonthRange> = {}
+      const result: Record<string, PlanParams27.ValueForMonthRange> = {}
       result[id1] = {
         id: id1,
         sortIndex: 0,
@@ -320,7 +323,7 @@ const startingParams = (timestamp: number): PlanParams => ({
         stocks: { scale: 1 },
         bonds: { enableVolatility: true },
       },
-      overrideToFixedForTesting:false,
+      overrideToFixedForTesting: false,
     },
     annualInflation: {
       type: 'suggested',
@@ -340,7 +343,7 @@ const startingParams = (timestamp: number): PlanParams => ({
     extraSpending: {
       essential: block(() => {
         const id1 = generateSmallId()
-        const result: Record<string, ValueForMonthRange> = {}
+        const result: Record<string, PlanParams27.ValueForMonthRange> = {}
         result[id1] = {
           id: id1,
           sortIndex: 0,
@@ -362,7 +365,7 @@ const startingParams = (timestamp: number): PlanParams => ({
       }),
       discretionary: block(() => {
         const id1 = generateSmallId()
-        const result: Record<string, ValueForMonthRange> = {}
+        const result: Record<string, PlanParams27.ValueForMonthRange> = {}
         result[id1] = {
           id: id1,
           sortIndex: 0,

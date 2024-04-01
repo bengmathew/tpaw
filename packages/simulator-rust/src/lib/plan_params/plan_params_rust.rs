@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use tsify::{declare, Tsify};
+use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::shared_types::{MonthAndStocks, SimpleRange, Stocks};
@@ -84,9 +84,9 @@ pub enum PersonType {
 
 #[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct LabeledAmount {
+pub struct LabeledAmountUntimed {
     pub label: Option<String>,
-    pub value: f64,
+    pub amount: f64,
     pub nominal: bool,
     pub id: String,
     pub sort_index: u64,
@@ -105,16 +105,6 @@ pub struct Ages_Person_Retirement {
     #[serde(rename = "ageAsMFNIfSpecifiedElseNull")]
     pub age_as_mfn_if_specified_else_null: Option<i64>,
     pub is_retired: bool,
-}
-
-#[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct Ages_Person {
-    #[serde(rename = "monthOfBirthAsMFN")]
-    pub month_of_birth_as_mfn: i64,
-    #[serde(rename = "maxAgeAsMFN")]
-    pub max_age_as_mfn: i64,
-    pub retirement: Ages_Person_Retirement,
 }
 
 #[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
@@ -141,10 +131,7 @@ pub struct Ages_ValidMonthRanges {
 #[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Ages {
-    pub person1: Ages_Person,
-    pub person2: Option<Ages_Person>,
     pub simulation_months: Ages_SimulationMonths,
-    pub valid_month_ranges: Ages_ValidMonthRanges,
 }
 
 // ----------------
@@ -152,49 +139,35 @@ pub struct Ages {
 // ----------------
 
 #[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ValueForMonthRange {
-    pub label: Option<String>,
-    #[serde(rename = "monthRange")]
-    pub month_range: SimpleRange<i64>,
-    pub value: f64,
-    pub nominal: bool,
-    pub id: String,
-    pub sort_index: u64,
-    pub color_index: u64,
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum AmountAndTiming {
+    #[serde(rename_all = "camelCase")]
+    OneTime { amount: f64, month: i64 },
+    #[serde(rename_all = "camelCase")]
+    Recurring {
+        base_amount: f64,
+        month_range: Option<SimpleRange<i64>>,
+        valid_month_range: SimpleRange<i64>,
+    },
 }
 
-#[declare]
-pub type ValueForMonthRanges = HashMap<String, ValueForMonthRange>;
+#[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct LabeledAmountTimed {
+    pub id: String,
+    pub nominal: bool,
+    pub amount_and_timing: AmountAndTiming,
+}
 
 // ----------------
 // ---- WEALTH ----
 // ----------------
-#[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
-#[serde(untagged)]
-pub enum PortfolioBalance {
-    #[serde(rename = "true", rename_all = "camelCase")]
-    UpdatedHere {
-        #[tsify(type = "true")]
-        updated_here: bool,
-        amount: f64,
-    },
-    #[serde(rename = "false", rename_all = "camelCase")]
-    NotUpdatedHere {
-        #[tsify(type = "false")]
-        updated_here: bool,
-        updated_at_id: String,
-        updated_to: f64,
-        updated_at_timestamp: f64,
-    },
-}
 
 #[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Wealth {
-    pub portfolio_balance: PortfolioBalance,
-    pub future_savings: ValueForMonthRanges,
-    pub income_during_retirement: ValueForMonthRanges,
+    pub future_savings: Vec<LabeledAmountTimed>,
+    pub income_during_retirement: Vec<LabeledAmountTimed>,
 }
 
 // ---------------------------------
@@ -204,15 +177,15 @@ pub struct Wealth {
 #[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ExtraSpending {
-    pub essential: ValueForMonthRanges,
-    pub discretionary: ValueForMonthRanges,
+    pub essential: Vec<LabeledAmountTimed>,
+    pub discretionary: Vec<LabeledAmountTimed>,
 }
 
 #[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Legacy {
     pub total: f64,
-    pub external: HashMap<String, LabeledAmount>,
+    pub external: Vec<LabeledAmountUntimed>,
 }
 
 #[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
@@ -235,20 +208,12 @@ pub struct AdjustmentsToSpending {
 // --------------
 // ---- RISK ----
 // --------------
-#[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct GlidePathIntermediateEntry {
-    pub id: String,
-    pub index_to_sort_by_added: i64,
-    pub month: i64,
-    pub stocks: f64,
-}
 
 #[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GlidePath {
-    pub start: MonthAndStocks,
-    pub intermediate: HashMap<String, GlidePathIntermediateEntry>,
+    pub now: Stocks,
+    pub intermediate: Vec<MonthAndStocks>,
     pub end: Stocks,
 }
 
@@ -423,36 +388,16 @@ pub struct Advanced {
     pub strategy: Strategy,
 }
 
-// -----------------
-// ---- RESULTS ----
-// ------------------
-#[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct DisplayedAssetAllocation {
-    pub stocks: f64,
-}
-
-#[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct PlanParamsStoredResults {
-    pub displayed_asset_allocation: DisplayedAssetAllocation,
-}
-
 // ---------------------
 // ---- PLAN PARAMS ----
 // ---------------------
 #[derive(Serialize, Deserialize, Tsify)]
 #[serde(rename_all = "camelCase")]
 #[tsify(from_wasm_abi, into_wasm_abi)]
-pub struct PlanParamsNormalized {
-    #[tsify(type = "27")]
-    pub v: ConstU64<27>,
-    pub timestamp: f64,
-    pub dialog_position_nominal: DialogPosition,
+pub struct PlanParamsRust {
     pub ages: Ages,
     pub wealth: Wealth,
     pub adjustments_to_spending: AdjustmentsToSpending,
     pub risk: Risk,
     pub advanced: Advanced,
-    pub results: Option<PlanParamsStoredResults>,
 }

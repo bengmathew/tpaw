@@ -34,13 +34,14 @@ export const planParamsProcessNetPresentValue = (
   const _calcObj = (
     x: {
       total: Float64Array
-      byId: Record<string, { values: Float64Array }>
+      byId: { id: string; values: Float64Array }[]
     },
     rate: number[],
   ) => ({
-    byId: _.mapValues(x.byId, (x) =>
-      Record.map(getNetPresentValue(rate, x.values), (k, v) => [k, v[0]]),
-    ),
+    byId: x.byId.map((x) => ({
+      id: x.id,
+      values: Record.mapValues(getNetPresentValue(rate, x.values), (x) => x[0]),
+    })),
   })
 
   return {

@@ -1,63 +1,68 @@
-import {
-  faCaretDown,
-  faFilePdf,
-  faLineColumns,
-} from '@fortawesome/pro-solid-svg-icons'
+import { faCaretDown, faLineColumns } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
 import clix from 'clsx'
-import Link from 'next/link'
-import { useRouter } from 'next/router'
-import React, { CSSProperties, useMemo } from 'react'
-import { ContextMenu2 } from '../../../../../Common/Modal/ContextMenu2'
+import React, { CSSProperties } from 'react'
+import { ContextModal } from '../../../../../Common/Modal/ContextModal'
 import { useSimulation } from '../../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../../UsePlanColors'
 import { PlanResultsSidePanelMenuBalanceSheet } from './PlanResultsSidePanelMenuBalanceSheet'
 import { PlanResultsSidePanelMenuPDFReportItem } from './PlanResultsSidePanelMenuPDFReportItem'
+import clsx from 'clsx'
 
 export const PlanResultsSidePanelMenu = React.memo(
   ({ className, style }: { className?: string; style?: CSSProperties }) => {
     const [showBalanceSheet, setShowBalanceSheet] = React.useState(false)
-    const { planParams } = useSimulation()
+    const { planParamsNorm } = useSimulation()
     const planColors = usePlanColors()
-    
+
     return (
       <>
-        <ContextMenu2
-          align={'right'}
-          className={clix(className, 'w-full')}
-          style={{
-            ...style,
-            backgroundColor: planColors.results.cardBG,
-            color: planColors.results.fg,
-          }}
-        >
-          <h2 className="font-semibold text-[16px] sm:text-[16px] flex   items-center gap-x-2">
-            More
-            <FontAwesomeIcon icon={faCaretDown} />
-          </h2>
-          <Menu.Items
-            className="rounded-lg py-2"
-            style={{
-              backgroundColor: planColors.results.cardBG,
-              color: planColors.results.fg,
-            }}
-          >
-          {planParams.advanced.strategy === 'TPAW' && (
-              <Menu.Item
-                as="button"
-                className="context-menu-item"
-                onClick={() => setShowBalanceSheet(true)}
+        <Menu>
+          {({ open }) => (
+            <ContextModal open={open} align={'right'}>
+              {({ ref }) => (
+                <Menu.Button
+                  ref={ref}
+                  className={clsx(
+                    className,
+                    'w-full',
+                    'font-semibold text-[16px] sm:text-[16px] flex   items-center gap-x-2',
+                  )}
+                  style={{
+                    ...style,
+                    backgroundColor: planColors.results.cardBG,
+                    color: planColors.results.fg,
+                  }}
+                >
+                  More
+                  <FontAwesomeIcon icon={faCaretDown} />
+                </Menu.Button>
+              )}
+              <Menu.Items
+                className="rounded-lg py-2"
+                style={{
+                  backgroundColor: planColors.results.cardBG,
+                  color: planColors.results.fg,
+                }}
               >
-                <span className="inline-block w-[30px]">
-                  <FontAwesomeIcon icon={faLineColumns} />
-                </span>
-                Balance Sheet
-              </Menu.Item>
-            )}
-            <PlanResultsSidePanelMenuPDFReportItem />
-          </Menu.Items>
-        </ContextMenu2>
+                {planParamsNorm.advanced.strategy === 'TPAW' && (
+                  <Menu.Item
+                    as="button"
+                    className="context-menu-item"
+                    onClick={() => setShowBalanceSheet(true)}
+                  >
+                    <span className="inline-block w-[30px]">
+                      <FontAwesomeIcon icon={faLineColumns} />
+                    </span>
+                    Balance Sheet
+                  </Menu.Item>
+                )}
+                <PlanResultsSidePanelMenuPDFReportItem />
+              </Menu.Items>
+            </ContextModal>
+          )}
+        </Menu>
         <PlanResultsSidePanelMenuBalanceSheet
           show={showBalanceSheet}
           onHide={() => setShowBalanceSheet(false)}

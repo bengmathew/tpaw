@@ -1,4 +1,4 @@
-import { block, fGet, letIn, noCase } from '@tpaw/common'
+import { CalendarMonthFns, block, fGet, letIn, noCase } from '@tpaw/common'
 import _ from 'lodash'
 import { getChartBandColor } from '../../../../../../Utils/ColorPalette'
 import { RGB } from '../../../../../../Utils/ColorUtils'
@@ -8,9 +8,9 @@ import { SimpleRange } from '../../../../../../Utils/SimpleRange'
 import { Transition } from '../../../../../../Utils/Transition'
 import { ChartBreakdown } from '../../../../../Common/Chart/ChartComponent/ChartBreakdown'
 import {
-    ChartPointer,
-    ChartPointerBoxComponents,
-    ChartPointerProps,
+  ChartPointer,
+  ChartPointerBoxComponents,
+  ChartPointerProps,
 } from '../../../../../Common/Chart/ChartComponent/ChartPointer'
 import { ChartPointerPortal } from '../../../../../Common/Chart/ChartComponent/ChartPointerPortal'
 import { ChartRange } from '../../../../../Common/Chart/ChartComponent/ChartRange'
@@ -18,9 +18,9 @@ import { ChartStyling } from '../../../../../Common/Chart/ChartUtils/ChartStylin
 import { ChartUtils } from '../../../../../Common/Chart/ChartUtils/ChartUtils'
 import { PlanColors } from '../../../UsePlanColors'
 import {
-    PlanResultsChartType,
-    isPlanResultsChartSpendingDiscretionaryType,
-    isPlanResultsChartSpendingEssentialType,
+  PlanResultsChartType,
+  isPlanResultsChartSpendingDiscretionaryType,
+  isPlanResultsChartSpendingEssentialType,
 } from '../../PlanResultsChartType'
 import { PlanResultsChartData } from './PlanResultsChartData'
 
@@ -206,25 +206,21 @@ const _getHeaderSection = (
 ) => {
   const { text, style, getLabel, oneRowGrid, fixedWidth, grid, group, gap } =
     components
-  const { planParamsExt, planParams } = data
-  const {
-    asMFN,
-    months,
-    getCurrentAgeOfPerson,
-    numMonths,
-    monthsFromNowToCalendarMonth,
-    getZonedTime,
-  } = planParamsExt
-  const calendarMonth = monthsFromNowToCalendarMonth(dataX)
+  const { planParamsNorm } = data
+  const { ages } = planParamsNorm
+  const calendarMonth = CalendarMonthFns.getFromMFN(
+    planParamsNorm.nowAs.calendarMonth,
+  )(dataX)
   const labelBase = getLabel({ lineHeight: fontSize.large.nonMono })
-  const getAgeBreakdown = (person: 'person1' | 'person2') => {
-    if (dataX > asMFN(months[person].max)) {
+  const getAgeBreakdown = (personType: 'person1' | 'person2') => {
+    const { maxAge, currentAge } = fGet(ages[personType])
+    if (dataX > maxAge.asMFN) {
       return {
         years: '—',
         months: '—',
       }
     }
-    const inMonths = getCurrentAgeOfPerson(person).inMonths + dataX
+    const inMonths = currentAge.inMonths + dataX
     return {
       years: `${Math.floor(inMonths / 12)}`,
       months: `${inMonths % 12}`,
@@ -260,9 +256,9 @@ const _getHeaderSection = (
     style(
       { font: ChartUtils.getFont(fontSize.large.nonMono, 'bold') },
 
-      dataX === numMonths
+      dataX === ages.simulationMonths.numMonths
         ? labelBase({}, text({}, 'Legacy'))
-        : planParams.people.withPartner
+        : ages.person2
           ? grid(
               {
                 gap: { horz: 30, vert: 5 },
@@ -281,13 +277,12 @@ const _getHeaderSection = (
     gap(4),
     style(
       {
-        // font: ChartUtils.getFont(fontSize.small),
         font: ChartUtils.getFont(fontSize.large.nonMono - 2),
         opacity: 1,
       },
       labelBase(
         { align: 'end' },
-        text({}, getZonedTime.fromObject(calendarMonth).toFormat('LLL yyyy')),
+        text({}, CalendarMonthFns.toStr(calendarMonth, { shortMonth: true })),
       ),
     ),
   ])

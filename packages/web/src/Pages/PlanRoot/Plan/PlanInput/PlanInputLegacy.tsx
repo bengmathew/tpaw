@@ -11,13 +11,14 @@ import { paddingCSSStyle } from '../../../../Utils/Geometry'
 import { smartDeltaFn } from '../../../../Utils/SmartDeltaFn'
 import { trimAndNullify } from '../../../../Utils/TrimAndNullify'
 import { AmountInput } from '../../../Common/Inputs/AmountInput'
-import { EditValueForMonthRange } from '../../../Common/Inputs/EditValueForMonthRange'
+import { LabelAmountOptMonthRangeInput } from '../../../Common/Inputs/LabelAmountTimedOrUntimedInput/LabeledAmountTimedOrUntimedInput'
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import {
-    PlanInputBody,
-    PlanInputBodyPassThruProps,
+  PlanInputBody,
+  PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
+import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 
 type _EditState = { isAdd: boolean; entryId: string; hideInMain: boolean }
 
@@ -42,7 +43,7 @@ export const PlanInputLegacy = React.memo(
         {{
           input: editState
             ? (transitionOut) => (
-                <EditValueForMonthRange
+                <LabelAmountOptMonthRangeInput
                   hasMonthRange={false}
                   addOrEdit={editState.isAdd ? 'add' : 'edit'}
                   title={
@@ -74,7 +75,7 @@ const _TotalTargetCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParams, updatePlanParams } = useSimulation()
+    const { planParamsNorm, updatePlanParams } = useSimulation()
     const handleAmount = (amount: number) =>
       updatePlanParams('setLegacyTotal', amount)
 
@@ -86,14 +87,16 @@ const _TotalTargetCard = React.memo(
       >
         <h2 className="font-bold text-lg mb-3">Total Legacy Target</h2>
         <Contentful.RichText
-          body={content.introAmount[planParams.advanced.strategy]}
+          body={content.introAmount[planParamsNorm.advanced.strategy]}
           p="p-base"
         />
         <div className={`flex items-center gap-x-2 mt-4`}>
           <AmountInput
             className=" text-input"
             prefix="$"
-            value={planParams.adjustmentsToSpending.tpawAndSPAW.legacy.total}
+            value={
+              planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.total
+            }
             onChange={handleAmount}
             decimals={0}
             modalLabel="Total Legacy Target"
@@ -103,7 +106,7 @@ const _TotalTargetCard = React.memo(
             onClick={() =>
               handleAmount(
                 increment(
-                  planParams.adjustmentsToSpending.tpawAndSPAW.legacy.total,
+                  planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.total,
                 ),
               )
             }
@@ -115,7 +118,7 @@ const _TotalTargetCard = React.memo(
             onClick={() =>
               handleAmount(
                 decrement(
-                  planParams.adjustmentsToSpending.tpawAndSPAW.legacy.total,
+                  planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.total,
                 ),
               )
             }
@@ -140,19 +143,19 @@ const _NonPortfolioSourcesCard = React.memo(
     editState: _EditState | null
     setEditState: (x: _EditState | null) => void
   }) => {
-    const { planParams, updatePlanParams } = useSimulation()
+    const { planParamsNorm, updatePlanParams } = useSimulation()
     const content = usePlanContent()['legacy']
     const handleAdd = () => {
       const sortIndex =
         Math.max(
           -1,
-          ..._.values(
-            planParams.adjustmentsToSpending.tpawAndSPAW.legacy.external,
-          ).map((x) => x.sortIndex),
+          ...planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
+            (x) => x.sortIndex,
+          ),
         ) + 1
 
       const entryId = generateSmallId()
-      updatePlanParams('addLabeledAmount', {
+      updatePlanParams('addLabeledAmountUntimed', {
         location: 'legacyExternalSources',
         entryId,
         sortIndex,
@@ -167,7 +170,7 @@ const _NonPortfolioSourcesCard = React.memo(
       >
         <h2 className="font-bold text-lg mb-3">Non-portfolio Sources</h2>
         <Contentful.RichText
-          body={content.introAssets[planParams.advanced.strategy]}
+          body={content.introAssets[planParamsNorm.advanced.strategy]}
           p="p-base mb-4"
         />
         <div className="flex justify-start gap-x-4 items-center  my-2 ">
@@ -180,31 +183,27 @@ const _NonPortfolioSourcesCard = React.memo(
           </button>
         </div>
         <div className="flex flex-col gap-y-6 mt-4 ">
-          {_.values(
-            planParams.adjustmentsToSpending.tpawAndSPAW.legacy.external,
-          )
-            .sort((a, b) => a.sortIndex - b.sortIndex)
-            .map(
-              (entry) =>
-                !(
-                  editState &&
-                  editState.hideInMain &&
-                  editState.entryId === entry.id
-                ) && (
-                  <_Entry
-                    key={entry.id}
-                    className=""
-                    entry={entry}
-                    onEdit={() => {
-                      setEditState({
-                        isAdd: false,
-                        hideInMain: false,
-                        entryId: entry.id,
-                      })
-                    }}
-                  />
-                ),
-            )}
+          {planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
+            (entry) =>
+              !(
+                editState &&
+                editState.hideInMain &&
+                editState.entryId === entry.id
+              ) && (
+                <_Entry
+                  key={entry.id}
+                  className=""
+                  entry={entry}
+                  onEdit={() => {
+                    setEditState({
+                      isAdd: false,
+                      hideInMain: false,
+                      entryId: entry.id,
+                    })
+                  }}
+                />
+              ),
+          )}
         </div>
       </div>
     )
@@ -231,7 +230,7 @@ const _Entry = React.memo(
         <div className="flex justify-between">
           <div className="flex items-stretch">
             <div className="flex flex-row items-center gap-x-2 mr-2">
-              <h2 className="">{formatCurrency(entry.value)}</h2>
+              <h2 className="">{formatCurrency(entry.amount)}</h2>
               <h2 className="">
                 {entry.nominal ? '(nominal dollars)' : '(real dollars)'}
               </h2>
@@ -277,11 +276,16 @@ const _RemainderCard = React.memo(
 )
 
 export const PlanInputLegacySummary = React.memo(
-  ({ planParamsProcessed }: { planParamsProcessed: PlanParamsProcessed }) => {
-    const { planParams } = planParamsProcessed
+  ({
+    planParamsNorm,
+    planParamsProcessed,
+  }: {
+    planParamsNorm: PlanParamsNormalized
+    planParamsProcessed: PlanParamsProcessed
+  }) => {
     const { total, external } =
-      planParams.adjustmentsToSpending.tpawAndSPAW.legacy
-    return _.values(external).length === 0 ? (
+      planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy
+    return external.length === 0 ? (
       <h2>Target: {formatCurrency(total)} (real dollars)</h2>
     ) : (
       <>
@@ -290,14 +294,14 @@ export const PlanInputLegacySummary = React.memo(
           <h2 className="text-right mt-2">{formatCurrency(total)}</h2>
           <h2 className="mt-2">(real dollars)</h2>
           <h2 className=" col-span-3 mt-2">Non-portfolio Sources</h2>
-          {_.values(external)
+          {external
             .sort((a, b) => a.sortIndex - b.sortIndex)
             .map((x, i) => (
               <React.Fragment key={i}>
                 <h2 className="ml-4 mt-1">
                   {trimAndNullify(x.label) ?? '<no label>'}
                 </h2>
-                <h2 className="mt-1 text-right">{formatCurrency(x.value)} </h2>
+                <h2 className="mt-1 text-right">{formatCurrency(x.amount)} </h2>
                 <h2 className="mt-1">
                   {x.nominal ? '(nominal dollars)' : '(real dollars)'}{' '}
                 </h2>

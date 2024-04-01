@@ -19,9 +19,9 @@ import {
 } from 'json-guard'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
-import { Guards } from '../../Guards'
-import { assert, block, fGet, preciseRange } from '../../Utils'
-import { PlanParams26 as PlanParamsPrev } from './Old/PlanParams26'
+import { Guards } from '../../../Guards'
+import { assert, block, fGet, preciseRange } from '../../../Utils'
+import { PlanParams26 as PlanParamsPrev } from './PlanParams26'
 
 export namespace PlanParams27 {
   export const currentVersion = 27 as const
@@ -623,7 +623,6 @@ export namespace PlanParams27 {
   ): JSONGuard<ValueForMonthRange> =>
     object({
       // Not trimmed because it won't allow space even temporarily.
-      // TODO: non longer need not trimmed, add back to validation.
       label: nullable(chain(string, bounded(MAX_LABEL_LENGTH))),
       monthRange: cg.monthRange(planParams),
       value: chain(number, gte(0)),

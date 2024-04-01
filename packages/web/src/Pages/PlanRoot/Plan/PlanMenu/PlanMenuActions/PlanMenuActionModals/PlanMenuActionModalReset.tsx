@@ -6,8 +6,8 @@ import { graphql } from 'relay-runtime'
 import { Spinner } from '../../../../../../Utils/View/Spinner'
 import { AppError } from '../../../../../App/AppError'
 import {
-    useDefaultErrorHandlerForNetworkCall,
-    useSetGlobalError,
+  useDefaultErrorHandlerForNetworkCall,
+  useSetGlobalError,
 } from '../../../../../App/GlobalErrorBoundary'
 import { User, useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'

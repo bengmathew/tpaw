@@ -1,16 +1,17 @@
+import { fGet } from '@tpaw/common'
 import { default as React, useRef, useState } from 'react'
-import { PlanParamsExtended } from '../../../../UseSimulator/ExtentPlanParams'
+import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import {
-    EditValueForMonthRange,
-    EditValueForMonthRangeStateful,
-} from '../../../Common/Inputs/EditValueForMonthRange'
+  LabelAmountOptMonthRangeInput,
+  LabelAmountOptMonthRangeInputStateful,
+} from '../../../Common/Inputs/LabelAmountTimedOrUntimedInput/LabeledAmountTimedOrUntimedInput'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
-import { ByMonthSchedule } from './Helpers/ByMonthSchedule'
-import { PlanInputSummaryValueForMonthRange } from './Helpers/PlanInputSummaryValueForMonthRange'
+import { LabeledAmountTimedListInput } from '../../../Common/Inputs/LabeledAmountTimedListInput'
+import { PlanInputSummaryLabeledAmountTimedList } from './Helpers/PlanInputSummaryLabeledAmountTimedList'
 import {
-    PlanInputBody,
-    PlanInputBodyPassThruProps,
+  PlanInputBody,
+  PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 type _EditState = {
@@ -20,15 +21,15 @@ type _EditState = {
 }
 export const PlanInputFutureSavings = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const { planParamsExt } = useSimulation()
+    const { planParamsNorm } = useSimulation()
+    const { ages } = planParamsNorm
     const [editState, setEditState] = useState<{
       isAdd: boolean
       entryId: string
       hideInMain: boolean
     } | null>(null)
 
-    const editRef = useRef<EditValueForMonthRangeStateful>(null)
-    const { validMonthRangeAsMFN } = planParamsExt
+    const editRef = useRef<LabelAmountOptMonthRangeInputStateful>(null)
 
     return (
       <PlanInputBody
@@ -43,7 +44,7 @@ export const PlanInputFutureSavings = React.memo(
         {{
           input: editState
             ? (transitionOut) => (
-                <EditValueForMonthRange
+                <LabelAmountOptMonthRangeInput
                   ref={editRef}
                   hasMonthRange
                   addOrEdit={editState.isAdd ? 'add' : 'edit'}
@@ -56,14 +57,12 @@ export const PlanInputFutureSavings = React.memo(
                   onDone={() => setEditState(null)}
                   location="futureSavings"
                   entryId={editState.entryId}
-                  validRangeAsMFN={validMonthRangeAsMFN('future-savings')}
-                  choices={{
+                  choicesPreFilter={{
                     start: ['now', 'numericAge', 'calendarMonth'],
                     end: [
                       'lastWorkingMonth',
                       'numericAge',
                       'calendarMonth',
-                      'forNumOfMonths',
                     ],
                   }}
                   cardPadding={props.sizing.cardPadding}
@@ -88,8 +87,8 @@ const _FutureSavingsCard = React.memo(
     editState: _EditState | null
     setEditState: (x: _EditState | null) => void
   }) => {
-    const { planParamsExt } = useSimulation()
-    const { validMonthRangeAsMFN, months, isPersonRetired } = planParamsExt
+    const { planParamsNorm } = useSimulation()
+    const { ages } = planParamsNorm
 
     return (
       <div className={`${className}`}>
@@ -98,15 +97,25 @@ const _FutureSavingsCard = React.memo(
           style={{ padding: paddingCSS(props.sizing.cardPadding) }}
         >
           <p className="p-base">{`How much do you expect to save per month between now and retirement? You can enter savings from different sources separately—your savings, your partner's savings, etc.`}</p>
-          <ByMonthSchedule
+          <LabeledAmountTimedListInput
             className="mt-6"
             editProps={{
-              defaultMonthRange: {
-                type: 'startAndEnd',
-                start: months.now,
-                end: !isPersonRetired('person1')
-                  ? months.person1.lastWorkingMonth
-                  : months.person2.lastWorkingMonth,
+              defaultAmountAndTiming: {
+                type: 'recurring',
+                baseAmount: 0,
+                delta: null,
+                everyXMonths: 1,
+                monthRange: {
+                  type: 'startAndEnd',
+                  start: planParamsNorm.nowAs.month,
+                  end: {
+                    type: 'namedAge',
+                    age: 'lastWorkingMonth',
+                    person: !ages.person1.retirement.isRetired
+                      ? 'person1'
+                      : 'person2',
+                  },
+                },
               },
               onEdit: (entryId, isAdd) =>
                 setEditState({ isAdd, entryId, hideInMain: isAdd }),
@@ -116,7 +125,6 @@ const _FutureSavingsCard = React.memo(
             hideEntryId={
               editState && editState.hideInMain ? editState.entryId : null
             }
-            allowableMonthRangeAsMFN={validMonthRangeAsMFN('future-savings')}
           />
         </div>
       </div>
@@ -125,14 +133,10 @@ const _FutureSavingsCard = React.memo(
 )
 
 export const PlanInputFutureSavingsSummary = React.memo(
-  ({ planParamsExt }: { planParamsExt: PlanParamsExtended }) => {
-    const { planParams } = planParamsExt
-    const { validMonthRangeAsMFN } = planParamsExt
+  ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
     return (
-      <PlanInputSummaryValueForMonthRange
-        entries={planParams.wealth.futureSavings}
-        range={validMonthRangeAsMFN('future-savings')}
-        planParamsExt={planParamsExt}
+      <PlanInputSummaryLabeledAmountTimedList
+        entries={planParamsNorm.wealth.futureSavings}
       />
     )
   },

@@ -1,6 +1,5 @@
 import * as Rust from '@tpaw/simulator'
-import { PlanParamsExtended } from '../ExtentPlanParams'
-import { normalizePlanParams } from '../NormalizePlanParams'
+import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
 import { CallRust } from './CallRust'
 import { planParamsProcessAdjustmentsToSpending } from './PlanParamsProcessAdjustmentsToSpending'
 import { planParamsProcessNetPresentValue } from './PlanParamsProcessNetPresentValue'
@@ -8,14 +7,9 @@ import { planParamsProcessRisk } from './PlanParamsProcessRisk'
 
 export type PlanParamsProcessed = ReturnType<typeof processPlanParams>
 export function processPlanParams(
-  planParamsExt: PlanParamsExtended,
-  estimatedCurrentPortfolioBalance: number,
+  planParamsNorm: PlanParamsNormalized,
   currentMarketData: Rust.DataForMarketBasedPlanParamValues,
 ) {
-  const { planParams, currentTimestamp, ianaTimezoneName, numMonths } =
-    planParamsExt
-
-  const planParamsNorm = normalizePlanParams(planParamsExt)
   const {
     expectedReturnsForPlanning,
     historicalMonthlyReturnsAdjusted,
@@ -25,18 +19,18 @@ export function processPlanParams(
 
   const adjustmentsToSpending = planParamsProcessAdjustmentsToSpending(
     planParamsNorm,
-    numMonths,
+    planParamsNorm.ages.simulationMonths.numMonths,
     inflation.monthly,
   )
 
   const risk = planParamsProcessRisk(
-    planParamsExt,
+    planParamsNorm,
     expectedReturnsForPlanning,
     historicalMonthlyReturnsAdjusted.stocks.stats.empiricalAnnualLogVariance,
   )
 
   const netPresentValue = planParamsProcessNetPresentValue(
-    numMonths,
+    planParamsNorm.ages.simulationMonths.numMonths,
     risk,
     adjustmentsToSpending.tpawAndSPAW.legacy.target,
     byMonth,
@@ -44,11 +38,6 @@ export function processPlanParams(
   )
 
   const result = {
-    currentTime: {
-      epoch: currentTimestamp,
-      zoneName: ianaTimezoneName,
-    },
-    estimatedCurrentPortfolioBalance,
     byMonth,
     netPresentValue,
     adjustmentsToSpending,
@@ -56,8 +45,6 @@ export function processPlanParams(
     expectedReturnsForPlanning,
     historicalMonthlyReturnsAdjusted,
     inflation,
-    planParams,
-    planParamsNorm,
   }
 
   return result

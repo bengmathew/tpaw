@@ -1,23 +1,22 @@
 import {
-    faArrowLeftLong,
-    faArrowRightLong,
-    faCaretDown,
-    faCaretRight,
+  faArrowLeftLong,
+  faArrowRightLong,
+  faCaretDown,
+  faCaretRight,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-    ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES,
-    PlanParams,
-    RISK_TOLERANCE_VALUES,
-    TIME_PREFERENCE_VALUES,
-    block,
-    fGet,
-    letIn,
-    monthlyToAnnualReturnRate,
+  DEFAULT_RISK_TPAW,
+  PLAN_PARAMS_CONSTANTS,
+  block,
+  fGet,
+  letIn,
+  monthlyToAnnualReturnRate,
 } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import React, { ReactNode, useState } from 'react'
+import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSS, paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { SliderInput } from '../../../../Common/Inputs/SliderInput/SliderInput'
@@ -78,15 +77,13 @@ const _TPAWRiskToleranceCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const {
-      planParams,
-      planParamsExt,
+      planParamsNorm,
       defaultPlanParams,
       updatePlanParams,
       simulationResult,
     } = useSimulation()
     const defaultRisk = defaultPlanParams.risk.tpaw
-    const { asMFN, withdrawalStartMonth, withdrawalsStarted, maxMaxAge } =
-      planParamsExt
+    const { ages } = planParamsNorm
 
     const get50thStockAllocation = (mfn: number) =>
       fGet(
@@ -96,11 +93,15 @@ const _TPAWRiskToleranceCard = React.memo(
       ).data[mfn]
 
     const effectiveMaxAgeAsMFN =
-      asMFN(maxMaxAge) +
-      (planParams.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0 ? 0 : -1)
+      ages.simulationMonths.lastMonthAsMFN +
+      (planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0
+        ? 0
+        : -1)
     const stockAllocations = {
       now: get50thStockAllocation(0),
-      atRetirement: get50thStockAllocation(asMFN(withdrawalStartMonth)),
+      atRetirement: get50thStockAllocation(
+        ages.simulationMonths.withdrawalStartMonth.asMFN,
+      ),
       atMaxAge: get50thStockAllocation(effectiveMaxAgeAsMFN),
     }
 
@@ -130,8 +131,8 @@ const _TPAWRiskToleranceCard = React.memo(
             className={` `}
             height={60}
             maxOverflowHorz={props.sizing.cardPadding}
-            data={RISK_TOLERANCE_VALUES.DATA}
-            value={planParams.risk.tpaw.riskTolerance.at20}
+            data={PLAN_PARAMS_CONSTANTS.riskToleranceValues.DATA}
+            value={planParamsNorm.risk.tpaw.riskTolerance.at20}
             onChange={(value) =>
               updatePlanParams('setTPAWRiskTolerance', value)
             }
@@ -159,7 +160,7 @@ const _TPAWRiskToleranceCard = React.memo(
               {formatPercentage(0)(stockAllocations.now)}
             </h2>
             <h2></h2>
-            {!withdrawalsStarted && (
+            {ages.simulationMonths.withdrawalStartMonth.asMFN > 0 && (
               <>
                 <h2>At retirement</h2>
                 <h2 className="text-right">
@@ -213,12 +214,12 @@ const _TPAWRiskToleranceCard = React.memo(
           title="Relative risk aversion (RRA) corresponding to this risk tolerance"
         >
           <p className="p-base">
-            Your risk tolerance of {planParams.risk.tpaw.riskTolerance.at20}{' '}
+            Your risk tolerance of {planParamsNorm.risk.tpaw.riskTolerance.at20}{' '}
             corresponds to a relative risk aversion of{' '}
             <span className="font-bold">
               {_rraToStr(
-                RISK_TOLERANCE_VALUES.riskToleranceToRRA.withInfinityAtZero(
-                  planParams.risk.tpaw.riskTolerance.at20,
+                PLAN_PARAMS_CONSTANTS.riskToleranceValues.riskToleranceToRRA.withInfinityAtZero(
+                  planParamsNorm.risk.tpaw.riskTolerance.at20,
                 ),
               )}
             </span>
@@ -236,7 +237,7 @@ const _TPAWRiskToleranceCard = React.memo(
           }
           disabled={
             defaultRisk.riskTolerance.at20 ===
-            planParams.risk.tpaw.riskTolerance.at20
+            planParamsNorm.risk.tpaw.riskTolerance.at20
           }
         >
           Reset to Default
@@ -292,26 +293,24 @@ const _SpendingTiltCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const {
-      planParams,
-      planParamsExt,
+      planParamsNorm,
       updatePlanParams,
       defaultPlanParams,
       planParamsProcessed,
     } = useSimulation()
-    const { withdrawalsStarted, withdrawalStartMonth, asMFN, numMonths } =
-      planParamsExt
+    const { ages } = planParamsNorm
 
     const handleChange = (value: number) =>
       updatePlanParams('setTPAWAdditionalSpendingTilt', value)
     const isModified =
       defaultPlanParams.risk.tpaw.additionalAnnualSpendingTilt !==
-      planParams.risk.tpaw.additionalAnnualSpendingTilt
+      planParamsNorm.risk.tpaw.additionalAnnualSpendingTilt
 
     const getSpendingTiltAtMFN = (mfn: number) => {
       const total = monthlyToAnnualReturnRate(
         planParamsProcessed.risk.tpawAndSPAW.monthlySpendingTilt[mfn],
       )
-      const extra = planParams.risk.tpaw.additionalAnnualSpendingTilt
+      const extra = planParamsNorm.risk.tpaw.additionalAnnualSpendingTilt
       const baseline = total - extra
       return (
         <>
@@ -339,8 +338,8 @@ const _SpendingTiltCard = React.memo(
           className={`-mx-3 mt-2 `}
           height={60}
           maxOverflowHorz={props.sizing.cardPadding}
-          data={ADDITIONAL_ANNUAL_SPENDING_TILT_VALUES}
-          value={planParams.risk.tpaw.additionalAnnualSpendingTilt}
+          data={PLAN_PARAMS_CONSTANTS.additionalAnnualSpendingTiltValues}
+          value={planParamsNorm.risk.tpaw.additionalAnnualSpendingTilt}
           onChange={(x) => handleChange(x)}
           format={(x) => formatPercentage(1)(x)}
           ticks={(value, i) => (i % 10 === 0 ? 'large' : 'small')}
@@ -390,14 +389,16 @@ const _SpendingTiltCard = React.memo(
               <h2 className="">Total</h2>
               <h2 className="">Now</h2>
               {getSpendingTiltAtMFN(0)}
-              {!withdrawalsStarted && (
+              {ages.simulationMonths.withdrawalStartMonth.asMFN > 0 && (
                 <>
                   <h2 className="">At retirement</h2>
-                  {getSpendingTiltAtMFN(asMFN(withdrawalStartMonth))}
+                  {getSpendingTiltAtMFN(
+                    ages.simulationMonths.withdrawalStartMonth.asMFN,
+                  )}
                 </>
               )}
               <h2 className="">At max age</h2>
-              {getSpendingTiltAtMFN(numMonths - 1)}
+              {getSpendingTiltAtMFN(ages.simulationMonths.numMonths - 1)}
             </div>
           </div>
         </_ExpandableNote>
@@ -426,19 +427,16 @@ const _TPAWRiskToleranceDeclineCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParams, updatePlanParams, defaultPlanParams, planParamsExt } =
-      useSimulation()
     const {
-      longerLivedPerson,
-      withdrawalsStarted,
-      getCurrentAgeOfPerson,
-      withdrawalStartMonth,
-      asMFN,
-      getRiskToleranceFromMFN,
-      numMonths,
-    } = planParamsExt
+      planParamsNorm,
+      planParamsProcessed,
+      updatePlanParams,
+      defaultPlanParams,
+    } = useSimulation()
+    const { ages } = planParamsNorm
     const defaultRisk = defaultPlanParams.risk.tpaw
     const isModified = useIsRiskToleranceDeclineCardModified()
+
     return (
       <div
         className={`${className} params-card relative`}
@@ -454,9 +452,9 @@ const _TPAWRiskToleranceDeclineCard = React.memo(
           it decreases linearly from there to max age by the amount entered
           below.{' '}
         </p>
-        {planParams.people.withPartner && (
+        {ages.person2 && (
           <p className="p-base mt-2">
-            {longerLivedPerson === 'person1'
+            {ages.longerLivedPersonType === 'person1'
               ? `This calculation will be based on the ages of the partner who has the longer remaining lifespan. Based on the ages you have entered, you have the longer remaining lifespan.`
               : `This calculation will be based on the ages of the partner who has the longer remaining lifespan. Based on the ages you have entered, your partner has the longer remaining lifespan.`}
           </p>
@@ -465,47 +463,54 @@ const _TPAWRiskToleranceDeclineCard = React.memo(
           className={`-mx-3 mt-2 `}
           height={60}
           maxOverflowHorz={props.sizing.cardPadding}
-          data={RISK_TOLERANCE_VALUES.DATA.map((x) => -x)}
-          value={planParams.risk.tpaw.riskTolerance.deltaAtMaxAge}
+          data={PLAN_PARAMS_CONSTANTS.riskToleranceValues.DATA.map((x) => -x)}
+          value={planParamsNorm.risk.tpaw.riskTolerance.deltaAtMaxAge}
           onChange={(value) =>
             updatePlanParams('setTPAWRiskDeltaAtMaxAge', value)
           }
           format={(x) => (-x).toFixed(0)}
-          ticks={(value, i) => (i % 10 === 0 ? 'large' : 'small')}
+          ticks={(__, i) => (i % 10 === 0 ? 'large' : 'small')}
         />
         <_ExpandableNote className="mt-8" title="Risk Tolerance Table">
           {block(() => {
             const data = _.compact([
               {
                 label: 'At Age 20',
-                mfn:
-                  20 * 12 - getCurrentAgeOfPerson(longerLivedPerson).inMonths,
+                mfn: 'at20' as const,
               },
               {
                 label: 'Now',
                 mfn: 0,
               },
-              withdrawalsStarted
+              ages.simulationMonths.withdrawalStartMonth.asMFN === 0
                 ? null
                 : {
                     label: 'Retirement',
-                    mfn: asMFN(withdrawalStartMonth),
+                    mfn: ages.simulationMonths.withdrawalStartMonth.asMFN,
                   },
               {
                 label: 'Max Age',
-                mfn: numMonths,
+                mfn: ages.simulationMonths.lastMonthAsMFN,
               },
             ])
               .map((x) =>
-                letIn(getRiskToleranceFromMFN(x.mfn), (riskTolerance) => ({
-                  ...x,
-                  riskTolerance,
-                  rra: RISK_TOLERANCE_VALUES.riskToleranceToRRA.withInfinityAtZero(
+                letIn(
+                  x.mfn === 'at20'
+                    ? planParamsNorm.risk.tpaw.riskTolerance.at20
+                    : planParamsProcessed.risk.tpaw.fullGlidePath[x.mfn]
+                        .unclamped.riskTolerance,
+                  (riskTolerance) => ({
+                    ...x,
                     riskTolerance,
-                  ),
-                })),
+                    rra: PLAN_PARAMS_CONSTANTS.riskToleranceValues.riskToleranceToRRA.withInfinityAtZero(
+                      riskTolerance,
+                    ),
+                  }),
+                ),
               )
-              .sort((a, b) => a.mfn - b.mfn)
+              .sort((a, b) =>
+                a.mfn === 'at20' ? -1 : b.mfn === 'at20' ? 1 : a.mfn - b.mfn,
+              )
             return (
               <div className="">
                 <p className="p-base">
@@ -517,7 +522,7 @@ const _TPAWRiskToleranceDeclineCard = React.memo(
                 >
                   <div className="flex items-end justify-center">
                     <h2 className="">
-                      {longerLivedPerson === 'person1'
+                      {ages.longerLivedPersonType === 'person1'
                         ? 'Your Age'
                         : `Your Partner's Age`}
                     </h2>
@@ -560,10 +565,10 @@ const _TPAWRiskToleranceDeclineCard = React.memo(
 )
 
 const useIsRiskToleranceDeclineCardModified = () => {
-  const { planParams, defaultPlanParams } = useSimulation()
+  const { planParamsNorm, defaultPlanParams } = useSimulation()
   return (
     defaultPlanParams.risk.tpaw.riskTolerance.deltaAtMaxAge !==
-    planParams.risk.tpaw.riskTolerance.deltaAtMaxAge
+    planParamsNorm.risk.tpaw.riskTolerance.deltaAtMaxAge
   )
 }
 
@@ -575,7 +580,8 @@ const _TPAWLegacyRiskToleranceDeltaCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParams, updatePlanParams, defaultPlanParams } = useSimulation()
+    const { planParamsNorm, updatePlanParams, defaultPlanParams } =
+      useSimulation()
     const defaultRisk = defaultPlanParams.risk.tpaw
     const isModified = useIsLegacyRiskToleranceDeltaCardModified()
 
@@ -600,8 +606,10 @@ const _TPAWLegacyRiskToleranceDeltaCard = React.memo(
           className={`-mx-3 mt-2 `}
           height={60}
           maxOverflowHorz={props.sizing.cardPadding}
-          data={RISK_TOLERANCE_VALUES.DATA}
-          value={planParams.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20}
+          data={PLAN_PARAMS_CONSTANTS.riskToleranceValues.DATA}
+          value={
+            planParamsNorm.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20
+          }
           onChange={handleChange}
           format={(x) => x.toFixed(0)}
           ticks={(value, i) => (i % 10 === 0 ? 'large' : 'small')}
@@ -621,10 +629,10 @@ const _TPAWLegacyRiskToleranceDeltaCard = React.memo(
 )
 
 const useIsLegacyRiskToleranceDeltaCardModified = () => {
-  const { planParams, defaultPlanParams } = useSimulation()
+  const { planParamsNorm, defaultPlanParams } = useSimulation()
   return (
     defaultPlanParams.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 !==
-    planParams.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20
+    planParamsNorm.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20
   )
 }
 
@@ -636,7 +644,8 @@ const _TPAWTimePreferenceCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParams, updatePlanParams, defaultPlanParams } = useSimulation()
+    const { planParamsNorm, updatePlanParams, defaultPlanParams } =
+      useSimulation()
     const defaultRisk = defaultPlanParams.risk.tpaw
     const isModified = useIsTimePreferenceCardModified()
     const handleChange = (value: number) =>
@@ -664,8 +673,8 @@ const _TPAWTimePreferenceCard = React.memo(
           className={`-mx-3 mt-4 `}
           height={60}
           maxOverflowHorz={props.sizing.cardPadding}
-          data={[...TIME_PREFERENCE_VALUES].reverse()}
-          value={planParams.risk.tpaw.timePreference}
+          data={[...PLAN_PARAMS_CONSTANTS.timePreferenceValues].reverse()}
+          value={planParamsNorm.risk.tpaw.timePreference}
           onChange={(x) => handleChange(x)}
           format={(x) => formatPercentage(1)(-x)}
           ticks={(value, i) => (i % 10 === 0 ? 'large' : 'small')}
@@ -682,35 +691,28 @@ const _TPAWTimePreferenceCard = React.memo(
   },
 )
 const useIsTimePreferenceCardModified = () => {
-  const { planParams, defaultPlanParams } = useSimulation()
+  const { planParamsNorm, defaultPlanParams } = useSimulation()
   return (
     defaultPlanParams.risk.tpaw.timePreference !==
-    planParams.risk.tpaw.timePreference
+    planParamsNorm.risk.tpaw.timePreference
   )
 }
 
 export const PlanInputRiskTPAWSummary = React.memo(
-  ({
-    planParams,
-    defaultPlanParams,
-  }: {
-    planParams: PlanParams
-    defaultPlanParams: PlanParams
-  }) => {
-    const { risk } = planParams
-    const defaultRisk = defaultPlanParams.risk
+  ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
+    const { risk } = planParamsNorm
     const advancedCount = _.filter([
       risk.tpaw.riskTolerance.deltaAtMaxAge !==
-        defaultRisk.tpaw.riskTolerance.deltaAtMaxAge,
+        DEFAULT_RISK_TPAW.riskTolerance.deltaAtMaxAge,
       risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 !==
-        defaultRisk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20,
-      risk.tpaw.timePreference !== defaultRisk.tpaw.timePreference,
+        DEFAULT_RISK_TPAW.riskTolerance.forLegacyAsDeltaFromAt20,
+      risk.tpaw.timePreference !== DEFAULT_RISK_TPAW.timePreference,
     ]).length
     return (
       <>
         <h2>
           {`Risk Tolerance: ${risk.tpaw.riskTolerance.at20} (${fGet(
-            RISK_TOLERANCE_VALUES.SEGMENTS.find((x) =>
+            PLAN_PARAMS_CONSTANTS.riskToleranceValues.SEGMENTS.find((x) =>
               x.containsIndex(risk.tpaw.riskTolerance.at20),
             ),
           ).label.toLowerCase()})`}
@@ -718,27 +720,27 @@ export const PlanInputRiskTPAWSummary = React.memo(
         <h2>
           Spending Tilt: Base +{' '}
           {formatPercentage(1)(
-            planParams.risk.tpaw.additionalAnnualSpendingTilt,
+            planParamsNorm.risk.tpaw.additionalAnnualSpendingTilt,
           )}
         </h2>
         {advancedCount > -0 && (
           <>
             <h2 className="">Advanced</h2>
-            {defaultRisk.tpaw.riskTolerance.deltaAtMaxAge !==
+            {DEFAULT_RISK_TPAW.riskTolerance.deltaAtMaxAge !==
               risk.tpaw.riskTolerance.deltaAtMaxAge && (
               <h2 className="ml-4">
                 Decrease Risk Tolerance With Age:{' '}
                 {-risk.tpaw.riskTolerance.deltaAtMaxAge}
               </h2>
             )}
-            {defaultRisk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 !==
+            {DEFAULT_RISK_TPAW.riskTolerance.forLegacyAsDeltaFromAt20 !==
               risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 && (
               <h2 className="ml-4">
                 Increase Risk Tolerance For Legacy:{' '}
                 {risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20}
               </h2>
             )}
-            {defaultRisk.tpaw.timePreference !== risk.tpaw.timePreference && (
+            {DEFAULT_RISK_TPAW.timePreference !== risk.tpaw.timePreference && (
               <h2 className="ml-4">
                 Time Preference:{' '}
                 {formatPercentage(1)(-risk.tpaw.timePreference)}

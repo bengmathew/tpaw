@@ -10,7 +10,10 @@ export function usePlanResultsChartType() {
   const getPlanResultsChartURL = useGetPlanResultsChartURL()
 
   const typeStr = useURLParam('graph') ?? ''
-  let type = isPlanResultsChartType(simulationResult.args.planParamsProcessed.planParams, typeStr)
+  let type = isPlanResultsChartType(
+    simulationResult.args.planParamsNorm,
+    typeStr,
+  )
     ? typeStr
     : 'spending-total'
   if (typeStr.length > 0 && typeStr !== type)

@@ -9,10 +9,10 @@ import React, { CSSProperties, useEffect, useRef, useState } from 'react'
 import { Padding, RectExt, rectExt } from '../../../../../Utils/Geometry'
 import { useSystemInfo } from '../../../../App/WithSystemInfo'
 import {
-    ChartReact,
-    ChartReactStatefull,
+  ChartReact,
+  ChartReactStatefull,
 } from '../../../../Common/Chart/ChartReact'
-import { ContextMenu2 } from '../../../../Common/Modal/ContextMenu2'
+import { ContextModal } from '../../../../Common/Modal/ContextModal'
 import { Config } from '../../../../Config'
 import { useNonPlanParams } from '../../../PlanRootHelpers/WithNonPlanParams'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
@@ -25,8 +25,8 @@ import { getPlanResultsChartRange } from './PlanResultsChart/GetPlanResultsChart
 import { PlanResultsChartData } from './PlanResultsChart/PlanResultsChartData'
 import { PlanResultsChartCardMenuButton } from './PlanResultsChartCardMenuButton'
 import {
-    getPlanResultsChartLabelInfoForSpending,
-    planResultsChartLabel,
+  getPlanResultsChartLabelInfoForSpending,
+  planResultsChartLabel,
 } from './PlanResultsChartLabel'
 
 const maxWidth = 700
@@ -45,7 +45,7 @@ export const PlanResultsChartCardMenu = React.memo(
   }) => {
     const { windowWidthName } = useSystemInfo()
     const { simulationResult } = useSimulation()
-    const { planParams } = simulationResult.args
+    const { planParamsNorm } = simulationResult.args
     const planColors = usePlanColors()
     const { nonPlanParams } = useNonPlanParams()
 
@@ -54,168 +54,176 @@ export const PlanResultsChartCardMenu = React.memo(
 
     const chartH = windowWidthName === 'xs' ? 50 : 55
 
-    const essentialArray = _.values(
-      planParams.adjustmentsToSpending.extraSpending.essential,
-    ).sort((a, b) => a.sortIndex - b.sortIndex)
+    const essentialArray =
+      planParamsNorm.adjustmentsToSpending.extraSpending.essential.sort(
+        (a, b) => a.sortIndex - b.sortIndex,
+      )
 
-    const discretionaryArray = _.values(
-      planParams.adjustmentsToSpending.extraSpending.discretionary,
-    ).sort((a, b) => a.sortIndex - b.sortIndex)
+    const discretionaryArray =
+      planParamsNorm.adjustmentsToSpending.extraSpending.discretionary.sort(
+        (a, b) => a.sortIndex - b.sortIndex,
+      )
 
     const spendingLabelInfo =
-      getPlanResultsChartLabelInfoForSpending(planParams)
+      getPlanResultsChartLabelInfoForSpending(planParamsNorm)
     const marginToWindow = windowWidthName === 'xs' ? 0 : 10
     return (
-      <ContextMenu2
-        align={'left'}
-        onMenuClose={() => {
-          setExpandEssential(false)
-          setExpandDiscretionary(false)
-        }}
-        getMarginToWindow={() => marginToWindow}
-      >
-        <PlanResultsChartCardMenuButton
-          className={className}
-          style={style}
-          transition={transition}
-        />
+      <Menu>
+        {({ open }) => (
+          <ContextModal
+            align={'left'}
+            open={open}
+            afterLeave={() => {
+              setExpandEssential(false)
+              setExpandDiscretionary(false)
+            }}
+            getMarginToWindow={() => marginToWindow}
+          >
+            {({ ref }) => (
+              <Menu.Button ref={ref}>
+                <PlanResultsChartCardMenuButton
+                  ref={ref}
+                  className={className}
+                  style={style}
+                  transition={transition}
+                />
+              </Menu.Button>
+            )}
 
-        <Menu.Items
-          className="rounded-lg"
-          style={{
-            maxWidth: `calc(100vw - ${marginToWindow * 2}px)`,
-            width: '700px',
-            color: planColors.results.fg,
-          }}
-        >
-          <_Link type="spending-total" indent={0} chartH={chartH} />
-          {spendingLabelInfo.hasExtra && (
-            <>
-              <_Link indent={1} type="spending-general" chartH={chartH} />
-              {spendingLabelInfo.extraSpendingLabelInfo
-                .splitEssentialAndDiscretionary ? (
+            <Menu.Items
+              className="rounded-lg"
+              style={{
+                maxWidth: `calc(100vw - ${marginToWindow * 2}px)`,
+                width: '700px',
+                color: planColors.results.fg,
+              }}
+            >
+              <_Link type="spending-total" indent={0} chartH={chartH} />
+              {spendingLabelInfo.hasExtra && (
                 <>
-                  {essentialArray.length > 0 && (
+                  <_Link indent={1} type="spending-general" chartH={chartH} />
+                  {spendingLabelInfo.extraSpendingLabelInfo
+                    .splitEssentialAndDiscretionary ? (
+                    <>
+                      {essentialArray.length > 0 && (
+                        <>
+                          <_Button
+                            indent={1}
+                            isExpanded={expandEssential}
+                            onClick={() => setExpandEssential((x) => !x)}
+                            label={
+                              spendingLabelInfo.extraSpendingLabelInfo.essential
+                                .label
+                            }
+                            description={
+                              spendingLabelInfo.extraSpendingLabelInfo.essential
+                                .description
+                            }
+                            chartH={chartH}
+                          />
+                          {expandEssential &&
+                            essentialArray.map((x) => (
+                              <_Link
+                                indent={2}
+                                key={`essential-${x.id}`}
+                                type={`spending-essential-${x.id}`}
+                                chartH={chartH}
+                              />
+                            ))}
+                        </>
+                      )}
+                      {discretionaryArray.length > 0 && (
+                        <>
+                          <_Button
+                            isExpanded={expandDiscretionary}
+                            indent={1}
+                            onClick={() => setExpandDiscretionary((x) => !x)}
+                            label={
+                              spendingLabelInfo.extraSpendingLabelInfo
+                                .discretionary.label
+                            }
+                            description={
+                              spendingLabelInfo.extraSpendingLabelInfo
+                                .discretionary.description
+                            }
+                            chartH={chartH}
+                          />
+                          {expandDiscretionary &&
+                            discretionaryArray.map((x) => (
+                              <_Link
+                                indent={2}
+                                key={`discretionary-${x.id}`}
+                                type={`spending-discretionary-${x.id}`}
+                                chartH={chartH}
+                              />
+                            ))}
+                        </>
+                      )}
+                    </>
+                  ) : (
                     <>
                       <_Button
-                        indent={1}
                         isExpanded={expandEssential}
                         onClick={() => setExpandEssential((x) => !x)}
-                        label={
-                          spendingLabelInfo.extraSpendingLabelInfo.essential
-                            .label
-                        }
+                        label={spendingLabelInfo.extraSpendingLabelInfo.label}
                         description={
-                          spendingLabelInfo.extraSpendingLabelInfo.essential
-                            .description
+                          spendingLabelInfo.extraSpendingLabelInfo.description
                         }
+                        indent={1}
                         chartH={chartH}
                       />
                       {expandEssential &&
-                        essentialArray.map((x) => (
-                          <_Link
-                            indent={2}
-                            key={`essential-${x.id}`}
-                            type={`spending-essential-${x.id}`}
-                            chartH={chartH}
-                          />
-                        ))}
+                        [
+                          ...planParamsNorm.adjustmentsToSpending.extraSpending
+                            .essential,
+                        ]
+                          .sort((a, b) => a.sortIndex - b.sortIndex)
+                          .map((x) => (
+                            <_Link
+                              key={`essential-${x.id}`}
+                              indent={2}
+                              type={`spending-essential-${x.id}`}
+                              chartH={chartH}
+                            />
+                          ))}
+                      {expandEssential &&
+                        [
+                          ...planParamsNorm.adjustmentsToSpending.extraSpending
+                            .discretionary,
+                        ]
+                          .sort((a, b) => a.sortIndex - b.sortIndex)
+                          .map((x) => (
+                            <_Link
+                              key={`discretionary-${x.id}`}
+                              indent={2}
+                              type={`spending-discretionary-${x.id}`}
+                              chartH={chartH}
+                            />
+                          ))}
                     </>
                   )}
-                  {discretionaryArray.length > 0 && (
-                    <>
-                      <_Button
-                        isExpanded={expandDiscretionary}
-                        indent={1}
-                        onClick={() => setExpandDiscretionary((x) => !x)}
-                        label={
-                          spendingLabelInfo.extraSpendingLabelInfo.discretionary
-                            .label
-                        }
-                        description={
-                          spendingLabelInfo.extraSpendingLabelInfo.discretionary
-                            .description
-                        }
-                        chartH={chartH}
-                      />
-                      {expandDiscretionary &&
-                        discretionaryArray.map((x) => (
-                          <_Link
-                            indent={2}
-                            key={`discretionary-${x.id}`}
-                            type={`spending-discretionary-${x.id}`}
-                            chartH={chartH}
-                          />
-                        ))}
-                    </>
-                  )}
-                </>
-              ) : (
-                <>
-                  <_Button
-                    isExpanded={expandEssential}
-                    onClick={() => setExpandEssential((x) => !x)}
-                    label={spendingLabelInfo.extraSpendingLabelInfo.label}
-                    description={
-                      spendingLabelInfo.extraSpendingLabelInfo.description
-                    }
-                    indent={1}
-                    chartH={chartH}
-                  />
-                  {expandEssential &&
-                    [
-                      ..._.values(
-                        planParams.adjustmentsToSpending.extraSpending
-                          .essential,
-                      ),
-                    ]
-                      .sort((a, b) => a.sortIndex - b.sortIndex)
-                      .map((x) => (
-                        <_Link
-                          key={`essential-${x.id}`}
-                          indent={2}
-                          type={`spending-essential-${x.id}`}
-                          chartH={chartH}
-                        />
-                      ))}
-                  {expandEssential &&
-                    [
-                      ..._.values(
-                        planParams.adjustmentsToSpending.extraSpending
-                          .discretionary,
-                      ),
-                    ]
-                      .sort((a, b) => a.sortIndex - b.sortIndex)
-                      .map((x) => (
-                        <_Link
-                          key={`discretionary-${x.id}`}
-                          indent={2}
-                          type={`spending-discretionary-${x.id}`}
-                          chartH={chartH}
-                        />
-                      ))}
                 </>
               )}
-            </>
-          )}
 
-          <_Link type={'portfolio'} indent={0} chartH={chartH} />
-          <_Link
-            type={'asset-allocation-savings-portfolio'}
-            indent={0}
-            chartH={chartH}
-          />
-          <_Link type={'withdrawal'} indent={0} chartH={chartH} />
-          {(!Config.client.isProduction ||
-            nonPlanParams.dev.showDevFeatures) && (
-            <_Link
-              type="asset-allocation-total-portfolio"
-              indent={0}
-              chartH={chartH}
-            />
-          )}
-        </Menu.Items>
-      </ContextMenu2>
+              <_Link type={'portfolio'} indent={0} chartH={chartH} />
+              <_Link
+                type={'asset-allocation-savings-portfolio'}
+                indent={0}
+                chartH={chartH}
+              />
+              <_Link type={'withdrawal'} indent={0} chartH={chartH} />
+              {(!Config.client.isProduction ||
+                nonPlanParams.dev.showDevFeatures) && (
+                <_Link
+                  type="asset-allocation-total-portfolio"
+                  indent={0}
+                  chartH={chartH}
+                />
+              )}
+            </Menu.Items>
+          </ContextModal>
+        )}
+      </Menu>
     )
   },
 )
@@ -324,11 +332,11 @@ const _Link = React.memo(
     chartH: number
   }) => {
     const { simulationResult } = useSimulation()
-    const { planParams } = simulationResult.args
+    const { planParamsNorm } = simulationResult.args
     const getPlanChartURL = useGetPlanResultsChartURL()
     const chartData = useChartData(type)
 
-    const { label, description } = planResultsChartLabel(planParams, type)
+    const { label, description } = planResultsChartLabel(planParamsNorm, type)
     const { windowWidthName } = useSystemInfo()
     const width = windowWidthName === 'xs' ? 120 : 145
 

@@ -1,9 +1,9 @@
 import { faChevronRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { block, fGet, getZonedTimeFns, noCase } from '@tpaw/common'
+import { CalendarMonthFns, block, fGet, noCase } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { PERCENTILES_STR } from '../../../../UseSimulator/Simulator/Simulator'
 import { SimpleRange } from '../../../../Utils/SimpleRange'
 import { PlanResultsChartType } from '../../Plan/PlanResults/PlanResultsChartType'
@@ -16,17 +16,17 @@ import { PlanPrintViewArgs } from './PlanPrintViewArgs'
 export const PlanPrintViewAppendixSection = React.memo(
   ({ settings }: { settings: PlanPrintViewArgs['settings'] }) => {
     const { args } = useSimulationResult()
-    const { extraSpending } = args.planParams.adjustmentsToSpending
+    const { extraSpending } = args.planParamsNorm.adjustmentsToSpending
 
     const secondaryCharts: PlanResultsChartType[] = _.compact([
-      _.values(extraSpending.discretionary).length > 0 ||
-      _.values(extraSpending.essential).length > 0
+      extraSpending.discretionary.length > 0 ||
+      extraSpending.essential.length > 0
         ? 'spending-general'
         : undefined,
-      ..._.values(extraSpending.essential)
+      ...extraSpending.essential
         .sort((a, b) => a.sortIndex - b.sortIndex)
         .map((x) => `spending-essential-${x.id}` as const),
-      ..._.values(extraSpending.discretionary)
+      ...extraSpending.discretionary
         .sort((a, b) => a.sortIndex - b.sortIndex)
         .map((x) => `spending-discretionary-${x.id}` as const),
       'portfolio' as const,
@@ -44,7 +44,7 @@ export const PlanPrintViewAppendixSection = React.memo(
         </PlanPrintViewPageGroup>
         <PlanPrintViewPageGroup settings={settings}>
           <_Table className="mt-10" type="spending-total" />
-          {_.keys(args.planParams.wealth.incomeDuringRetirement).length > 0 && (
+          {args.planParamsNorm.wealth.incomeDuringRetirement.length > 0 && (
             <_Table
               className="mt-10"
               type="spending-total-funding-sources-50"
@@ -61,34 +61,16 @@ export const PlanPrintViewAppendixSection = React.memo(
 
 const _Table = React.memo(
   ({ className, type }: { className?: string; type: PlanResultsChartType }) => {
-    const simulationResult = useSimulationResult()
-    const { ianaTimezoneName } = simulationResult.args.planParamsExt
-    const getZonedTime = useMemo(
-      () => getZonedTimeFns(ianaTimezoneName),
-      [ianaTimezoneName],
-    )
     const { args } = useSimulationResult()
-    const { monthsFromNowToCalendarMonth } = args.planParamsExt
     const chartData = useChartDataForPDF(type)
-    const { getCurrentAgeOfPerson } = args.planParamsExt
-    const person1Age = useMemo(
-      () => getCurrentAgeOfPerson('person1'),
-      [getCurrentAgeOfPerson],
-    )
-    const person2Age = useMemo(
-      () =>
-        args.planParams.people.withPartner
-          ? getCurrentAgeOfPerson('person2')
-          : null,
-      [getCurrentAgeOfPerson, args.planParams.people.withPartner],
-    )
+    const { ages } = args.planParamsNorm
 
     const months = _.range(
       chartData.displayRange.x.start,
       chartData.displayRange.x.end + 1,
     )
     const { label, subLabel, yAxisDescriptionStr } = getPlanPrintChartLabel(
-      args.planParams,
+      args.planParamsNorm,
       type,
     )
 
@@ -115,7 +97,7 @@ const _Table = React.memo(
               <th className="px-4 border-l border-black" rowSpan={2}>
                 Your Age
               </th>
-              {person2Age !== null && (
+              {ages.person2 !== null && (
                 <th className="px-4 border-l border-black" rowSpan={2}>
                   {`Partner's Age`}
                 </th>
@@ -173,18 +155,18 @@ const _Table = React.memo(
           </thead>
           <tbody className="font-mono text-[10px] ">
             {months.map((mfn, i) => {
-              const person1AgeInMonths = (mfn + person1Age.inMonths) % 12
               if (
                 !(
-                  person1AgeInMonths === 0 ||
+                  ages.person1.currentAge.inMonths === 0 ||
                   i === months.length - 1 ||
                   i === 0
                 )
               )
                 return <React.Fragment key={i}></React.Fragment>
-              const dateTime = getZonedTime.fromObject(
-                monthsFromNowToCalendarMonth(mfn),
-              )
+
+              const calendarMonth = CalendarMonthFns.getFromMFN(
+                args.planParamsNorm.nowAs.calendarMonth,
+              )(mfn)
               return (
                 <tr
                   key={i}
@@ -195,19 +177,23 @@ const _Table = React.memo(
                   )}
                 >
                   <td className="px-4 text-center border-l border-black">
-                    {dateTime.toFormat('MMM yyyy')}
+                    {CalendarMonthFns.toStr(calendarMonth, {
+                      shortMonth: true,
+                    })}
                   </td>
                   <td className="px-4 text-center border-l border-black">
-                    {`${Math.floor((mfn + person1Age.inMonths) / 12)}`}
+                    {`${Math.floor((mfn + ages.person1.currentAge.inMonths) / 12)}`}
                     <span className="ml-1 lighten-2 text-[8px]">yr</span>{' '}
-                    <span>{(mfn + person1Age.inMonths) % 12}</span>
+                    <span>{(mfn + ages.person1.currentAge.inMonths) % 12}</span>
                     <span className="ml-1 lighten-2 text-[8px]">mo</span>
                   </td>
-                  {person2Age !== null && (
+                  {ages.person2 !== null && (
                     <td className="px-4 text-center border-l border-black">
-                      {`${Math.floor((mfn + person2Age.inMonths) / 12)}`}
+                      {`${Math.floor((mfn + ages.person2.currentAge.inMonths) / 12)}`}
                       <span className="ml-1 lighten-2 text-[8px]">yr</span>{' '}
-                      <span>{(mfn + person2Age.inMonths) % 12}</span>
+                      <span>
+                        {(mfn + ages.person2.currentAge.inMonths) % 12}
+                      </span>
                       <span className="ml-1 lighten-2 text-[8px]">mo</span>
                     </td>
                   )}

@@ -2,7 +2,7 @@ import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
 import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { MANUAL_INFLATION_VALUES, noCase, PlanParams } from '@tpaw/common'
+import { PLAN_PARAMS_CONSTANTS, noCase, PlanParams } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useMemo } from 'react'
 import { PlanParamsProcessed } from '../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
@@ -17,6 +17,7 @@ import {
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 import { fWASM } from '../../../../UseSimulator/Simulator/GetWASM'
+import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 
 export const PlanInputInflation = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -37,7 +38,7 @@ export const _InflationCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const {
-      planParams,
+      planParamsNorm,
       updatePlanParams,
       defaultPlanParams,
       currentMarketData,
@@ -72,7 +73,7 @@ export const _InflationCard = React.memo(
           <FontAwesomeIcon
             className="mt-1"
             icon={
-              planParams.advanced.annualInflation.type === 'suggested'
+              planParamsNorm.advanced.annualInflation.type === 'suggested'
                 ? faCircleSelected
                 : faCircleRegular
             }
@@ -90,7 +91,7 @@ export const _InflationCard = React.memo(
         <button
           className={`${className} flex gap-x-2 mt-3`}
           onClick={() => {
-            switch (planParams.advanced.annualInflation.type) {
+            switch (planParamsNorm.advanced.annualInflation.type) {
               case 'suggested':
                 handleChange({
                   type: 'manual',
@@ -100,14 +101,14 @@ export const _InflationCard = React.memo(
               case 'manual':
                 return
               default:
-                noCase(planParams.advanced.annualInflation)
+                noCase(planParamsNorm.advanced.annualInflation)
             }
           }}
         >
           <FontAwesomeIcon
             className="mt-1"
             icon={
-              planParams.advanced.annualInflation.type === 'manual'
+              planParamsNorm.advanced.annualInflation.type === 'manual'
                 ? faCircleSelected
                 : faCircleRegular
             }
@@ -118,14 +119,14 @@ export const _InflationCard = React.memo(
             </h2>
           </div>
         </button>
-        {planParams.advanced.annualInflation.type === 'manual' && (
+        {planParamsNorm.advanced.annualInflation.type === 'manual' && (
           <SliderInput
             className=""
             height={60}
             maxOverflowHorz={props.sizing.cardPadding}
             format={formatPercentage(1)}
-            data={MANUAL_INFLATION_VALUES}
-            value={planParams.advanced.annualInflation.value}
+            data={PLAN_PARAMS_CONSTANTS.manualInflationValues}
+            value={planParamsNorm.advanced.annualInflation.value}
             onChange={(value) => handleChange({ type: 'manual', value })}
             ticks={(value, i) =>
               i % 10 === 0
@@ -164,20 +165,25 @@ export const inflationTypeLabel = ({
 }
 
 export const useIsPlanInputInflationModified = () => {
-  const { planParams, defaultPlanParams } = useSimulation()
+  const { planParamsNorm, defaultPlanParams } = useSimulation()
   return !_.isEqual(
     defaultPlanParams.advanced.annualInflation,
-    planParams.advanced.annualInflation,
+    planParamsNorm.advanced.annualInflation,
   )
 }
 
 export const PlanInputInflationSummary = React.memo(
-  ({ planParamsProcessed }: { planParamsProcessed: PlanParamsProcessed }) => {
-    const { planParams } = planParamsProcessed
+  ({
+    planParamsNorm,
+    planParamsProcessed,
+  }: {
+    planParamsNorm: PlanParamsNormalized
+    planParamsProcessed: PlanParamsProcessed
+  }) => {
     const format = formatPercentage(1)
     return (
       <h2>
-        {inflationTypeLabel(planParams.advanced.annualInflation)}:{' '}
+        {inflationTypeLabel(planParamsNorm.advanced.annualInflation)}:{' '}
         {format(planParamsProcessed.inflation.annual)}
       </h2>
     )

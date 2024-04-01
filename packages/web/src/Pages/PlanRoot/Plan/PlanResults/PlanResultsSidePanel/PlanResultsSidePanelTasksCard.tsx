@@ -1,10 +1,11 @@
 import { PlanParams, fGet } from '@tpaw/common'
-import clix from 'clsx'
+import { default as clix, default as clsx } from 'clsx'
 import _ from 'lodash'
 import React, { CSSProperties, ReactNode, useState } from 'react'
 import { FirstMonthSavingsPortfolioDetail } from '../../../../../UseSimulator/Simulator/GetFirstMonthSavingsPortfolioDetail'
 import {
   NumberArrByPercentileByMonthsFromNow,
+  NumberArrWithIdByPercentileByMonthsFromNow,
   SimulationResult,
 } from '../../../../../UseSimulator/Simulator/Simulator'
 import { formatCurrency } from '../../../../../Utils/FormatCurrency'
@@ -17,7 +18,10 @@ import {
   useSimulationResult,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
-import clsx from 'clsx'
+import {
+  PlanParamsProcessed,
+  ProcessedValueForMonthRanges,
+} from '@tpaw/simulator'
 
 export const PlanResultsSidePanelTasksCard = React.memo(
   ({
@@ -135,44 +139,31 @@ const _getProps = (simulationResult: SimulationResult): _Props => {
   const original = simulationResult.firstMonthOfSomeRun
   const { args } = simulationResult
 
-  const { withdrawalsStarted } = args.planParamsExt
+  const withdrawalsStarted =
+    args.planParamsNorm.ages.simulationMonths.withdrawalStartMonth.asMFN === 0
 
-  const firstMonthOfAnyPercentile = (
-    id: string,
-    { byId }: { byId: Map<string, NumberArrByPercentileByMonthsFromNow> },
-  ) => fGet(byId.get(id)).byPercentileByMonthsFromNow[0].data[0]
+  const getWithdrawals = (type: 'essential' | 'discretionary') =>
+    simulationResult.savingsPortfolio.withdrawals[type].byId.map(
+      ({ id, byPercentileByMonthsFromNow }) => {
+        const { label } = fGet(
+          args.planParamsNorm.adjustmentsToSpending.extraSpending[type].find(
+            (x) => x.id === id,
+          ),
+        )
+        const amount = byPercentileByMonthsFromNow[0].data[0]
+        return { id, label, amount }
+      },
+    )
 
   return {
     ...original,
     withdrawals: {
       ...original.withdrawals,
-      essentialByEntry: _.values(
-        args.planParams.adjustmentsToSpending.extraSpending.essential,
-      )
-        .sort((a, b) => a.sortIndex - b.sortIndex)
-        .map(({ id, label }) => ({
-          id,
-          label,
-          amount: firstMonthOfAnyPercentile(
-            id,
-            simulationResult.savingsPortfolio.withdrawals.essential,
-          ),
-        })),
-      discretionaryByEntry: _.values(
-        args.planParams.adjustmentsToSpending.extraSpending.discretionary,
-      )
-        .sort((a, b) => a.sortIndex - b.sortIndex)
-        .map(({ id, label }) => ({
-          id,
-          label,
-          amount: firstMonthOfAnyPercentile(
-            id,
-            simulationResult.savingsPortfolio.withdrawals.discretionary,
-          ),
-        })),
+      essentialByEntry: getWithdrawals('essential'),
+      discretionaryByEntry: getWithdrawals('discretionary'),
     },
     withdrawalsStarted,
-    strategy: args.planParams.advanced.strategy,
+    strategy: args.planParamsNorm.advanced.strategy,
   }
 }
 

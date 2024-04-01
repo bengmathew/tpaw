@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, FragmentRefs } from 'relay-runtime';
+import { ConcreteRequest, FragmentRefs } from 'relay-runtime'
 export type UserPlanSetAsMainInput = {
   planId: string;
   userId: string;

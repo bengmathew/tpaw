@@ -4,18 +4,19 @@ import { pluralize } from '../../../../../Utils/Pluralize'
 import { trimAndNullify } from '../../../../../Utils/TrimAndNullify'
 import { optGet } from '../../../../../Utils/optGet'
 import {
-    PlanResultsChartType,
-    PlanResultsSpendingChartType,
-    isPlanResultsChartSpendingDiscretionaryType,
-    isPlanResultsChartSpendingEssentialType,
-    isPlanResultsChartSpendingTotalFundingSourcesType,
-    isPlanResultsChartSpendingType,
-    planResultsChartSpendingDiscretionaryTypeID,
-    planResultsChartSpendingEssentialTypeID,
+  PlanResultsChartType,
+  PlanResultsSpendingChartType,
+  isPlanResultsChartSpendingDiscretionaryType,
+  isPlanResultsChartSpendingEssentialType,
+  isPlanResultsChartSpendingTotalFundingSourcesType,
+  isPlanResultsChartSpendingType,
+  planResultsChartSpendingDiscretionaryTypeID,
+  planResultsChartSpendingEssentialTypeID,
 } from '../PlanResultsChartType'
+import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 
 export const planResultsChartLabel = (
-  planParams: PlanParams,
+  planParamsNorm: PlanParamsNormalized,
   panelType: PlanResultsChartType,
 ) => {
   switch (panelType) {
@@ -56,22 +57,19 @@ export const planResultsChartLabel = (
     }
     default:
       if (isPlanResultsChartSpendingType(panelType)) {
-        return getPlanResultsChartLabelInfoForSpending(planParams).getLabelInfo(
-          panelType,
-        )
+        return getPlanResultsChartLabelInfoForSpending(
+          planParamsNorm,
+        ).getLabelInfo(panelType)
       }
       noCase(panelType)
   }
 }
 
 export const getPlanResultsChartLabelInfoForSpending = (
-  planParams: PlanParams,
+  planParamsNorm: PlanParamsNormalized,
 ) => {
   const { essential, discretionary } =
-    planParams.adjustmentsToSpending.extraSpending
-  const numEssential = _.values(essential).length
-  const numDiscretionary = _.values(discretionary).length
-  const numExtra = numEssential + numDiscretionary
+    planParamsNorm.adjustmentsToSpending.extraSpending
   const spendingTotalInfo = block(() => {
     const full = ['Monthly Spending During Retirement']
     return {
@@ -81,7 +79,7 @@ export const getPlanResultsChartLabelInfoForSpending = (
       yAxisDescription: _yAxisDescriptionType.realDollarsExplanation,
     }
   })
-  if (numExtra === 0) {
+  if (essential.length + discretionary.length === 0) {
     return {
       hasExtra: false,
       getLabelInfo: (chartType: PlanResultsSpendingChartType) => {
@@ -103,7 +101,7 @@ export const getPlanResultsChartLabelInfoForSpending = (
     } as const
   } else {
     const splitEssentialAndDiscretionary =
-      planParams.advanced.strategy !== 'SWR'
+      planParamsNorm.advanced.strategy !== 'SWR'
     return {
       hasExtra: true,
       extraSpendingLabelInfo: splitEssentialAndDiscretionary
@@ -112,14 +110,14 @@ export const getPlanResultsChartLabelInfoForSpending = (
             essential: {
               label: ['Extra Spending', 'Essential'],
               description: `Extra essential spending (${pluralize(
-                numEssential,
+                essential.length,
                 'graph',
               )})`,
             },
             discretionary: {
               label: ['Extra Spending', 'Discretionary'],
               description: `Extra discretionary spending (${pluralize(
-                numDiscretionary,
+                discretionary.length,
                 'graph',
               )})`,
             },
@@ -128,7 +126,7 @@ export const getPlanResultsChartLabelInfoForSpending = (
             splitEssentialAndDiscretionary: false,
             label: ['Extra Spending'],
             description: `Extra  spending (${pluralize(
-              numDiscretionary + numEssential,
+              discretionary.length + essential.length,
               'graph',
             )})`,
           } as const),
@@ -154,7 +152,8 @@ export const getPlanResultsChartLabelInfoForSpending = (
         if (isPlanResultsChartSpendingEssentialType(chartType)) {
           const id = planResultsChartSpendingEssentialTypeID(chartType)
           const spendingLabel = `${
-            trimAndNullify(fGet(optGet(essential, id)).label) ?? '<No label>'
+            trimAndNullify(fGet(essential.find((x) => x.id === id)).label) ??
+            '<No label>'
           }`
           return {
             ...(splitEssentialAndDiscretionary
@@ -180,8 +179,9 @@ export const getPlanResultsChartLabelInfoForSpending = (
         if (isPlanResultsChartSpendingDiscretionaryType(chartType)) {
           const id = planResultsChartSpendingDiscretionaryTypeID(chartType)
           const spendingLabel = `${
-            trimAndNullify(fGet(optGet(discretionary, id)).label) ??
-            '<No label>'
+            trimAndNullify(
+              fGet(discretionary.find((x) => x.id === id)).label,
+            ) ?? '<No label>'
           }`
           return {
             ...(splitEssentialAndDiscretionary

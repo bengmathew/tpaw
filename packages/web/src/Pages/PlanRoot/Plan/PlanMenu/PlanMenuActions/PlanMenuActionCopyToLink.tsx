@@ -1,8 +1,8 @@
 import {
-    faCheck,
-    faCopy,
-    faLink,
-    faSpinnerThird,
+  faCheck,
+  faCopy,
+  faLink,
+  faSpinnerThird,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
@@ -17,6 +17,7 @@ import { useDefaultErrorHandlerForNetworkCall } from '../../../../App/GlobalErro
 import { CurrentPortfolioBalance } from '../../../PlanRootHelpers/CurrentPortfolioBalance'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionCopyToLinkShortLinkMutation } from './__generated__/PlanMenuActionCopyToLinkShortLinkMutation.graphql'
+import { normalizePlanParamsInverse } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
 
 export const PlanMenuActionCopyToLink = React.memo(
   ({ className, closeMenu }: { className?: string; closeMenu: () => void }) => {
@@ -75,7 +76,7 @@ const _Link = React.memo(
   }) => {
     const { defaultErrorHandlerForNetworkCall } =
       useDefaultErrorHandlerForNetworkCall()
-    const { planParams, currentPortfolioBalanceInfo } = useSimulation()
+    const { planParamsNorm, currentPortfolioBalanceInfo } = useSimulation()
     const [state, setState] = useState<
       | { type: 'idle' }
       | { type: 'generatingLink' }
@@ -95,13 +96,15 @@ const _Link = React.memo(
     }, [])
 
     const params = useMemo(() => {
-      const clone = cloneJSON(planParams)
+      const clone = normalizePlanParamsInverse(planParamsNorm)
       clone.wealth.portfolioBalance = {
         updatedHere: true,
-        amount: CurrentPortfolioBalance.get(currentPortfolioBalanceInfo),
+        amount: CurrentPortfolioBalance.getAmountInfo(
+          currentPortfolioBalanceInfo,
+        ).amount,
       }
       return clone
-    }, [currentPortfolioBalanceInfo, planParams])
+    }, [currentPortfolioBalanceInfo, planParamsNorm])
 
     const [commitGetShortLink, isGetShortLinkRunning] =
       useMutation<PlanMenuActionCopyToLinkShortLinkMutation>(graphql`

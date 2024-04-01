@@ -1,13 +1,13 @@
 import { faLeftLong } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { assert, block, noCase } from '@tpaw/common'
+import { CalendarMonthFns, assert, block, noCase } from '@tpaw/common'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { graphql, useMutation } from 'react-relay'
 import { appPaths } from '../../../../AppPaths'
-import { extendPlanParams } from '../../../../UseSimulator/ExtentPlanParams'
+import { normalizePlanParams } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { processPlanParams } from '../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import { SimulationResult } from '../../../../UseSimulator/Simulator/Simulator'
 import { getSimulatorSingleton } from '../../../../UseSimulator/UseSimulator'
@@ -31,6 +31,7 @@ import { PlanPrintViewResultsSection } from './PlanPrintViewResultsSection/PlanP
 import { PlanPrintViewSettings } from './PlanPrintViewSettings'
 import { PlanPrintViewTasksForThisMonthSection } from './PlanPrintViewTasksForThisMonthSection'
 import { PlanPrintViewGetShortLinkMutation } from './__generated__/PlanPrintViewGetShortLinkMutation.graphql'
+import _ from 'lodash'
 
 export type PlanPrintViewProps = {
   fixed: PlanPrintViewArgs['fixed']
@@ -56,41 +57,50 @@ export const PlanPrintView = React.memo(
     const [simulationResult, setSimulationResult] =
       useState<SimulationResult | null>(simulationResultIn)
 
+    const planParamsForLink = useMemo(() => {
+      const clone = _.cloneDeep(fixed.planParams)
+      clone.wealth.portfolioBalance = {
+        updatedHere: true,
+        amount: fixed.currentPortfolioBalanceAmount,
+      }
+      return clone
+    }, [fixed.currentPortfolioBalanceAmount, fixed.planParams])
+
     useEffect(() => {
       if (simulationResult) return
       return asyncEffect(async (status) => {
-        const planParamsExt = extendPlanParams(
-          fixed.planParams,
-          fixed.planParams.timestamp,
+        const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
+          fixed.timestamp,
           fixed.ianaTimezoneName,
         )
-        assert(fixed.planParams.wealth.portfolioBalance.updatedHere)
+        const planParamsNorm = normalizePlanParams(
+          fixed.planParams,
+          nowAsCalendarMonth,
+        )
         const planParamsProcessed = processPlanParams(
-          planParamsExt,
-          fixed.planParams.wealth.portfolioBalance.amount,
+          planParamsNorm,
           fixed.marketData,
         )
 
-        const start = Date.now()
-        const simulationResult = await block(async () => {
-          return await getSimulatorSingleton().runSimulations(status, {
-            planParams: planParamsProcessed.planParams,
-            planParamsExt,
+        setSimulationResult(
+          await getSimulatorSingleton().runSimulations(status, {
+            currentPortfolioBalanceAmount: fixed.currentPortfolioBalanceAmount,
+            planParamsNorm,
             planParamsProcessed,
             numOfSimulationForMonteCarloSampling:
               fixed.numOfSimulationForMonteCarloSampling,
             randomSeed: fixed.randomSeed,
-          })
-        })
-        console.log('runSimulations took', Date.now() - start)
-        setSimulationResult(simulationResult)
+          }),
+        )
       })
     }, [
+      fixed.timestamp,
       fixed.ianaTimezoneName,
       fixed.marketData,
       fixed.numOfSimulationForMonteCarloSampling,
       fixed.planParams,
       fixed.randomSeed,
+      fixed.currentPortfolioBalanceAmount,
       settings.isServerSidePrint,
       simulationResult,
     ])
@@ -111,10 +121,9 @@ export const PlanPrintView = React.memo(
       !settings.isServerSidePrint && settings.embeddedLinkType === 'short'
     useEffect(() => {
       if (!needsShortLink || shortLink) return
-      assert(fixed.planParams.wealth.portfolioBalance.updatedHere)
       const { dispose } = commitGetShortLink({
         variables: {
-          input: { params: JSON.stringify(fixed.planParams) },
+          input: { params: JSON.stringify(planParamsForLink) },
         },
         onCompleted: ({ createLinkBasedPlan }) => {
           const url = appPaths.link()
@@ -128,7 +137,7 @@ export const PlanPrintView = React.memo(
       return () => dispose()
     }, [
       commitGetShortLink,
-      fixed.planParams,
+      planParamsForLink,
       needsShortLink,
       setGlobalError,
       shortLink,
@@ -138,9 +147,8 @@ export const PlanPrintView = React.memo(
       ? new URL(settings.linkToEmbed)
       : settings.embeddedLinkType === 'long'
         ? block(() => {
-            assert(fixed.planParams.wealth.portfolioBalance.updatedHere)
             const url = appPaths.link()
-            url.searchParams.set('params', JSON.stringify(fixed.planParams))
+            url.searchParams.set('params', JSON.stringify(planParamsForLink))
             return url
           })
         : shortLink
@@ -261,13 +269,19 @@ export const PlanPrintView = React.memo(
                         settings={settings}
                         planLabel={fixed.planLabel}
                       />
-                      <PlanPrintViewInputSection settings={settings} />
+                      <PlanPrintViewInputSection
+                        settings={settings}
+                        currentPortfolioBalanceAmountInfo={{
+                          isEstimate: false,
+                          amount: fixed.currentPortfolioBalanceAmount,
+                        }}
+                      />
                       <PlanPrintViewResultsSection settings={settings} />
                       <PlanPrintViewTasksForThisMonthSection
                         settings={settings}
                       />
-                      {simulationResult.args.planParams.advanced.strategy ===
-                        'TPAW' && (
+                      {simulationResult.args.planParamsNorm.advanced
+                        .strategy === 'TPAW' && (
                         <PlanPrintViewBalanceSheetSection settings={settings} />
                       )}
                       <PlanPrintViewAppendixSection settings={settings} />
@@ -282,3 +296,4 @@ export const PlanPrintView = React.memo(
     )
   },
 )
+PlanPrintView.displayName = 'PlanPrintView'

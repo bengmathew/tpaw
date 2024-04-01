@@ -5,6 +5,7 @@ import {
   Percentile,
 } from '../../../../UseSimulator/Simulator/Simulator'
 import { optGet } from '../../../../Utils/optGet'
+import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 
 type SpendingTotalFundingSources =
   `spending-total-funding-sources-${Percentile}`
@@ -88,9 +89,11 @@ const _checkType = (x: string): x is PlanResultsChartType =>
   x === 'withdrawal'
 
 export const isPlanResultsChartType = (
-  planParams: PlanParams,
+  planParamsNorm: PlanParamsNormalized,
   type: string,
 ): type is PlanResultsChartType => {
+  const { essential, discretionary } =
+    planParamsNorm.adjustmentsToSpending.extraSpending
   if (!_checkType(type)) return false
   if (isPlanResultsChartSpendingType(type)) {
     if (
@@ -99,29 +102,15 @@ export const isPlanResultsChartType = (
     )
       return true
     if (type === 'spending-general') {
-      const { essential, discretionary } =
-        planParams.adjustmentsToSpending.extraSpending
-      return _.values(essential).length + _.values(discretionary).length > 0
+      return essential.length + discretionary.length > 0
     }
     if (isPlanResultsChartSpendingEssentialType(type)) {
       const id = planResultsChartSpendingEssentialTypeID(type)
-      return (
-        optGet(planParams.adjustmentsToSpending.extraSpending.essential, id) !==
-        undefined
-      )
+      return essential.find((x) => x.id === id) !== undefined
     }
     if (isPlanResultsChartSpendingDiscretionaryType(type)) {
       const id = planResultsChartSpendingDiscretionaryTypeID(type)
-      const x = _.get(
-        planParams.adjustmentsToSpending.extraSpending.discretionary,
-        id,
-      )
-      return (
-        optGet(
-          planParams.adjustmentsToSpending.extraSpending.discretionary,
-          id,
-        ) !== undefined
-      )
+      return discretionary.find((x) => x.id === id) !== undefined
     }
     noCase(type)
   }

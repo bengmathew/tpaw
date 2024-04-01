@@ -10,8 +10,8 @@ import {
 } from 'json-guard'
 import { PlanParams21 as V21 } from './Old/PlanParams21'
 import { PlanParams22 as V22 } from './Old/PlanParams22'
-import { PlanParams23 as V23 } from './Old/PlanParams23'
 import { PlanParams26 as V26 } from './Old/PlanParams26'
+import { PlanParams28 as V28 } from './PlanParams28'
 import {
   PlanParamsChangeActionDeprecated,
   planParamsChangeActionGuardDeprecated,
@@ -38,12 +38,12 @@ export type PlanParamsChangeActionCurrent =
   | { type: 'noOpToMarkMigration'; value: null }
   | { type: 'addPartner'; value: null }
   | { type: 'deletePartner'; value: null }
+  | {
+      type: 'setPersonMonthOfBirth2'
+      value: { person: 'person1' | 'person2'; monthOfBirth: V28.CalendarMonth }
+    }
   | { type: 'setPersonRetired'; value: _PersonType }
   | { type: 'setPersonNotRetired'; value: _PersonType }
-  | {
-      type: 'setPersonMonthOfBirth'
-      value: { person: _PersonType; monthOfBirth: V21.CalendarMonth }
-    }
   | {
       type: 'setPersonRetirementAge'
       value: { person: _PersonType; retirementAge: V21.InMonths }
@@ -54,68 +54,79 @@ export type PlanParamsChangeActionCurrent =
     }
   | { type: 'setWithdrawalStart'; value: _PersonType }
 
-  // --------------- WEALTH
+  // --------------- LABELED AMOUNT TIMED/UNTIMED
   | {
-      type: 'setCurrentPortfolioBalance'
-      value: number
-    }
-  | {
-      type: 'addValueForMonthRange'
+      type: 'addLabeledAmountUntimed'
       value: {
-        location: ValueForMonthRangeLocation
-        entryId: string
-        sortIndex: number
-        monthRange: V21.MonthRange
-      }
-    }
-  | {
-      type: 'deleteLabeledAmount'
-      value: {
-        location: LabeledAmountLocation
-        entryId: string
-      }
-    }
-  | {
-      type: 'addLabeledAmount'
-      value: {
-        location: LabeledAmountLocation
+        location: V28.LabeledAmountUntimedLocation
         entryId: string
         sortIndex: number
       }
     }
   | {
-      type: 'setLabelForLabeledAmount'
+      type: 'addLabeledAmountTimed'
       value: {
-        location: LabeledAmountLocation
+        location: V28.LabeledAmountTimedLocation
+        entryId: string
+        sortIndex: number
+        amountAndTiming: V28.LabeledAmountTimed['amountAndTiming']
+      }
+    }
+  | {
+      type: 'deleteLabeledAmountTimedOrUntimed'
+      value: {
+        location: V28.LabeledAmountTimedOrUntimedLocation
+        entryId: string
+      }
+    }
+  | {
+      type: 'setLabelForLabeledAmountTimedOrUntimed'
+      value: {
+        location: V28.LabeledAmountTimedOrUntimedLocation
         entryId: string
         label: string | null
       }
     }
   | {
-      type: 'setAmountForLabeledAmount'
+      type: 'setAmountForLabeledAmountUntimed'
       value: {
-        location: LabeledAmountLocation
+        location: V28.LabeledAmountUntimedLocation
         entryId: string
         amount: number
       }
     }
   | {
-      type: 'setNominalForLabeledAmount'
+      type: 'setBaseAmountForLabeledAmountTimed'
       value: {
-        location: LabeledAmountLocation
+        location: V28.LabeledAmountTimedLocation
+        entryId: string
+        baseAmount: number
+      }
+    }
+  | {
+      type: 'setNominalForLabeledAmountTimedOrUntimed'
+      value: {
+        location: V28.LabeledAmountTimedOrUntimedLocation
         entryId: string
         nominal: boolean
       }
     }
   | {
-      type: 'setMonthRangeForValueForMonthRange'
+      type: 'setMonthRangeForLabeledAmountTimed'
       value: {
-        location: ValueForMonthRangeLocation
+        location: V28.LabeledAmountTimedLocation
         entryId: string
-        monthRange: V21.MonthRange
+        monthRange: V28.MonthRange
       }
     }
+
+  // --------------- WEALTH
+  | {
+      type: 'setCurrentPortfolioBalance'
+      value: number
+    }
   | { type: 'setSpendingCeiling'; value: number | null }
+  | { type: 'setSpendingFloor'; value: number | null }
   | { type: 'setLegacyTotal'; value: number }
 
   // --------- RISK
@@ -150,7 +161,6 @@ export type PlanParamsChangeActionCurrent =
       value: number
     }
   | { type: 'setTPAWAndSPAWLMP'; value: number }
-  | { type: 'setSpendingFloor'; value: number | null }
 
   // ----------ADVANCED
   | {
@@ -160,8 +170,8 @@ export type PlanParamsChangeActionCurrent =
   | { type: 'setSamplingToDefault'; value: null }
   | { type: 'setSampling'; value: 'historical' | 'monteCarlo' }
   | {
-      type: 'setMonteCarloSamplingBlockSize'
-      value: number
+      type: 'setMonteCarloSamplingBlockSize2'
+      value: { inMonths: number }
     }
   | {
       type: 'setMonteCarloStaggerRunStarts'
@@ -193,24 +203,15 @@ export type PlanParamsChangeActionCurrent =
 export type PlanParamsChangeAction =
   | PlanParamsChangeActionCurrent
   | PlanParamsChangeActionDeprecated
+;``
 // ------------------------------------------
 //                   GUARDS
 // ------------------------------------------
 // These guards are not complete. Mostly a sanity check on the shape.
 const v21CG = V21.componentGuards
 const v22CG = V22.componentGuards
-const v23CG = V23.componentGuards
 const v26CG = V26.componentGuards
-const valueForMonthRangeLocation: JSONGuard<ValueForMonthRangeLocation> = union(
-  constant('futureSavings'),
-  constant('incomeDuringRetirement'),
-  constant('extraSpendingEssential'),
-  constant('extraSpendingDiscretionary'),
-)
-const labeledAmountLocation: JSONGuard<LabeledAmountLocation> = union(
-  valueForMonthRangeLocation,
-  constant('legacyExternalSources'),
-)
+const v28CG = V28.componentGuards
 
 const _guard = <T extends string, V>(
   type: T,
@@ -231,8 +232,8 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
     _guard('setPersonRetired', v21CG.personType),
     _guard('setPersonNotRetired', v21CG.personType),
     _guard(
-      'setPersonMonthOfBirth',
-      object({ person: v21CG.personType, monthOfBirth: v21CG.calendarMonth }),
+      'setPersonMonthOfBirth2',
+      object({ person: v21CG.personType, monthOfBirth: v28CG.monthOfBirth }),
     ),
     _guard(
       'setPersonRetirementAge',
@@ -244,61 +245,74 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
     ),
     _guard('setWithdrawalStart', v21CG.personType),
 
-    // ----------- WEALTH
-    _guard('setCurrentPortfolioBalance', number),
+    // --------------- LABELED AMOUNT TIMED/UNTIMED
     _guard(
-      'addValueForMonthRange',
+      'addLabeledAmountUntimed',
       object({
-        location: valueForMonthRangeLocation,
-        entryId: string,
-        sortIndex: number,
-        monthRange: v21CG.monthRange(null),
-      }),
-    ),
-    _guard(
-      'deleteLabeledAmount',
-      object({ location: labeledAmountLocation, entryId: string }),
-    ),
-    _guard(
-      'addLabeledAmount',
-      object({
-        location: labeledAmountLocation,
+        location: v28CG.labeledAmountUntimedLocation,
         entryId: string,
         sortIndex: number,
       }),
     ),
     _guard(
-      'setLabelForLabeledAmount',
+      'addLabeledAmountTimed',
       object({
-        location: labeledAmountLocation,
+        location: v28CG.labeledAmountTimedLocation,
+        entryId: string,
+        sortIndex: number,
+        amountAndTiming: v28CG.amountAndTiming(null),
+      }),
+    ),
+    _guard(
+      'deleteLabeledAmountTimedOrUntimed',
+      object({
+        location: v28CG.labeledAmountTimedOrUntimedLocation,
+        entryId: string,
+      }),
+    ),
+    _guard(
+      'setLabelForLabeledAmountTimedOrUntimed',
+      object({
+        location: v28CG.labeledAmountTimedOrUntimedLocation,
         entryId: string,
         label: nullable(string),
       }),
     ),
     _guard(
-      'setAmountForLabeledAmount',
+      'setAmountForLabeledAmountUntimed',
       object({
-        location: labeledAmountLocation,
+        location: v28CG.labeledAmountUntimedLocation,
         entryId: string,
         amount: number,
       }),
     ),
     _guard(
-      'setNominalForLabeledAmount',
+      'setBaseAmountForLabeledAmountTimed',
       object({
-        location: labeledAmountLocation,
+        location: v28CG.labeledAmountTimedLocation,
+        entryId: string,
+        baseAmount: number,
+      }),
+    ),
+    _guard(
+      'setNominalForLabeledAmountTimedOrUntimed',
+      object({
+        location: v28CG.labeledAmountTimedOrUntimedLocation,
         entryId: string,
         nominal: boolean,
       }),
     ),
     _guard(
-      'setMonthRangeForValueForMonthRange',
+      'setMonthRangeForLabeledAmountTimed',
       object({
-        location: valueForMonthRangeLocation,
+        location: v28CG.labeledAmountTimedLocation,
         entryId: string,
-        monthRange: v21CG.monthRange(null),
+        monthRange: v28CG.monthRange(null),
       }),
     ),
+
+    // ----------- WEALTH
+    _guard('setCurrentPortfolioBalance', number),
     _guard('setSpendingCeiling', nullable(number)),
     _guard('setSpendingFloor', nullable(number)),
     _guard('setLegacyTotal', number),
@@ -319,7 +333,7 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
     _guard('setStrategy', v21CG.strategy),
     _guard('setSamplingToDefault', constant(null)),
     _guard('setSampling', v22CG.samplingType),
-    _guard('setMonteCarloSamplingBlockSize', number),
+    _guard('setMonteCarloSamplingBlockSize2', object({ inMonths: number })),
     _guard('setMonteCarloStaggerRunStarts', boolean),
     _guard('setExpectedReturns2', v26CG.expectedAnnualReturnForPlanning),
     _guard('setAnnualInflation', v21CG.annualInflation),
@@ -338,16 +352,3 @@ export const planParamsChangeActionGuard: JSONGuard<PlanParamsChangeAction> =
     planParamsChangeActionGuardCurrent,
     planParamsChangeActionGuardDeprecated,
   )
-
-// ------------------------------------------
-//                   HELPERS
-// ------------------------------------------
-type ValueForMonthRangeLocation =
-  | 'futureSavings'
-  | 'incomeDuringRetirement'
-  | 'extraSpendingEssential'
-  | 'extraSpendingDiscretionary'
-
-type LabeledAmountLocation =
-  | ValueForMonthRangeLocation
-  | 'legacyExternalSources'

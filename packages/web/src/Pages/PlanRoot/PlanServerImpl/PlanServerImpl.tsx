@@ -1,17 +1,17 @@
 import * as Sentry from '@sentry/nextjs'
 import {
-    FGet,
-    PlanParams,
-    PlanParamsChangeAction,
-    SomePlanParams,
-    SomePlanParamsVersion,
-    assert,
-    assertFalse,
-    block,
-    fGet,
-    letIn,
-    noCase,
-    planParamsMigrate,
+  FGet,
+  PlanParams,
+  PlanParamsChangeAction,
+  SomePlanParams,
+  SomePlanParamsVersion,
+  assert,
+  assertFalse,
+  block,
+  fGet,
+  letIn,
+  noCase,
+  planParamsMigrate,
 } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
@@ -27,11 +27,11 @@ import { useCurrentTime } from '../PlanRootHelpers/UseCurrentTime'
 import { useWorkingPlan } from '../PlanRootHelpers/UseWorkingPlan'
 import { useIANATimezoneName } from '../PlanRootHelpers/WithNonPlanParams'
 import {
-    SimulationInfoForServerSrc,
-    SimulationParams,
-    WithSimulation,
-    useSimulationParamsForHistoryMode,
-    useSimulationParamsForPlanMode,
+  SimulationInfoForServerSrc,
+  SimulationParams,
+  WithSimulation,
+  useSimulationParamsForHistoryMode,
+  useSimulationParamsForPlanMode,
 } from '../PlanRootHelpers/WithSimulation'
 import { PlanRootServerQuery$data } from '../PlanRootServer/__generated__/PlanRootServerQuery.graphql'
 import { PlanServerImplSyncState } from './PlanServerImplSyncState'

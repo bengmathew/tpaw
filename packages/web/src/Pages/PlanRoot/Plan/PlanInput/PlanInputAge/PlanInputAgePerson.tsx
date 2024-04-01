@@ -1,32 +1,46 @@
 import {
-    faCaretDown,
-    faCaretRight,
-    faTrash,
+  faCaretDown,
+  faCaretRight,
+  faCircle,
+  faTrash,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Switch } from '@headlessui/react'
 import {
-    MAX_AGE_IN_MONTHS,
-    PlanParams,
-    block,
-    noCase,
-    planParamsFns,
+  CalendarMonthFns,
+  LabeledAmountTimedLocation,
+  block,
+  fGet,
+  noCase,
 } from '@tpaw/common'
+import { clsx } from 'clsx'
 import _ from 'lodash'
-import React, { ReactNode, useMemo, useRef, useState } from 'react'
-import { calendarMonthStr } from '../../../../../Utils/CalendarMonthStr'
-import { numMonthsStr } from '../../../../../Utils/NumMonthsStr'
-import { pluralize } from '../../../../../Utils/Pluralize'
-import { SimpleRange } from '../../../../../Utils/SimpleRange'
-import { assert } from '../../../../../Utils/Utils'
+import React, {
+  ReactNode,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+import { NormalizedLabeledAmountTimed } from '../../../../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
+import { InMonthsFns } from '../../../../../Utils/InMonthsFns'
 import { yourOrYourPartners } from '../../../../../Utils/YourOrYourPartners'
-import { CalendarMonthInput } from '../../../../Common/Inputs/CalendarMonthInput'
 import { CheckBox } from '../../../../Common/Inputs/CheckBox'
-import { NumMonthsInput } from '../../../../Common/Inputs/NumMonthsInput'
+import { CalendarMonthInput } from '../../../../Common/Inputs/MonthInput/CalendarMonthInput'
+import { InMonthsInput } from '../../../../Common/Inputs/MonthInput/InMonthsInput'
 import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
-import { ValueForMonthRangeDisplay } from '../../../../Common/ValueForMonthRangeDisplay'
+import { LabeledAmountTimedDisplay } from '../../../../Common/LabeledAmountTimedDisplay'
+import {
+  RemovePartnerAdjustments,
+  getRemovePartnerAdjustments,
+} from '../../../PlanRootHelpers/GetPlanParamsChangeActionImpl/GetDeletePartnerChangeActionImpl'
+import {
+  RetirePersonAdjustments,
+  getRetirePersonAdjustments,
+} from '../../../PlanRootHelpers/GetPlanParamsChangeActionImpl/GetSetPersonRetiredChangeActionImpl'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
-import { analyzeMonthsInParams } from '../Helpers/AnalyzeMonthsInParams'
+import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
+import { planSectionLabel } from '../Helpers/PlanSectionLabel'
 import { PlanInputAgeOpenableSection } from './PlanInputAge'
 
 export const PlanInputAgePerson = React.memo(
@@ -43,17 +57,22 @@ export const PlanInputAgePerson = React.memo(
     openSection: PlanInputAgeOpenableSection
     setOpenSection: (x: PlanInputAgeOpenableSection) => void
   }) => {
-    const { planParams, planParamsExt, updatePlanParams } = useSimulation()
+    const { planParamsNorm, updatePlanParams } = useSimulation()
     const divRef = useRef<HTMLDivElement>(null)
-    const { isPersonRetired, getCurrentAgeOfPerson, isAgesNotRetired } =
-      planParamsExt
+    const person = fGet(planParamsNorm.ages[personType])
 
-    const { ages } = _getPersonInPlan(planParams, personType)
+    const retireAdjustments = useMemo(
+      () => getRetirePersonAdjustments(personType, planParamsNorm),
+      [personType, planParamsNorm],
+    )
 
-    const retireWarnings = useRetireWarnings(personType)
     const [showRetireWarnings, setShowRetireWarnings] = useState(false)
-    const person2DeleteWarnings = usePerson2DeleteWarnings()
-    const [showPerson2DeleteWarnings, setShowPerson2DeleteWarnings] =
+
+    const deletePartnerAdjustments = useMemo(
+      () => getRemovePartnerAdjustments(planParamsNorm),
+      [planParamsNorm],
+    )
+    const [showDeletePartnerWarnings, setShowDeletePartnerWarnings] =
       useState(false)
 
     useState<ReactNode[]>([])
@@ -77,8 +96,8 @@ export const PlanInputAgePerson = React.memo(
             <button
               className=""
               onClick={() => {
-                if (person2DeleteWarnings) {
-                  setShowPerson2DeleteWarnings(true)
+                if (deletePartnerAdjustments) {
+                  setShowDeletePartnerWarnings(true)
                 } else {
                   updatePlanParams('deletePartner', null)
                 }
@@ -100,10 +119,10 @@ export const PlanInputAgePerson = React.memo(
             </Switch.Label>
             <CheckBox
               className=""
-              enabled={isPersonRetired({ ages })}
+              enabled={person.retirement.isRetired}
               setEnabled={(retired) => {
                 if (retired) {
-                  if (retireWarnings) {
+                  if (retireAdjustments) {
                     setShowRetireWarnings(true)
                   } else {
                     updatePlanParams('setPersonRetired', personType)
@@ -127,15 +146,11 @@ export const PlanInputAgePerson = React.memo(
             currSection={openSection}
             setCurrSection={setOpenSection}
           />
-          {isAgesNotRetired(ages) && (
+          {!person.retirement.isRetired && (
             <_AgeInput
               sectionName="Retirement Age"
               personType={personType}
               type="retirementAge"
-              range={{
-                start: getCurrentAgeOfPerson(personType).inMonths + 1,
-                end: ages.maxAge.inMonths - 1,
-              }}
               sectionType={`${personType}-retirementAge`}
               currSection={openSection}
               setCurrSection={setOpenSection}
@@ -145,12 +160,6 @@ export const PlanInputAgePerson = React.memo(
             sectionName="Max Age"
             personType={personType}
             type="maxAge"
-            range={{
-              start: isAgesNotRetired(ages)
-                ? ages.retirementAge.inMonths + 1
-                : getCurrentAgeOfPerson(personType).inMonths + 2,
-              end: MAX_AGE_IN_MONTHS,
-            }}
             sectionType={`${personType}-maxAge`}
             currSection={openSection}
             setCurrSection={setOpenSection}
@@ -160,52 +169,30 @@ export const PlanInputAgePerson = React.memo(
           className="grid gap-y-2 items-center gap-x-4"
           style={{ grid: 'auto / 145px 1fr' }}
         ></div>
-        <CenteredModal
-          className=" dialog-outer-div"
-          show={showPerson2DeleteWarnings}
-          onOutsideClickOrEscape={null}
-        >
-          <h2 className=" dialog-heading">Error Removing Partner</h2>
-          <div className=" dialog-content-div">{person2DeleteWarnings}</div>
-          <div className=" dialog-button-div">
-            <button
-              className=" dialog-button-dark"
-              onClick={() => {
-                setShowPerson2DeleteWarnings(false)
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </CenteredModal>
 
-        <CenteredModal
-          className=" dialog-outer-div"
+        <DeletePartnerWarningsModal
+          show={showDeletePartnerWarnings}
+          onCancel={() => {
+            setShowDeletePartnerWarnings(false)
+          }}
+          onApply={() => {
+            setShowDeletePartnerWarnings(false)
+            updatePlanParams('deletePartner', null)
+          }}
+          adjustments={deletePartnerAdjustments}
+        />
+        <RetirementWarningsModal
+          personType={personType}
           show={showRetireWarnings}
-          onOutsideClickOrEscape={null}
-        >
-          <h2 className=" dialog-heading text-errorFG">Warning</h2>
-          <div className=" dialog-content-div">{retireWarnings}</div>
-          <div className=" dialog-button-div">
-            <button
-              className=" dialog-button-cancel"
-              onClick={() => {
-                setShowRetireWarnings(false)
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              className=" dialog-button-warning"
-              onClick={() => {
-                setShowRetireWarnings(false)
-                updatePlanParams('setPersonRetired', personType)
-              }}
-            >
-              Continue
-            </button>
-          </div>
-        </CenteredModal>
+          onCancel={() => {
+            setShowRetireWarnings(false)
+          }}
+          onApply={() => {
+            setShowRetireWarnings(false)
+            updatePlanParams('setPersonRetired', personType)
+          }}
+          adjustments={retireAdjustments}
+        />
       </div>
     )
   },
@@ -280,10 +267,9 @@ export const _MonthOfBirthInput = React.memo(
     currSection: PlanInputAgeOpenableSection
     setCurrSection: (open: PlanInputAgeOpenableSection) => void
   }) => {
-    const { planParams, updatePlanParams, planParamsExt } = useSimulation()
-    const value = _getPersonInPlan(planParams, personType).ages.monthOfBirth
-    const { asMFN } = planParamsExt
-    const valueAsMFN = useMemo(() => asMFN(value), [asMFN, value])
+    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const person = fGet(planParamsNorm.ages[personType])
+    const { monthOfBirth, currentAge } = person
 
     return (
       <_Section
@@ -292,20 +278,21 @@ export const _MonthOfBirthInput = React.memo(
         currSection={currSection}
         setCurrSection={setCurrSection}
       >
-        {calendarMonthStr(value)}
+        {CalendarMonthFns.toStr(monthOfBirth.baseValue)}
         <div className="">
           <CalendarMonthInput
             className="mt-2 ml-4"
-            value={value}
+            normValue={{ ...monthOfBirth }}
             onChange={(monthOfBirth) =>
-              updatePlanParams('setPersonMonthOfBirth', {
+              updatePlanParams('setPersonMonthOfBirth2', {
                 person: personType,
                 monthOfBirth,
               })
             }
-            rangeAsMFN={{ start: -MAX_AGE_IN_MONTHS + 3, end: 0 }}
           />
-          <h2 className="mb-2 mt-3 ml-4">Age: {numMonthsStr(-valueAsMFN)}</h2>
+          <h2 className="mb-2 mt-3 ml-4">
+            Age: {InMonthsFns.toStr(currentAge)}
+          </h2>
         </div>
       </_Section>
     )
@@ -316,7 +303,6 @@ export const _AgeInput = React.memo(
     sectionName,
     personType,
     type,
-    range,
     sectionType,
     currSection,
     setCurrSection,
@@ -324,19 +310,15 @@ export const _AgeInput = React.memo(
     sectionName: string
     personType: 'person1' | 'person2'
     type: 'retirementAge' | 'maxAge'
-    range: SimpleRange
     sectionType: Exclude<PlanInputAgeOpenableSection, 'none'>
     currSection: PlanInputAgeOpenableSection
     setCurrSection: (open: PlanInputAgeOpenableSection) => void
   }) => {
-    const { planParams, updatePlanParams } = useSimulation()
+    const { planParamsNorm, updatePlanParams } = useSimulation()
     const age = (() => {
-      const person = _getPersonInPlan(planParams, personType)
-      if (type === 'retirementAge') {
-        assert(person.ages.type === 'retirementDateSpecified')
-        return person.ages.retirementAge
-      }
-      if (type === 'maxAge') return person.ages.maxAge
+      const person = fGet(planParamsNorm.ages[personType])
+      if (type === 'retirementAge') return fGet(person.retirement.ageIfInFuture)
+      if (type === 'maxAge') return person.maxAge
       noCase(type)
     })()
 
@@ -347,181 +329,303 @@ export const _AgeInput = React.memo(
         currSection={currSection}
         setCurrSection={setCurrSection}
       >
-        {numMonthsStr(age.inMonths)}
-        <NumMonthsInput
+        {InMonthsFns.toStr(age.baseValue)}
+        <InMonthsInput
           className="mt-2 mb-4 ml-4"
           modalLabel={sectionName}
-          value={age.inMonths}
+          normValue={{
+            baseValue: age.baseValue,
+            validRangeInMonths: {
+              includingLocalConstraints: age.validRangeInMonths,
+            },
+          }}
           onChange={(inMonths) =>
             type === 'retirementAge'
               ? updatePlanParams('setPersonRetirementAge', {
                   person: personType,
-                  retirementAge: { inMonths },
+                  retirementAge: inMonths,
                 })
               : type === 'maxAge'
-              ? updatePlanParams('setPersonMaxAge', {
-                  person: personType,
-                  maxAge: { inMonths },
-                })
-              : noCase(type)
+                ? updatePlanParams('setPersonMaxAge', {
+                    person: personType,
+                    maxAge: inMonths,
+                  })
+                : noCase(type)
           }
-          rangeAsMFN={range}
         />
       </_Section>
     )
   },
 )
 
-const usePerson2DeleteWarnings = () => {
-  const { planParamsExt } = useSimulation()
-  const { fromRanges, fromGlidePath } = useMemo(() => {
-    const analysis = analyzeMonthsInParams(planParamsExt, {
-      type: 'asVisible',
-    })
-    const fromRanges = analysis.valueForMonthRange.filter((x) => x.usesPerson2)
-    const fromGlidePath = analysis.glidePath.filter((x) => x.usesPerson2)
-    return { fromRanges, fromGlidePath }
-  }, [planParamsExt])
+const RetirementWarningsModal = React.memo(
+  ({
+    show,
+    onCancel,
+    onApply,
+    adjustments: adjustmentsIn,
+    personType,
+  }: {
+    show: boolean
+    onCancel: () => void
+    onApply: () => void
+    adjustments: RetirePersonAdjustments | null
+    personType: 'person1' | 'person2'
+  }) => {
+    const { planParamsNorm } = useSimulation()
+    const [adjustments, setAdjustments] = useState(
+      null as null | RetirePersonAdjustments,
+    )
+    const handleShow = (show: boolean) => {
+      if (show) setAdjustments(fGet(adjustmentsIn))
+    }
+    const handleShowRef = useRef(handleShow)
+    handleShowRef.current = handleShow
+    useLayoutEffect(() => {
+      handleShowRef.current(show)
+    }, [show])
 
-  if (fromRanges.length === 0 && fromGlidePath.length === 0) return null
-  return (
-    <div className="">
-      <h2 className="">{`The following are specified in terms of your partner's age:`}</h2>
-      <ol className=" list-disc list-outside ml-10 mt-4" key={_.uniqueId()}>
-        {fromRanges.map((x, i) => (
-          <li key={`range-${i}`} className="list-item">
-            <ValueForMonthRangeDisplay
-              entry={x.entry}
-              rangeAsMFN={null}
-              skipLength
-              planParamsExt={planParamsExt}
+    return (
+      <CenteredModal
+        className=" dialog-outer-div"
+        show={show}
+        onOutsideClickOrEscape={null}
+      >
+        {adjustments &&
+          block(() => {
+            const {
+              futureSavingsEntriesToBeRemovedDueSectionRemoval,
+              valueForMonthRangeEntriesToBeAdjusted,
+              spawAndSWRStockAllocationAdjusted,
+            } = adjustments
+            return (
+              <>
+                <h2 className=" text-2xl font-bold">Additional Changes</h2>
+                <div className=" dialog-content-div">
+                  <p className="p-base">
+                    Setting {yourOrYourPartners(personType)} status to retired
+                    will cause the following additional changes to be made to
+                    the plan:
+                  </p>
+                  <_FutureSavingsIssue
+                    entries={futureSavingsEntriesToBeRemovedDueSectionRemoval}
+                  />
+                  <_MonthRangesBySectionIssue
+                    description={`The following entries reference ${yourOrYourPartners(personType)} retirement and or last working month. They will be adjusted to "now" or "in the past" respectively.`}
+                    valueForMonthRanges={valueForMonthRangeEntriesToBeAdjusted}
+                  />
+                  {spawAndSWRStockAllocationAdjusted && (
+                    <_StockAllocationIssueSection
+                      referenceStr={`${yourOrYourPartners(personType)} retirement`}
+                    />
+                  )}
+                </div>
+                <div className=" dialog-button-div">
+                  <button className=" dialog-button-cancel" onClick={onCancel}>
+                    Cancel
+                  </button>
+                  <button className=" dialog-button-dark" onClick={onApply}>
+                    Apply Changes
+                  </button>
+                </div>
+              </>
+            )
+          })}
+      </CenteredModal>
+    )
+  },
+)
+
+const DeletePartnerWarningsModal = React.memo(
+  ({
+    show,
+    onCancel,
+    onApply,
+    adjustments: adjustmentsIn,
+  }: {
+    show: boolean
+    onCancel: () => void
+    onApply: () => void
+    adjustments: RemovePartnerAdjustments | null
+  }) => {
+    const [adjustments, setAdjustments] = useState(
+      null as null | RemovePartnerAdjustments,
+    )
+    const handleShow = (show: boolean) => {
+      if (show) setAdjustments(fGet(adjustmentsIn))
+    }
+    const handleShowRef = useRef(handleShow)
+    handleShowRef.current = handleShow
+    useLayoutEffect(() => {
+      handleShowRef.current(show)
+    }, [show])
+    return (
+      <CenteredModal
+        className=" dialog-outer-div"
+        show={show}
+        onOutsideClickOrEscape={null}
+      >
+        {adjustments &&
+          block(() => {
+            const {
+              futureSavingsEntriesToBeRemovedDueSectionRemoval,
+              amountForMonthRangeEntriesToBeRemoved,
+              spawAndSWRStockAllocationAdjusted,
+            } = adjustments
+            return (
+              <>
+                <h2 className=" font-bold text-2xl">Additional Changes</h2>
+                <div className=" dialog-content-div">
+                  <p className="p-base">
+                    Deleting your partner will cause the following additional
+                    changes to be made to the plan:
+                  </p>
+                  <_FutureSavingsIssue
+                    entries={futureSavingsEntriesToBeRemovedDueSectionRemoval}
+                  />
+                  <_MonthRangesBySectionIssue
+                    description="The following entries reference your partner. They will be removed."
+                    valueForMonthRanges={amountForMonthRangeEntriesToBeRemoved}
+                  />
+                  {spawAndSWRStockAllocationAdjusted && (
+                    <_StockAllocationIssueSection
+                      referenceStr={`your partner`}
+                    />
+                  )}
+                </div>
+                <div className=" dialog-button-div">
+                  <button className=" dialog-button-cancel" onClick={onCancel}>
+                    Cancel
+                  </button>
+                  <button className=" dialog-button-dark" onClick={onApply}>
+                    Apply Changes
+                  </button>
+                </div>
+              </>
+            )
+          })}
+      </CenteredModal>
+    )
+  },
+)
+
+const _FutureSavingsIssue = React.memo(
+  ({ entries }: { entries: NormalizedLabeledAmountTimed[] }) => {
+    if (entries.length === 0) return <></>
+    return (
+      <div className={'mt-6'}>
+        <h2 className="font-bold text-xl mt-6">Future Savings</h2>
+        <p className="p-base mt-2">
+          {`The future savings section will no longer be applicable. It has the following entries that will be removed:`}
+        </p>
+        <_MonthRangesIssueList entries={entries} />
+      </div>
+    )
+  },
+)
+
+const _MonthRangesBySectionIssue = React.memo(
+  ({
+    valueForMonthRanges,
+    description,
+  }: {
+    description: string
+    valueForMonthRanges: Map<
+      LabeledAmountTimedLocation,
+      NormalizedLabeledAmountTimed[]
+    >
+  }) => {
+    if (valueForMonthRanges.size === 0) return <></>
+    return (
+      <div className={'mt-4'}>
+        <h2 className="font-bold text-xl mt-6">Month Ranges</h2>
+        <p className="p-base mt-2">{description}</p>
+        {_.sortBy([...valueForMonthRanges.entries()], ([location]) => {
+          switch (location) {
+            case 'futureSavings':
+              return 0
+            case 'incomeDuringRetirement':
+              return 1
+            case 'extraSpendingEssential':
+              return 2
+            case 'extraSpendingDiscretionary':
+              return 3
+            default:
+              noCase(location)
+          }
+        }).map(([location, entries]) => (
+          <div key={location} className="mt-4">
+            <h2 className="font-bold">
+              {block(() => {
+                switch (location) {
+                  case 'futureSavings':
+                    return planSectionLabel('future-savings')
+                  case 'incomeDuringRetirement':
+                    return planSectionLabel('income-during-retirement')
+                  case 'extraSpendingEssential':
+                    return `${planSectionLabel('extra-spending')} - Essential`
+                  case 'extraSpendingDiscretionary':
+                    return `${planSectionLabel('extra-spending')} - Discretionary`
+                  default:
+                    noCase(location)
+                }
+              })}
+            </h2>
+            <_MonthRangesIssueList className="" entries={entries} />
+          </div>
+        ))}
+      </div>
+    )
+  },
+)
+
+const _MonthRangesIssueList = React.memo(
+  ({
+    className,
+    entries,
+  }: {
+    className?: string
+    entries: NormalizedLabeledAmountTimed[]
+  }) => {
+    return (
+      <div className={clsx(className)}>
+        {entries.map((entry) => (
+          <div className="mt-1 flex gap-x-3" key={entry.id}>
+            <FontAwesomeIcon className="text-[6px] mt-2.5" icon={faCircle} />
+            <LabeledAmountTimedDisplay
+              className=""
+              labelClassName="font-medium"
+              entry={entry}
             />
-          </li>
+          </div>
         ))}
-        {fromGlidePath.map((x, i) => (
-          <li key={`glidePath-${i}`} className="list-item">
-            Stock allocation in the {`"${x.sectionLabel}"`} section.
-          </li>
-        ))}
-      </ol>
-      <h2 className="mt-4">{`Remove these references to your partner's age before removing your partner.`}</h2>
-    </div>
-  )
-}
-
-const useRetireWarnings = (personType: 'person1' | 'person2') => {
-  const { getIsFutureSavingsAllowed } = planParamsFns
-  const { planParamsExt } = useSimulation()
-  const { isPersonRetired, planParams } = planParamsExt
-  const futureSavingsWarnings = block(() => {
-    const { futureSavings } = planParams.wealth
-    const count = _.values(futureSavings).length
-    if (count === 0) return null
-    const isFutureSavingsGoingToBeAllowed = getIsFutureSavingsAllowed(
-      personType === 'person1' ? true : isPersonRetired('person1'),
-      personType === 'person2'
-        ? true
-        : planParams.people.withPartner
-        ? isPersonRetired('person2')
-        : undefined,
-    )
-    if (isFutureSavingsGoingToBeAllowed) return null
-    return (
-      <div className="">
-        <h2 key={1} className="">
-          {`The Future Savings section is not applicable once ${
-            planParams.people.withPartner ? 'both you and your partner' : 'you'
-          } are retired but has the following ${pluralize(
-            count,
-            'entry',
-            'entries',
-          )}:`}
-        </h2>
-        <ul className=" list-disc list-outside ml-10 mt-4">
-          {_.values(futureSavings)
-            .sort((a, b) => a.sortIndex - b.sortIndex)
-            .map((x, i) => (
-              <li key={i} className="list-item">
-                <ValueForMonthRangeDisplay
-                  entry={x}
-                  rangeAsMFN={null}
-                  skipLength
-                  planParamsExt={planParamsExt}
-                />
-              </li>
-            ))}
-        </ul>
-        <h2 className="mt-4  font-bold">
-          {'These entries will be deleted if you continue!'}
-        </h2>
       </div>
     )
-  })
-  const hasFutureSavingsWarnings = !!futureSavingsWarnings
-  const retirementRefAnalysis = useMemo(() => {
-    const analysis = analyzeMonthsInParams(planParamsExt, {
-      type: 'asVisible',
-    })
-    const fromRanges = analysis.valueForMonthRange
-      .filter((x) => x.useRetirement(personType))
-      .filter((x) =>
-        hasFutureSavingsWarnings ? x.section !== 'future-savings' : true,
-      )
-    const fromGlidePath = analysis.glidePath.filter((x) =>
-      x.usesRetirement(personType),
-    )
-    return { fromRanges, fromGlidePath }
-  }, [hasFutureSavingsWarnings, personType, planParamsExt])
+  },
+)
 
-  const retirementReferencesWarnings = block(() => {
-    const { fromRanges, fromGlidePath } = retirementRefAnalysis
-    if (fromRanges.length === 0 && fromGlidePath.length === 0) return null
+const _StockAllocationIssueSection = React.memo(
+  ({ referenceStr }: { referenceStr: string }) => {
+    const { planParamsNorm } = useSimulation()
     return (
-      <div className="">
-        <h2 className="">
-          {`The following are specified in terms of ${yourOrYourPartners(
-            personType,
-          )} retirement age:`}
-        </h2>
-        <ul className="list-disc list-outside ml-10 mt-4" key={_.uniqueId()}>
-          {fromRanges.map((x, i) => (
-            <li key={`ranges-${i}`} className="list-item">
-              <ValueForMonthRangeDisplay
-                entry={x.entry}
-                rangeAsMFN={null}
-                skipLength
-                planParamsExt={planParamsExt}
-              />
-            </li>
-          ))}
-          {fromGlidePath.map((x, i) => (
-            <li key={`glidePath-${i}`} className="list-item">
-              Stock allocation in the {`"${x.sectionLabel}"`} section.
-            </li>
-          ))}
-        </ul>
-        <h2 className="mt-4 font-bold">
-          {`These references to ${yourOrYourPartners(
-            personType,
-          )} retirement will be converted to "now" if you continue`}
-        </h2>
+      <div className={clsx('mt-6')}>
+        <h2 className="font-bold text-xl mt-6">Stock Allocation</h2>
+        <p className="p-base mt-2">
+          {`One or more entries in the stock allocation table in the ${planSectionLabel('risk')} section reference 
+                        ${referenceStr}. The
+                         corresponding entries will be removed from the table.`}
+        </p>
+        {planParamsNorm.advanced.strategy === 'TPAW' && (
+          <p className="p-base mt-2">
+            {`Note: The stock allocation table is visible only when the strategy
+                          is set to "SPAW" or "SWR".`}
+          </p>
+        )}
+        <PlanInputSummaryGlidePath
+          className="mt-2"
+          normValue={planParamsNorm.risk.spawAndSWR.allocation}
+        />
       </div>
     )
-  })
-  if (!futureSavingsWarnings && !retirementReferencesWarnings) return null
-  return (
-    <div className="flex flex-col gap-y-6">
-      {futureSavingsWarnings}
-      {retirementReferencesWarnings}
-    </div>
-  )
-}
-
-const _getPersonInPlan = (
-  plan: PlanParams,
-  personType: 'person1' | 'person2',
-) => {
-  if (personType === 'person1') return plan.people.person1
-  assert(plan.people.withPartner)
-  return plan.people.person2
-}
+  },
+)

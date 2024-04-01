@@ -629,7 +629,6 @@ export namespace PlanParams25 {
   ): JSONGuard<ValueForMonthRange> =>
     object({
       // Not trimmed because it won't allow space even temporarily.
-      // TODO: non longer need not trimmed, add back to validation.
       label: nullable(chain(string, bounded(MAX_LABEL_LENGTH))),
       monthRange: cg.monthRange(planParams),
       value: chain(number, gte(0)),

@@ -3,6 +3,7 @@ import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { PlanParams } from '@tpaw/common'
 import React from 'react'
+import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { Contentful } from '../../../../Utils/Contentful'
 import { paddingCSS, paddingCSSStyleHorz } from '../../../../Utils/Geometry'
 import { noCase } from '../../../../Utils/Utils'
@@ -11,13 +12,13 @@ import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import { PlanInputSummaryChoiceItem } from './Helpers/PlanInputSummaryChoiceItem'
 import {
-    PlanInputBody,
-    PlanInputBodyPassThruProps,
+  PlanInputBody,
+  PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 
 export const PlanInputStrategy = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const { planParams, updatePlanParams } = useSimulation()
+    const { planParamsNorm, updatePlanParams } = useSimulation()
 
     const content = usePlanContent()['strategy']
     const handleStrategy = (strategy: PlanParams['advanced']['strategy']) =>
@@ -33,7 +34,7 @@ export const PlanInputStrategy = React.memo(
             }}
           >
             <Contentful.RichText
-              body={content.intro[planParams.advanced.strategy]}
+              body={content.intro[planParamsNorm.advanced.strategy]}
               p="p-base"
             />
           </div>
@@ -80,7 +81,7 @@ const _StrategyCard = React.memo(
     strategy: PlanParams['advanced']['strategy']
     handleStrategy: (strategy: PlanParams['advanced']['strategy']) => void
   }) => {
-    const { planParams } = useSimulation()
+    const { planParamsNorm } = useSimulation()
     const content = usePlanContent()['strategy']
     const label = (() => {
       switch (strategy) {
@@ -110,7 +111,7 @@ const _StrategyCard = React.memo(
             <FontAwesomeIcon
               className="mr-2"
               icon={
-                planParams.advanced.strategy === strategy
+                planParamsNorm.advanced.strategy === strategy
                   ? faCircleSelected
                   : faCircleRegular
               }
@@ -119,7 +120,9 @@ const _StrategyCard = React.memo(
           </h2>
           <div className="mt-2">
             <Contentful.RichText
-              body={content.cardIntro[strategy][planParams.advanced.strategy]}
+              body={
+                content.cardIntro[strategy][planParamsNorm.advanced.strategy]
+              }
               p="p-base"
             />
           </div>
@@ -137,19 +140,19 @@ export const useIsPlanInputStrategyModified = () => {
 }
 
 const useIsCardModified = (type: PlanParams['advanced']['strategy']) => {
-  const { planParams } = useSimulation()
-  return type === 'TPAW' ? false : type === planParams.advanced.strategy
+  const { planParamsNorm } = useSimulation()
+  return type === 'TPAW' ? false : type === planParamsNorm.advanced.strategy
 }
 
 export const PlanInputStrategySummary = React.memo(
-  ({ planParams }: { planParams: PlanParams }) => {
+  ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
     return (
       <>
         {(['TPAW', 'SPAW', 'SWR'] as const).map((value) => (
           <PlanInputSummaryChoiceItem
             key={value}
             value={value}
-            selected={(x) => planParams.advanced.strategy === x}
+            selected={(x) => planParamsNorm.advanced.strategy === x}
             label={(x) => x}
           />
         ))}

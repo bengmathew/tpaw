@@ -11,13 +11,9 @@ export const PlanMenuActionViewPlanHistory = React.memo(
   ({
     className,
     historyStatus,
-    onMenuClose,
-    closeMenu,
   }: {
     className?: string
     historyStatus: 'fetching' | 'fetched' | 'failed'
-    onMenuClose: (x: () => void) => void
-    closeMenu: () => void
   }) => {
     const [waitForHistory, setWaitForHistory] = useState(false)
     const { currentTimestamp } = useSimulation()

@@ -1,20 +1,21 @@
 import * as Sentry from '@sentry/nextjs'
 import {
+  CalendarMonthFns,
   DEFAULT_MONTE_CARLO_SIMULATION_SEED,
   MarketData,
   PlanParams,
   PlanParamsHistoryFns,
   assert,
+  assertFalse,
   block,
   fGet,
   getZonedTimeFns,
-  letIn,
   noCase,
 } from '@tpaw/common'
 import { getAuth } from 'firebase/auth'
 import _ from 'lodash'
 import * as uuid from 'uuid'
-import { extendPlanParams } from '../../../UseSimulator/ExtentPlanParams'
+import { normalizePlanParams } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { processPlanParams } from '../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import {
   FirstMonthSavingsPortfolioDetail,
@@ -223,7 +224,13 @@ export namespace CurrentPortfolioBalance {
     // Actions can be empty, but if they are not, they are all between
     // start.timestamp and estimationTimestamp (inclusive).
     if (actions.length > 0) {
-      assert(fGet(_.first(actions)).timestamp >= start.timestamp)
+      const firstAction = fGet(_.first(actions))
+      if (firstAction.timestamp < start.timestamp) {
+        Sentry.captureMessage(
+          `First action too early: ${JSON.stringify(firstAction)}\n start timestamp: ${start.timestamp}\n startingParams.timestamp: ${startingParams.timestamp}\n estimationTimestamp: ${estimationTimestamp}`,
+        )
+        assertFalse()
+      }
       assert(fGet(_.last(actions)).timestamp <= estimationTimestamp)
     }
     const result = {
@@ -331,18 +338,17 @@ export namespace CurrentPortfolioBalance {
       if (fromCache) return fromCache
 
       const planParams = historyItem.params
-
-      let start = performance.now()
-      const paramsExt = extendPlanParams(
-        planParams,
+      const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
         timestamp,
         ianaTimezoneName,
       )
+      const planParamsNorm = normalizePlanParams(planParams, nowAsCalendarMonth)
+
+      let start = performance.now()
       start = performance.now()
       timing.t1 += performance.now() - start
-      const paramsProcessed = processPlanParams(
-        paramsExt,
-        portfolioBalance,
+      const planParamsProcessed = processPlanParams(
+        planParamsNorm,
         marketDataAtTime,
       )
       timing.t2 += performance.now() - start
@@ -350,7 +356,9 @@ export namespace CurrentPortfolioBalance {
 
       const result = getFirstMonthSavingsPortfolioDetail(
         runSimulationInWASM(
-          paramsProcessed,
+          portfolioBalance,
+          planParamsNorm,
+          planParamsProcessed,
           { start: 0, end: 1 },
           DEFAULT_MONTE_CARLO_SIMULATION_SEED, // Does not matter since first month is deterministic.
           wasm,
@@ -358,7 +366,7 @@ export namespace CurrentPortfolioBalance {
             forFirstMonth: true,
           },
         ).byMonthsFromNowByRun.savingsPortfolio,
-        paramsProcessed,
+        planParamsProcessed,
       )
       timing.t3 += performance.now() - start
       start = performance.now()
@@ -539,38 +547,20 @@ export namespace CurrentPortfolioBalance {
       }
     })
 
-  export const getEstimateInfo = (info: ReturnType<typeof cutInfo>) => {
-    const targetInfo = info.postBase ? info.postBase : info.preBase
-    if (targetInfo.actions.length === 0) return null
-
-    const lastPortfolioUpdateIndex = _.findLastIndex(
-      targetInfo.actions,
-      (action) =>
-        action.args.type === 'planChange' &&
-        action.args.portfolioUpdate !== null,
-    )
-    if (lastPortfolioUpdateIndex === targetInfo.actions.length - 1) return null
-    if (lastPortfolioUpdateIndex === -1)
-      return {
-        lastEnteredAmount: targetInfo.startState.estimate,
-        lastEnteredTimestamp: targetInfo.startTimestamp,
-      }
-    const { args } = targetInfo.actions[lastPortfolioUpdateIndex]
-    assert(args.type === 'planChange' && args.portfolioUpdate)
-    return {
-      lastEnteredAmount: args.portfolioUpdate.amount,
-      lastEnteredTimestamp: args.portfolioUpdate.exactTimestamp,
-    }
-  }
-
   export const cutInfo = (
     endTimestamp: number,
     info: { preBase: ByMonthInfo | null; postBase: Info },
   ) => {
+    if (info.preBase) {
+      assert(info.preBase.ianaTimezoneName === info.postBase.ianaTimezoneName)
+    }
     const cutPostBase = _cutInfo(endTimestamp, info.postBase)
     try {
       return cutPostBase
-        ? ({ preBase: info.preBase, postBase: cutPostBase } as const)
+        ? ({
+            preBase: info.preBase,
+            postBase: cutPostBase,
+          } as const)
         : ({
             preBase: fGet(_cutByMonthInfo(endTimestamp, fGet(info.preBase))),
             postBase: null,
@@ -694,11 +684,55 @@ export namespace CurrentPortfolioBalance {
     }
   }
 
-  export const get = (info: ReturnType<typeof cutInfo>): number =>
-    letIn(
-      info.postBase ?? info.preBase,
-      (data) => _.last(data.actions)?.stateChange.end ?? data.startState,
-    ).estimate
+  export type AmountInfo =
+    | { isEstimate: false; amount: number }
+    | {
+        isEstimate: true
+        amount: number
+        lastEnteredAmount: number
+        lastEnteredTimestamp: number
+        ianaTimezoneName: string
+      }
+  export const getAmountInfo = (
+    info: ReturnType<typeof cutInfo>,
+  ): AmountInfo => {
+    const targetInfo = info.postBase ? info.postBase : info.preBase
+    const { estimate: amount } =
+      targetInfo.actions.length === 0
+        ? targetInfo.startState
+        : fGet(_.last(targetInfo.actions)).stateChange.end
+
+    const { ianaTimezoneName } = info.postBase || fGet(info.preBase)
+    const lastPortfolioUpdateIndex = _.findLastIndex(
+      targetInfo.actions,
+      (action) =>
+        action.args.type === 'planChange' &&
+        action.args.portfolioUpdate !== null,
+    )
+    if (
+      targetInfo.actions.length === 0 ||
+      lastPortfolioUpdateIndex === targetInfo.actions.length - 1
+    )
+      return { isEstimate: false, amount }
+
+    if (lastPortfolioUpdateIndex === -1)
+      return {
+        isEstimate: true,
+        amount,
+        lastEnteredAmount: targetInfo.startState.estimate,
+        lastEnteredTimestamp: targetInfo.startTimestamp,
+        ianaTimezoneName,
+      }
+    const { args } = targetInfo.actions[lastPortfolioUpdateIndex]
+    assert(args.type === 'planChange' && args.portfolioUpdate)
+    return {
+      isEstimate: true,
+      amount,
+      lastEnteredAmount: args.portfolioUpdate.amount,
+      lastEnteredTimestamp: args.portfolioUpdate.exactTimestamp,
+      ianaTimezoneName,
+    }
+  }
 
   const _getDescTimeSeq = (
     ianaTimezoneName: string,

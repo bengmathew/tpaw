@@ -1,52 +1,77 @@
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { faExclamationCircle } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { CalendarMonthFns, fGet, noCase } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import React, { useRef, useState } from 'react'
-import { PlanParamsExtended } from '../../../../../UseSimulator/ExtentPlanParams'
-import { calendarMonthStr } from '../../../../../Utils/CalendarMonthStr'
+import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsHelperFns } from '../../../../../UseSimulator/PlanParamsHelperFns'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { joinWithCommaAnd } from '../../../../../Utils/JoinWithAnd'
-import { numMonthsStr } from '../../../../../Utils/NumMonthsStr'
 import { yourOrYourPartners } from '../../../../../Utils/YourOrYourPartners'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
-import { analyzeMonthsInParams } from '../Helpers/AnalyzeMonthsInParams'
 import { planSectionLabel } from '../Helpers/PlanSectionLabel'
 import {
-    PlanInputBody,
-    PlanInputBodyPassThruProps,
+  PlanInputBody,
+  PlanInputBodyPassThruProps,
 } from '../PlanInputBody/PlanInputBody'
 import { PlanInputAgePerson } from './PlanInputAgePerson'
 import { PlanInputAgeWithdrawalStart } from './PlanInputAgeWithdrawalStart'
+import { InMonthsFns } from '../../../../../Utils/InMonthsFns'
 
 export type PlanInputAgeOpenableSection =
   | `${'person1' | 'person2'}-${'monthOfBirth' | 'retirementAge' | 'maxAge'}`
   | 'none'
 export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
-  const { planParams, updatePlanParams, planParamsExt } = useSimulation()
+  const { planParamsNorm, updatePlanParams } = useSimulation()
   const contentDivRef = useRef<HTMLDivElement>(null)
   const [openSection, setOpenSection] =
     useState<PlanInputAgeOpenableSection>('none')
 
-  const monthAnalysis = analyzeMonthsInParams(planParamsExt, {
-    type: 'asVisible',
-  })
-  const warnings = _.uniq(
-    [
-      ...monthAnalysis.valueForMonthRange.filter(
-        (x) =>
-          x.boundsCheck &&
-          (x.boundsCheck.start !== 'ok' || x.boundsCheck.end !== 'ok'),
-      ),
-      ...monthAnalysis.glidePath.filter((x) =>
-        x.analyzed.some((x) => x.issue !== 'none'),
-      ),
-    ]
-      .map((x) => x.section)
-      .map(planSectionLabel)
-      .map((x) => `"${x}"`),
-  )
+  const planSectionsWithIssues = _.uniq(
+    PlanParamsHelperFns.mapAllLabeledAmountTimedList(
+      planParamsNorm,
+      ({ amountAndTiming }, location) => {
+        switch (amountAndTiming.type) {
+          case 'inThePast':
+            return { location, months: [] }
+          case 'oneTime':
+            return { location, months: [amountAndTiming.month] }
+          case 'recurring':
+            const { monthRange: range } = amountAndTiming
+            switch (range.type) {
+              case 'startAndEnd':
+                return { location, months: [range.start, range.end] }
+              case 'startAndDuration':
+                return { location, months: [range.start, range.duration] }
+              case 'endAndDuration':
+                return { location, months: [range.end, range.duration] }
+              default:
+                noCase(range)
+            }
+          default:
+            noCase(amountAndTiming)
+        }
+      },
+    )
+      .filter((x) => x.months.some((x) => x.errorMsg !== null))
+      .map((x) => x.location)
+      .map((x) => {
+        switch (x) {
+          case 'futureSavings':
+            return 'future-savings'
+          case 'incomeDuringRetirement':
+            return 'income-during-retirement'
+          case 'extraSpendingEssential':
+            return 'extra-spending'
+          case 'extraSpendingDiscretionary':
+            return 'extra-spending'
+          default:
+            return noCase(x)
+        }
+      }),
+  ).map(planSectionLabel)
 
   return (
     <PlanInputBody {...props} onBackgroundClick={() => setOpenSection('none')}>
@@ -64,7 +89,7 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
           openSection={openSection}
           setOpenSection={setOpenSection}
         />
-        {planParams.people.withPartner ? (
+        {planParamsNorm.ages.person2 ? (
           <>
             <PlanInputAgePerson
               className="mt-10 params-card"
@@ -91,7 +116,7 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
       </div>
       {{
         error:
-          warnings.length === 0 ? undefined : (
+          planSectionsWithIssues.length === 0 ? undefined : (
             <div className="p-base">
               <h2 className="text-errorFG ">
                 <FontAwesomeIcon
@@ -99,9 +124,9 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
                   icon={faExclamationCircle}
                 />{' '}
                 {`Based on the ages set here, one or more months specified in the ${joinWithCommaAnd(
-                  warnings,
+                  planSectionsWithIssues,
                 )} ${
-                  warnings.length > 1 ? 'sections' : 'section'
+                  planSectionsWithIssues.length > 1 ? 'sections' : 'section'
                 } needs to be updated.`}
               </h2>
             </div>
@@ -112,16 +137,8 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
 })
 
 export const PlanInputAgeSummary = React.memo(
-  ({ planParamsExt }: { planParamsExt: PlanParamsExtended }) => {
-    const { planParams } = planParamsExt
-    const {
-      isAgesNotRetired,
-      isPersonRetired,
-      pickPerson,
-      getCurrentAgeOfPerson,
-      dialogPositionEffective,
-    } = planParamsExt
-    if (dialogPositionEffective === 'age') {
+  ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
+    if (planParamsNorm.dialogPosition.effective === 'age') {
       return (
         <>
           <h2>Month of Birth: </h2>
@@ -130,36 +147,33 @@ export const PlanInputAgeSummary = React.memo(
         </>
       )
     }
-    const forPerson = (person: 'person1' | 'person2', className = '') => {
-      const { ages } = pickPerson(person)
-      return isAgesNotRetired(ages) ? (
+    const { ages } = planParamsNorm
+    const forPerson = (personType: 'person1' | 'person2', className = '') => {
+      const person = fGet(ages[personType])
+      return (
         <>
+          {person.retirement.isRetired && (
+            <h2 className={`${className} col-span-2`}>Retired</h2>
+          )}
           <h2 className={`${className}`}>Month of Birth</h2>
           <h2>
-            {calendarMonthStr(ages.monthOfBirth)} (Age:{' '}
-            {numMonthsStr(getCurrentAgeOfPerson(person).inMonths)})
+            {CalendarMonthFns.toStr(person.monthOfBirth.baseValue)} (Age:{' '}
+            {InMonthsFns.toStr(person.currentAge)})
           </h2>
-          <h2 className={`${className}`}>Retirement</h2>
-          <h2> {numMonthsStr(ages.retirementAge.inMonths)}</h2>
+          {person.retirement.ageIfInFuture && (
+            <>
+              <h2 className={`${className}`}>Retirement</h2>
+              <h2>
+                {InMonthsFns.toStr(person.retirement.ageIfInFuture.baseValue)}
+              </h2>
+            </>
+          )}
           <h2 className={`${className}`}>Max</h2>
-          <h2> {numMonthsStr(ages.maxAge.inMonths)}</h2>
-        </>
-      ) : (
-        <>
-          <h2 className={`${className} col-span-2`}>Retired</h2>
-          <h2 className={`${className}`}>Month of Birth</h2>
-          <h2>
-            {' '}
-            {calendarMonthStr(ages.monthOfBirth)} (Age:{' '}
-            {numMonthsStr(getCurrentAgeOfPerson(person).inMonths)})
-          </h2>
-          <h2 className={`${className}`}>Max</h2>
-          <h2> {numMonthsStr(ages.maxAge.inMonths)}</h2>
+          <h2> {InMonthsFns.toStr(person.maxAge.baseValue)}</h2>
         </>
       )
     }
-    if (planParams.people.withPartner) {
-      const withdrawalPerson = pickPerson(planParams.people.withdrawalStart)
+    if (ages.person2) {
       return (
         <div
           className={clix('grid gap-x-3 gap-y-1')}
@@ -169,14 +183,19 @@ export const PlanInputAgeSummary = React.memo(
           {forPerson('person1', 'ml-4')}
           <h2 className="mt-2 font-medium  col-span-2">Your Partner</h2>
           {forPerson('person2', 'ml-4')}
-          {!(isPersonRetired('person1') && isPersonRetired('person2')) && (
+          {!(
+            ages.person1.retirement.isRetired &&
+            ages.person2.retirement.isRetired
+          ) && (
             <h2 className="mt-2  col-span-2">
-              Withdrawals start{' '}
-              {isPersonRetired(withdrawalPerson)
-                ? 'now.'
+              Withdrawals starts{' '}
+              {fGet(
+                ages[ages.simulationMonths.withdrawalStartMonth.atRetirementOf],
+              ).retirement.isRetired
+                ? 'now'
                 : `at ${yourOrYourPartners(
-                    planParams.people.withdrawalStart,
-                  )} retirement.`}
+                    ages.simulationMonths.withdrawalStartMonth.atRetirementOf,
+                  )} retirement`}
             </h2>
           )}
         </div>

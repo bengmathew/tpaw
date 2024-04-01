@@ -1,14 +1,14 @@
 import React, {
-    ReactElement,
-    ReactNode,
-    useEffect,
-    useLayoutEffect,
-    useRef,
-    useState,
+  ReactElement,
+  ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
 } from 'react'
 import {
-    newPaddingHorz,
-    paddingCSSStyleHorz,
+  newPaddingHorz,
+  paddingCSSStyleHorz,
 } from '../../../../../Utils/Geometry'
 import { fGet } from '../../../../../Utils/Utils'
 import { ModalBase } from '../../../../Common/Modal/ModalBase'
@@ -37,10 +37,10 @@ export const PlanInputBodyMobile = React.memo(
       input?: (transitionOut: (onDone: () => void) => void) => ReactElement
     }
   }) => {
-    const { planParamsExt } = useSimulation()
-    const { dialogPositionEffective } = planParamsExt
+    const { planParamsNorm } = useSimulation()
+    const { dialogPosition } = planParamsNorm
     const { padding } =
-      dialogPositionEffective !== 'done'
+      dialogPosition.effective !== 'done'
         ? sizing.dialogMode
         : sizing.notDialogMode
 

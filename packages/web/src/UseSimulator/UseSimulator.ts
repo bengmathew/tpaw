@@ -1,13 +1,14 @@
 import { assert } from '@tpaw/common'
 import { useEffect, useMemo, useState } from 'react'
 import { asyncEffect } from '../Utils/AsyncEffect'
-import { PlanParamsExtended } from './ExtentPlanParams'
+import { PlanParamsNormalized } from './NormalizePlanParams/NormalizePlanParams'
 import { PlanParamsProcessed } from './PlanParamsProcessed/PlanParamsProcessed'
 import {
-    SimulationArgs,
-    SimulationResult,
-    Simulator,
+  SimulationArgs,
+  SimulationResult,
+  Simulator,
 } from './Simulator/Simulator'
+import { CurrentPortfolioBalance } from '../Pages/PlanRoot/PlanRootHelpers/CurrentPortfolioBalance'
 
 // Singleton so this is created only one for speedup.
 let _singleton: Simulator | null = null
@@ -17,8 +18,9 @@ export const getSimulatorSingleton = () => {
 }
 
 export function useSimulator(
+  currentPortfolioBalanceAmount: number,
+  planParamsNorm: PlanParamsNormalized,
   planParamsProcessed: PlanParamsProcessed,
-  planParamsExt: PlanParamsExtended,
   numOfSimulationForMonteCarloSampling: number,
   randomSeed: number,
 ) {
@@ -26,15 +28,16 @@ export function useSimulator(
 
   const args: SimulationArgs = useMemo(() => {
     return {
-      planParams: planParamsProcessed.planParams,
+      currentPortfolioBalanceAmount,
+      planParamsNorm,
       planParamsProcessed,
-      planParamsExt,
       numOfSimulationForMonteCarloSampling,
       randomSeed,
     }
   }, [
+    currentPortfolioBalanceAmount,
     numOfSimulationForMonteCarloSampling,
-    planParamsExt,
+    planParamsNorm,
     planParamsProcessed,
     randomSeed,
   ])

@@ -3,8 +3,8 @@ import React, { ReactNode, useMemo } from 'react'
 import { useFragment } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { createContext } from '../../Utils/CreateContext'
-import { FirebaseUser, useFirebaseUser } from './WithFirebaseUser'
 import { WithNonPlanParams } from '../PlanRoot/PlanRootHelpers/WithNonPlanParams'
+import { FirebaseUser, useFirebaseUser } from './WithFirebaseUser'
 import { WithUser_query$key } from './__generated__/WithUser_query.graphql'
 import {
   WithUser_user$data,

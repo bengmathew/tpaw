@@ -1,4 +1,4 @@
-pub mod normalize_plan_params;
+pub mod plan_params_rust;
 pub mod process_plan_params;
 
 // use serde::{Deserialize, Serialize};
@@ -7,11 +7,6 @@ pub mod process_plan_params;
 // use wasm_bindgen::prelude::*;
 
 // use crate::{calendar_month::CalendarMonth, shared_types::MonthAndStocks};
-
-
-
-
-
 
 // #[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
 // #[serde(rename_all = "camelCase")]
@@ -59,12 +54,6 @@ pub mod process_plan_params;
 //         withdrawal_start: PersonType,
 //     },
 // }
-
-
-
-
-
-
 
 // #[derive(Serialize, Deserialize, Tsify)]
 // #[serde(rename_all = "camelCase")]
