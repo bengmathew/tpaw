@@ -370,7 +370,8 @@ const _Percent = React.memo(
           className="w-[45px] text-right text-input"
           value={Math.round(value * 100)}
           onChange={(stocks) => {
-            onChange(_.clamp(stocks / 100, 0, 1))
+            // Rounding is necessary because /100 can result in floating point imprecision.
+            onChange(_.round(_.clamp(stocks / 100, 0, 1), 2))
           }}
           decimals={0}
           modalLabel={modalLabel}

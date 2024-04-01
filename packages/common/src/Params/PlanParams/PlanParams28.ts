@@ -152,19 +152,7 @@ export namespace PlanParams28 {
       | {
           type: 'recurring'
           monthRange: MonthRange
-          everyXMonths:
-            | 1
-            | 2
-            | 3
-            | 4
-            | 5
-            | 6
-            | 7
-            | 8
-            | 9
-            | 10
-            | 11
-            | 12
+          everyXMonths: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12
           baseAmount: number
           delta: {
             by: { type: 'percent'; percent: number }
@@ -184,10 +172,10 @@ export namespace PlanParams28 {
     colorIndex: number
   }
   export type LabeledAmountUntimedList = Record<string, LabeledAmountUntimed>
-  
+
   export type LabeledAmountTimedOrUntimed =
-  | LabeledAmountTimed
-  | LabeledAmountUntimed
+    | LabeledAmountTimed
+    | LabeledAmountUntimed
 
   export type GlidePath = {
     start: { month: CalendarMonth; stocks: number }
@@ -530,9 +518,7 @@ export namespace PlanParams28 {
         object({
           type: constant('recurring'),
           monthRange: monthRange(planParams),
-          everyXMonths: among([
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
-          ] as const),
+          everyXMonths: among([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const),
           baseAmount: chain(number, integer, gte(0)),
           delta: nullable(
             object({
@@ -934,7 +920,10 @@ export namespace PlanParams28 {
     const _migrateLabeledAmount = (
       prev: PlanParamsPrev.LabeledAmount,
     ): LabeledAmountUntimed => ({
-      ...prev,
+      id: prev.id,
+      sortIndex: prev.sortIndex,
+      colorIndex: prev.colorIndex,
+      nominal: prev.nominal,
       label: _migrateLabel(prev.label),
       amount: prev.value,
     })
@@ -987,6 +976,19 @@ export namespace PlanParams28 {
       x: PlanParamsPrev.ValueForMonthRanges,
     ): LabeledAmountTimedList => _.mapValues(x, _migrateAmountForMonthRange)
 
+    // Previous glide paths nominally are rounded to precision 2, so we would
+    // not have had to do this, but that was got by taking a whole number and
+    // dividing by 100, which is not exact due to floating point math. Since
+    // we are not enforcing this in the guard, it has to be exact.
+    const _migrateGlidePath = (x: PlanParamsPrev.GlidePath): GlidePath => ({
+      start: { ...x.start, stocks: _.round(x.start.stocks, 2) },
+      intermediate: _.mapValues(x.intermediate, (x) => ({
+        ...x,
+        stocks: _.round(x.stocks, 2),
+      })),
+      end: { stocks: _.round(x.end.stocks, 2) },
+    })
+
     const result: PlanParams = {
       ...prev,
       v: currentVersion,
@@ -1015,6 +1017,12 @@ export namespace PlanParams28 {
               prev.adjustmentsToSpending.tpawAndSPAW.legacy.external,
             ),
           },
+        },
+      },
+      risk: {
+        ...prev.risk,
+        spawAndSWR: {
+          allocation: _migrateGlidePath(prev.risk.spawAndSWR.allocation),
         },
       },
       advanced: {
