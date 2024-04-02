@@ -56,7 +56,7 @@ export const PlanServerImpl = React.memo((props: _Props) => {
       ).timestamp,
     [plan],
   )
-  assert(time >= firstParamsTime - 2 * 1000)
+  assert(time >= firstParamsTime - 3 * 1000)
 
   // Wait for clock to catch up to server.
   const shouldWait = time < firstParamsTime

@@ -10,10 +10,7 @@ import { normalizeGlidePath } from './NormalizeGlidePath'
 import { normalizeLabeledAmountTimedList } from './NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 import { normalizeLabeledAmountUntimedList } from './NormalizeLabeledAmountUntimedList'
 import { getToMFN, normalizePlanParamsAges } from './NormalizePlanParamsAges'
-import { normalize } from 'relay-runtime/lib/store/RelayResponseNormalizer'
-import { normalizePlanParamsInverseUnchecked } from './NormalizePlanParamsInverse'
-import * as Sentry from '@sentry/nextjs'
-import jsonpatch from 'fast-json-patch'
+import { normalizePlanParamsInverse } from './NormalizePlanParamsInverse'
 
 export type PlanParamsNormalized = ReturnType<typeof normalizePlanParams>
 
@@ -21,24 +18,10 @@ export const normalizePlanParams = (
   planParams: PlanParams,
   nowAsCalendarMonth: CalendarMonth,
 ) => {
-  const result = normalizePlanParamsUnchecked(planParams, nowAsCalendarMonth)
-  const reNorm = normalizePlanParamsUnchecked(
-    normalizePlanParamsInverseUnchecked(result),
-    nowAsCalendarMonth,
-  )
-
-  const diff = jsonpatch.compare(result, reNorm)
-  const rdiff = jsonpatch.compare(reNorm, result)
-  if (diff.length > 0 || rdiff.length > 0) {
-    Sentry.captureMessage(
-      `Expected diff to be empty, but got\n ${JSON.stringify(diff)}\n ${JSON.stringify(rdiff)}`,
-    )
-  }
-  // Don't assert. The assert will happen in the inverse function which is
-  // called in updatePlanParams(). This will let the user continue until they
-  // make a change.
-  // assert(diff.length === 0)
-  return result
+  const norm = normalizePlanParamsUnchecked(planParams, nowAsCalendarMonth)
+  // Soft check inverse.
+  normalizePlanParamsInverse(norm, 'soft')
+  return norm
 }
 export const normalizePlanParamsUnchecked = (
   planParams: PlanParams,

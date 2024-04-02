@@ -8,6 +8,7 @@ import {
   block,
   currentPlanParamsVersion,
   noCase,
+  fGet,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { normalizeGlidePath } from './NormalizeGlidePath'
@@ -22,21 +23,37 @@ import jsonpatch from 'fast-json-patch'
 import * as Sentry from '@sentry/nextjs'
 
 export const normalizePlanParamsInverse = (
-  norm: PlanParamsNormalized,
-): PlanParams => {
-  const result = normalizePlanParamsInverseUnchecked(norm)
-  const reNorm = normalizePlanParamsUnchecked(result, norm.nowAs.calendarMonth)
-  const diff = jsonpatch.compare(norm, reNorm)
-  const rdiff = jsonpatch.compare(reNorm, norm)
-  if (diff.length > 0 || rdiff.length > 0) {
+  originalNorm: PlanParamsNormalized,
+  check: 'hard' | 'soft' = 'hard',
+) => {
+  const deNorm = _normalizePlanParamsInverseUnchecked(originalNorm)
+  const reNorm = normalizePlanParamsUnchecked(
+    deNorm,
+    originalNorm.nowAs.calendarMonth,
+  )
+
+  // If retirement.agsAsMFNIfSpecifiedElseNull is in the past in originalNorm,
+  // it will be null in reNorm.
+  reNorm.ages.person1.retirement.ageAsMFNIfSpecifiedElseNull =
+    originalNorm.ages.person1.retirement.ageAsMFNIfSpecifiedElseNull
+  if (reNorm.ages.person2) {
+    reNorm.ages.person2.retirement.ageAsMFNIfSpecifiedElseNull = fGet(
+      originalNorm.ages.person2,
+    ).retirement.ageAsMFNIfSpecifiedElseNull
+  }
+  const diff = jsonpatch.compare(originalNorm, reNorm)
+  const reverseDiff = jsonpatch.compare(reNorm, originalNorm)
+  const checkOk = diff.length > 0 || reverseDiff.length > 0
+  if (checkOk) {
     Sentry.captureMessage(
-      `Expected diff to be empty, but got\n ${JSON.stringify(diff)}\n ${JSON.stringify(rdiff)}`,
+      `Expected diff to be empty, but got\n ${JSON.stringify(diff)}\n ${JSON.stringify(reverseDiff)}`,
     )
   }
-  assert(diff.length === 0 && rdiff.length === 0)
-  return result
+  if (check === 'hard') assert(checkOk)
+  return deNorm
 }
-export const normalizePlanParamsInverseUnchecked = (
+
+const _normalizePlanParamsInverseUnchecked = (
   norm: PlanParamsNormalized,
 ): PlanParams => {
   const _forMonthRange = (norm: NormalizedMonthRange): MonthRange => {
