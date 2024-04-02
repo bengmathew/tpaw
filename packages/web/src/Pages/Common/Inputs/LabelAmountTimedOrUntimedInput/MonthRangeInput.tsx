@@ -45,7 +45,7 @@ export const MonthRangeInput = React.memo(
         case 'startAndEnd':
           switch (normValue.type) {
             case 'startAndEnd':
-              assertFalse()
+              return
             case 'startAndDuration':
               // Exact
               props.onChange({
@@ -93,7 +93,7 @@ export const MonthRangeInput = React.memo(
               })
               break
             case 'startAndDuration':
-              assertFalse()
+              return
             case 'endAndDuration':
               // Exact
               props.onChange({
@@ -143,7 +143,7 @@ export const MonthRangeInput = React.memo(
               })
               break
             case 'endAndDuration':
-              assertFalse()
+              return
             default:
               noCase(normValue)
           }
