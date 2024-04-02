@@ -2,9 +2,9 @@ import { faPlus } from '@fortawesome/pro-light-svg-icons'
 import {
   faMinus,
   faPlus as faPlusRegular,
+  faTrash,
   faTurnDownLeft,
 } from '@fortawesome/pro-solid-svg-icons'
-import { faTrash } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { GlidePath, fGet, generateSmallId } from '@tpaw/common'
 import clsx from 'clsx'
@@ -364,27 +364,27 @@ const _Percent = React.memo(
     onChange: (x: number) => void
     modalLabel: string
   }) => {
+    // Rounding is necessary because /100 can result in floating point imprecision.
+    const handleChange = (x: number) => onChange(_.round(_.clamp(x, 0, 1), 2))
+
     return (
       <div className={`${className} flex justify-end items-stretch`}>
         <AmountInput
           className="w-[45px] text-right text-input"
           value={Math.round(value * 100)}
-          onChange={(stocks) => {
-            // Rounding is necessary because /100 can result in floating point imprecision.
-            onChange(_.round(_.clamp(stocks / 100, 0, 1), 2))
-          }}
+          onChange={handleChange}
           decimals={0}
           modalLabel={modalLabel}
         />
         <button
           className={`flex items-center ml-2 px-2 `}
-          onClick={() => onChange(_.clamp(value + 0.01, 0, 1))}
+          onClick={() => handleChange(value + 0.01)}
         >
           <FontAwesomeIcon className="text-base" icon={faPlusRegular} />
         </button>
         <button
           className={`flex items-center px-2 `}
-          onClick={() => onChange(_.clamp(value - 0.01, 0, 1))}
+          onClick={() => handleChange(value - 0.01)}
         >
           <FontAwesomeIcon className="text-base" icon={faMinus} />
         </button>

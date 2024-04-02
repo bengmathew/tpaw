@@ -7,9 +7,9 @@ import {
 } from '@tpaw/common'
 import { PlanParamsHelperFns } from '../PlanParamsHelperFns'
 import { normalizeGlidePath } from './NormalizeGlidePath'
+import { normalizeLabeledAmountTimedList } from './NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 import { normalizeLabeledAmountUntimedList } from './NormalizeLabeledAmountUntimedList'
 import { getToMFN, normalizePlanParamsAges } from './NormalizePlanParamsAges'
-import { normalizeLabeledAmountTimedList } from './NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 
 export type PlanParamsNormalized = ReturnType<typeof normalizePlanParams>
 

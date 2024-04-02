@@ -17,6 +17,8 @@ import {
 } from './NormalizePlanParams'
 import { NormalizedMonthRange } from './NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
 import { NormalizedLabeledAmountTimed } from './NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
+import jsonpatch from 'fast-json-patch'
+import * as Sentry from '@sentry/nextjs'
 
 export const normalizePlanParamsInverse = (
   norm: PlanParamsNormalized,
@@ -163,6 +165,13 @@ export const normalizePlanParamsInverse = (
     advanced: norm.advanced,
     results: norm.results,
   }
-  assert(_.isEqual(norm, normalizePlanParams(result, norm.nowAs.calendarMonth)))
+  const reNorm = normalizePlanParams(result, norm.nowAs.calendarMonth)
+  const diff = jsonpatch.compare(norm, reNorm)
+  if (diff.length > 0) {
+    Sentry.captureException(
+      new Error(`Expected diff to be empty, but got ${JSON.stringify(diff)}`),
+    )
+  }
+  assert(diff.length === 0)
   return result
 }

@@ -113,15 +113,15 @@ export const _CurrentPortfolioBalanceCard = React.memo(
                     ).toLocaleString(DateTime.DATE_MED)}
                     .{' '}
                   </p>
-                  <button
-                    className="underline block mt-1"
-                    onClick={() => setShowHistory(true)}
-                  >
-                    View Balance History
-                  </button>
                 </div>
               </div>
             )}
+          <button
+            className="underline block mt-4"
+            onClick={() => setShowHistory(true)}
+          >
+            View Balance History
+          </button>
         </div>
         <CenteredModal
           className=" dialog-outer-div"
@@ -420,7 +420,7 @@ export const PlanInputCurrentPortfolioBalanceSummary = React.memo(
           amountInfo.lastEnteredAmount !== amountInfo.amount && (
             <div className={'ml-2 flex items-top gap-x-1'}>
               <FontAwesomeIcon
-                className={clsx("rotate-90 mr-1", forPrint && 'text-[10px]')}
+                className={clsx('rotate-90 mr-1', forPrint && 'text-[10px]')}
                 icon={faTurnDownLeft}
               />
               <div className="">

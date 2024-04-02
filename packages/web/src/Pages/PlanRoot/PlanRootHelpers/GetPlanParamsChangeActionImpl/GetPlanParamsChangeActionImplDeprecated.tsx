@@ -219,17 +219,16 @@ export const processPlanParamsChangeActionDeprecated = (
               prevParams,
               location,
             )
-
-          let label = optGet(prevEntries, entryId)?.label
-          if (!label) {
+          const prevEntry = optGet(prevEntries, entryId)
+          if (!prevEntry) {
             Sentry.captureException(
-              new Error('No label for deleteLabeledAmount'),
+              new Error('No entry for deleteLabeledAmount'),
             )
           }
-
+          const label = prevEntry ? getLabelStrTruncated(prevEntry.label) : ''
           return `Deleted ${getLabeledAmountTimedOrUntimedLocationStr(
             location,
-          )} entry${label ? ` "${getLabelStrTruncated(label)}"` : ``}`
+          )} entry ${label}`
         },
       }
     }
