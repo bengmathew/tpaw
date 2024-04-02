@@ -14,6 +14,7 @@ import { normalizeGlidePath } from './NormalizeGlidePath'
 import {
   PlanParamsNormalized,
   normalizePlanParams,
+  normalizePlanParamsUnchecked,
 } from './NormalizePlanParams'
 import { NormalizedMonthRange } from './NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
 import { NormalizedLabeledAmountTimed } from './NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
@@ -21,6 +22,20 @@ import jsonpatch from 'fast-json-patch'
 import * as Sentry from '@sentry/nextjs'
 
 export const normalizePlanParamsInverse = (
+  norm: PlanParamsNormalized,
+): PlanParams => {
+  const result = normalizePlanParamsInverseUnchecked(norm)
+  const reNorm = normalizePlanParamsUnchecked(result, norm.nowAs.calendarMonth)
+  const diff = jsonpatch.compare(norm, reNorm)
+  if (diff.length > 0) {
+    Sentry.captureException(
+      new Error(`Expected diff to be empty, but got ${JSON.stringify(diff)}`),
+    )
+  }
+  assert(diff.length === 0)
+  return result
+}
+export const normalizePlanParamsInverseUnchecked = (
   norm: PlanParamsNormalized,
 ): PlanParams => {
   const _forMonthRange = (norm: NormalizedMonthRange): MonthRange => {
@@ -88,7 +103,7 @@ export const normalizePlanParamsInverse = (
   ): LabeledAmountTimedList =>
     _.fromPairs(x.map((x) => [x.id, _forLabeledAmountTimed(x)]))
 
-  const result: PlanParams = {
+  return {
     v: currentPlanParamsVersion,
     timestamp: norm.timestamp,
     dialogPositionNominal: norm.dialogPosition.effective,
@@ -165,13 +180,4 @@ export const normalizePlanParamsInverse = (
     advanced: norm.advanced,
     results: norm.results,
   }
-  const reNorm = normalizePlanParams(result, norm.nowAs.calendarMonth)
-  const diff = jsonpatch.compare(norm, reNorm)
-  if (diff.length > 0) {
-    Sentry.captureException(
-      new Error(`Expected diff to be empty, but got ${JSON.stringify(diff)}`),
-    )
-  }
-  assert(diff.length === 0)
-  return result
 }
