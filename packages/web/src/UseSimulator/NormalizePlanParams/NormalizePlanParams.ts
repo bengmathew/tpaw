@@ -29,8 +29,8 @@ export const normalizePlanParams = (
 
   const diff = jsonpatch.compare(planParams, reNorm)
   if (diff.length > 0) {
-    Sentry.captureException(
-      new Error(`Expected diff to be empty, but got ${JSON.stringify(diff)}`),
+    Sentry.captureMessage(
+      `Expected diff to be empty, but got ${JSON.stringify(diff)}`,
     )
   }
   // Don't assert. The assert will happen in the inverse function which is
