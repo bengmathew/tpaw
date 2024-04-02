@@ -27,10 +27,11 @@ export const normalizePlanParams = (
     nowAsCalendarMonth,
   )
 
-  const diff = jsonpatch.compare(planParams, reNorm)
-  if (diff.length > 0) {
+  const diff = jsonpatch.compare(result, reNorm)
+  const rdiff = jsonpatch.compare(reNorm, result)
+  if (diff.length > 0 || rdiff.length > 0) {
     Sentry.captureMessage(
-      `Expected diff to be empty, but got ${JSON.stringify(diff)}`,
+      `Expected diff to be empty, but got\n ${JSON.stringify(diff)}\n ${JSON.stringify(rdiff)}`,
     )
   }
   // Don't assert. The assert will happen in the inverse function which is

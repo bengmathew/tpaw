@@ -27,12 +27,13 @@ export const normalizePlanParamsInverse = (
   const result = normalizePlanParamsInverseUnchecked(norm)
   const reNorm = normalizePlanParamsUnchecked(result, norm.nowAs.calendarMonth)
   const diff = jsonpatch.compare(norm, reNorm)
-  if (diff.length > 0) {
-    Sentry.captureException(
-      new Error(`Expected diff to be empty, but got ${JSON.stringify(diff)}`),
+  const rdiff = jsonpatch.compare(reNorm, norm)
+  if (diff.length > 0 || rdiff.length > 0) {
+    Sentry.captureMessage(
+      `Expected diff to be empty, but got\n ${JSON.stringify(diff)}\n ${JSON.stringify(rdiff)}`,
     )
   }
-  assert(diff.length === 0)
+  assert(diff.length === 0 && rdiff.length === 0)
   return result
 }
 export const normalizePlanParamsInverseUnchecked = (
