@@ -43,13 +43,13 @@ export const normalizePlanParamsInverse = (
   }
   const diff = jsonpatch.compare(originalNorm, reNorm)
   const reverseDiff = jsonpatch.compare(reNorm, originalNorm)
-  const checkOk = diff.length > 0 || reverseDiff.length > 0
-  if (checkOk) {
+  const checkFailed = diff.length > 0 || reverseDiff.length > 0
+  if (checkFailed) {
     Sentry.captureMessage(
       `Expected diff to be empty, but got\n ${JSON.stringify(diff)}\n ${JSON.stringify(reverseDiff)}`,
     )
   }
-  if (check === 'hard') assert(checkOk)
+  if (check === 'hard') assert(!checkFailed)
   return deNorm
 }
 
