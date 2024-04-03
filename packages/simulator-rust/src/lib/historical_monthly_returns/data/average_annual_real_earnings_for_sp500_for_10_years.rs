@@ -68,8 +68,8 @@ pub const AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS:
         value: 146.14,
     },
     AverageAnnualRealEarningsForSP500For10Years {
-        // TODO: Fix date
-        added_date_ms: 1712087192626,
+        //  Wednesday, April 3, 2024 12:37:41.624 PM PDT
+        added_date_ms: 1712173061624,
         ten_year_duration: TenYearDuration {
             start: YearAndMonth {
                 year: 2014,
