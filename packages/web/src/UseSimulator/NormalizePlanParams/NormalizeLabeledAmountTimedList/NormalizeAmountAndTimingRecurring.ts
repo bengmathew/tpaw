@@ -327,11 +327,31 @@ const _stepStartToCurrent = (
   delta: _Orig['delta'],
   mfnToCalendarMonth: (mfn: number) => CalendarMonth,
 ): { month: { asMFN: number; value: Month }; baseAmount: number } | null => {
-  if (startMonth.asMFNPastNotElided >= 0)
+  // Not >= 0 because we want to rewrite month as 'now' if === 0. Besides
+  // cleaness, this is necessary if month is 'retired'. We have to remove the
+  // reference to 'retired' because if retirement month is 0, we will elide
+  // retiremed date to 'retiredWithNoRetirementDataSpecified', and then
+  // 'retired' will no longer be resolvable.
+  if (startMonth.asMFNPastNotElided > 0)
     return {
       month: { asMFN: startMonth.asMFNPastNotElided, value: startMonth.value },
       baseAmount,
     }
+  const getResult = (asMFN: number, baseAmount: number) => ({
+    month: {
+      asMFN,
+      value: block((): Month => {
+        const calendarMonth = mfnToCalendarMonth(asMFN)
+        return asMFN === 0
+          ? { type: 'calendarMonthAsNow', monthOfEntry: calendarMonth }
+          : { type: 'calendarMonth', calendarMonth }
+      }),
+    },
+    baseAmount,
+  })
+
+  if (startMonth.asMFNPastNotElided === 0) return getResult(0, baseAmount)
+
   assert(endMonthAsMFNPastElided !== 'inThePast')
   const endMonthAsMFNNotInPast = endMonthAsMFNPastElided
 
@@ -341,16 +361,10 @@ const _stepStartToCurrent = (
     delta,
   )
   if (startSteppedToCurrent.monthAsMFN > endMonthAsMFNNotInPast) return null
-  return {
-    month: {
-      asMFN: startSteppedToCurrent.monthAsMFN,
-      value: {
-        type: 'calendarMonth',
-        calendarMonth: mfnToCalendarMonth(startSteppedToCurrent.monthAsMFN),
-      },
-    },
-    baseAmount: startSteppedToCurrent.value,
-  }
+  return getResult(
+    startSteppedToCurrent.monthAsMFN,
+    startSteppedToCurrent.value,
+  )
 }
 
 const _stepRecurringAmountToCurrent = (
