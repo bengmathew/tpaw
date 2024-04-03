@@ -16,7 +16,6 @@ pub struct StocksAndBonds<T> {
     pub bonds: T,
 }
 
-
 #[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MonthAndStocks {
@@ -29,7 +28,6 @@ pub struct MonthAndStocks {
 pub struct Stocks {
     pub stocks: f64,
 }
-
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -68,11 +66,25 @@ pub enum StocksOrBonds {
     Bonds,
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Tsify)]
+#[derive(Serialize, Deserialize, Clone, Copy, Tsify, PartialEq, Eq, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct YearAndMonth {
     pub year: u16,
     pub month: u8,
+}
+
+impl YearAndMonth {
+    pub fn add_months(&self, months_to_add: i64) -> YearAndMonth {
+        let as_months_since0 = self.year as i64 * 12 + self.month as i64 - 1;
+        let new_as_months_since0 = as_months_since0 + months_to_add;
+        assert!(new_as_months_since0 >= 0); // Mod math doesn't work with negative numbers.
+        let year = new_as_months_since0 / 12;
+        let month = (new_as_months_since0 % 12) + 1;
+        YearAndMonth {
+            year: year as u16,
+            month: month as u8,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Tsify, PartialEq, Debug, Eq)]
@@ -80,4 +92,38 @@ pub struct YearAndMonth {
 pub struct SimpleRange<T> {
     pub start: T,
     pub end: T,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(2020, 1, 11, 2020, 12)]
+    #[case(2020, 1, 12, 2021, 1)]
+    #[case(2020, 12, 1, 2021, 1)]
+    #[case(2020, 12, 13, 2022, 1)]
+    #[case (2020, 2, -1, 2020, 1)]
+    #[case (2020, 2, -12, 2019, 2)]
+    #[case (2020, 2, -13, 2019, 1)]
+    #[case (2020, 2, -14, 2018, 12)]
+    fn test_add_months(
+        #[case] year: u16,
+        #[case] month: u8,
+        #[case] months_to_add: i64,
+        #[case] result_year: u16,
+        #[case] result_month: u8,
+    ) {
+        let start = YearAndMonth {
+            year: year,
+            month: month,
+        };
+
+        let result = YearAndMonth {
+            year: result_year,
+            month: result_month,
+        };
+        assert_eq!(start.add_months(months_to_add), result);
+    }
 }

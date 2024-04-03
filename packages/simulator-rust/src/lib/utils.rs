@@ -5,7 +5,6 @@ pub mod random;
 pub mod return_series;
 pub mod round;
 pub mod shared_types;
-pub mod calendar_month;
 
 use self::shared_types::StocksAndBonds;
 

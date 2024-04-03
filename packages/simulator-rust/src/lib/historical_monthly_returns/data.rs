@@ -1,6 +1,7 @@
 pub mod average_annual_real_earnings_for_sp500_for_10_years;
 pub mod v1;
 pub mod v2;
+pub mod v3;
 
 use crate::shared_types::{Log, StocksAndBonds};
 use crate::{

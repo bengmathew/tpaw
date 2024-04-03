@@ -57,8 +57,8 @@ export namespace Contentful {
     [P in keyof IdObj]: IdObj[P] extends string
       ? FetchedInline
       : IdObj[P] extends _IdObj
-      ? _MapIdObj<IdObj[P]>
-      : never
+        ? _MapIdObj<IdObj[P]>
+        : never
   }
   export const fetchInlineMultiple = async <X extends _IdObj>(
     idObj: X,
@@ -174,10 +174,15 @@ export namespace Contentful {
     node: T,
   ): T => {
     if (helpers.isText(node)) {
-      const keys = _.keys(variables)
-      const replace = (x: string) =>
-        keys.reduce((a, c) => a.replaceAll(`{{${c}}}`, variables[c]), x)
-      return { ...node, value: replace(node.value) }
+      const value = _.keys(variables).reduce(
+        (a, c) => a.replaceAll(`{{${c}}}`, variables[c]),
+        node.value,
+      )
+      console.dir(value)
+      return {
+        ...node,
+        value,
+      }
     } else {
       return {
         ...node,

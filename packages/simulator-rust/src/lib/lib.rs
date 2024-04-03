@@ -15,7 +15,6 @@ use crate::{
     plan_params::{
         plan_params_rust::PlanParamsRust,
         process_plan_params::{
-            plan_params_processed::PlanParamsProcessed,
             process_expected_returns_for_planning::DataForExpectedReturnsForPlanningPresets,
             PlanParamsProcessedJS,
         },
@@ -24,22 +23,19 @@ use crate::{
 };
 use data_for_market_based_plan_param_values::DataForMarketBasedPlanParamValues;
 use historical_monthly_returns::{
-    data::v1::V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS, get_historical_monthly_returns,
+    data::v1::V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
+    get_historical_monthly_returns_info,
 };
 use params::*;
 use plan_params::{
     plan_params_rust,
-    process_plan_params::{
-        get_suggested_annual_inflation,
-        plan_params_processed::StocksAndBondsHistoricalMonthlyLogReturnsAdjustedInfo,
-        process_expected_returns_for_planning,
-    },
+    process_plan_params::{get_suggested_annual_inflation, process_expected_returns_for_planning},
 };
 use return_series::Stats;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use tsify::Tsify;
-use utils::{calendar_month::CalendarMonth, shared_types::StocksAndBonds, *};
+use utils::{shared_types::StocksAndBonds, *};
 use wasm_bindgen::prelude::*;
 
 #[derive(Serialize, Deserialize, Tsify, Copy, Clone)]
@@ -292,7 +288,9 @@ pub fn sort(data: Box<[f64]>) -> Box<[f64]> {
 
 #[wasm_bindgen]
 pub fn test() {
-    let h = get_historical_monthly_returns(V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS);
+    let h =
+        &get_historical_monthly_returns_info(V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS)
+            .returns;
     let _run_result = run(
         ParamsStrategy::TPAW,
         0,
@@ -336,17 +334,6 @@ pub fn process_plan_params(
 ) -> PlanParamsProcessedJS {
     plan_params::process_plan_params::process_plan_params(&plan_params_norm, &market_data)
 }
-
-// #[wasm_bindgen]
-// pub fn normalize_plan_params(
-//     plan_params: PlanParams,
-//     now_as_calendar_month:CalendarMonth
-// ) ->PlanParamsNormalized {
-//     plan_params::normalize_plan_params::normalize_plan_params(
-//         &plan_params,
-//         &now_as_calendar_month
-//     )
-// }
 
 #[wasm_bindgen]
 pub fn process_market_data_for_expected_returns_for_planning_presets(

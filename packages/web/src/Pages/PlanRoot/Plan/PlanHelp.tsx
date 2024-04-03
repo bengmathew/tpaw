@@ -20,7 +20,7 @@ import {
   PlanTransitionState,
   simplifyPlanTransitionState2,
 } from './PlanTransition'
-import { block } from '@tpaw/common'
+import { CalendarMonthFns, block } from '@tpaw/common'
 import { fWASM } from '../../../UseSimulator/Simulator/GetWASM'
 import { formatPercentage } from '../../../Utils/FormatPercentage'
 import { CallRust } from '../../../UseSimulator/PlanParamsProcessed/CallRust'
@@ -93,11 +93,16 @@ const _Body = React.memo(({ sizing }: { sizing: PlanHelpSizing }) => {
       historicalExpectedBondReturn: formatPercentage(1)(
         presetInfo.bonds.historical,
       ),
+      historicalReturnDataStartMonth: CalendarMonthFns.toStr(
+        presetInfo.historicalReturnsMonthRange.start,
+      ),
+      historicalReturnDataEndMonth: CalendarMonthFns.toStr(
+        presetInfo.historicalReturnsMonthRange.end,
+      ),
       tipsYield20Year: formatPercentage(1)(
         currentMarketData.bondRates.twentyYear,
       ),
     }
-    // return contentBeforeVars
     return Contentful.replaceVariables(variables, contentBeforeVars)
   })
 

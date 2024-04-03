@@ -2,7 +2,7 @@ use super::process_expected_returns_for_planning::ExpectedReturnsForPlanningProc
 use crate::{
     data_for_market_based_plan_param_values::DataForMarketBasedPlanParamValues,
     historical_monthly_returns::{
-        get_historical_monthly_returns, HistoricalMonthlyLogReturnsAdjustedInfo,
+        get_historical_monthly_returns_info, HistoricalMonthlyLogReturnsAdjustedInfo,
     },
     shared_types::StocksAndBonds,
 };
@@ -13,7 +13,8 @@ pub fn process_historical_monthly_log_returns_adjustment(
     override_to_fixed_for_testing: bool,
 ) -> StocksAndBonds<HistoricalMonthlyLogReturnsAdjustedInfo> {
     let historical_monthly_returns =
-        get_historical_monthly_returns(market_data.timestamp_ms_for_historical_returns);
+        &get_historical_monthly_returns_info(market_data.timestamp_ms_for_historical_returns)
+            .returns;
 
     let mut result = StocksAndBonds {
         stocks: historical_monthly_returns

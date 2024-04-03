@@ -191,7 +191,7 @@ describe('NormalizeAmountAndTimingRecurring', () => {
       [1, 1 as _1to12, [0, 101 * 1.1]],
       [1, 2 as _1to12, [1, 101 * 1.1]],
       [1, 3 as _1to12, null],
-    ])('in past', (end, recurrance, result) => {
+    ])('in past %#', (end, recurrance, result) => {
       expect(
         _stepStartToCurrent(
           {
@@ -212,10 +212,16 @@ describe('NormalizeAmountAndTimingRecurring', () => {
           ? {
               month: {
                 asMFN: result[0],
-                value: {
-                  type: 'calendarMonth',
-                  calendarMonth: mfnToCalendarMonth(result[0]),
-                },
+                value:
+                  result[0] === 0
+                    ? {
+                        type: 'calendarMonthAsNow',
+                        monthOfEntry: mfnToCalendarMonth(0),
+                      }
+                    : {
+                        type: 'calendarMonth',
+                        calendarMonth: mfnToCalendarMonth(result[0]),
+                      },
               },
               baseAmount: _.round(result[1]),
             }
@@ -249,7 +255,11 @@ describe('NormalizeAmountAndTimingRecurring', () => {
 
     test.each([
       [3, 2, [2, 2, { start: 1, end: 3 }, null, null]],
-      [6, 2, [5, 2, { start: 2, end: 6 }, null, normalizedMonthErrorMsg.outOfRange]],
+      [
+        6,
+        2,
+        [5, 2, { start: 2, end: 6 }, null, normalizedMonthErrorMsg.outOfRange],
+      ],
       [
         3,
         5,

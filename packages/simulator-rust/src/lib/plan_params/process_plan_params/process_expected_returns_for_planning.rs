@@ -1,10 +1,12 @@
 use crate::data_for_market_based_plan_param_values::BondRates;
 use crate::data_for_market_based_plan_param_values::SP500;
 use crate::expected_value_of_returns::annual_non_log_to_monthly_non_log_return_rate;
+use crate::historical_monthly_returns;
 use crate::historical_monthly_returns::data::average_annual_real_earnings_for_sp500_for_10_years::AverageAnnualRealEarningsForSP500For10Years;
-use crate::historical_monthly_returns::get_historical_monthly_returns;
-use crate::plan_params;
+use crate::historical_monthly_returns::get_historical_monthly_returns_info;
 use crate::plan_params_rust;
+use crate::shared_types::SimpleRange;
+use crate::shared_types::YearAndMonth;
 use crate::{
     data_for_market_based_plan_param_values::DataForMarketBasedPlanParamValues,
     expected_value_of_returns::EmpiricalAnnualNonLogExpectedValueInfo,
@@ -127,6 +129,7 @@ pub struct DataForExpectedReturnsForPlanningPresetsForBonds {
 #[tsify(into_wasm_abi)]
 pub struct DataForExpectedReturnsForPlanningPresets {
     pub block_size_actual: Option<usize>,
+    pub historical_returns_month_range: SimpleRange<YearAndMonth>,
     pub stocks: DataForExpectedReturnsForPlanningPresetsForStocks,
     pub bonds: DataForExpectedReturnsForPlanningPresetsForBonds,
 }
@@ -167,14 +170,15 @@ pub fn process_market_data_for_expected_returns_for_planning_presets(
         }
     };
 
-    let historical_monthly_returns =
-        get_historical_monthly_returns(market_data.timestamp_ms_for_historical_returns);
+    let historical_monthly_returns_info =
+        get_historical_monthly_returns_info(market_data.timestamp_ms_for_historical_returns);
+    let historical_monthly_returns = &historical_monthly_returns_info.returns;
     let stocks = {
         let sp500 = &market_data.sp500;
         let average_earning = AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS
             .iter()
             .rev()
-            .find(|x| sp500.closing_time_ms > x.added_date_ms)
+            .find(|x| market_data.timestamp_ms_for_historical_returns >= x.added_date_ms)
             .unwrap();
         let one_over_cape = average_earning.value / sp500.value;
         let empirical_annual_non_log_regressions_stocks = historical_monthly_returns
@@ -247,6 +251,7 @@ pub fn process_market_data_for_expected_returns_for_planning_presets(
     };
     DataForExpectedReturnsForPlanningPresets {
         block_size_actual,
+        historical_returns_month_range: historical_monthly_returns_info.month_range.clone(),
         stocks,
         bonds,
     }

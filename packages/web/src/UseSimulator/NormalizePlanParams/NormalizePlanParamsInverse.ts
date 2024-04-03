@@ -1,26 +1,25 @@
+import * as Sentry from '@sentry/nextjs'
 import {
+  LabeledAmountTimed,
+  LabeledAmountTimedList,
   MonthRange,
   Person,
   PlanParams,
-  LabeledAmountTimed,
-  LabeledAmountTimedList,
   assert,
   block,
   currentPlanParamsVersion,
-  noCase,
   fGet,
+  noCase,
 } from '@tpaw/common'
+import jsonpatch from 'fast-json-patch'
 import _ from 'lodash'
 import { normalizeGlidePath } from './NormalizeGlidePath'
-import {
-  PlanParamsNormalized,
-  normalizePlanParams,
-  normalizePlanParamsUnchecked,
-} from './NormalizePlanParams'
 import { NormalizedMonthRange } from './NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
 import { NormalizedLabeledAmountTimed } from './NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
-import jsonpatch from 'fast-json-patch'
-import * as Sentry from '@sentry/nextjs'
+import {
+  PlanParamsNormalized,
+  normalizePlanParamsUnchecked
+} from './NormalizePlanParams'
 
 export const normalizePlanParamsInverse = (
   originalNorm: PlanParamsNormalized,

@@ -4,9 +4,17 @@ use simulator::{
     constants::MAX_AGE_IN_MONTHS,
     historical_monthly_returns::{
         data::{
-            get_empirical_stats_for_block_size, process_raw_monthly_non_log_series, v1::v1_raw_monthly_non_log_series::{
+            get_empirical_stats_for_block_size, process_raw_monthly_non_log_series,
+            v1::v1_raw_monthly_non_log_series::{
                 V1_RAW_MONTHLY_NON_LOG_SERIES, V1_RAW_MONTHLY_NON_LOG_SERIES_START,
-            }, v2::v2_raw_monthly_non_log_series::{V2_RAW_MONTHLY_NON_LOG_SERIES, V2_RAW_MONTHLY_NON_LOG_SERIES_START}, AnnualLogMeanFromOneOverCAPERegressionInfo, EmpiricalStats32, FiveTenTwentyThirtyYearsSlopeAndIntercept, RawCAPESeriesEntry, RawMonthlyNonLogSeriesEntry
+            },
+            v2::v2_raw_monthly_non_log_series::{
+                V2_RAW_MONTHLY_NON_LOG_SERIES, V2_RAW_MONTHLY_NON_LOG_SERIES_START,
+            },
+            v3::v3_raw_monthly_non_log_series::{V3_RAW_MONTHLY_NON_LOG_SERIES, V3_RAW_MONTHLY_NON_LOG_SERIES_START},
+            AnnualLogMeanFromOneOverCAPERegressionInfo, EmpiricalStats32,
+            FiveTenTwentyThirtyYearsSlopeAndIntercept, RawCAPESeriesEntry,
+            RawMonthlyNonLogSeriesEntry,
         },
         HistoricalReturnsId,
     },
@@ -38,6 +46,7 @@ fn get_raw_monthly_non_log_series(
     match returns_id {
         HistoricalReturnsId::V1 => &V1_RAW_MONTHLY_NON_LOG_SERIES,
         HistoricalReturnsId::V2 => &V2_RAW_MONTHLY_NON_LOG_SERIES,
+        HistoricalReturnsId::V3 => &V3_RAW_MONTHLY_NON_LOG_SERIES,
     }
 }
 
@@ -56,10 +65,15 @@ fn generate_regressions(returns_id: &HistoricalReturnsId, base_dir: &str) {
     let raw_monthly_series_start = match returns_id {
         HistoricalReturnsId::V1 => &V1_RAW_MONTHLY_NON_LOG_SERIES_START,
         HistoricalReturnsId::V2 => &V2_RAW_MONTHLY_NON_LOG_SERIES_START,
+        HistoricalReturnsId::V3 => &V3_RAW_MONTHLY_NON_LOG_SERIES_START,
     };
 
-
-    assert!(cape_series.len() == monthly_series.log.stocks.len(), "{} {}", cape_series.len(), monthly_series.log.stocks.len());
+    assert!(
+        cape_series.len() == monthly_series.log.stocks.len(),
+        "{} {}",
+        cape_series.len(),
+        monthly_series.log.stocks.len()
+    );
     assert!(cape_series[0].year == raw_monthly_series_start.year);
     assert!(cape_series[0].month == raw_monthly_series_start.month);
 
@@ -93,7 +107,7 @@ fn generate_regressions(returns_id: &HistoricalReturnsId, base_dir: &str) {
             thirty_year: regress(restricted_start_index, 30),
         },
     };
-  
+
     write_regession(returns_id, base_dir, "stocks", &stocks);
 }
 

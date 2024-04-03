@@ -115,7 +115,7 @@ mod tests {
     use crate::{
         historical_monthly_returns::{
             data::v1::V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
-            get_historical_monthly_returns,
+            get_historical_monthly_returns_info,
         },
         return_series::{adjust_log_returns, exp_m1_series, periodize_log_returns, SeriesAndStats},
     };
@@ -133,10 +133,12 @@ mod tests {
                 })
                 .collect::<Vec<f64>>()
         }
-        let original =
-            &get_historical_monthly_returns(V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS)
-                .stocks
-                .log;
+        let original = &get_historical_monthly_returns_info(
+            V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
+        )
+        .returns
+        .stocks
+        .log;
 
         let annualized1 = alt_periodize(&exp_m1_series(&original.series), 3);
         let annualized2 = exp_m1_series(&periodize_log_returns(&original.series, 3));
@@ -150,10 +152,12 @@ mod tests {
 
     #[test]
     fn test_adjust_log_returns_mean() {
-        let original =
-            &get_historical_monthly_returns(V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS)
-                .stocks
-                .log;
+        let original = &get_historical_monthly_returns_info(
+            V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
+        )
+        .returns
+        .stocks
+        .log;
         let target_mean = original.stats.mean + 1.5;
         let adjusted = SeriesAndStats::from_series(adjust_log_returns(&original, target_mean, 1.0));
         assert!((adjusted.stats.mean - target_mean).abs() < 1e-10);
@@ -164,10 +168,12 @@ mod tests {
 
     #[test]
     fn test_adjust_log_returns_scale() {
-        let original =
-            &get_historical_monthly_returns(V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS)
-                .stocks
-                .log;
+        let original = &get_historical_monthly_returns_info(
+            V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
+        )
+        .returns
+        .stocks
+        .log;
         let scale = 0.5;
         let adjusted =
             SeriesAndStats::from_series(adjust_log_returns(&original, original.stats.mean, scale));
@@ -180,10 +186,12 @@ mod tests {
 
     #[test]
     fn test_adjust_log_returns_mean_and_scale() {
-        let original =
-            &get_historical_monthly_returns(V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS)
-                .stocks
-                .log;
+        let original = &get_historical_monthly_returns_info(
+            V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
+        )
+        .returns
+        .stocks
+        .log;
 
         let target_mean = original.stats.mean + 1.5;
         let scale = 0.5;

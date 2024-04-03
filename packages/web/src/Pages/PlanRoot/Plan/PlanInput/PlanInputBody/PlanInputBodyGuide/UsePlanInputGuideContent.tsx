@@ -1,3 +1,4 @@
+import { CalendarMonthFns } from '@tpaw/common'
 import { CallRust } from '../../../../../../UseSimulator/PlanParamsProcessed/CallRust'
 import { fWASM } from '../../../../../../UseSimulator/Simulator/GetWASM'
 import { Contentful } from '../../../../../../Utils/Contentful'
@@ -31,6 +32,7 @@ export function usePlanInputGuideContent(type: PlanInputType) {
   const contentForType = usePlanContent()[type]
   if (!('guide' in contentForType)) return null
   const content = contentForType.guide[planParamsNorm.advanced.strategy]
+
   const variables = {
     numRuns: `${nonPlanParams.numOfSimulationForMonteCarloSampling}`,
     inflationDate: formatDate(inflation.closingTime),
@@ -40,6 +42,36 @@ export function usePlanInputGuideContent(type: PlanInputType) {
     ),
     historicalExpectedBondReturn: formatPercentage(1)(
       presetInfo.bonds.historical,
+    ),
+    historicalReturnDataStartMonth: CalendarMonthFns.toStr(
+      presetInfo.historicalReturnsMonthRange.start,
+    ),
+    historicalReturnDataStartMonthPlus1: CalendarMonthFns.toStr(
+      CalendarMonthFns.addMonths(
+        presetInfo.historicalReturnsMonthRange.start,
+        1,
+      ),
+    ),
+    historicalReturnDataStartMonthPlus599: CalendarMonthFns.toStr(
+      CalendarMonthFns.addMonths(
+        presetInfo.historicalReturnsMonthRange.start,
+        599,
+      ),
+    ),
+    historicalReturnDataStartMonthPlus600: CalendarMonthFns.toStr(
+      CalendarMonthFns.addMonths(
+        presetInfo.historicalReturnsMonthRange.start,
+        600,
+      ),
+    ),
+    historicalReturnDataEndMonthMinus599: CalendarMonthFns.toStr(
+      CalendarMonthFns.addMonths(
+        presetInfo.historicalReturnsMonthRange.start,
+        -599,
+      ),
+    ),
+    historicalReturnDataEndMonth: CalendarMonthFns.toStr(
+      presetInfo.historicalReturnsMonthRange.end,
     ),
     tipsYield20Year: formatPercentage(1)(
       currentMarketData.bondRates.twentyYear,

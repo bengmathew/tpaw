@@ -17,6 +17,7 @@ struct Cli {
 enum Version {
     V1,
     V2,
+    V3,
 }
 
 #[derive(Subcommand)]
@@ -32,6 +33,7 @@ fn return_id_map(
     match returns_id {
         Version::V1 => simulator::historical_monthly_returns::HistoricalReturnsId::V1,
         Version::V2 => simulator::historical_monthly_returns::HistoricalReturnsId::V2,
+        Version::V3 => simulator::historical_monthly_returns::HistoricalReturnsId::V3,
     }
 }
 
