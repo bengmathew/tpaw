@@ -327,16 +327,16 @@ const _stepStartToCurrent = (
   delta: _Orig['delta'],
   mfnToCalendarMonth: (mfn: number) => CalendarMonth,
 ): { month: { asMFN: number; value: Month }; baseAmount: number } | null => {
-  // Not >= 0 because we want to rewrite month as 'now' if === 0. Besides
-  // cleaness, this is necessary if month is 'retired'. We have to remove the
-  // reference to 'retired' because if retirement month is 0, we will elide
-  // retiremed date to 'retiredWithNoRetirementDataSpecified', and then
-  // 'retired' will no longer be resolvable.
-  if (startMonth.asMFNPastNotElided > 0)
-    return {
-      month: { asMFN: startMonth.asMFNPastNotElided, value: startMonth.value },
-      baseAmount,
-    }
+  const unchanged = {
+    month: { asMFN: startMonth.asMFNPastNotElided, value: startMonth.value },
+    baseAmount,
+  }
+  // Not >= 0 because we want to rewrite month as 'now' if === 0 if month is
+  // 'retired'. We have to remove the reference to 'retired' because if
+  // retirement month is 0, we will elide retiremed date to
+  // 'retiredWithNoRetirementDataSpecified', and then 'retired' will no longer
+  // be resolvable.
+  if (startMonth.asMFNPastNotElided > 0) return unchanged
   const getResult = (asMFN: number, baseAmount: number) => ({
     month: {
       asMFN,
@@ -350,7 +350,12 @@ const _stepStartToCurrent = (
     baseAmount,
   })
 
-  if (startMonth.asMFNPastNotElided === 0) return getResult(0, baseAmount)
+  if (startMonth.asMFNPastNotElided === 0) {
+    return startMonth.value.type === 'namedAge' &&
+      startMonth.value.age === 'retirement'
+      ? getResult(0, baseAmount)
+      : unchanged
+  }
 
   assert(endMonthAsMFNPastElided !== 'inThePast')
   const endMonthAsMFNNotInPast = endMonthAsMFNPastElided
