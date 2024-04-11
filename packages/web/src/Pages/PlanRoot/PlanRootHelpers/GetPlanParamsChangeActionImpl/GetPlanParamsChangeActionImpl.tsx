@@ -336,11 +336,11 @@ export const getPlanParamsChangeActionImpl = (
               location,
             )
           const prevEntry = optGet(prevEntries, entryId)
-          if (!prevEntry) {
-            Sentry.captureException(
-              new Error('No entry for deleteLabeledAmount'),
-            )
-          }
+          // if (!prevEntry) {
+          //   Sentry.captureException(
+          //     new Error('No entry for deleteLabeledAmount'),
+          //   )
+          // }
           const label = prevEntry ? getLabelStrTruncated(prevEntry.label) : ''
 
           return `Deleted ${getLabeledAmountTimedOrUntimedLocationStr(
