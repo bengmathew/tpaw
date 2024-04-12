@@ -82,14 +82,26 @@ export const useServerSyncPlan = (
   setServerPlan: (x: _ServerPlan) => void,
 ): ServerSyncState => {
   const { setGlobalError } = useSetGlobalError()
-  const [state, setState] = useState<_State>({ type: 'synced' })
+  const [state, setStateDirect] = useState<_State>({ type: 'synced' })
 
-  const stateHistoryForDebugRef = useRef([] as _State[])
-
-  useEffect(() => {
-    stateHistoryForDebugRef.current.push(state)
-    stateHistoryForDebugRef.current = stateHistoryForDebugRef.current.slice(-10)
-  }, [state])
+  const historyForDebugRef = useRef(
+    [] as {
+      action: string
+      currState: { onRender: _State['type']; onSetState: _State['type'] }
+      targetState: _State['type']
+    }[],
+  )
+  const setStateDebug = (action: string, targetState: _State) => {
+    setStateDirect((prev) => {
+      historyForDebugRef.current.push({
+        action,
+        currState: { onRender: prev.type, onSetState: prev.type },
+        targetState: targetState.type,
+      })
+      historyForDebugRef.current = historyForDebugRef.current.slice(-10)
+      return targetState
+    })
+  }
 
   // ---- INPUT ----
   const input = useMemo(
@@ -99,7 +111,7 @@ export const useServerSyncPlan = (
 
   // ---- TO SYNCED STATE ----
   const toSyncedState = () => {
-    setState({ type: 'synced' })
+    setStateDebug('toSyncedState', { type: 'synced' })
   }
   const toSyncedStateRef = useRef(toSyncedState)
   toSyncedStateRef.current = toSyncedState
@@ -159,7 +171,7 @@ export const useServerSyncPlan = (
         switch (userPlanSync.__typename) {
           case 'ConcurrentChangeError':
             Sentry.captureMessage(
-              `ConcurrentChangeError\n: ${JSON.stringify(stateHistoryForDebugRef.current)}`,
+              `ConcurrentChangeError\n: ${(JSON.stringify(historyForDebugRef.current), null, 2)}`,
             )
             setGlobalError(new AppError('concurrentChange'))
             break
@@ -220,7 +232,7 @@ export const useServerSyncPlan = (
         })
       },
     })
-    setState({
+    setStateDebug('toSyncingState', {
       type: 'syncing',
       startTime,
       failures,
@@ -256,12 +268,19 @@ export const useServerSyncPlan = (
   const handleClearThrottleRef = useRef(handleClearThrottle)
   handleClearThrottleRef.current = handleClearThrottle
   const toThrottleState = () => {
-    assert(state.type === 'syncing')
+    if (state.type !== 'syncing') {
+      Sentry.captureException(
+        new Error(
+          `Expected state.type to be 'syncing', but was ${state.type}.\n${JSON.stringify(historyForDebugRef.current, null, 2)}`,
+        ),
+      )
+      assertFalse()
+    }
     const timeout = window.setTimeout(
       () => handleClearThrottleRef.current(),
       SERVER_SYNC_PLAN_THROTTLE_WAIT_TIME,
     )
-    setState({
+    setStateDebug('toThrottleState', {
       type: 'waitDueToThrottle',
       waitEndTime: Date.now() + SERVER_SYNC_PLAN_THROTTLE_WAIT_TIME,
       dispose: () => window.clearTimeout(timeout),
@@ -273,7 +292,14 @@ export const useServerSyncPlan = (
   // ---- TO ERROR STATE ----
   const handleClearError = () => {
     assert(input)
-    assert(state.type === 'waitDueToError')
+    if (state.type !== 'waitDueToError') {
+      Sentry.captureException(
+        new Error(
+          `Expected state.type to be 'waitDueToError', but was ${state.type}.\n${JSON.stringify(historyForDebugRef.current, null, 2)}`,
+        ),
+      )
+      assertFalse()
+    }
     state.dispose() // Safe even if timeout has already fired.
     toSyncingState({ input, failures: state.failures })
   }
@@ -281,7 +307,14 @@ export const useServerSyncPlan = (
   handleClearErrorRef.current = handleClearError
 
   const toErrorState = (failure: _Failure) => {
-    assert(state.type === 'syncing')
+    if (state.type !== 'syncing') {
+      Sentry.captureException(
+        new Error(
+          `Expected state.type to be 'syncing', but was ${state.type}.\n${JSON.stringify(historyForDebugRef.current, null, 2)}`,
+        ),
+      )
+      assertFalse()
+    }
     const waitEndTime = block(() => {
       switch (failure.reason) {
         // Don't retry on timeout, the server might have handled the request.
@@ -298,7 +331,7 @@ export const useServerSyncPlan = (
       }
     })
 
-    setState({
+    setStateDebug('toErrorState', {
       type: 'waitDueToError',
       waitEndTime: waitEndTime,
       failures: [...state.failures, failure],
