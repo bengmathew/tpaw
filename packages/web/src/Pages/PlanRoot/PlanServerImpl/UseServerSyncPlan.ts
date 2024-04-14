@@ -171,7 +171,7 @@ export const useServerSyncPlan = (
         switch (userPlanSync.__typename) {
           case 'ConcurrentChangeError':
             Sentry.captureMessage(
-              `ConcurrentChangeError\n: ${(JSON.stringify(historyForDebugRef.current), null, 2)}`,
+              `ConcurrentChangeError\n: ${JSON.stringify(historyForDebugRef.current, null, 2)}`,
             )
             setGlobalError(new AppError('concurrentChange'))
             break
