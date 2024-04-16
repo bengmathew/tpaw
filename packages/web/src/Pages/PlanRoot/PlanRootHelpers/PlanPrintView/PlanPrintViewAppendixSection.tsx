@@ -12,6 +12,7 @@ import { useSimulationResult } from '../WithSimulation'
 import { getPlanPrintChartLabel } from './Helpers/GetPlanPrintChartLabel'
 import { PlanPrintViewPageGroup } from './Helpers/PlanPrintViewPageGroup'
 import { PlanPrintViewArgs } from './PlanPrintViewArgs'
+import { InMonthsFns } from '../../../../Utils/InMonthsFns'
 
 export const PlanPrintViewAppendixSection = React.memo(
   ({ settings }: { settings: PlanPrintViewArgs['settings'] }) => {
@@ -157,7 +158,9 @@ const _Table = React.memo(
             {months.map((mfn, i) => {
               if (
                 !(
-                  ages.person1.currentAge.inMonths === 0 ||
+                  InMonthsFns.getFromMFN(ages.person1.currentAge, 0, 1)(mfn) %
+                    12 ===
+                    0 ||
                   i === months.length - 1 ||
                   i === 0
                 )
