@@ -1156,9 +1156,9 @@ export const _BondVolatilityCard = React.memo(
         <PlanInputModifiedBadge show={isModified} mainPage={false} />
         <h2 className="font-bold text-lg ">Bond Volatility</h2>
         <p className="p-base mt-2">
-          The default simulation models bonds with volatility equal to the
-          historical volatility. You can choose to model bonds with more or less
-          volatility by choosing a scaling factor for the bond return
+          The default simulation assumes that the volatility of bonds is equal
+          to its historical volatility. You can choose to model bonds with more
+          or less volatility by choosing a scaling factor for the bond return
           distribution here. A scaling factor of{' '}
           <span className="italic">X</span> multiplies the deviations of
           historical log bond returns from its the mean by{' '}
@@ -1238,9 +1238,9 @@ export const _StockVolatilityCard = React.memo(
         <PlanInputModifiedBadge show={isModified} mainPage={false} />
         <h2 className="font-bold text-lg ">Stock Volatility</h2>
         <p className="p-base mt-2">
-          The default simulation models stocks with volatility equal to the
-          historical volatility. You can choose to model stocks with more or
-          less volatility by choosing a scaling factor for the stock return
+          The default simulation assumes that the volatility of stocks is equal
+          to its historical volatility. You can choose to model stocks with more
+          or less volatility by choosing a scaling factor for the stock return
           distribution here. A scaling factor of{' '}
           <span className="italic">X</span> multiplies the deviations of
           historical log stock returns from its the mean by{' '}
