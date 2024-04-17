@@ -19,7 +19,7 @@ use crate::historical_monthly_returns::data::v2::v2_raw_monthly_non_log_series::
 use crate::historical_monthly_returns::data::v3::v3_raw_monthly_non_log_series::V3_RAW_MONTHLY_NON_LOG_SERIES_START;
 use crate::shared_types::{SimpleRange, YearAndMonth};
 use crate::{
-    expected_value_of_returns::EmpiricalAnnualNonLogExpectedValueInfo,
+    expected_value_of_returns::EmpiricalAnnualNonLogExpectedReturnInfo,
     historical_monthly_returns::data::{
         v1::{
             v1_annual_log_mean_from_one_over_cape_regression_info_stocks::V1_ANNUAL_LOG_MEAN_FROM_ONE_OVER_CAPE_REGRESSION_INFO_STOCKS,
@@ -47,12 +47,17 @@ pub struct HistoricalMonthlyReturns {
 
 #[derive(Serialize, Deserialize, Tsify, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct HistoricalMonthlyLogReturnsAdjustedInfoArgs {
+    empirical_annual_non_log_expected_return_info: EmpiricalAnnualNonLogExpectedReturnInfo,
+    empirical_annual_log_variance: f64,
+}
+
+#[derive(Serialize, Deserialize, Tsify, Copy, Clone)]
+#[serde(rename_all = "camelCase")]
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct HistoricalMonthlyLogReturnsAdjustedStats {
     pub log: Stats,
     pub annualized: LogAndNonLog<Stats>,
-    pub empirical_annual_log_variance: f64,
-    pub unadjusted_annualized: LogAndNonLog<Stats>,
 }
 
 #[derive(Serialize, Deserialize, Tsify, Clone)]
@@ -60,7 +65,11 @@ pub struct HistoricalMonthlyLogReturnsAdjustedStats {
 pub struct HistoricalMonthlyLogReturnsAdjustedInfo {
     #[serde(skip)]
     pub log_series: Vec<f64>,
+    #[serde(skip)]
+    pub non_log_series: Vec<f64>,
     pub stats: HistoricalMonthlyLogReturnsAdjustedStats,
+    pub args: HistoricalMonthlyLogReturnsAdjustedInfoArgs,
+    pub src_annualized_stats: LogAndNonLog<Stats>,
 }
 
 impl HistoricalMonthlyReturns {
@@ -129,9 +138,9 @@ impl HistoricalMonthlyReturns {
         log_monthly_expected_value: f64,
         block_size: Option<usize>,
         log_volatility_scale: f64,
-    ) -> EmpiricalAnnualNonLogExpectedValueInfo {
+    ) -> EmpiricalAnnualNonLogExpectedReturnInfo {
         let correction = self.get_shift_correction(&block_size, log_volatility_scale);
-        EmpiricalAnnualNonLogExpectedValueInfo {
+        EmpiricalAnnualNonLogExpectedReturnInfo {
             value: ((log_monthly_expected_value + correction) * 12.0).exp_m1(),
             block_size,
             log_volatility_scale,
@@ -140,9 +149,9 @@ impl HistoricalMonthlyReturns {
 
     pub fn adjust_log_returns(
         &self,
-        empirical_annual_non_log_expected_value: &EmpiricalAnnualNonLogExpectedValueInfo,
+        empirical_annual_non_log_expected_value: &EmpiricalAnnualNonLogExpectedReturnInfo,
     ) -> Vec<f64> {
-        let EmpiricalAnnualNonLogExpectedValueInfo {
+        let EmpiricalAnnualNonLogExpectedReturnInfo {
             block_size,
             log_volatility_scale,
             value: target_annual_non_log_mean,
@@ -152,44 +161,64 @@ impl HistoricalMonthlyReturns {
         adjust_log_returns(&self.log, monthly_log_mean, *log_volatility_scale)
     }
 
+    pub fn get_target_empirical_annual_log_variance(
+        &self,
+        empirical_annual_non_log_return_info: &EmpiricalAnnualNonLogExpectedReturnInfo,
+    ) -> f64 {
+        let EmpiricalAnnualNonLogExpectedReturnInfo {
+            block_size,
+            log_volatility_scale,
+            ..
+        } = empirical_annual_non_log_return_info;
+        let unscaled = match block_size {
+            Some(block_size) => {
+                self.empirical_stats_by_block_size
+                    .get(&block_size)
+                    .unwrap()
+                    .annual_log_returns_variance
+            }
+            None => self.annualized_stats.log.variance,
+        };
+        unscaled * log_volatility_scale.powi(2)
+    }
+
     pub fn adjust_log_returns_detailed(
         &self,
-        empirical_annual_non_log_return_info: &EmpiricalAnnualNonLogExpectedValueInfo,
+        empirical_annual_non_log_return_info: &EmpiricalAnnualNonLogExpectedReturnInfo,
     ) -> HistoricalMonthlyLogReturnsAdjustedInfo {
         let log_series = self.adjust_log_returns(empirical_annual_non_log_return_info);
-        let annalized_log_series = &periodize_log_returns(&log_series, 12);
+        let non_log_series = log_series.iter().map(|x| x.exp_m1()).collect::<Vec<f64>>();
         let stats = HistoricalMonthlyLogReturnsAdjustedStats {
             log: Stats::from_series(&log_series),
-            annualized: LogAndNonLog {
-                log: Stats::from_series(&annalized_log_series),
-                non_log: Stats::from_series(
-                    &annalized_log_series
-                        .iter()
-                        .map(|x| x.exp_m1())
-                        .collect::<Vec<f64>>(),
-                ),
+            annualized: {
+                let annalized_log_series = &periodize_log_returns(&log_series, 12);
+                LogAndNonLog {
+                    log: Stats::from_series(&annalized_log_series),
+                    non_log: Stats::from_series(
+                        &annalized_log_series
+                            .iter()
+                            .map(|x| x.exp_m1())
+                            .collect::<Vec<f64>>(),
+                    ),
+                }
             },
-            empirical_annual_log_variance: {
-                let unscaled = match empirical_annual_non_log_return_info.block_size {
-                    Some(block_size) => {
-                        self.empirical_stats_by_block_size
-                            .get(&block_size)
-                            .unwrap()
-                            .annual_log_returns_variance
-                    }
-                    None => self.annualized_stats.log.variance,
-                };
-                unscaled
-                    * empirical_annual_non_log_return_info
-                        .log_volatility_scale
-                        .powi(2)
+        };
+
+        HistoricalMonthlyLogReturnsAdjustedInfo {
+            log_series,
+            non_log_series,
+            stats,
+            args: HistoricalMonthlyLogReturnsAdjustedInfoArgs {
+                empirical_annual_non_log_expected_return_info: empirical_annual_non_log_return_info
+                    .clone(),
+                empirical_annual_log_variance: self
+                    .get_target_empirical_annual_log_variance(empirical_annual_non_log_return_info),
             },
-            unadjusted_annualized: LogAndNonLog {
+            src_annualized_stats: LogAndNonLog {
                 log: self.annualized_stats.log,
                 non_log: self.annualized_stats.non_log,
             },
-        };
-        HistoricalMonthlyLogReturnsAdjustedInfo { log_series, stats }
+        }
     }
 }
 
@@ -325,7 +354,7 @@ mod tests {
     use rand_chacha::ChaCha20Rng;
 
     use crate::{
-        expected_value_of_returns::EmpiricalAnnualNonLogExpectedValueInfo,
+        expected_value_of_returns::EmpiricalAnnualNonLogExpectedReturnInfo,
         historical_monthly_returns::data::get_empirical_stats_for_block_size,
     };
 
@@ -423,17 +452,18 @@ mod tests {
         #[values(0.5, 0.75, 1.0, 1.25, 1.5)] volatility_scale: f64,
     ) {
         let h = resolve_historical_monthly_returns(&returns_id, &src);
-        let adjusted_info = h.adjust_log_returns_detailed(
-            &(EmpiricalAnnualNonLogExpectedValueInfo {
+        let empirical_annual_non_log_expected_return_info =
+            EmpiricalAnnualNonLogExpectedReturnInfo {
                 value: target_mean,
                 block_size: None,
                 log_volatility_scale: volatility_scale,
-            }),
-        );
+            };
+        let adjusted_info =
+            h.adjust_log_returns_detailed(&(empirical_annual_non_log_expected_return_info));
 
         let mean_diff = adjusted_info.stats.annualized.non_log.mean - target_mean;
         let var_diff = adjusted_info.stats.annualized.log.variance
-            - adjusted_info.stats.empirical_annual_log_variance;
+            - adjusted_info.args.empirical_annual_log_variance;
         assert!(mean_diff < 0.00099, "mean_diff: {}", mean_diff);
         assert!(var_diff < 0.00099, "var_diff: {}", var_diff);
     }
@@ -458,13 +488,14 @@ mod tests {
             .collect::<Vec<u64>>()[seed_index];
 
         let h = resolve_historical_monthly_returns(&returns_id, &src);
-        let adjusted_info = h.adjust_log_returns_detailed(
-            &(EmpiricalAnnualNonLogExpectedValueInfo {
+        let empirical_annual_non_log_expected_return_info =
+            EmpiricalAnnualNonLogExpectedReturnInfo {
                 value: target_mean,
                 block_size: Some(block_size as usize),
                 log_volatility_scale: volatility_scale,
-            }),
-        );
+            };
+        let adjusted_info =
+            h.adjust_log_returns_detailed(&(empirical_annual_non_log_expected_return_info));
 
         let sampled_adjusted = get_empirical_stats_for_block_size(
             &adjusted_info.log_series,
@@ -476,7 +507,7 @@ mod tests {
         );
         let mean_diff = sampled_adjusted.annual_non_log_returns_mean as f64 - target_mean;
         let var_diff = sampled_adjusted.annual_log_returns_variance as f64
-            - adjusted_info.stats.empirical_annual_log_variance;
+            - adjusted_info.args.empirical_annual_log_variance;
         assert!(mean_diff < 0.001, "mean_diff: {}", mean_diff);
         assert!(var_diff < 0.0005, "var_diff: {}", var_diff);
     }

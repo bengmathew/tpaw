@@ -6,7 +6,7 @@ import {
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
-import { fGet, noCase } from '@tpaw/common'
+import { assert, assertFalse, fGet, noCase } from '@tpaw/common'
 import clix from 'clsx'
 import cloneJSON from 'fast-json-clone'
 import React, { ReactNode, useEffect, useMemo, useRef, useState } from 'react'
@@ -97,11 +97,20 @@ const _Link = React.memo(
 
     const params = useMemo(() => {
       const clone = normalizePlanParamsInverse(planParamsNorm)
-      clone.wealth.portfolioBalance = {
-        updatedHere: true,
-        amount: CurrentPortfolioBalance.getAmountInfo(
-          currentPortfolioBalanceInfo,
-        ).amount,
+      if (
+        clone.wealth.portfolioBalance.isDatedPlan &&
+        !clone.wealth.portfolioBalance.updatedHere
+      ) {
+        assert(planParamsNorm.datingInfo.isDated)
+        assert(currentPortfolioBalanceInfo.isDatedPlan)
+        clone.timestamp = planParamsNorm.datingInfo.nowAsTimestamp
+        clone.wealth.portfolioBalance = {
+          isDatedPlan: true,
+          updatedHere: true,
+          amount: CurrentPortfolioBalance.getAmountInfo(
+            currentPortfolioBalanceInfo.info,
+          ).amount,
+        }
       }
       return clone
     }, [currentPortfolioBalanceInfo, planParamsNorm])

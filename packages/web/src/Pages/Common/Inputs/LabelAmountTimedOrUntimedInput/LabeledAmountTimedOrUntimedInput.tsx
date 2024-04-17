@@ -461,7 +461,7 @@ const _MonthRangeSection = React.memo(
     assert(amountAndTiming.type !== 'oneTime')
 
     const handleChange = (monthRange: MonthRange) => {
-      updatePlanParams('setMonthRangeForLabeledAmountTimed', {
+      updatePlanParams('setMonthRangeForLabeledAmountTimed2', {
         location,
         entryId,
         monthRange,

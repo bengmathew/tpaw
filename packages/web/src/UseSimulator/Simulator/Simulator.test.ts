@@ -54,13 +54,17 @@ describe('simulator', () => {
     return {
       v: currentPlanParamsVersion,
       timestamp: now,
+      datingInfo: { isDated: true },
       dialogPositionNominal: 'done',
       people: {
         withPartner: true,
         person1: {
           ages: {
             type: 'retirementDateSpecified',
-            monthOfBirth: yearsFromNowAsCalendarMonth(-30),
+            currentAgeInfo: {
+              isDatedPlan: true,
+              monthOfBirth: yearsFromNowAsCalendarMonth(-30),
+            },
             retirementAge: { inMonths: 65 * 12 },
             maxAge: { inMonths: 95 * 12 },
           },
@@ -68,7 +72,10 @@ describe('simulator', () => {
         person2: {
           ages: {
             type: 'retirementDateSpecified',
-            monthOfBirth: yearsFromNowAsCalendarMonth(-40),
+            currentAgeInfo: {
+              isDatedPlan: true,
+              monthOfBirth: yearsFromNowAsCalendarMonth(-40),
+            },
             retirementAge: { inMonths: 70 * 12 },
             maxAge: { inMonths: 100 * 12 },
           },
@@ -77,6 +84,7 @@ describe('simulator', () => {
       },
       wealth: {
         portfolioBalance: {
+          isDatedPlan: true,
           updatedHere: true,
           amount: 100000,
         },
@@ -85,8 +93,11 @@ describe('simulator', () => {
             monthRange: {
               type: 'startAndEnd',
               start: {
-                type: 'calendarMonthAsNow',
-                monthOfEntry: yearsFromNowAsCalendarMonth(-1),
+                type: 'now',
+                monthOfEntry: {
+                  isDatedPlan: true,
+                  calendarMonth: yearsFromNowAsCalendarMonth(-1),
+                },
               },
               end: {
                 type: 'namedAge',
@@ -100,8 +111,11 @@ describe('simulator', () => {
             monthRange: {
               type: 'startAndEnd',
               start: {
-                type: 'calendarMonthAsNow',
-                monthOfEntry: yearsFromNowAsCalendarMonth(1),
+                type: 'now',
+                monthOfEntry: {
+                  isDatedPlan: true,
+                  calendarMonth: yearsFromNowAsCalendarMonth(1),
+                },
               },
               end: {
                 type: 'namedAge',
@@ -147,8 +161,11 @@ describe('simulator', () => {
               monthRange: {
                 type: 'startAndEnd',
                 start: {
-                  type: 'calendarMonthAsNow',
-                  monthOfEntry: yearsFromNowAsCalendarMonth(-1),
+                  type: 'now',
+                  monthOfEntry: {
+                    isDatedPlan: true,
+                    calendarMonth: yearsFromNowAsCalendarMonth(-1),
+                  },
                 },
                 end: { type: 'namedAge', person: 'person1', age: 'max' },
               },
@@ -158,8 +175,11 @@ describe('simulator', () => {
               monthRange: {
                 type: 'startAndEnd',
                 start: {
-                  type: 'calendarMonthAsNow',
-                  monthOfEntry: yearsFromNowAsCalendarMonth(-1),
+                  type: 'now',
+                  monthOfEntry: {
+                    isDatedPlan: true,
+                    calendarMonth: yearsFromNowAsCalendarMonth(-1),
+                  },
                 },
                 end: { type: 'namedAge', person: 'person2', age: 'max' },
               },
@@ -171,8 +191,11 @@ describe('simulator', () => {
               monthRange: {
                 type: 'startAndEnd',
                 start: {
-                  type: 'calendarMonthAsNow',
-                  monthOfEntry: yearsFromNowAsCalendarMonth(-1),
+                  type: 'now',
+                  monthOfEntry: {
+                    isDatedPlan: true,
+                    calendarMonth: yearsFromNowAsCalendarMonth(-1),
+                  },
                 },
                 end: { type: 'namedAge', person: 'person1', age: 'max' },
               },
@@ -182,8 +205,11 @@ describe('simulator', () => {
               monthRange: {
                 type: 'startAndEnd',
                 start: {
-                  type: 'calendarMonthAsNow',
-                  monthOfEntry: yearsFromNowAsCalendarMonth(-1),
+                  type: 'now',
+                  monthOfEntry: {
+                    isDatedPlan: true,
+                    calendarMonth: yearsFromNowAsCalendarMonth(-1),
+                  },
                 },
                 end: { type: 'namedAge', person: 'person2', age: 'max' },
               },
@@ -217,7 +243,13 @@ describe('simulator', () => {
         spawAndSWR: {
           allocation: {
             start: {
-              month: yearsFromNowAsCalendarMonth(-1),
+              month: {
+                type: 'now',
+                monthOfEntry: {
+                  isDatedPlan: true,
+                  calendarMonth: yearsFromNowAsCalendarMonth(-1),
+                },
+              },
               stocks: 0.5,
             },
             intermediate: {},
@@ -230,22 +262,29 @@ describe('simulator', () => {
       },
       advanced: {
         strategy,
-        expectedReturnsForPlanning: {
-          type: 'manual',
-          stocks: 0.05,
-          bonds: 0.02,
-        },
-        historicalMonthlyLogReturnsAdjustment: {
-          standardDeviation: {
-            stocks: { scale: 1 },
-            bonds: { enableVolatility: true },
+        returnsStatsForPlanning: {
+          expectedValue: {
+            empiricalAnnualNonLog: {
+              type: 'fixed',
+              stocks: 0.05,
+              bonds: 0.02,
+            },
           },
-          overrideToFixedForTesting: true,
+          standardDeviation: {
+            stocks: { scale: { log: 1 } },
+            bonds: { scale: { log: 0 } },
+          },
+        },
+        historicalReturnsAdjustment: {
+          standardDeviation: {
+            bonds: { scale: { log: 1 } },
+            overrideToFixedForTesting: true,
+          },
         },
         annualInflation: { type: 'manual', value: 0.02 },
         sampling: {
           type: 'monteCarlo',
-          forMonteCarlo: {
+          data: {
             blockSize: { inMonths: 12 * 5 },
             staggerRunStarts: true,
           },
@@ -257,7 +296,9 @@ describe('simulator', () => {
   // This should not matter. It is used for inflation and expected returns
   // presets and historical returns which we don't use.
   const marketData: Rust.DataForMarketBasedPlanParamValues = {
+    closingTime: 0,
     inflation: {
+      closingTime: 0,
       value: 0,
     },
     sp500: {
@@ -273,7 +314,7 @@ describe('simulator', () => {
       thirtyYear: 0,
     },
 
-    timestampMSForHistoricalReturns: Number.MAX_SAFE_INTEGER,
+    timestampForMarketData: Number.MAX_SAFE_INTEGER,
   }
 
   test('with fixed historical returns', async () => {

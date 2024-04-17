@@ -1,8 +1,6 @@
 import {
-  CalendarMonth,
   CalendarMonthFns,
   DEFAULT_MONTE_CARLO_SIMULATION_SEED,
-  MarketData,
   PlanParams,
   PlanParamsChangeActionCurrent,
   PlanParamsHistoryFns,
@@ -15,10 +13,7 @@ import {
   nonPlanParamFns,
 } from '@tpaw/common'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import {
-  PlanParamsProcessed,
-  processPlanParams,
-} from '../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
+import { processPlanParams } from '../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import { useSimulator } from '../../../UseSimulator/UseSimulator'
 import { createContext } from '../../../Utils/CreateContext'
 
@@ -49,6 +44,7 @@ import { CurrentTimeInfo } from './UseCurrentTime'
 import { WorkingPlanInfo } from './UseWorkingPlan'
 import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName, useNonPlanParams } from './WithNonPlanParams'
+import { CallRust } from '../../../UseSimulator/PlanParamsProcessed/CallRust'
 
 type UpdatePlanParamsFromAction<T> = UnionToIntersection<
   T extends PlanParamsChangeActionCurrent
@@ -62,23 +58,19 @@ export type SimulationInfo = {
   planId: string
   planPaths: (typeof appPaths)['plan']
 
-  currentTimestamp: number
-  nowAsCalendarMonth: CalendarMonth
   fastForwardInfo: CurrentTimeInfo['fastForwardInfo']
 
   defaultPlanParams: PlanParams
-  currentMarketData: MarketData.Data[0] & {
-    timestampMSForHistoricalReturns: number
-  }
 
-  currentPortfolioBalanceInfo: ReturnType<
-    typeof CurrentPortfolioBalance.cutInfo
-  >
+  currentPortfolioBalanceInfo:
+    | {
+        isDatedPlan: true
+        info: CurrentPortfolioBalance.CutInfo
+      }
+    | { isDatedPlan: false; amount: number }
 
   planParamsId: string
-  // planParams: PlanParams
   planParamsNorm: PlanParamsNormalized
-  planParamsProcessed: PlanParamsProcessed
   planMigratedFromVersion: SomePlanParamsVersion
 
   updatePlanParams: UpdatePlanParams
@@ -156,7 +148,6 @@ export type SimulationParams = Omit<
   SimulationInfo,
   | 'nowAsCalendarMonth'
   | 'defaultPlanParams'
-  | 'currentMarketData'
   | 'planParamsExt'
   | 'planParamsNorm'
   | 'planParamsProcessed'
@@ -167,6 +158,7 @@ export type SimulationParams = Omit<
   | 'numOfSimulationForMonteCarloSampling'
   | 'randomSeed'
 > & {
+  currentTimestamp: number
   planParams: PlanParams
   currentPortfolioBalanceInfoPreBase: CurrentPortfolioBalance.ByMonthInfo | null
   currentPortfolioBalanceInfoPostBase: CurrentPortfolioBalance.Info
@@ -378,49 +370,67 @@ export const WithSimulation = React.memo(
     const currentMarketData = useMemo(
       () => ({
         ...getMarketDataForTime(currentTimestamp, marketData),
-        timestampMSForHistoricalReturns: currentTimestamp,
+        timestampForMarketData: currentTimestamp,
       }),
       [currentTimestamp, marketData],
     )
 
-    const { currentPortfolioBalanceInfo, planParamsNorm, planParamsProcessed } =
-      useMemo(() => {
-        const currentPortfolioBalanceInfo = CurrentPortfolioBalance.cutInfo(
-          currentTimestamp,
-          {
-            preBase: currentPortfolioBalanceInfoPreBase,
-            postBase: currentPortfolioBalanceInfoPostBase,
-          },
-        )
-        const planParamsNorm = normalizePlanParams(
-          planParams,
-          nowAsCalendarMonth,
-        )
+    const {
+      currentPortfolioBalanceInfo,
+      planParamsNorm,
+      planParamsProcessed,
+      planParamsRust,
+    } = useMemo(() => {
+      const planParamsNorm = normalizePlanParams(planParams, {
+        timestamp: currentTimestamp,
+        calendarMonth: nowAsCalendarMonth,
+      })
+      const currentPortfolioBalanceInfo = planParamsNorm.wealth.portfolioBalance
+        .isDatedPlan
+        ? ({
+            isDatedPlan: true,
+            info: CurrentPortfolioBalance.cutInfo(currentTimestamp, {
+              preBase: currentPortfolioBalanceInfoPreBase,
+              postBase: currentPortfolioBalanceInfoPostBase,
+            }),
+          } as const)
+        : ({
+            isDatedPlan: false,
+            amount: planParamsNorm.wealth.portfolioBalance.amount,
+          } as const)
 
-        const planParamsProcessed = processPlanParams(
-          planParamsNorm,
-          currentMarketData,
-        )
-
-        return {
-          currentPortfolioBalanceInfo,
-          planParamsNorm,
-          planParamsProcessed,
-        }
-      }, [
+      const planParamsRust = CallRust.getPlanParamsRust(planParamsNorm)
+      const planParamsProcessed = processPlanParams(
+        planParamsNorm,
         currentMarketData,
-        nowAsCalendarMonth,
-        currentPortfolioBalanceInfoPostBase,
-        currentPortfolioBalanceInfoPreBase,
-        currentTimestamp,
-        planParams,
-      ])
+      )
+
+      return {
+        currentPortfolioBalanceInfo,
+        planParamsRust,
+        planParamsNorm,
+        planParamsProcessed,
+      }
+    }, [
+      currentMarketData,
+      nowAsCalendarMonth,
+      currentPortfolioBalanceInfoPostBase,
+      currentPortfolioBalanceInfoPreBase,
+      currentTimestamp,
+      planParams,
+    ])
 
     const {
       result: simulationResult,
       resultIsCurrent: simulationResultIsCurrent,
     } = useSimulator(
-      CurrentPortfolioBalance.getAmountInfo(currentPortfolioBalanceInfo).amount,
+      currentPortfolioBalanceInfo.isDatedPlan
+        ? CurrentPortfolioBalance.getAmountInfo(
+            currentPortfolioBalanceInfo.info,
+          ).amount
+        : currentPortfolioBalanceInfo.amount,
+      planParamsRust,
+      currentMarketData,
       planParamsNorm,
       planParamsProcessed,
       numOfSimulationForMonteCarloSampling,
@@ -430,11 +440,8 @@ export const WithSimulation = React.memo(
     const simulationInfo: SimulationInfo | null = simulationResult
       ? {
           ...params,
-          nowAsCalendarMonth,
           defaultPlanParams,
-          currentMarketData,
           planParamsNorm,
-          planParamsProcessed,
           currentPortfolioBalanceInfo,
           simulationResult,
           simulationResultIsCurrent,
@@ -465,7 +472,6 @@ const useShowPDFReportIfNeeded = (
   pdfReportInfo: SimulationParams['pdfReportInfo'],
 ) => {
   const isLoggedIn = useUser() !== null
-  const { ianaTimezoneName } = useIANATimezoneName()
   const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
   const shouldShowPrint =
     useURLParam('pdf-report') === 'true' &&
@@ -496,6 +502,7 @@ const useShowPDFReportIfNeeded = (
     const printPlanParams = normalizePlanParamsInverse(
       simulationInfo.planParamsNorm,
     )
+    const { datingInfo } = simulationInfo.planParamsNorm
     const fixed: PlanPrintViewArgs['fixed'] = {
       planLabel: block(() => {
         switch (simulationInfo.simulationInfoBySrc.src) {
@@ -508,15 +515,25 @@ const useShowPDFReportIfNeeded = (
             noCase(simulationInfo.simulationInfoBySrc)
         }
       }),
-      timestamp: simulationInfo.currentTimestamp,
-      currentPortfolioBalanceAmount: CurrentPortfolioBalance.getAmountInfo(
-        simulationInfo.currentPortfolioBalanceInfo,
-      ).amount,
+      datingInfo: datingInfo.isDated
+        ? {
+            isDatedPlan: true,
+            nowAsTimestamp: datingInfo.nowAsTimestamp,
+            nowAsCalendarMonth: datingInfo.nowAsCalendarMonth,
+          }
+        : {
+            isDatedPlan: false,
+            timestampForMarketData: datingInfo.timestampForMarketData,
+          },
+      currentPortfolioBalanceAmount: simulationInfo.currentPortfolioBalanceInfo
+        .isDatedPlan
+        ? CurrentPortfolioBalance.getAmountInfo(
+            simulationInfo.currentPortfolioBalanceInfo.info,
+          ).amount
+        : simulationInfo.currentPortfolioBalanceInfo.amount,
       planParams: printPlanParams,
-      marketData: simulationInfo.currentMarketData,
       numOfSimulationForMonteCarloSampling:
         simulationInfo.numOfSimulationForMonteCarloSampling,
-      ianaTimezoneName,
       randomSeed: simulationInfo.randomSeed,
     }
 

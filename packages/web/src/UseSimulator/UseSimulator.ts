@@ -8,7 +8,7 @@ import {
   SimulationResult,
   Simulator,
 } from './Simulator/Simulator'
-import { CurrentPortfolioBalance } from '../Pages/PlanRoot/PlanRootHelpers/CurrentPortfolioBalance'
+import * as Rust from '@tpaw/simulator'
 
 // Singleton so this is created only one for speedup.
 let _singleton: Simulator | null = null
@@ -19,6 +19,8 @@ export const getSimulatorSingleton = () => {
 
 export function useSimulator(
   currentPortfolioBalanceAmount: number,
+  planParamsRust: Rust.PlanParamsRust,
+  marketData: Rust.DataForMarketBasedPlanParamValues,
   planParamsNorm: PlanParamsNormalized,
   planParamsProcessed: PlanParamsProcessed,
   numOfSimulationForMonteCarloSampling: number,
@@ -29,6 +31,8 @@ export function useSimulator(
   const args: SimulationArgs = useMemo(() => {
     return {
       currentPortfolioBalanceAmount,
+      planParamsRust,
+      marketData,
       planParamsNorm,
       planParamsProcessed,
       numOfSimulationForMonteCarloSampling,
@@ -37,6 +41,8 @@ export function useSimulator(
   }, [
     currentPortfolioBalanceAmount,
     numOfSimulationForMonteCarloSampling,
+    planParamsRust,
+    marketData,
     planParamsNorm,
     planParamsProcessed,
     randomSeed,

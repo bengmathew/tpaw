@@ -155,11 +155,21 @@ export const PlanInputAgeSummary = React.memo(
           {person.retirement.isRetired && (
             <h2 className={`${className} col-span-2`}>Retired</h2>
           )}
-          <h2 className={`${className}`}>Month of Birth</h2>
-          <h2>
-            {CalendarMonthFns.toStr(person.monthOfBirth.baseValue)} (Age:{' '}
-            {InMonthsFns.toStr(person.currentAge)})
-          </h2>
+          {person.currentAgeInfo.isDatedPlan ? (
+            <>
+              <h2 className={`${className}`}>Month of Birth</h2>
+              <h2>
+                {CalendarMonthFns.toStr(person.currentAgeInfo.baseValue)} (Age:{' '}
+                {InMonthsFns.toStr(person.currentAgeInfo)})
+              </h2>
+            </>
+          ) : (
+            <>
+              <h2 className={`${className}`}>Current</h2>
+              <h2>{InMonthsFns.toStr(person.currentAgeInfo)})</h2>
+            </>
+          )}
+
           {person.retirement.ageIfInFuture && (
             <>
               <h2 className={`${className}`}>Retirement</h2>

@@ -13,14 +13,16 @@ import {
 } from '@tpaw/common'
 import { SimpleRange } from '../../Utils/SimpleRange'
 
-export type ToMFN = ReturnType<typeof getToMFN>
+export type MonthToMFN = ReturnType<typeof getMonthToMFN>
 
 export type NormalizedAges = ReturnType<typeof normalizePlanParamsAges>
 export const normalizePlanParamsAges = (
   orig: PlanParams['people'],
-  nowAsCalendarMonth: CalendarMonth,
+  nowAsCalendarMonth: CalendarMonth | null,
 ) => {
-  const calendarMonthToMFN = CalendarMonthFns.getToMFN(nowAsCalendarMonth)
+  const calendarMonthToMFN = nowAsCalendarMonth
+    ? CalendarMonthFns.getToMFN(nowAsCalendarMonth)
+    : null
   const person1 = _forPerson(orig.person1.ages, calendarMonthToMFN)
   const person2 = orig.withPartner
     ? _forPerson(orig.person2.ages, calendarMonthToMFN)
@@ -58,65 +60,62 @@ export const normalizePlanParamsAges = (
   }
 }
 
-export const getToMFN = ({
-  nowAs,
-  ages: { person1, person2 },
-}: {
-  nowAs: { calendarMonth: CalendarMonth }
-  ages: {
+export const getMonthToMFN = (
+  nowAsCalendarMonth: CalendarMonth | null,
+  {
+    person1,
+    person2,
+  }: {
     person1: ReturnType<typeof _forPerson>
     person2: ReturnType<typeof _forPerson> | null
-  }
-}) => {
-  const calendarMonthToMFN = CalendarMonthFns.getToMFN(nowAs.calendarMonth)
-  return {
-    forCalendarMonth: calendarMonthToMFN,
-    forMonth: block(() => {
-      const pastNotElided = (month: Month) => {
-        switch (month.type) {
-          case 'calendarMonthAsNow':
-            return calendarMonthToMFN(month.monthOfEntry)
-          case 'calendarMonth':
-            return calendarMonthToMFN(month.calendarMonth)
-          case 'namedAge': {
-            const person = fGet({ person1, person2 }[month.person])
-            switch (month.age) {
-              case 'lastWorkingMonth':
-                return fGet(person.retirement.ageAsMFNIfSpecifiedElseNull) - 1
-              case 'retirement':
-                return fGet(person.retirement.ageAsMFNIfSpecifiedElseNull)
-              case 'max':
-                return person.maxAge.asMFN
-              default:
-                noCase(month)
-            }
-          }
-          case 'numericAge': {
-            const person = fGet({ person1, person2 }[month.person])
-            return person.monthOfBirth.asMFN + month.age.inMonths
-          }
+  },
+) => {
+  const calendarMonthToMFN = nowAsCalendarMonth
+    ? CalendarMonthFns.getToMFN(nowAsCalendarMonth)
+    : null
+
+  const pastNotElided = (month: Month) => {
+    switch (month.type) {
+      case 'now':
+        return month.monthOfEntry.isDatedPlan
+          ? fGet(calendarMonthToMFN)(month.monthOfEntry.calendarMonth)
+          : 0
+      case 'calendarMonth':
+        return fGet(calendarMonthToMFN)(month.calendarMonth)
+      case 'namedAge': {
+        const person = fGet({ person1, person2 }[month.person])
+        switch (month.age) {
+          case 'lastWorkingMonth':
+            return fGet(person.retirement.ageAsMFNIfSpecifiedElseNull) - 1
+          case 'retirement':
+            return fGet(person.retirement.ageAsMFNIfSpecifiedElseNull)
+          case 'max':
+            return person.maxAge.asMFN
           default:
             noCase(month)
         }
       }
-      return {
-        // May be negative.
-        pastNotElided,
-        // Not negative or 'inThePast'.
-        pastElided: (month: Month) => {
-          const asMFN = pastNotElided(month)
-          return asMFN < 0 ? ('inThePast' as const) : asMFN
-        },
-        // Not negative.
-        fNotInPast: (month: Month) => {
-          const asMFN = pastNotElided(month)
-          assert(asMFN >= 0)
-          return asMFN
-        },
+      case 'numericAge': {
+        const person = fGet({ person1, person2 }[month.person])
+        return person.currentAgeInfo.asMFN + month.age.inMonths
       }
-    }),
-    inverse: {
-      nowAsCalendarMonth: nowAs.calendarMonth,
+      default:
+        noCase(month)
+    }
+  }
+  return {
+    // May be negative.
+    pastNotElided,
+    // Not negative or 'inThePast'.
+    pastElided: (month: Month) => {
+      const asMFN = pastNotElided(month)
+      return asMFN < 0 ? ('inThePast' as const) : asMFN
+    },
+    // Not negative.
+    fNotInPast: (month: Month) => {
+      const asMFN = pastNotElided(month)
+      assert(asMFN >= 0)
+      return asMFN
     },
   }
 }
@@ -129,8 +128,10 @@ export const getFromMFNToNumericAge = ({
     person2: ReturnType<typeof _forPerson> | null
   }
 }) => ({
-  person1: (mfn: number) => person1.currentAge.inMonths + mfn,
-  person2: person2 ? (mfn: number) => person2.currentAge.inMonths + mfn : null,
+  person1: (mfn: number) => person1.currentAgeInfo.inMonths + mfn,
+  person2: person2
+    ? (mfn: number) => person2.currentAgeInfo.inMonths + mfn
+    : null,
 })
 
 export type NormalizedCalendarMonth = {
@@ -141,27 +142,50 @@ export type NormalizedCalendarMonth = {
 
 const _forPerson = (
   orig: Person['ages'],
-  asMFNForCalendarMonth: (x: CalendarMonth) => number,
+  asMFNForCalendarMonth: null | ((x: CalendarMonth) => number),
 ) => {
-  const monthOfBirth: NormalizedCalendarMonth = {
-    asMFN: asMFNForCalendarMonth(orig.monthOfBirth),
-    baseValue: orig.monthOfBirth,
-    validRangeAsMFN: {
-      includingLocalConstraints: {
-        start: asMFNForCalendarMonth({
-          year: PLAN_PARAMS_CONSTANTS.earliestYearOfBirth,
-          month: 1,
-        }),
-        end: 0,
-      },
-    },
-  }
+  const currentAgeInfo = orig.currentAgeInfo.isDatedPlan
+    ? block(() => {
+        assert(orig.currentAgeInfo.isDatedPlan)
+
+        const asMFN = fGet(asMFNForCalendarMonth)(
+          orig.currentAgeInfo.monthOfBirth,
+        )
+        return {
+          isDatedPlan: true as const,
+          inMonths: -asMFN,
+          asMFN,
+          baseValue: orig.currentAgeInfo.monthOfBirth,
+          validRangeAsMFN: {
+            includingLocalConstraints: {
+              start: fGet(asMFNForCalendarMonth)({
+                year: PLAN_PARAMS_CONSTANTS.people.ages.person.currentAgeInfo
+                  .datedPlan.earliestYearOfBirth,
+                month: 1,
+              }),
+              end: 0,
+            },
+          },
+        }
+      })
+    : {
+        isDatedPlan: false as const,
+        inMonths: orig.currentAgeInfo.currentAge.inMonths,
+        asMFN: -orig.currentAgeInfo.currentAge.inMonths,
+        baseValue: orig.currentAgeInfo.currentAge,
+        validRangeAsMFN: {
+          includingLocalConstraints: {
+            start: -PLAN_PARAMS_CONSTANTS.people.ages.person.maxAge,
+            end: 0,
+          },
+        },
+      }
+
   const maxAge = {
-    asMFN: monthOfBirth.asMFN + orig.maxAge.inMonths,
+    asMFN: currentAgeInfo.asMFN + orig.maxAge.inMonths,
     baseValue: orig.maxAge,
     // range:
   }
-  const currentAge = { inMonths: -monthOfBirth.asMFN }
   const retirement = block(() => {
     switch (orig.type) {
       case 'retiredWithNoRetirementDateSpecified':
@@ -177,7 +201,7 @@ const _forPerson = (
         }
       case 'retirementDateSpecified':
         const ageIfSpecified = {
-          asMFN: monthOfBirth.asMFN + orig.retirementAge.inMonths,
+          asMFN: currentAgeInfo.asMFN + orig.retirementAge.inMonths,
           baseValue: orig.retirementAge,
         }
         const ageIfInFuture = ageIfSpecified.asMFN > 0 ? ageIfSpecified : null
@@ -186,7 +210,7 @@ const _forPerson = (
             ? {
                 ...ageIfInFuture,
                 validRangeInMonths: {
-                  start: currentAge.inMonths + 1,
+                  start: currentAgeInfo.inMonths + 1,
                   end: maxAge.baseValue.inMonths - 1,
                 },
               }
@@ -200,15 +224,14 @@ const _forPerson = (
     }
   })
   return {
-    monthOfBirth,
-    currentAge,
+    currentAgeInfo,
     maxAge: {
       ...maxAge,
       validRangeInMonths: {
         start: retirement.ageIfInFuture
           ? retirement.ageIfInFuture.baseValue.inMonths + 1
-          : currentAge.inMonths + 2, // Leave space for retirement
-        end: PLAN_PARAMS_CONSTANTS.maxAgeInMonths,
+          : currentAgeInfo.inMonths + 2, // Leave space for retirement
+        end: PLAN_PARAMS_CONSTANTS.people.ages.person.maxAge,
       },
     },
     retirement,

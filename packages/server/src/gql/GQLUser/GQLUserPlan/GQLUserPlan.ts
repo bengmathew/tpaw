@@ -61,9 +61,11 @@ export const PothosPlanWithHistory = builder.prismaObject('PlanWithHistory', {
 
         // Go back to minId because that is needed for current portfolio
         // balance estimation.
-        const minId = startPortfolioBalance.updatedHere
-          ? requestedStart.planParamsChangeId
-          : startPortfolioBalance.updatedAtId
+        const minId =
+          !startPortfolioBalance.isDatedPlan ||
+          startPortfolioBalance.updatedHere
+            ? requestedStart.planParamsChangeId
+            : startPortfolioBalance.updatedAtId
         const minTimestamp = (
           await Clients.prisma.planParamsChange.findUniqueOrThrow({
             where: {

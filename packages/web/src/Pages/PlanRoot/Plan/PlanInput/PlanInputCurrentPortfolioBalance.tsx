@@ -1,7 +1,7 @@
 import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { faTurnDownLeft } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { block, getZonedTimeFns, noCase } from '@tpaw/common'
+import { assert, block, getZonedTimeFns, noCase } from '@tpaw/common'
 import { default as clix, default as clsx } from 'clsx'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
@@ -15,7 +15,9 @@ import { smartDeltaFnForAmountInput } from '../../../Common/Inputs/SmartDeltaFnF
 import { CenteredModal } from '../../../Common/Modal/CenteredModal'
 import { CurrentPortfolioBalance } from '../../PlanRootHelpers/CurrentPortfolioBalance'
 import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulation
+} from '../../PlanRootHelpers/WithSimulation'
 import { planSectionLabel } from './Helpers/PlanSectionLabel'
 import {
   PlanInputBody,
@@ -42,9 +44,20 @@ export const _CurrentPortfolioBalanceCard = React.memo(
   }) => {
     const [showExplanation, setShowHistory] = useState(false)
     const { currentPortfolioBalanceInfo, updatePlanParams } = useSimulation()
-    const amountInfo = CurrentPortfolioBalance.getAmountInfo(
-      currentPortfolioBalanceInfo,
-    )
+    const amountInfo = currentPortfolioBalanceInfo.isDatedPlan
+      ? ({
+          isDatedPlan: true,
+          info: CurrentPortfolioBalance.getAmountInfo(
+            currentPortfolioBalanceInfo.info,
+          ),
+        } as const)
+      : ({
+          isDatedPlan: false,
+          amount: currentPortfolioBalanceInfo.amount,
+        } as const)
+    const amount = amountInfo.isDatedPlan
+      ? amountInfo.info.amount
+      : amountInfo.amount
 
     const handleChange = (amount: number) =>
       updatePlanParams('setCurrentPortfolioBalance', amount)
@@ -64,14 +77,14 @@ export const _CurrentPortfolioBalanceCard = React.memo(
             <AmountInput
               className="text-input"
               prefix="$"
-              value={amountInfo.amount}
+              value={amount}
               onChange={(x) => {
                 // This happens on blur and enter. The check for real change is
-                // especially important when amountInfo.amount is an estimate when
+                // especially important when amount is an estimate when
                 // handleChange() is called, we mark it as not a estimate, which
                 // is materially different. We don't want to do that on blur and
                 // enter if the value has not changed.
-                if (x !== amountInfo.amount) handleChange(x)
+                if (x !== amount) handleChange(x)
               }}
               decimals={0}
               modalLabel={planSectionLabel('current-portfolio-balance')}
@@ -79,9 +92,7 @@ export const _CurrentPortfolioBalanceCard = React.memo(
             <button
               className="ml-2 px-3"
               onClick={() => {
-                handleChange(
-                  smartDeltaFnForAmountInput.increment(amountInfo.amount),
-                )
+                handleChange(smartDeltaFnForAmountInput.increment(amount))
               }}
             >
               <FontAwesomeIcon icon={faPlus} />
@@ -89,16 +100,15 @@ export const _CurrentPortfolioBalanceCard = React.memo(
             <button
               className="px-3"
               onClick={() => {
-                handleChange(
-                  smartDeltaFnForAmountInput.decrement(amountInfo.amount),
-                )
+                handleChange(smartDeltaFnForAmountInput.decrement(amount))
               }}
             >
               <FontAwesomeIcon icon={faMinus} />
             </button>
           </div>
-          {amountInfo.isEstimate &&
-            amountInfo.lastEnteredAmount !== amountInfo.amount && (
+          {amountInfo.isDatedPlan &&
+            amountInfo.info.isEstimate &&
+            amountInfo.info.lastEnteredAmount !== amountInfo.info.amount && (
               <div className={'mt-4 ml-2 flex items-top gap-x-1'}>
                 <FontAwesomeIcon
                   className="rotate-90 mr-1"
@@ -107,9 +117,9 @@ export const _CurrentPortfolioBalanceCard = React.memo(
                 <div className="">
                   <p className="p-base">
                     This is an estimate calculated from your last entry of{' '}
-                    {formatCurrency(amountInfo.lastEnteredAmount)} on{' '}
-                    {getZonedTimeFns(amountInfo.ianaTimezoneName)(
-                      amountInfo.lastEnteredTimestamp,
+                    {formatCurrency(amountInfo.info.lastEnteredAmount)} on{' '}
+                    {getZonedTimeFns(amountInfo.info.ianaTimezoneName)(
+                      amountInfo.info.lastEnteredTimestamp,
                     ).toLocaleString(DateTime.DATE_MED)}
                     .{' '}
                   </p>
@@ -123,102 +133,117 @@ export const _CurrentPortfolioBalanceCard = React.memo(
             View Balance History
           </button>
         </div>
-        <CenteredModal
-          className=" dialog-outer-div"
-          show={showExplanation}
-          onOutsideClickOrEscape={() => setShowHistory(false)}
-        >
-          <_Popup />
-        </CenteredModal>
+        {currentPortfolioBalanceInfo.isDatedPlan && (
+          <CenteredModal
+            className=" dialog-outer-div"
+            show={showExplanation}
+            onOutsideClickOrEscape={() => setShowHistory(false)}
+          >
+            <_Popup
+              currentPortfolioBalanceInfo={currentPortfolioBalanceInfo.info}
+            />
+          </CenteredModal>
+        )}
       </div>
     )
   },
 )
 
-const _Popup = React.memo(() => {
-  const { currentTimestamp, simulationInfoBySrc, currentPortfolioBalanceInfo } =
-    useSimulation()
-  const amountInfo = CurrentPortfolioBalance.getAmountInfo(
+const _Popup = React.memo(
+  ({
     currentPortfolioBalanceInfo,
-  )
-  const historyModeInfo = block(() => {
-    switch (simulationInfoBySrc.src) {
-      case 'link':
-      case 'localMain':
-        return 'fetched' as const
-      default:
-        return simulationInfoBySrc.historyStatus
-    }
-  })
-  const byMonth = useMemo(
-    () =>
-      CurrentPortfolioBalance.mergeByMonthInfo(
-        ..._.compact([
-          currentPortfolioBalanceInfo.preBase,
-          currentPortfolioBalanceInfo.postBase
-            ? CurrentPortfolioBalance.getByMonthInfo(
-                currentPortfolioBalanceInfo.postBase,
-              )
-            : null,
-        ]),
-      ),
-    [currentPortfolioBalanceInfo.postBase, currentPortfolioBalanceInfo.preBase],
-  )
-  const { getZonedTime } = useIANATimezoneName()
+  }: {
+    currentPortfolioBalanceInfo: CurrentPortfolioBalance.CutInfo
+  }) => {
+    const { simulationInfoBySrc, planParamsNorm } = useSimulation()
+    const { datingInfo } = planParamsNorm
+    assert(datingInfo.isDated)
+    const currentTimestamp = datingInfo.nowAsTimestamp
+    const amountInfo = CurrentPortfolioBalance.getAmountInfo(
+      currentPortfolioBalanceInfo,
+    )
+    const historyModeInfo = block(() => {
+      switch (simulationInfoBySrc.src) {
+        case 'link':
+        case 'localMain':
+          return 'fetched' as const
+        default:
+          return simulationInfoBySrc.historyStatus
+      }
+    })
+    const byMonth = useMemo(
+      () =>
+        CurrentPortfolioBalance.mergeByMonthInfo(
+          ..._.compact([
+            currentPortfolioBalanceInfo.preBase,
+            currentPortfolioBalanceInfo.postBase
+              ? CurrentPortfolioBalance.getByMonthInfo(
+                  currentPortfolioBalanceInfo.postBase,
+                )
+              : null,
+          ]),
+        ),
+      [
+        currentPortfolioBalanceInfo.postBase,
+        currentPortfolioBalanceInfo.preBase,
+      ],
+    )
+    const { getZonedTime } = useIANATimezoneName()
 
-  const formatTime = (x: number) => getZonedTime(x).toFormat('LLLL d, yyyy')
-  return (
-    <div className="p-2 min-w-[600px] sm:min-w-auto">
-      {/* <h2 className="text-right">Zone: {currentTime.toFormat('ZZZZ')}</h2> */}
-      <div className="ml-4">
-        {/* <h2 className="font-bold text-lg">You Entered</h2>
+    const formatTime = (x: number) => getZonedTime(x).toFormat('LLLL d, yyyy')
+    return (
+      <div className="p-2 min-w-[600px] sm:min-w-auto">
+        {/* <h2 className="text-right">Zone: {currentTime.toFormat('ZZZZ')}</h2> */}
+        <div className="ml-4">
+          {/* <h2 className="font-bold text-lg">You Entered</h2>
           <div className="">
             <h2>
               {' '}
               {formatCurrency(start.amount)} on {formatTime(start.timestamp)}
             </h2>
           </div> */}
-        <h2 className="font-bold mt-2 text-lg">Current Estimate</h2>
-        <div className="">
-          <h2>
-            {' '}
-            <span className="">{formatCurrency(amountInfo.amount)}</span> as of{' '}
-            {formatTime(currentTimestamp)}
-          </h2>
+          <h2 className="font-bold mt-2 text-lg">Current Estimate</h2>
+          <div className="">
+            <h2>
+              {' '}
+              <span className="">{formatCurrency(amountInfo.amount)}</span> as
+              of {formatTime(currentTimestamp)}
+            </h2>
+          </div>
+          <h2 className="mt-2">This estimate assumes you are invested in:</h2>
+          <div className="">
+            <h2>
+              Stocks{' — '}
+              <span className="">Vanguard Total World Stock ETF (VT)</span>
+            </h2>
+            <h2>Bonds — Vanguard Total Bond Market ETF (BND)</h2>
+          </div>
         </div>
-        <h2 className="mt-2">This estimate assumes you are invested in:</h2>
-        <div className="">
-          <h2>
-            Stocks{' — '}
-            <span className="">Vanguard Total World Stock ETF (VT)</span>
-          </h2>
-          <h2>Bonds — Vanguard Total Bond Market ETF (BND)</h2>
-        </div>
-      </div>
 
-      {byMonth.monthsDesc.map((info) => (
-        <_Month
-          key={`month-${info.month}`}
-          className="mt-4 mb-10 rounded-lg  bg-gray-100 px-4 pb-4"
-          info={info}
-        />
-      ))}
-      {historyModeInfo === 'fetched' ? (
-        <></>
-      ) : historyModeInfo === 'failed' ? (
-        <div className="mt-5 text-errorFG text-center">
-          Failed to fetch full history. Please reload to try again.
-        </div>
-      ) : historyModeInfo === 'fetching' ? (
-        <div className="relative h-[50px]">
-          <Spinner size="text-3xl" />
-        </div>
-      ) : (
-        noCase(historyModeInfo)
-      )}
-    </div>
-  )
-})
+        {byMonth.monthsDesc.map((info) => (
+          <_Month
+            key={`month-${info.month}`}
+            className="mt-4 mb-10 rounded-lg  bg-gray-100 px-4 pb-4"
+            info={info}
+          />
+        ))}
+        {historyModeInfo === 'fetched' ? (
+          <></>
+        ) : historyModeInfo === 'failed' ? (
+          <div className="mt-5 text-errorFG text-center">
+            Failed to fetch full history. Please reload to try again.
+          </div>
+        ) : historyModeInfo === 'fetching' ? (
+          <div className="relative h-[50px]">
+            <Spinner size="text-3xl" />
+          </div>
+        ) : (
+          noCase(historyModeInfo)
+        )}
+      </div>
+    )
+  },
+)
 
 type MonthInfo = CurrentPortfolioBalance.ByMonthInfo['monthsDesc'][0]
 const _Month = React.memo(
@@ -410,14 +435,19 @@ export const PlanInputCurrentPortfolioBalanceSummary = React.memo(
     amountInfo,
     forPrint,
   }: {
-    amountInfo: CurrentPortfolioBalance.AmountInfo
+    amountInfo:
+      | { isDatedPlan: true; info: CurrentPortfolioBalance.AmountInfo }
+      | { isDatedPlan: false; amount: number }
     forPrint: boolean
   }) => {
+    const amount = amountInfo.isDatedPlan
+      ? amountInfo.info.amount
+      : amountInfo.amount
     return (
       <>
-        <h2>{formatCurrency(amountInfo.amount)}</h2>
-        {amountInfo.isEstimate &&
-          amountInfo.lastEnteredAmount !== amountInfo.amount && (
+        <h2>{formatCurrency(amount)}</h2>
+        {amountInfo.isDatedPlan &&  amountInfo.info.isEstimate &&
+          amountInfo.info.lastEnteredAmount !== amountInfo.info.amount && (
             <div className={'ml-2 flex items-top gap-x-1'}>
               <FontAwesomeIcon
                 className={clsx('rotate-90 mr-1', forPrint && 'text-[10px]')}
@@ -426,9 +456,9 @@ export const PlanInputCurrentPortfolioBalanceSummary = React.memo(
               <div className="">
                 <p className={clsx(forPrint ? '' : 'font-font2 text-base')}>
                   This is an estimate calculated from your last entry of{' '}
-                  {formatCurrency(amountInfo.lastEnteredAmount)} on{' '}
-                  {getZonedTimeFns(amountInfo.ianaTimezoneName)(
-                    amountInfo.lastEnteredTimestamp,
+                  {formatCurrency(amountInfo.info.lastEnteredAmount)} on{' '}
+                  {getZonedTimeFns(amountInfo.info.ianaTimezoneName)(
+                    amountInfo.info.lastEnteredTimestamp,
                   ).toLocaleString(DateTime.DATE_MED)}
                   .{' '}
                 </p>

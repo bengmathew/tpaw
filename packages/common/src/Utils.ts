@@ -73,6 +73,7 @@ export const preciseRange = (
   )
 }
 
+// TODO: Deprecate in favor of Rust
 export function annualToMonthlyReturnRate(
   annual: number,
   // correction: number,
@@ -167,3 +168,7 @@ export const generateRandomString = (length: number) => {
 export const generateSmallId = () => generateRandomString(10)
 
 export type FGet<T> = Exclude<T, null | undefined>
+export type PickType<T extends { type: string }, U extends T['type']> = Extract<
+  T,
+  { type: U }
+>

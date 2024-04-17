@@ -22,7 +22,7 @@ import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanPara
 import {
   NormalizedAges,
   getFromMFNToNumericAge,
-  getToMFN,
+  getMonthToMFN,
 } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsAges'
 import {
   NormalizedMonthInThePast,
@@ -72,8 +72,8 @@ export const MonthInput = React.memo(
     const currChoiceIndex = useMemo(() => {
       const _getMonthStructure = (month: Month) => {
         switch (month.type) {
-          case 'calendarMonthAsNow':
-            return { type: 'calendarMonthAsNow' }
+          case 'now':
+            return { type: 'now' }
           case 'namedAge':
             return month
           case 'calendarMonth':
@@ -146,7 +146,7 @@ export const MonthInput = React.memo(
           }
           const { baseValue, asMFN, validRangeAsMFN } = normValue
           switch (baseValue.type) {
-            case 'calendarMonthAsNow':
+            case 'now':
             case 'namedAge':
               return <></>
             case 'calendarMonth':
@@ -222,11 +222,14 @@ const _processChoices = (
       },
   {
     ages,
-    nowAs,
-  }: { nowAs: { calendarMonth: CalendarMonth }; ages: NormalizedAges },
+    datingInfo,
+  }: {
+    datingInfo: PlanParamsNormalized['datingInfo']
+    ages: NormalizedAges
+  },
   choicesPreFilter: MonthType[],
 ) => {
-  const toMFN = getToMFN({ ages, nowAs })
+  const monthToMFN = getMonthToMFN(datingInfo.nowAsCalendarMonth, ages)
   const preferredMonthAsMFN = value.isInThePast
     ? value.validRangeAsMFN.includingLocalConstraints
       ? value.validRangeAsMFN.includingLocalConstraints.start
@@ -242,8 +245,13 @@ const _processChoices = (
             case 'now':
               return [
                 {
-                  type: 'calendarMonthAsNow',
-                  monthOfEntry: nowAs.calendarMonth,
+                  type: 'now',
+                  monthOfEntry: datingInfo.isDated
+                    ? {
+                        isDatedPlan: true,
+                        calendarMonth: datingInfo.nowAsCalendarMonth,
+                      }
+                    : { isDatedPlan: false },
                 },
               ]
             case 'lastWorkingMonth':
@@ -288,14 +296,15 @@ const _processChoices = (
                   : null,
               ]
             case 'calendarMonth': {
-              const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(
-                nowAs.calendarMonth,
-              )
               return [
-                {
-                  type: 'calendarMonth',
-                  calendarMonth: mfnToCalendarMonth(preferredMonthAsMFN),
-                },
+                datingInfo.isDated
+                  ? {
+                      type: 'calendarMonth',
+                      calendarMonth: CalendarMonthFns.getFromMFN(
+                        datingInfo.nowAsCalendarMonth,
+                      )(preferredMonthAsMFN),
+                    }
+                  : null,
               ]
             }
             case 'numericAge': {
@@ -329,10 +338,10 @@ const _processChoices = (
       ),
     ).filter((x) => {
       switch (x.type) {
-        case 'calendarMonthAsNow':
+        case 'now':
         case 'namedAge':
           return SimpleRange.Closed.isIn(
-            toMFN.forMonth.fNotInPast(x),
+            monthToMFN.fNotInPast(x),
             value.validRangeAsMFN.excludingLocalConstraints,
           )
         case 'calendarMonth':
@@ -344,7 +353,7 @@ const _processChoices = (
               value.validRangeAsMFN.excludingLocalConstraints,
               {
                 start: 0,
-                end: toMFN.forMonth.fNotInPast({
+                end: monthToMFN.fNotInPast({
                   type: 'namedAge',
                   person: x.person,
                   age: 'max',
@@ -358,7 +367,7 @@ const _processChoices = (
     }),
     (x) => {
       switch (x.type) {
-        case 'calendarMonthAsNow':
+        case 'now':
           return 0
         case 'namedAge':
           const personOffset = x.person === 'person1' ? 1 : 2

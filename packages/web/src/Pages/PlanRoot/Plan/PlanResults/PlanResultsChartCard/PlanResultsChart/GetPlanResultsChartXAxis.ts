@@ -26,7 +26,7 @@ export const getPlanResultsChartXAxis = (
             : 0),
         padding: { top: personType === 'person1' ? 0 : 1 },
         height: belowPlotAreaSizing.xAxis.height,
-        transformDataXDelta: person.currentAge.inMonths,
+        transformDataXDelta: person.currentAgeInfo.inMonths,
         markers: {
           start: 0,
           retirement: person.retirement.ageIfInFuture?.asMFN ?? 0,

@@ -45,7 +45,7 @@ export const LabeledAmountTimedListInput = React.memo(
       handleAdd: () => {
         const sortIndex = Math.max(-1, ...entries.map((x) => x.sortIndex)) + 1
         const entryId = generateSmallId()
-        updatePlanParams('addLabeledAmountTimed', {
+        updatePlanParams('addLabeledAmountTimed2', {
           location,
           entryId,
           sortIndex,

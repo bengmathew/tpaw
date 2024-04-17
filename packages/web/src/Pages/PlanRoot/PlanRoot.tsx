@@ -51,10 +51,10 @@ export const PlanRoot = React.memo(
 
     return (
       <>
-        {pdfReportProps && <PlanPrintView {...pdfReportProps} />}
-        <WithWASM>
-          <WithPlanContent planContent={planContent}>
-            <WithMarketData marketData={marketData}>
+        <WithMarketData marketData={marketData}>
+          {pdfReportProps && <PlanPrintView {...pdfReportProps} />}
+          <WithWASM>
+            <WithPlanContent planContent={planContent}>
               {src.type === 'serverMain' ? (
                 <PlanRootServer
                   key="main"
@@ -74,9 +74,9 @@ export const PlanRoot = React.memo(
               ) : (
                 noCase(src)
               )}
-            </WithMarketData>
-          </WithPlanContent>
-        </WithWASM>
+            </WithPlanContent>
+          </WithWASM>
+        </WithMarketData>
       </>
     )
   },

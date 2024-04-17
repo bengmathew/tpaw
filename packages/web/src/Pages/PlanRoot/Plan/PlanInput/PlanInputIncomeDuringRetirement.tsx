@@ -56,7 +56,16 @@ export const PlanInputIncomeDuringRetirement = React.memo(
                   monthRange: {
                     type: 'startAndEnd',
                     start: ages.person1.retirement.isRetired
-                      ? planParamsNorm.nowAs.month
+                      ? {
+                          type: 'now',
+                          monthOfEntry: planParamsNorm.datingInfo.isDated
+                            ? {
+                                isDatedPlan: true,
+                                calendarMonth:
+                                  planParamsNorm.datingInfo.nowAsCalendarMonth,
+                              }
+                            : { isDatedPlan: false },
+                        }
                       : {
                           type: 'namedAge',
                           age: 'retirement',

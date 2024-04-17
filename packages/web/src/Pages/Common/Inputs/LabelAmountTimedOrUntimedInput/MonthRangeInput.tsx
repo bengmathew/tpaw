@@ -6,6 +6,7 @@ import {
   MonthRange,
   assertFalse,
   block,
+  fGet,
   noCase,
 } from '@tpaw/common'
 import clsx from 'clsx'
@@ -16,6 +17,7 @@ import { ContextModal } from '../../Modal/ContextModal'
 import { getMonthRangeDurationStr } from '../../MonthRangeDisplay'
 import { MonthInput, MonthType } from '../MonthInput/MonthInput'
 import { MonthRangeDurationInput } from '../MonthInput/MonthRangeDurationInput'
+import { SimpleModalListbox } from '../../Modal/SimpleModalListbox'
 
 export type MonthRangeInputProps = React.ComponentProps<typeof MonthRangeInput>
 
@@ -35,11 +37,11 @@ export const MonthRangeInput = React.memo(
     ...props
   }: { normValue: NormalizedMonthRange } & _PropsWithoutValue) => {
     const { planParamsNorm } = useSimulation()
-    const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(
-      planParamsNorm.nowAs.calendarMonth,
-    )
-    console.dir(normValue)
-
+    const mfnToCalendarMonth = planParamsNorm.datingInfo.nowAsCalendarMonth
+      ? CalendarMonthFns.getFromMFN(
+          planParamsNorm.datingInfo.nowAsCalendarMonth,
+        )
+      : null
     const handleTypeChange = (targetType: NormalizedMonthRange['type']) => {
       switch (targetType) {
         case 'startAndEnd':
@@ -53,7 +55,9 @@ export const MonthRangeInput = React.memo(
                 start: normValue.start.baseValue,
                 end: {
                   type: 'calendarMonth',
-                  calendarMonth: mfnToCalendarMonth(normValue.duration.asMFN),
+                  calendarMonth: fGet(mfnToCalendarMonth)(
+                    normValue.duration.asMFN,
+                  ),
                 },
               })
               break
@@ -63,7 +67,9 @@ export const MonthRangeInput = React.memo(
                 type: targetType,
                 start: {
                   type: 'calendarMonth',
-                  calendarMonth: mfnToCalendarMonth(normValue.duration.asMFN),
+                  calendarMonth: fGet(mfnToCalendarMonth)(
+                    normValue.duration.asMFN,
+                  ),
                 },
                 end: normValue.end.baseValue,
               })
@@ -100,7 +106,9 @@ export const MonthRangeInput = React.memo(
                 type: targetType,
                 start: {
                   type: 'calendarMonth',
-                  calendarMonth: mfnToCalendarMonth(normValue.duration.asMFN),
+                  calendarMonth: fGet(mfnToCalendarMonth)(
+                    normValue.duration.asMFN,
+                  ),
                 },
                 duration: normValue.duration.baseValue,
               })
@@ -137,7 +145,9 @@ export const MonthRangeInput = React.memo(
                 type: targetType,
                 end: {
                   type: 'calendarMonth',
-                  calendarMonth: mfnToCalendarMonth(normValue.duration.asMFN),
+                  calendarMonth: fGet(mfnToCalendarMonth)(
+                    normValue.duration.asMFN,
+                  ),
                 },
                 duration: normValue.duration.baseValue,
               })
@@ -157,25 +167,19 @@ export const MonthRangeInput = React.memo(
         className={clsx(className, 'grid gap-x-3')}
         style={{ grid: 'auto/80px 1fr' }}
       >
-        {/* <div className="inline-flex gap-x-2 items-center mr-2  "> */}
         <h2 className="py-1.5">Format:</h2>
-        <Listbox value={normValue.type} onChange={handleTypeChange}>
-          {({ open }) => (
-            <ContextModal align="left" open={open}>
-              {({ ref }) => (
-                <Listbox.Button ref={ref} className="py-1.5 flex items-center">
-                  <h2>{_typeToStr(normValue.type)}</h2>
-                  <FontAwesomeIcon className="ml-2" icon={faCaretDown} />
-                </Listbox.Button>
-              )}
-              <Listbox.Options className="py-2.5 rounded-lg">
-                <_ListboxOption type="startAndEnd" />
-                <_ListboxOption type="startAndDuration" />
-                <_ListboxOption type="endAndDuration" />
-              </Listbox.Options>
-            </ContextModal>
-          )}
-        </Listbox>
+        <div className="">
+          <SimpleModalListbox
+            className="py-1.5"
+            value={normValue.type}
+            choices={
+              ['startAndEnd', 'startAndDuration', 'endAndDuration'] as const
+            }
+            onChange={handleTypeChange}
+            getLabel={_typeToStr}
+          />
+        </div>
+
         {/* </div> */}
         {block(() => {
           switch (normValue.type) {
@@ -208,29 +212,14 @@ export const MonthRangeInput = React.memo(
   },
 )
 
-const _ListboxOption = React.memo(
-  ({ type }: { type: NormalizedMonthRange['type'] }) => (
-    <Listbox.Option className="context-menu-item" value={type}>
-      {({ selected }) => (
-        <div className="flex">
-          <div className="w-[25px]">
-            {selected && <FontAwesomeIcon icon={faCheck} />}
-          </div>
-          <h2>{_typeToStr(type)}</h2>
-        </div>
-      )}
-    </Listbox.Option>
-  ),
-)
-
 const _typeToStr = (type: NormalizedMonthRange['type']) => {
   switch (type) {
     case 'startAndEnd':
-      return <h2 className="">Start and End</h2>
+      return 'Start and End'
     case 'startAndDuration':
-      return <h2 className="">Start and Duration</h2>
+      return 'Start and Duration'
     case 'endAndDuration':
-      return <h2 className="">End and Duration</h2>
+      return 'End and Duration'
     default:
       noCase(type)
   }

@@ -4,6 +4,7 @@ import { SimpleRange } from '../../Utils/SimpleRange'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 import { RunSimulationInWASMResult } from './RunSimulationInWASMResult'
 import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsRust, DataForMarketBasedPlanParamValues } from '@tpaw/simulator'
 
 export type SimulationWorkerArgs =
   | {
@@ -11,6 +12,8 @@ export type SimulationWorkerArgs =
       taskID: string
       args: {
         currentPortfolioBalanceAmount: number
+        planParamsRust: PlanParamsRust
+        marketData: DataForMarketBasedPlanParamValues
         planParamsNorm: PlanParamsNormalized
         planParamsProcessed: PlanParamsProcessed
         runs: SimpleRange

@@ -15,7 +15,7 @@ import {
   NormalizedGlidePathEntry,
   normalizeGlidePath,
 } from '../../../UseSimulator/NormalizePlanParams/NormalizeGlidePath'
-import { getToMFN } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsAges'
+import { getMonthToMFN } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsAges'
 import { assert } from '../../../Utils/Utils'
 import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { getNormalizedMonthStr } from '../MonthOrDurationDisplay'
@@ -32,6 +32,8 @@ export const GlidePathInput = React.memo(
     value: NormalizedGlidePath
     onChange: (glidePath: GlidePath) => void
   }) => {
+    const { planParamsNorm } = useSimulation()
+    const { nowAsCalendarMonth } = planParamsNorm.datingInfo
     return (
       <div className={`${className}`}>
         <div className="flex justify-between pb-3 border-b border-gray-500 mb-3">
@@ -48,7 +50,10 @@ export const GlidePathInput = React.memo(
             className=""
             value={value.now.stocks}
             onChange={(stocks) => {
-              const clone = normalizeGlidePath.inverse(value)
+              const clone = normalizeGlidePath.inverse(
+                value,
+                nowAsCalendarMonth,
+              )
               clone.start.stocks = stocks
               onChange(clone)
             }}
@@ -58,7 +63,10 @@ export const GlidePathInput = React.memo(
           <_Intermediate
             values={value.intermediate}
             onChange={(intermediate) => {
-              const clone = normalizeGlidePath.inverse(value)
+              const clone = normalizeGlidePath.inverse(
+                value,
+                nowAsCalendarMonth,
+              )
               clone.intermediate = _.fromPairs(
                 [
                   ...intermediate,
@@ -73,7 +81,10 @@ export const GlidePathInput = React.memo(
             className=""
             value={value.end.stocks}
             onChange={(stocks) => {
-              const clone = normalizeGlidePath.inverse(value)
+              const clone = normalizeGlidePath.inverse(
+                value,
+                nowAsCalendarMonth,
+              )
               clone.end.stocks = stocks
               onChange(clone)
             }}
@@ -84,7 +95,10 @@ export const GlidePathInput = React.memo(
           <_Intermediate
             values={value.atOrPastEnd}
             onChange={(atOrPastEnd) => {
-              const clone = normalizeGlidePath.inverse(value)
+              const clone = normalizeGlidePath.inverse(
+                value,
+                nowAsCalendarMonth,
+              )
               clone.intermediate = _.fromPairs(
                 [
                   ...atOrPastEnd,
@@ -97,7 +111,7 @@ export const GlidePathInput = React.memo(
         </div>
         <_NewEntry
           onAdd={(x) => {
-            const clone = normalizeGlidePath.inverse(value)
+            const clone = normalizeGlidePath.inverse(value, nowAsCalendarMonth)
             clone.intermediate[x.id] = x
             onChange(clone)
           }}
@@ -110,33 +124,42 @@ export const GlidePathInput = React.memo(
 const _NewEntry = React.memo(
   ({ onAdd }: { onAdd: (x: GlidePath['intermediate']['string']) => void }) => {
     const { planParamsNorm } = useSimulation()
-    const { nowAs, ages } = planParamsNorm
+    const { ages } = planParamsNorm
+    const { nowAsCalendarMonth } = planParamsNorm.datingInfo
     const [dummyGlidePath, setDummyGlidePath] = useState<GlidePath | null>(
       () => null,
     )
     const handleAdd = () => {
       const id = generateSmallId()
       setDummyGlidePath({
-        start: { month: nowAs.calendarMonth, stocks: 0.5 },
+        start: {
+          month: {
+            type: 'now',
+            monthOfEntry: nowAsCalendarMonth
+              ? { isDatedPlan: true, calendarMonth: nowAsCalendarMonth }
+              : { isDatedPlan: false },
+          },
+          stocks: 0.5,
+        },
         intermediate: {
           [id]: {
             id,
             indexToSortByAdded: 0,
             month:
-              ages.person1.currentAge.inMonths <
+              ages.person1.currentAgeInfo.inMonths <
               ages.person1.maxAge.baseValue.inMonths - 1
                 ? {
                     type: 'numericAge',
                     person: 'person1',
                     age: {
-                      inMonths: ages.person1.currentAge.inMonths + 1,
+                      inMonths: ages.person1.currentAgeInfo.inMonths + 1,
                     },
                   }
                 : {
                     type: 'numericAge',
                     person: 'person2',
                     age: {
-                      inMonths: fGet(ages.person2).currentAge.inMonths + 1,
+                      inMonths: fGet(ages.person2).currentAgeInfo.inMonths + 1,
                     },
                   },
             stocks: 0.5,
@@ -148,11 +171,14 @@ const _NewEntry = React.memo(
 
     const normalizedEntry = useMemo((): NormalizedGlidePathEntry | null => {
       if (!dummyGlidePath) return null
-      const { ages } = planParamsNorm
       const { intermediate, atOrPastEnd } = normalizeGlidePath(
         dummyGlidePath,
-        getToMFN(planParamsNorm),
-        ages,
+        getMonthToMFN(
+          planParamsNorm.datingInfo.nowAsCalendarMonth,
+          planParamsNorm.ages,
+        ),
+        planParamsNorm.ages,
+        planParamsNorm.datingInfo.nowAsCalendarMonth,
       )
       const norm = fGet(_.first([...intermediate, ...atOrPastEnd]))
       // Don't display errors during entry creation.

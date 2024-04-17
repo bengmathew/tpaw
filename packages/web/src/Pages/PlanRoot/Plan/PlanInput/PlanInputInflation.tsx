@@ -9,7 +9,10 @@ import { PlanParamsProcessed } from '../../../../UseSimulator/PlanParamsProcesse
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import { SliderInput } from '../../../Common/Inputs/SliderInput/SliderInput'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulation,
+  useSimulationResult,
+} from '../../PlanRootHelpers/WithSimulation'
 import { useWASM } from '../../PlanRootHelpers/WithWASM'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
@@ -41,13 +44,11 @@ export const _InflationCard = React.memo(
       planParamsNorm,
       updatePlanParams,
       defaultPlanParams,
-      currentMarketData,
+      simulationResult,
     } = useSimulation()
 
-    const suggestedInflation = useMemo(
-      () => fWASM().get_suggested_annual_inflation(currentMarketData),
-      [currentMarketData],
-    )
+    const suggestedInflation =
+      simulationResult.info.marketData.inflation.suggestedAnnual
 
     const handleChange = (
       annualInflation: PlanParams['advanced']['annualInflation'],
@@ -125,7 +126,7 @@ export const _InflationCard = React.memo(
             height={60}
             maxOverflowHorz={props.sizing.cardPadding}
             format={formatPercentage(1)}
-            data={PLAN_PARAMS_CONSTANTS.manualInflationValues}
+            data={PLAN_PARAMS_CONSTANTS.advanced.inflation.manual.values}
             value={planParamsNorm.advanced.annualInflation.value}
             onChange={(value) => handleChange({ type: 'manual', value })}
             ticks={(value, i) =>
@@ -173,18 +174,13 @@ export const useIsPlanInputInflationModified = () => {
 }
 
 export const PlanInputInflationSummary = React.memo(
-  ({
-    planParamsNorm,
-    planParamsProcessed,
-  }: {
-    planParamsNorm: PlanParamsNormalized
-    planParamsProcessed: PlanParamsProcessed
-  }) => {
+  ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
+    const { args } = useSimulationResult()
     const format = formatPercentage(1)
     return (
       <h2>
         {inflationTypeLabel(planParamsNorm.advanced.annualInflation)}:{' '}
-        {format(planParamsProcessed.inflation.annual)}
+        {format(args.planParamsProcessed.inflation.annual)}
       </h2>
     )
   },

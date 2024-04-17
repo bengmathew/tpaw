@@ -5,7 +5,7 @@ import {
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
-import { fGet } from '@tpaw/common'
+import { assert, fGet } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
@@ -24,16 +24,18 @@ export const PlanMenuSubMenuRewind = React.memo(
   }: {
     simulationInfoForHistoryMode: SimulationInfoForHistoryMode
   }) => {
+    const { planParamsNorm } = useSimulation()
+    assert(planParamsNorm.datingInfo.isDated)
+    const { nowAsTimestamp } = planParamsNorm.datingInfo
     const { getZonedTime } = useIANATimezoneName()
-    const { currentTimestamp } = useSimulation()
     const { setRewindTo } = simulationInfoForHistoryMode
     const planColors = usePlanColors()
-    const prevEndOfDay = getZonedTime(currentTimestamp)
+    const prevEndOfDay = getZonedTime(nowAsTimestamp)
       .minus({ days: 1 })
       .endOf('day')
     const prevOk = !useIsBeforeMin(prevEndOfDay, simulationInfoForHistoryMode)
 
-    const nextEndOfDay = getZonedTime(currentTimestamp)
+    const nextEndOfDay = getZonedTime(nowAsTimestamp)
       .plus({ days: 1 })
       .endOf('day')
     const nextOk = !useIsInFuture(nextEndOfDay, simulationInfoForHistoryMode)
@@ -48,7 +50,7 @@ export const PlanMenuSubMenuRewind = React.memo(
       >
         <div className="flex gap-x-2">
           <h2 className="">
-            {getZonedTime(currentTimestamp).toLocaleString(DateTime.DATE_MED)}
+            {getZonedTime(nowAsTimestamp).toLocaleString(DateTime.DATE_MED)}
           </h2>
         </div>
         <div className="flex justify-between items-stretch  gap-x-4 mt-1 ">
@@ -96,6 +98,7 @@ export const PlanMenuSubMenuRewind = React.memo(
                       simulationInfoForHistoryMode={
                         simulationInfoForHistoryMode
                       }
+                      nowAsTimestamp={nowAsTimestamp}
                       onClose={close}
                     />
                   </div>
@@ -113,13 +116,14 @@ export const _Calendar = React.memo(
   ({
     className,
     simulationInfoForHistoryMode,
+    nowAsTimestamp,
     onClose,
   }: {
     className?: string
     simulationInfoForHistoryMode: SimulationInfoForHistoryMode
+    nowAsTimestamp: number
     onClose: () => void
   }) => {
-    const { currentTimestamp } = useSimulation()
     const { getZonedTime } = useIANATimezoneName()
     const { planParamsHistory, actualCurrentTimestamp } =
       simulationInfoForHistoryMode
@@ -129,7 +133,7 @@ export const _Calendar = React.memo(
     ).startOf('month')
     const maxMonth = getZonedTime(actualCurrentTimestamp).startOf('month')
     const [month, setMonth] = useState(
-      getZonedTime(currentTimestamp).startOf('month'),
+      getZonedTime(nowAsTimestamp).startOf('month'),
     )
     const weeks = useMemo(() => {
       const weeks = [[]] as (DateTime | null)[][]
@@ -235,6 +239,7 @@ export const _Calendar = React.memo(
                   endOfDay={endOfDay}
                   simulationInfoForHistoryMode={simulationInfoForHistoryMode}
                   onClose={onClose}
+                  nowAsTimestamp={nowAsTimestamp}
                 />
               ) : (
                 <div key={`${i}-${j}`}></div>
@@ -260,13 +265,14 @@ const _CalendarDay = React.memo(
     endOfDay,
     simulationInfoForHistoryMode,
     onClose,
+    nowAsTimestamp,
   }: {
     className?: string
     endOfDay: DateTime
     simulationInfoForHistoryMode: SimulationInfoForHistoryMode
+    nowAsTimestamp: number
     onClose: () => void
   }) => {
-    const { currentTimestamp } = useSimulation()
     const { getZonedTime } = useIANATimezoneName()
     const {
       setRewindTo,
@@ -278,7 +284,7 @@ const _CalendarDay = React.memo(
     const isInFuture = useIsInFuture(endOfDay, simulationInfoForHistoryMode)
     const isSelected =
       endOfDay.toMillis() ===
-      getZonedTime(currentTimestamp).endOf('day').toMillis()
+      getZonedTime(nowAsTimestamp).endOf('day').toMillis()
     const [isHover, setIsHover] = useState(false)
 
     const disabled = isBeforeMin || isInFuture || isSelected

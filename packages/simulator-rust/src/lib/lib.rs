@@ -10,32 +10,17 @@ mod run_swr;
 mod run_tpaw;
 pub mod utils;
 
-use crate::{
-    constants::MAX_AGE_IN_MONTHS,
-    plan_params::{
-        plan_params_rust::PlanParamsRust,
-        process_plan_params::{
-            process_expected_returns_for_planning::DataForExpectedReturnsForPlanningPresets,
-            PlanParamsProcessedJS,
-        },
-    },
-    return_series::periodize_log_returns,
-};
+use crate::{plan_params::PlanParams, return_series::periodize_log_returns};
 use data_for_market_based_plan_param_values::DataForMarketBasedPlanParamValues;
-use historical_monthly_returns::{
-    data::v1::V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
-    get_historical_monthly_returns_info,
-};
 use params::*;
-use plan_params::{
-    plan_params_rust,
-    process_plan_params::{get_suggested_annual_inflation, process_expected_returns_for_planning},
+use plan_params::process_plan_params::{
+    process_market_data::MarketDataProcessed, process_plan_params,
 };
 use return_series::Stats;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use tsify::Tsify;
-use utils::{shared_types::StocksAndBonds, *};
+use utils::*;
 use wasm_bindgen::prelude::*;
 
 #[derive(Serialize, Deserialize, Tsify, Copy, Clone)]
@@ -44,6 +29,13 @@ use wasm_bindgen::prelude::*;
 pub struct BaseAndLogStats {
     pub base: Stats,
     pub log: Stats,
+}
+
+#[derive(Serialize, Deserialize, Tsify, Copy, Clone)]
+#[serde(rename_all = "camelCase")]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+pub struct RunResultInfo {
+    market_data: MarketDataProcessed,
 }
 
 #[wasm_bindgen]
@@ -64,6 +56,7 @@ pub struct RunResult {
     by_run_by_mfn_returns_bonds: Vec<f64>,
     annual_stats_for_sampled_stock_returns: Option<BaseAndLogStats>,
     annual_stats_for_sampled_bond_returns: Option<BaseAndLogStats>,
+    pub info: RunResultInfo,
 }
 
 #[wasm_bindgen]
@@ -126,58 +119,34 @@ pub enum ParamsSWRWithdrawalType {
 
 #[wasm_bindgen]
 pub fn run(
-    strategy: ParamsStrategy,
+    plan_params: PlanParams,
+    market_data: DataForMarketBasedPlanParamValues,
     start_run: usize,
     end_run: usize,
-    num_months: usize,
     num_months_to_simulate: usize,
-    withdrawal_start_month: usize,
-    expected_returns_stocks: f64,
-    expected_returns_bonds: f64,
-    historical_log_returns_stocks: Box<[f64]>,
-    historical_log_returns_bonds: Box<[f64]>,
     current_savings: f64,
     target_allocation_regular_portfolio_tpaw: Box<[f64]>,
     target_allocation_regular_portfolio_spaw: Box<[f64]>,
     target_allocation_legacy_portfolio: f64,
     swr_withdrawal_type: ParamsSWRWithdrawalType,
     swr_withdrawal_value: f64,
-    lmp: Box<[f64]>,
-    by_month_savings: Box<[f64]>,
-    by_month_withdrawals_essential: Box<[f64]>,
-    by_month_withdrawals_discretionary: Box<[f64]>,
     legacy_target: f64,
     legacy_external: f64,
     spending_tilt: Box<[f64]>,
     spending_ceiling: Option<f64>,
     spending_floor: Option<f64>,
-    monte_carlo_sampling: bool,
-    monte_carlo_block_size: usize,
-    monte_carlo_stagger_run_starts: bool,
     max_num_months: usize,
     rand_seed: u64,
     test_truth: Option<Box<[f64]>>,
     test_index_into_historical_returns: Option<Box<[usize]>>,
 ) -> RunResult {
-    let expected_monthly_returns = StocksAndBonds {
-        stocks: expected_returns_stocks,
-        bonds: expected_returns_bonds,
-    };
+    let plan_params_processed = process_plan_params(&plan_params, &market_data);
+
     let params = Params {
-        strategy,
         start_run,
         end_run,
-        num_months,
         num_months_to_simulate,
-        withdrawal_start_month,
         current_savings,
-        expected_monthly_returns,
-        historical_returns: (0..historical_log_returns_stocks.len())
-            .map(|i| StocksAndBonds {
-                stocks: historical_log_returns_stocks[i].exp_m1(),
-                bonds: historical_log_returns_bonds[i].exp_m1(),
-            })
-            .collect(),
         target_allocation: ParamsTargetAllocation {
             regular_portfolio: ParamsTargetAllocationRegularPortfolio {
                 tpaw: target_allocation_regular_portfolio_tpaw,
@@ -194,20 +163,11 @@ pub fn run(
             },
             _ => panic!(),
         },
-        lmp,
-        by_month: ParamsByMonth {
-            savings: by_month_savings,
-            withdrawals_essential: by_month_withdrawals_essential,
-            withdrawals_discretionary: by_month_withdrawals_discretionary,
-        },
         legacy_target,
         legacy_external,
         spending_tilt,
         spending_ceiling,
         spending_floor,
-        monte_carlo_sampling,
-        monte_carlo_block_size,
-        monte_carlo_stagger_run_starts,
         max_num_months,
         rand_seed,
         test: if let Some(truth) = test_truth {
@@ -238,12 +198,21 @@ pub fn run(
         by_run_by_mfn_returns_bonds: create_vec(),
         annual_stats_for_sampled_stock_returns: None,
         annual_stats_for_sampled_bond_returns: None,
+        info: RunResultInfo {
+            market_data: plan_params_processed.market_data,
+        },
     };
 
-    match strategy {
-        params::ParamsStrategy::TPAW => run_tpaw::run(&params, &mut result),
-        params::ParamsStrategy::SPAW => run_spaw::run(&params, &mut result),
-        params::ParamsStrategy::SWR => run_swr::run(&params, &mut result),
+    match plan_params.advanced.strategy {
+        plan_params::Strategy::TPAW => {
+            run_tpaw::run(&plan_params, &plan_params_processed, &params, &mut result)
+        }
+        plan_params::Strategy::SPAW => {
+            run_spaw::run(&plan_params, &plan_params_processed, &params, &mut result)
+        }
+        plan_params::Strategy::SWR => {
+            run_swr::run(&plan_params, &plan_params_processed, &params, &mut result)
+        }
     };
 
     if result.by_run_by_mfn_returns_stocks.len() >= 12 {
@@ -287,73 +256,14 @@ pub fn sort(data: Box<[f64]>) -> Box<[f64]> {
 }
 
 #[wasm_bindgen]
-pub fn test() {
-    let h =
-        &get_historical_monthly_returns_info(V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS)
-            .returns;
-    let _run_result = run(
-        ParamsStrategy::TPAW,
-        0,
-        500,
-        50 * 12,
-        50 * 12,
-        0,
-        0.05,
-        0.02,
-        h.stocks.log.series.to_vec().into_boxed_slice(),
-        h.bonds.log.series.to_vec().into_boxed_slice(),
-        10000.0,
-        vec![0.5; 50 * 12].into_boxed_slice(),
-        vec![0.5; 50 * 12].into_boxed_slice(),
-        0.5,
-        ParamsSWRWithdrawalType::AsPercent,
-        0.04,
-        vec![0.0; 50 * 12].into_boxed_slice(),
-        vec![0.0; 50 * 12].into_boxed_slice(),
-        vec![0.0; 50 * 12].into_boxed_slice(),
-        vec![0.0; 50 * 12].into_boxed_slice(),
-        0.0,
-        0.0,
-        vec![0.01; 50 * 12].into_boxed_slice(),
-        None,
-        None,
-        true,
-        5 * 12,
-        true,
-        MAX_AGE_IN_MONTHS,
-        256893116,
-        None,
-        None,
-    );
-}
-
-#[wasm_bindgen]
-pub fn process_plan_params(
-    plan_params_norm: PlanParamsRust,
+pub fn process_plan_params_lib(
+    plan_params: PlanParams,
     market_data: DataForMarketBasedPlanParamValues,
-) -> PlanParamsProcessedJS {
-    plan_params::process_plan_params::process_plan_params(&plan_params_norm, &market_data)
+) -> Vec<u8> {
+    let plan_params_processed =
+        plan_params::process_plan_params::process_plan_params(&plan_params, &market_data);
+    rmp_serde::encode::to_vec_named(&plan_params_processed).unwrap()
 }
 
 #[wasm_bindgen]
-pub fn process_market_data_for_expected_returns_for_planning_presets(
-    sampling: plan_params_rust::Sampling,
-    scaling: plan_params_rust::HistoricalMonthlyLogReturnsAdjustment_StandardDeviation,
-    market_data: DataForMarketBasedPlanParamValues,
-) -> DataForExpectedReturnsForPlanningPresets {
-    process_expected_returns_for_planning::process_market_data_for_expected_returns_for_planning_presets(
-        &market_data,
-        &sampling,
-        &scaling,
-    )
-}
-
-#[wasm_bindgen]
-pub fn get_suggested_annual_inflation(market_data: DataForMarketBasedPlanParamValues) -> f64 {
-    get_suggested_annual_inflation::get_suggested_annual_inflation(&market_data)
-}
-
-#[wasm_bindgen]
-pub fn test_log() {
-    console_log!("hello");
-}
+pub fn test() {}

@@ -1,3 +1,5 @@
+import * as Rust from '@tpaw/simulator'
+
 export type RunSimulationInWASMResult = {
   byMonthsFromNowByRun: {
     savingsPortfolio: {
@@ -25,7 +27,7 @@ export type RunSimulationInWASMResult = {
   }
   annualStatsForSampledReturns: Record<
     'stocks' | 'bonds',
-     Record<
+    Record<
       'ofBase' | 'ofLog',
       {
         mean: number
@@ -35,6 +37,7 @@ export type RunSimulationInWASMResult = {
       }
     >
   >
+  info: Rust.RunResultInfo
   perf: [
     ['runs', number],
     ['post', number],

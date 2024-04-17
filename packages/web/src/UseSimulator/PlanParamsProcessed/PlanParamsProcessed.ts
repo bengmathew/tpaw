@@ -1,3 +1,4 @@
+import { assertFalse } from '@tpaw/common'
 import * as Rust from '@tpaw/simulator'
 import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
 import { CallRust } from './CallRust'
@@ -5,45 +6,60 @@ import { planParamsProcessAdjustmentsToSpending } from './PlanParamsProcessAdjus
 import { planParamsProcessNetPresentValue } from './PlanParamsProcessNetPresentValue'
 import { planParamsProcessRisk } from './PlanParamsProcessRisk'
 
+import jsonpatch from 'fast-json-patch'
+import { deepCompare } from '../../Utils/DeepCompare'
+import * as Sentry from '@sentry/nextjs'
+
 export type PlanParamsProcessed = ReturnType<typeof processPlanParams>
 export function processPlanParams(
   planParamsNorm: PlanParamsNormalized,
   currentMarketData: Rust.DataForMarketBasedPlanParamValues,
 ) {
   const {
-    expectedReturnsForPlanning,
-    historicalMonthlyReturnsAdjusted,
+    // marketData,
+    returnsStatsForPlanning,
+    historicalReturnsAdjusted,
     inflation,
+    risk,
     byMonth,
   } = CallRust.processPlanParams(planParamsNorm, currentMarketData)
 
   const adjustmentsToSpending = planParamsProcessAdjustmentsToSpending(
     planParamsNorm,
-    planParamsNorm.ages.simulationMonths.numMonths,
     inflation.monthly,
   )
 
-  const risk = planParamsProcessRisk(
-    planParamsNorm,
-    expectedReturnsForPlanning,
-    historicalMonthlyReturnsAdjusted.stocks.stats.empiricalAnnualLogVariance,
-  )
+  {
+    const riskJS = planParamsProcessRisk(
+      planParamsNorm,
+      returnsStatsForPlanning,
+    )
+    if (!deepCompare(riskJS, risk, 0.0000001)) {
+      Sentry.captureException(
+        new Error(
+          `riskJS !== risk\n${JSON.stringify(jsonpatch.compare(risk, riskJS))}\n${JSON.stringify(jsonpatch.compare(riskJS, risk))}`,
+        ),
+      )
+      assertFalse()
+    }
+  }
 
   const netPresentValue = planParamsProcessNetPresentValue(
     planParamsNorm.ages.simulationMonths.numMonths,
     risk,
     adjustmentsToSpending.tpawAndSPAW.legacy.target,
     byMonth,
-    expectedReturnsForPlanning,
+    returnsStatsForPlanning,
   )
 
   const result = {
+    // marketData,
     byMonth,
     netPresentValue,
     adjustmentsToSpending,
     risk,
-    expectedReturnsForPlanning,
-    historicalMonthlyReturnsAdjusted,
+    returnsStatsForPlanning,
+    historicalReturnsAdjusted,
     inflation,
   }
 

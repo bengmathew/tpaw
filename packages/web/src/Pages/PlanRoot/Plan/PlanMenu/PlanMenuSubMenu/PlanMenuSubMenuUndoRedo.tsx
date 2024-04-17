@@ -304,7 +304,11 @@ const _Item = React.memo(
     onMouseMove: () => void
     className?: string
   }) => {
-    const { currentTimestamp } = useSimulation()
+    const { planParamsNorm } = useSimulation()
+    const { datingInfo } = planParamsNorm
+    const currentTimestamp = datingInfo.isDated
+      ? datingInfo.nowAsTimestamp
+      : datingInfo.nowAsTimestampNominal
     const { timestamp, render } = item
 
     const durationStr = useMemo(

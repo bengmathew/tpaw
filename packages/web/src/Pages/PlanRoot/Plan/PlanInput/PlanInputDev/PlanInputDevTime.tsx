@@ -44,13 +44,19 @@ const _FastForwardCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { currentTimestamp, planParamsNorm, fastForwardInfo } = useSimulation()
+    const { planParamsNorm, fastForwardInfo } = useSimulation()
+    const { datingInfo } = planParamsNorm
+    const currentTimestamp = datingInfo.isDated
+      ? datingInfo.nowAsTimestamp
+      : datingInfo.nowAsTimestampNominal
     const { getZonedTime } = useIANATimezoneName()
     const currentTime: DateTime = getZonedTime(currentTimestamp)
     const { portfolioBalance } = planParamsNorm.wealth
-    const portfolioBalanceUpdatedAt = portfolioBalance.updatedHere
-      ? planParamsNorm.timestamp
-      : portfolioBalance.updatedAtTimestamp
+    const portfolioBalanceUpdatedAt = portfolioBalance.isDatedPlan
+      ? portfolioBalance.updatedHere
+        ? planParamsNorm.timestamp
+        : portfolioBalance.updatedAtTimestamp
+      : null
 
     const isModified = useIsFastForwardCardModified()
 
@@ -92,12 +98,18 @@ const _FastForwardCard = React.memo(
           </div>
           <h2 className="text-right">Portfolio</h2>
           <div className="">
-            <h2 className="font-mono text-sm">
-              {_formatDateTime(getZonedTime(portfolioBalanceUpdatedAt))}
-            </h2>
-            <h2 className="text-sm font-font1 lighten">
-              {formatDistanceFromNow(portfolioBalanceUpdatedAt)} ago
-            </h2>
+            {portfolioBalanceUpdatedAt ? (
+              <>
+                <h2 className="font-mono text-sm">
+                  {_formatDateTime(getZonedTime(portfolioBalanceUpdatedAt))}
+                </h2>
+                <h2 className="text-sm font-font1 lighten">
+                  {formatDistanceFromNow(portfolioBalanceUpdatedAt)} ago
+                </h2>
+              </>
+            ) : (
+              <h2 className="font-mono text-sm">N/A (undated plan)</h2>
+            )}
           </div>
         </div>
         <div className=" flex justify-start gap-x-4 items-center mt-8">
@@ -199,7 +211,8 @@ const _SynthesizeMarketDataCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const isModified = useIsSynthesizeMarketDataCardModified()
-    const { planParamsNorm, planParamsProcessed } = useSimulation()
+    const { planParamsNorm, simulationResult } = useSimulation()
+    const {args} = simulationResult
     const {
       synthesizeMarketDataSpec,
       setSynthesizeMarketDataSpec,
@@ -300,11 +313,11 @@ const _SynthesizeMarketDataCard = React.memo(
                     dailyStockMarketPerformance: {
                       type: 'constant',
                       annualBND:
-                        planParamsProcessed.expectedReturnsForPlanning
-                          .empiricalAnnualNonLogReturnInfo.bonds.value,
+                        args.planParamsProcessed.returnsStatsForPlanning.stocks
+                          .empiricalAnnualNonLogExpectedReturnInfo.value,
                       annualVT:
-                        planParamsProcessed.expectedReturnsForPlanning
-                          .empiricalAnnualNonLogReturnInfo.stocks.value,
+                        args.planParamsProcessed.returnsStatsForPlanning.bonds
+                          .empiricalAnnualNonLogExpectedReturnInfo.value,
                     },
                   },
                 })
@@ -347,14 +360,15 @@ const _SynthesizeMarketDataCard = React.memo(
                             </h2>
                           </div>
                           <div className="mt-2">
-                            {planParamsNorm.advanced.expectedReturnsForPlanning
-                              .type === 'manual' ? (
+                            {planParamsNorm.advanced.returnsStatsForPlanning
+                              .expectedValue.empiricalAnnualNonLog.type ===
+                            'fixed' ? (
                               <h2 className="">
-                                NOTE: Expected return is manual.
+                                NOTE: Expected return is fixed.
                               </h2>
                             ) : (
                               <h2 className="text-errorFG">
-                                NOTE: Expected return is NOT manual.
+                                NOTE: Expected return is NOT fixed.
                               </h2>
                             )}
                           </div>
@@ -455,7 +469,11 @@ const useIsSynthesizeMarketDataCardModified = () => {
 export const PlanInputDevTimeSummary = React.memo(() => {
   const { synthesizeMarketDataSpec } = useMarketData()
   const { getZonedTime } = useIANATimezoneName()
-  const { fastForwardInfo, currentTimestamp } = useSimulation()
+  const { fastForwardInfo, planParamsNorm } = useSimulation()
+  const { datingInfo } = planParamsNorm
+  const currentTimestamp = datingInfo.isDated
+    ? datingInfo.nowAsTimestamp
+    : datingInfo.nowAsTimestampNominal
 
   return (
     <>

@@ -1,6 +1,6 @@
 import { assertFalse } from '@tpaw/common'
+import * as Rust from '@tpaw/simulator'
 import _ from 'lodash'
-import { Record } from '../../Utils/Record'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { StatsTools } from '../../Utils/StatsTools'
 import { assert, fGet, noCase } from '../../Utils/Utils'
@@ -82,6 +82,7 @@ export type SimulationResult = {
       }
     >
   >
+  info: Rust.RunResultInfo
   perf: {
     main: [
       ['num-workers', number],
@@ -112,6 +113,8 @@ export type SimulationResult = {
 
 export type SimulationArgs = {
   currentPortfolioBalanceAmount: number
+  planParamsRust: Rust.PlanParamsRust
+  marketData: Rust.DataForMarketBasedPlanParamValues
   planParamsNorm: PlanParamsNormalized
   planParamsProcessed: PlanParamsProcessed
   numOfSimulationForMonteCarloSampling: number
@@ -168,6 +171,8 @@ export class Simulator {
     runs: SimpleRange,
     randomSeed: number,
     currentPortfolioBalanceAmount: number,
+    planParamsRust: Rust.PlanParamsRust,
+    marketData: Rust.DataForMarketBasedPlanParamValues,
     planParamsNorm: PlanParamsNormalized,
     planParamsProcessed: PlanParamsProcessed,
   ): Promise<RunSimulationInWASMResult> {
@@ -176,6 +181,8 @@ export class Simulator {
       taskID,
       type: 'runSimulation',
       args: {
+        planParamsRust,
+        marketData,
         currentPortfolioBalanceAmount,
         runs,
         planParamsNorm,
@@ -212,6 +219,8 @@ export class Simulator {
     const {
       currentPortfolioBalanceAmount,
       planParamsNorm,
+      planParamsRust,
+      marketData,
       planParamsProcessed,
       numOfSimulationForMonteCarloSampling,
       randomSeed,
@@ -234,6 +243,8 @@ export class Simulator {
           _loadBalance(i, numSimulationsActual, this._workers.length),
           randomSeed,
           currentPortfolioBalanceAmount,
+          planParamsRust,
+          marketData,
           planParamsNorm,
           planParamsProcessed,
         ),
@@ -294,6 +305,7 @@ export class Simulator {
     const perfSortAndPickPercentiles = performance.now() - start
     start = performance.now()
 
+    const info = runsByWorker[0].info
     const firstMonthOfSomeRun = getFirstMonthSavingsPortfolioDetail(
       runsByWorker[0].byMonthsFromNowByRun.savingsPortfolio,
       planParamsProcessed,
@@ -365,6 +377,7 @@ export class Simulator {
       firstMonthOfSomeRun,
       endingBalanceOfSavingsPortfolioByPercentile,
       annualStatsForSampledReturns,
+      info,
       perf: {
         main: [
           ['num-workers', this._workers.length],
@@ -549,13 +562,12 @@ const _getNumSimulationsActual = (
       return numOfSimulationForMonteCarloSampling
     case 'historical': {
       return (
-        planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.logSeries
-          .length -
+        planParamsProcessed.historicalReturnsAdjusted.stocks.stats.log.n -
         planParamsNorm.ages.simulationMonths.numMonths +
         1
       )
     }
     default:
-      noCase(planParamsNorm.advanced.sampling.type)
+      noCase(planParamsNorm.advanced.sampling)
   }
 }

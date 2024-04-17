@@ -1,12 +1,13 @@
 import {
+  CalendarMonth,
   LabeledAmountTimed,
   LabeledAmountTimedList,
   block,
   noCase,
 } from '@tpaw/common'
-import _ from 'lodash'
+import _, { now } from 'lodash'
 import { SimpleRange } from '../../../Utils/SimpleRange'
-import { NormalizedAges, ToMFN } from '../NormalizePlanParamsAges'
+import { NormalizedAges, MonthToMFN } from '../NormalizePlanParamsAges'
 import {
   NormalizedAmountAndTimingOneTime,
   normalizeAmountAndTimingOneTime,
@@ -31,20 +32,30 @@ export type NormalizedLabeledAmountTimed = {
 export const normalizeLabeledAmountTimedList = (
   x: LabeledAmountTimedList,
   validRangeAsMFN: SimpleRange | null,
-  toMFN: ToMFN,
+  monthToMFN: MonthToMFN,
   ages: NormalizedAges,
+  nowAsCalendarMonth: CalendarMonth | null,
 ): NormalizedLabeledAmountTimed[] =>
   !validRangeAsMFN
     ? []
     : _.values(x)
-        .map((x) => _normalizeLabeledAmountTimed(x, validRangeAsMFN, toMFN, ages))
+        .map((x) =>
+          _normalizeLabeledAmountTimed(
+            x,
+            validRangeAsMFN,
+            monthToMFN,
+            ages,
+            nowAsCalendarMonth,
+          ),
+        )
         .sort((a, b) => a.sortIndex - b.sortIndex)
 
 const _normalizeLabeledAmountTimed = (
   x: LabeledAmountTimed,
   validRangeAsMFN: SimpleRange,
-  toMFN: ToMFN,
+  monthToMFN: MonthToMFN,
   ages: NormalizedAges,
+  nowAsCalendarMonth: CalendarMonth | null,
 ): NormalizedLabeledAmountTimed => {
   const amountAndTiming = block(
     (): NormalizedLabeledAmountTimed['amountAndTiming'] | null => {
@@ -53,7 +64,7 @@ const _normalizeLabeledAmountTimed = (
           return normalizeAmountAndTimingOneTime(
             x.amountAndTiming,
             validRangeAsMFN,
-            toMFN,
+            monthToMFN,
             ages,
           )
         }
@@ -61,8 +72,9 @@ const _normalizeLabeledAmountTimed = (
           return normalizeAmountAndTimingRecurring(
             x.amountAndTiming,
             validRangeAsMFN,
-            toMFN,
-            ages
+            monthToMFN,
+            ages,
+            nowAsCalendarMonth,
           )
         }
         case 'inThePast':

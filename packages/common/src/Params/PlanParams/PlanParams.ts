@@ -1,4 +1,4 @@
-import { PlanParams28 as PlanParamsCurr } from './PlanParams28'
+import { PlanParams29 as PlanParamsCurr } from './PlanParams29'
 
 type _GetVersion<T> = T extends { v: infer V } ? V : 1
 
@@ -9,6 +9,7 @@ export type TimestampedPlanParams = PlanParamsCurr.TimestampedPlanParams
 export type DialogPosition = PlanParamsCurr.DialogPosition
 export type CalendarMonth = PlanParamsCurr.CalendarMonth
 export type InMonths = PlanParamsCurr.InMonths
+export type PersonId = PlanParamsCurr.PersonId
 export type Person = PlanParamsCurr.Person
 export type People = PlanParamsCurr.People
 export type Month = PlanParamsCurr.Month

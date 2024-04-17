@@ -2,6 +2,7 @@ import { faDice, faEllipsis } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   DEFAULT_MONTE_CARLO_SIMULATION_SEED,
+  assert,
   getDefaultNonPlanParams,
 } from '@tpaw/common'
 import { clsx } from 'clsx'
@@ -10,6 +11,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { errorToast } from '../../../../../Utils/CustomToasts'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../../Utils/Geometry'
+import { Record } from '../../../../../Utils/Record'
 import { AmountInput } from '../../../../Common/Inputs/AmountInput'
 import { ToggleSwitch } from '../../../../Common/Inputs/ToggleSwitch'
 import { useNonPlanParams } from '../../../PlanRootHelpers/WithNonPlanParams'
@@ -58,6 +60,7 @@ const _SimulationsCard = React.memo(
       () => getDefaultNonPlanParams(Date.now()),
       [],
     )
+    assert(defaultPlanParams.advanced.sampling.type === 'monteCarlo')
 
     const isModified = useIsPlanInputDevSimulationsModified()
 
@@ -136,8 +139,13 @@ const _SimulationsCard = React.memo(
           <h2 className="">Stagger Run Starts: </h2>
           <ToggleSwitch
             checked={
-              planParamsNorm.advanced.sampling.forMonteCarlo.staggerRunStarts
+              planParamsNorm.advanced.sampling.type === 'monteCarlo'
+                ? planParamsNorm.advanced.sampling.data.staggerRunStarts
+                : planParamsNorm.advanced.sampling.defaultData.monteCarlo
+                    ?.staggerRunStarts ??
+                  defaultPlanParams.advanced.sampling.data.staggerRunStarts
             }
+            disabled={planParamsNorm.advanced.sampling.type !== 'monteCarlo'}
             setChecked={(value) => {
               updatePlanParams('setMonteCarloStaggerRunStarts', value)
             }}
@@ -147,8 +155,8 @@ const _SimulationsCard = React.memo(
           <h2 className="">Override Historical Returns To Fixed: </h2>
           <ToggleSwitch
             checked={
-              planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
-                .overrideToFixedForTesting
+              planParamsNorm.advanced.historicalReturnsAdjustment
+                .standardDeviation.overrideToFixedForTesting
             }
             setChecked={(value) => {
               updatePlanParams(
@@ -173,11 +181,16 @@ const _SimulationsCard = React.memo(
               setNonPlanParams(clone)
             }
             reRun(DEFAULT_MONTE_CARLO_SIMULATION_SEED)
-            updatePlanParams(
-              'setMonteCarloStaggerRunStarts',
-              defaultPlanParams.advanced.sampling.forMonteCarlo
-                .staggerRunStarts,
+            assert(defaultPlanParams.advanced.sampling.type === 'monteCarlo')
+            if (
+              planParamsNorm.advanced.sampling.type === 'monteCarlo' &&
+              planParamsNorm.advanced.sampling.data.staggerRunStarts !==
+                defaultPlanParams.advanced.sampling.data.staggerRunStarts
             )
+              updatePlanParams(
+                'setMonteCarloStaggerRunStarts',
+                defaultPlanParams.advanced.sampling.data.staggerRunStarts,
+              )
           }}
           disabled={!isModified}
         >
@@ -200,13 +213,15 @@ export const PlanInputDevSimulationsSummary = React.memo(() => {
       <h2>Time to Run: {_timeToRun(simulationResult)}</h2>
       <h2>
         Stagger Run Starts:{' '}
-        {planParamsNorm.advanced.sampling.forMonteCarlo.staggerRunStarts
-          ? 'yes'
-          : 'no'}
+        {planParamsNorm.advanced.sampling.type !== 'monteCarlo'
+          ? 'N/A'
+          : planParamsNorm.advanced.sampling.data.staggerRunStarts
+            ? 'yes'
+            : 'no'}
       </h2>
       <h2>
         Override Historical Returns To Fixed:{' '}
-        {planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
+        {planParamsNorm.advanced.historicalReturnsAdjustment.standardDeviation
           .overrideToFixedForTesting
           ? 'yes'
           : 'no'}
@@ -224,72 +239,6 @@ const _timeToRun = (simulationResult: SimulationInfo['simulationResult']) =>
 
 const _AnnualReturnStatsTable = React.memo(
   ({ className }: { className?: string }) => {
-    const { simulationResult, planParamsProcessed } = useSimulation()
-
-    const forData = (stats: {
-      ofBase: {
-        mean: number
-      }
-      ofLog: {
-        variance: number
-        standardDeviation?: number
-      }
-    }) => (
-      <>
-        <h2 className="text-right font-mono">
-          {formatPercentage(5)(stats.ofBase.mean)}
-        </h2>
-        <h2 className="text-right font-mono">
-          {stats.ofLog.variance.toFixed(5)}
-        </h2>
-        <h2 className="text-right font-mono">
-          {(
-            stats.ofLog.standardDeviation ?? Math.sqrt(stats.ofLog.variance)
-          ).toFixed(5)}
-        </h2>
-      </>
-    )
-
-    const targetData = {
-      stocks: {
-        ofBase: {
-          mean: simulationResult.args.planParamsProcessed
-            .expectedReturnsForPlanning.empiricalAnnualNonLogReturnInfo.stocks
-            .value,
-        },
-        ofLog: {
-          variance:
-            planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.stats
-              .empiricalAnnualLogVariance,
-        },
-      },
-      bonds: {
-        ofBase: {
-          mean: simulationResult.args.planParamsProcessed
-            .expectedReturnsForPlanning.empiricalAnnualNonLogReturnInfo.bonds
-            .value,
-        },
-        ofLog: {
-          variance:
-            planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.stats
-              .empiricalAnnualLogVariance,
-        },
-      },
-    }
-    const delta = (
-      a: (typeof targetData)['stocks'],
-      b: (typeof targetData)['stocks'],
-    ) => ({
-      ofBase: {
-        mean: a.ofBase.mean - b.ofBase.mean,
-      },
-      ofLog: {
-        variance: a.ofLog.variance - b.ofLog.variance,
-        standardDeviation:
-          Math.sqrt(a.ofLog.variance) - Math.sqrt(b.ofLog.variance),
-      },
-    })
-
     return (
       <div className={clsx(className)}>
         <div
@@ -308,67 +257,104 @@ const _AnnualReturnStatsTable = React.memo(
           </div>
           <h2></h2>
           <h2 className="col-span-4 border-t border-gray-300 my-2"></h2>
-          <h2>Stocks - Target</h2>
-          {forData(targetData.stocks)}
-          <h2>Stocks - Sampled</h2>
-          {forData(simulationResult.annualStatsForSampledReturns.stocks)}
-          <h2>Stocks - Sampled 𝚫</h2>
-          {forData(
-            delta(
-              simulationResult.annualStatsForSampledReturns.stocks,
-              targetData.stocks,
-            ),
-          )}
-          <h2>Stocks - Historical - Adj </h2>
-          {forData({
-            ofBase:
-              planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.stats
-                .annualized.nonLog,
-            ofLog:
-              planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.stats
-                .annualized.log,
-          })}
-          <h2>Stocks - Historical - Raw</h2>
-          {forData({
-            ofBase:
-              planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.stats
-                .unadjustedAnnualized.nonLog,
-            ofLog:
-              planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.stats
-                .unadjustedAnnualized.log,
-          })}
-          <h2 className="col-span-4 border-t border-gray-300 my-2"></h2>
-          <h2>Bonds - Target</h2>
-          {forData(targetData.bonds)}
-          <h2>Bonds - Sampled</h2>
-          {forData(simulationResult.annualStatsForSampledReturns.bonds)}
-          <h2>Bonds - Sampled - 𝚫</h2>
-          {forData(
-            delta(
-              simulationResult.annualStatsForSampledReturns.bonds,
-              targetData.bonds,
-            ),
-          )}
-          <h2>Bonds - Historical - Adj </h2>
-          {forData({
-            ofBase:
-              planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.stats
-                .annualized.nonLog,
-            ofLog:
-              planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.stats
-                .annualized.log,
-          })}
-          <h2>Bonds - Historical - Raw</h2>
-          {forData({
-            ofBase:
-              planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.stats
-                .unadjustedAnnualized.nonLog,
-            ofLog:
-              planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.stats
-                .unadjustedAnnualized.log,
-          })}
+          <_AnnualReturnStatsTableSection type="stocks" />
+          <div className=" col-span-4 my-1.5 border-b border-gray-300"></div>
+          <_AnnualReturnStatsTableSection type="bonds" />
         </div>
       </div>
+    )
+  },
+)
+
+const _AnnualReturnStatsTableSection = React.memo(
+  ({ type }: { type: 'stocks' | 'bonds' }) => {
+    const { simulationResult } = useSimulation()
+    const { planParamsProcessed } = simulationResult.args
+    const { returnsStatsForPlanning, historicalReturnsAdjusted } =
+      planParamsProcessed
+
+    const addSd = (mean: number, varianceOfLog: number) => ({
+      mean,
+      varianceOfLog,
+      sdOfLog: Math.sqrt(varianceOfLog),
+    })
+
+    const targetForPlanning = addSd(
+      returnsStatsForPlanning[type].empiricalAnnualNonLogExpectedReturnInfo
+        .value,
+      returnsStatsForPlanning[type].empiricalAnnualLogVariance,
+    )
+    const targetForSimulation = addSd(
+      historicalReturnsAdjusted[type].args
+        .empiricalAnnualNonLogExpectedReturnInfo.value,
+      historicalReturnsAdjusted[type].args.empiricalAnnualLogVariance,
+    )
+    const sampled = addSd(
+      simulationResult.annualStatsForSampledReturns[type].ofBase.mean,
+      simulationResult.annualStatsForSampledReturns[type].ofLog.variance,
+    )
+
+    const adjusted = addSd(
+      historicalReturnsAdjusted[type].stats.annualized.nonLog.mean,
+      historicalReturnsAdjusted[type].stats.annualized.log.variance,
+    )
+
+    const unadjusted = addSd(
+      historicalReturnsAdjusted[type].srcAnnualizedStats.nonLog.mean,
+      historicalReturnsAdjusted[type].srcAnnualizedStats.log.variance,
+    )
+
+    const label = _.upperFirst(type)
+    return (
+      <>
+        <_AnnualReturnStatsTableRow
+          label={`${label} - For Planning`}
+          {...targetForPlanning}
+        />
+        <_AnnualReturnStatsTableRow
+          label={`${label} - For Simulation`}
+          {...targetForSimulation}
+        />
+        <_AnnualReturnStatsTableRow label={`${label} - Sampled`} {...sampled} />
+        <_AnnualReturnStatsTableRow
+          label={`${label} - Sampled 𝚫`}
+          {...Record.mapValues(
+            sampled,
+            (sampled, key) => sampled - targetForSimulation[key],
+          )}
+        />
+        <_AnnualReturnStatsTableRow
+          label={`${label} - Historical -Adj`}
+          {...adjusted}
+        />
+        <_AnnualReturnStatsTableRow
+          label={`${label} - Historical -Raw`}
+          {...unadjusted}
+        />
+      </>
+    )
+  },
+)
+
+const _AnnualReturnStatsTableRow = React.memo(
+  ({
+    mean,
+    varianceOfLog,
+    sdOfLog,
+    label,
+  }: {
+    mean: number
+    varianceOfLog: number
+    sdOfLog: number
+    label: string
+  }) => {
+    return (
+      <>
+        <h2>{label}</h2>
+        <h2 className="text-right font-mono">{formatPercentage(5)(mean)}</h2>
+        <h2 className="text-right font-mono">{varianceOfLog.toFixed(5)}</h2>
+        <h2 className="text-right font-mono">{sdOfLog.toFixed(5)}</h2>
+      </>
     )
   },
 )

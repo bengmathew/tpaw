@@ -50,8 +50,13 @@ Plan.displayName = 'Plan'
 
 const _Plan = React.memo(() => {
   const { nonPlanParams } = useNonPlanParams()
-  const { planParamsNorm, simulationInfoByMode, simulationInfoBySrc } =
-    useSimulation()
+  const {
+    planParamsNorm,
+    simulationResult,
+    simulationInfoByMode,
+    simulationInfoBySrc,
+  } = useSimulation()
+
 
   const isSWR = planParamsNorm.advanced.strategy === 'SWR'
   const isTallMenu =

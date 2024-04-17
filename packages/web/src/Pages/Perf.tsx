@@ -19,6 +19,7 @@ import { AppPage } from './App/AppPage'
 import { getMarketDataForTime } from './Common/GetMarketData'
 import { AmountInput } from './Common/Inputs/AmountInput'
 import { useMarketData } from './PlanRoot/PlanRootHelpers/WithMarketData'
+import { CallRust } from '../UseSimulator/PlanParamsProcessed/CallRust'
 
 export const Perf = React.memo(() => {
   const { marketData } = useMarketData()
@@ -42,27 +43,35 @@ export const Perf = React.memo(() => {
                 currentTime.zoneName,
               )
 
+              assert(planParams.wealth.portfolioBalance.isDatedPlan)
               assert(planParams.wealth.portfolioBalance.updatedHere)
               const currMarketData = getMarketDataForTime(
                 currentTime.toMillis(),
                 marketData,
               )
-              const planParamsNorm = normalizePlanParams(
-                planParams,
-                CalendarMonthFns.fromTimestamp(
+              const planParamsNorm = normalizePlanParams(planParams, {
+                timestamp: currentTime.toMillis(),
+                calendarMonth: CalendarMonthFns.fromTimestamp(
                   currentTime.toMillis(),
                   currentTime.zoneName,
                 ),
-              )
-              const planParamsProcessed = processPlanParams(planParamsNorm, {
-                ...currMarketData,
-                timestampMSForHistoricalReturns: Number.MAX_SAFE_INTEGER,
               })
+              const planParamsRust = CallRust.getPlanParamsRust(planParamsNorm)
+              const currMarketDataExt = {
+                ...currMarketData,
+                timestampForMarketData: Number.MAX_SAFE_INTEGER,
+              }
+              const planParamsProcessed = processPlanParams(
+                planParamsNorm,
+                currMarketDataExt,
+              )
               const result = await fGet(workerRef.current).runSimulations(
                 { canceled: false },
                 {
                   currentPortfolioBalanceAmount:
                     planParams.wealth.portfolioBalance.amount,
+                  planParamsRust,
+                  marketData: currMarketDataExt,
                   planParamsNorm,
                   planParamsProcessed,
                   numOfSimulationForMonteCarloSampling:
@@ -148,15 +157,19 @@ const getParams = (
     v: currentPlanParamsVersion,
     results: null,
     timestamp: currentTimestamp,
+    datingInfo: { isDated: true },
     dialogPositionNominal: 'done',
     people: {
       withPartner: false,
       person1: {
         ages: {
           type: 'retirementDateSpecified',
-          monthOfBirth: CalendarMonthFns.getFromMFN(nowAsCalendarMonth)(
-            -35 * 12,
-          ),
+          currentAgeInfo: {
+            isDatedPlan: true,
+            monthOfBirth: CalendarMonthFns.getFromMFN(nowAsCalendarMonth)(
+              -35 * 12,
+            ),
+          },
           retirementAge: { inMonths: 65 * 12 },
           maxAge: { inMonths: 100 * 12 },
         },
@@ -164,6 +177,7 @@ const getParams = (
     },
     wealth: {
       portfolioBalance: {
+        isDatedPlan: true,
         updatedHere: true,
         amount: 100000,
       },
@@ -201,7 +215,13 @@ const getParams = (
       spawAndSWR: {
         allocation: {
           start: {
-            month: nowAsCalendarMonth,
+            month: {
+              type: 'now',
+              monthOfEntry: {
+                isDatedPlan: true,
+                calendarMonth: nowAsCalendarMonth,
+              },
+            },
             stocks: 0.5,
           },
           intermediate: {},
@@ -214,22 +234,25 @@ const getParams = (
     },
 
     advanced: {
-      expectedReturnsForPlanning: {
-        type: 'manual',
-        stocks: 0.04,
-        bonds: 0.02,
-      },
-      historicalMonthlyLogReturnsAdjustment: {
-        standardDeviation: {
-          stocks: { scale: 1 },
-          bonds: { enableVolatility: true },
+      returnsStatsForPlanning: {
+        expectedValue: {
+          empiricalAnnualNonLog: { type: 'fixed', stocks: 0.04, bonds: 0.02 },
         },
-        overrideToFixedForTesting: false,
+        standardDeviation: {
+          stocks: { scale: { log: 1 } },
+          bonds: { scale: { log: 0 } },
+        },
+      },
+      historicalReturnsAdjustment: {
+        standardDeviation: {
+          bonds: { scale: { log: 1 } },
+          overrideToFixedForTesting: false,
+        },
       },
       annualInflation: { type: 'manual', value: 0.02 },
       sampling: {
         type: 'monteCarlo',
-        forMonteCarlo: {
+        data: {
           blockSize: { inMonths: 12 * 5 },
           staggerRunStarts: true,
         },

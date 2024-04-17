@@ -58,8 +58,8 @@ export const PlanInputRiskRRASlider = React.memo(
     const segment = useMemo(
       () =>
         fGet(
-          PLAN_PARAMS_CONSTANTS.riskToleranceValues.SEGMENTS.find((x) =>
-            x.containsIndex(pointerIndex),
+          PLAN_PARAMS_CONSTANTS.risk.tpaw.riskTolerance.values.segments.find(
+            (x) => x.containsIndex(pointerIndex),
           ),
         ),
       [pointerIndex],

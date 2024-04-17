@@ -1,6 +1,11 @@
+#[allow(unused_imports)]
 use std::cmp::Ordering;
 
 use crate::params::*;
+use crate::plan_params;
+use crate::plan_params::process_plan_params::plan_params_processed;
+use crate::plan_params::process_plan_params::plan_params_processed::PlanParamsProcessed;
+use crate::plan_params::PlanParams;
 use crate::portfolio_over_month;
 use crate::portfolio_over_month::SingleMonthContext;
 use crate::portfolio_over_month::TargetWithdrawals;
@@ -12,20 +17,32 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use self::random::memoized_random;
+use self::shared_types::StocksAndBonds;
 
-pub fn run(params: &Params, result: &mut RunResult) {
-    let pre_calculations = do_pre_calculations(&params);
+pub fn run(
+    plan_params: &PlanParams,
+    plan_params_processed: &PlanParamsProcessed,
+    params: &Params,
+    result: &mut RunResult,
+) {
+    let pre_calculations = do_pre_calculations(&plan_params, &plan_params_processed, &params);
 
-    let pre_withdrawal_from_using_expected_returns =
-        run_using_expected_returns(&params, &pre_calculations)
-            .into_iter()
-            .map(|(pre_withdrawal, _)| pre_withdrawal)
-            .collect();
+    let pre_withdrawal_from_using_expected_returns = run_using_expected_returns(
+        plan_params,
+        plan_params_processed,
+        params,
+        &pre_calculations,
+    )
+    .into_iter()
+    .map(|(pre_withdrawal, _)| pre_withdrawal)
+    .collect();
 
     let num_runs = params.end_run - params.start_run;
     for run_index in 0..num_runs {
         run_using_historical_returns(
-            &params,
+            plan_params,
+            plan_params_processed,
+            params,
             &pre_calculations,
             &pre_withdrawal_from_using_expected_returns,
             result,
@@ -35,6 +52,8 @@ pub fn run(params: &Params, result: &mut RunResult) {
 }
 
 pub fn run_using_expected_returns(
+    plan_params: &PlanParams,
+    plan_params_processed: &PlanParamsProcessed,
     params: &Params,
     pre_calculations: &PreCalculations,
 ) -> Vec<(SingleMonthPreWithdrawal, Withdrawals)> {
@@ -43,10 +62,21 @@ pub fn run_using_expected_returns(
     return (0..params.num_months_to_simulate)
         .map(|month_index| {
             let context = SingleMonthContext {
+                plan_params,
+                plan_params_processed,
                 params,
                 pre_calculations,
                 month_index,
-                returns: &&params.expected_monthly_returns,
+                returns: &StocksAndBonds {
+                    stocks: plan_params_processed
+                        .returns_stats_for_planning
+                        .stocks
+                        .empirical_monthly_non_log_expected_return,
+                    bonds: plan_params_processed
+                        .returns_stats_for_planning
+                        .bonds
+                        .empirical_monthly_non_log_expected_return,
+                },
                 balance_starting,
             };
             let (
@@ -91,6 +121,8 @@ pub fn run_using_expected_returns(
 }
 
 fn run_using_historical_returns(
+    plan_params: &PlanParams,
+    plan_params_processed: &PlanParamsProcessed,
     params: &Params,
     pre_calculations: &PreCalculations,
     pre_withdrawal_from_using_expected_returns: &Vec<SingleMonthPreWithdrawal>,
@@ -100,23 +132,29 @@ fn run_using_historical_returns(
     let n = params.num_months_to_simulate;
 
     let historical_index = ((params.start_run + run_index)
-        ..(params.start_run + run_index + params.num_months))
+        ..(params.start_run + run_index + plan_params.ages.simulation_months.num_months as usize))
         .collect();
     let index_into_historical_returns = if let Some(x) = &params.test {
         &x.index_into_historical_returns
     } else {
-        if params.monte_carlo_sampling {
-            &memoized_random(
+        match plan_params.advanced.sampling {
+            plan_params::Sampling::MonteCarlo {
+                block_size,
+                stagger_run_starts,
+            } => &memoized_random(
                 params.rand_seed,
                 params.start_run,
                 params.end_run - params.start_run,
                 params.max_num_months,
-                params.monte_carlo_block_size,
-                params.historical_returns.len(),
-                params.monte_carlo_stagger_run_starts,
-            )[run_index]
-        } else {
-            &historical_index
+                block_size as usize,
+                plan_params_processed
+                    .historical_returns_adjusted
+                    .stocks
+                    .non_log_series
+                    .len(),
+                stagger_run_starts,
+            )[run_index],
+            plan_params::Sampling::Historical => &historical_index,
         }
     };
 
@@ -132,10 +170,21 @@ fn run_using_historical_returns(
     let mut pass_forward = initial_pass_forward();
     for month_index in 0..n {
         let context = SingleMonthContext {
+            plan_params,
+            plan_params_processed,
             params,
             pre_calculations,
             month_index,
-            returns: &params.historical_returns[index_into_historical_returns[month_index]],
+            returns: &StocksAndBonds {
+                stocks: plan_params_processed
+                    .historical_returns_adjusted
+                    .stocks
+                    .non_log_series[index_into_historical_returns[month_index]],
+                bonds: plan_params_processed
+                    .historical_returns_adjusted
+                    .bonds
+                    .non_log_series[index_into_historical_returns[month_index]],
+            },
             balance_starting,
         };
         let (new_balance, curr_pass_forward) = run_for_single_month_using_historical_returns(
@@ -164,13 +213,14 @@ fn run_for_single_month_using_fixed_returns(
 ) {
     let SingleMonthContext {
         params,
+        plan_params_processed,
         month_index,
         returns,
         balance_starting,
         ..
     } = *context;
     let savings_portfolio_after_contributions = portfolio_over_month::apply_contributions(
-        params.by_month.savings[month_index],
+        plan_params_processed.by_month.wealth.total[month_index],
         balance_starting,
     );
 
@@ -218,6 +268,7 @@ fn run_for_single_month_using_historical_returns(
 ) -> (f64, SingleMonthPassForward) {
     let SingleMonthContext {
         params,
+        plan_params_processed,
         pre_calculations,
         month_index,
         returns,
@@ -225,7 +276,7 @@ fn run_for_single_month_using_historical_returns(
         ..
     } = *context;
     let savings_portfolio_after_contributions = portfolio_over_month::apply_contributions(
-        params.by_month.savings[month_index],
+        plan_params_processed.by_month.wealth.total[month_index],
         balance_starting,
     );
 
@@ -278,6 +329,8 @@ fn run_for_single_month_using_historical_returns(
             .from_savings_portfolio_rate_or_nan;
         if x.is_nan() {
             let context2 = SingleMonthContext {
+                plan_params: context.plan_params,
+                plan_params_processed: context.plan_params_processed,
                 params: context.params,
                 pre_calculations: context.pre_calculations,
                 month_index: context.month_index,
@@ -285,7 +338,7 @@ fn run_for_single_month_using_historical_returns(
                 balance_starting: 0.00001,
             };
             let savings_portfolio_after_contributions = portfolio_over_month::apply_contributions(
-                params.by_month.savings[month_index],
+                plan_params_processed.by_month.wealth.total[month_index],
                 balance_starting,
             );
 
@@ -342,7 +395,6 @@ fn run_for_single_month_using_historical_returns(
             result.by_run_num_insufficient_fund_months[run_index] + 1;
     }
 
-
     let curr_pass_forward = get_pass_forward(target_withdrawals);
     return (savings_portfolio_at_end.balance, curr_pass_forward);
 }
@@ -381,13 +433,20 @@ fn calculate_target_withdrawals(
     pass_forward: &SingleMonthPassForward,
 ) -> TargetWithdrawals {
     let SingleMonthContext {
+        plan_params,
+        plan_params_processed,
         params,
         month_index,
         balance_starting,
         ..
     } = *context;
 
-    let regular_without_lmp = match month_index.cmp(&params.withdrawal_start_month) {
+    let regular_without_lmp = match month_index.cmp(
+        &(plan_params
+            .ages
+            .simulation_months
+            .withdrawal_start_month_as_mfn as usize),
+    ) {
         Ordering::Less => 0.0,
         Ordering::Equal => match params.swr_withdrawal {
             ParamsSWRWithdrawal::AsPercent { percent } => balance_starting * percent,
@@ -397,8 +456,18 @@ fn calculate_target_withdrawals(
     };
     TargetWithdrawals {
         lmp: 0.0,
-        essential: params.by_month.withdrawals_essential[month_index],
-        discretionary: params.by_month.withdrawals_discretionary[month_index],
+        essential: plan_params_processed
+            .by_month
+            .adjustments_to_spending
+            .extra_spending
+            .essential
+            .total[month_index],
+        discretionary: plan_params_processed
+            .by_month
+            .adjustments_to_spending
+            .extra_spending
+            .discretionary
+            .total[month_index],
         regular_without_lmp,
     }
 }

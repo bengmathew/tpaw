@@ -3,45 +3,74 @@ import {
   DialogPosition,
   Month,
   PlanParams,
+  assert,
   block,
+  fGet,
+  letIn,
 } from '@tpaw/common'
 import { PlanParamsHelperFns } from '../PlanParamsHelperFns'
 import { normalizeGlidePath } from './NormalizeGlidePath'
 import { normalizeLabeledAmountTimedList } from './NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 import { normalizeLabeledAmountUntimedList } from './NormalizeLabeledAmountUntimedList'
-import { getToMFN, normalizePlanParamsAges } from './NormalizePlanParamsAges'
+import { getMonthToMFN, normalizePlanParamsAges } from './NormalizePlanParamsAges'
 import { normalizePlanParamsInverse } from './NormalizePlanParamsInverse'
+import _ from 'lodash'
 
 export type PlanParamsNormalized = ReturnType<typeof normalizePlanParams>
 
 export const normalizePlanParams = (
   planParams: PlanParams,
-  nowAsCalendarMonth: CalendarMonth,
+  nowAs: {
+    timestamp: number
+    // Cannot be null if dated plan.
+    calendarMonth: CalendarMonth | null
+  },
 ) => {
-  const norm = normalizePlanParamsUnchecked(planParams, nowAsCalendarMonth)
+  const norm = normalizePlanParamsUnchecked(planParams, nowAs)
   // Soft check inverse.
-  normalizePlanParamsInverse(norm, 'soft')
+  const deNorm = normalizePlanParamsInverse(norm, 'soft')
+  if (!planParams.datingInfo.isDated) assert(_.isEqual(deNorm, planParams))
   return norm
 }
+
+type NormalizedDatingInfo =
+  | {
+      isDated: true
+      nowAsCalendarMonth: CalendarMonth
+      nowAsTimestamp: number
+    }
+  | {
+      isDated: false
+      nowAsCalendarMonth: null
+      timestampForMarketData: number
+      nowAsTimestampNominal: number
+    }
 export const normalizePlanParamsUnchecked = (
   planParams: PlanParams,
-  nowAsCalendarMonth: CalendarMonth,
+  nowAs: {
+    timestamp: number
+    calendarMonth: CalendarMonth | null
+  },
 ) => {
+  const datingInfo: NormalizedDatingInfo = planParams.datingInfo.isDated
+    ? ({
+        isDated: true,
+        nowAsTimestamp: nowAs.timestamp,
+        nowAsCalendarMonth: fGet(nowAs.calendarMonth),
+      } as const)
+    : ({
+        isDated: false,
+        nowAsCalendarMonth: null,
+        timestampForMarketData: planParams.datingInfo.timestampForMarketData,
+        nowAsTimestampNominal: nowAs.timestamp,
+      } as const)
+  const { nowAsCalendarMonth } = datingInfo
   const ages = normalizePlanParamsAges(planParams.people, nowAsCalendarMonth)
-  const toMFN = getToMFN({ nowAs: { calendarMonth: nowAsCalendarMonth }, ages })
-
-  const nowAsMonth: Month = {
-    type: 'calendarMonthAsNow',
-    monthOfEntry: nowAsCalendarMonth,
-  }
-
+  const monthToMFN = getMonthToMFN(nowAsCalendarMonth, ages)
   return {
     v: planParams.v,
     timestamp: planParams.timestamp,
-    nowAs: {
-      calendarMonth: nowAsCalendarMonth,
-      month: nowAsMonth,
-    },
+    datingInfo,
     dialogPosition: block(() => {
       const getEffective = (
         curr: DialogPosition,
@@ -72,14 +101,16 @@ export const normalizePlanParamsUnchecked = (
       futureSavings: normalizeLabeledAmountTimedList(
         planParams.wealth.futureSavings,
         ages.validMonthRangesAsMFN.futureSavings,
-        toMFN,
+        monthToMFN,
         ages,
+        nowAsCalendarMonth,
       ),
       incomeDuringRetirement: normalizeLabeledAmountTimedList(
         planParams.wealth.incomeDuringRetirement,
         ages.validMonthRangesAsMFN.incomeDuringRetirement,
-        toMFN,
+        monthToMFN,
         ages,
+        nowAsCalendarMonth,
       ),
     },
 
@@ -88,14 +119,16 @@ export const normalizePlanParamsUnchecked = (
         essential: normalizeLabeledAmountTimedList(
           planParams.adjustmentsToSpending.extraSpending.essential,
           ages.validMonthRangesAsMFN.extraSpending,
-          toMFN,
+          monthToMFN,
           ages,
+          nowAsCalendarMonth,
         ),
         discretionary: normalizeLabeledAmountTimedList(
           planParams.adjustmentsToSpending.extraSpending.discretionary,
           ages.validMonthRangesAsMFN.extraSpending,
-          toMFN,
+          monthToMFN,
           ages,
+          nowAsCalendarMonth,
         ),
       },
       tpawAndSPAW: {
@@ -119,8 +152,9 @@ export const normalizePlanParamsUnchecked = (
       spawAndSWR: {
         allocation: normalizeGlidePath(
           planParams.risk.spawAndSWR.allocation,
-          toMFN,
+          monthToMFN,
           ages,
+          nowAsCalendarMonth,
         ),
       },
       swr: planParams.risk.swr,

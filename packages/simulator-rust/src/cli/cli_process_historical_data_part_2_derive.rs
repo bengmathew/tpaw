@@ -1,8 +1,7 @@
 use linreg::linear_regression;
 use rayon::prelude::*;
 use simulator::{
-    constants::MAX_AGE_IN_MONTHS,
-    historical_monthly_returns::{
+    constants::MAX_AGE_IN_MONTHS, historical_monthly_returns::{
         data::{
             get_empirical_stats_for_block_size, process_raw_monthly_non_log_series,
             v1::v1_raw_monthly_non_log_series::{
@@ -17,8 +16,7 @@ use simulator::{
             RawMonthlyNonLogSeriesEntry,
         },
         HistoricalReturnsId,
-    },
-    utils::{return_series::periodize_log_returns, shared_types::SlopeAndIntercept},
+    }, utils::{return_series::periodize_log_returns, shared_types::SlopeAndIntercept}
 };
 use std::{
     fs::{self, File},

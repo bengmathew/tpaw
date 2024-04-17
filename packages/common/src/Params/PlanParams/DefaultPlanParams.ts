@@ -2,6 +2,7 @@ import _ from 'lodash'
 import { CalendarMonthFns } from '../../Misc/CalendarMonthFns'
 import { currentPlanParamsVersion, PlanParams } from './PlanParams'
 
+// TODO: Remove in favor of Rust version
 export const DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT = (
   retirementLengthInMonths: number,
 ) => {
@@ -30,16 +31,20 @@ export function getDefaultPlanParams(
   const params: PlanParams = {
     v: currentPlanParamsVersion,
     timestamp: currentTimestamp,
+    datingInfo: { isDated: true },
     dialogPositionNominal: 'age',
     people: {
       withPartner: false,
       person1: {
         ages: {
           type: 'retirementDateSpecified',
-          monthOfBirth: CalendarMonthFns.addMonths(
-            nowAsCalendarMonth,
-            -35 * 12,
-          ),
+          currentAgeInfo: {
+            isDatedPlan: true,
+            monthOfBirth: CalendarMonthFns.addMonths(
+              nowAsCalendarMonth,
+              -35 * 12,
+            ),
+          },
           retirementAge: { inMonths: 65 * 12 },
           maxAge: { inMonths: 100 * 12 },
         },
@@ -48,6 +53,7 @@ export function getDefaultPlanParams(
 
     wealth: {
       portfolioBalance: {
+        isDatedPlan: true,
         updatedHere: true,
         amount: 0,
       },
@@ -82,7 +88,13 @@ export function getDefaultPlanParams(
       spawAndSWR: {
         allocation: {
           start: {
-            month: nowAsCalendarMonth,
+            month: {
+              type: 'now',
+              monthOfEntry: {
+                isDatedPlan: true,
+                calendarMonth: nowAsCalendarMonth,
+              },
+            },
             stocks: 0.5,
           },
           intermediate: {},
@@ -95,20 +107,27 @@ export function getDefaultPlanParams(
     },
 
     advanced: {
-      expectedReturnsForPlanning: {
-        type: 'regressionPrediction,20YearTIPSYield',
-      },
-      historicalMonthlyLogReturnsAdjustment: {
-        standardDeviation: {
-          stocks: { scale: 1 },
-          bonds: { enableVolatility: true },
+      returnsStatsForPlanning: {
+        expectedValue: {
+          empiricalAnnualNonLog: {
+            type: 'regressionPrediction,20YearTIPSYield',
+          },
         },
-        overrideToFixedForTesting: false,
+        standardDeviation: {
+          stocks: { scale: { log: 1 } },
+          bonds: { scale: { log: 0 } },
+        },
+      },
+      historicalReturnsAdjustment: {
+        standardDeviation: {
+          bonds: { scale: { log: 1 } },
+          overrideToFixedForTesting: false,
+        },
       },
       annualInflation: { type: 'suggested' },
       sampling: {
         type: 'monteCarlo',
-        forMonteCarlo: {
+        data: {
           blockSize: { inMonths: 12 * 5 },
           staggerRunStarts: true,
         },

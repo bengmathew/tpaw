@@ -42,12 +42,11 @@ export const PlanMenuServerPlanMode = React.memo(
     simulationInfoForPlanMode: SimulationInfoForPlanMode
   }) => {
     const planColors = usePlanColors()
-    const { planPaths } = useSimulation()
+    const { planPaths, planParamsNorm } = useSimulation()
+    const { datingInfo } = planParamsNorm
     const { plan, historyStatus, syncState } = simulationInfoForServerSrc
     const isSyncing = syncState.type !== 'synced'
     const label = plan.isMain ? 'Main Plan' : plan.label ?? 'Untitled'
-
-    const [buttonRef, setButtonRef] = useState<HTMLElement | null>(null)
 
     const [showCreatePlanModal, setShowCreatePlanModal] = useState(false)
     const [showEditLabelModal, setShowEditLabelModal] = useState(false)
@@ -158,10 +157,13 @@ export const PlanMenuServerPlanMode = React.memo(
                   className="context-menu-item"
                   closeMenu={close}
                 />
-                <PlanMenuActionViewPlanHistory
-                  className="context-menu-item"
-                  historyStatus={historyStatus}
-                />
+                {datingInfo.isDated && (
+                  <PlanMenuActionViewPlanHistory
+                    className="context-menu-item"
+                    historyStatus={historyStatus}
+                    nowAsTimestamp={datingInfo.nowAsTimestamp}
+                  />
+                )}
                 <Menu.Item
                   as="button"
                   className="context-menu-item text-errorFG"

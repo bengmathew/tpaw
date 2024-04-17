@@ -6,7 +6,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     nominal_to_real::nominal_to_real,
-    plan_params::plan_params_rust::{AmountAndTiming, LabeledAmountTimed, PlanParamsRust},
+    plan_params::{AmountAndTiming, LabeledAmountTimed, PlanParams},
     shared_types::SimpleRange,
 };
 
@@ -15,7 +15,8 @@ use crate::{
 pub struct ProcessedByMonthParamsWealth {
     pub future_savings: ProcessedValueForMonthRanges,
     pub income_during_retirement: ProcessedValueForMonthRanges,
-    #[serde(skip)]
+    // TODO:
+    // #[serde(skip)]
     pub total: Vec<f64>,
 }
 
@@ -54,7 +55,7 @@ pub struct ProcessedByMonthParams {
 }
 
 pub fn process_by_month_params(
-    plan_params_norm: &PlanParamsRust,
+    plan_params_norm: &PlanParams,
     monthly_inflation: f64,
     // expected_monthly_non_log_returns: &StocksAndBonds<f64>,
 ) -> ProcessedByMonthParams {
@@ -144,7 +145,8 @@ pub struct ProcessedValueForMonthRange_NetPresentValue {
 #[serde(rename_all = "camelCase")]
 pub struct ProcessedValueForMonthRange {
     pub id: String,
-    #[serde(skip)]
+    // TODO
+    // #[serde(skip)]
     pub values: Vec<f64>,
     pub valid_range: Option<SimpleRange<i64>>,
     // pub net_present_value: ProcessedValueForMonthRange_NetPresentValue,
@@ -169,7 +171,8 @@ impl ProcessedValueForMonthRange {
 #[serde(rename_all = "camelCase")]
 pub struct ProcessedValueForMonthRanges {
     pub by_id: Vec<ProcessedValueForMonthRange>,
-    #[serde(skip)]
+    // TODO:
+    // #[serde(skip)]
     pub total: Vec<f64>,
 }
 
@@ -273,7 +276,7 @@ mod test {
     use rstest::*;
 
     use crate::{
-        nominal_to_real::nominal_to_real, plan_params::plan_params_rust::LabeledAmountTimed,
+        nominal_to_real::nominal_to_real, plan_params::LabeledAmountTimed,
         shared_types::SimpleRange,
     };
 
@@ -287,7 +290,7 @@ mod test {
         LabeledAmountTimed {
             nominal: true,
             id: "".to_string(),
-            amount_and_timing: crate::plan_params::plan_params_rust::AmountAndTiming::Recurring {
+            amount_and_timing: crate::plan_params::AmountAndTiming::Recurring {
                 base_amount: VALUE,
                 month_range: Some(month_range),
                 valid_month_range: valid_month_range,

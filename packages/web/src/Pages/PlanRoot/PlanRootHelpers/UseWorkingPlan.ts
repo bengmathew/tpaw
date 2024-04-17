@@ -70,7 +70,10 @@ export const useWorkingPlan = (
 
   const { planParams, planParamsUndoRedoStack } = useMemo(() => {
     const startingParams = workingPlan.planParamsPostBase[0].params
-    assert(startingParams.wealth.portfolioBalance.updatedHere)
+    assert(
+      !startingParams.wealth.portfolioBalance.isDatedPlan ||
+        startingParams.wealth.portfolioBalance.updatedHere,
+    )
     const undos = workingPlan.planParamsPostBase.slice(0, headIndex + 1)
     const redos = workingPlan.planParamsPostBase.slice(headIndex + 1)
     const planParams = fGet(_.last(undos)).params
@@ -92,12 +95,14 @@ export const useWorkingPlan = (
       assert(planParams === currHistoryItem.params)
 
       const change = { type, value } as T
-      const { applyToClone, merge } = getPlanParamsChangeActionImpl(change)
-
-      const planParamsNorm = normalizePlanParams(
-        planParams,
-        currentTimeInfo.nowAsCalendarMonth,
+      const { applyToClone, merge } = getPlanParamsChangeActionImpl(
+        _.clone(change),
       )
+
+      const planParamsNorm = normalizePlanParams(planParams, {
+        timestamp: currentTimeInfo.currentTimestamp,
+        calendarMonth: currentTimeInfo.nowAsCalendarMonth,
+      })
 
       const planParamsFromNorm = normalizePlanParamsInverse(planParamsNorm)
       const nextPlanParams = letIn(
@@ -105,27 +110,27 @@ export const useWorkingPlan = (
         (clone) =>
           applyToClone(clone, planParamsNorm, defaultPlanParams) ?? clone,
       )
-      if (
-        _.isEqual(nextPlanParams, planParamsFromNorm) &&
-        // setCurrentPortfolio balance is a special case, because it is
-        // is sensitive to timestamps. So even if the value is the same
-        // but timestamp is different we need to update it.
-        change.type !== 'setCurrentPortfolioBalance'
-      ) {
-        return
+      if (_.isEqual(nextPlanParams, planParamsFromNorm)) {
+        if (!nextPlanParams.datingInfo.isDated) return
+        // setCurrentPortfolio balance is a special case, because it is is
+        // sensitive to timestamps (if the plan is dated). So even if the value
+        // is the same but timestamp is different we need to update it.
+        if (change.type !== 'setCurrentPortfolioBalance') return
       }
 
       nextPlanParams.timestamp = currentTimeInfo.forceUpdateCurrentTime()
       if (change.type !== 'setCurrentPortfolioBalance') {
-        nextPlanParams.wealth.portfolioBalance = planParamsFromNorm.wealth
-          .portfolioBalance.updatedHere
-          ? {
-              updatedHere: false,
-              updatedAtId: currHistoryItem.id,
-              updatedTo: planParamsFromNorm.wealth.portfolioBalance.amount,
-              updatedAtTimestamp: planParamsFromNorm.timestamp,
-            }
-          : _.cloneDeep(planParamsFromNorm.wealth.portfolioBalance)
+        nextPlanParams.wealth.portfolioBalance =
+          planParamsFromNorm.wealth.portfolioBalance.isDatedPlan &&
+          planParamsFromNorm.wealth.portfolioBalance.updatedHere
+            ? {
+                isDatedPlan: true,
+                updatedHere: false,
+                updatedAtId: currHistoryItem.id,
+                updatedTo: planParamsFromNorm.wealth.portfolioBalance.amount,
+                updatedAtTimestamp: planParamsFromNorm.timestamp,
+              }
+            : _.cloneDeep(planParamsFromNorm.wealth.portfolioBalance)
       }
 
       const planParamsPostBase = [
@@ -200,7 +205,8 @@ export const useWorkingPlan = (
         // not current index
         i > 0 &&
         // portfolio balance was updated here
-        x.params.wealth.portfolioBalance.updatedHere &&
+        (!x.params.wealth.portfolioBalance.isDatedPlan ||
+          x.params.wealth.portfolioBalance.updatedHere) &&
         // postBase size (include rebaseIndex) is more than size require for
         // undo + buffer.
         planParamsPostBase.length - i > TARGET_UNDO_DEPTH + 1 + REBASE_BUFFER,

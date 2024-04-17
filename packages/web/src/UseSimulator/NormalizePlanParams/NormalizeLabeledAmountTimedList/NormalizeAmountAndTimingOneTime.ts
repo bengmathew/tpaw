@@ -1,6 +1,6 @@
 import { LabeledAmountTimed } from '@tpaw/common'
 import { SimpleRange } from '../../../Utils/SimpleRange'
-import { NormalizedAges, ToMFN } from '../NormalizePlanParamsAges'
+import { NormalizedAges, MonthToMFN } from '../NormalizePlanParamsAges'
 import {
   NormalizedMonthNotInThePast,
   getNormalizedMonthNotInThePast,
@@ -18,10 +18,10 @@ export const normalizeAmountAndTimingOneTime = (
     { type: 'oneTime' }
   >,
   validRangeAsMFN: SimpleRange,
-  toMFN: ToMFN,
+  monthToMFN: MonthToMFN,
   ages: NormalizedAges,
 ): NormalizedAmountAndTimingOneTime | null => {
-  const asMFN = toMFN.forMonth.pastElided(amountAndTiming.month)
+  const asMFN = monthToMFN.pastElided(amountAndTiming.month)
   return asMFN === 'inThePast'
     ? null
     : {

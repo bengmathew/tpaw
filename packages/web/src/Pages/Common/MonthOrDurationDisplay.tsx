@@ -72,7 +72,7 @@ export const getNormalizedMonthStr = (
     return result(InMonthsFns.toStr(normValue.baseValue), 'noDash')
   }
   switch (normValue.baseValue.type) {
-    case 'calendarMonthAsNow':
+    case 'now':
       return result('Now', 'noDash')
     case 'calendarMonth':
       return result(

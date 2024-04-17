@@ -1,4 +1,11 @@
-import { assert, block, letIn, noCase } from '@tpaw/common'
+import {
+  PLAN_PARAMS_CONSTANTS,
+  assert,
+  block,
+  fGet,
+  letIn,
+  noCase,
+} from '@tpaw/common'
 import * as Rust from '@tpaw/simulator'
 import _ from 'lodash'
 import { SimpleRange } from '../../Utils/SimpleRange'
@@ -7,6 +14,7 @@ import { NormalizedMonthRange } from '../NormalizePlanParams/NormalizeLabeledAmo
 import { NormalizedLabeledAmountTimed } from '../NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
 import { fWASM } from '../Simulator/GetWASM'
+import { unpack } from 'msgpackr'
 
 export namespace CallRust {
   export type PlanParamsProcessed = ReturnType<typeof processPlanParams>
@@ -18,93 +26,18 @@ export namespace CallRust {
     let start = performance.now()
 
     const planParamsRust = getPlanParamsRust(planParamsNorm)
-    const fromRust = wasm.process_plan_params(planParamsRust, marketData)
-
     // console.log('process_plan_params:part1:', performance.now() - start)
     start = performance.now()
 
-    const withoutArrays = JSON.parse(
-      fromRust.without_arrays(),
-    ) as Rust.PlanParamsProcessed
-    const result = {
-      ...withoutArrays,
-      historicalMonthlyReturnsAdjusted: {
-        stocks: {
-          ...withoutArrays.historicalMonthlyReturnsAdjusted.stocks,
-          logSeries: fromRust
-            .array({
-              type: 'historicalMonthlyReturnsAdjusted.stocks.logSeries',
-            })
-            .slice(),
-        },
-        bonds: {
-          ...withoutArrays.historicalMonthlyReturnsAdjusted.bonds,
-          logSeries: fromRust
-            .array({ type: 'historicalMonthlyReturnsAdjusted.bonds.logSeries' })
-            .slice(),
-        },
-      },
-      byMonth: block(() => {
-        const forLabeledAmountTimedList = (
-          x: typeof withoutArrays.byMonth.wealth.futureSavings,
-          t:
-            | 'wealth.futureSavings'
-            | 'wealth.incomeDuringRetirement'
-            | 'adjustmentsToSpending.extraSpending.essential'
-            | 'adjustmentsToSpending.extraSpending.discretionary',
-        ) => ({
-          ...x,
-          byId: x.byId.map((v) => ({
-            ...v,
-            values: fromRust.array({ type: `${t}.byId`, id: v.id }).slice(),
-          })),
-          total: fromRust.array({ type: `${t}.total` }).slice(),
-        })
-        return {
-          ...withoutArrays.byMonth,
-          wealth: {
-            ...withoutArrays.byMonth.wealth,
-            futureSavings: forLabeledAmountTimedList(
-              withoutArrays.byMonth.wealth.futureSavings,
-              'wealth.futureSavings',
-            ),
-            incomeDuringRetirement: forLabeledAmountTimedList(
-              withoutArrays.byMonth.wealth.incomeDuringRetirement,
-              'wealth.incomeDuringRetirement',
-            ),
-            total: fromRust.array({ type: 'wealth.total' }).slice(),
-          },
-          adjustmentsToSpending: {
-            ...withoutArrays.byMonth.adjustmentsToSpending,
-            extraSpending: {
-              ...withoutArrays.byMonth.adjustmentsToSpending.extraSpending,
-              essential: forLabeledAmountTimedList(
-                withoutArrays.byMonth.adjustmentsToSpending.extraSpending
-                  .essential,
-                'adjustmentsToSpending.extraSpending.essential',
-              ),
-              discretionary: forLabeledAmountTimedList(
-                withoutArrays.byMonth.adjustmentsToSpending.extraSpending
-                  .discretionary,
-                'adjustmentsToSpending.extraSpending.discretionary',
-              ),
-            },
-          },
-          risk: {
-            ...withoutArrays.byMonth.risk,
-            tpawAndSPAW: {
-              ...withoutArrays.byMonth.risk.tpawAndSPAW,
-              lmp: fromRust.array({ type: 'risk.tpawAndSPAW.lmp' }).slice(),
-            },
-          },
-        }
-      }),
-    }
-    fromRust.free()
+    const encoded = wasm.process_plan_params_lib(planParamsRust, marketData)
     // console.log('process_plan_params:part2:', performance.now() - start)
     start = performance.now()
 
-    return result
+    const planParamsProcessed = unpack(encoded)
+    // console.log('process_plan_params:part3:', performance.now() - start)
+    start = performance.now()
+
+    return planParamsProcessed as Rust.PlanParamsProcessed
   }
 
   export const getPlanParamsRust = (
@@ -192,12 +125,30 @@ export namespace CallRust {
       end: { stocks: valueForMonthRange.end.stocks },
     })
 
+    const constants: Rust.PlanParamsRust['constants'] = {
+      maxAge: PLAN_PARAMS_CONSTANTS.people.ages.person.maxAge,
+      riskToleranceNumIntegerValuesStartingFrom0:
+        PLAN_PARAMS_CONSTANTS.risk.tpaw.riskTolerance.values
+          .numIntegerValuesStartingFrom0,
+      riskToleranceStartRRA:
+        PLAN_PARAMS_CONSTANTS.risk.tpaw.riskTolerance.values.startRRA,
+      riskToleranceEndRRA:
+        PLAN_PARAMS_CONSTANTS.risk.tpaw.riskTolerance.values.endRRA,
+    }
     const ages: Rust.PlanParamsRust['ages'] = {
       simulationMonths: letIn(planParamsNorm.ages, ({ simulationMonths }) => ({
         numMonths: simulationMonths.numMonths,
+        numWithdrawalMonths: simulationMonths.numWithdrawalMonths,
         lastMonthAsMFN: simulationMonths.lastMonthAsMFN,
         withdrawalStartMonthAsMFN: simulationMonths.withdrawalStartMonth.asMFN,
       })),
+      longerLivedPerson: letIn(
+        fGet(planParamsNorm.ages[planParamsNorm.ages.longerLivedPersonType]),
+        (longerLivedPerson) => ({
+          maxAgeInMonths: longerLivedPerson.maxAge.baseValue.inMonths,
+          currentAgeInMonths: longerLivedPerson.currentAgeInfo.inMonths,
+        }),
+      ),
     }
 
     const wealth: Rust.PlanParamsRust['wealth'] = {
@@ -270,47 +221,32 @@ export namespace CallRust {
     const advanced = letIn(
       planParamsNorm.advanced,
       (advanced): Rust.PlanParamsRust['advanced'] => ({
-        expectedReturnsForPlanning: block(() => {
-          switch (advanced.expectedReturnsForPlanning.type) {
-            case 'regressionPrediction,20YearTIPSYield':
-            case 'conservativeEstimate,20YearTIPSYield':
-            case '1/CAPE,20YearTIPSYield':
-            case 'historical':
-              return { type: advanced.expectedReturnsForPlanning.type }
-            case 'manual':
-              return {
-                type: 'manual',
-                stocks: advanced.expectedReturnsForPlanning.stocks,
-                bonds: advanced.expectedReturnsForPlanning.bonds,
-              }
-          }
-        }),
-        historicalMonthlyLogReturnsAdjustment: block(() => {
-          return {
-            standardDeviation: {
-              stocks: {
-                scale:
-                  advanced.historicalMonthlyLogReturnsAdjustment
-                    .standardDeviation.stocks.scale,
-              },
-              bonds: {
-                enableVolatility:
-                  advanced.historicalMonthlyLogReturnsAdjustment
-                    .standardDeviation.bonds.enableVolatility,
-              },
-            },
+        returnsStatsForPlanning: {
+          expectedValue: {
+            empiricalAnnualNonLog:
+              advanced.returnsStatsForPlanning.expectedValue
+                .empiricalAnnualNonLog,
+          },
+          standardDeviation: advanced.returnsStatsForPlanning.standardDeviation,
+        },
+        historicalReturnsAdjustment: {
+          standardDeviation: {
+            bonds: advanced.historicalReturnsAdjustment.standardDeviation.bonds,
             overrideToFixedForTesting:
-              advanced.historicalMonthlyLogReturnsAdjustment
+              advanced.historicalReturnsAdjustment.standardDeviation
                 .overrideToFixedForTesting,
-          }
-        }),
-        sampling: {
-          type: advanced.sampling.type,
-          forMonteCarlo: {
-            blockSize: advanced.sampling.forMonteCarlo.blockSize.inMonths,
-            staggerRunStarts: advanced.sampling.forMonteCarlo.staggerRunStarts,
           },
         },
+        sampling:
+          advanced.sampling.type === 'monteCarlo'
+            ? {
+                type: advanced.sampling.type,
+                blockSize: advanced.sampling.data.blockSize.inMonths,
+                staggerRunStarts: advanced.sampling.data.staggerRunStarts,
+              }
+            : {
+                type: advanced.sampling.type,
+              },
         annualInflation: block(() => {
           switch (advanced.annualInflation.type) {
             case 'suggested':
@@ -324,6 +260,7 @@ export namespace CallRust {
     )
 
     return {
+      constants,
       ages,
       wealth,
       adjustmentsToSpending,

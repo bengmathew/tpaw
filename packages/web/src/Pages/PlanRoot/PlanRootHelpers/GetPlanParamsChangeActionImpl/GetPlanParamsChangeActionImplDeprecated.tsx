@@ -1,6 +1,7 @@
+import * as Sentry from '@sentry/nextjs'
 import {
-  LabeledAmountTimed,
   CalendarMonthFns,
+  LabeledAmountTimed,
   LabeledAmountUntimed,
   PlanParams,
   PlanParamsChangeAction,
@@ -9,20 +10,19 @@ import {
   noCase,
 } from '@tpaw/common'
 import _ from 'lodash'
+import { PlanParamsHelperFns } from '../../../../UseSimulator/PlanParamsHelperFns'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
+import { InMonthsFns } from '../../../../Utils/InMonthsFns'
+import { yourOrYourPartners } from '../../../../Utils/YourOrYourPartners'
 import { optGet } from '../../../../Utils/optGet'
-import { expectedReturnTypeLabelInfo } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
 import {
   getLabelStrTruncated,
-  getPlanParamsChangeActionImpl,
   getLabeledAmountTimedLocationStr,
   getLabeledAmountTimedOrUntimedLocationStr,
+  getPlanParamsChangeActionImpl,
 } from './GetPlanParamsChangeActionImpl'
-import { yourOrYourPartners } from '../../../../Utils/YourOrYourPartners'
-import { PlanParamsHelperFns } from '../../../../UseSimulator/PlanParamsHelperFns'
-import { InMonthsFns } from '../../../../Utils/InMonthsFns'
-import * as Sentry from '@sentry/nextjs'
+import { getExpectedReturnTypeLabelInfo } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility/GetExpectedReturnLabelInto'
 
 type _ActionFns = {
   render: (
@@ -147,21 +147,23 @@ export const processPlanParamsChangeActionDeprecated = (
     }
 
     // ---------
-    // SetExpectedReturns2
+    // SetExpectedReturns
     // ---------
     case 'setExpectedReturns': {
       const { value } = action
       return {
         render: () => {
-          const labelInfo = expectedReturnTypeLabelInfo({
+          const labelInfo = getExpectedReturnTypeLabelInfo({
             type: block(() => {
               switch (value.type) {
                 case 'suggested':
-                  return 'conservativeEstimate,20YearTIPSYield' as const
+                  return 'conservativeEstimate,20YearTIPSYield'
                 case 'oneOverCAPE':
-                  return '1/CAPE,20YearTIPSYield' as const
+                  return '1/CAPE,20YearTIPSYield'
                 case 'regressionPrediction':
-                  return 'regressionPrediction,20YearTIPSYield' as const
+                  return 'regressionPrediction,20YearTIPSYield'
+                case 'manual':
+                  return 'fixed'
                 default:
                   return value.type
               }
@@ -351,6 +353,104 @@ export const processPlanParamsChangeActionDeprecated = (
       return {
         render: () =>
           `Set block size for Monte Carlo simulation to ${InMonthsFns.toStr({ inMonths: value })}`,
+      }
+    }
+
+    // ---------
+    // setHistoricalStockReturnsAdjustmentVolatilityScale
+    // ---------
+    case 'setHistoricalStockReturnsAdjustmentVolatilityScale': {
+      const { value } = action
+      return {
+        render: () => `Set stocks volatility scaling to ${value}`,
+      }
+    }
+
+    // ---------
+    // setHistoricalBondReturnsAdjustmentEnableVolatility
+    // ---------
+    case 'setHistoricalBondReturnsAdjustmentEnableVolatility': {
+      const { value } = action
+      return {
+        render: () => `Bond volatility ${value ? 'enabled' : 'disabled'}`,
+      }
+    }
+    // ---------
+    // SetExpectedReturns2
+    // ---------
+    case 'setExpectedReturns2': {
+      const { value } = action
+      return {
+        render: () => {
+          const labelInfo = getExpectedReturnTypeLabelInfo({
+            type: value.type === 'manual' ? 'fixed' : value.type,
+          })
+          const label = labelInfo.isSplit
+            ? labelInfo.forUndoRedo
+            : _.lowerCase(labelInfo.stocksAndBonds)
+
+          return `Set expected returns to ${label}${
+            value.type === 'manual'
+              ? ` (stocks: ${formatPercentage(1)(
+                  value.stocks,
+                )}, bonds: ${formatPercentage(1)(value.bonds)})`
+              : ''
+          }`
+        },
+      }
+    }
+    // ---------
+    // setPersonMonthOfBirth2
+    // ---------
+    case 'setPersonMonthOfBirth2': {
+      const { person, monthOfBirth } = action.value
+      return {
+        render: () =>
+          `Set ${yourOrYourPartners(
+            person,
+          )} month of birth to ${CalendarMonthFns.toStr(monthOfBirth)}`,
+      }
+    }
+    // ---------
+    // setSPAWAndSWRAllocation
+    // ---------
+    case 'setSPAWAndSWRAllocation': {
+      return {
+        render: () => `Updated stock allocation`,
+      }
+    }
+    // ---------
+    // setMonthRangeForLabeledAmountTimed
+    // ---------
+    case 'setMonthRangeForLabeledAmountTimed': {
+      const { location, entryId, monthRange } = action.value
+      return {
+        render: (_: PlanParams, planParams: PlanParams) => {
+          return `Set ${getLabeledAmountTimedLocationStr(
+            location,
+          )} entry "${getLabelStrTruncated(
+            fGet(
+              optGet(
+                PlanParamsHelperFns.getLabeledAmountTimedListFromLocation(
+                  planParams,
+                  location,
+                ),
+                entryId,
+              ),
+            ).label,
+          )}" month range`
+        },
+      }
+    }
+    // ---------
+    // addLabeledAmountTimed
+    // ---------
+    case 'addLabeledAmountTimed': {
+      const { location } = action.value
+      return {
+        render: () => {
+          return `Added ${getLabeledAmountTimedLocationStr(location)} entry`
+        },
       }
     }
 

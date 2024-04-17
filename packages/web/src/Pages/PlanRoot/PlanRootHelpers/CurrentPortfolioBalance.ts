@@ -25,6 +25,7 @@ import { WASM } from '../../../UseSimulator/Simulator/GetWASM'
 import { runSimulationInWASM } from '../../../UseSimulator/Simulator/RunSimulationInWASM'
 import { groupBy } from '../../../Utils/GroupBy'
 import { getMarketDataIndexForTime } from '../../Common/GetMarketData'
+import { CallRust } from '../../../UseSimulator/PlanParamsProcessed/CallRust'
 
 export namespace CurrentPortfolioBalance {
   type _State = { estimate: number; allocation: { stocks: number } }
@@ -74,7 +75,11 @@ export namespace CurrentPortfolioBalance {
     const startingParams = fGet(_.first(planParamsHistory)).params
     assert(startingParams.timestamp <= estimationTimestamp)
     const startingPortfolioBalance = startingParams.wealth.portfolioBalance
-    assert(startingPortfolioBalance.updatedHere)
+    // FEATURE: Don't do estimation for non-dated plans.
+    assert(
+      !startingPortfolioBalance.isDatedPlan ||
+        startingPortfolioBalance.updatedHere,
+    )
 
     const simulate_inOrder = _getSimulate_InOrder(
       planId,
@@ -121,7 +126,11 @@ export namespace CurrentPortfolioBalance {
     )
 
     const start = block(() => {
-      const amount = startingPortfolioBalance.amount
+      const amount =
+        !startingPortfolioBalance.isDatedPlan ||
+        startingPortfolioBalance.updatedHere
+          ? startingPortfolioBalance.amount
+          : assertFalse()
       const timestamp = startTime
       const allocation = getAllocationForParams(startingParams, amount)
       return { amount, timestamp, allocation }
@@ -166,24 +175,27 @@ export namespace CurrentPortfolioBalance {
           return null
         }
         const prev = planParamsHistoryFiltered[i - 1]
-        const prevPortfolioBalanceChangedAtId = prev.params.wealth
-          .portfolioBalance.updatedHere
-          ? prev.id
-          : prev.params.wealth.portfolioBalance.updatedAtId
+        const prevPortfolioBalanceChangedAtId =
+          !prev.params.wealth.portfolioBalance.isDatedPlan ||
+          prev.params.wealth.portfolioBalance.updatedHere
+            ? prev.id
+            : prev.params.wealth.portfolioBalance.updatedAtId
         const timestamp = params.timestamp
-        const portfolioUpdate = params.wealth.portfolioBalance.updatedHere
-          ? {
-              amount: params.wealth.portfolioBalance.amount,
-              exactTimestamp: params.timestamp,
-            }
-          : params.wealth.portfolioBalance.updatedAtId !==
-              prevPortfolioBalanceChangedAtId
+        const portfolioUpdate =
+          !params.wealth.portfolioBalance.isDatedPlan ||
+          params.wealth.portfolioBalance.updatedHere
             ? {
-                amount: params.wealth.portfolioBalance.updatedTo,
-                exactTimestamp:
-                  params.wealth.portfolioBalance.updatedAtTimestamp,
+                amount: params.wealth.portfolioBalance.amount,
+                exactTimestamp: params.timestamp,
               }
-            : null
+            : params.wealth.portfolioBalance.updatedAtId !==
+                prevPortfolioBalanceChangedAtId
+              ? {
+                  amount: params.wealth.portfolioBalance.updatedTo,
+                  exactTimestamp:
+                    params.wealth.portfolioBalance.updatedAtTimestamp,
+                }
+              : null
         return {
           timestamp,
           getArgs: (currEstimate) => {
@@ -330,7 +342,7 @@ export namespace CurrentPortfolioBalance {
       const historyItem = pickPlanParamsForTimestamp(timestamp)
       const marketDataAtTime = {
         ...pickMarketDataForTimestamp(timestamp),
-        timestampMSForHistoricalReturns: timestamp,
+        timestampForMarketData: timestamp,
       }
 
       const cacheKey = `${historyItem.id}/${timestamp}/${portfolioBalance}`
@@ -338,15 +350,18 @@ export namespace CurrentPortfolioBalance {
       if (fromCache) return fromCache
 
       const planParams = historyItem.params
-      const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
+      const planParamsNorm = normalizePlanParams(planParams, {
         timestamp,
-        ianaTimezoneName,
-      )
-      const planParamsNorm = normalizePlanParams(planParams, nowAsCalendarMonth)
+        calendarMonth: CalendarMonthFns.fromTimestamp(
+          timestamp,
+          ianaTimezoneName,
+        ),
+      })
 
       let start = performance.now()
       start = performance.now()
       timing.t1 += performance.now() - start
+      const planParamsRust = CallRust.getPlanParamsRust(planParamsNorm)
       const planParamsProcessed = processPlanParams(
         planParamsNorm,
         marketDataAtTime,
@@ -357,6 +372,8 @@ export namespace CurrentPortfolioBalance {
       const result = getFirstMonthSavingsPortfolioDetail(
         runSimulationInWASM(
           portfolioBalance,
+          planParamsRust,
+          marketDataAtTime,
           planParamsNorm,
           planParamsProcessed,
           { start: 0, end: 1 },
@@ -547,6 +564,7 @@ export namespace CurrentPortfolioBalance {
       }
     })
 
+    export type CutInfo = ReturnType<typeof cutInfo>
   export const cutInfo = (
     endTimestamp: number,
     info: { preBase: ByMonthInfo | null; postBase: Info },

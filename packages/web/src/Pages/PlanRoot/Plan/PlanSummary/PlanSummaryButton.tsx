@@ -19,7 +19,6 @@ import { PlanInputCurrentPortfolioBalanceSummary } from '../PlanInput/PlanInputC
 import { PlanInputDevMiscSummary } from '../PlanInput/PlanInputDev/PlanInputDevMisc'
 import { PlanInputDevSimulationsSummary } from '../PlanInput/PlanInputDev/PlanInputDevSimulations'
 import { PlanInputDevTimeSummary } from '../PlanInput/PlanInputDev/PlanInputDevTime'
-import { PlanInputExpectedReturnsAndVolatilitySummary } from '../PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { PlanInputExtraSpendingSummary } from '../PlanInput/PlanInputExtraSpending'
 import { PlanInputFutureSavingsSummary } from '../PlanInput/PlanInputFutureSavings'
 import { PlanInputIncomeDuringRetirementSummary } from '../PlanInput/PlanInputIncomeDuringRetirement'
@@ -31,6 +30,7 @@ import { PlanInputSpendingCeilingAndFloorSummary } from '../PlanInput/PlanInputS
 import { PlanInputStrategySummary } from '../PlanInput/PlanInputStrategy'
 import { usePlanColors } from '../UsePlanColors'
 import { CurrentPortfolioBalance } from '../../PlanRootHelpers/CurrentPortfolioBalance'
+import { PlanInputExpectedReturnsAndVolatilitySummary } from '../PlanInput/PlanInputExpectedReturnsAndVolatility/PlanInputExpectedReturnsAndVolatility'
 
 type _Props = {
   padding: Padding
@@ -139,7 +139,7 @@ export const PlanSummaryButton = React.memo(
 
 const _SectionSummary = React.memo(
   ({ type }: { type: Exclude<PlanInputType, 'history'> }) => {
-    const { planParamsNorm, planParamsProcessed, currentPortfolioBalanceInfo } =
+    const { planParamsNorm, simulationResult, currentPortfolioBalanceInfo } =
       useSimulation()
     switch (type) {
       case 'age':
@@ -147,9 +147,19 @@ const _SectionSummary = React.memo(
       case 'current-portfolio-balance':
         return (
           <PlanInputCurrentPortfolioBalanceSummary
-            amountInfo={CurrentPortfolioBalance.getAmountInfo(
-              currentPortfolioBalanceInfo,
-            )}
+            amountInfo={
+              currentPortfolioBalanceInfo.isDatedPlan
+                ? {
+                    isDatedPlan: true,
+                    info: CurrentPortfolioBalance.getAmountInfo(
+                      currentPortfolioBalanceInfo.info,
+                    ),
+                  }
+                : {
+                    isDatedPlan: false,
+                    amount: currentPortfolioBalanceInfo.amount,
+                  }
+            }
             forPrint={false}
           />
         )
@@ -167,7 +177,6 @@ const _SectionSummary = React.memo(
         return (
           <PlanInputLegacySummary
             planParamsNorm={planParamsNorm}
-            planParamsProcessed={planParamsProcessed}
           />
         )
       case 'spending-ceiling-and-floor':
@@ -182,14 +191,12 @@ const _SectionSummary = React.memo(
         return (
           <PlanInputExpectedReturnsAndVolatilitySummary
             planParamsNorm={planParamsNorm}
-            planParamsProcessed={planParamsProcessed}
           />
         )
       case 'inflation':
         return (
           <PlanInputInflationSummary
             planParamsNorm={planParamsNorm}
-            planParamsProcessed={planParamsProcessed}
           />
         )
       case 'strategy':

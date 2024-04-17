@@ -3,28 +3,27 @@ import { nominalToReal } from '../../Utils/NominalToReal'
 import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
 
 export function planParamsProcessAdjustmentsToSpending(
-  planParams: PlanParamsNormalized,
-  numMonths: number,
+  planParamsNorm: PlanParamsNormalized,
   monthlyInflation: number,
 ) {
   return {
     tpawAndSPAW: (() => {
       const { monthlySpendingCeiling, monthlySpendingFloor, legacy } =
-        planParams.adjustmentsToSpending.tpawAndSPAW
+        planParamsNorm.adjustmentsToSpending.tpawAndSPAW
       return {
         monthlySpendingCeiling:
           monthlySpendingCeiling === null
             ? null
-            : Math.max(monthlySpendingCeiling, planParams.risk.tpawAndSPAW.lmp),
+            : Math.max(monthlySpendingCeiling, planParamsNorm.risk.tpawAndSPAW.lmp),
         monthlySpendingFloor,
         legacy: (() => {
-          const { total } = planParams.adjustmentsToSpending.tpawAndSPAW.legacy
+          const { total } = planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy
           const external = _.sum(
             legacy.external.map((x) =>
               nominalToReal({
                 value: x,
                 monthlyInflation,
-                monthsFromNow: numMonths,
+                monthsFromNow: planParamsNorm.ages.simulationMonths.numMonths,
               }),
             ),
           )

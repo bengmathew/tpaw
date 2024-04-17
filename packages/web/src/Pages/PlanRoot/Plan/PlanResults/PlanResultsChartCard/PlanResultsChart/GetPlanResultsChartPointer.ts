@@ -208,19 +208,21 @@ const _getHeaderSection = (
     components
   const { planParamsNorm } = data
   const { ages } = planParamsNorm
-  const calendarMonth = CalendarMonthFns.getFromMFN(
-    planParamsNorm.nowAs.calendarMonth,
-  )(dataX)
+  const calendarMonth = planParamsNorm.datingInfo.nowAsCalendarMonth
+    ? CalendarMonthFns.getFromMFN(planParamsNorm.datingInfo.nowAsCalendarMonth)(
+        dataX,
+      )
+    : null
   const labelBase = getLabel({ lineHeight: fontSize.large.nonMono })
   const getAgeBreakdown = (personType: 'person1' | 'person2') => {
-    const { maxAge, currentAge } = fGet(ages[personType])
+    const { maxAge, currentAgeInfo } = fGet(ages[personType])
     if (dataX > maxAge.asMFN) {
       return {
         years: '—',
         months: '—',
       }
     }
-    const inMonths = currentAge.inMonths + dataX
+    const inMonths = currentAgeInfo.inMonths + dataX
     return {
       years: `${Math.floor(inMonths / 12)}`,
       months: `${inMonths % 12}`,
@@ -274,17 +276,24 @@ const _getHeaderSection = (
               getAgeLine('Age', 'person1'),
             ),
     ),
-    gap(4),
-    style(
-      {
-        font: ChartUtils.getFont(fontSize.large.nonMono - 2),
-        opacity: 1,
-      },
-      labelBase(
-        { align: 'end' },
-        text({}, CalendarMonthFns.toStr(calendarMonth, { shortMonth: true })),
-      ),
-    ),
+    ...(calendarMonth
+      ? [
+          gap(4),
+          style(
+            {
+              font: ChartUtils.getFont(fontSize.large.nonMono - 2),
+              opacity: 1,
+            },
+            labelBase(
+              { align: 'end' },
+              text(
+                {},
+                CalendarMonthFns.toStr(calendarMonth, { shortMonth: true }),
+              ),
+            ),
+          ),
+        ]
+      : []),
   ])
 }
 

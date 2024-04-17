@@ -1,5 +1,6 @@
 import {
   CalendarMonth,
+  CalendarMonthFns,
   GlidePath,
   block,
   fGet,
@@ -11,7 +12,7 @@ import {
   NormalizedMonthNotInThePast,
   normalizedMonthRangeCheckAndSquishRangeForAge,
 } from './NormalizeLabeledAmountTimedList/NormalizedMonth'
-import { NormalizedAges, ToMFN } from './NormalizePlanParamsAges'
+import { NormalizedAges, MonthToMFN } from './NormalizePlanParamsAges'
 
 export type NormalizedGlidePathEntry = {
   id: string
@@ -22,7 +23,6 @@ export type NormalizedGlidePathEntry = {
 }
 
 export type NormalizedGlidePath = {
-  nowAsCalendarMonth: CalendarMonth
   now: { stocks: number }
   intermediate: NormalizedGlidePathEntry[]
   end: { stocks: number }
@@ -31,21 +31,26 @@ export type NormalizedGlidePath = {
 
 export const normalizeGlidePath = (
   orig: GlidePath,
-  toMFN: ToMFN,
+  monthToMFN: MonthToMFN,
   ages: NormalizedAges,
+  nowAsCalendarMonth: CalendarMonth | null,
 ): NormalizedGlidePath => {
   const { lastMonthAsMFN } = ages.simulationMonths
   const validRangeAsMFN = letIn({ start: 1, end: lastMonthAsMFN - 1 }, (x) => ({
     includingLocalConstraints: x,
     excludingLocalConstraints: x,
   }))
-  const preNormStartAsMFN = toMFN.forCalendarMonth(orig.start.month)
+  const preNormStartAsMFN = orig.start.month.monthOfEntry.isDatedPlan
+    ? CalendarMonthFns.getToMFN(fGet(nowAsCalendarMonth))(
+        orig.start.month.monthOfEntry.calendarMonth,
+      )
+    : 0
   const [beforeEndStage1, atOrPastEndStage1] = _.partition(
     _.values(orig.intermediate)
       .map((x) => ({
         id: x.id,
         month: {
-          asMFN: toMFN.forMonth.pastNotElided(x.month),
+          asMFN: monthToMFN.pastNotElided(x.month),
           baseValue: x.month,
           validRangeAsMFN,
         },
@@ -96,7 +101,6 @@ export const normalizeGlidePath = (
   })
 
   return {
-    nowAsCalendarMonth: toMFN.inverse.nowAsCalendarMonth,
     now: { stocks: stocksNow },
     intermediate: intermediateBeforeElidingPast
       .filter((x) => x.month.asMFN > 0)
@@ -116,8 +120,19 @@ export const normalizeGlidePath = (
   }
 }
 
-normalizeGlidePath.inverse = (n: NormalizedGlidePath): GlidePath => ({
-  start: { month: n.nowAsCalendarMonth, stocks: n.now.stocks },
+normalizeGlidePath.inverse = (
+  n: NormalizedGlidePath,
+  nowAsCalendarMonth: CalendarMonth | null,
+): GlidePath => ({
+  start: {
+    month: {
+      type: 'now',
+      monthOfEntry: nowAsCalendarMonth
+        ? { isDatedPlan: true, calendarMonth: nowAsCalendarMonth }
+        : { isDatedPlan: false },
+    },
+    stocks: n.now.stocks,
+  },
   intermediate: _.fromPairs(
     [...n.intermediate, ...n.atOrPastEnd].map((x) => [
       x.id,

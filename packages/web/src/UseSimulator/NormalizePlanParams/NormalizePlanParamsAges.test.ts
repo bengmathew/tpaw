@@ -26,34 +26,41 @@ describe('NormalizePlanParamsAges', () => {
     const validRangeAsMFNForMonthOfBirth = {
       includingLocalConstraints: {
         start: calendarMonToMFN({
-          year: PLAN_PARAMS_CONSTANTS.earliestYearOfBirth,
+          year: PLAN_PARAMS_CONSTANTS.people.ages.person.currentAgeInfo
+            .datedPlan.earliestYearOfBirth,
           month: 1,
         }),
         end: 0,
       },
     }
     test('retiredWithNoRetirementDateSpecified', () => {
+      const monthOfBirth = CalendarMonthFns.addMonths(
+        nowCalendarMonth,
+        -10 * 12,
+      )
       const person: Person['ages'] = {
         type: 'retiredWithNoRetirementDateSpecified',
-        monthOfBirth: CalendarMonthFns.addMonths(nowCalendarMonth, -10 * 12),
+        currentAgeInfo: {
+          isDatedPlan: true,
+          monthOfBirth: monthOfBirth,
+        },
         maxAge: { inMonths: 20 * 12 + 3 },
       }
       const result = _forPerson(person, calendarMonToMFN)
       expect(result).toEqual({
-        monthOfBirth: {
-          asMFN: -10 * 12,
-          baseValue: person.monthOfBirth,
-          validRangeAsMFN: validRangeAsMFNForMonthOfBirth,
-        },
-        currentAge: {
+        currentAgeInfo: {
+          isDatedPlan: true,
           inMonths: 10 * 12,
+          asMFN: -10 * 12,
+          baseValue: monthOfBirth,
+          validRangeAsMFN: validRangeAsMFNForMonthOfBirth,
         },
         maxAge: {
           asMFN: 20 * 12 + 3 - 10 * 12,
           baseValue: person.maxAge,
           validRangeInMonths: {
             start: 10 * 12 + 2,
-            end: PLAN_PARAMS_CONSTANTS.maxAgeInMonths,
+            end: PLAN_PARAMS_CONSTANTS.people.ages.person.maxAge,
           },
         },
         retirement: {
@@ -70,23 +77,25 @@ describe('NormalizePlanParamsAges', () => {
       [10 * 12, true],
       [10 * 12 - 1, true],
     ])('retirementDateSpecified', (retirementAge, isRetired) => {
+      const monthOfBirth = {
+        year: nowCalendarMonth.year - 10,
+        month: nowCalendarMonth.month,
+      }
       const person: Person['ages'] = {
         type: 'retirementDateSpecified',
-        monthOfBirth: {
-          year: nowCalendarMonth.year - 10,
-          month: nowCalendarMonth.month,
-        },
+        currentAgeInfo: { isDatedPlan: true, monthOfBirth },
         retirementAge: { inMonths: retirementAge },
         maxAge: { inMonths: 20 * 12 + 3 },
       }
 
       expect(_forPerson(person, calendarMonToMFN)).toMatchObject({
-        monthOfBirth: {
+        currentAgeInfo: {
+          isDatedPlan: true,
           asMFN: -10 * 12,
-          baseValue: person.monthOfBirth,
+          inMonths: 10 * 12,
+          baseValue: monthOfBirth,
           validRangeAsMFN: validRangeAsMFNForMonthOfBirth,
         },
-        currentAge: { inMonths: 10 * 12 },
         maxAge: {
           asMFN: 20 * 12 + 3 - 10 * 12,
           baseValue: person.maxAge,
@@ -201,14 +210,20 @@ describe('NormalizePlanParamsAges', () => {
         person1: {
           ages: {
             type: 'retiredWithNoRetirementDateSpecified' as const,
-            monthOfBirth: mfnToCalendarMonth(-10),
+            currentAgeInfo: {
+              isDatedPlan: true,
+              monthOfBirth: mfnToCalendarMonth(-10),
+            },
             maxAge: { inMonths: 20 },
           },
         },
         person2: {
           ages: {
             type: 'retiredWithNoRetirementDateSpecified' as const,
-            monthOfBirth: mfnToCalendarMonth(-20),
+            currentAgeInfo: {
+              isDatedPlan: true,
+              monthOfBirth: mfnToCalendarMonth(-20),
+            },
             maxAge: { inMonths: 30 },
           },
         },

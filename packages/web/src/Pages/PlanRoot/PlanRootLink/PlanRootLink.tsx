@@ -73,7 +73,11 @@ export const PlanRootLink = React.memo(
               json,
               planParamsBackwardsCompatibleGuard,
             )(fGet(data.linkBasedPlan).params).force()
-      assert(planParamsMigrate(result).wealth.portfolioBalance.updatedHere)
+      const migrated = planParamsMigrate(result)
+      assert(
+        !migrated.wealth.portfolioBalance.isDatedPlan ||
+          migrated.wealth.portfolioBalance.updatedHere,
+      )
       return result
     }, [startingState, data])
 

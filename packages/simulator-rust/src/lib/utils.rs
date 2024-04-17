@@ -5,6 +5,7 @@ pub mod random;
 pub mod return_series;
 pub mod round;
 pub mod shared_types;
+pub mod linear_fns;
 
 use self::shared_types::StocksAndBonds;
 
@@ -48,6 +49,9 @@ macro_rules! console_log {
     ($($t:tt)*) => (web_sys::console::log_1(&format_args!($($t)*).to_string().into()))
 }
 
+pub fn vec_u8_js_view(x: &Vec<u8>) -> js_sys::Uint8Array {
+    unsafe { js_sys::Uint8Array::view(&x[..]) }
+}
 pub fn vec_f64_js_view(x: &Vec<f64>) -> js_sys::Float64Array {
     unsafe { js_sys::Float64Array::view(&x[..]) }
 }

@@ -1,7 +1,7 @@
 import { faCircle } from '@fortawesome/pro-light-svg-icons'
 import { faCircle as faCircleSolid } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { PLAN_PARAMS_CONSTANTS } from '@tpaw/common'
+import { PLAN_PARAMS_CONSTANTS, assert } from '@tpaw/common'
 import React from 'react'
 import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import {
@@ -16,11 +16,12 @@ import {
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
 import { InMonthsFns } from '../../../../Utils/InMonthsFns'
+import _ from 'lodash'
 
 export const PlanInputSimulation = React.memo(
   (props: PlanInputBodyPassThruProps) => {
     const { updatePlanParams } = useSimulation()
-
+    const isModified = useIsPlanInputSimulationModifed()
     return (
       <PlanInputBody {...props}>
         <>
@@ -35,8 +36,11 @@ export const PlanInputSimulation = React.memo(
           <_MonteCarloCard className="mt-8" props={props} />
           <_HistoricalCard className="mt-8" props={props} />
           <button
-            className="mt-8 underline"
-            onClick={() => updatePlanParams('setSamplingToDefault', null)}
+            className="mt-8 underline disabled:lighten-2"
+            disabled={!isModified}
+            onClick={() => {
+              updatePlanParams('setSamplingToDefault', null)
+            }}
             style={{
               ...paddingCSSStyleHorz(props.sizing.cardPadding, { scale: 0.5 }),
             }}
@@ -63,6 +67,8 @@ const _MonteCarloCard = React.memo(
     const isEnabled = planParamsNorm.advanced.sampling.type === 'monteCarlo'
     const handleBlockSize = (x: { inMonths: number }) =>
       updatePlanParams('setMonteCarloSamplingBlockSize2', x)
+    assert(defaultPlanParams.advanced.sampling.type === 'monteCarlo')
+    const defaultBlockSize = defaultPlanParams.advanced.sampling.data.blockSize
 
     const body = (
       <div className="">
@@ -85,11 +91,14 @@ const _MonteCarloCard = React.memo(
             modalLabel="Sampling Block Size"
             normValue={{
               baseValue:
-                planParamsNorm.advanced.sampling.forMonteCarlo.blockSize,
+                planParamsNorm.advanced.sampling.type === 'monteCarlo'
+                  ? planParamsNorm.advanced.sampling.data.blockSize
+                  : planParamsNorm.advanced.sampling.defaultData.monteCarlo
+                      ?.blockSize ?? defaultBlockSize,
               validRangeInMonths: {
                 includingLocalConstraints: {
                   start: 1,
-                  end: PLAN_PARAMS_CONSTANTS.maxAgeInMonths,
+                  end: PLAN_PARAMS_CONSTANTS.people.ages.person.maxAge,
                 },
               },
             }}
@@ -99,11 +108,7 @@ const _MonteCarloCard = React.memo(
           <button
             className="mt-4 underline disabled:lighten-2"
             disabled={!isModified}
-            onClick={() => {
-              handleBlockSize(
-                defaultPlanParams.advanced.sampling.forMonteCarlo.blockSize,
-              )
-            }}
+            onClick={() => handleBlockSize(defaultBlockSize)}
           >
             Reset to Default
           </button>
@@ -185,10 +190,15 @@ export const useIsPlanInputSimulationModifed = () => {
 
 const useIsMonteCarloCardModifed = () => {
   const { planParamsNorm, defaultPlanParams } = useSimulation()
-  return (
-    planParamsNorm.advanced.sampling.forMonteCarlo.blockSize !==
-    defaultPlanParams.advanced.sampling.forMonteCarlo.blockSize
-  )
+
+  assert(defaultPlanParams.advanced.sampling.type === 'monteCarlo')
+  const result =
+    planParamsNorm.advanced.sampling.type === 'monteCarlo' &&
+    !_.isEqual(
+      planParamsNorm.advanced.sampling.data.blockSize,
+      defaultPlanParams.advanced.sampling.data.blockSize,
+    )
+  return result
 }
 const useIsHistoricalSequenceCardModifed = () => {
   const { planParamsNorm } = useSimulation()
@@ -202,9 +212,7 @@ export const PlanInputSimulationSummary = React.memo(
         <h2>Monte Carlo Sequence</h2>
         <h2>
           Block Size:{' '}
-          {InMonthsFns.toStr(
-            planParamsNorm.advanced.sampling.forMonteCarlo.blockSize,
-          )}
+          {InMonthsFns.toStr(planParamsNorm.advanced.sampling.data.blockSize)}
         </h2>
       </>
     ) : (

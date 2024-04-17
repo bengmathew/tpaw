@@ -6,7 +6,6 @@ import {
   generateSmallId,
 } from '@tpaw/common'
 import _ from 'lodash'
-import { PickType } from '../../Utils/UtilityTypes'
 import {
   NormalizedGlidePath,
   NormalizedGlidePathEntry,
@@ -16,35 +15,43 @@ import {
 import { normalizedMonthErrorMsg } from './NormalizeLabeledAmountTimedList/NormalizedMonth'
 import {
   getFromMFNToNumericAge,
-  getToMFN,
+  getMonthToMFN,
   normalizePlanParamsAges,
 } from './NormalizePlanParamsAges'
 
 describe('NormalizeGlidePath', () => {
-  const nowAs = { calendarMonth: { year: 2024, month: 3 } }
-  const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(nowAs.calendarMonth)
+  const datingInfo = { nowAsCalendarMonth: { year: 2024, month: 3 } }
+  const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(
+    datingInfo.nowAsCalendarMonth,
+  )
   const ages = normalizePlanParamsAges(
     {
       withPartner: true,
       person1: {
         ages: {
           type: 'retiredWithNoRetirementDateSpecified' as const,
-          monthOfBirth: mfnToCalendarMonth(-10),
+          currentAgeInfo: {
+            isDatedPlan: true,
+            monthOfBirth: mfnToCalendarMonth(-10),
+          },
           maxAge: { inMonths: 20 },
         },
       },
       person2: {
         ages: {
           type: 'retiredWithNoRetirementDateSpecified' as const,
-          monthOfBirth: mfnToCalendarMonth(-10),
+          currentAgeInfo: {
+            isDatedPlan: true,
+            monthOfBirth: mfnToCalendarMonth(-10),
+          },
           maxAge: { inMonths: 30 },
         },
       },
       withdrawalStart: 'person2',
     },
-    nowAs.calendarMonth,
+    datingInfo.nowAsCalendarMonth,
   )
-  const toMFN = getToMFN({ nowAs, ages })
+  const monthToMFN = getMonthToMFN(datingInfo.nowAsCalendarMonth, ages)
 
   const m = (mfn: number): Month => ({
     type: 'numericAge',
@@ -103,10 +110,10 @@ describe('NormalizeGlidePath', () => {
       const normEntry = (
         x: (typeof intermediate)[0],
       ): NormalizedGlidePathEntry => {
-        const asMFN = toMFN.forMonth.pastElided(x.month)
+        const asMFN = monthToMFN.pastElided(x.month)
         assert(asMFN !== 'inThePast')
         const personMaxAgeAsMFN = (personType: 'person1' | 'person2') =>
-          toMFN.forMonth.fNotInPast({
+          monthToMFN.fNotInPast({
             type: 'namedAge',
             person: personType,
             age: 'max',
@@ -143,7 +150,16 @@ describe('NormalizeGlidePath', () => {
       expect(
         normalizeGlidePath(
           {
-            start: { month: mfnToCalendarMonth(startMFN), stocks: startStocks },
+            start: {
+              month: {
+                type: 'now',
+                monthOfEntry: {
+                  isDatedPlan: true,
+                  calendarMonth: mfnToCalendarMonth(startMFN),
+                },
+              },
+              stocks: startStocks,
+            },
             intermediate: _.fromPairs(
               intermediate
                 .map((x, i): GlidePath['intermediate']['string'] => ({
@@ -156,17 +172,17 @@ describe('NormalizeGlidePath', () => {
             ),
             end: { stocks: endStocks },
           },
-          toMFN,
+          monthToMFN,
           ages,
+          datingInfo.nowAsCalendarMonth,
         ),
       ).toEqual({
-        nowAsCalendarMonth: nowAs.calendarMonth,
         now: { stocks: resultNowStocks },
         intermediate: intermediate
           .filter(
             (x) =>
               x.issue !== 'atOrPastEnd' &&
-              toMFN.forMonth.pastElided(x.month) !== 'inThePast',
+              monthToMFN.pastElided(x.month) !== 'inThePast',
           )
           .map(normEntry),
         end: { stocks: endStocks },
@@ -176,5 +192,4 @@ describe('NormalizeGlidePath', () => {
       } as NormalizedGlidePath)
     },
   )
-
 })

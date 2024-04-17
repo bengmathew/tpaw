@@ -17,8 +17,8 @@ import {
 import * as Sentry from '@sentry/nextjs'
 
 Sentry.init({
+  maxValueLength: 10000,
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  maxValueLength:10000,
 })
 
 addEventListener('unhandledrejection', (event) => {
@@ -37,6 +37,8 @@ addEventListener('message', async (event) => {
       await _withErrorHandling(async () => {
         const result = runSimulationInWASM(
           eventData.args.currentPortfolioBalanceAmount,
+          eventData.args.planParamsRust,
+          eventData.args.marketData,
           eventData.args.planParamsNorm,
           eventData.args.planParamsProcessed,
           eventData.args.runs,

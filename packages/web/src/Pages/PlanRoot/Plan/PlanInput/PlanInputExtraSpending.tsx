@@ -50,7 +50,15 @@ export const PlanInputExtraSpending = React.memo(
       monthRange: {
         type: 'startAndDuration',
         start: ages.person1.retirement.isRetired
-          ? planParamsNorm.nowAs.month
+          ? {
+              type: 'now',
+              monthOfEntry: planParamsNorm.datingInfo.isDated
+                ? {
+                    isDatedPlan: true,
+                    calendarMonth: planParamsNorm.datingInfo.nowAsCalendarMonth,
+                  }
+                : { isDatedPlan: false },
+            }
           : { type: 'namedAge', age: 'retirement', person: 'person1' },
         duration: {
           inMonths: Math.min(5 * 12, ages.person1.retirement.numMonthsLeft),

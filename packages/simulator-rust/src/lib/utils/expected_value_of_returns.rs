@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::*;
 
 #[derive(Serialize, Deserialize, Tsify, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct EmpiricalAnnualNonLogExpectedValueInfo {
+pub struct EmpiricalAnnualNonLogExpectedReturnInfo {
     pub value: f64,
     pub block_size: Option<usize>,
     pub log_volatility_scale: f64,

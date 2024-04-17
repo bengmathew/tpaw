@@ -1,5 +1,6 @@
 import {
   DEFAULT_MONTE_CARLO_SIMULATION_SEED,
+  assert,
   getDefaultNonPlanParams,
 } from '@tpaw/common'
 import { useMemo } from 'react'
@@ -13,15 +14,29 @@ export const useIsPlanInputDevSimulationsModified = () => {
     () => getDefaultNonPlanParams(Date.now()),
     [],
   )
-  return (
-    randomSeed !== DEFAULT_MONTE_CARLO_SIMULATION_SEED ||
-    planParamsNorm.advanced.sampling.forMonteCarlo.staggerRunStarts !==
-      defaultPlanParams.advanced.sampling.forMonteCarlo.staggerRunStarts ||
-    nonPlanParams.numOfSimulationForMonteCarloSampling !==
-      defaultNonPlanParams.numOfSimulationForMonteCarloSampling ||
-    planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
+  assert(defaultPlanParams.advanced.sampling.type === 'monteCarlo')
+
+  const isStaggerRunStartsModified =
+    planParamsNorm.advanced.sampling.type === 'monteCarlo' &&
+    planParamsNorm.advanced.sampling.data.staggerRunStarts !==
+      defaultPlanParams.advanced.sampling.data.staggerRunStarts
+
+  const isOverrideToFixedForTestingModified =
+    planParamsNorm.advanced.historicalReturnsAdjustment.standardDeviation
       .overrideToFixedForTesting !==
-      defaultPlanParams.advanced.historicalMonthlyLogReturnsAdjustment
-        .overrideToFixedForTesting
+    defaultPlanParams.advanced.historicalReturnsAdjustment.standardDeviation
+      .overrideToFixedForTesting
+
+  const isNumberOfSimulationsModified =
+    nonPlanParams.numOfSimulationForMonteCarloSampling !==
+    defaultNonPlanParams.numOfSimulationForMonteCarloSampling
+
+  const isRandomSeedModified =
+    randomSeed !== DEFAULT_MONTE_CARLO_SIMULATION_SEED
+  return (
+    isRandomSeedModified ||
+    isStaggerRunStartsModified ||
+    isNumberOfSimulationsModified ||
+    isOverrideToFixedForTestingModified
   )
 }

@@ -18,15 +18,11 @@ import { CallRust } from './CallRust'
 
 export const planParamsProcessRisk = (
   planParamsNorm: PlanParamsNormalized,
-  expectedReturnsForPlanning: CallRust.PlanParamsProcessed['expectedReturnsForPlanning'],
-  empiricalAnnualLogVarianceOfStocks: number,
+  returnStatsForPlanning: CallRust.PlanParamsProcessed['returnsStatsForPlanning'],
 ) => {
   const { ages, risk } = planParamsNorm
 
-  const rMuSigmaPow2 = _getRMuSigmaPow2(
-    expectedReturnsForPlanning,
-    empiricalAnnualLogVarianceOfStocks,
-  )
+  const rMuSigmaPow2 = _getRMuSigmaPow2(returnStatsForPlanning)
 
   const tpawGlidePath = _getTPAWGlidePath(planParamsNorm, rMuSigmaPow2)
   // _logTPAWGlidePath(tpawGlidePath)
@@ -44,7 +40,7 @@ export const planParamsProcessRisk = (
             risk.tpaw.riskTolerance.at20 +
               risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20,
             (rra) =>
-              PLAN_PARAMS_CONSTANTS.riskToleranceValues.riskToleranceToRRA.withInfinityAtZero(
+              PLAN_PARAMS_CONSTANTS.risk.tpaw.riskTolerance.values.riskToleranceToRRA.withInfinityAtZero(
                 rra,
               ),
           ),
@@ -71,7 +67,7 @@ export const planParamsProcessRisk = (
   }
 
   const spawAndSWR = {
-    allocation: processGlidePath(risk.spawAndSWR.allocation, planParamsNorm),
+    allocation: _processGlidePath(risk.spawAndSWR.allocation, planParamsNorm),
   }
 
   const swr = {
@@ -123,7 +119,7 @@ const _getTPAWGlidePath = (
   } | null
 }[] => {
   const { ages, risk } = planParamsNorm
-  const { numMonths } = planParamsNorm.ages.simulationMonths
+  const { numMonths } = ages.simulationMonths
   const getRiskToleranceFromMFN = (mfn: number) => {
     const longerLivedPerson = fGet(ages[ages.longerLivedPersonType])
     return Math.max(
@@ -135,7 +131,7 @@ const _getTPAWGlidePath = (
             longerLivedPerson.maxAge.baseValue.inMonths,
             risk.tpaw.riskTolerance.at20 +
               risk.tpaw.riskTolerance.deltaAtMaxAge,
-          )(mfn + longerLivedPerson.currentAge.inMonths)
+          )(mfn + longerLivedPerson.currentAgeInfo.inMonths)
         : risk.tpaw.riskTolerance.at20,
     )
   }
@@ -152,18 +148,12 @@ const _getTPAWGlidePath = (
     const unclamped = block(() => {
       const riskTolerance = getRiskToleranceFromMFN(mfn)
       const rra =
-        PLAN_PARAMS_CONSTANTS.riskToleranceValues.riskToleranceToRRA.withInfinityAtZero(
+        PLAN_PARAMS_CONSTANTS.risk.tpaw.riskTolerance.values.riskToleranceToRRA.withInfinityAtZero(
           riskTolerance,
         )
       return { riskTolerance, rra, ..._currMertonFormula(rra) }
     })
-    const nominallyClampStockAllocation = (stockAllocation: number) => {
-      const result = _.clamp(stockAllocation, 0, 1)
-      // stockAllocation should already be in the range for [0, 1], but for
-      // floating point imprecision.
-      assert(Math.abs(result - stockAllocation) < 0.0001)
-      return result
-    }
+
     if (minRRA > unclamped.rra) {
       const clamped = block(() => {
         const rra = Math.max(minRRA, unclamped.rra)
@@ -171,7 +161,7 @@ const _getTPAWGlidePath = (
         return {
           rra,
           riskToleranceByInversion:
-            PLAN_PARAMS_CONSTANTS.riskToleranceValues.riskToleranceToRRA.withoutInfinityAtZero.inverse(
+            PLAN_PARAMS_CONSTANTS.risk.tpaw.riskTolerance.values.riskToleranceToRRA.withoutInfinityAtZero.inverse(
               rra,
             ),
           stockAllocation,
@@ -180,9 +170,13 @@ const _getTPAWGlidePath = (
       })
       return { minRRA, unclamped, clamped }
     } else {
-      unclamped.stockAllocation = nominallyClampStockAllocation(
-        unclamped.stockAllocation,
-      )
+      unclamped.stockAllocation = block(() => {
+        const nominallyClamped = _.clamp(unclamped.stockAllocation, 0, 1)
+        // stockAllocation should already be in the range for [0, 1], but for
+        // floating point imprecision.
+        assert(Math.abs(nominallyClamped - unclamped.stockAllocation) < 0.0001)
+        return nominallyClamped
+      })
       return { minRRA, unclamped, clamped: null }
     }
   }
@@ -225,13 +219,13 @@ type _RMuSigmaPow2 = {
   sigmaPow2: number
 }
 
-const _getRMuSigmaPow2 = (
-  expectedReturnsForPlanning: CallRust.PlanParamsProcessed['expectedReturnsForPlanning'],
-  empiricalAnnualLogVarianceOfStocks: number,
-) => ({
-  r: expectedReturnsForPlanning.empiricalAnnualNonLogReturnInfo.bonds.value,
-  mu: expectedReturnsForPlanning.empiricalAnnualNonLogReturnInfo.stocks.value,
-  sigmaPow2: empiricalAnnualLogVarianceOfStocks,
+const _getRMuSigmaPow2 = ({
+  stocks,
+  bonds,
+}: CallRust.PlanParamsProcessed['returnsStatsForPlanning']) => ({
+  r: bonds.empiricalAnnualNonLogExpectedReturnInfo.value,
+  mu: stocks.empiricalAnnualNonLogExpectedReturnInfo.value,
+  sigmaPow2: stocks.empiricalAnnualLogVariance,
 })
 
 // Does not clamp stock allocation.
@@ -279,7 +273,7 @@ _unclampedMertonsFormula.inverseFromStockAllocation = (
   return { rra: gamma }
 }
 
-export const processGlidePath = (
+const _processGlidePath = (
   { now, intermediate, end }: NormalizedGlidePath,
   planParamsNorm: PlanParamsNormalized,
 ) => {

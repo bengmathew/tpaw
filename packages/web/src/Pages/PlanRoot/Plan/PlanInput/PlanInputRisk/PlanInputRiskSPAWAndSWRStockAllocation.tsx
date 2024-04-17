@@ -17,7 +17,7 @@ export const PlanInputRiskSPAWAndSWRStockAllocationCard = React.memo(
     const { planParamsNorm, updatePlanParams, defaultPlanParams } =
       useSimulation()
     const handleChange = (x: GlidePath) =>
-      updatePlanParams('setSPAWAndSWRAllocation', x)
+      updatePlanParams('setSPAWAndSWRAllocation2', x)
 
     return (
       <div

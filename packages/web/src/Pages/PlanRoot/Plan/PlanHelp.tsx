@@ -75,32 +75,26 @@ export const PlanHelp = React.memo(
 )
 
 const _Body = React.memo(({ sizing }: { sizing: PlanHelpSizing }) => {
-  const { planParamsNorm, currentMarketData } = useSimulation()
+  const { planParamsNorm, simulationResult } = useSimulation()
+  const { marketData } = simulationResult.info
   const contentBeforeVars =
     usePlanContent().help[planParamsNorm.advanced.strategy]
   const contentAfterVars = block(() => {
-    const presetInfo =
-      fWASM().process_market_data_for_expected_returns_for_planning_presets(
-        CallRust.getPlanParamsRust(planParamsNorm).advanced.sampling,
-        planParamsNorm.advanced.historicalMonthlyLogReturnsAdjustment
-          .standardDeviation,
-        currentMarketData,
-      )
     const variables = {
       historicalExpectedStockReturn: formatPercentage(1)(
-        presetInfo.stocks.historical,
+        marketData.expectedReturns.stocks.historical,
       ),
       historicalExpectedBondReturn: formatPercentage(1)(
-        presetInfo.bonds.historical,
+        marketData.expectedReturns.bonds.historical,
       ),
       historicalReturnDataStartMonth: CalendarMonthFns.toStr(
-        presetInfo.historicalReturnsMonthRange.start,
+        marketData.historicalReturnsMonthRange.start,
       ),
       historicalReturnDataEndMonth: CalendarMonthFns.toStr(
-        presetInfo.historicalReturnsMonthRange.end,
+        marketData.historicalReturnsMonthRange.end,
       ),
       tipsYield20Year: formatPercentage(1)(
-        currentMarketData.bondRates.twentyYear,
+        marketData.expectedReturns.bonds.tipsYield20Year,
       ),
     }
     return Contentful.replaceVariables(variables, contentBeforeVars)

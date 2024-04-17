@@ -1,6 +1,6 @@
 import { assert } from '@tpaw/common'
 
-export const getNetPresentValue = (r: number[], amounts: Float64Array) => {
+export const getNetPresentValue = (r: number[], amounts: number[]) => {
   const n = amounts.length
   assert(r.length === n)
   const withCurrentMonth = new Float64Array(n)

@@ -40,7 +40,7 @@ const _doesMonthReferencePartner = (month: Month | { type: 'inThePast' }) => {
   switch (month.type) {
     case 'inThePast':
     case 'calendarMonth':
-    case 'calendarMonthAsNow':
+    case 'now':
       return false
     case 'numericAge':
     case 'namedAge':

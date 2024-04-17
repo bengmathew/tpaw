@@ -72,7 +72,7 @@ export const normalizedMonthRangeCheckAndSquishRangeForAge = (
   const ageRangeInfo = block(() => {
     switch (baseValue.type) {
       case 'calendarMonth':
-      case 'calendarMonthAsNow':
+      case 'now':
       case 'namedAge':
         return { hasAgeRange: false } as const
       case 'numericAge':

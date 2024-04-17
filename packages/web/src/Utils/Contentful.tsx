@@ -172,24 +172,19 @@ export namespace Contentful {
   export const replaceVariables = <T extends Text | Block | Inline>(
     variables: Record<string, string>,
     node: T,
-  ): T => {
-    if (helpers.isText(node)) {
-      const value = _.keys(variables).reduce(
-        (a, c) => a.replaceAll(`{{${c}}}`, variables[c]),
-        node.value,
-      )
-      console.dir(value)
-      return {
-        ...node,
-        value,
-      }
-    } else {
-      return {
-        ...node,
-        content: node.content.map((x: any) => replaceVariables(variables, x)),
-      }
-    }
-  }
+  ): T =>
+    helpers.isText(node)
+      ? {
+          ...node,
+          value: _.keys(variables).reduce(
+            (a, c) => a.replaceAll(`{{${c}}}`, variables[c]),
+            node.value,
+          ),
+        }
+      : {
+          ...node,
+          content: node.content.map((x: any) => replaceVariables(variables, x)),
+        }
   export const splitDocument = (
     document: Document,
     marker: string,

@@ -25,7 +25,6 @@ import { useGetPlanInputVisibility } from '../PlanInput/Helpers/UseGetPlanInputV
 import { useIsPlanInputDevMiscModified } from '../PlanInput/PlanInputDev/PlanInputDevMisc'
 import { useIsPlanInputDevTimeModified } from '../PlanInput/PlanInputDev/PlanInputDevTime'
 import { useIsPlanInputDevSimulationsModified } from '../PlanInput/PlanInputDev/UseIsPlanInputDevSimulationsModified'
-import { useIsPlanInputExpectedReturnsAndVolatilityModified } from '../PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { useIsPlanInputInflationModified } from '../PlanInput/PlanInputInflation'
 import { useIsPlanInputSimulationModifed } from '../PlanInput/PlanInputSimulation'
 import { useIsPlanInputStrategyModified } from '../PlanInput/PlanInputStrategy'
@@ -35,6 +34,7 @@ import {
 } from '../PlanTransition'
 import { PlanSummaryButton } from './PlanSummaryButton'
 import { PlanSummaryDialog } from './PlanSummaryDialog'
+import { useIsPlanInputExpectedReturnsAndVolatilityModified } from '../PlanInput/PlanInputExpectedReturnsAndVolatility/UseIsPlanInputExpectedReturnsCardModified'
 
 type _FixedSizingByMode = {
   size: Size

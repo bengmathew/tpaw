@@ -10,8 +10,8 @@ import {
 } from 'json-guard'
 import { PlanParams21 as V21 } from './Old/PlanParams21'
 import { PlanParams22 as V22 } from './Old/PlanParams22'
-import { PlanParams26 as V26 } from './Old/PlanParams26'
-import { PlanParams28 as V28 } from './PlanParams28'
+import { PlanParams28 as V28 } from './Old/PlanParams28'
+import { PlanParams29 as V29 } from './PlanParams29'
 import {
   PlanParamsChangeActionDeprecated,
   planParamsChangeActionGuardDeprecated,
@@ -36,11 +36,13 @@ export type PlanParamsChangeActionCurrent =
       value: V21.PlanParams['dialogPosition']
     }
   | { type: 'noOpToMarkMigration'; value: null }
+
+  // --------------- PEOPLE
   | { type: 'addPartner'; value: null }
   | { type: 'deletePartner'; value: null }
   | {
-      type: 'setPersonMonthOfBirth2'
-      value: { person: 'person1' | 'person2'; monthOfBirth: V28.CalendarMonth }
+      type: 'setPersonCurrentAgeInfo'
+      value: { personId: V29.PersonId; currentAgeInfo: V29.CurrentAgeInfo }
     }
   | { type: 'setPersonRetired'; value: _PersonType }
   | { type: 'setPersonNotRetired'; value: _PersonType }
@@ -64,12 +66,12 @@ export type PlanParamsChangeActionCurrent =
       }
     }
   | {
-      type: 'addLabeledAmountTimed'
+      type: 'addLabeledAmountTimed2'
       value: {
-        location: V28.LabeledAmountTimedLocation
+        location: V29.LabeledAmountTimedLocation
         entryId: string
         sortIndex: number
-        amountAndTiming: V28.LabeledAmountTimed['amountAndTiming']
+        amountAndTiming: V29.LabeledAmountTimed['amountAndTiming']
       }
     }
   | {
@@ -112,11 +114,11 @@ export type PlanParamsChangeActionCurrent =
       }
     }
   | {
-      type: 'setMonthRangeForLabeledAmountTimed'
+      type: 'setMonthRangeForLabeledAmountTimed2'
       value: {
-        location: V28.LabeledAmountTimedLocation
+        location: V29.LabeledAmountTimedLocation
         entryId: string
-        monthRange: V28.MonthRange
+        monthRange: V29.MonthRange
       }
     }
 
@@ -153,8 +155,8 @@ export type PlanParamsChangeActionCurrent =
       value: number
     }
   | {
-      type: 'setSPAWAndSWRAllocation'
-      value: V21.GlidePath
+      type: 'setSPAWAndSWRAllocation2'
+      value: V29.GlidePath
     }
   | {
       type: 'setSPAWAnnualSpendingTilt'
@@ -164,9 +166,14 @@ export type PlanParamsChangeActionCurrent =
 
   // ----------ADVANCED
   | {
-      type: 'setStrategy'
-      value: V21.PlanParams['advanced']['strategy']
+      type: 'setExpectedReturnsForPlanning'
+      value: V29.PlanParams['advanced']['returnsStatsForPlanning']['expectedValue']['empiricalAnnualNonLog']
     }
+  | {
+      type: 'setReturnsStatsForPlanningStockVolatilityScale'
+      value: number
+    }
+  | { type: 'setHistoricalReturnsAdjustmentBondVolatilityScale'; value: number }
   | { type: 'setSamplingToDefault'; value: null }
   | { type: 'setSampling'; value: 'historical' | 'monteCarlo' }
   | {
@@ -178,20 +185,12 @@ export type PlanParamsChangeActionCurrent =
       value: boolean
     }
   | {
-      type: 'setExpectedReturns2'
-      value: V26.PlanParams['advanced']['expectedAnnualReturnForPlanning']
-    }
-  | {
       type: 'setAnnualInflation'
       value: V21.PlanParams['advanced']['annualInflation']
     }
   | {
-      type: 'setHistoricalStockReturnsAdjustmentVolatilityScale'
-      value: number
-    }
-  | {
-      type: 'setHistoricalBondReturnsAdjustmentEnableVolatility'
-      value: boolean
+      type: 'setStrategy'
+      value: V21.PlanParams['advanced']['strategy']
     }
 
   // -------------- DEV
@@ -210,8 +209,8 @@ export type PlanParamsChangeAction =
 // These guards are not complete. Mostly a sanity check on the shape.
 const v21CG = V21.componentGuards
 const v22CG = V22.componentGuards
-const v26CG = V26.componentGuards
 const v28CG = V28.componentGuards
+const v29CG = V29.componentGuards
 
 const _guard = <T extends string, V>(
   type: T,
@@ -227,14 +226,19 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
     _guard('startFromURL', constant(null)),
     _guard('setDialogPosition', v21CG.dialogPosition(null)),
     _guard('noOpToMarkMigration', constant(null)),
+    // --------------- PEOPLE
     _guard('addPartner', constant(null)),
     _guard('deletePartner', constant(null)),
+    _guard(
+      'setPersonCurrentAgeInfo',
+      object({
+        personId: v29CG.personId,
+        currentAgeInfo: v29CG.currentAgeInfo(null),
+      }),
+    ),
     _guard('setPersonRetired', v21CG.personType),
     _guard('setPersonNotRetired', v21CG.personType),
-    _guard(
-      'setPersonMonthOfBirth2',
-      object({ person: v21CG.personType, monthOfBirth: v28CG.monthOfBirth }),
-    ),
+
     _guard(
       'setPersonRetirementAge',
       object({ person: v21CG.personType, retirementAge: v21CG.inMonths }),
@@ -255,12 +259,12 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
       }),
     ),
     _guard(
-      'addLabeledAmountTimed',
+      'addLabeledAmountTimed2',
       object({
-        location: v28CG.labeledAmountTimedLocation,
+        location: v29CG.labeledAmountTimedLocation,
         entryId: string,
         sortIndex: number,
-        amountAndTiming: v28CG.amountAndTiming(null),
+        amountAndTiming: v29CG.amountAndTiming(null),
       }),
     ),
     _guard(
@@ -303,11 +307,11 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
       }),
     ),
     _guard(
-      'setMonthRangeForLabeledAmountTimed',
+      'setMonthRangeForLabeledAmountTimed2',
       object({
-        location: v28CG.labeledAmountTimedLocation,
+        location: v29CG.labeledAmountTimedLocation,
         entryId: string,
-        monthRange: v28CG.monthRange(null),
+        monthRange: v29CG.monthRange(null),
       }),
     ),
 
@@ -325,20 +329,20 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
     _guard('setTPAWAdditionalSpendingTilt', number),
     _guard('setSWRWithdrawalAsPercentPerYear', number),
     _guard('setSWRWithdrawalAsAmountPerMonth', number),
-    _guard('setSPAWAndSWRAllocation', v21CG.glidePath(null)),
+    _guard('setSPAWAndSWRAllocation2', v29CG.glidePath(null)),
     _guard('setSPAWAnnualSpendingTilt', number),
     _guard('setTPAWAndSPAWLMP', number),
 
     // ------------ ADVANCED
-    _guard('setStrategy', v21CG.strategy),
+    _guard('setExpectedReturnsForPlanning', v29CG.expectedReturnsForPlanning),
+    _guard('setReturnsStatsForPlanningStockVolatilityScale', number),
+    _guard('setHistoricalReturnsAdjustmentBondVolatilityScale', number),
     _guard('setSamplingToDefault', constant(null)),
     _guard('setSampling', v22CG.samplingType),
     _guard('setMonteCarloSamplingBlockSize2', object({ inMonths: number })),
     _guard('setMonteCarloStaggerRunStarts', boolean),
-    _guard('setExpectedReturns2', v26CG.expectedAnnualReturnForPlanning),
     _guard('setAnnualInflation', v21CG.annualInflation),
-    _guard('setHistoricalStockReturnsAdjustmentVolatilityScale', number),
-    _guard('setHistoricalBondReturnsAdjustmentEnableVolatility', boolean),
+    _guard('setStrategy', v21CG.strategy),
 
     // -------------- DEV
     _guard(

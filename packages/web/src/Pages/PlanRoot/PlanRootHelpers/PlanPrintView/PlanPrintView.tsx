@@ -32,6 +32,9 @@ import { PlanPrintViewSettings } from './PlanPrintViewSettings'
 import { PlanPrintViewTasksForThisMonthSection } from './PlanPrintViewTasksForThisMonthSection'
 import { PlanPrintViewGetShortLinkMutation } from './__generated__/PlanPrintViewGetShortLinkMutation.graphql'
 import _ from 'lodash'
+import { useMarketData } from '../WithMarketData'
+import { getMarketDataForTime } from '../../../Common/GetMarketData'
+import { CallRust } from '../../../../UseSimulator/PlanParamsProcessed/CallRust'
 
 export type PlanPrintViewProps = {
   fixed: PlanPrintViewArgs['fixed']
@@ -57,34 +60,60 @@ export const PlanPrintView = React.memo(
     const [simulationResult, setSimulationResult] =
       useState<SimulationResult | null>(simulationResultIn)
 
+    const { marketData } = useMarketData()
+
+    const currentMarketData = useMemo(() => {
+      const timestampForMarketData = fixed.datingInfo.isDatedPlan
+        ? fixed.datingInfo.nowAsTimestamp
+        : fixed.datingInfo.timestampForMarketData
+      return {
+        ...getMarketDataForTime(timestampForMarketData, marketData),
+        timestampForMarketData,
+      }
+    }, [fixed.datingInfo, marketData])
+
     const planParamsForLink = useMemo(() => {
       const clone = _.cloneDeep(fixed.planParams)
-      clone.wealth.portfolioBalance = {
-        updatedHere: true,
-        amount: fixed.currentPortfolioBalanceAmount,
-      }
+      clone.wealth.portfolioBalance = clone.datingInfo.isDated
+        ? {
+            isDatedPlan: true,
+            updatedHere: true,
+            amount: fixed.currentPortfolioBalanceAmount,
+          }
+        : {
+            isDatedPlan: false,
+            amount: fixed.currentPortfolioBalanceAmount,
+          }
       return clone
     }, [fixed.currentPortfolioBalanceAmount, fixed.planParams])
 
     useEffect(() => {
       if (simulationResult) return
       return asyncEffect(async (status) => {
-        const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
-          fixed.timestamp,
-          fixed.ianaTimezoneName,
-        )
         const planParamsNorm = normalizePlanParams(
           fixed.planParams,
-          nowAsCalendarMonth,
+          fixed.datingInfo.isDatedPlan
+            ? {
+                timestamp: fixed.datingInfo.nowAsTimestamp,
+                calendarMonth: fixed.datingInfo.nowAsCalendarMonth,
+              }
+            : {
+                // Show not show up in the pdf report.
+                timestamp: 0,
+                calendarMonth: null,
+              },
         )
+        const planParamsRust = CallRust.getPlanParamsRust(planParamsNorm)
         const planParamsProcessed = processPlanParams(
           planParamsNorm,
-          fixed.marketData,
+          currentMarketData,
         )
 
         setSimulationResult(
           await getSimulatorSingleton().runSimulations(status, {
             currentPortfolioBalanceAmount: fixed.currentPortfolioBalanceAmount,
+            planParamsRust,
+            marketData: currentMarketData,
             planParamsNorm,
             planParamsProcessed,
             numOfSimulationForMonteCarloSampling:
@@ -94,9 +123,8 @@ export const PlanPrintView = React.memo(
         )
       })
     }, [
-      fixed.timestamp,
-      fixed.ianaTimezoneName,
-      fixed.marketData,
+      fixed.datingInfo,
+      currentMarketData,
       fixed.numOfSimulationForMonteCarloSampling,
       fixed.planParams,
       fixed.randomSeed,
@@ -271,10 +299,9 @@ export const PlanPrintView = React.memo(
                       />
                       <PlanPrintViewInputSection
                         settings={settings}
-                        currentPortfolioBalanceAmountInfo={{
-                          isEstimate: false,
-                          amount: fixed.currentPortfolioBalanceAmount,
-                        }}
+                        currentPortfolioBalanceAmount={
+                          fixed.currentPortfolioBalanceAmount
+                        }
                       />
                       <PlanPrintViewResultsSection settings={settings} />
                       <PlanPrintViewTasksForThisMonthSection

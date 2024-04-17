@@ -26,7 +26,7 @@ const _mergeNumberByWorkerByMonthsFromNowByRun = (
 
 export const mergeSimulationWorkerRuns = (
   runsByWorker: RunSimulationInWASMResult[],
-): RunSimulationInWASMResult => {
+): Omit<RunSimulationInWASMResult, 'info'> => {
   const byMonthsFromNowByRun = {
     savingsPortfolio: {
       start: {

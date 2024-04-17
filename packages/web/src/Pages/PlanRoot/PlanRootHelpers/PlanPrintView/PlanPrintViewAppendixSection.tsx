@@ -92,9 +92,11 @@ const _Table = React.memo(
         <table className=" border-collapse mt-2 border border-black">
           <thead className="">
             <tr className="">
-              <th className="px-4 border-l border-black" rowSpan={2}>
-                Month
-              </th>
+              {args.planParamsNorm.datingInfo.isDated && (
+                <th className="px-4 border-l border-black" rowSpan={2}>
+                  Month
+                </th>
+              )}
               <th className="px-4 border-l border-black" rowSpan={2}>
                 Your Age
               </th>
@@ -156,20 +158,20 @@ const _Table = React.memo(
           </thead>
           <tbody className="font-mono text-[10px] ">
             {months.map((mfn, i) => {
-              if (
-                !(
-                  InMonthsFns.getFromMFN(ages.person1.currentAge, 0, 1)(mfn) %
-                    12 ===
-                    0 ||
-                  i === months.length - 1 ||
-                  i === 0
-                )
-              )
-                return <React.Fragment key={i}></React.Fragment>
+              const shouldShow =
+                InMonthsFns.getFromMFN(ages.person1.currentAgeInfo, 0, 1)(mfn) %
+                  12 ===
+                  0 ||
+                i === months.length - 1 ||
+                i === 0
+              if (!shouldShow) return <React.Fragment key={i}></React.Fragment>
 
-              const calendarMonth = CalendarMonthFns.getFromMFN(
-                args.planParamsNorm.nowAs.calendarMonth,
-              )(mfn)
+              const calendarMonth = args.planParamsNorm.datingInfo
+                .nowAsCalendarMonth
+                ? CalendarMonthFns.getFromMFN(
+                    args.planParamsNorm.datingInfo.nowAsCalendarMonth,
+                  )(mfn)
+                : null
               return (
                 <tr
                   key={i}
@@ -179,23 +181,27 @@ const _Table = React.memo(
                       : 'border-t border-gray-300',
                   )}
                 >
+                  {calendarMonth && (
+                    <td className="px-4 text-center border-l border-black">
+                      {CalendarMonthFns.toStr(calendarMonth, {
+                        shortMonth: true,
+                      })}
+                    </td>
+                  )}
                   <td className="px-4 text-center border-l border-black">
-                    {CalendarMonthFns.toStr(calendarMonth, {
-                      shortMonth: true,
-                    })}
-                  </td>
-                  <td className="px-4 text-center border-l border-black">
-                    {`${Math.floor((mfn + ages.person1.currentAge.inMonths) / 12)}`}
+                    {`${Math.floor((mfn + ages.person1.currentAgeInfo.inMonths) / 12)}`}
                     <span className="ml-1 lighten-2 text-[8px]">yr</span>{' '}
-                    <span>{(mfn + ages.person1.currentAge.inMonths) % 12}</span>
+                    <span>
+                      {(mfn + ages.person1.currentAgeInfo.inMonths) % 12}
+                    </span>
                     <span className="ml-1 lighten-2 text-[8px]">mo</span>
                   </td>
                   {ages.person2 !== null && (
                     <td className="px-4 text-center border-l border-black">
-                      {`${Math.floor((mfn + ages.person2.currentAge.inMonths) / 12)}`}
+                      {`${Math.floor((mfn + ages.person2.currentAgeInfo.inMonths) / 12)}`}
                       <span className="ml-1 lighten-2 text-[8px]">yr</span>{' '}
                       <span>
-                        {(mfn + ages.person2.currentAge.inMonths) % 12}
+                        {(mfn + ages.person2.currentAgeInfo.inMonths) % 12}
                       </span>
                       <span className="ml-1 lighten-2 text-[8px]">mo</span>
                     </td>

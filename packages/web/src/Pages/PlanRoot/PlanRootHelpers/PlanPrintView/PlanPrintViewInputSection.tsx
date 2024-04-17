@@ -5,7 +5,6 @@ import React, { ReactNode } from 'react'
 import { useGetPlanInputVisibility } from '../../Plan/PlanInput/Helpers/UseGetPlanInputVisibility'
 import { PlanInputAgeSummary } from '../../Plan/PlanInput/PlanInputAge/PlanInputAge'
 import { PlanInputCurrentPortfolioBalanceSummary } from '../../Plan/PlanInput/PlanInputCurrentPortfolioBalance'
-import { PlanInputExpectedReturnsAndVolatilitySummary } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { PlanInputExtraSpendingSummary } from '../../Plan/PlanInput/PlanInputExtraSpending'
 import { PlanInputFutureSavingsSummary } from '../../Plan/PlanInput/PlanInputFutureSavings'
 import { PlanInputIncomeDuringRetirementSummary } from '../../Plan/PlanInput/PlanInputIncomeDuringRetirement'
@@ -20,15 +19,16 @@ import { PlanPrintViewPageGroup } from './Helpers/PlanPrintViewPageGroup'
 import { PlanPrintViewSectionTitlePageGroup } from './Helpers/PlanPrintViewSectionTitlePageGroup'
 import { PlanPrintViewArgs } from './PlanPrintViewArgs'
 import { CurrentPortfolioBalance } from '../CurrentPortfolioBalance'
+import { PlanInputExpectedReturnsAndVolatilitySummary } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility/PlanInputExpectedReturnsAndVolatility'
 
 // Note: The show/hide should mirror PlanSummary. "None" displays should mirror
 // PlanSummaryButtons's empty attribute from PlanSummary.
 export const PlanPrintViewInputSection = React.memo(
   ({
     settings,
-    currentPortfolioBalanceAmountInfo,
+    currentPortfolioBalanceAmount,
   }: {
-    currentPortfolioBalanceAmountInfo: CurrentPortfolioBalance.AmountInfo
+    currentPortfolioBalanceAmount: number
     settings: PlanPrintViewArgs['settings']
   }) => {
     const { args } = useSimulationResult()
@@ -65,7 +65,20 @@ export const PlanPrintViewInputSection = React.memo(
                 </_SubSectionHeading>
                 <div className="mt-2">
                   <PlanInputCurrentPortfolioBalanceSummary
-                    amountInfo={currentPortfolioBalanceAmountInfo}
+                    amountInfo={
+                      args.planParamsNorm.datingInfo.isDated
+                        ? {
+                            isDatedPlan: true,
+                            info: {
+                              isEstimate: false,
+                              amount: currentPortfolioBalanceAmount,
+                            },
+                          }
+                        : {
+                            isDatedPlan: false,
+                            amount: currentPortfolioBalanceAmount,
+                          }
+                    }
                     forPrint
                   />
                 </div>
@@ -131,7 +144,6 @@ export const PlanPrintViewInputSection = React.memo(
                   ) : (
                     <PlanInputLegacySummary
                       planParamsNorm={args.planParamsNorm}
-                      planParamsProcessed={args.planParamsProcessed}
                     />
                   )}
                 </div>
@@ -181,7 +193,6 @@ export const PlanPrintViewInputSection = React.memo(
                 <div className="mt-2">
                   <PlanInputExpectedReturnsAndVolatilitySummary
                     planParamsNorm={args.planParamsNorm}
-                    planParamsProcessed={args.planParamsProcessed}
                   />
                 </div>
               </div>
@@ -192,7 +203,6 @@ export const PlanPrintViewInputSection = React.memo(
                 <div className="mt-2">
                   <PlanInputInflationSummary
                     planParamsNorm={args.planParamsNorm}
-                    planParamsProcessed={args.planParamsProcessed}
                   />
                 </div>
               </div>

@@ -59,11 +59,7 @@ export const PlanInputFutureSavings = React.memo(
                   entryId={editState.entryId}
                   choicesPreFilter={{
                     start: ['now', 'numericAge', 'calendarMonth'],
-                    end: [
-                      'lastWorkingMonth',
-                      'numericAge',
-                      'calendarMonth',
-                    ],
+                    end: ['lastWorkingMonth', 'numericAge', 'calendarMonth'],
                   }}
                   cardPadding={props.sizing.cardPadding}
                 />
@@ -107,7 +103,16 @@ const _FutureSavingsCard = React.memo(
                 everyXMonths: 1,
                 monthRange: {
                   type: 'startAndEnd',
-                  start: planParamsNorm.nowAs.month,
+                  start: {
+                    type: 'now',
+                    monthOfEntry: planParamsNorm.datingInfo.isDated
+                      ? {
+                          isDatedPlan: true,
+                          calendarMonth:
+                            planParamsNorm.datingInfo.nowAsCalendarMonth,
+                        }
+                      : { isDatedPlan: false },
+                  },
                   end: {
                     type: 'namedAge',
                     age: 'lastWorkingMonth',

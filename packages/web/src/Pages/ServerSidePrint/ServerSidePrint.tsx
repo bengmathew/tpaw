@@ -1,4 +1,11 @@
-import { assertFalse, currentPlanParamsVersion, fGet } from '@tpaw/common'
+import {
+  CalendarMonthFns,
+  assertFalse,
+  currentPlanParamsVersion,
+  fGet,
+  getZonedTimeFns,
+  letIn,
+} from '@tpaw/common'
 import React, { useMemo } from 'react'
 import { useURLParam } from '../../Utils/UseURLParam'
 import { PlanPrintView } from '../PlanRoot/PlanRootHelpers/PlanPrintView/PlanPrintView'
@@ -31,12 +38,18 @@ const testParams: PlanPrintViewArgsServerSide = {
   fixed: {
     planLabel: 'Test Plan',
 
-    timestamp: 1704489409432,
-    ianaTimezoneName: 'America/Los_Angeles',
+    datingInfo: letIn(1704489409432, (nowAsTimestamp) => ({
+      isDatedPlan: true,
+      nowAsTimestamp,
+      nowAsCalendarMonth: getZonedTimeFns('America/Los_Angeles')(
+        nowAsTimestamp,
+      ),
+    })),
     currentPortfolioBalanceAmount: 1547440,
     planParams: {
-      timestamp: 1704489409432,
       v: currentPlanParamsVersion,
+      timestamp: 1704489409432,
+      datingInfo: { isDated: true },
       risk: {
         swr: {
           withdrawal: {
@@ -62,8 +75,11 @@ const testParams: PlanPrintViewArgsServerSide = {
             },
             start: {
               month: {
-                year: 2023,
-                month: 11,
+                type: 'now',
+                monthOfEntry: {
+                  isDatedPlan: true,
+                  calendarMonth: { year: 2023, month: 11 },
+                },
               },
               stocks: 0.5,
             },
@@ -81,9 +97,9 @@ const testParams: PlanPrintViewArgsServerSide = {
             maxAge: {
               inMonths: 1200,
             },
-            monthOfBirth: {
-              year: 1988,
-              month: 11,
+            currentAgeInfo: {
+              isDatedPlan: true,
+              monthOfBirth: { year: 1988, month: 11 },
             },
           },
         },
@@ -92,6 +108,7 @@ const testParams: PlanPrintViewArgsServerSide = {
       wealth: {
         futureSavings: {},
         portfolioBalance: {
+          isDatedPlan: true,
           updatedHere: true,
           amount: 1547440,
         },
@@ -105,7 +122,7 @@ const testParams: PlanPrintViewArgsServerSide = {
       advanced: {
         sampling: {
           type: 'monteCarlo',
-          forMonteCarlo: {
+          data: {
             blockSize: { inMonths: 12 * 5 },
             staggerRunStarts: true,
           },
@@ -114,17 +131,24 @@ const testParams: PlanPrintViewArgsServerSide = {
         annualInflation: {
           type: 'suggested',
         },
-        expectedReturnsForPlanning: {
-          type: 'manual',
-          bonds: 0.022,
-          stocks: 0.03,
-        },
-        historicalMonthlyLogReturnsAdjustment: {
-          standardDeviation: {
-            stocks: { scale: 1.0 },
-            bonds: { enableVolatility: true },
+        returnsStatsForPlanning: {
+          expectedValue: {
+            empiricalAnnualNonLog: {
+              type: 'fixed',
+              bonds: 0.022,
+              stocks: 0.03,
+            },
           },
-          overrideToFixedForTesting: false,
+          standardDeviation: {
+            stocks: { scale: { log: 1.0 } },
+            bonds: { scale: { log: 0.0 } },
+          },
+        },
+        historicalReturnsAdjustment: {
+          standardDeviation: {
+            bonds: { scale: { log: 1.0 } },
+            overrideToFixedForTesting: false,
+          },
         },
       },
       adjustmentsToSpending: {
@@ -143,25 +167,7 @@ const testParams: PlanPrintViewArgsServerSide = {
       },
       dialogPositionNominal: 'done',
     },
-    marketData: {
-      inflation: {
-        value: 0.0239,
-      },
-      sp500: {
-        closingTime: 1706648400000,
-        value: 4924.9702,
-      },
-      bondRates: {
-        closingTime: 1706648400000,
-        fiveYear: 0.0157,
-        sevenYear: 0.0152,
-        tenYear: 0.0149,
-        twentyYear: 0.015,
-        thirtyYear: 0.0154,
-      },
 
-      timestampMSForHistoricalReturns: Number.MAX_SAFE_INTEGER,
-    },
     numOfSimulationForMonteCarloSampling: 500,
 
     randomSeed: 0,

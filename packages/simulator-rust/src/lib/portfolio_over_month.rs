@@ -1,11 +1,15 @@
-use crate::params::*;
+use crate::plan_params::process_plan_params::plan_params_processed::PlanParamsProcessed;
+use crate::plan_params::Strategy;
 use crate::pre_calculations::PreCalculations;
 use crate::utils::*;
+use crate::{params::*, plan_params::PlanParams};
 use serde::{Deserialize, Serialize};
 
 use self::shared_types::StocksAndBonds;
 
 pub struct SingleMonthContext<'a> {
+    pub plan_params: &'a PlanParams,
+    pub plan_params_processed: &'a PlanParamsProcessed,
     pub params: &'a Params,
     pub pre_calculations: &'a PreCalculations,
     pub month_index: usize,
@@ -74,20 +78,31 @@ fn get_actual_withdrawals(
     after_contributions: &AfterContributions,
 ) -> ActualWithdrawals {
     // ---- Apply ceiling and floor, but not for SWR ----
-    let target = if matches!(context.params.strategy, ParamsStrategy::SWR) {
+    let target = if matches!(context.plan_params.advanced.strategy, Strategy::SWR) {
         *target
     } else {
+        let plan_params_processed = context.plan_params_processed;
+        let plan_params = context.plan_params;
         let params = context.params;
         let month_index = context.month_index;
         let mut discretionary = target.discretionary;
 
-        let withdrawal_started = month_index >= params.withdrawal_start_month;
+        let withdrawal_started = month_index
+            >= plan_params
+                .ages
+                .simulation_months
+                .withdrawal_start_month_as_mfn as usize;
         let mut regular_with_lmp = target.lmp + target.regular_without_lmp;
 
         if let Some(spending_ceiling) = params.spending_ceiling {
             discretionary = f64::min(
                 discretionary,
-                params.by_month.withdrawals_discretionary[month_index],
+                plan_params_processed
+                    .by_month
+                    .adjustments_to_spending
+                    .extra_spending
+                    .discretionary
+                    .total[month_index],
             );
             regular_with_lmp = f64::min(regular_with_lmp, spending_ceiling);
         };
@@ -95,7 +110,12 @@ fn get_actual_withdrawals(
         if let Some(spending_floor) = params.spending_floor {
             discretionary = f64::max(
                 discretionary,
-                params.by_month.withdrawals_discretionary[month_index],
+                plan_params_processed
+                    .by_month
+                    .adjustments_to_spending
+                    .extra_spending
+                    .discretionary
+                    .total[month_index],
             );
             if withdrawal_started {
                 regular_with_lmp = f64::max(regular_with_lmp, spending_floor);

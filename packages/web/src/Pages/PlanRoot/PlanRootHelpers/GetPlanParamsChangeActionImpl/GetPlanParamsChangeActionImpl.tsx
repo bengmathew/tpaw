@@ -14,6 +14,7 @@ import {
   fGet,
   noCase,
   LabeledAmountTimedOrUntimedLocation,
+  block,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
@@ -23,11 +24,16 @@ import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { yourOrYourPartners } from '../../../../Utils/YourOrYourPartners'
 import { optGet } from '../../../../Utils/optGet'
 import { planSectionLabel } from '../../Plan/PlanInput/Helpers/PlanSectionLabel'
-import { expectedReturnTypeLabelInfo } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
+import {} from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility/PlanInputExpectedReturnsAndVolatility'
 import { inflationTypeLabel } from '../../Plan/PlanInput/PlanInputInflation'
 import { getDeletePartnerChangeActionImpl } from './GetDeletePartnerChangeActionImpl'
 import { getSetPersonRetiredChangeActionImpl } from './GetSetPersonRetiredChangeActionImpl'
 import { InMonthsFns } from '../../../../Utils/InMonthsFns'
+import {
+  getExpectedReturnTypeLabelInfo,
+  getExpectedReturnCustomStockBaseLabel,
+  getExpectedReturnCustomBondBaseLabel,
+} from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility/GetExpectedReturnLabelInto'
 
 const { getPerson } = PlanParamsHelperFns
 export type PlanParamsChangeActionImpl = {
@@ -153,13 +159,13 @@ export const getPlanParamsChangeActionImpl = (
           const retirementAge = {
             inMonths: _.clamp(
               defaultPerson.ages.retirementAge.inMonths,
-              fGet(planParamsNorm.ages[personType]).currentAge.inMonths + 1,
+              fGet(planParamsNorm.ages[personType]).currentAgeInfo.inMonths + 1,
               currPerson.ages.maxAge.inMonths - 1,
             ),
           }
           currPerson.ages = {
             type: 'retirementDateSpecified',
-            monthOfBirth: currPerson.ages.monthOfBirth,
+            currentAgeInfo: currPerson.ages.currentAgeInfo,
             maxAge: currPerson.ages.maxAge,
             retirementAge,
           }
@@ -172,20 +178,24 @@ export const getPlanParamsChangeActionImpl = (
       }
     }
     // ---------
-    // SetPersonMonthOfBirth
+    // setPersonCurrentAgeInfo
     // ---------
-    case 'setPersonMonthOfBirth2': {
-      const { person, monthOfBirth } = action.value
+    case 'setPersonCurrentAgeInfo': {
+      const { personId, currentAgeInfo } = action.value
       return {
         applyToClone: (clone) => {
-          getPerson(clone, person).ages.monthOfBirth = monthOfBirth
+          getPerson(clone, personId).ages.currentAgeInfo = currentAgeInfo
         },
-        render: () =>
-          `Set ${yourOrYourPartners(
-            person,
-          )} month of birth to ${CalendarMonthFns.toStr(monthOfBirth)}`,
+        render: () => {
+          const prefix = `Set ${yourOrYourPartners(personId)}`
+          const postfix = currentAgeInfo.isDatedPlan
+            ? `month of birth to ${CalendarMonthFns.toStr(currentAgeInfo.monthOfBirth)}`
+            : `current age to ${InMonthsFns.toStr(currentAgeInfo.currentAge)}`
+          return `${prefix} ${postfix}`
+        },
         merge: (prev) =>
-          prev.type === 'setPersonMonthOfBirth' && prev.value.person === person,
+          prev.type === 'setPersonCurrentAgeInfo' &&
+          prev.value.personId === personId,
       }
     }
 
@@ -277,9 +287,9 @@ export const getPlanParamsChangeActionImpl = (
       }
     }
     // ---------
-    // addLabeledAmountTimed
+    // addLabeledAmountTimed2
     // ---------
-    case 'addLabeledAmountTimed': {
+    case 'addLabeledAmountTimed2': {
       const { location, entryId, amountAndTiming, sortIndex } = action.value
       return {
         applyToClone: (clone) => {
@@ -492,9 +502,9 @@ export const getPlanParamsChangeActionImpl = (
       }
     }
     // ---------
-    // setMonthRangeForLabeledAmountTimed
+    // setMonthRangeForLabeledAmountTimed2
     // ---------
-    case 'setMonthRangeForLabeledAmountTimed': {
+    case 'setMonthRangeForLabeledAmountTimed2': {
       const { location, entryId, monthRange } = action.value
       return {
         applyToClone: (clone) => {
@@ -540,10 +550,16 @@ export const getPlanParamsChangeActionImpl = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.wealth.portfolioBalance = {
-            updatedHere: true,
-            amount: value,
-          }
+          clone.wealth.portfolioBalance = clone.datingInfo.isDated
+            ? {
+                isDatedPlan: true,
+                updatedHere: true,
+                amount: value,
+              }
+            : {
+                isDatedPlan: false,
+                amount: value,
+              }
         },
         render: () =>
           `Set current portfolio balance to ${formatCurrency(value)}`,
@@ -710,9 +726,9 @@ export const getPlanParamsChangeActionImpl = (
     }
 
     // ---------
-    // SetSPAWAndSWRAllocation
+    // setSPAWAndSWRAllocation2
     // ---------
-    case 'setSPAWAndSWRAllocation': {
+    case 'setSPAWAndSWRAllocation2': {
       const { value } = action
       return {
         applyToClone: (clone) => {
@@ -752,63 +768,93 @@ export const getPlanParamsChangeActionImpl = (
     }
 
     // ---------
-    // SetExpectedReturns2
+    // setExpectedReturnsForPlanning
     // ---------
-    case 'setExpectedReturns2': {
+    case 'setExpectedReturnsForPlanning': {
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.expectedReturnsForPlanning = value
+          clone.advanced.returnsStatsForPlanning.expectedValue.empiricalAnnualNonLog =
+            value
         },
-        render: () => {
-          const labelInfo = expectedReturnTypeLabelInfo(value)
-          const label = labelInfo.isSplit
-            ? labelInfo.forUndoRedo
-            : _.lowerCase(labelInfo.stocksAndBonds)
+        render: (prevPlanParams) => {
+          const { forUndoRedo: label } = getExpectedReturnTypeLabelInfo(value)
+          const prev =
+            prevPlanParams.advanced.returnsStatsForPlanning.expectedValue
+              .empiricalAnnualNonLog
+          if (prev.type !== value.type)
+            return `Set expected returns to ${label}`
 
-          return `Set expected returns to ${label}${
-            value.type === 'manual'
-              ? ` (stocks: ${formatPercentage(1)(
-                  value.stocks,
-                )}, bonds: ${formatPercentage(1)(value.bonds)})`
-              : ''
-          }`
+          switch (value.type) {
+            case 'regressionPrediction,20YearTIPSYield':
+            case 'conservativeEstimate,20YearTIPSYield':
+            case '1/CAPE,20YearTIPSYield':
+            case 'historical':
+              // Can not have consecutive changes of these types because
+              // they don't have data.
+              return assertFalse()
+            case 'fixedEquityPremium':
+              return `Set fixed equity premium to ${formatPercentage(1)(value.equityPremium)}`
+            case 'custom':
+              assert(prev.type === 'custom')
+              if (prev.stocks.base !== value.stocks.base) {
+                return `Set preset for custom expected return of stocks to ${getExpectedReturnCustomStockBaseLabel(value.stocks.base).lowercase}`
+              }
+              if (prev.stocks.delta !== value.stocks.delta) {
+                return `Set delta for custom expected return of stocks to ${formatPercentage(1)(value.stocks.delta)}`
+              }
+              if (prev.bonds.base !== value.bonds.base) {
+                return `Set preset for custom expected return of bonds to ${getExpectedReturnCustomBondBaseLabel(value.bonds.base).lowercase}`
+              }
+              if (prev.bonds.delta !== value.bonds.delta) {
+                return `Set delta for custom expected return of bonds fixed delta to ${formatPercentage(1)(value.bonds.delta)}`
+              }
+              assertFalse()
+            case 'fixed':
+              assert(prev.type === 'fixed')
+              if (value.stocks !== prev.stocks) {
+                return `Set expected return of stocks to ${formatPercentage(1)(value.stocks)}`
+              }
+              if (value.bonds !== prev.bonds) {
+                return `Set expected return of bonds to ${formatPercentage(1)(value.bonds)}`
+              }
+              assertFalse()
+            default:
+              noCase(value)
+          }
         },
         merge: (prev) =>
-          prev.type === 'setExpectedReturns' &&
-          prev.value.type === 'manual' &&
-          value.type === 'manual',
-      }
-    }
-    // ---------
-    // setHistoricalStockReturnsAdjustmentVolatilityScale
-    // ---------
-    case 'setHistoricalStockReturnsAdjustmentVolatilityScale': {
-      const { value } = action
-      return {
-        applyToClone: (clone) => {
-          clone.advanced.historicalMonthlyLogReturnsAdjustment.standardDeviation.stocks.scale =
-            value
-        },
-
-        render: () => `Set stocks volatility scaling to ${value}`,
-        merge: () => true,
+          prev.type === 'setExpectedReturns' && prev.value.type === value.type,
       }
     }
 
     // ---------
-    // setHistoricalBondReturnsAdjustmentEnableVolatility
+    // setReturnsStatsForPlanningStockVolatilityScale
     // ---------
-    case 'setHistoricalBondReturnsAdjustmentEnableVolatility': {
+    case 'setReturnsStatsForPlanningStockVolatilityScale': {
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.historicalMonthlyLogReturnsAdjustment.standardDeviation.bonds.enableVolatility =
+          clone.advanced.returnsStatsForPlanning.standardDeviation.stocks.scale.log =
             value
         },
+        render: () => `Set stock volatility scaling to ${value.toFixed(2)}`,
+        merge: true,
+      }
+    }
 
-        render: () => `Bond volatility ${value ? 'enabled' : 'disabled'}`,
-        merge: false,
+    // ---------
+    // setHistoricalReturnsAdjustmentBondVolatilityScale
+    // ---------
+    case 'setHistoricalReturnsAdjustmentBondVolatilityScale': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          clone.advanced.historicalReturnsAdjustment.standardDeviation.bonds.scale.log =
+            value
+        },
+        render: () => `Set bond volatility scaling to ${value.toFixed(2)}`,
+        merge: true,
       }
     }
 
@@ -839,8 +885,19 @@ export const getPlanParamsChangeActionImpl = (
     // ---------
     case 'setSamplingToDefault': {
       return {
-        applyToClone: (clone, __, defaultPlanParams: PlanParams) => {
-          clone.advanced.sampling = defaultPlanParams.advanced.sampling
+        applyToClone: (clone, __, defaultPlanParams) => {
+          const def = _.clone(defaultPlanParams.advanced.sampling)
+          assert(def.type === 'monteCarlo')
+          // Recreating this object instead of using _.clone(def) makes sure we
+          // are adding default data correctly. There is none currently , but if
+          // gets added it will lead to a compilation error here.
+          clone.advanced.sampling = {
+            type: def.type,
+            data: {
+              blockSize: { inMonths: def.data.blockSize.inMonths },
+              staggerRunStarts: def.data.staggerRunStarts,
+            },
+          }
         },
         render: (_: PlanParams, planParams: PlanParams) =>
           `Set simulation to Monte Carlo sequence`,
@@ -854,8 +911,28 @@ export const getPlanParamsChangeActionImpl = (
     case 'setSampling': {
       const { value } = action
       return {
-        applyToClone: (clone) => {
-          clone.advanced.sampling.type = value
+        applyToClone: (clone, __, defaultPlanParams) => {
+          switch (value) {
+            case 'monteCarlo':
+              if (clone.advanced.sampling.type === 'monteCarlo') return
+              assert(defaultPlanParams.advanced.sampling.type === 'monteCarlo')
+              clone.advanced.sampling = {
+                type: 'monteCarlo',
+                data:
+                  clone.advanced.sampling.defaultData.monteCarlo ??
+                  defaultPlanParams.advanced.sampling.data,
+              }
+              break
+            case 'historical':
+              if (clone.advanced.sampling.type === 'historical') return
+              clone.advanced.sampling = {
+                type: 'historical',
+                defaultData: { monteCarlo: clone.advanced.sampling.data },
+              }
+              break
+            default:
+              noCase(value)
+          }
         },
         render: () =>
           `Set simulation to ${
@@ -872,7 +949,8 @@ export const getPlanParamsChangeActionImpl = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.sampling.forMonteCarlo.blockSize = value
+          assert(clone.advanced.sampling.type === 'monteCarlo')
+          clone.advanced.sampling.data.blockSize = value
         },
         render: () =>
           `Set block size for Monte Carlo simulation to ${InMonthsFns.toStr(value)}`,
@@ -887,7 +965,8 @@ export const getPlanParamsChangeActionImpl = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.sampling.forMonteCarlo.staggerRunStarts = value
+          assert(clone.advanced.sampling.type === 'monteCarlo')
+          clone.advanced.sampling.data.staggerRunStarts = value
         },
         render: () =>
           `Set stagger run starts for Monte Carlo simulation to ${value ? 'true' : 'false'}`,
@@ -924,7 +1003,7 @@ export const getPlanParamsChangeActionImpl = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.historicalMonthlyLogReturnsAdjustment.overrideToFixedForTesting =
+          clone.advanced.historicalReturnsAdjustment.standardDeviation.overrideToFixedForTesting =
             value
         },
         render: () =>

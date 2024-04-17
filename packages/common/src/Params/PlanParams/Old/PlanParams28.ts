@@ -19,15 +19,16 @@ import {
   union,
 } from 'json-guard'
 import _ from 'lodash'
-import { Guards } from '../../Guards'
-import { assert, block, fGet, letIn, noCase } from '../../Utils'
+import { Guards } from '../../../Guards'
+import { assert, block, fGet, letIn, noCase } from '../../../Utils'
 import {
   PlanParams27 as PlanParamsPrev,
   PlanParams27 as V27,
-} from './Old/PlanParams27'
+} from './PlanParams27'
 
 export namespace PlanParams28 {
-  export const currentVersion = 28 as const
+  // Just to re-emphasize that currentVersion has the const type.
+  export const currentVersion = 28 as number as 28
 
   export const CONSTANTS = block(() => {
     const labeledAmountTimedLocations = [
@@ -524,7 +525,6 @@ export namespace PlanParams28 {
             object({
               by: object({
                 type: constant('percent'),
-                // TODO
                 percent: (x: unknown): JSONGuardResult<number> =>
                   failure('Not Implemented'),
               }),

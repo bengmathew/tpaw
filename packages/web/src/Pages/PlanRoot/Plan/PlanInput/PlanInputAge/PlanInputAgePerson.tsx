@@ -9,6 +9,9 @@ import { Switch } from '@headlessui/react'
 import {
   CalendarMonthFns,
   LabeledAmountTimedLocation,
+  PersonId,
+  assert,
+  assertFalse,
   block,
   fGet,
   noCase,
@@ -42,6 +45,7 @@ import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
 import { planSectionLabel } from '../Helpers/PlanSectionLabel'
 import { PlanInputAgeOpenableSection } from './PlanInputAge'
+import { NormalizedAges } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsAges'
 
 export const PlanInputAgePerson = React.memo(
   ({
@@ -139,13 +143,19 @@ export const PlanInputAgePerson = React.memo(
           className="grid items-center "
           style={{ grid: 'auto / 145px 1fr' }}
         >
-          <_MonthOfBirthInput
-            sectionName="Month of Birth"
-            personType={personType}
-            sectionType={`${personType}-monthOfBirth`}
-            currSection={openSection}
-            setCurrSection={setOpenSection}
-          />
+          {person.currentAgeInfo.isDatedPlan ? (
+            <_MonthOfBirthInput
+              sectionName="Month of Birth"
+              personId={personType}
+              currentAgeInfo={person.currentAgeInfo}
+              sectionType={`${personType}-monthOfBirth`}
+              currSection={openSection}
+              setCurrSection={setOpenSection}
+            />
+          ) : (
+            // TODO
+            assertFalse()
+          )}
           {!person.retirement.isRetired && (
             <_AgeInput
               sectionName="Retirement Age"
@@ -256,20 +266,23 @@ export const _Section = React.memo(
 export const _MonthOfBirthInput = React.memo(
   ({
     sectionName,
-    personType,
+    personId,
+    currentAgeInfo,
     sectionType,
     currSection,
     setCurrSection,
   }: {
     sectionName: string
-    personType: 'person1' | 'person2'
+    personId: PersonId
+    currentAgeInfo: Extract<
+      NormalizedAges['person1']['currentAgeInfo'],
+      { isDatedPlan: true }
+    >
     sectionType: Exclude<PlanInputAgeOpenableSection, 'none'>
     currSection: PlanInputAgeOpenableSection
     setCurrSection: (open: PlanInputAgeOpenableSection) => void
   }) => {
-    const { planParamsNorm, updatePlanParams } = useSimulation()
-    const person = fGet(planParamsNorm.ages[personType])
-    const { monthOfBirth, currentAge } = person
+    const { updatePlanParams } = useSimulation()
 
     return (
       <_Section
@@ -278,20 +291,20 @@ export const _MonthOfBirthInput = React.memo(
         currSection={currSection}
         setCurrSection={setCurrSection}
       >
-        {CalendarMonthFns.toStr(monthOfBirth.baseValue)}
+        {CalendarMonthFns.toStr(currentAgeInfo.baseValue)}
         <div className="">
           <CalendarMonthInput
             className="mt-2 ml-4"
-            normValue={{ ...monthOfBirth }}
+            normValue={currentAgeInfo}
             onChange={(monthOfBirth) =>
-              updatePlanParams('setPersonMonthOfBirth2', {
-                person: personType,
-                monthOfBirth,
+              updatePlanParams('setPersonCurrentAgeInfo', {
+                personId,
+                currentAgeInfo: { isDatedPlan: true as const, monthOfBirth },
               })
             }
           />
           <h2 className="mb-2 mt-3 ml-4">
-            Age: {InMonthsFns.toStr(currentAge)}
+            Age: {InMonthsFns.toStr(currentAgeInfo)}
           </h2>
         </div>
       </_Section>

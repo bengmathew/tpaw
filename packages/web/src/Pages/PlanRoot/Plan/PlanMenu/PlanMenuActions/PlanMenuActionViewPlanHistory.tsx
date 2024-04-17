@@ -11,16 +11,17 @@ export const PlanMenuActionViewPlanHistory = React.memo(
   ({
     className,
     historyStatus,
+    nowAsTimestamp,
   }: {
     className?: string
     historyStatus: 'fetching' | 'fetched' | 'failed'
+    nowAsTimestamp: number
   }) => {
     const [waitForHistory, setWaitForHistory] = useState(false)
-    const { currentTimestamp } = useSimulation()
 
     const handleSwitchToHistoryMode = () => {
       const url = new URL(window.location.href)
-      url.searchParams.set('rewindTo', `${currentTimestamp}`)
+      url.searchParams.set('rewindTo', `${nowAsTimestamp}`)
       urlUpdater.push(url)
     }
     const handleSwitchToHistoryModeRef = useRef(handleSwitchToHistoryMode)

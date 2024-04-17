@@ -2,25 +2,21 @@ import _ from 'lodash'
 import { blendReturns } from '../../Utils/BlendReturns'
 import { getNetPresentValue } from '../../Utils/GetNetPresentValue'
 
-import { annualToMonthlyReturnRate } from '@tpaw/common'
+import { Record } from '../../Utils/Record'
 import { CallRust } from './CallRust'
 import { planParamsProcessRisk } from './PlanParamsProcessRisk'
-import * as Rust from '@tpaw/simulator'
-import { Record } from '../../Utils/Record'
 
 export const planParamsProcessNetPresentValue = (
   numMonths: number,
   risk: ReturnType<typeof planParamsProcessRisk>,
   legacyTarget: number,
   byMonth: ReturnType<(typeof CallRust)['processPlanParams']>['byMonth'],
-  expectedReturnsForPlanning: CallRust.PlanParamsProcessed['expectedReturnsForPlanning'],
+  returnsStatsForPlanning: CallRust.PlanParamsProcessed['returnsStatsForPlanning'],
 ) => {
-  const monthlyExpectedReturns = annualToMonthlyReturnRate({
-    stocks:
-      expectedReturnsForPlanning.empiricalAnnualNonLogReturnInfo.stocks.value,
-    bonds:
-      expectedReturnsForPlanning.empiricalAnnualNonLogReturnInfo.bonds.value,
-  })
+  const monthlyExpectedReturns = {
+    stocks: returnsStatsForPlanning.stocks.empiricalMonthlyNonLogExpectedReturn,
+    bonds: returnsStatsForPlanning.bonds.empiricalMonthlyNonLogExpectedReturn,
+  }
 
   const bondRateArr = _.times(
     byMonth.wealth.total.length,
@@ -33,8 +29,8 @@ export const planParamsProcessNetPresentValue = (
 
   const _calcObj = (
     x: {
-      total: Float64Array
-      byId: { id: string; values: Float64Array }[]
+      total: number[]
+      byId: { id: string; values: number[] }[]
     },
     rate: number[],
   ) => ({

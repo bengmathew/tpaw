@@ -1,15 +1,17 @@
 import { PLAN_PARAMS_CONSTANTS, assert, block } from '@tpaw/common'
-import { BaseAndLogStats } from '@tpaw/simulator'
+import * as Rust from '@tpaw/simulator'
 import _ from 'lodash'
 import { SimpleRange } from '../../Utils/SimpleRange'
 import { noCase } from '../../Utils/Utils'
+import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
 import { PlanParamsProcessed } from '../PlanParamsProcessed/PlanParamsProcessed'
 import { WASM } from './GetWASM'
 import { RunSimulationInWASMResult } from './RunSimulationInWASMResult'
-import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
 
 export function runSimulationInWASM(
   currentPortfolioBalanceAmount: number,
+  planParamsRust: Rust.PlanParamsRust,
+  marketData: Rust.DataForMarketBasedPlanParamValues,
   planParamsNorm: PlanParamsNormalized,
   planParamsProcessed: PlanParamsProcessed,
   runsSpec: SimpleRange,
@@ -29,18 +31,11 @@ export function runSimulationInWASM(
 
   let start = performance.now()
   let runs = wasm.run(
-    planParamsNorm.advanced.strategy,
+    planParamsRust,
+    marketData,
     runsSpec.start,
     runsSpec.end,
-    ages.simulationMonths.numMonths,
     numMonthsToSimulate,
-    ages.simulationMonths.withdrawalStartMonth.asMFN,
-    planParamsProcessed.expectedReturnsForPlanning.monthlyNonLogForSimulation
-      .stocks,
-    planParamsProcessed.expectedReturnsForPlanning.monthlyNonLogForSimulation
-      .bonds,
-    planParamsProcessed.historicalMonthlyReturnsAdjusted.stocks.logSeries,
-    planParamsProcessed.historicalMonthlyReturnsAdjusted.bonds.logSeries,
     currentPortfolioBalanceAmount,
     Float64Array.from(planParamsProcessed.risk.tpaw.allocation),
     Float64Array.from(planParamsProcessed.risk.spawAndSWR.allocation),
@@ -51,12 +46,6 @@ export function runSimulationInWASM(
       : planParamsProcessed.risk.swr.monthlyWithdrawal.type === 'asPercent'
         ? planParamsProcessed.risk.swr.monthlyWithdrawal.percent
         : noCase(planParamsProcessed.risk.swr.monthlyWithdrawal),
-    planParamsProcessed.byMonth.risk.tpawAndSPAW.lmp,
-    planParamsProcessed.byMonth.wealth.total,
-    planParamsProcessed.byMonth.adjustmentsToSpending.extraSpending.essential
-      .total,
-    planParamsProcessed.byMonth.adjustmentsToSpending.extraSpending
-      .discretionary.total,
     planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.target,
     planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.external,
     Float64Array.from(planParamsProcessed.risk.tpawAndSPAW.monthlySpendingTilt),
@@ -64,14 +53,7 @@ export function runSimulationInWASM(
       .monthlySpendingCeiling ?? undefined,
     planParamsProcessed.adjustmentsToSpending.tpawAndSPAW
       .monthlySpendingFloor ?? undefined,
-    planParamsNorm.advanced.sampling.type === 'monteCarlo'
-      ? true
-      : planParamsNorm.advanced.sampling.type === 'historical'
-        ? false
-        : noCase(planParamsNorm.advanced.sampling.type),
-    planParamsNorm.advanced.sampling.forMonteCarlo.blockSize.inMonths,
-    planParamsNorm.advanced.sampling.forMonteCarlo.staggerRunStarts,
-    PLAN_PARAMS_CONSTANTS.maxAgeInMonths,
+    PLAN_PARAMS_CONSTANTS.people.ages.person.maxAge,
     BigInt(randomSeed),
     opts.test?.truth ? Float64Array.from(opts.test.truth) : undefined,
     opts.test?.indexIntoHistoricalReturns
@@ -134,7 +116,7 @@ export function runSimulationInWASM(
     },
     annualStatsForSampledReturns: block(() => {
       const processStatsForWindowSize = (
-        stats: BaseAndLogStats | null | undefined,
+        stats: Rust.BaseAndLogStats | null | undefined,
       ) => {
         if (stats) return { ofBase: stats.base, ofLog: stats.log }
         else {
@@ -152,6 +134,7 @@ export function runSimulationInWASM(
         ),
       }
     }),
+    info: runs.info,
   }
   runs.free()
   const perfPost = performance.now() - start

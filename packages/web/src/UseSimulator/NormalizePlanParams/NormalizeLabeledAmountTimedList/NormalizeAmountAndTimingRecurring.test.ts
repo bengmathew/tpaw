@@ -1,6 +1,6 @@
 import { CalendarMonthFns, Month, assertFalse } from '@tpaw/common'
-import _ from 'lodash'
-import { getToMFN, normalizePlanParamsAges } from '../NormalizePlanParamsAges'
+import _, { now } from 'lodash'
+import { getMonthToMFN, normalizePlanParamsAges } from '../NormalizePlanParamsAges'
 import {
   NormalizedAmountAndTimingRecurring,
   _forTest,
@@ -215,8 +215,11 @@ describe('NormalizeAmountAndTimingRecurring', () => {
                 value:
                   result[0] === 0
                     ? {
-                        type: 'calendarMonthAsNow',
-                        monthOfEntry: mfnToCalendarMonth(0),
+                        type: 'now',
+                        monthOfEntry: {
+                          isDatedPlan: true,
+                          calendarMonth: mfnToCalendarMonth(0),
+                        },
                       }
                     : {
                         type: 'calendarMonth',
@@ -231,8 +234,8 @@ describe('NormalizeAmountAndTimingRecurring', () => {
   })
 
   describe('normalizeAmountAndTimingRecurring', () => {
-    const nowAs = { calendarMonth: { year: 2024, month: 3 } }
-    const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(nowAs.calendarMonth)
+    const nowAsCalendarMonth = { year: 2024, month: 3 }
+    const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(nowAsCalendarMonth)
     const mfnToMonth = (mfn: number): Month => ({
       type: 'calendarMonth',
       calendarMonth: mfnToCalendarMonth(mfn),
@@ -243,14 +246,17 @@ describe('NormalizeAmountAndTimingRecurring', () => {
         person1: {
           ages: {
             type: 'retiredWithNoRetirementDateSpecified' as const,
-            monthOfBirth: mfnToCalendarMonth(-10),
+            currentAgeInfo: {
+              isDatedPlan: true,
+              monthOfBirth: mfnToCalendarMonth(-10),
+            },
             maxAge: { inMonths: 20 },
           },
         },
       },
-      nowAs.calendarMonth,
+      nowAsCalendarMonth,
     )
-    const toMFN = getToMFN({ nowAs, ages })
+    const monthToMFN = getMonthToMFN(nowAsCalendarMonth, ages)
     const validRangeAsMFN = { start: 1, end: 5 }
 
     test.each([
@@ -279,8 +285,9 @@ describe('NormalizeAmountAndTimingRecurring', () => {
           baseAmount: 100,
         },
         validRangeAsMFN,
-        toMFN,
+        monthToMFN,
         ages,
+        nowAsCalendarMonth,
       )
 
       if (!result) {
@@ -367,8 +374,9 @@ describe('NormalizeAmountAndTimingRecurring', () => {
           baseAmount: 100,
         },
         validRangeAsMFN,
-        toMFN,
+        monthToMFN,
         ages,
+        nowAsCalendarMonth,
       )
 
       if (!result) {
@@ -453,8 +461,9 @@ describe('NormalizeAmountAndTimingRecurring', () => {
           baseAmount: 100,
         },
         validRangeAsMFN,
-        toMFN,
+        monthToMFN,
         ages,
+        nowAsCalendarMonth,
       )
       if (!result) {
         expect(r).toBeNull()

@@ -1,6 +1,7 @@
-import { NonPlanParams, PlanParams } from '@tpaw/common'
+import { CalendarMonth, NonPlanParams, PlanParams } from '@tpaw/common'
 import * as Rust from '@tpaw/simulator'
 import { CurrentPortfolioBalance } from '../CurrentPortfolioBalance'
+import { isDate } from 'lodash'
 
 type _PageSize_NoDefault = Exclude<
   NonPlanParams['pdfReportSettings']['pageSize'],
@@ -10,15 +11,19 @@ type _PageSize_NoDefault = Exclude<
 export type PlanPrintViewArgs = {
   fixed: {
     planLabel: string | null
-    timestamp: number
-    ianaTimezoneName: string
+    datingInfo:
+      | {
+          isDatedPlan: true
+          nowAsTimestamp: number
+          nowAsCalendarMonth: CalendarMonth
+        }
+      | { isDatedPlan: false; timestampForMarketData: number }
     // We want the estimate to be resolved to an amount for printing and don't
     // surface any estimation info. This is needed for because we add a link to
     // the plan in the PDF and links don't support current portfolio balance
     // estimation.
     currentPortfolioBalanceAmount: number
     planParams: PlanParams
-    marketData: Rust.DataForMarketBasedPlanParamValues
     numOfSimulationForMonteCarloSampling: number
     randomSeed: number
   }

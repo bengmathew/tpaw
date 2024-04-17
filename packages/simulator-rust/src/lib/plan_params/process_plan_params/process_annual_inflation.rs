@@ -1,13 +1,12 @@
 use crate::{
-    data_for_market_based_plan_param_values::DataForMarketBasedPlanParamValues,
     expected_value_of_returns::annual_non_log_to_monthly_non_log_return_rate,
-    plan_params::{self, plan_params_rust},
+    plan_params::{self},
 };
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
-use super::get_suggested_annual_inflation::get_suggested_annual_inflation;
+use super::process_market_data::MarketDataProcessed;
 
 #[derive(Serialize, Deserialize, Tsify, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -18,12 +17,12 @@ pub struct InflationProcessed {
 }
 
 pub fn process_annual_inflation(
-    inflation: &plan_params_rust::AnnualInfaltion,
-    market_data: &DataForMarketBasedPlanParamValues,
+    inflation: &plan_params::AnnualInfaltion,
+    market_data: &MarketDataProcessed,
 ) -> InflationProcessed {
     let annual = match inflation {
-        plan_params_rust::AnnualInfaltion::Suggested => get_suggested_annual_inflation(market_data),
-        plan_params_rust::AnnualInfaltion::Manual { value } => *value,
+        plan_params::AnnualInfaltion::Suggested => market_data.inflation.suggested_annual,
+        plan_params::AnnualInfaltion::Manual { value } => *value,
     };
     let monthly = annual_non_log_to_monthly_non_log_return_rate(annual);
     return InflationProcessed { annual, monthly };

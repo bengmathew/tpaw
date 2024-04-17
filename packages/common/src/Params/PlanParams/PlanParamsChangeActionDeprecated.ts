@@ -11,6 +11,8 @@ import {
 import { PlanParams21 as V21 } from './Old/PlanParams21'
 import { PlanParams22 as V22 } from './Old/PlanParams22'
 import { PlanParams23 as V23 } from './Old/PlanParams23'
+import { PlanParams26 as V26 } from './Old/PlanParams26'
+import { PlanParams28 as V28 } from './Old/PlanParams28'
 
 type Pre28ValueForMonthRangeLocation =
   | 'futureSavings'
@@ -132,7 +134,46 @@ export type PlanParamsChangeActionDeprecated =
       type: 'setMonteCarloSamplingBlockSize'
       value: number
     }
-// ------- end Deprecated in v28
+  // -------  Deprecated in v29
+  | {
+      type: 'setHistoricalStockReturnsAdjustmentVolatilityScale'
+      value: number
+    }
+  | {
+      type: 'setHistoricalBondReturnsAdjustmentEnableVolatility'
+      value: boolean
+    }
+  | {
+      type: 'setExpectedReturns2'
+      value: V26.PlanParams['advanced']['expectedAnnualReturnForPlanning']
+    }
+  | {
+      type: 'setPersonMonthOfBirth2'
+      value: { person: 'person1' | 'person2'; monthOfBirth: V28.CalendarMonth }
+    }
+  | {
+      type: 'setSPAWAndSWRAllocation'
+      value: V21.GlidePath
+    }
+  | {
+      type: 'setMonthRangeForLabeledAmountTimed'
+      value: {
+        location: V28.LabeledAmountTimedLocation
+        entryId: string
+        monthRange: V28.MonthRange
+      }
+    }
+  | {
+      type: 'addLabeledAmountTimed'
+      value: {
+        location: V28.LabeledAmountTimedLocation
+        entryId: string
+        sortIndex: number
+        amountAndTiming: V28.LabeledAmountTimed['amountAndTiming']
+      }
+    }
+
+// ------- end Deprecated in v29
 
 const _guard = <T extends string, V>(
   type: T,
@@ -154,6 +195,8 @@ const pre28LabeledAmountLocationGuard: JSONGuard<Pre28LabeledAmountLocation> =
 const v21CG = V21.componentGuards
 const v22CG = V22.componentGuards
 const v23CG = V23.componentGuards
+const v26CG = V26.componentGuards
+const v28CG = V28.componentGuards
 export const planParamsChangeActionGuardDeprecated: JSONGuard<PlanParamsChangeActionDeprecated> =
   union(
     _guard(
@@ -239,5 +282,32 @@ export const planParamsChangeActionGuardDeprecated: JSONGuard<PlanParamsChangeAc
       object({ person: v21CG.personType, monthOfBirth: v21CG.calendarMonth }),
     ),
     _guard('setMonteCarloSamplingBlockSize', number),
-    // ------- end Deprecated in v28
+    // -------  Deprecated in v29
+    _guard('setHistoricalStockReturnsAdjustmentVolatilityScale', number),
+    _guard('setHistoricalBondReturnsAdjustmentEnableVolatility', boolean),
+    _guard('setExpectedReturns2', v26CG.expectedAnnualReturnForPlanning),
+    _guard(
+      'setPersonMonthOfBirth2',
+      object({ person: v21CG.personType, monthOfBirth: v28CG.monthOfBirth }),
+    ),
+    _guard('setSPAWAndSWRAllocation', v21CG.glidePath(null)),
+    _guard(
+      'setMonthRangeForLabeledAmountTimed',
+      object({
+        location: v28CG.labeledAmountTimedLocation,
+        entryId: string,
+        monthRange: v28CG.monthRange(null),
+      }),
+    ),
+    _guard(
+      'addLabeledAmountTimed',
+      object({
+        location: v28CG.labeledAmountTimedLocation,
+        entryId: string,
+        sortIndex: number,
+        amountAndTiming: v28CG.amountAndTiming(null),
+      }),
+    ),
+
+    // ------- end Deprecated in v29
   )

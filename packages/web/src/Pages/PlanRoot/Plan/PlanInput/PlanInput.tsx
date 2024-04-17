@@ -23,7 +23,7 @@ import { PlanInputCurrentPortfolioBalance } from './PlanInputCurrentPortfolioBal
 import { PlanInputDevMisc } from './PlanInputDev/PlanInputDevMisc'
 import { PlanInputDevSimulations } from './PlanInputDev/PlanInputDevSimulations'
 import { PlanInputDevFastForward } from './PlanInputDev/PlanInputDevTime'
-import { PlanInputExpectedReturnsAndVolatility } from './PlanInputExpectedReturnsAndVolatility'
+import { PlanInputExpectedReturnsAndVolatility } from './PlanInputExpectedReturnsAndVolatility/PlanInputExpectedReturnsAndVolatility'
 import { PlanInputExtraSpending } from './PlanInputExtraSpending'
 import { PlanInputFutureSavings } from './PlanInputFutureSavings'
 import { PlanInputIncomeDuringRetirement } from './PlanInputIncomeDuringRetirement'

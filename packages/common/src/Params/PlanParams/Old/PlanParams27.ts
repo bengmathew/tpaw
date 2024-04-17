@@ -24,7 +24,8 @@ import { assert, block, fGet, preciseRange } from '../../../Utils'
 import { PlanParams26 as PlanParamsPrev } from './PlanParams26'
 
 export namespace PlanParams27 {
-  export const currentVersion = 27 as const
+  // Just to re-emphasize that currentVersion has the const type.
+  export const currentVersion = 27 as number as 27
 
   export const MAX_LABEL_LENGTH = 150
   // A copy of this is in simulator_rust.

@@ -32,14 +32,12 @@ export const getSetPersonRetiredChangeActionImpl = ({
       _removeRetirementReferences(
         personType,
         clone,
-        planParamsNorm.nowAs.calendarMonth,
+        planParamsNorm.datingInfo.nowAsCalendarMonth,
       )
-      console.dir('removeRefs')
-      console.dir(clone)
       const person = PlanParamsHelperFns.getPerson(clone, personType)
       person.ages = {
         type: 'retiredWithNoRetirementDateSpecified',
-        monthOfBirth: person.ages.monthOfBirth,
+        currentAgeInfo: person.ages.currentAgeInfo,
         maxAge: person.ages.maxAge,
       }
     },
@@ -54,14 +52,13 @@ export const getSetPersonRetiredChangeActionImpl = ({
 const _removeRetirementReferencesFromLabeledAmountTimedList = (
   personType: 'person1' | 'person2',
   clone: PlanParams,
-  nowAsCalendarMonth: CalendarMonth,
-  debug: boolean,
+  nowAsCalendarMonth: CalendarMonth | null,
 ) => {
   // Returns a new object only if month is changed.
   const handleMonth = (month: Month): Month | { type: 'inThePast' } => {
     switch (month.type) {
       case 'calendarMonth':
-      case 'calendarMonthAsNow':
+      case 'now':
       case 'numericAge':
         return month
       case 'namedAge':
@@ -71,8 +68,10 @@ const _removeRetirementReferencesFromLabeledAmountTimedList = (
             return { type: 'inThePast' }
           case 'retirement':
             return {
-              type: 'calendarMonthAsNow',
-              monthOfEntry: nowAsCalendarMonth,
+              type: 'now',
+              monthOfEntry: nowAsCalendarMonth
+                ? { isDatedPlan: true, calendarMonth: nowAsCalendarMonth }
+                : { isDatedPlan: false },
             }
           case 'max':
             return month
@@ -118,10 +117,7 @@ const _removeRetirementReferencesFromLabeledAmountTimedList = (
       }
       case 'endAndDuration': {
         const end = handleMonth(monthRange.end)
-        if (debug) {
-          console.dir('end')
-          console.dir(end)
-        }
+
         return end === monthRange.end
           ? monthRange
           : end.type === 'inThePast'
@@ -193,7 +189,7 @@ const _removeRetirementReferencesFromGlidePaths = (
   const handleMonth = (month: Month): boolean => {
     switch (month.type) {
       case 'calendarMonth':
-      case 'calendarMonthAsNow':
+      case 'now':
       case 'numericAge':
         return true
       case 'namedAge':
@@ -242,7 +238,7 @@ const _removeRetirementReferencesFromGlidePaths = (
 const _removeRetirementReferences = (
   personType: 'person1' | 'person2',
   clone: PlanParams,
-  nowAsCalendarMonth: CalendarMonth,
+  nowAsCalendarMonth: CalendarMonth | null,
 ) => {
   // To make sure typechecking fails when new locations are added, so
   // we can update this code.
@@ -263,7 +259,6 @@ const _removeRetirementReferences = (
     personType,
     clone,
     nowAsCalendarMonth,
-    true,
   )
   _removeRetirementReferencesFromGlidePaths(personType, clone)
 }
@@ -301,8 +296,7 @@ export const getRetirePersonAdjustments = (
     const inClone = _removeRetirementReferencesFromLabeledAmountTimedList(
       personType,
       clone,
-      planParamsNorm.nowAs.calendarMonth,
-      false,
+      planParamsNorm.datingInfo.nowAsCalendarMonth,
     )
     // If future savings is not going to be allowed, these will be handled
     // by futureSavingsEntryRemovals.

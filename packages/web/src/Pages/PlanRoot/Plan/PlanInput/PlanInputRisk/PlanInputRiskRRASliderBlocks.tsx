@@ -17,7 +17,7 @@ export const PlanInputRiskRRASliderBlocks = React.memo(
     const pointerIndex = pointerState.drag?.index ?? index
     return (
       <>
-        {PLAN_PARAMS_CONSTANTS.riskToleranceValues.SEGMENTS.map(
+        {PLAN_PARAMS_CONSTANTS.risk.tpaw.riskTolerance.values.segments.map(
           (segment, i) => (
             <rect
               key={i}

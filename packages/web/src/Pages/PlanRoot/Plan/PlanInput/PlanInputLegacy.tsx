@@ -13,7 +13,10 @@ import { trimAndNullify } from '../../../../Utils/TrimAndNullify'
 import { AmountInput } from '../../../Common/Inputs/AmountInput'
 import { LabelAmountOptMonthRangeInput } from '../../../Common/Inputs/LabelAmountTimedOrUntimedInput/LabeledAmountTimedOrUntimedInput'
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulation,
+  useSimulationResult,
+} from '../../PlanRootHelpers/WithSimulation'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
@@ -255,7 +258,8 @@ const _RemainderCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsProcessed } = useSimulation()
+    const { args } = useSimulationResult()
+
     return (
       <div
         className={`${className} params-card`}
@@ -266,7 +270,8 @@ const _RemainderCard = React.memo(
         </h2>
         <h2 className="">
           {formatCurrency(
-            planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.target,
+            args.planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy
+              .target,
           )}{' '}
           <span className="">real</span>
         </h2>
@@ -276,15 +281,11 @@ const _RemainderCard = React.memo(
 )
 
 export const PlanInputLegacySummary = React.memo(
-  ({
-    planParamsNorm,
-    planParamsProcessed,
-  }: {
-    planParamsNorm: PlanParamsNormalized
-    planParamsProcessed: PlanParamsProcessed
-  }) => {
+  ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
+    const { args } = useSimulationResult()
     const { total, external } =
       planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy
+
     return external.length === 0 ? (
       <h2>Target: {formatCurrency(total)} (real dollars)</h2>
     ) : (
@@ -310,7 +311,7 @@ export const PlanInputLegacySummary = React.memo(
           <h2 className="mt-2">Remaining Target</h2>
           <h2 className="mt-2 text-right">
             {formatCurrency(
-              planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy
+              args.planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy
                 .target,
             )}{' '}
           </h2>

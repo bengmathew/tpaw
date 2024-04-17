@@ -12,13 +12,13 @@ import {
   noCase,
 } from '@tpaw/common'
 import jsonpatch from 'fast-json-patch'
-import _ from 'lodash'
+import _, { isDate } from 'lodash'
 import { normalizeGlidePath } from './NormalizeGlidePath'
 import { NormalizedMonthRange } from './NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
 import { NormalizedLabeledAmountTimed } from './NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 import {
   PlanParamsNormalized,
-  normalizePlanParamsUnchecked
+  normalizePlanParamsUnchecked,
 } from './NormalizePlanParams'
 
 export const normalizePlanParamsInverse = (
@@ -28,7 +28,15 @@ export const normalizePlanParamsInverse = (
   const deNorm = _normalizePlanParamsInverseUnchecked(originalNorm)
   const reNorm = normalizePlanParamsUnchecked(
     deNorm,
-    originalNorm.nowAs.calendarMonth,
+    originalNorm.datingInfo.isDated
+      ? {
+          timestamp: originalNorm.datingInfo.nowAsTimestamp,
+          calendarMonth: originalNorm.datingInfo.nowAsCalendarMonth,
+        }
+      : {
+          timestamp: 0,
+          calendarMonth: { year: 0, month: 0 },
+        },
   )
 
   // If retirement.agsAsMFNIfSpecifiedElseNull is in the past in originalNorm,
@@ -123,23 +131,35 @@ const _normalizePlanParamsInverseUnchecked = (
   return {
     v: currentPlanParamsVersion,
     timestamp: norm.timestamp,
+    datingInfo: norm.datingInfo.isDated
+      ? { isDated: true }
+      : {
+          isDated: false,
+          timestampForMarketData: norm.datingInfo.timestampForMarketData,
+        },
     dialogPositionNominal: norm.dialogPosition.effective,
     people: block(() => {
-      const _getPerson = (n: typeof norm.ages.person1): Person => ({
-        ages:
-          n.retirement.ageIfInFuture === null
-            ? {
-                type: 'retiredWithNoRetirementDateSpecified',
-                monthOfBirth: n.monthOfBirth.baseValue,
-                maxAge: n.maxAge.baseValue,
-              }
-            : {
-                type: 'retirementDateSpecified',
-                monthOfBirth: n.monthOfBirth.baseValue,
-                retirementAge: n.retirement.ageIfInFuture.baseValue,
-                maxAge: n.maxAge.baseValue,
-              },
-      })
+      const _getPerson = (n: typeof norm.ages.person1): Person => {
+        const currentAgeInfo: Person['ages']['currentAgeInfo'] = n
+          .currentAgeInfo.isDatedPlan
+          ? { isDatedPlan: true, monthOfBirth: n.currentAgeInfo.baseValue }
+          : { isDatedPlan: false, currentAge: n.currentAgeInfo.baseValue }
+        return {
+          ages:
+            n.retirement.ageIfInFuture === null
+              ? {
+                  type: 'retiredWithNoRetirementDateSpecified',
+                  currentAgeInfo,
+                  maxAge: n.maxAge.baseValue,
+                }
+              : {
+                  type: 'retirementDateSpecified',
+                  currentAgeInfo,
+                  retirementAge: n.retirement.ageIfInFuture.baseValue,
+                  maxAge: n.maxAge.baseValue,
+                },
+        }
+      }
       return norm.ages.person2
         ? {
             withPartner: true,
@@ -190,7 +210,10 @@ const _normalizePlanParamsInverseUnchecked = (
       tpawAndSPAW: norm.risk.tpawAndSPAW,
       spaw: norm.risk.spaw,
       spawAndSWR: {
-        allocation: normalizeGlidePath.inverse(norm.risk.spawAndSWR.allocation),
+        allocation: normalizeGlidePath.inverse(
+          norm.risk.spawAndSWR.allocation,
+          norm.datingInfo.nowAsCalendarMonth,
+        ),
       },
       swr: norm.risk.swr,
     },

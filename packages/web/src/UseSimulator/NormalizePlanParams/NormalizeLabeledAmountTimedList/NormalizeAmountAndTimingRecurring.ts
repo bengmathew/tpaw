@@ -7,13 +7,14 @@ import {
   assertFalse,
   block,
   noCase,
+  fGet,
+  PickType,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { InMonthsFns } from '../../../Utils/InMonthsFns'
 import { Record } from '../../../Utils/Record'
 import { SimpleRange } from '../../../Utils/SimpleRange'
-import { PickType } from '../../../Utils/UtilityTypes'
-import { NormalizedAges, ToMFN } from '../NormalizePlanParamsAges'
+import { NormalizedAges, MonthToMFN } from '../NormalizePlanParamsAges'
 import {
   NormalizedMonthInThePast,
   NormalizedMonthNotInThePast,
@@ -107,8 +108,9 @@ export const normalizeAmountAndTimingRecurring = (
     baseAmount,
   }: PickType<LabeledAmountTimed['amountAndTiming'], 'recurring'>,
   validRangeAsMFN: SimpleRange,
-  toMFN: ToMFN,
+  monthToMFN: MonthToMFN,
   ages: NormalizedAges,
+  nowAsCalendarMonth: CalendarMonth | null,
 ): NormalizedAmountAndTimingRecurring | null => {
   const result = (monthRange: NormalizedMonthRange, baseAmount: number) => ({
     type: 'recurring' as const,
@@ -117,19 +119,19 @@ export const normalizeAmountAndTimingRecurring = (
     baseAmount,
     delta,
   })
-  const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(
-    toMFN.inverse.nowAsCalendarMonth,
-  )
+  const mfnToCalendarMonth = nowAsCalendarMonth
+    ? CalendarMonthFns.getFromMFN(nowAsCalendarMonth)
+    : null
 
   switch (monthRange.type) {
     case 'startAndEnd': {
-      const inputStartAsMFNPastNotElided = toMFN.forMonth.pastNotElided(
+      const inputStartAsMFNPastNotElided = monthToMFN.pastNotElided(
         monthRange.start,
       )
       const inputEndAsMFNPastElided =
         monthRange.end.type === 'inThePast'
           ? 'inThePast'
-          : toMFN.forMonth.pastElided(monthRange.end)
+          : monthToMFN.pastElided(monthRange.end)
       if (
         inputStartAsMFNPastNotElided < 0 &&
         inputEndAsMFNPastElided === 'inThePast'
@@ -193,7 +195,7 @@ export const normalizeAmountAndTimingRecurring = (
       }
     }
     case 'startAndDuration': {
-      const inputStartAsMFNPastNotElided = toMFN.forMonth.pastNotElided(
+      const inputStartAsMFNPastNotElided = monthToMFN.pastNotElided(
         monthRange.start,
       )
       const inputEndAsMFNPastNotElided =
@@ -246,7 +248,7 @@ export const normalizeAmountAndTimingRecurring = (
     }
 
     case 'endAndDuration': {
-      const inputEndAsMFNPastElided = toMFN.forMonth.pastElided(monthRange.end)
+      const inputEndAsMFNPastElided = monthToMFN.pastElided(monthRange.end)
       if (inputEndAsMFNPastElided === 'inThePast') return null
       const inputEndAsMFNNotInPast = inputEndAsMFNPastElided
 
@@ -263,17 +265,6 @@ export const normalizeAmountAndTimingRecurring = (
         { type: 'rangeCheckAndSquishRangeForAge', ages },
       )
       const startAsMFNNotInPast = Math.max(0, inputStartAsMFNPastNotElided)
-      console.dir({
-        m: monthRange.type,
-        startAsMFNNotInPast,
-        x: { inMonths: end.asMFN - startAsMFNNotInPast + 1 },
-        y: {
-          includingLocalConstraints: _squashValidRangeAsMFNGivenEnd(
-            end,
-            validRangeAsMFN,
-          ),
-        },
-      })
       const duration = _getNormalizedDuration(
         monthRange.type,
         startAsMFNNotInPast,
@@ -325,31 +316,30 @@ const _stepStartToCurrent = (
   baseAmount: number,
   everyXMonths: _Orig['everyXMonths'],
   delta: _Orig['delta'],
-  mfnToCalendarMonth: (mfn: number) => CalendarMonth,
+  mfnToCalendarMonth: null | ((mfn: number) => CalendarMonth),
 ): { month: { asMFN: number; value: Month }; baseAmount: number } | null => {
   const unchanged = {
     month: { asMFN: startMonth.asMFNPastNotElided, value: startMonth.value },
     baseAmount,
   }
-  // Not >= 0 because we want to rewrite month as 'now' if === 0 if month is
-  // 'retired'. We have to remove the reference to 'retired' because if
-  // retirement month is 0, we will elide retiremed date to
-  // 'retiredWithNoRetirementDataSpecified', and then 'retired' will no longer
-  // be resolvable.
   if (startMonth.asMFNPastNotElided > 0) return unchanged
   const getResult = (asMFN: number, baseAmount: number) => ({
     month: {
       asMFN,
       value: block((): Month => {
-        const calendarMonth = mfnToCalendarMonth(asMFN)
+        const calendarMonth = fGet(mfnToCalendarMonth)(asMFN)
         return asMFN === 0
-          ? { type: 'calendarMonthAsNow', monthOfEntry: calendarMonth }
+          ? { type: 'now', monthOfEntry: { isDatedPlan: true, calendarMonth } }
           : { type: 'calendarMonth', calendarMonth }
       }),
     },
     baseAmount,
   })
 
+  // We want to rewrite month as 'now' if === 0 and month is 'retired'. We have
+  // to remove the reference to 'retired' because if retirement month is 0, we
+  // will elide retiremed date to 'retiredWithNoRetirementDataSpecified', and
+  // then 'retired' will no longer be resolvable.
   if (startMonth.asMFNPastNotElided === 0) {
     return startMonth.value.type === 'namedAge' &&
       startMonth.value.age === 'retirement'
@@ -357,6 +347,8 @@ const _stepStartToCurrent = (
       : unchanged
   }
 
+  // Undated plans cannot have been in the past.
+  assert(mfnToCalendarMonth)
   assert(endMonthAsMFNPastElided !== 'inThePast')
   const endMonthAsMFNNotInPast = endMonthAsMFNPastElided
 
