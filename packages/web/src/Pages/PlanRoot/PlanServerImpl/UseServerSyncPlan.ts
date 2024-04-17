@@ -86,14 +86,20 @@ export const useServerSyncPlan = (
 
   const historyForDebugRef = useRef(
     [] as {
+      src: string | null
       action: string
       currState: { onRender: _State['type']; onSetState: _State['type'] }
       targetState: _State['type']
     }[],
   )
-  const setStateDebug = (action: string, targetState: _State) => {
+  const setStateDebug = (
+    src: string | null,
+    action: string,
+    targetState: _State,
+  ) => {
     setStateDirect((prev) => {
       historyForDebugRef.current.push({
+        src,
         action,
         currState: { onRender: prev.type, onSetState: prev.type },
         targetState: targetState.type,
@@ -111,7 +117,7 @@ export const useServerSyncPlan = (
 
   // ---- TO SYNCED STATE ----
   const toSyncedState = () => {
-    setStateDebug('toSyncedState', { type: 'synced' })
+    setStateDebug(null, 'toSyncedState', { type: 'synced' })
   }
   const toSyncedStateRef = useRef(toSyncedState)
   toSyncedStateRef.current = toSyncedState
@@ -135,13 +141,24 @@ export const useServerSyncPlan = (
     }
   `)
 
-  const toSyncingState = ({
-    input,
-    failures,
-  }: {
-    input: _Input
-    failures: _Failure[]
-  }) => {
+  const toSyncingState = (
+    src: string,
+    {
+      input,
+      failures,
+    }: {
+      input: _Input
+      failures: _Failure[]
+    },
+  ) => {
+    if (state.type === 'syncing') {
+      Sentry.captureException(
+        new Error(
+          `toSyncingState called while already syncing.\nsrc:${src}\n${JSON.stringify(historyForDebugRef.current, null, 2)}`,
+        ),
+      )
+      assertFalse()
+    }
     const { cutAfterId, add, reverseHeadIndex, newParamsHistoryPostBaseIds } =
       input
     const startTime = Date.now()
@@ -232,7 +249,7 @@ export const useServerSyncPlan = (
         })
       },
     })
-    setStateDebug('toSyncingState', {
+    setStateDebug(src, 'toSyncingState', {
       type: 'syncing',
       startTime,
       failures,
@@ -263,7 +280,7 @@ export const useServerSyncPlan = (
       )
     }
     state.dispose() // Safe even if timeout has already fired.
-    toSyncingState({ input, failures: [] })
+    toSyncingStateRef.current('handleClearThrottle', { input, failures: [] })
   }
   const handleClearThrottleRef = useRef(handleClearThrottle)
   handleClearThrottleRef.current = handleClearThrottle
@@ -280,7 +297,7 @@ export const useServerSyncPlan = (
       () => handleClearThrottleRef.current(),
       SERVER_SYNC_PLAN_THROTTLE_WAIT_TIME,
     )
-    setStateDebug('toThrottleState', {
+    setStateDebug(null, 'toThrottleState', {
       type: 'waitDueToThrottle',
       waitEndTime: Date.now() + SERVER_SYNC_PLAN_THROTTLE_WAIT_TIME,
       dispose: () => window.clearTimeout(timeout),
@@ -301,7 +318,10 @@ export const useServerSyncPlan = (
       assertFalse()
     }
     state.dispose() // Safe even if timeout has already fired.
-    toSyncingState({ input, failures: state.failures })
+    toSyncingStateRef.current('handleClearError', {
+      input,
+      failures: state.failures,
+    })
   }
   const handleClearErrorRef = useRef(handleClearError)
   handleClearErrorRef.current = handleClearError
@@ -331,7 +351,7 @@ export const useServerSyncPlan = (
       }
     })
 
-    setStateDebug('toErrorState', {
+    setStateDebug(null, 'toErrorState', {
       type: 'waitDueToError',
       waitEndTime: waitEndTime,
       failures: [...state.failures, failure],
@@ -355,7 +375,10 @@ export const useServerSyncPlan = (
     if (input) {
       switch (state.type) {
         case 'synced':
-          toSyncingStateRef.current({ input, failures: [] })
+          toSyncingStateRef.current('inputChangeEffect', {
+            input,
+            failures: [],
+          })
           break
         case 'syncing':
         case 'waitDueToError':
