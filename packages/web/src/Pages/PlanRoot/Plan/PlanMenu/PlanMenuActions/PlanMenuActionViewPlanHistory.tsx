@@ -5,24 +5,26 @@ import { assertFalse, noCase } from '@tpaw/common'
 import clix from 'clsx'
 import React, { useEffect, useRef, useState } from 'react'
 import { useURLUpdater } from '../../../../../Utils/UseURLUpdater'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { SimulationInfoForServerSrc } from '../../../PlanRootHelpers/WithSimulation'
+import { CalendarDayFns } from '../../../../../Utils/CalendarDayFns'
+import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
 
 export const PlanMenuActionViewPlanHistory = React.memo(
   ({
     className,
-    historyStatus,
+    simulationInfoForServerSrc,
     nowAsTimestamp,
   }: {
     className?: string
-    historyStatus: 'fetching' | 'fetched' | 'failed'
+    simulationInfoForServerSrc: SimulationInfoForServerSrc
     nowAsTimestamp: number
   }) => {
+    const { getZonedTime } = useIANATimezoneName()
+    const { historyStatus, setRewindTo } = simulationInfoForServerSrc
     const [waitForHistory, setWaitForHistory] = useState(false)
 
     const handleSwitchToHistoryMode = () => {
-      const url = new URL(window.location.href)
-      url.searchParams.set('rewindTo', `${nowAsTimestamp}`)
-      urlUpdater.push(url)
+      setRewindTo(CalendarDayFns.fromDateTime(getZonedTime(nowAsTimestamp)))
     }
     const handleSwitchToHistoryModeRef = useRef(handleSwitchToHistoryMode)
     handleSwitchToHistoryModeRef.current = handleSwitchToHistoryMode
@@ -58,7 +60,7 @@ export const PlanMenuActionViewPlanHistory = React.memo(
           }
         }}
       >
-        <span className="inline-block w-[25px]">
+        <span className="context-menu-icon">
           <FontAwesomeIcon icon={faHistory} />
         </span>{' '}
         {waitForHistory ? 'Fetching History...' : 'View Plan History'}

@@ -1,6 +1,7 @@
 import {
   JSONGuard,
   array,
+  boolean,
   bounded,
   chain,
   failure,
@@ -30,8 +31,8 @@ import { fGet } from './Utils'
 
 export namespace API {
   // Update this if the client needs to forced to update.
-  export const version = '2'
-  // Update this if the you want to inform the user there is a new version 
+  export const version = '3'
+  // Update this if the you want to inform the user there is a new version
   // available, if they want to update.
   export const clientVersion = '1'
   const { uuid, ianaTimezoneName } = Guards
@@ -179,13 +180,13 @@ export namespace API {
       userId: string
       planId: string
       lastSyncAt: number
-      ianaTimezoneName: string
+      planParams: string
     }) =>
       object({
         userId,
         planId: uuid,
         lastSyncAt: chain(number, integer),
-        ianaTimezoneName,
+        planParams: chain(string, json, planParamsBackwardsCompatibleGuard),
       })(x)
   }
 

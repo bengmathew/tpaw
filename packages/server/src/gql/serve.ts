@@ -4,11 +4,12 @@ import { Prisma } from '@prisma/client'
 import Sentry from '@sentry/node'
 import {
   API,
+  PlanParams,
   assert,
   block,
   fGet,
   getDefaultNonPlanParams,
-  getDefaultPlanParams,
+  getFullDatedDefaultPlanParams,
   getSlug,
 } from '@tpaw/common'
 import bodyParser from 'body-parser'
@@ -185,7 +186,7 @@ async function _impl() {
 
             const label = null
             const now = new Date()
-            const planParams = getDefaultPlanParams(
+            const planParams: PlanParams = getFullDatedDefaultPlanParams(
               now.getTime(),
               ianaTimezoneName,
             )

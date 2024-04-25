@@ -3,7 +3,7 @@ import clix from 'clsx'
 import React from 'react'
 import { gray } from '../../../Utils/ColorPalette'
 
-export const ToggleSwitch = React.memo(
+export const SwitchAsToggle = React.memo(
   ({
     className = '',
     checked,

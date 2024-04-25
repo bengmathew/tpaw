@@ -7,7 +7,6 @@ import {
   block,
   currentPlanParamsVersion,
   fGet,
-  getDefaultPlanParams,
   planParamsBackwardsCompatibleGuard,
   planParamsChangeActionGuard,
   planParamsMigrate,
@@ -70,12 +69,11 @@ const _planParamsPostBaseItemGuard: JSONGuard<_PlanParamsHistoryItemUnmigratedUn
 
 export namespace PlanLocalStorage {
   export const getDefault = (
-    ianaTimezoneName: string,
+    planParams: PlanParams,
   ): {
     state: PlanLocalStorageMigrated
     planMigratedFromVersion: SomePlanParamsVersion
   } => {
-    const now = Date.now()
     return {
       state: {
         v: 1,
@@ -83,7 +81,7 @@ export namespace PlanLocalStorage {
         planParamsPostBase: [
           {
             id: uuid.v4(),
-            params: getDefaultPlanParams(now, ianaTimezoneName),
+            params: planParams,
             change: { type: 'start', value: null },
           },
         ],

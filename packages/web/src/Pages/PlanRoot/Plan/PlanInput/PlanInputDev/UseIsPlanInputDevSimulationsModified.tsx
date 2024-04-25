@@ -1,6 +1,7 @@
 import {
   DEFAULT_MONTE_CARLO_SIMULATION_SEED,
   assert,
+  partialDefaultDatelessPlanParams,
   getDefaultNonPlanParams,
 } from '@tpaw/common'
 import { useMemo } from 'react'
@@ -8,23 +9,23 @@ import { useNonPlanParams } from '../../../PlanRootHelpers/WithNonPlanParams'
 import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 
 export const useIsPlanInputDevSimulationsModified = () => {
-  const { randomSeed, planParamsNorm, defaultPlanParams } = useSimulation()
+  const { randomSeed, planParamsNorm } = useSimulation()
   const { nonPlanParams } = useNonPlanParams()
   const defaultNonPlanParams = useMemo(
     () => getDefaultNonPlanParams(Date.now()),
     [],
   )
-  assert(defaultPlanParams.advanced.sampling.type === 'monteCarlo')
+  assert(partialDefaultDatelessPlanParams.advanced.sampling.type === 'monteCarlo')
 
   const isStaggerRunStartsModified =
     planParamsNorm.advanced.sampling.type === 'monteCarlo' &&
     planParamsNorm.advanced.sampling.data.staggerRunStarts !==
-      defaultPlanParams.advanced.sampling.data.staggerRunStarts
+      partialDefaultDatelessPlanParams.advanced.sampling.data.staggerRunStarts
 
   const isOverrideToFixedForTestingModified =
     planParamsNorm.advanced.historicalReturnsAdjustment.standardDeviation
       .overrideToFixedForTesting !==
-    defaultPlanParams.advanced.historicalReturnsAdjustment.standardDeviation
+    partialDefaultDatelessPlanParams.advanced.historicalReturnsAdjustment.standardDeviation
       .overrideToFixedForTesting
 
   const isNumberOfSimulationsModified =

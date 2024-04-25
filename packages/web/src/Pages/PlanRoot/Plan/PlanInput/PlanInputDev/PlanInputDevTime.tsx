@@ -10,7 +10,7 @@ import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { writableCloneDeep } from '../../../../../Utils/WritableCloneDeep'
 import { NumberInput } from '../../../../Common/Inputs/NumberInput'
-import { ToggleSwitch } from '../../../../Common/Inputs/ToggleSwitch'
+import { SwitchAsToggle } from '../../../../Common/Inputs/SwitchAsToggle'
 import { useMarketData } from '../../../PlanRootHelpers/WithMarketData'
 import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
 import {
@@ -114,7 +114,7 @@ const _FastForwardCard = React.memo(
         </div>
         <div className=" flex justify-start gap-x-4 items-center mt-8">
           <h2 className={clix(`font-semibold`)}>Fast Forward</h2>
-          <ToggleSwitch
+          <SwitchAsToggle
             className="disabled:lighten-2"
             checked={fastForwardInfo.isFastForwarding}
             setChecked={() => {
@@ -229,7 +229,7 @@ const _SynthesizeMarketDataCard = React.memo(
         <div className="flex items-center gap-x-4 mb-2">
           <h2 className="font-bold text-lg ">Synthesize Market Data</h2>
 
-          <ToggleSwitch
+          <SwitchAsToggle
             className=""
             checked={synthesizeMarketDataSpec !== null}
             setChecked={(enabled) => {

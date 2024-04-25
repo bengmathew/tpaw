@@ -1,6 +1,11 @@
-import { assert, fGet } from '@tpaw/common'
+import {
+  PlanParams,
+  assert,
+  fGet,
+  getFullDatedDefaultPlanParams,
+} from '@tpaw/common'
 import _ from 'lodash'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { appPaths } from '../../../AppPaths'
 import { useCurrentTime } from '../PlanRootHelpers/UseCurrentTime'
 import { useWorkingPlan } from '../PlanRootHelpers/UseWorkingPlan'
@@ -25,7 +30,9 @@ export const PlanRootLocalImpl = React.memo(
     const [startingSrc] = useState(
       () =>
         PlanLocalStorage.read() ??
-        PlanLocalStorage.getDefault(ianaTimezoneName),
+        PlanLocalStorage.getDefault(
+          getFullDatedDefaultPlanParams(Date.now(), ianaTimezoneName),
+        ),
     )
     const planPaths = appPaths.guest
     const currentTimeInfo = useCurrentTime({ planId: startingSrc.state.planId })
@@ -53,13 +60,14 @@ export const PlanRootLocalImpl = React.memo(
       })
     }, [workingPlanInfo.workingPlan])
 
-    const reset = () => {
-      PlanLocalStorage.clear()
-      PlanLocalStorage.write(
-        PlanLocalStorage.getDefault(ianaTimezoneName).state,
-      )
-      reload()
-    }
+    const reset = useCallback(
+      (planParams: PlanParams) => {
+        PlanLocalStorage.clear()
+        PlanLocalStorage.write(PlanLocalStorage.getDefault(planParams).state)
+        reload()
+      },
+      [reload],
+    )
 
     const simulationParams = useSimulationParamsForPlanMode(
       planPaths,

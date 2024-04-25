@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest } from 'relay-runtime'
+import { ConcreteRequest, Mutation } from 'relay-runtime';
 export type GeneratePDFReportInput = {
   auth?: string | null | undefined;
   devicePixelRatio: number;

@@ -8,6 +8,7 @@ export type SomePlanParamsVersion = _GetVersion<SomePlanParams>
 export type TimestampedPlanParams = PlanParamsCurr.TimestampedPlanParams
 export type DialogPosition = PlanParamsCurr.DialogPosition
 export type CalendarMonth = PlanParamsCurr.CalendarMonth
+export type CalendarDay = PlanParamsCurr.CalendarDay
 export type InMonths = PlanParamsCurr.InMonths
 export type PersonId = PlanParamsCurr.PersonId
 export type Person = PlanParamsCurr.Person

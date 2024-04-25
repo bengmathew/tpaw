@@ -1,4 +1,4 @@
-import { faPlus } from '@fortawesome/pro-solid-svg-icons'
+import { faInfinity, faPlus } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { assert, block, fGet, letIn } from '@tpaw/common'
 import { clsx } from 'clsx'
@@ -16,6 +16,8 @@ import { PlanInputBodyHeaderDoneButton } from '../PlanRoot/Plan/PlanInput/PlanIn
 import { PlanMenuActionModalCreatePlan } from '../PlanRoot/Plan/PlanMenu/PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalCreatePlan'
 import { PlansActions } from './PlansActions'
 import { PlansQuery } from './__generated__/PlansQuery.graphql'
+import { useIANATimezoneName } from '../PlanRoot/PlanRootHelpers/WithNonPlanParams'
+import { mainPlanColors } from '../PlanRoot/Plan/UsePlanColors'
 
 export const Plans = React.memo(() => {
   const userGQLArgs = useUserGQLArgs()
@@ -96,11 +98,22 @@ const _Item = React.memo(
     className?: string
     plan: User['plans'][number]
   }) => {
+    const { getZonedTime } = useIANATimezoneName()
     const href = block(() => {
       const href = appPaths['alt-plan']()
       href.searchParams.set('plan', plan.slug)
       return href
     })
+    const dateStr = useMemo(() => {
+      return {
+        created: getZonedTime(plan.addedToServerAt).toLocaleString(
+          DateTime.DATETIME_MED,
+        ),
+        lastUpdated: getZonedTime(plan.lastSyncAt).toLocaleString(
+          DateTime.DATETIME_MED,
+        ),
+      }
+    }, [getZonedTime, plan.addedToServerAt, plan.lastSyncAt])
     return (
       // z-0 to create a stacking context so z index of actions don't leak out.
       <div className={clsx(className, 'relative z-0 bg-gray-100 rounded-xl ')}>
@@ -110,19 +123,19 @@ const _Item = React.memo(
           shallow
         >
           <h2 className={clsx('text-lg')}>{plan.label ?? '<Untitled>'}</h2>
-
-          <h2 className="text-sm">
-            Created:{' '}
-            {DateTime.fromMillis(plan.addedToServerAt).toLocaleString(
-              DateTime.DATE_FULL,
-            )}
-          </h2>
-          <h2 className="text-sm">
-            Last Updated:{' '}
-            {DateTime.fromMillis(plan.lastSyncAt).toLocaleString(
-              DateTime.DATETIME_MED,
-            )}
-          </h2>
+          <h2 className="text-sm">Created: {dateStr.created}</h2>
+          <h2 className="text-sm">Last Updated: {dateStr.lastUpdated}</h2>
+          {!plan.isDated && (
+            <div className="text-sm flex mt-2 -ml-1">
+              <div
+                className="rounded-full px-2 "
+                style={{ backgroundColor: mainPlanColors.shades.light[8].hex }}
+              >
+                <FontAwesomeIcon className="text-[12px] mr-1" icon={faInfinity} />
+                dateless plan
+              </div>
+            </div>
+          )}
         </Link>
         <PlansActions
           className="absolute top-0 right-0 z-10 py-1 px-4"

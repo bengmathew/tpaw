@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import React, { useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { appPaths } from '../../../AppPaths'
 import { useFirebaseUser } from '../../App/WithFirebaseUser'
 import { WithUser } from '../../App/WithUser'
@@ -24,13 +24,11 @@ export const PlanRootLocalMain = React.memo(
 
     const [key, setKey] = React.useState(0)
 
+    const reload = useCallback(() => setKey((x) => x + 1), [])
     if (isLoggedIn) return <></>
     return (
       <WithUser userFragmentOnQueryKey={null} key={key}>
-        <PlanRootLocalImpl
-          reload={() => setKey((x) => x + 1)}
-          pdfReportInfo={pdfReportInfo}
-        />
+        <PlanRootLocalImpl reload={reload} pdfReportInfo={pdfReportInfo} />
       </WithUser>
     )
   },

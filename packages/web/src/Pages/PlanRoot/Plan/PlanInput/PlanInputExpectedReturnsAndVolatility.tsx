@@ -7,41 +7,43 @@ import {
   PlanParams,
   assert,
   block,
+  fGet,
+  getNYZonedTime,
   letIn,
   noCase,
+  partialDefaultDatelessPlanParams,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useState } from 'react'
-import { SimulationResult } from '../../../../../UseSimulator/Simulator/Simulator'
-import { formatCurrency } from '../../../../../Utils/FormatCurrency'
-import { formatPercentage } from '../../../../../Utils/FormatPercentage'
-import { paddingCSSStyle } from '../../../../../Utils/Geometry'
-import { SliderInput } from '../../../../Common/Inputs/SliderInput/SliderInput'
-import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
-import { SimpleModalListbox } from '../../../../Common/Modal/SimpleModalListbox'
-import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
+import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { SimulationResult } from '../../../../UseSimulator/Simulator/Simulator'
+import { formatCurrency } from '../../../../Utils/FormatCurrency'
+import { formatPercentage } from '../../../../Utils/FormatPercentage'
+import { paddingCSSStyle } from '../../../../Utils/Geometry'
+import { SliderInput } from '../../../Common/Inputs/SliderInput/SliderInput'
+import { CenteredModal } from '../../../Common/Modal/CenteredModal'
+import { SimpleModalListbox } from '../../../Common/Modal/SimpleModalListbox'
+import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
 import {
   useSimulation,
   useSimulationResult,
-} from '../../../PlanRootHelpers/WithSimulation'
-import { mainPlanColors } from '../../UsePlanColors'
-import { PlanInputModifiedBadge } from '../Helpers/PlanInputModifiedBadge'
+} from '../../PlanRootHelpers/WithSimulation'
+import { mainPlanColors } from '../UsePlanColors'
+import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
-} from '../PlanInputBody/PlanInputBody'
+} from './PlanInputBody/PlanInputBody'
 import {
+  getExpectedReturnCustomBondBaseLabel,
+  getExpectedReturnCustomStockBaseLabel,
+  getExpectedReturnTypeLabelInfo,
   useIsPlanInputBondVolatilityCardModified,
   useIsPlanInputExpectedReturnsCardModified,
   useIsPlanInputStockVolatilityCardModified,
-} from './UseIsPlanInputExpectedReturnsCardModified'
-import {
-  getExpectedReturnTypeLabelInfo,
-  getExpectedReturnCustomStockBaseLabel,
-  getExpectedReturnCustomBondBaseLabel,
-} from './GetExpectedReturnLabelInto'
-import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+} from './PlanInputExpectedReturnsAndVolatilityFns'
+import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
 
 type ExpectedReturnsForPlanning =
   PlanParams['advanced']['returnsStatsForPlanning']['expectedValue']['empiricalAnnualNonLog']
@@ -76,15 +78,12 @@ export const _ExpectedReturnsCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { getZonedTime } = useIANATimezoneName()
-    const {
-      updatePlanParams,
-      defaultPlanParams,
-      planParamsNorm,
-      simulationResult,
-    } = useSimulation()
+    const { updatePlanParams, planParamsNorm, simulationResult } =
+      useSimulation()
     const { empiricalAnnualNonLog } =
       planParamsNorm.advanced.returnsStatsForPlanning.expectedValue
+
+    const marketData = simulationResult.info.marketData.expectedReturns
 
     const [defaultData, setDefaultData] = useState<_DefaultData>({
       fixedEquityPremium:
@@ -129,15 +128,68 @@ export const _ExpectedReturnsCard = React.memo(
 
         <h2 className="font-bold text-lg ">Expected Returns</h2>
         <div className="mt-2">
-          <p className="p-base mb-2 mt-1">
-            {`Pick the expected annual real returns for stocks and bonds. All the options other than "${letIn(
-              getExpectedReturnTypeLabelInfo({ type: 'fixed' }),
-              (labelInfo) => {
-                assert(!labelInfo.isSplit)
-                return labelInfo.stocksAndBonds.toLowerCase()
-              },
-            )}" are automatically updated periodically based on new data.`}
-          </p>
+          {planParamsNorm.datingInfo.isDated ? (
+            <>
+              <p className="p-base mb-2 mt-1">
+                Pick the expected annual real returns for stocks and bonds. All
+                the options other than {`"`}
+                {letIn(
+                  getExpectedReturnTypeLabelInfo({ type: 'fixed' }),
+                  (labelInfo) => {
+                    assert(!labelInfo.isSplit)
+                    return labelInfo.stocksAndBonds.toLowerCase()
+                  },
+                )}
+                {`"`} are automatically updated based on new data.
+              </p>
+              <p className="p-base">
+                The current data is from NYSE close on{' '}
+                {formatNYDate(marketData.stocks.sp500.closingTime)} for stocks
+                and {formatNYDate(marketData.bonds.bondRates.closingTime)} for
+                bonds. To see the calculations and data used for these options,
+                {` `}
+                <button
+                  className="underline"
+                  onClick={() => setShowCalculationPopup(true)}
+                >
+                  click here.
+                </button>
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="p-base mb-2 mt-1">
+                Pick the expected annual real returns for stocks and bonds. All
+                the options other than {`"`}
+                {letIn(
+                  getExpectedReturnTypeLabelInfo({ type: 'fixed' }),
+                  (labelInfo) => {
+                    assert(!labelInfo.isSplit)
+                    return labelInfo.stocksAndBonds.toLowerCase()
+                  },
+                )}
+                {`"`} are calculated based on market data.
+              </p>
+              <p className="p-base">
+                This is a dateless plan and you have chosen to use market data
+                as of{' '}
+                {CalendarDayFns.toStr(
+                  planParamsNorm.datingInfo.marketDataAsOfEndOfDayInNY,
+                )}
+                . The latest data available on that day was from NYSE close on{' '}
+                {formatNYDate(marketData.stocks.sp500.closingTime)} for stocks
+                and {formatNYDate(marketData.bonds.bondRates.closingTime)} for
+                bonds. To see the calculations and data used for these options,
+                {` `}
+                <button
+                  className="underline"
+                  onClick={() => setShowCalculationPopup(true)}
+                >
+                  click here.
+                </button>
+              </p>
+            </>
+          )}
           <div className="mt-6">
             <_Preset
               className="mt-4"
@@ -167,7 +219,18 @@ export const _ExpectedReturnsCard = React.memo(
             />
             <_Custom
               className="mt-4"
-              onChange={handleChange}
+              onChange={(x) => {
+                if (empiricalAnnualNonLog.type === 'fixedEquityPremium') {
+                  window.setTimeout(() => {
+                    const element = document.getElementById('erPreset:custom')
+                    fGet(element).scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'center',
+                    })
+                  }, 10)
+                }
+                handleChange(x)
+              }}
               props={props}
               defaultData={
                 defaultData.custom ?? {
@@ -180,11 +243,41 @@ export const _ExpectedReturnsCard = React.memo(
             <_Preset
               className="mt-4"
               type="historical"
-              onChange={handleChange}
+              onChange={(x) => {
+                if (
+                  empiricalAnnualNonLog.type === 'fixedEquityPremium' ||
+                  empiricalAnnualNonLog.type === 'custom'
+                ) {
+                  window.setTimeout(() => {
+                    const element = document.getElementById(
+                      'erPreset:historical',
+                    )
+                    fGet(element).scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'center',
+                    })
+                  }, 10)
+                }
+                handleChange(x)
+              }}
             />
             <_Fixed
               className="mt-4"
-              onChange={handleChange}
+              onChange={(x) => {
+                if (
+                  empiricalAnnualNonLog.type === 'fixedEquityPremium' ||
+                  empiricalAnnualNonLog.type === 'custom'
+                ) {
+                  window.setTimeout(() => {
+                    const element = document.getElementById('erPreset:fixed')
+                    fGet(element).scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'center',
+                    })
+                  }, 10)
+                }
+                handleChange(x)
+              }}
               props={props}
               defaultData={
                 defaultData.fixed ?? {
@@ -196,27 +289,16 @@ export const _ExpectedReturnsCard = React.memo(
             />
           </div>
 
-          <p className="mt-6 p-base">
-            These presets were last updated on{' '}
-            {getZonedTime(
-              simulationResult.info.marketData.lastUpdatedAtTimestamp,
-            ).toLocaleString(DateTime.DATE_MED)}
-            . To see the calculations and data used for the presets as well as
-            other options for expected returns,{` `}
-            <button
-              className="underline"
-              onClick={() => setShowCalculationPopup(true)}
-            >
-              click here.
-            </button>
-          </p>
+          {/* <p className="mt-6 p-base">
+            
+          </p> */}
         </div>
         <button
-          className="mt-3 underline disabled:lighten-2"
+          className="mt-6 underline disabled:lighten-2"
           onClick={() =>
             handleChange(
-              defaultPlanParams.advanced.returnsStatsForPlanning.expectedValue
-                .empiricalAnnualNonLog,
+              partialDefaultDatelessPlanParams.advanced.returnsStatsForPlanning
+                .expectedValue.empiricalAnnualNonLog,
             )
           }
           disabled={!isModified}
@@ -237,9 +319,6 @@ const _ExpectedReturnsPresetPopup = React.memo(
     const { simulationResult } = useSimulation()
     const marketData = simulationResult.info.marketData.expectedReturns
     const { getZonedTime } = useIANATimezoneName()
-
-    const formatDate = (timestamp: number) =>
-      getZonedTime(timestamp).toLocaleString(DateTime.DATE_MED)
 
     const getPresetLabelForStocks = (x: ExpectedReturnsForPlanning['type']) => {
       const labelInfo = getExpectedReturnTypeLabelInfo({ type: x })
@@ -266,14 +345,15 @@ const _ExpectedReturnsPresetPopup = React.memo(
             measure of the US stock market.
           </p>
           <h2 className="p-base mt-3">
-            Data as of {formatDate(marketData.stocks.sp500.closingTime)}:
+            Data from NYSE close on{' '}
+            {formatNYDate(marketData.stocks.sp500.closingTime)}:
           </h2>
           <h2 className=" font-bold mt-4">CAPE Ratio</h2>
           <div className="p-base">
             {/* <p className="mt-3">CAPE calculation for the S&P 500 index:</p> */}
             <p className="mt-3 p-base">
-              Price: The S&P 500 price as of{' '}
-              {formatDate(marketData.stocks.sp500.closingTime)} was{' '}
+              Price: The S&P 500 price at NYSE close on{' '}
+              {formatNYDate(marketData.stocks.sp500.closingTime)} was{' '}
               <span className="font-bold">
                 {formatCurrency(marketData.stocks.sp500.value, 2)}
               </span>
@@ -446,8 +526,12 @@ const _ExpectedReturnsPresetPopup = React.memo(
                 </div>
               </div>
             </div>
-            <h2 className=" font-bold mt-4">Presets</h2>
-            <p className="p-base mt-3">The presets provided are as follows:</p>
+            <h2 className=" font-bold mt-4">
+              Automatically Calculated Options
+            </h2>
+            <p className="p-base mt-3">
+              The automatically calculated options are as follows:
+            </p>
             <ul className="list-disc ml-5 mt-2 p-base">
               <li className="mt-1">
                 {getPresetLabelForStocks(
@@ -468,7 +552,8 @@ const _ExpectedReturnsPresetPopup = React.memo(
                 </span>{' '}
               </li>
               <li className="mt-1">
-                {getPresetLabelForStocks('1/CAPE,20YearTIPSYield')}{' '}
+                {getPresetLabelForStocks('1/CAPE,20YearTIPSYield')}
+                {': '}
                 <span className="font-bold">
                   {format(marketData.stocks.oneOverCAPERounded)}
                 </span>
@@ -501,7 +586,8 @@ const _ExpectedReturnsPresetPopup = React.memo(
           Yield Curve series.`}
               </p>
               <p className="mt-3">
-                Data as of {formatDate(marketData.bonds.bondRates.closingTime)}:
+                Data from NYSE close on{' '}
+                {formatNYDate(marketData.bonds.bondRates.closingTime)}:
               </p>
             </div>
 
@@ -531,10 +617,12 @@ const _ExpectedReturnsPresetPopup = React.memo(
                 </h2>
               </div>
             </div>
-            <h2 className=" font-bold mt-4">Presets</h2>
+            <h2 className=" font-bold mt-4">
+              Automatically Calculated Options
+            </h2>
             <div className="p-base">
               <p className="p-base mt-3">
-                The presets provided are as follows:
+                The automatically calculated options are as follows:
               </p>
               <ul className="list-disc ml-5 mt-2 p-base">
                 <li className="mt-1">
@@ -578,18 +666,18 @@ const _Preset = React.memo(
     type: _PresetType
     onChange: (expected: ExpectedReturnsForPlanning) => void
   }) => {
-    const { planParamsNorm, defaultPlanParams, simulationResult } =
-      useSimulation()
+    const { planParamsNorm, simulationResult } = useSimulation()
 
     const marketData = simulationResult.info.marketData.expectedReturns
     const { stocks, bonds } = _resolveExpectedReturnPreset(type, marketData)
     const isDefault =
-      defaultPlanParams.advanced.returnsStatsForPlanning.expectedValue
-        .empiricalAnnualNonLog.type === type
+      partialDefaultDatelessPlanParams.advanced.returnsStatsForPlanning
+        .expectedValue.empiricalAnnualNonLog.type === type
     const labelInfo = getExpectedReturnTypeLabelInfo({ type })
 
     return (
       <button
+        id={`erPreset:${type}`}
         className={`${className} flex gap-x-2`}
         onClick={() => onChange({ type })}
       >
@@ -785,7 +873,7 @@ export const _Custom = React.memo(
           .empiricalAnnualNonLogExpectedReturnInfo.value,
     }
     return (
-      <div className={`${className}`}>
+      <div id="erPreset:custom" className={`${className}`}>
         <button
           className={`${className} flex gap-x-2`}
           onClick={() => onChange(defaultData)}
@@ -809,10 +897,10 @@ export const _Custom = React.memo(
               )}
             </h2>
             <h2 className="text-start lighten-2 text-sm">
-              Stocks: Preset + Fixed Delta
+              Stocks: Base + Fixed Delta
             </h2>
             <h2 className="text-start lighten-2 text-sm">
-              Bonds: Preset + Fixed Delta
+              Bonds: Base + Fixed Delta
             </h2>
           </div>
         </button>
@@ -978,7 +1066,7 @@ export const _Fixed = React.memo(
       planParamsNorm.advanced.returnsStatsForPlanning.expectedValue
 
     return (
-      <div className={`${className}`}>
+      <div id="erPreset:fixed" className={`${className}`}>
         <button
           className={`${className} flex gap-x-2`}
           onClick={() => onChange(defaultData)}
@@ -1134,12 +1222,8 @@ export const _BondVolatilityCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const {
-      planParamsNorm,
-      simulationResult,
-      updatePlanParams,
-      defaultPlanParams,
-    } = useSimulation()
+    const { planParamsNorm, simulationResult, updatePlanParams } =
+      useSimulation()
     const { planParamsProcessed } = simulationResult.args
     const isModified = useIsPlanInputBondVolatilityCardModified()
     const handleChange = (volatilityScale: number) => {
@@ -1199,8 +1283,8 @@ export const _BondVolatilityCard = React.memo(
           className="mt-6 underline disabled:lighten-2"
           onClick={() =>
             handleChange(
-              defaultPlanParams.advanced.historicalReturnsAdjustment
-                .standardDeviation.bonds.scale.log,
+              partialDefaultDatelessPlanParams.advanced
+                .historicalReturnsAdjustment.standardDeviation.bonds.scale.log,
             )
           }
           disabled={!isModified}
@@ -1220,8 +1304,7 @@ export const _StockVolatilityCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, updatePlanParams, defaultPlanParams } =
-      useSimulation()
+    const { planParamsNorm, updatePlanParams } = useSimulation()
     const { planParamsProcessed } = useSimulationResult().args
     const isModified = useIsPlanInputStockVolatilityCardModified()
     const handleChange = (volatilityScale: number) => {
@@ -1281,7 +1364,7 @@ export const _StockVolatilityCard = React.memo(
           className="mt-6 underline disabled:lighten-2"
           onClick={() =>
             handleChange(
-              defaultPlanParams.advanced.returnsStatsForPlanning
+              partialDefaultDatelessPlanParams.advanced.returnsStatsForPlanning
                 .standardDeviation.stocks.scale.log,
             )
           }
@@ -1439,3 +1522,6 @@ export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(
 )
 
 const format = formatPercentage(1)
+
+const formatNYDate = (timestamp: number) =>
+  getNYZonedTime(timestamp).toLocaleString(DateTime.DATE_MED)

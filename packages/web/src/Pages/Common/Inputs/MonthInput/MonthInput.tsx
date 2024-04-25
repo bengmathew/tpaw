@@ -23,7 +23,7 @@ import {
   NormalizedAges,
   getFromMFNToNumericAge,
   getMonthToMFN,
-} from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsAges'
+} from '../../../../UseSimulator/NormalizePlanParams/NormalizeAges'
 import {
   NormalizedMonthInThePast,
   NormalizedMonthNotInThePast,
@@ -103,7 +103,11 @@ export const MonthInput = React.memo(
           }}
         >
           {({ open }) => (
-            <ContextModal align="left" open={open}>
+            <ContextModal
+              align="left"
+              open={open}
+              onOutsideClickOrEscape={null}
+            >
               {({ ref }) => (
                 <Listbox.Button className="py-1.5" ref={ref}>
                   {getNormalizedMonthStr(normValue).forMonthTypeMenu.label}
@@ -313,22 +317,8 @@ const _processChoices = (
               // lead to error free months.
               const mfnToNumericAge = getFromMFNToNumericAge({ ages })
               return [
-                {
-                  type: 'numericAge',
-                  person: 'person1',
-                  age: {
-                    inMonths: mfnToNumericAge.person1(preferredMonthAsMFN),
-                  },
-                },
-                mfnToNumericAge.person2
-                  ? {
-                      type: 'numericAge',
-                      person: 'person2',
-                      age: {
-                        inMonths: mfnToNumericAge.person2(preferredMonthAsMFN),
-                      },
-                    }
-                  : null,
+                mfnToNumericAge.person1(preferredMonthAsMFN),
+                mfnToNumericAge.person2?.(preferredMonthAsMFN) ?? null,
               ]
             }
             default:

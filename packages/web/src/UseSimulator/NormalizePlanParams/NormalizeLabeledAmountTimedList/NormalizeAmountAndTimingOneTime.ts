@@ -1,6 +1,6 @@
 import { LabeledAmountTimed } from '@tpaw/common'
 import { SimpleRange } from '../../../Utils/SimpleRange'
-import { NormalizedAges, MonthToMFN } from '../NormalizePlanParamsAges'
+import { NormalizedAges, MonthToMFN } from '../NormalizeAges'
 import {
   NormalizedMonthNotInThePast,
   getNormalizedMonthNotInThePast,

@@ -3,6 +3,11 @@ import React from 'react'
 import { appPaths } from '../../../../AppPaths'
 import { PlanPrintViewPageGroup } from './Helpers/PlanPrintViewPageGroup'
 import { PlanPrintViewArgs } from './PlanPrintViewArgs'
+import { useSimulationResult } from '../WithSimulation'
+import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
+import { useIANATimezoneName } from '../WithNonPlanParams'
+import { getNYZonedTime } from '@tpaw/common'
+import clsx from 'clsx'
 
 export const PlanPrintViewFrontSection = React.memo(
   ({
@@ -14,10 +19,14 @@ export const PlanPrintViewFrontSection = React.memo(
     settings: PlanPrintViewArgs['settings']
     planLabel: string | null
   }) => {
+    const { args } = useSimulationResult()
+    const { datingInfo } = args.planParamsNorm
+
     return (
       <PlanPrintViewPageGroup className="relative" settings={settings}>
         <div className="">
-          <div className="">
+          {/* Removed the element on !isDated was causing footer to move to next page.*/}
+          <div className={clsx(!datingInfo.isDated && 'invisible')}>
             <h2 className="font-bold text-[50px] leading-[50px]">
               {DateTime.now().toFormat('yyyy')}
             </h2>
@@ -34,6 +43,18 @@ export const PlanPrintViewFrontSection = React.memo(
                 {planLabel}
               </h2>
             )}
+            {!datingInfo.isDated && (
+              <div className="text-[18px] mt-3 ml-1">
+                <p className="font-font2">
+                  This is a dateless plan. It is not tied to a calendar date.
+                  Recommended for examples and not for personal planning.
+                </p>
+                <p className="font-font2 mt-3">
+                  Created using market data as of{' '}
+                  {CalendarDayFns.toStr(datingInfo.marketDataAsOfEndOfDayInNY)}
+                </p>
+              </div>
+            )}
             <h2 className="text-[18px] lighten-2 mt-3 ml-1">
               <a
                 className=""
@@ -44,7 +65,7 @@ export const PlanPrintViewFrontSection = React.memo(
               </a>
             </h2>
           </div>
-          <div className="absolute bottom-[1in] print:bottom-0 right-[1in] flex flex-col items-end ">
+          <div className="absolute bottom-[1in] print:bottom-0 right-[1in] flex flex-col items-end w-full">
             <h2 className="text-[25px] font-semibold ">TPAW Planner</h2>
             <a
               className="text-[18px] "

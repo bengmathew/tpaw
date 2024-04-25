@@ -7,7 +7,7 @@ import {
 } from '@tpaw/common'
 import _, { now } from 'lodash'
 import { SimpleRange } from '../../../Utils/SimpleRange'
-import { NormalizedAges, MonthToMFN } from '../NormalizePlanParamsAges'
+import { NormalizedAges, MonthToMFN } from '../NormalizeAges'
 import {
   NormalizedAmountAndTimingOneTime,
   normalizeAmountAndTimingOneTime,

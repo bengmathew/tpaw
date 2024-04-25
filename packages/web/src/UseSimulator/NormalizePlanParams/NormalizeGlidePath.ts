@@ -12,7 +12,7 @@ import {
   NormalizedMonthNotInThePast,
   normalizedMonthRangeCheckAndSquishRangeForAge,
 } from './NormalizeLabeledAmountTimedList/NormalizedMonth'
-import { NormalizedAges, MonthToMFN } from './NormalizePlanParamsAges'
+import { NormalizedAges, MonthToMFN } from './NormalizeAges'
 
 export type NormalizedGlidePathEntry = {
   id: string

@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   DEFAULT_MONTE_CARLO_SIMULATION_SEED,
   assert,
+  partialDefaultDatelessPlanParams,
   getDefaultNonPlanParams,
 } from '@tpaw/common'
 import { clsx } from 'clsx'
@@ -13,7 +14,7 @@ import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { Record } from '../../../../../Utils/Record'
 import { AmountInput } from '../../../../Common/Inputs/AmountInput'
-import { ToggleSwitch } from '../../../../Common/Inputs/ToggleSwitch'
+import { SwitchAsToggle } from '../../../../Common/Inputs/SwitchAsToggle'
 import { useNonPlanParams } from '../../../PlanRootHelpers/WithNonPlanParams'
 import {
   SimulationInfo,
@@ -53,14 +54,13 @@ const _SimulationsCard = React.memo(
       simulationResultIsCurrent,
       updatePlanParams,
       planParamsNorm,
-      defaultPlanParams,
     } = useSimulation()
     const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
     const defaultNonPlanParams = useMemo(
       () => getDefaultNonPlanParams(Date.now()),
       [],
     )
-    assert(defaultPlanParams.advanced.sampling.type === 'monteCarlo')
+    assert(partialDefaultDatelessPlanParams.advanced.sampling.type === 'monteCarlo')
 
     const isModified = useIsPlanInputDevSimulationsModified()
 
@@ -137,13 +137,14 @@ const _SimulationsCard = React.memo(
         </div>
         <div className="mt-2 flex items-center gap-x-2">
           <h2 className="">Stagger Run Starts: </h2>
-          <ToggleSwitch
+          <SwitchAsToggle
             checked={
               planParamsNorm.advanced.sampling.type === 'monteCarlo'
                 ? planParamsNorm.advanced.sampling.data.staggerRunStarts
                 : planParamsNorm.advanced.sampling.defaultData.monteCarlo
                     ?.staggerRunStarts ??
-                  defaultPlanParams.advanced.sampling.data.staggerRunStarts
+                  partialDefaultDatelessPlanParams.advanced.sampling.data
+                    .staggerRunStarts
             }
             disabled={planParamsNorm.advanced.sampling.type !== 'monteCarlo'}
             setChecked={(value) => {
@@ -153,7 +154,7 @@ const _SimulationsCard = React.memo(
         </div>
         <div className="mt-2 flex items-center gap-x-2">
           <h2 className="">Override Historical Returns To Fixed: </h2>
-          <ToggleSwitch
+          <SwitchAsToggle
             checked={
               planParamsNorm.advanced.historicalReturnsAdjustment
                 .standardDeviation.overrideToFixedForTesting
@@ -181,15 +182,18 @@ const _SimulationsCard = React.memo(
               setNonPlanParams(clone)
             }
             reRun(DEFAULT_MONTE_CARLO_SIMULATION_SEED)
-            assert(defaultPlanParams.advanced.sampling.type === 'monteCarlo')
+            assert(
+              partialDefaultDatelessPlanParams.advanced.sampling.type === 'monteCarlo',
+            )
             if (
               planParamsNorm.advanced.sampling.type === 'monteCarlo' &&
               planParamsNorm.advanced.sampling.data.staggerRunStarts !==
-                defaultPlanParams.advanced.sampling.data.staggerRunStarts
+                partialDefaultDatelessPlanParams.advanced.sampling.data.staggerRunStarts
             )
               updatePlanParams(
                 'setMonteCarloStaggerRunStarts',
-                defaultPlanParams.advanced.sampling.data.staggerRunStarts,
+                partialDefaultDatelessPlanParams.advanced.sampling.data
+                  .staggerRunStarts,
               )
           }}
           disabled={!isModified}

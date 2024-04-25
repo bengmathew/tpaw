@@ -100,6 +100,10 @@ module.exports = {
             {},
         },
 
+        '.context-menu-icon': {
+          '@apply inline-block w-[25px] mr-1 text-center': {},
+        },
+
         // ---- Button ----
         '.btn2-warning': {
           '@apply text-white bg-errorBlockBG disabled:lighten-2': {},

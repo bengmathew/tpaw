@@ -1,18 +1,38 @@
 import {
+  CalendarDay,
+  CalendarMonthFns,
   DialogPosition,
+  GlidePath,
   GlidePathLocation,
-  LabeledAmountUntimed,
-  LabeledAmountUntimedLocation,
-  PLAN_PARAMS_CONSTANTS,
-  PlanParams,
-  LabeledAmountTimedLocation,
+  LabeledAmountTimed,
   LabeledAmountTimedList,
-  assert,
-  fGet,
-  noCase,
+  LabeledAmountTimedLocation,
   LabeledAmountTimedOrUntimedLocation,
+  LabeledAmountUntimedLocation,
+  Month,
+  MonthRange,
+  PLAN_PARAMS_CONSTANTS,
+  Person,
+  PersonId,
+  PickType,
+  PlanParams,
+  assert,
+  assertFalse,
+  block,
+  fGet,
+  getLastMarketDataDayForUndatedPlans,
+  getNYZonedTime,
+  getZonedTimeFns,
+  noCase,
+  planParamsGuard,
 } from '@tpaw/common'
 import _ from 'lodash'
+import { InMonthsFns } from '../Utils/InMonthsFns'
+import { PlanParamsNormalized } from './NormalizePlanParams/NormalizePlanParams'
+import { normalizePlanParamsInverse } from './NormalizePlanParams/NormalizePlanParamsInverse'
+import { getFromMFNToNumericAge } from './NormalizePlanParams/NormalizeAges'
+import { SimulationInfo } from '../Pages/PlanRoot/PlanRootHelpers/WithSimulation'
+import { CurrentPortfolioBalance } from '../Pages/PlanRoot/PlanRootHelpers/CurrentPortfolioBalance'
 
 export namespace PlanParamsHelperFns {
   export const getNextDialogPosition = (
@@ -186,5 +206,312 @@ export namespace PlanParamsHelperFns {
     if (personType === 'person1') return params.people.person1
     assert(params.people.withPartner)
     return params.people.person2
+  }
+
+  export const switchDating = (
+    planParamsNorm: PlanParamsNormalized,
+    currentPortfolioBalanceInfo: SimulationInfo['currentPortfolioBalanceInfo'],
+    ianaTimezoneName: string,
+  ) => {
+    if (planParamsNorm.datingInfo.isDated) {
+      assert(currentPortfolioBalanceInfo.isDatedPlan)
+      return toDatelessPlan(
+        planParamsNorm,
+        CurrentPortfolioBalance.getAmountInfo(currentPortfolioBalanceInfo.info)
+          .amount,
+      )
+    } else {
+      return toDatedPlan(planParamsNorm, ianaTimezoneName)
+    }
+  }
+
+  export const toDatedPlan = (
+    planParamsNorm: PlanParamsNormalized,
+    ianaTimezoneName: string,
+  ) => {
+    const { datingInfo } = planParamsNorm
+    assert(!datingInfo.isDated)
+    const {} = datingInfo
+    const timestamp = datingInfo.nowAsTimestampNominal
+    const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
+      datingInfo.nowAsTimestampNominal,
+      ianaTimezoneName,
+    )
+    const _forNowMonth = (): PickType<Month, 'now'> => ({
+      type: 'now',
+      monthOfEntry: { isDatedPlan: true, calendarMonth: nowAsCalendarMonth },
+    })
+
+    const _forMonth = (month: Month): Month => {
+      switch (month.type) {
+        case 'now':
+          return _forNowMonth()
+        case 'calendarMonth':
+          assertFalse()
+        case 'namedAge':
+        case 'numericAge':
+          return month
+        default:
+          noCase(month)
+      }
+    }
+
+    const planParams = mapMonths(
+      normalizePlanParamsInverse(planParamsNorm, 'hard'),
+      _forMonth,
+      _forNowMonth,
+    )
+
+    const result: PlanParams = {
+      ...planParams,
+      timestamp,
+      datingInfo: { isDated: true },
+      people: block(() => {
+        const _forCurrentAgeInfo = (
+          x: Person['ages']['currentAgeInfo'],
+        ): Person['ages']['currentAgeInfo'] => {
+          assert(!x.isDatedPlan)
+          return {
+            isDatedPlan: true,
+            monthOfBirth: CalendarMonthFns.getFromMFN(nowAsCalendarMonth)(
+              -x.currentAge.inMonths,
+            ),
+          }
+        }
+        const _forPerson = (person: Person): Person => {
+          return {
+            ages: {
+              ...person.ages,
+              currentAgeInfo: _forCurrentAgeInfo(person.ages.currentAgeInfo),
+            },
+          }
+        }
+        return planParams.people.withPartner
+          ? {
+              withPartner: planParams.people.withPartner,
+              person1: _forPerson(planParams.people.person1),
+              person2: _forPerson(planParams.people.person2),
+              withdrawalStart: planParams.people.withdrawalStart,
+            }
+          : {
+              withPartner: planParams.people.withPartner,
+              person1: _forPerson(planParams.people.person1),
+            }
+      }),
+      wealth: {
+        ...planParams.wealth,
+        portfolioBalance: {
+          isDatedPlan: true,
+          updatedHere: true,
+          amount: block(() => {
+            assert(!planParams.wealth.portfolioBalance.isDatedPlan)
+            return planParams.wealth.portfolioBalance.amount
+          }),
+        },
+      },
+      results: null,
+    }
+
+    const check = planParamsGuard(result)
+    if (check.error) {
+      console.dir(result)
+      console.dir(check.message)
+      assertFalse()
+    }
+    return result
+  }
+
+  export const toDatelessPlan = (
+    planParamsNorm: PlanParamsNormalized,
+    currentPortfolioBalance: number,
+  ): PlanParams => {
+    const { datingInfo } = planParamsNorm
+    assert(datingInfo.isDated)
+    const { nowAsTimestamp: timestamp, nowAsCalendarMonth } = datingInfo
+    const calendarMonthToMFN = CalendarMonthFns.getToMFN(nowAsCalendarMonth)
+    const mfnToNumericAge = getFromMFNToNumericAge(planParamsNorm)
+
+    const _forNowMonth = (): PickType<Month, 'now'> => ({
+      type: 'now',
+      monthOfEntry: { isDatedPlan: false },
+    })
+
+    const _forMonth = (month: Month): Month => {
+      switch (month.type) {
+        case 'now':
+          return _forNowMonth()
+        case 'calendarMonth':
+          return mfnToNumericAge.auto(calendarMonthToMFN(month.calendarMonth))
+        case 'namedAge':
+        case 'numericAge':
+          return month
+        default:
+          noCase(month)
+      }
+    }
+
+    const planParams = mapMonths(
+      normalizePlanParamsInverse(planParamsNorm, 'hard'),
+      _forMonth,
+      _forNowMonth,
+    )
+
+    const result: PlanParams = {
+      ...planParams,
+      timestamp,
+      datingInfo: {
+        isDated: false,
+        marketDataAsOfEndOfDayInNY:
+          getLastMarketDataDayForUndatedPlans(timestamp),
+      },
+      people: block(() => {
+        const _forCurrentAgeInfo = (
+          x: Person['ages']['currentAgeInfo'],
+        ): Person['ages']['currentAgeInfo'] => {
+          assert(x.isDatedPlan)
+          return {
+            isDatedPlan: false,
+            currentAge: {
+              inMonths: CalendarMonthFns.diff(
+                nowAsCalendarMonth,
+                x.monthOfBirth,
+              ),
+            },
+          }
+        }
+        const _forPerson = (person: Person): Person => {
+          return {
+            ages: {
+              ...person.ages,
+              currentAgeInfo: _forCurrentAgeInfo(person.ages.currentAgeInfo),
+            },
+          }
+        }
+        return planParams.people.withPartner
+          ? {
+              withPartner: planParams.people.withPartner,
+              person1: _forPerson(planParams.people.person1),
+              person2: _forPerson(planParams.people.person2),
+              withdrawalStart: planParams.people.withdrawalStart,
+            }
+          : {
+              withPartner: planParams.people.withPartner,
+              person1: _forPerson(planParams.people.person1),
+            }
+      }),
+      wealth: {
+        ...planParams.wealth,
+        portfolioBalance: {
+          isDatedPlan: false,
+          amount: currentPortfolioBalance,
+        },
+      },
+      results: null,
+    }
+    assert(!planParamsGuard(result).error)
+    return result
+  }
+
+  export const mapMonths = (
+    planParams: PlanParams,
+    fn: (month: Month) => Month,
+    glidePathStart: (month: PickType<Month, 'now'>) => PickType<Month, 'now'>,
+  ): PlanParams => {
+    const _mapMonthRange = (monthRange: MonthRange): MonthRange => {
+      switch (monthRange.type) {
+        case 'startAndEnd':
+          return {
+            type: 'startAndEnd',
+            start: fn(monthRange.start),
+            end:
+              monthRange.end.type === 'inThePast'
+                ? monthRange.end
+                : fn(monthRange.end),
+          }
+        case 'startAndDuration':
+          return {
+            type: 'startAndDuration',
+            start: fn(monthRange.start),
+            duration: monthRange.duration,
+          }
+        case 'endAndDuration':
+          return {
+            type: 'endAndDuration',
+            end: fn(monthRange.end),
+            duration: monthRange.duration,
+          }
+        default:
+          noCase(monthRange)
+      }
+    }
+
+    const _mapLabeledAmountTimed = (
+      x: LabeledAmountTimed,
+    ): LabeledAmountTimed => {
+      return {
+        ...x,
+        amountAndTiming: block(() => {
+          switch (x.amountAndTiming.type) {
+            case 'inThePast':
+              return x.amountAndTiming
+            case 'oneTime':
+              return {
+                ...x.amountAndTiming,
+                month: fn(x.amountAndTiming.month),
+              }
+            case 'recurring':
+              return {
+                ...x.amountAndTiming,
+                monthRange: _mapMonthRange(x.amountAndTiming.monthRange),
+              }
+            default:
+              noCase(x.amountAndTiming)
+          }
+        }),
+      }
+    }
+
+    const _mapLabeledAmountTimedList = (
+      x: LabeledAmountTimedList,
+    ): LabeledAmountTimedList => _.mapValues(x, _mapLabeledAmountTimed)
+
+    const _mapGlidePath = (x: GlidePath): GlidePath => ({
+      ...x,
+      start: { ...x.start, month: glidePathStart(x.start.month) },
+      intermediate: _.mapValues(x.intermediate, (x) => ({
+        ...x,
+        month: fn(x.month),
+      })),
+    })
+
+    return {
+      ...planParams,
+      wealth: {
+        ...planParams.wealth,
+        futureSavings: _mapLabeledAmountTimedList(
+          planParams.wealth.futureSavings,
+        ),
+        incomeDuringRetirement: _mapLabeledAmountTimedList(
+          planParams.wealth.incomeDuringRetirement,
+        ),
+      },
+      adjustmentsToSpending: {
+        ...planParams.adjustmentsToSpending,
+        extraSpending: {
+          essential: _mapLabeledAmountTimedList(
+            planParams.adjustmentsToSpending.extraSpending.essential,
+          ),
+          discretionary: _mapLabeledAmountTimedList(
+            planParams.adjustmentsToSpending.extraSpending.discretionary,
+          ),
+        },
+      },
+      risk: {
+        ...planParams.risk,
+        spawAndSWR: {
+          allocation: _mapGlidePath(planParams.risk.spawAndSWR.allocation),
+        },
+      },
+    }
   }
 }

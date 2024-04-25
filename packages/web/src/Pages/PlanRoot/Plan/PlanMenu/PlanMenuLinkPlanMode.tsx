@@ -66,7 +66,11 @@ export const PlanMenuLinkPlanMode = React.memo(
       <div className="flex gap-x-2">
         <Menu>
           {({ open, close }) => (
-            <ContextModal align="right" open={open}>
+            <ContextModal
+              align="right"
+              open={open}
+              onOutsideClickOrEscape={null}
+            >
               {({ ref }) => (
                 <Menu.Button
                   ref={ref}
@@ -97,7 +101,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                       className=" context-menu-item "
                       onClick={() => setShowSavePlanToAccount(true)}
                     >
-                      <span className="inline-block w-[25px]">
+                      <span className="context-menu-icon">
                         <FontAwesomeIcon icon={faSave} />
                       </span>{' '}
                       Save Plan to Account
@@ -113,7 +117,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                         }
                       }}
                     >
-                      <span className="inline-block w-[25px]">
+                      <span className="context-menu-icon">
                         <FontAwesomeIcon icon={faPlus} />
                       </span>{' '}
                       Create a New Plan
@@ -123,7 +127,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                         className={'context-menu-item '}
                         href={appPaths.plan()}
                       >
-                        <span className="inline-block w-[25px] ">
+                        <span className="context-menu-icon ">
                           <FontAwesomeIcon className="" icon={faHome} />
                         </span>{' '}
                         Switch to Main Plan
@@ -135,7 +139,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                         href={appPaths.plans()}
                         onClick={() => setPlansOnDoneURL()}
                       >
-                        <span className="inline-block w-[25px]">
+                        <span className="context-menu-icon">
                           <FontAwesomeIcon icon={faGrid2} />
                         </span>{' '}
                         View All Plans
@@ -150,7 +154,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                       className=" context-menu-item "
                       onClick={() => setShowLoginAndSavePlan(true)}
                     >
-                      <span className="inline-block w-[25px]">
+                      <span className="context-menu-icon">
                         <FontAwesomeIcon icon={faSave} />
                       </span>{' '}
                       Save Plan to Account
@@ -166,7 +170,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                         })
                       }
                     >
-                      <span className="inline-block w-[25px]">
+                      <span className="context-menu-icon">
                         <FontAwesomeIcon icon={faPlus} />
                       </span>{' '}
                       Create a New Plan
@@ -176,7 +180,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                         className={'context-menu-item '}
                         href={appPaths.guest()}
                       >
-                        <span className="inline-block w-[25px] ">
+                        <span className="context-menu-icon ">
                           <FontAwesomeIcon className="" icon={faHome} />
                         </span>{' '}
                         Switch to Your Plan
@@ -187,7 +191,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                       className=" context-menu-item "
                       onClick={() => setShowOverwriteLocalModal(true)}
                     >
-                      <span className="inline-block w-[25px]">
+                      <span className="context-menu-icon">
                         <FontAwesomeIcon icon={faArrowUp} />
                       </span>{' '}
                       Make This Your Plan
@@ -203,7 +207,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                         })
                       }
                     >
-                      <span className="inline-block w-[25px]">
+                      <span className="context-menu-icon">
                         <FontAwesomeIcon icon={faGrid2} />
                       </span>{' '}
                       View All Plans
@@ -217,7 +221,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                       className=" context-menu-item "
                       onClick={() => setShowLoginAndSavePlan(true)}
                     >
-                      <span className="inline-block w-[25px]">
+                      <span className="context-menu-icon">
                         <FontAwesomeIcon icon={faSave} />
                       </span>{' '}
                       Save Plan to Account
@@ -227,7 +231,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                         className={'context-menu-item '}
                         href={appPaths.plan()}
                       >
-                        <span className="inline-block w-[25px] ">
+                        <span className="context-menu-icon ">
                           <FontAwesomeIcon className="" icon={faPlus} />
                         </span>{' '}
                         Create Your Own Plan
@@ -247,7 +251,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                     className={clix('context-menu-item text-errorFG')}
                     onClick={() => setShowResetModal(true)}
                   >
-                    <span className="inline-block w-[25px]">
+                    <span className="context-menu-icon">
                       <FontAwesomeIcon icon={faEraser} />
                     </span>{' '}
                     Undo Changes
@@ -301,7 +305,7 @@ export const PlanMenuLinkPlanMode = React.memo(
           onHide={() => setShowResetModal(false)}
           title="Undo Changes"
           message="Are you sure you want to undo the changes you made? This will reset the plan to the original version shared through the link."
-          reset={reset}
+          reset={() => reset(null)}
         />
       </div>
     )

@@ -31,6 +31,7 @@ export type PlanParamsChangeActionCurrent =
   | { type: 'startCopiedFromBeforeHistory'; value: null }
   | { type: 'startCutByClient'; value: null }
   | { type: 'startFromURL'; value: null }
+  | { type: 'setMarketDataDay'; value: V29.CalendarDay }
   | {
       type: 'setDialogPosition'
       value: V21.PlanParams['dialogPosition']
@@ -224,6 +225,7 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
     _guard('startCopiedFromBeforeHistory', constant(null)),
     _guard('startCutByClient', constant(null)),
     _guard('startFromURL', constant(null)),
+    _guard('setMarketDataDay', v29CG.calendarDay),
     _guard('setDialogPosition', v21CG.dialogPosition(null)),
     _guard('noOpToMarkMigration', constant(null)),
     // --------------- PEOPLE

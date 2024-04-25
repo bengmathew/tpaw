@@ -5,7 +5,7 @@ import React, { useMemo } from 'react'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { NumberInput } from '../../../../Common/Inputs/NumberInput'
 import { smartDeltaFnForMonthlyAmountInput } from '../../../../Common/Inputs/SmartDeltaFnForAmountInput'
-import { ToggleSwitch } from '../../../../Common/Inputs/ToggleSwitch'
+import { SwitchAsToggle } from '../../../../Common/Inputs/SwitchAsToggle'
 import { useNonPlanParams } from '../../../PlanRootHelpers/WithNonPlanParams'
 import { usePlanResultsChartType } from '../../PlanResults/UsePlanResultsChartType'
 import { useChartData } from '../../WithPlanResultsChartData'
@@ -49,7 +49,7 @@ const _MiscCard = React.memo(
       >
         <PlanInputModifiedBadge show={isModified} mainPage={false} />
         <div className=" flex justify-start gap-x-4 items-center mt-4">
-          <ToggleSwitch
+          <SwitchAsToggle
             className=""
             checked={nonPlanParams.dev.alwaysShowAllMonths}
             setChecked={(x) => {
@@ -61,7 +61,7 @@ const _MiscCard = React.memo(
           <h2 className="">Always Show All Months</h2>
         </div>
         <div className=" flex justify-start gap-x-4 items-center mt-4">
-          <ToggleSwitch
+          <SwitchAsToggle
             className=""
             checked={nonPlanParams.dev.showSyncStatus}
             setChecked={(x) => {
@@ -114,7 +114,7 @@ const _ChartYRangeOverride = React.memo(
     return (
       <div className={clix(className)}>
         <div className="flex justify-start gap-x-4 items-center ">
-          <ToggleSwitch
+          <SwitchAsToggle
             checked={!!nonPlanParams.dev.overridePlanResultChartYRange}
             setChecked={(checked) => {
               const clone = _.cloneDeep(nonPlanParams)

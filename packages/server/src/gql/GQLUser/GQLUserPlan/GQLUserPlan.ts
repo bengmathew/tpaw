@@ -35,6 +35,10 @@ export const PothosPlanWithHistory = builder.prismaObject('PlanWithHistory', {
     sortTime: t.float({ resolve: (x) => x.sortTime.getTime() }),
     lastSyncAt: t.float({ resolve: (x) => x.lastSyncAt.getTime() }),
     reverseHeadIndex: t.exposeInt('reverseHeadIndex'),
+    isDated: t.boolean({
+      resolve: (x) =>
+        planParamsMigrate(x.endingParams as SomePlanParams).datingInfo.isDated,
+    }),
     planParamsPostBase: t.field({
       type: [PothosPlanParamsChangePatched],
       args: { targetCount: t.arg.int() },

@@ -1,6 +1,6 @@
 import { Month, block, fGet, letIn, noCase } from '@tpaw/common'
 import { SimpleRange } from '../../../Utils/SimpleRange'
-import { NormalizedAges } from '../NormalizePlanParamsAges'
+import { NormalizedAges } from '../NormalizeAges'
 import { yourOrYourPartners } from '../../../Utils/YourOrYourPartners'
 
 export type NormalizedMonthNotInThePast = {

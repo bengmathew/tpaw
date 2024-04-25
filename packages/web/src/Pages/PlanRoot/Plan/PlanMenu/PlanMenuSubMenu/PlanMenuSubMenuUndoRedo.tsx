@@ -67,7 +67,7 @@ const _Menu = React.memo(
     return (
       <Menu>
         {({ open }) => (
-          <ContextModal align="right" open={open}>
+          <ContextModal align="right" open={open} onOutsideClickOrEscape={null}>
             {({ ref }) => (
               <Menu.Button
                 ref={ref}

@@ -66,12 +66,6 @@ builder.mutationField('userPlanCreate', (t) =>
             false,
           ),
       )
-
-      // return await Clients.prisma.user.findUniqueOrThrow({
-      //   ...query,
-      //   where: { id: userId },
-      // })
-
       return {
         type: 'PlanAndUserResult' as const,
         userId,

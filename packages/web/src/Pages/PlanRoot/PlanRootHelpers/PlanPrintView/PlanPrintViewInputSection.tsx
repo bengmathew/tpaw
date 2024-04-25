@@ -19,7 +19,7 @@ import { PlanPrintViewPageGroup } from './Helpers/PlanPrintViewPageGroup'
 import { PlanPrintViewSectionTitlePageGroup } from './Helpers/PlanPrintViewSectionTitlePageGroup'
 import { PlanPrintViewArgs } from './PlanPrintViewArgs'
 import { CurrentPortfolioBalance } from '../CurrentPortfolioBalance'
-import { PlanInputExpectedReturnsAndVolatilitySummary } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility/PlanInputExpectedReturnsAndVolatility'
+import { PlanInputExpectedReturnsAndVolatilitySummary } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
 
 // Note: The show/hide should mirror PlanSummary. "None" displays should mirror
 // PlanSummaryButtons's empty attribute from PlanSummary.

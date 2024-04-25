@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<3037455bd608366bf49a0e7eda14fe70>>
+ * @generated SignedSource<<6107dc31575daec66c0b8df3e82bf8c3>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -138,6 +138,13 @@ return {
                     "kind": "ScalarField",
                     "name": "isMain",
                     "storageKey": null
+                  },
+                  {
+                    "alias": null,
+                    "args": null,
+                    "kind": "ScalarField",
+                    "name": "isDated",
+                    "storageKey": null
                   }
                 ],
                 "storageKey": null
@@ -164,12 +171,12 @@ return {
     ]
   },
   "params": {
-    "cacheID": "97bfb706b355641ec6b1b2dc54fc675e",
+    "cacheID": "356df5291d86fb4a3897c314368f4be9",
     "id": null,
     "metadata": {},
     "name": "AccountQuery",
     "operationKind": "query",
-    "text": "query AccountQuery(\n  $userId: ID!\n  $includeUser: Boolean!\n) {\n  ...WithUser_query\n}\n\nfragment WithUser_query on Query {\n  user(userId: $userId) @include(if: $includeUser) {\n    ...WithUser_user\n    id\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
+    "text": "query AccountQuery(\n  $userId: ID!\n  $includeUser: Boolean!\n) {\n  ...WithUser_query\n}\n\nfragment WithUser_query on Query {\n  user(userId: $userId) @include(if: $includeUser) {\n    ...WithUser_user\n    id\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n    isDated\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
   }
 };
 })();

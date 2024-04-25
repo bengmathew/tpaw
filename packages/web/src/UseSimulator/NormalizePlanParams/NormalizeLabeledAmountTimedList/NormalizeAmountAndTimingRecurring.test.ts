@@ -1,6 +1,6 @@
 import { CalendarMonthFns, Month, assertFalse } from '@tpaw/common'
 import _, { now } from 'lodash'
-import { getMonthToMFN, normalizePlanParamsAges } from '../NormalizePlanParamsAges'
+import { getMonthToMFN, normalizeAges } from '../NormalizeAges'
 import {
   NormalizedAmountAndTimingRecurring,
   _forTest,
@@ -240,7 +240,7 @@ describe('NormalizeAmountAndTimingRecurring', () => {
       type: 'calendarMonth',
       calendarMonth: mfnToCalendarMonth(mfn),
     })
-    const ages = normalizePlanParamsAges(
+    const ages = normalizeAges(
       {
         withPartner: false,
         person1: {

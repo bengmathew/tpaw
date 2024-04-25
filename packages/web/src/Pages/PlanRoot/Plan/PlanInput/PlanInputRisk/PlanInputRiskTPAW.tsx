@@ -9,6 +9,7 @@ import {
   DEFAULT_RISK_TPAW,
   PLAN_PARAMS_CONSTANTS,
   block,
+  partialDefaultDatelessPlanParams,
   fGet,
   letIn,
   monthlyToAnnualReturnRate,
@@ -54,7 +55,7 @@ export const PlanInputRiskTPAW = React.memo(
             <FontAwesomeIcon icon={showAdvanced ? faCaretDown : faCaretRight} />
           </div>
           <h2 className="">
-            {advancedCount === 0 ? 'None' : `${advancedCount} modified`}
+            {advancedCount === 0 ? 'None modified' : `${advancedCount} modified`}
           </h2>
         </button>
         {showAdvanced && (
@@ -81,13 +82,9 @@ const _TPAWRiskToleranceCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const {
-      planParamsNorm,
-      defaultPlanParams,
-      updatePlanParams,
-      simulationResult,
-    } = useSimulation()
-    const defaultRisk = defaultPlanParams.risk.tpaw
+    const { planParamsNorm, updatePlanParams, simulationResult } =
+      useSimulation()
+    const defaultRisk = partialDefaultDatelessPlanParams.risk.tpaw
     const { ages } = planParamsNorm
 
     const get50thStockAllocation = (mfn: number) =>
@@ -297,19 +294,15 @@ const _SpendingTiltCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const {
-      planParamsNorm,
-      updatePlanParams,
-      defaultPlanParams,
-      simulationResult,
-    } = useSimulation()
+    const { planParamsNorm, updatePlanParams, simulationResult } =
+      useSimulation()
     const { args } = simulationResult
     const { ages } = planParamsNorm
 
     const handleChange = (value: number) =>
       updatePlanParams('setTPAWAdditionalSpendingTilt', value)
     const isModified =
-      defaultPlanParams.risk.tpaw.additionalAnnualSpendingTilt !==
+      partialDefaultDatelessPlanParams.risk.tpaw.additionalAnnualSpendingTilt !==
       planParamsNorm.risk.tpaw.additionalAnnualSpendingTilt
 
     const getSpendingTiltAtMFN = (mfn: number) => {
@@ -367,9 +360,9 @@ const _SpendingTiltCard = React.memo(
           <p className="p-base mt-2">
             Your base spending tilt will change with age if your risk tolerance
             changes with age. The default setting decreases risk tolerance by{' '}
-            {-defaultPlanParams.risk.tpaw.riskTolerance.deltaAtMaxAge} between
-            age 20 and max age. You can change this in the advanced section
-            below.
+            {-partialDefaultDatelessPlanParams.risk.tpaw.riskTolerance.deltaAtMaxAge}{' '}
+            between age 20 and max age. You can change this in the advanced
+            section below.
           </p>
           {/* </li> */}
           <h2 className="font-semibold mt-4">2. Extra Spending Tilt</h2>
@@ -415,7 +408,7 @@ const _SpendingTiltCard = React.memo(
           className="mt-6 underline disabled:lighten-2"
           onClick={() =>
             handleChange(
-              defaultPlanParams.risk.tpaw.additionalAnnualSpendingTilt,
+              partialDefaultDatelessPlanParams.risk.tpaw.additionalAnnualSpendingTilt,
             )
           }
           disabled={!isModified}
@@ -435,15 +428,11 @@ const _TPAWRiskToleranceDeclineCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const {
-      planParamsNorm,
-      simulationResult,
-      updatePlanParams,
-      defaultPlanParams,
-    } = useSimulation()
+    const { planParamsNorm, simulationResult, updatePlanParams } =
+      useSimulation()
     const { planParamsProcessed } = simulationResult.args
     const { ages } = planParamsNorm
-    const defaultRisk = defaultPlanParams.risk.tpaw
+    const defaultRisk = partialDefaultDatelessPlanParams.risk.tpaw
     const isModified = useIsRiskToleranceDeclineCardModified()
 
     return (
@@ -574,9 +563,9 @@ const _TPAWRiskToleranceDeclineCard = React.memo(
 )
 
 const useIsRiskToleranceDeclineCardModified = () => {
-  const { planParamsNorm, defaultPlanParams } = useSimulation()
+  const { planParamsNorm } = useSimulation()
   return (
-    defaultPlanParams.risk.tpaw.riskTolerance.deltaAtMaxAge !==
+    partialDefaultDatelessPlanParams.risk.tpaw.riskTolerance.deltaAtMaxAge !==
     planParamsNorm.risk.tpaw.riskTolerance.deltaAtMaxAge
   )
 }
@@ -589,9 +578,8 @@ const _TPAWLegacyRiskToleranceDeltaCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, updatePlanParams, defaultPlanParams } =
-      useSimulation()
-    const defaultRisk = defaultPlanParams.risk.tpaw
+    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const defaultRisk = partialDefaultDatelessPlanParams.risk.tpaw
     const isModified = useIsLegacyRiskToleranceDeltaCardModified()
 
     const handleChange = (value: number) =>
@@ -638,9 +626,10 @@ const _TPAWLegacyRiskToleranceDeltaCard = React.memo(
 )
 
 const useIsLegacyRiskToleranceDeltaCardModified = () => {
-  const { planParamsNorm, defaultPlanParams } = useSimulation()
+  const { planParamsNorm } = useSimulation()
   return (
-    defaultPlanParams.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20 !==
+    partialDefaultDatelessPlanParams.risk.tpaw.riskTolerance
+      .forLegacyAsDeltaFromAt20 !==
     planParamsNorm.risk.tpaw.riskTolerance.forLegacyAsDeltaFromAt20
   )
 }
@@ -653,9 +642,8 @@ const _TPAWTimePreferenceCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, updatePlanParams, defaultPlanParams } =
-      useSimulation()
-    const defaultRisk = defaultPlanParams.risk.tpaw
+    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const defaultRisk = partialDefaultDatelessPlanParams.risk.tpaw
     const isModified = useIsTimePreferenceCardModified()
     const handleChange = (value: number) =>
       updatePlanParams('setTPAWTimePreference', value)
@@ -702,9 +690,9 @@ const _TPAWTimePreferenceCard = React.memo(
   },
 )
 const useIsTimePreferenceCardModified = () => {
-  const { planParamsNorm, defaultPlanParams } = useSimulation()
+  const { planParamsNorm } = useSimulation()
   return (
-    defaultPlanParams.risk.tpaw.timePreference !==
+    partialDefaultDatelessPlanParams.risk.tpaw.timePreference !==
     planParamsNorm.risk.tpaw.timePreference
   )
 }

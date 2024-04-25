@@ -1,9 +1,15 @@
 import { Transition } from '@headlessui/react'
-import clix from 'clsx'
-import React, { ReactNode, useLayoutEffect, useRef, useState } from 'react'
+import React, {
+  ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import ReactDOM from 'react-dom'
 import { fGet, noCase } from '../../../Utils/Utils'
 import { useSystemInfo } from '../../App/WithSystemInfo'
+import clsx from 'clsx'
 
 export const ContextModal = React.memo(
   ({
@@ -11,6 +17,7 @@ export const ContextModal = React.memo(
     open,
     align,
     afterLeave: afterLeaveIn,
+    onOutsideClickOrEscape,
     getMarginToWindow = (windowWidthName) =>
       windowWidthName === 'xs' ? 0 : 20,
   }: {
@@ -23,6 +30,8 @@ export const ContextModal = React.memo(
         | ReactNode
       ),
     ]
+
+    onOutsideClickOrEscape: (() => void) | null
     afterLeave?: () => void
     getMarginToWindow?: (windowWidthName: string) => number
   }) => {
@@ -71,6 +80,16 @@ export const ContextModal = React.memo(
       [referenceElement, menuElement, marginToWindow],
     )
 
+    const onOutsideClickOrEscapeRef = useRef(onOutsideClickOrEscape)
+    onOutsideClickOrEscapeRef.current = onOutsideClickOrEscape
+    useEffect(() => {
+      const callback = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onOutsideClickOrEscapeRef.current?.()
+      }
+      window.document.body.addEventListener('keyup', callback)
+      return () => window.document.body.removeEventListener('keyup', callback)
+    }, [])
+
     // This catches window resizes.
     useLayoutEffect(() => {
       const resizeObserver = new ResizeObserver(() =>
@@ -90,7 +109,10 @@ export const ContextModal = React.memo(
             // pointer-events-none was needed to get the onPointerLeave to get
             // called on chart card to control the chart hover when the chart
             // menu was open.
-            className={clix('page fixed inset-0 pointer-events-none')}
+            className={clsx(
+              'page fixed inset-0',
+              !onOutsideClickOrEscape && 'pointer-events-none',
+            )}
           >
             <Transition.Child
               ref={setOuterElement}
@@ -104,6 +126,7 @@ export const ContextModal = React.memo(
                 }
                 afterLeaveIn?.()
               }}
+              onClick={onOutsideClickOrEscape ?? undefined}
             />
             <Transition.Child
               ref={setMenuElement}

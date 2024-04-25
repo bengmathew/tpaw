@@ -2,10 +2,16 @@ import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
 import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { PLAN_PARAMS_CONSTANTS, noCase, PlanParams } from '@tpaw/common'
-import _ from 'lodash'
-import React, { useMemo } from 'react'
-import { PlanParamsProcessed } from '../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
+import {
+  PLAN_PARAMS_CONSTANTS,
+  PlanParams,
+  getNYZonedTime,
+  noCase,
+  partialDefaultDatelessPlanParams,
+} from '@tpaw/common'
+import { DateTime } from 'luxon'
+import React from 'react'
+import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import { SliderInput } from '../../../Common/Inputs/SliderInput/SliderInput'
@@ -13,14 +19,17 @@ import {
   useSimulation,
   useSimulationResult,
 } from '../../PlanRootHelpers/WithSimulation'
-import { useWASM } from '../../PlanRootHelpers/WithWASM'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
-import { fWASM } from '../../../../UseSimulator/Simulator/GetWASM'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import {
+  inflationTypeLabel,
+  useIsPlanInputInflationModified,
+} from './PlanInputInflationFns'
+import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
+import { mainPlanColors } from '../UsePlanColors'
 
 export const PlanInputInflation = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -40,15 +49,11 @@ export const _InflationCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const {
-      planParamsNorm,
-      updatePlanParams,
-      defaultPlanParams,
-      simulationResult,
-    } = useSimulation()
+    const { planParamsNorm, updatePlanParams, simulationResult } =
+      useSimulation()
 
-    const suggestedInflation =
-      simulationResult.info.marketData.inflation.suggestedAnnual
+    const marketData = simulationResult.info.marketData.inflation
+    const suggestedInflation = marketData.suggestedAnnual
 
     const handleChange = (
       annualInflation: PlanParams['advanced']['annualInflation'],
@@ -63,9 +68,36 @@ export const _InflationCard = React.memo(
       >
         <PlanInputModifiedBadge show={isModified} mainPage={false} />
 
-        <p className="mb-2 p-base mt-1">
-          {`Enter your estimate for the annual inflation rate. The "suggested" option will be automatically updated periodically based on new data.`}
-        </p>
+        {planParamsNorm.datingInfo.isDated ? (
+          <>
+            <p className="p-base mt-2">
+              Enter your estimate for the annual inflation rate. The{' '}
+              {`"${inflationTypeLabel({ type: 'suggested' })}"`} option will be
+              automatically updated based on new data.
+            </p>
+            <p className="p-base mt-2">
+              The current inflation data is from NYSE close on{' '}
+              {formatNYDate(marketData.closingTime)}.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="p-base mt-2">
+              Enter your estimate for the annual inflation rate. The{' '}
+              {`"${inflationTypeLabel({ type: 'suggested' })}"`} option is
+              calculated based on market data.
+            </p>
+            <p className="p-base mt-2">
+              This is a dateless plan and you have chosen to use market data as
+              of{' '}
+              {CalendarDayFns.toStr(
+                planParamsNorm.datingInfo.marketDataAsOfEndOfDayInNY,
+              )}
+              . The latest inflation data available on that day was from NYSE
+              close on {formatNYDate(marketData.closingTime)}.
+            </p>
+          </>
+        )}
 
         <button
           className={`${className} flex gap-x-2 mt-4`}
@@ -82,6 +114,14 @@ export const _InflationCard = React.memo(
           <div className="">
             <h2 className="text-start">
               {inflationTypeLabel({ type: 'suggested' })}
+              <span
+                className="hidden sm:inline-block px-2 bg-gray-200 rounded-full text-sm ml-2"
+                style={{
+                  backgroundColor: mainPlanColors.shades.light[4].hex,
+                }}
+              >
+                default
+              </span>
             </h2>
             <h2 className="text-left text-sm lighten-2">
               {formatPercentage(1)(suggestedInflation)}
@@ -141,7 +181,9 @@ export const _InflationCard = React.memo(
         <button
           className="mt-6 underline disabled:lighten-2"
           onClick={() =>
-            handleChange(defaultPlanParams.advanced.annualInflation)
+            handleChange(
+              partialDefaultDatelessPlanParams.advanced.annualInflation,
+            )
           }
           disabled={!isModified}
         >
@@ -151,27 +193,6 @@ export const _InflationCard = React.memo(
     )
   },
 )
-
-export const inflationTypeLabel = ({
-  type,
-}: {
-  type: PlanParams['advanced']['annualInflation']['type']
-}) => {
-  switch (type) {
-    case 'suggested':
-      return 'Suggested'
-    case 'manual':
-      return 'Manual'
-  }
-}
-
-export const useIsPlanInputInflationModified = () => {
-  const { planParamsNorm, defaultPlanParams } = useSimulation()
-  return !_.isEqual(
-    defaultPlanParams.advanced.annualInflation,
-    planParamsNorm.advanced.annualInflation,
-  )
-}
 
 export const PlanInputInflationSummary = React.memo(
   ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
@@ -185,3 +206,5 @@ export const PlanInputInflationSummary = React.memo(
     )
   },
 )
+const formatNYDate = (timestamp: number) =>
+  getNYZonedTime(timestamp).toLocaleString(DateTime.DATE_MED)

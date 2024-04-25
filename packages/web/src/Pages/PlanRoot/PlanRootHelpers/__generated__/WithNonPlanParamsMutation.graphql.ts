@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<6b25885cbe3b8cf77d8f155b2564c400>>
+ * @generated SignedSource<<f9f324da64a385f73dac694a40c435f0>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -205,6 +205,13 @@ return {
                         "kind": "ScalarField",
                         "name": "isMain",
                         "storageKey": null
+                      },
+                      {
+                        "alias": null,
+                        "args": null,
+                        "kind": "ScalarField",
+                        "name": "isDated",
+                        "storageKey": null
                       }
                     ],
                     "storageKey": null
@@ -237,12 +244,12 @@ return {
     ]
   },
   "params": {
-    "cacheID": "d731a0f5a549c737f4dac7e93fdeeb59",
+    "cacheID": "b11b6c67fac81769f91fad810811a346",
     "id": null,
     "metadata": {},
     "name": "WithNonPlanParamsMutation",
     "operationKind": "mutation",
-    "text": "mutation WithNonPlanParamsMutation(\n  $input: UserSetNonPlanParamsInput!\n) {\n  userSetNonPlanParams(input: $input) {\n    __typename\n    ... on UserSuccessResult {\n      user {\n        ...WithUser_user\n        id\n      }\n    }\n    ... on ConcurrentChangeError {\n      _\n    }\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
+    "text": "mutation WithNonPlanParamsMutation(\n  $input: UserSetNonPlanParamsInput!\n) {\n  userSetNonPlanParams(input: $input) {\n    __typename\n    ... on UserSuccessResult {\n      user {\n        ...WithUser_user\n        id\n      }\n    }\n    ... on ConcurrentChangeError {\n      _\n    }\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n    isDated\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
   }
 };
 })();

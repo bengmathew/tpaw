@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<4f515ada63d7abfc1a7df7ac732b9782>>
+ * @generated SignedSource<<86caae387348aac580a293c9456d889e>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,8 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, FragmentRefs } from 'relay-runtime'
+import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { FragmentRefs } from "relay-runtime";
 export type UserPlanSetAsMainInput = {
   planId: string;
   userId: string;
@@ -140,6 +141,13 @@ return {
                 "kind": "ScalarField",
                 "name": "isMain",
                 "storageKey": null
+              },
+              {
+                "alias": null,
+                "args": null,
+                "kind": "ScalarField",
+                "name": "isDated",
+                "storageKey": null
               }
             ],
             "storageKey": null
@@ -164,12 +172,12 @@ return {
     ]
   },
   "params": {
-    "cacheID": "a682b5fa48c779b6e0b1748150713816",
+    "cacheID": "4fdb1d8059b5c8d9f2088a1d38b001d8",
     "id": null,
     "metadata": {},
     "name": "PlanMenuActionModalSetAsMainPlanMutation",
     "operationKind": "mutation",
-    "text": "mutation PlanMenuActionModalSetAsMainPlanMutation(\n  $input: UserPlanSetAsMainInput!\n) {\n  userPlanSetAsMain(input: $input) {\n    ...WithUser_user\n    id\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
+    "text": "mutation PlanMenuActionModalSetAsMainPlanMutation(\n  $input: UserPlanSetAsMainInput!\n) {\n  userPlanSetAsMain(input: $input) {\n    ...WithUser_user\n    id\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n    isDated\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
   }
 };
 })();

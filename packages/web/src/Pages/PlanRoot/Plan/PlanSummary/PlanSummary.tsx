@@ -25,7 +25,6 @@ import { useGetPlanInputVisibility } from '../PlanInput/Helpers/UseGetPlanInputV
 import { useIsPlanInputDevMiscModified } from '../PlanInput/PlanInputDev/PlanInputDevMisc'
 import { useIsPlanInputDevTimeModified } from '../PlanInput/PlanInputDev/PlanInputDevTime'
 import { useIsPlanInputDevSimulationsModified } from '../PlanInput/PlanInputDev/UseIsPlanInputDevSimulationsModified'
-import { useIsPlanInputInflationModified } from '../PlanInput/PlanInputInflation'
 import { useIsPlanInputSimulationModifed } from '../PlanInput/PlanInputSimulation'
 import { useIsPlanInputStrategyModified } from '../PlanInput/PlanInputStrategy'
 import {
@@ -34,7 +33,9 @@ import {
 } from '../PlanTransition'
 import { PlanSummaryButton } from './PlanSummaryButton'
 import { PlanSummaryDialog } from './PlanSummaryDialog'
-import { useIsPlanInputExpectedReturnsAndVolatilityModified } from '../PlanInput/PlanInputExpectedReturnsAndVolatility/UseIsPlanInputExpectedReturnsCardModified'
+import { useIsPlanInputExpectedReturnsAndVolatilityModified } from '../PlanInput/PlanInputExpectedReturnsAndVolatilityFns'
+import { PlanSummaryDating } from './PlanSummaryDating/PlanSummaryDating'
+import { useIsPlanInputInflationModified } from '../PlanInput/PlanInputInflationFns'
 
 type _FixedSizingByMode = {
   size: Size
@@ -182,6 +183,7 @@ export const PlanSummary = React.memo(
           <div
             className={`flex flex-col gap-y-12 sm:gap-y-16 relative z-0 w-full  mb-20`}
           >
+            <PlanSummaryDating />
             <div className="">
               <_Heading cardPadding={cardPadding} firstItem="age">
                 Age
@@ -322,16 +324,14 @@ export const PlanSummary = React.memo(
                       icon={expandAdvanced ? faCaretDown : faCaretRight}
                     />
                   </div>
-                  {!expandAdvanced && (
-                    <h2 className="text-left">
-                      {advancedModifiedCount === 0
-                        ? 'None'
-                        : `${advancedModifiedCount} modified`}
-                    </h2>
-                  )}
+                  <h2 className="text-left">
+                    {advancedModifiedCount === 0
+                      ? 'None modified'
+                      : `${advancedModifiedCount} modified`}
+                  </h2>
                 </button>
                 {expandAdvanced && (
-                  <div className="flex flex-col gap-y-6 mt-6">
+                  <div className="flex flex-col gap-y-6 mt-4">
                     <PlanSummaryButton
                       type="expected-returns-and-volatility"
                       section={section}
@@ -379,16 +379,14 @@ export const PlanSummary = React.memo(
                         icon={expandDev ? faCaretDown : faCaretRight}
                       />
                     </div>
-                    {!expandDev && (
-                      <h2 className="text-left">
-                        {devModifiedCount === 0
-                          ? 'None'
-                          : `${devModifiedCount} modified`}
-                      </h2>
-                    )}
+                    <h2 className="text-left">
+                      {devModifiedCount === 0
+                        ? 'None modified'
+                        : `${devModifiedCount} modified`}
+                    </h2>
                   </button>
                   {expandDev && (
-                    <div className="flex flex-col gap-y-6 mt-6">
+                    <div className="flex flex-col gap-y-6 mt-4">
                       <PlanSummaryButton
                         type="dev-misc"
                         section={section}

@@ -1,4 +1,11 @@
-import { PlanPaths, assertFalse, fGet, noCase } from '@tpaw/common'
+import {
+  PlanPaths,
+  assertFalse,
+  fGet,
+  getFullDatedDefaultPlanParams,
+  getFullDatelessDefaultPlanParams,
+  noCase,
+} from '@tpaw/common'
 import clix from 'clsx'
 import React, { useState } from 'react'
 import { useMutation } from 'react-relay'
@@ -30,7 +37,7 @@ export const PlanMenuActionModalReset = React.memo(
   }) => {
     return (
       <CenteredModal
-        className=" dialog-outer-div"
+        className="w-[600px] dialog-outer-div"
         show={show}
         onOutsideClickOrEscape={null}
       >
@@ -96,7 +103,11 @@ const _Body = React.memo(
             userId: user.id,
             planId: plan.id,
             lastSyncAt: plan.lastSyncAt,
-            ianaTimezoneName,
+            planParams: JSON.stringify(
+              plan.isDated
+                ? getFullDatedDefaultPlanParams(Date.now(), ianaTimezoneName)
+                : getFullDatelessDefaultPlanParams(Date.now()),
+            ),
           },
         },
         onCompleted: ({ userPlanReset }) => {
@@ -145,6 +156,7 @@ const _Body = React.memo(
       }
       handleResetRef.current()
     }, [isSyncing, state.type])
+
     return (
       <>
         <h2 className=" dialog-heading">Reset Plan</h2>
@@ -155,7 +167,6 @@ const _Body = React.memo(
                 Are you sure you want to reset this plan? This cannot be undone.
               </p>
             </div>
-
             <div className="dialog-button-div">
               <button
                 className=" dialog-button-cancel"

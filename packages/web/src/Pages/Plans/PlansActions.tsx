@@ -36,7 +36,11 @@ export const PlansActions = React.memo(
       <>
         <Menu>
           {({ open }) => (
-            <ContextModal open={open} align="right">
+            <ContextModal
+              open={open}
+              align="right"
+              onOutsideClickOrEscape={null}
+            >
               {({ ref }) => (
                 <Menu.Button ref={ref} className={clsx(className)}>
                   Actions <FontAwesomeIcon icon={faCaretDown} />
@@ -48,7 +52,7 @@ export const PlansActions = React.memo(
                   className="context-menu-item"
                   onClick={() => setShowEditLabelModal(true)}
                 >
-                  <span className="inline-block w-[25px]">
+                  <span className="context-menu-icon">
                     <FontAwesomeIcon icon={faTag} />
                   </span>{' '}
                   Edit Label
@@ -59,7 +63,7 @@ export const PlansActions = React.memo(
                     className="context-menu-item"
                     onClick={() => setShowSetAsMainModal(true)}
                   >
-                    <span className="inline-block w-[25px]">
+                    <span className="context-menu-icon">
                       <FontAwesomeIcon icon={faArrowUp} />
                     </span>{' '}
                     Make This the Main Plan
@@ -70,7 +74,7 @@ export const PlansActions = React.memo(
                   className="context-menu-item"
                   onClick={() => setShowCopyModal(true)}
                 >
-                  <span className="inline-block w-[25px]">
+                  <span className="context-menu-icon">
                     <FontAwesomeIcon icon={faCopy} />
                   </span>{' '}
                   Copy to New Plan
@@ -80,7 +84,7 @@ export const PlansActions = React.memo(
                   className="context-menu-item text-errorFG "
                   onClick={() => setShowReset(true)}
                 >
-                  <span className="inline-block w-[25px]">
+                  <span className="context-menu-icon">
                     <FontAwesomeIcon icon={faEraser} />
                   </span>{' '}
                   Reset
@@ -91,7 +95,7 @@ export const PlansActions = React.memo(
                     className="context-menu-item text-errorFG"
                     onClick={() => setShowDelete(true)}
                   >
-                    <span className="inline-block w-[25px]">
+                    <span className="context-menu-icon">
                       <FontAwesomeIcon icon={faTrash} />
                     </span>{' '}
                     Delete
@@ -120,6 +124,7 @@ export const PlansActions = React.memo(
           hideOnSuccess
           cutAfterId={null}
           isSyncing={false}
+          planParamsForDatingSwitch={null}
         />
         <PlanMenuActionModalDelete
           show={showDelete}

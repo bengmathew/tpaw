@@ -5,6 +5,7 @@ import {
   Month,
   PLAN_PARAMS_CONSTANTS,
   Person,
+  PickType,
   PlanParams,
   assert,
   block,
@@ -15,8 +16,8 @@ import { SimpleRange } from '../../Utils/SimpleRange'
 
 export type MonthToMFN = ReturnType<typeof getMonthToMFN>
 
-export type NormalizedAges = ReturnType<typeof normalizePlanParamsAges>
-export const normalizePlanParamsAges = (
+export type NormalizedAges = ReturnType<typeof normalizeAges>
+export const normalizeAges = (
   orig: PlanParams['people'],
   nowAsCalendarMonth: CalendarMonth | null,
 ) => {
@@ -127,12 +128,35 @@ export const getFromMFNToNumericAge = ({
     person1: ReturnType<typeof _forPerson>
     person2: ReturnType<typeof _forPerson> | null
   }
-}) => ({
-  person1: (mfn: number) => person1.currentAgeInfo.inMonths + mfn,
-  person2: person2
-    ? (mfn: number) => person2.currentAgeInfo.inMonths + mfn
-    : null,
-})
+}) => {
+  const toPerson1 = (mfn: number): PickType<Month, 'numericAge'> => ({
+    type: 'numericAge',
+    person: 'person1',
+    age: { inMonths: person1.currentAgeInfo.inMonths + mfn },
+  })
+  const toPerson2 = person2
+    ? (mfn: number): PickType<Month, 'numericAge'> => ({
+        type: 'numericAge',
+        person: 'person2',
+        age: { inMonths: person2.currentAgeInfo.inMonths + mfn },
+      })
+    : null
+
+  return {
+    person1: toPerson1,
+    person2: toPerson2,
+    auto: (mfn: number) => {
+      const asPerson1 = toPerson1(mfn)
+      if (asPerson1.age.inMonths <= person1.maxAge.asMFN || !toPerson2)
+        return asPerson1
+      assert(person2)
+      const asPerson2 = toPerson2(mfn)
+      return asPerson2.age.inMonths <= person2.maxAge.asMFN
+        ? asPerson2
+        : asPerson1
+    },
+  }
+}
 
 export type NormalizedCalendarMonth = {
   asMFN: number
@@ -173,12 +197,6 @@ const _forPerson = (
         inMonths: orig.currentAgeInfo.currentAge.inMonths,
         asMFN: -orig.currentAgeInfo.currentAge.inMonths,
         baseValue: orig.currentAgeInfo.currentAge,
-        validRangeAsMFN: {
-          includingLocalConstraints: {
-            start: -PLAN_PARAMS_CONSTANTS.people.ages.person.maxAge,
-            end: 0,
-          },
-        },
       }
 
   const maxAge = {
@@ -193,7 +211,7 @@ const _forPerson = (
           ageIfInFuture: null as {
             asMFN: number
             baseValue: InMonths
-            validRangeInMonths: SimpleRange
+            validRangeInMonths: { includingLocalConstraints: SimpleRange }
           } | null,
           ageAsMFNIfSpecifiedElseNull: null as number | null,
           numMonthsLeft: maxAge.asMFN,
@@ -210,8 +228,10 @@ const _forPerson = (
             ? {
                 ...ageIfInFuture,
                 validRangeInMonths: {
-                  start: currentAgeInfo.inMonths + 1,
-                  end: maxAge.baseValue.inMonths - 1,
+                  includingLocalConstraints: {
+                    start: currentAgeInfo.inMonths + 1,
+                    end: maxAge.baseValue.inMonths - 1,
+                  },
                 },
               }
             : null,
@@ -224,14 +244,28 @@ const _forPerson = (
     }
   })
   return {
-    currentAgeInfo,
+    currentAgeInfo: currentAgeInfo.isDatedPlan
+      ? currentAgeInfo
+      : {
+          ...currentAgeInfo,
+          validRangeInMonths: {
+            includingLocalConstraints: {
+              start: 0,
+              end: retirement.ageIfInFuture
+                ? retirement.ageIfInFuture.baseValue.inMonths - 1
+                : maxAge.baseValue.inMonths - 2, // Leave space for retirement
+            },
+          },
+        },
     maxAge: {
       ...maxAge,
       validRangeInMonths: {
-        start: retirement.ageIfInFuture
-          ? retirement.ageIfInFuture.baseValue.inMonths + 1
-          : currentAgeInfo.inMonths + 2, // Leave space for retirement
-        end: PLAN_PARAMS_CONSTANTS.people.ages.person.maxAge,
+        includingLocalConstraints: {
+          start: retirement.ageIfInFuture
+            ? retirement.ageIfInFuture.baseValue.inMonths + 1
+            : currentAgeInfo.inMonths + 2, // Leave space for retirement
+          end: PLAN_PARAMS_CONSTANTS.people.ages.person.maxAge,
+        },
       },
     },
     retirement,

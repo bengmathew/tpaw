@@ -1,4 +1,4 @@
-import { block, fGet } from '@tpaw/common'
+import { PlanParams, block, fGet } from '@tpaw/common'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { graphql, useMutation } from 'react-relay'
@@ -7,8 +7,9 @@ import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalE
 import { User, useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { setPlansOnDoneURL } from '../../../../../Plans/Plans'
+import { useSimulation } from '../../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionModalLabelInput } from './PlanMenuActionModalLabelInput'
-import { PlanMenuActionModalCopyServerMutation } from './__generated__/PlanMenuActionModalCopyServerMutation.graphql'
+import { PlanMenuActionModalCopyServerCopyMutation } from './__generated__/PlanMenuActionModalCopyServerCopyMutation.graphql'
 
 export const PlanMenuActionModalCopyServer = React.memo(
   ({
@@ -18,6 +19,7 @@ export const PlanMenuActionModalCopyServer = React.memo(
     hideOnSuccess,
     cutAfterId,
     isSyncing,
+    planParamsForDatingSwitch,
   }: {
     plan: User['plans'][0]
     show: boolean
@@ -25,10 +27,11 @@ export const PlanMenuActionModalCopyServer = React.memo(
     hideOnSuccess: boolean
     cutAfterId: string | null
     isSyncing: boolean
+    planParamsForDatingSwitch: PlanParams | null
   }) => {
     return (
       <CenteredModal
-        className="dialog-outer-div"
+        className="w-[450px] dialog-outer-div"
         show={show}
         onOutsideClickOrEscape={null}
       >
@@ -38,6 +41,7 @@ export const PlanMenuActionModalCopyServer = React.memo(
           hideOnSuccess={hideOnSuccess}
           cutAfterId={cutAfterId}
           isSyncing={isSyncing}
+          planParamsForDatingSwitch={planParamsForDatingSwitch}
         />
       </CenteredModal>
     )
@@ -51,22 +55,26 @@ const _Body = React.memo(
     hideOnSuccess,
     cutAfterId,
     isSyncing,
+    planParamsForDatingSwitch,
   }: {
     plan: User['plans'][0]
     onHide: () => void
     hideOnSuccess: boolean
     cutAfterId: string | null
     isSyncing: boolean
+    planParamsForDatingSwitch: PlanParams | null
   }) => {
     const { defaultErrorHandlerForNetworkCall } =
       useDefaultErrorHandlerForNetworkCall()
     const [result, setResult] = React.useState<{ slug: string } | null>(null)
     const [label, setLabel] = useState(null as string | null)
     const user = fGet(useUser())
+    const { planParamsNorm } = useSimulation()
+    const { datingInfo } = planParamsNorm
 
-    const [mutation, isRunning] =
-      useMutation<PlanMenuActionModalCopyServerMutation>(graphql`
-        mutation PlanMenuActionModalCopyServerMutation(
+    const [copyMutation, isCopyRunning] =
+      useMutation<PlanMenuActionModalCopyServerCopyMutation>(graphql`
+        mutation PlanMenuActionModalCopyServerCopyMutation(
           $input: UserPlanCopyInput!
         ) {
           userPlanCopy(input: $input) {
@@ -82,7 +90,7 @@ const _Body = React.memo(
       `)
 
     const handleCopy = (label: string) => {
-      mutation({
+      copyMutation({
         variables: {
           input: {
             userId: user.id,
@@ -99,17 +107,23 @@ const _Body = React.memo(
           }
         },
         onError: (e) => {
-          defaultErrorHandlerForNetworkCall({ e, toast: 'Error copying plan.' })
+          defaultErrorHandlerForNetworkCall({
+            e,
+            toast: 'Error copying plan.',
+          })
           onHide()
         },
       })
     }
     const handleCopyRef = useRef(handleCopy)
     handleCopyRef.current = handleCopy
+
     useEffect(() => {
       if (!label || isSyncing) return
       handleCopyRef.current(label)
     }, [isSyncing, label])
+
+    const isRunning = isCopyRunning || isSyncing
 
     return !result ? (
       <PlanMenuActionModalLabelInput
@@ -118,7 +132,7 @@ const _Body = React.memo(
         buttonLabel="Copy Plan"
         onCancel={onHide}
         onAction={setLabel}
-        isRunning={isRunning || isSyncing}
+        isRunning={isRunning}
       />
     ) : (
       <>

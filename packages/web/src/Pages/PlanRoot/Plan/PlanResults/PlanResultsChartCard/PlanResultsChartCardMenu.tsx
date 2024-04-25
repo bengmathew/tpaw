@@ -78,6 +78,7 @@ export const PlanResultsChartCardMenu = React.memo(
               setExpandDiscretionary(false)
             }}
             getMarginToWindow={() => marginToWindow}
+            onOutsideClickOrEscape={null}
           >
             {({ ref }) => (
               <Menu.Button ref={ref}>

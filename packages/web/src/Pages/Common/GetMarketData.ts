@@ -29,6 +29,7 @@ export const getMarketData = async (): Promise<MarketData.Data> => {
 export const getMarketDataIndexForTime = (
   timestamp: number,
   marketData: MarketData.Data,
+
 ) => {
   const index =
     _.sortedLastIndexBy<{ closingTime: number }>(

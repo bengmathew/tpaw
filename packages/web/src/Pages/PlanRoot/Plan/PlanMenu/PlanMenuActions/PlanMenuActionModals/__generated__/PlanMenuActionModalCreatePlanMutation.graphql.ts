@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<f4d59feb8236c5f29e973c72a5b95a30>>
+ * @generated SignedSource<<fec253f6b54e6925486d5a47f59f005f>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,8 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, FragmentRefs } from 'relay-runtime'
+import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { FragmentRefs } from "relay-runtime";
 export type UserPlanCreateInput = {
   label: string;
   plan: UserPlanCreatePlanInput;
@@ -220,7 +221,14 @@ return {
                   (v6/*: any*/),
                   (v7/*: any*/),
                   (v8/*: any*/),
-                  (v5/*: any*/)
+                  (v5/*: any*/),
+                  {
+                    "alias": null,
+                    "args": null,
+                    "kind": "ScalarField",
+                    "name": "isDated",
+                    "storageKey": null
+                  }
                 ],
                 "storageKey": null
               },
@@ -247,12 +255,12 @@ return {
     ]
   },
   "params": {
-    "cacheID": "8d4b0924d0ab89181677127e9be19e1b",
+    "cacheID": "72b98c931d2ec0480e627b8e258baa2e",
     "id": null,
     "metadata": {},
     "name": "PlanMenuActionModalCreatePlanMutation",
     "operationKind": "mutation",
-    "text": "mutation PlanMenuActionModalCreatePlanMutation(\n  $input: UserPlanCreateInput!\n) {\n  userPlanCreate(input: $input) {\n    plan {\n      id\n      label\n      slug\n      ...PlanWithoutParamsFragment\n    }\n    user {\n      ...WithUser_user\n      id\n    }\n  }\n}\n\nfragment PlanWithoutParamsFragment on PlanWithHistory {\n  id\n  isMain\n  label\n  slug\n  addedToServerAt\n  sortTime\n  lastSyncAt\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
+    "text": "mutation PlanMenuActionModalCreatePlanMutation(\n  $input: UserPlanCreateInput!\n) {\n  userPlanCreate(input: $input) {\n    plan {\n      id\n      label\n      slug\n      ...PlanWithoutParamsFragment\n    }\n    user {\n      ...WithUser_user\n      id\n    }\n  }\n}\n\nfragment PlanWithoutParamsFragment on PlanWithHistory {\n  id\n  isMain\n  label\n  slug\n  addedToServerAt\n  sortTime\n  lastSyncAt\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n    isDated\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
   }
 };
 })();

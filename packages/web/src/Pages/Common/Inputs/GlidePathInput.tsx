@@ -15,7 +15,7 @@ import {
   NormalizedGlidePathEntry,
   normalizeGlidePath,
 } from '../../../UseSimulator/NormalizePlanParams/NormalizeGlidePath'
-import { getMonthToMFN } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsAges'
+import { getMonthToMFN } from '../../../UseSimulator/NormalizePlanParams/NormalizeAges'
 import { assert } from '../../../Utils/Utils'
 import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { getNormalizedMonthStr } from '../MonthOrDurationDisplay'

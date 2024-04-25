@@ -21,7 +21,7 @@ export const SimpleModalListbox = <T,>({
   return (
     <Listbox value={value} onChange={onChange}>
       {({ open }) => (
-        <ContextModal align="left" open={open}>
+        <ContextModal align="left" open={open} onOutsideClickOrEscape={null}>
           {({ ref }) => (
             <Listbox.Button className={clsx(className)} ref={ref}>
               {getLabel(value)}

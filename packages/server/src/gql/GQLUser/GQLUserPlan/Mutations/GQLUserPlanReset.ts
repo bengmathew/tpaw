@@ -1,4 +1,4 @@
-import { API, getDefaultPlanParams } from '@tpaw/common'
+import { API, SomePlanParams } from '@tpaw/common'
 import * as uuid from 'uuid'
 import {
   PrismaTransaction,
@@ -14,7 +14,7 @@ const Input = builder.inputType('UserPlanResetInput', {
     userId: t.string(),
     planId: t.string(),
     lastSyncAt: t.float(),
-    ianaTimezoneName: t.string(),
+    planParams: t.string(),
   }),
 })
 
@@ -27,7 +27,7 @@ builder.mutationField('userPlanReset', (t) =>
     authScopes: (_, args, ctx) => ctx.user?.id === args.input.userId,
     args: { input: t.arg({ type: Input }) },
     resolve: async (__, { input }) => {
-      const { userId, planId, lastSyncAt, ianaTimezoneName } =
+      const { userId, planId, lastSyncAt, planParams } =
         API.UserPlanReset.check(input).force()
 
       return await serialTransaction(async (tx) => {
@@ -37,7 +37,7 @@ builder.mutationField('userPlanReset', (t) =>
         if (startingPlan.lastSyncAt.getTime() !== lastSyncAt)
           return concurrentChangeError
 
-        await userPlanReset(tx, userId, planId, ianaTimezoneName)
+        await userPlanReset(tx, userId, planId, planParams)
         return { type: 'PlanAndUserResult' as const, planId, userId }
       })
     },
@@ -48,10 +48,11 @@ export const userPlanReset = async (
   tx: PrismaTransaction,
   userId: string,
   planId: string,
-  ianaTimezoneName: string,
+  planParams: SomePlanParams,
 ) => {
   const now = new Date()
-  const endingParams = getDefaultPlanParams(now.getTime(), ianaTimezoneName)
+  const endingParams = planParams
+
   await tx.planWithHistory.update({
     where: { userId_planId: { userId, planId } },
     data: {

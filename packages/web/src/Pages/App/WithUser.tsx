@@ -73,6 +73,7 @@ const _LoggedIn = React.memo(
             sortTime
             lastSyncAt
             isMain
+            isDated
           }
           nonPlanParamsLastUpdatedAt
           nonPlanParams

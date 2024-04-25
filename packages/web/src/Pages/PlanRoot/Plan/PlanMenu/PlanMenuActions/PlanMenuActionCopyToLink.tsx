@@ -37,7 +37,7 @@ export const PlanMenuActionCopyToLink = React.memo(
         }}
       >
         <h2 className="">
-          <span className="inline-block w-[25px]">
+          <span className="context-menu-icon">
             <FontAwesomeIcon icon={faLink} />
           </span>{' '}
           Copy to Link
@@ -49,7 +49,7 @@ export const PlanMenuActionCopyToLink = React.memo(
           className="font-semibold"
           onClick={() => setState({ type: 'idle' })}
         >
-          <span className="inline-block w-[25px]">
+          <span className="context-menu-icon">
             <FontAwesomeIcon icon={faLink} />
           </span>{' '}
           Copy to Link

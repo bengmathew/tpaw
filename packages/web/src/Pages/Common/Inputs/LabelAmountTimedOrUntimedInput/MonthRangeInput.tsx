@@ -4,6 +4,7 @@ import { Listbox } from '@headlessui/react'
 import {
   CalendarMonthFns,
   MonthRange,
+  Month,
   assertFalse,
   block,
   fGet,
@@ -18,6 +19,7 @@ import { getMonthRangeDurationStr } from '../../MonthRangeDisplay'
 import { MonthInput, MonthType } from '../MonthInput/MonthInput'
 import { MonthRangeDurationInput } from '../MonthInput/MonthRangeDurationInput'
 import { SimpleModalListbox } from '../../Modal/SimpleModalListbox'
+import { getFromMFNToNumericAge } from '../../../../UseSimulator/NormalizePlanParams/NormalizeAges'
 
 export type MonthRangeInputProps = React.ComponentProps<typeof MonthRangeInput>
 
@@ -37,11 +39,19 @@ export const MonthRangeInput = React.memo(
     ...props
   }: { normValue: NormalizedMonthRange } & _PropsWithoutValue) => {
     const { planParamsNorm } = useSimulation()
-    const mfnToCalendarMonth = planParamsNorm.datingInfo.nowAsCalendarMonth
-      ? CalendarMonthFns.getFromMFN(
-          planParamsNorm.datingInfo.nowAsCalendarMonth,
-        )
-      : null
+    const { datingInfo } = planParamsNorm
+    const mfnToNumericAge = getFromMFNToNumericAge(planParamsNorm)
+
+    const getMonth = (mfn: number): Month =>
+      datingInfo.isDated
+        ? {
+            type: 'calendarMonth',
+            calendarMonth: CalendarMonthFns.getFromMFN(
+              datingInfo.nowAsCalendarMonth,
+            )(mfn),
+          }
+        : mfnToNumericAge.auto(mfn)
+
     const handleTypeChange = (targetType: NormalizedMonthRange['type']) => {
       switch (targetType) {
         case 'startAndEnd':
@@ -53,24 +63,14 @@ export const MonthRangeInput = React.memo(
               props.onChange({
                 type: targetType,
                 start: normValue.start.baseValue,
-                end: {
-                  type: 'calendarMonth',
-                  calendarMonth: fGet(mfnToCalendarMonth)(
-                    normValue.duration.asMFN,
-                  ),
-                },
+                end: getMonth(normValue.duration.asMFN),
               })
               break
             case 'endAndDuration':
               // Exact
               props.onChange({
                 type: targetType,
-                start: {
-                  type: 'calendarMonth',
-                  calendarMonth: fGet(mfnToCalendarMonth)(
-                    normValue.duration.asMFN,
-                  ),
-                },
+                start: getMonth(normValue.duration.asMFN),
                 end: normValue.end.baseValue,
               })
               break
@@ -104,12 +104,7 @@ export const MonthRangeInput = React.memo(
               // Exact
               props.onChange({
                 type: targetType,
-                start: {
-                  type: 'calendarMonth',
-                  calendarMonth: fGet(mfnToCalendarMonth)(
-                    normValue.duration.asMFN,
-                  ),
-                },
+                start: getMonth(normValue.duration.asMFN),
                 duration: normValue.duration.baseValue,
               })
               break
@@ -143,12 +138,7 @@ export const MonthRangeInput = React.memo(
               // Exact
               props.onChange({
                 type: targetType,
-                end: {
-                  type: 'calendarMonth',
-                  calendarMonth: fGet(mfnToCalendarMonth)(
-                    normValue.duration.asMFN,
-                  ),
-                },
+                end: getMonth(normValue.duration.asMFN),
                 duration: normValue.duration.baseValue,
               })
               break

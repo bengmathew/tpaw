@@ -1,4 +1,5 @@
 import {
+  PlanParams,
   assert,
   fGet,
   planParamsBackwardsCompatibleGuard,
@@ -13,13 +14,14 @@ import { WithUser } from '../../App/WithUser'
 import { SimulationParams } from '../PlanRootHelpers/WithSimulation'
 import { PlanRootLinkImpl } from './PlanRootLinkImpl'
 import { PlanRootLinkQuery } from './__generated__/PlanRootLinkQuery.graphql'
+import { set } from 'lodash'
 
 export const PlanRootLink = React.memo(
   ({ pdfReportInfo }: { pdfReportInfo: SimulationParams['pdfReportInfo'] }) => {
     const paramsStr = useURLParam('params')
     assert(paramsStr !== null)
-    const [startingState] = useState(() => {
-      return paramsStr.length === 32
+    const [startingState] = useState(() =>
+      paramsStr.length === 32
         ? ({
             shortOrLongLink: 'shortLink',
             queryArgs: { linkId: paramsStr, includeLink: true },
@@ -32,8 +34,8 @@ export const PlanRootLink = React.memo(
               planParamsBackwardsCompatibleGuard,
             )(paramsStr).force(),
             queryArgs: { linkId: '', includeLink: false },
-          } as const)
-    })
+          } as const),
+    )
 
     const userGQLArgs = useUserGQLArgs()
 
@@ -82,13 +84,20 @@ export const PlanRootLink = React.memo(
     }, [startingState, data])
 
     const [key, setKey] = useState(0)
+    const [startingParamsOverride, setStartingParamsOverride] = useState(
+      null as PlanParams | null,
+    )
 
     return (
       <WithUser userFragmentOnQueryKey={userGQLArgs.includeUser ? data : null}>
         <PlanRootLinkImpl
           key={key}
           startingParams={startingParams}
-          reset={() => setKey((x) => x + 1)}
+          startingParamsOverride={startingParamsOverride}
+          reset={(planParams: PlanParams | null) => {
+            if (planParams) setStartingParamsOverride(planParams)
+            setKey((x) => x + 1)
+          }}
           pdfReportInfo={pdfReportInfo}
         />
       </WithUser>

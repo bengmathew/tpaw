@@ -1,7 +1,8 @@
 import {
-    PlanParamsChangeActionCurrent,
-    fGet,
-    getDefaultPlanParams,
+  PlanParamsChangeActionCurrent,
+  fGet,
+  getFullDatedDefaultPlanParams,
+  getFullDatelessDefaultPlanParams,
 } from '@tpaw/common'
 import React, { useState } from 'react'
 import { useMutation } from 'react-relay'
@@ -29,7 +30,7 @@ export const PlanMenuActionModalCreatePlan = React.memo(
     const urlUpdater = useURLUpdater()
     return (
       <CenteredModal
-        className="w-[400px] dialog-outer-div"
+        className="w-[450px] dialog-outer-div"
         show={show}
         onOutsideClickOrEscape={null}
       >
@@ -87,12 +88,16 @@ const _Body = React.memo(
     `)
 
     const handleCreate = (label: string) => {
-      const currentTimestamp = Date.now()
       const change: PlanParamsChangeActionCurrent = {
         type: 'start',
         value: null,
       }
       setIsRunning(true)
+      const planParams = getFullDatedDefaultPlanParams(
+        Date.now(),
+        ianaTimezoneName,
+      )
+
       commit({
         variables: {
           input: {
@@ -102,9 +107,7 @@ const _Body = React.memo(
               planParamsHistory: [
                 {
                   id: uuid.v4(),
-                  params: JSON.stringify(
-                    getDefaultPlanParams(currentTimestamp, ianaTimezoneName),
-                  ),
+                  params: JSON.stringify(planParams),
                   change: JSON.stringify(change),
                 },
               ],
@@ -116,7 +119,7 @@ const _Body = React.memo(
         // Don't set isRunning to false, let it stay true until the modal is removed.
         onCompleted: ({ userPlanCreate }) => onCreate(userPlanCreate.plan.slug),
         onError: (e) => {
-          defaultErrorHandlerForNetworkCall({e, toast:'Error creating plan'})
+          defaultErrorHandlerForNetworkCall({ e, toast: 'Error creating plan' })
           setIsRunning(false)
         },
       })

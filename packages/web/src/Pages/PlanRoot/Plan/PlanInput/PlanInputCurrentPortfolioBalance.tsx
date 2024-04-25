@@ -15,9 +15,7 @@ import { smartDeltaFnForAmountInput } from '../../../Common/Inputs/SmartDeltaFnF
 import { CenteredModal } from '../../../Common/Modal/CenteredModal'
 import { CurrentPortfolioBalance } from '../../PlanRootHelpers/CurrentPortfolioBalance'
 import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
-import {
-  useSimulation
-} from '../../PlanRootHelpers/WithSimulation'
+import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import { planSectionLabel } from './Helpers/PlanSectionLabel'
 import {
   PlanInputBody,
@@ -126,12 +124,14 @@ export const _CurrentPortfolioBalanceCard = React.memo(
                 </div>
               </div>
             )}
-          <button
-            className="underline block mt-4"
-            onClick={() => setShowHistory(true)}
-          >
-            View Balance History
-          </button>
+          {amountInfo.isDatedPlan && (
+            <button
+              className="underline block mt-4"
+              onClick={() => setShowHistory(true)}
+            >
+              View Balance History
+            </button>
+          )}
         </div>
         {currentPortfolioBalanceInfo.isDatedPlan && (
           <CenteredModal
@@ -446,7 +446,8 @@ export const PlanInputCurrentPortfolioBalanceSummary = React.memo(
     return (
       <>
         <h2>{formatCurrency(amount)}</h2>
-        {amountInfo.isDatedPlan &&  amountInfo.info.isEstimate &&
+        {amountInfo.isDatedPlan &&
+          amountInfo.info.isEstimate &&
           amountInfo.info.lastEnteredAmount !== amountInfo.info.amount && (
             <div className={'ml-2 flex items-top gap-x-1'}>
               <FontAwesomeIcon

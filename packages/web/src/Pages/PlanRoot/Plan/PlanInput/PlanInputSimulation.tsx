@@ -1,7 +1,7 @@
 import { faCircle } from '@fortawesome/pro-light-svg-icons'
 import { faCircle as faCircleSolid } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { PLAN_PARAMS_CONSTANTS, assert } from '@tpaw/common'
+import { PLAN_PARAMS_CONSTANTS, assert, partialDefaultDatelessPlanParams } from '@tpaw/common'
 import React from 'react'
 import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import {
@@ -61,14 +61,14 @@ const _MonteCarloCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, updatePlanParams, defaultPlanParams } =
+    const { planParamsNorm, updatePlanParams } =
       useSimulation()
     const isModified = useIsMonteCarloCardModifed()
     const isEnabled = planParamsNorm.advanced.sampling.type === 'monteCarlo'
     const handleBlockSize = (x: { inMonths: number }) =>
       updatePlanParams('setMonteCarloSamplingBlockSize2', x)
-    assert(defaultPlanParams.advanced.sampling.type === 'monteCarlo')
-    const defaultBlockSize = defaultPlanParams.advanced.sampling.data.blockSize
+    assert(partialDefaultDatelessPlanParams.advanced.sampling.type === 'monteCarlo')
+    const defaultBlockSize = partialDefaultDatelessPlanParams.advanced.sampling.data.blockSize
 
     const body = (
       <div className="">
@@ -189,14 +189,14 @@ export const useIsPlanInputSimulationModifed = () => {
 }
 
 const useIsMonteCarloCardModifed = () => {
-  const { planParamsNorm, defaultPlanParams } = useSimulation()
+  const { planParamsNorm } = useSimulation()
 
-  assert(defaultPlanParams.advanced.sampling.type === 'monteCarlo')
+  assert(partialDefaultDatelessPlanParams.advanced.sampling.type === 'monteCarlo')
   const result =
     planParamsNorm.advanced.sampling.type === 'monteCarlo' &&
     !_.isEqual(
       planParamsNorm.advanced.sampling.data.blockSize,
-      defaultPlanParams.advanced.sampling.data.blockSize,
+      partialDefaultDatelessPlanParams.advanced.sampling.data.blockSize,
     )
   return result
 }

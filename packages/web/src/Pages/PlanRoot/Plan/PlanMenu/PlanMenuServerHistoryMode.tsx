@@ -30,17 +30,19 @@ export const PlanMenuServerHistoryMode = React.memo(
   }) => {
     const planColors = usePlanColors()
     const { planParamsId } = useSimulation()
-    const { plan, syncState } = simulationInfoForServerSrc
+    const { plan, syncState, setRewindTo } = simulationInfoForServerSrc
     const [showCopyModal, setShowCopyModal] = useState(false)
     const label = plan.isMain ? 'Main Plan' : plan.label ?? 'Untitled'
 
-    const exitHistoryURL = new URL(window.location.href)
-    exitHistoryURL.searchParams.delete('rewindTo')
     return (
       <div className="flex gap-x-2">
         <Menu>
           {({ open, close }) => (
-            <ContextModal align="right" open={open}>
+            <ContextModal
+              align="right"
+              open={open}
+              onOutsideClickOrEscape={null}
+            >
               {({ ref }) => (
                 <Menu.Button
                   ref={ref}
@@ -68,7 +70,7 @@ export const PlanMenuServerHistoryMode = React.memo(
                     className="context-menu-item "
                     onClick={() => setShowCopyModal(true)}
                   >
-                    <span className="inline-block w-[25px]">
+                    <span className="context-menu-icon">
                       <FontAwesomeIcon icon={faCopy} />
                     </span>{' '}
                     Copy to New Plan
@@ -80,22 +82,22 @@ export const PlanMenuServerHistoryMode = React.memo(
                 />
                 <PlanMenuDivider />
                 <Menu.Item>
-                  <Link
+                  <button
                     className="context-menu-item "
-                    href={exitHistoryURL}
-                    shallow
+                    onClick={() => setRewindTo(null)}
                   >
-                    <span className="inline-block w-[25px]">
+                    <span className="context-menu-icon">
                       <FontAwesomeIcon icon={faArrowRightFromBracket} />
                     </span>{' '}
                     Exit History Mode
-                  </Link>
+                  </button>
                 </Menu.Item>
               </Menu.Items>
             </ContextModal>
           )}
         </Menu>
         <PlanMenuSubMenuRewind
+          simulationInfoForServerSrc={simulationInfoForServerSrc}
           simulationInfoForHistoryMode={simulationInfoForHistoryMode}
         />
 
@@ -106,6 +108,7 @@ export const PlanMenuServerHistoryMode = React.memo(
           hideOnSuccess={false}
           cutAfterId={planParamsId}
           isSyncing={syncState.type !== 'synced'}
+          planParamsForDatingSwitch={null}
         />
       </div>
     )

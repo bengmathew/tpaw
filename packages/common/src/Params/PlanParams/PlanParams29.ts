@@ -217,6 +217,12 @@ export namespace PlanParams29 {
     year: number
     month: number // 1 - 12
   }
+  export type CalendarDay = {
+    year: number
+    month: number // 1 - 12
+    day: number // 1 - 31
+  }
+
   export type InMonths = { inMonths: number }
   export type CurrentAgeInfo =
     | { isDatedPlan: true; monthOfBirth: CalendarMonth }
@@ -361,7 +367,10 @@ export namespace PlanParams29 {
     timestamp: number
     datingInfo:
       | { isDated: true }
-      | { isDated: false; timestampForMarketData: number }
+      | {
+          isDated: false
+          marketDataAsOfEndOfDayInNY: CalendarDay
+        }
 
     // Note 1. Technically should be in non-plan, but this moves with plan
     // changes, so simpler to keep it here.
@@ -545,8 +554,13 @@ export namespace PlanParams29 {
         ? () => failure('Cannot use calendar month in undated plan.')
         : object({
             year: chain(number, integer),
-            month: chain(number, integer),
+            month: chain(number, integer, gte(1), lte(12)),
           })
+    const calendarDay: JSONGuard<CalendarDay> = object({
+      year: chain(number, integer),
+      month: chain(number, integer, gte(1), lte(12)),
+      day: chain(number, integer, gte(1), lte(31)),
+    })
 
     const currentAgeInfo = (
       planParams: PlanParams | null,
@@ -886,6 +900,7 @@ export namespace PlanParams29 {
 
     return {
       calendarMonth,
+      calendarDay,
       currentAgeInfo,
       personId,
       strategy,
@@ -1194,7 +1209,7 @@ export namespace PlanParams29 {
         object({ isDated: constant(true) }),
         object({
           isDated: constant(false),
-          timestampForMarketData: number,
+          marketDataAsOfEndOfDayInNY: cg.calendarDay,
         }),
       ),
       dialogPositionNominal: cg.dialogPositionNominal,

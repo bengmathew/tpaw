@@ -1,4 +1,4 @@
-import { PLAN_PARAMS_CONSTANTS } from '@tpaw/common'
+import { PLAN_PARAMS_CONSTANTS, partialDefaultDatelessPlanParams } from '@tpaw/common'
 import React from 'react'
 import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
@@ -33,8 +33,7 @@ const _SpendingTiltCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, defaultPlanParams, updatePlanParams } =
-      useSimulation()
+    const { planParamsNorm, updatePlanParams } = useSimulation()
     const handleChange = (value: number) =>
       updatePlanParams('setSPAWAnnualSpendingTilt', value)
 
@@ -65,7 +64,7 @@ const _SpendingTiltCard = React.memo(
         <button
           className="mt-4 underline"
           onClick={() =>
-            handleChange(defaultPlanParams.risk.spaw.annualSpendingTilt)
+            handleChange(partialDefaultDatelessPlanParams.risk.spaw.annualSpendingTilt)
           }
         >
           Reset to Default

@@ -20,7 +20,7 @@ export const PlanResultsSidePanelMenu = React.memo(
       <>
         <Menu>
           {({ open }) => (
-            <ContextModal open={open} align={'right'}>
+            <ContextModal open={open} align={'right'} onOutsideClickOrEscape={null}>
               {({ ref }) => (
                 <Menu.Button
                   ref={ref}

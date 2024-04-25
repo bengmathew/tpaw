@@ -54,6 +54,7 @@ type PlanParamsChangePatched {
 type PlanWithHistory {
   addedToServerAt: Float!
   id: ID!
+  isDated: Boolean!
   isMain: Boolean!
   label: String
   lastSyncAt: Float!
@@ -136,9 +137,9 @@ input UserPlanDeleteInput {
 }
 
 input UserPlanResetInput {
-  ianaTimezoneName: String!
   lastSyncAt: Float!
   planId: String!
+  planParams: String!
   userId: String!
 }
 

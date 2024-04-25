@@ -11,7 +11,7 @@ import { paddingCSSStyle } from '../../../../Utils/Geometry'
 import { fGet } from '../../../../Utils/Utils'
 import { AmountInput } from '../../../Common/Inputs/AmountInput'
 import { smartDeltaFnForMonthlyAmountInput } from '../../../Common/Inputs/SmartDeltaFnForAmountInput'
-import { ToggleSwitch } from '../../../Common/Inputs/ToggleSwitch'
+import { SwitchAsToggle } from '../../../Common/Inputs/SwitchAsToggle'
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import {
@@ -131,7 +131,7 @@ export const _SpendingCeilingCard = React.memo(
           <Switch.Group>
             <div className="flex items-center gap-x-2">
               <Switch.Label className="">Enable Ceiling</Switch.Label>
-              <ToggleSwitch
+              <SwitchAsToggle
                 className=""
                 checked={value !== null}
                 setChecked={(enabled) =>
@@ -245,7 +245,7 @@ export const _SpendingFloorCard = React.memo(
           <Switch.Group>
             <div className="flex items-center gap-x-2">
               <Switch.Label className="">Enable Floor</Switch.Label>
-              <ToggleSwitch
+              <SwitchAsToggle
                 className=""
                 checked={value !== null}
                 setChecked={(enabled) =>

@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<6854552b92bc1b1319e9a3cea8407a1e>>
+ * @generated SignedSource<<0ec71fd1a488922cc6fa173eb64dd7c6>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,8 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, FragmentRefs } from 'relay-runtime'
+import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { FragmentRefs } from "relay-runtime";
 export type UserPlanDeleteInput = {
   planId: string;
   userId: string;
@@ -140,6 +141,13 @@ return {
                 "kind": "ScalarField",
                 "name": "isMain",
                 "storageKey": null
+              },
+              {
+                "alias": null,
+                "args": null,
+                "kind": "ScalarField",
+                "name": "isDated",
+                "storageKey": null
               }
             ],
             "storageKey": null
@@ -164,12 +172,12 @@ return {
     ]
   },
   "params": {
-    "cacheID": "dbc7aa884e07628e6e81de1916efd3c1",
+    "cacheID": "170920ab0bba26c77cb94bb2d22b4300",
     "id": null,
     "metadata": {},
     "name": "PlanMenuActionModalDeleteMutation",
     "operationKind": "mutation",
-    "text": "mutation PlanMenuActionModalDeleteMutation(\n  $input: UserPlanDeleteInput!\n) {\n  userPlanDelete(input: $input) {\n    ...WithUser_user\n    id\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
+    "text": "mutation PlanMenuActionModalDeleteMutation(\n  $input: UserPlanDeleteInput!\n) {\n  userPlanDelete(input: $input) {\n    ...WithUser_user\n    id\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n    isDated\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
   }
 };
 })();

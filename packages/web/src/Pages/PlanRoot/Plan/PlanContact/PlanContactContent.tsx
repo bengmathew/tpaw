@@ -32,7 +32,7 @@ export const PlanContactContent = React.memo(
         <div className="border-l border-gray-400 w-[1px] my-2"></div>
         <Menu>
           {({ open }) => (
-            <ContextModal align="right" open={open}>
+            <ContextModal align="right" open={open} onOutsideClickOrEscape={null}>
               {({ ref }) => (
                 <Menu.Button ref={ref} className="pl-2 pr-4 py-2 rounded-lg">
                   Contact

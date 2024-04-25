@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<2fb7c70276838fd0b2f7208d7aba5658>>
+ * @generated SignedSource<<c5a02911bf3b276e06bf572cb5c9c246>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -17,6 +17,7 @@ export type WithUser_user$data = {
   readonly plans: ReadonlyArray<{
     readonly addedToServerAt: number;
     readonly id: string;
+    readonly isDated: boolean;
     readonly isMain: boolean;
     readonly label: string | null | undefined;
     readonly lastSyncAt: number;
@@ -95,6 +96,13 @@ return {
           "kind": "ScalarField",
           "name": "isMain",
           "storageKey": null
+        },
+        {
+          "alias": null,
+          "args": null,
+          "kind": "ScalarField",
+          "name": "isDated",
+          "storageKey": null
         }
       ],
       "storageKey": null
@@ -119,6 +127,6 @@ return {
 };
 })();
 
-(node as any).hash = "6fc9266f1b39eba1e067461a51399607";
+(node as any).hash = "656c9e90d2344967067e6cdb514ed774";
 
 export default node;

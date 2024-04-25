@@ -1,6 +1,12 @@
 import _ from 'lodash'
 import { CalendarMonthFns } from '../../Misc/CalendarMonthFns'
-import { currentPlanParamsVersion, PlanParams } from './PlanParams'
+import {
+  CalendarDay,
+  CalendarMonth,
+  currentPlanParamsVersion,
+  PlanParams,
+} from './PlanParams'
+import { getLastMarketDataDayForUndatedPlans } from './GetLastMarketDataDayForUndatedPlans'
 
 // TODO: Remove in favor of Rust version
 export const DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT = (
@@ -19,123 +25,158 @@ export const DEFAULT_RISK_TPAW = {
   additionalAnnualSpendingTilt: 0,
 }
 
-export function getDefaultPlanParams(
-  currentTimestamp: number,
+export const getFullDatedDefaultPlanParams = (
+  timestamp: number,
   ianaTimezoneName: string,
-): PlanParams {
-  const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
-    currentTimestamp,
-    ianaTimezoneName,
-  )
+): PlanParams => ({
+  ...getPartialDefaultPlanParams({
+    isDatedPlan: true,
+    nowAsCalendarMonth: CalendarMonthFns.fromTimestamp(
+      timestamp,
+      ianaTimezoneName,
+    ),
+  }),
+  timestamp,
+  datingInfo: { isDated: true },
+})
 
-  const params: PlanParams = {
-    v: currentPlanParamsVersion,
-    timestamp: currentTimestamp,
-    datingInfo: { isDated: true },
-    dialogPositionNominal: 'age',
-    people: {
-      withPartner: false,
-      person1: {
-        ages: {
-          type: 'retirementDateSpecified',
-          currentAgeInfo: {
-            isDatedPlan: true,
-            monthOfBirth: CalendarMonthFns.addMonths(
-              nowAsCalendarMonth,
-              -35 * 12,
-            ),
-          },
-          retirementAge: { inMonths: 65 * 12 },
-          maxAge: { inMonths: 100 * 12 },
-        },
-      },
-    },
+export const getFullDatelessDefaultPlanParams = (
+  timestamp: number,
+): PlanParams => ({
+  ...getPartialDefaultPlanParams({ isDatedPlan: false }),
+  timestamp,
+  datingInfo: {
+    isDated: false,
+    marketDataAsOfEndOfDayInNY: getLastMarketDataDayForUndatedPlans(timestamp),
+  },
+})
 
-    wealth: {
-      portfolioBalance: {
-        isDatedPlan: true,
-        updatedHere: true,
-        amount: 0,
-      },
-      futureSavings: {},
-      incomeDuringRetirement: {},
-    },
-
-    adjustmentsToSpending: {
-      tpawAndSPAW: {
-        monthlySpendingCeiling: null,
-        monthlySpendingFloor: null,
-        legacy: {
-          total: 0,
-          external: {},
-        },
-      },
-      extraSpending: {
-        essential: {},
-        discretionary: {},
-      },
-    },
-
-    risk: {
-      tpaw: DEFAULT_RISK_TPAW,
-      tpawAndSPAW: {
-        lmp: 0,
-      },
-      spaw: {
-        annualSpendingTilt: 0.008,
-      },
-
-      spawAndSWR: {
-        allocation: {
-          start: {
-            month: {
-              type: 'now',
-              monthOfEntry: {
-                isDatedPlan: true,
-                calendarMonth: nowAsCalendarMonth,
-              },
+export const getPartialDefaultPlanParams = (
+  props:
+    | {
+        isDatedPlan: true
+        nowAsCalendarMonth: CalendarMonth
+      }
+    | { isDatedPlan: false },
+): Omit<PlanParams, 'timestamp' | 'datingInfo'> => ({
+  v: currentPlanParamsVersion,
+  dialogPositionNominal: 'age',
+  people: {
+    withPartner: false,
+    person1: {
+      ages: {
+        type: 'retirementDateSpecified',
+        currentAgeInfo: props.isDatedPlan
+          ? {
+              isDatedPlan: props.isDatedPlan,
+              monthOfBirth: CalendarMonthFns.addMonths(
+                props.nowAsCalendarMonth,
+                -35 * 12,
+              ),
+            }
+          : {
+              isDatedPlan: props.isDatedPlan,
+              currentAge: { inMonths: 35 * 12 },
             },
-            stocks: 0.5,
-          },
-          intermediate: {},
-          end: { stocks: 0.5 },
-        },
-      },
-      swr: {
-        withdrawal: { type: 'default' },
+        retirementAge: { inMonths: 65 * 12 },
+        maxAge: { inMonths: 100 * 12 },
       },
     },
+  },
 
-    advanced: {
-      returnsStatsForPlanning: {
-        expectedValue: {
-          empiricalAnnualNonLog: {
-            type: 'regressionPrediction,20YearTIPSYield',
-          },
+  wealth: {
+    portfolioBalance: props.isDatedPlan
+      ? {
+          isDatedPlan: props.isDatedPlan,
+          updatedHere: true,
+          amount: 0,
+        }
+      : {
+          isDatedPlan: props.isDatedPlan,
+          amount: 0,
         },
-        standardDeviation: {
-          stocks: { scale: { log: 1 } },
-          bonds: { scale: { log: 0 } },
-        },
+    futureSavings: {},
+    incomeDuringRetirement: {},
+  },
+
+  adjustmentsToSpending: {
+    tpawAndSPAW: {
+      monthlySpendingCeiling: null,
+      monthlySpendingFloor: null,
+      legacy: {
+        total: 0,
+        external: {},
       },
-      historicalReturnsAdjustment: {
-        standardDeviation: {
-          bonds: { scale: { log: 1 } },
-          overrideToFixedForTesting: false,
-        },
-      },
-      annualInflation: { type: 'suggested' },
-      sampling: {
-        type: 'monteCarlo',
-        data: {
-          blockSize: { inMonths: 12 * 5 },
-          staggerRunStarts: true,
-        },
-      },
-      strategy: 'TPAW',
     },
-    results: null,
-  }
+    extraSpending: {
+      essential: {},
+      discretionary: {},
+    },
+  },
 
-  return params
-}
+  risk: {
+    tpaw: DEFAULT_RISK_TPAW,
+    tpawAndSPAW: {
+      lmp: 0,
+    },
+    spaw: {
+      annualSpendingTilt: 0.008,
+    },
+
+    spawAndSWR: {
+      allocation: {
+        start: {
+          month: {
+            type: 'now',
+            monthOfEntry: props.isDatedPlan
+              ? {
+                  isDatedPlan: props.isDatedPlan,
+                  calendarMonth: props.nowAsCalendarMonth,
+                }
+              : { isDatedPlan: props.isDatedPlan },
+          },
+          stocks: 0.5,
+        },
+        intermediate: {},
+        end: { stocks: 0.5 },
+      },
+    },
+    swr: {
+      withdrawal: { type: 'default' },
+    },
+  },
+
+  advanced: {
+    returnsStatsForPlanning: {
+      expectedValue: {
+        empiricalAnnualNonLog: {
+          type: 'regressionPrediction,20YearTIPSYield',
+        },
+      },
+      standardDeviation: {
+        stocks: { scale: { log: 1 } },
+        bonds: { scale: { log: 0 } },
+      },
+    },
+    historicalReturnsAdjustment: {
+      standardDeviation: {
+        bonds: { scale: { log: 1 } },
+        overrideToFixedForTesting: false,
+      },
+    },
+    annualInflation: { type: 'suggested' },
+    sampling: {
+      type: 'monteCarlo',
+      data: {
+        blockSize: { inMonths: 12 * 5 },
+        staggerRunStarts: true,
+      },
+    },
+    strategy: 'TPAW',
+  },
+  results: null,
+})
+
+export const partialDefaultDatelessPlanParams = getPartialDefaultPlanParams({
+  isDatedPlan: false,
+})

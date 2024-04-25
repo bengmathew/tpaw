@@ -1,20 +1,24 @@
 import {
+  CalendarDay,
   CalendarMonth,
   DialogPosition,
   Month,
   PlanParams,
   assert,
+  assertFalse,
   block,
   fGet,
+  getNYZonedTime,
   letIn,
 } from '@tpaw/common'
 import { PlanParamsHelperFns } from '../PlanParamsHelperFns'
 import { normalizeGlidePath } from './NormalizeGlidePath'
 import { normalizeLabeledAmountTimedList } from './NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 import { normalizeLabeledAmountUntimedList } from './NormalizeLabeledAmountUntimedList'
-import { getMonthToMFN, normalizePlanParamsAges } from './NormalizePlanParamsAges'
+import { getMonthToMFN, normalizeAges } from './NormalizeAges'
 import { normalizePlanParamsInverse } from './NormalizePlanParamsInverse'
-import _ from 'lodash'
+import _, { now } from 'lodash'
+import jsonpatch from 'fast-json-patch'
 
 export type PlanParamsNormalized = ReturnType<typeof normalizePlanParams>
 
@@ -29,20 +33,30 @@ export const normalizePlanParams = (
   const norm = normalizePlanParamsUnchecked(planParams, nowAs)
   // Soft check inverse.
   const deNorm = normalizePlanParamsInverse(norm, 'soft')
-  if (!planParams.datingInfo.isDated) assert(_.isEqual(deNorm, planParams))
+  if (!planParams.datingInfo.isDated) {
+    if (!_.isEqual(deNorm, planParams)) {
+      const diff = jsonpatch.compare(planParams, deNorm)
+      const rDiff = jsonpatch.compare(deNorm, planParams)
+      console.dir(diff)
+      console.dir(rDiff)
+      assertFalse()
+    }
+  }
   return norm
 }
 
-type NormalizedDatingInfo =
+export type NormalizedDatingInfo =
   | {
       isDated: true
       nowAsCalendarMonth: CalendarMonth
+      timestampForMarketData: number
       nowAsTimestamp: number
     }
   | {
       isDated: false
       nowAsCalendarMonth: null
       timestampForMarketData: number
+      marketDataAsOfEndOfDayInNY: CalendarDay
       nowAsTimestampNominal: number
     }
 export const normalizePlanParamsUnchecked = (
@@ -57,15 +71,21 @@ export const normalizePlanParamsUnchecked = (
         isDated: true,
         nowAsTimestamp: nowAs.timestamp,
         nowAsCalendarMonth: fGet(nowAs.calendarMonth),
+        timestampForMarketData: nowAs.timestamp,
       } as const)
     : ({
         isDated: false,
         nowAsCalendarMonth: null,
-        timestampForMarketData: planParams.datingInfo.timestampForMarketData,
+        marketDataAsOfEndOfDayInNY:
+          planParams.datingInfo.marketDataAsOfEndOfDayInNY,
+        timestampForMarketData: getNYZonedTime
+          .fromObject(planParams.datingInfo.marketDataAsOfEndOfDayInNY)
+          .endOf('day')
+          .toMillis(),
         nowAsTimestampNominal: nowAs.timestamp,
       } as const)
   const { nowAsCalendarMonth } = datingInfo
-  const ages = normalizePlanParamsAges(planParams.people, nowAsCalendarMonth)
+  const ages = normalizeAges(planParams.people, nowAsCalendarMonth)
   const monthToMFN = getMonthToMFN(nowAsCalendarMonth, ages)
   return {
     v: planParams.v,

@@ -21,7 +21,7 @@ import { PlanInputAgeWithdrawalStart } from './PlanInputAgeWithdrawalStart'
 import { InMonthsFns } from '../../../../../Utils/InMonthsFns'
 
 export type PlanInputAgeOpenableSection =
-  | `${'person1' | 'person2'}-${'monthOfBirth' | 'retirementAge' | 'maxAge'}`
+  | `${'person1' | 'person2'}-${'currentAgeInfo' | 'retirementAge' | 'maxAge'}`
   | 'none'
 export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
   const { planParamsNorm, updatePlanParams } = useSimulation()
@@ -84,7 +84,7 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
       >
         <PlanInputAgePerson
           className="params-card"
-          personType="person1"
+          personId="person1"
           style={{ padding: paddingCSS(props.sizing.cardPadding) }}
           openSection={openSection}
           setOpenSection={setOpenSection}
@@ -93,7 +93,7 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
           <>
             <PlanInputAgePerson
               className="mt-10 params-card"
-              personType="person2"
+              personId="person2"
               style={{ padding: paddingCSS(props.sizing.cardPadding) }}
               openSection={openSection}
               setOpenSection={setOpenSection}
@@ -141,7 +141,7 @@ export const PlanInputAgeSummary = React.memo(
     if (planParamsNorm.dialogPosition.effective === 'age') {
       return (
         <>
-          <h2>Month of Birth: </h2>
+          <h2>{planParamsNorm.datingInfo.isDated? 'Month of Birth': 'Current'}: </h2>
           <h2>Retirement: </h2>
           <h2>Max: </h2>
         </>
@@ -166,7 +166,7 @@ export const PlanInputAgeSummary = React.memo(
           ) : (
             <>
               <h2 className={`${className}`}>Current</h2>
-              <h2>{InMonthsFns.toStr(person.currentAgeInfo)})</h2>
+              <h2>{InMonthsFns.toStr(person.currentAgeInfo)}</h2>
             </>
           )}
 

@@ -1,4 +1,5 @@
 import {
+  CalendarDay,
   CalendarMonthFns,
   DEFAULT_MONTE_CARLO_SIMULATION_SEED,
   PlanParams,
@@ -8,7 +9,7 @@ import {
   assert,
   block,
   fGet,
-  getDefaultPlanParams,
+  getNYZonedTime,
   noCase,
   nonPlanParamFns,
 } from '@tpaw/common'
@@ -26,6 +27,7 @@ import {
   normalizePlanParams,
 } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { normalizePlanParamsInverse } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
+import { CallRust } from '../../../UseSimulator/PlanParamsProcessed/CallRust'
 import { SimulationResult } from '../../../UseSimulator/Simulator/Simulator'
 import { infoToast } from '../../../Utils/CustomToasts'
 import { UnionToIntersection } from '../../../Utils/UnionToIntersection'
@@ -44,7 +46,6 @@ import { CurrentTimeInfo } from './UseCurrentTime'
 import { WorkingPlanInfo } from './UseWorkingPlan'
 import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName, useNonPlanParams } from './WithNonPlanParams'
-import { CallRust } from '../../../UseSimulator/PlanParamsProcessed/CallRust'
 
 type UpdatePlanParamsFromAction<T> = UnionToIntersection<
   T extends PlanParamsChangeActionCurrent
@@ -57,10 +58,9 @@ export type UpdatePlanParams =
 export type SimulationInfo = {
   planId: string
   planPaths: (typeof appPaths)['plan']
-
   fastForwardInfo: CurrentTimeInfo['fastForwardInfo']
 
-  defaultPlanParams: PlanParams
+  // defaultPlanParams: PlanParams
 
   currentPortfolioBalanceInfo:
     | {
@@ -78,18 +78,19 @@ export type SimulationInfo = {
   simulationInfoBySrc:
     | {
         src: 'localMain'
-        reset: () => void
+        reset: (planParams: PlanParams) => void
       }
     | {
         src: 'server'
         plan: User['plans'][0]
         historyStatus: 'fetching' | 'fetched' | 'failed'
         syncState: ServerSyncState
+        setRewindTo: (x: 'lastUpdate' | CalendarDay | null) => void
       }
     | {
         src: 'link'
         isModified: boolean
-        reset: () => void
+        reset: (planParams: PlanParams | null) => void
         setForceNav: () => void
       }
 
@@ -103,8 +104,7 @@ export type SimulationInfo = {
         mode: 'history'
         actualCurrentTimestamp: number
         planParamsHistory: { id: string; params: PlanParams }[]
-        planParamsHistoryEndOfDays: Set<number>
-        setRewindTo: (timestamp: number) => 'withinRange' | 'fixedToRange'
+        planParamsHistoryDays: Set<number>
       }
 
   simulationResult: SimulationResult
@@ -221,7 +221,6 @@ export const useSimulationParamsForHistoryMode = (
     rewindTo: number
     currentPortfolioBalanceInfoPreBase: CurrentPortfolioBalance.ByMonthInfo
     planParamsHistoryPreBase: { id: string; params: PlanParams }[]
-    setRewindTo: (timestamp: number) => 'withinRange' | 'fixedToRange'
   } | null,
   planPaths: SimulationInfo['planPaths'],
   currentTimeInfo: CurrentTimeInfo,
@@ -272,11 +271,11 @@ export const useSimulationParamsForHistoryMode = (
     workingPlanInfo.planParamsUndoRedoStack.undos,
   ])
 
-  const planParamsHistoryEndOfDays = useMemo(
+  const planParamsHistoryDays = useMemo(
     () =>
       new Set(
         planParamsHistory.map((x) =>
-          getZonedTime(x.params.timestamp).endOf('day').toMillis(),
+          getZonedTime(x.params.timestamp).startOf('day').toMillis(),
         ),
       ),
     [planParamsHistory, getZonedTime],
@@ -319,8 +318,7 @@ export const useSimulationParamsForHistoryMode = (
       mode: 'history',
       actualCurrentTimestamp: currentTimeInfo.currentTimestamp,
       planParamsHistory,
-      planParamsHistoryEndOfDays,
-      setRewindTo: rewindInfo.setRewindTo,
+      planParamsHistoryDays,
     },
     pdfReportInfo,
   }
@@ -354,37 +352,34 @@ export const WithSimulation = React.memo(
       currentPortfolioBalanceInfoPreBase,
       currentPortfolioBalanceInfoPostBase,
     } = params
-
-    const { ianaTimezoneName, getZonedTime } = useIANATimezoneName()
+    const { ianaTimezoneName } = useIANATimezoneName()
     const { marketData } = useMarketData()
-    const nowAsCalendarMonth = useMemo(
-      () => CalendarMonthFns.fromTimestamp(currentTimestamp, ianaTimezoneName),
-      [currentTimestamp, ianaTimezoneName],
-    )
-
-    const defaultPlanParams = useMemo(
-      () => getDefaultPlanParams(currentTimestamp, ianaTimezoneName),
-      [currentTimestamp, ianaTimezoneName],
-    )
-
-    const currentMarketData = useMemo(
-      () => ({
-        ...getMarketDataForTime(currentTimestamp, marketData),
-        timestampForMarketData: currentTimestamp,
-      }),
-      [currentTimestamp, marketData],
-    )
 
     const {
       currentPortfolioBalanceInfo,
       planParamsNorm,
+      currentMarketData,
       planParamsProcessed,
       planParamsRust,
     } = useMemo(() => {
+      const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
+        currentTimestamp,
+        ianaTimezoneName,
+      )
       const planParamsNorm = normalizePlanParams(planParams, {
         timestamp: currentTimestamp,
         calendarMonth: nowAsCalendarMonth,
       })
+
+      const currentMarketData = {
+        ...getMarketDataForTime(
+          planParamsNorm.datingInfo.timestampForMarketData,
+          marketData,
+        ),
+        timestampForMarketData:
+          planParamsNorm.datingInfo.timestampForMarketData,
+      }
+
       const currentPortfolioBalanceInfo = planParamsNorm.wealth.portfolioBalance
         .isDatedPlan
         ? ({
@@ -407,17 +402,18 @@ export const WithSimulation = React.memo(
 
       return {
         currentPortfolioBalanceInfo,
+        currentMarketData,
         planParamsRust,
         planParamsNorm,
         planParamsProcessed,
       }
     }, [
-      currentMarketData,
-      nowAsCalendarMonth,
-      currentPortfolioBalanceInfoPostBase,
-      currentPortfolioBalanceInfoPreBase,
       currentTimestamp,
+      ianaTimezoneName,
       planParams,
+      marketData,
+      currentPortfolioBalanceInfoPreBase,
+      currentPortfolioBalanceInfoPostBase,
     ])
 
     const {
@@ -440,7 +436,6 @@ export const WithSimulation = React.memo(
     const simulationInfo: SimulationInfo | null = simulationResult
       ? {
           ...params,
-          defaultPlanParams,
           planParamsNorm,
           currentPortfolioBalanceInfo,
           simulationResult,
@@ -523,7 +518,10 @@ const useShowPDFReportIfNeeded = (
           }
         : {
             isDatedPlan: false,
-            timestampForMarketData: datingInfo.timestampForMarketData,
+            timestampForMarketData: getNYZonedTime
+              .fromObject(datingInfo.marketDataAsOfEndOfDayInNY)
+              .endOf('day')
+              .toMillis(),
           },
       currentPortfolioBalanceAmount: simulationInfo.currentPortfolioBalanceInfo
         .isDatedPlan

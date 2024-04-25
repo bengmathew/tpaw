@@ -34,8 +34,8 @@ export const normalizePlanParamsInverse = (
           calendarMonth: originalNorm.datingInfo.nowAsCalendarMonth,
         }
       : {
-          timestamp: 0,
-          calendarMonth: { year: 0, month: 0 },
+          timestamp: originalNorm.datingInfo.nowAsTimestampNominal,
+          calendarMonth: null,
         },
   )
 
@@ -52,6 +52,10 @@ export const normalizePlanParamsInverse = (
   const reverseDiff = jsonpatch.compare(reNorm, originalNorm)
   const checkFailed = diff.length > 0 || reverseDiff.length > 0
   if (checkFailed) {
+    console.dir(originalNorm)
+    console.dir(reNorm)
+    console.dir(diff)
+    console.dir(reverseDiff)
     Sentry.captureMessage(
       `Expected diff to be empty, but got\n ${JSON.stringify(diff)}\n ${JSON.stringify(reverseDiff)}`,
     )
@@ -135,7 +139,8 @@ const _normalizePlanParamsInverseUnchecked = (
       ? { isDated: true }
       : {
           isDated: false,
-          timestampForMarketData: norm.datingInfo.timestampForMarketData,
+          marketDataAsOfEndOfDayInNY:
+            norm.datingInfo.marketDataAsOfEndOfDayInNY,
         },
     dialogPositionNominal: norm.dialogPosition.effective,
     people: block(() => {

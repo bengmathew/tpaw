@@ -28,7 +28,7 @@ import React, {
 import { NormalizedLabeledAmountTimed } from '../../../../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 import { InMonthsFns } from '../../../../../Utils/InMonthsFns'
 import { yourOrYourPartners } from '../../../../../Utils/YourOrYourPartners'
-import { CheckBox } from '../../../../Common/Inputs/CheckBox'
+import { SwitchAsCheckBox } from '../../../../Common/Inputs/SwitchAsCheckBox'
 import { CalendarMonthInput } from '../../../../Common/Inputs/MonthInput/CalendarMonthInput'
 import { InMonthsInput } from '../../../../Common/Inputs/MonthInput/InMonthsInput'
 import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
@@ -45,17 +45,17 @@ import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
 import { planSectionLabel } from '../Helpers/PlanSectionLabel'
 import { PlanInputAgeOpenableSection } from './PlanInputAge'
-import { NormalizedAges } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsAges'
+import { NormalizedAges } from '../../../../../UseSimulator/NormalizePlanParams/NormalizeAges'
 
 export const PlanInputAgePerson = React.memo(
   ({
-    personType,
+    personId,
     className = '',
     style,
     openSection,
     setOpenSection,
   }: {
-    personType: 'person1' | 'person2'
+    personId: 'person1' | 'person2'
     className?: string
     style?: React.CSSProperties
     openSection: PlanInputAgeOpenableSection
@@ -63,11 +63,11 @@ export const PlanInputAgePerson = React.memo(
   }) => {
     const { planParamsNorm, updatePlanParams } = useSimulation()
     const divRef = useRef<HTMLDivElement>(null)
-    const person = fGet(planParamsNorm.ages[personType])
+    const person = fGet(planParamsNorm.ages[personId])
 
     const retireAdjustments = useMemo(
-      () => getRetirePersonAdjustments(personType, planParamsNorm),
-      [personType, planParamsNorm],
+      () => getRetirePersonAdjustments(personId, planParamsNorm),
+      [personId, planParamsNorm],
     )
 
     const [showRetireWarnings, setShowRetireWarnings] = useState(false)
@@ -94,9 +94,9 @@ export const PlanInputAgePerson = React.memo(
           onClick={() => setOpenSection('none')}
         >
           <h2 className="font-bold text-lg">
-            {personType === 'person1' ? 'You' : 'Your Partner'}
+            {personId === 'person1' ? 'You' : 'Your Partner'}
           </h2>
-          {personType === 'person2' && (
+          {personId === 'person2' && (
             <button
               className=""
               onClick={() => {
@@ -117,22 +117,22 @@ export const PlanInputAgePerson = React.memo(
         >
           <Switch.Group>
             <Switch.Label className="">
-              {personType === 'person1'
+              {personId === 'person1'
                 ? 'Are you retired?'
                 : 'Is your partner retired?'}
             </Switch.Label>
-            <CheckBox
+            <SwitchAsCheckBox
               className=""
-              enabled={person.retirement.isRetired}
-              setEnabled={(retired) => {
+              checked={person.retirement.isRetired}
+              setChecked={(retired) => {
                 if (retired) {
                   if (retireAdjustments) {
                     setShowRetireWarnings(true)
                   } else {
-                    updatePlanParams('setPersonRetired', personType)
+                    updatePlanParams('setPersonRetired', personId)
                   }
                 } else {
-                  updatePlanParams('setPersonNotRetired', personType)
+                  updatePlanParams('setPersonNotRetired', personId)
                 }
               }}
             />
@@ -146,31 +146,37 @@ export const PlanInputAgePerson = React.memo(
           {person.currentAgeInfo.isDatedPlan ? (
             <_MonthOfBirthInput
               sectionName="Month of Birth"
-              personId={personType}
+              personId={personId}
               currentAgeInfo={person.currentAgeInfo}
-              sectionType={`${personType}-monthOfBirth`}
+              sectionType={`${personId}-currentAgeInfo`}
               currSection={openSection}
               setCurrSection={setOpenSection}
             />
           ) : (
-            // TODO
-            assertFalse()
+            <_AgeInput
+              sectionName="Current Age"
+              personId={personId}
+              type="currentAge"
+              sectionType={`${personId}-currentAgeInfo`}
+              currSection={openSection}
+              setCurrSection={setOpenSection}
+            />
           )}
           {!person.retirement.isRetired && (
             <_AgeInput
               sectionName="Retirement Age"
-              personType={personType}
+              personId={personId}
               type="retirementAge"
-              sectionType={`${personType}-retirementAge`}
+              sectionType={`${personId}-retirementAge`}
               currSection={openSection}
               setCurrSection={setOpenSection}
             />
           )}
           <_AgeInput
             sectionName="Max Age"
-            personType={personType}
+            personId={personId}
             type="maxAge"
-            sectionType={`${personType}-maxAge`}
+            sectionType={`${personId}-maxAge`}
             currSection={openSection}
             setCurrSection={setOpenSection}
           />
@@ -192,14 +198,14 @@ export const PlanInputAgePerson = React.memo(
           adjustments={deletePartnerAdjustments}
         />
         <RetirementWarningsModal
-          personType={personType}
+          personType={personId}
           show={showRetireWarnings}
           onCancel={() => {
             setShowRetireWarnings(false)
           }}
           onApply={() => {
             setShowRetireWarnings(false)
-            updatePlanParams('setPersonRetired', personType)
+            updatePlanParams('setPersonRetired', personId)
           }}
           adjustments={retireAdjustments}
         />
@@ -311,25 +317,30 @@ export const _MonthOfBirthInput = React.memo(
     )
   },
 )
+
 export const _AgeInput = React.memo(
   ({
     sectionName,
-    personType,
+    personId,
     type,
     sectionType,
     currSection,
     setCurrSection,
   }: {
     sectionName: string
-    personType: 'person1' | 'person2'
-    type: 'retirementAge' | 'maxAge'
+    personId: 'person1' | 'person2'
+    type: 'currentAge' | 'retirementAge' | 'maxAge'
     sectionType: Exclude<PlanInputAgeOpenableSection, 'none'>
     currSection: PlanInputAgeOpenableSection
     setCurrSection: (open: PlanInputAgeOpenableSection) => void
   }) => {
     const { planParamsNorm, updatePlanParams } = useSimulation()
     const age = (() => {
-      const person = fGet(planParamsNorm.ages[personType])
+      const person = fGet(planParamsNorm.ages[personId])
+      if (type === 'currentAge') {
+        assert(!person.currentAgeInfo.isDatedPlan)
+        return person.currentAgeInfo
+      }
       if (type === 'retirementAge') return fGet(person.retirement.ageIfInFuture)
       if (type === 'maxAge') return person.maxAge
       noCase(type)
@@ -346,24 +357,27 @@ export const _AgeInput = React.memo(
         <InMonthsInput
           className="mt-2 mb-4 ml-4"
           modalLabel={sectionName}
-          normValue={{
-            baseValue: age.baseValue,
-            validRangeInMonths: {
-              includingLocalConstraints: age.validRangeInMonths,
-            },
-          }}
+          normValue={age}
           onChange={(inMonths) =>
-            type === 'retirementAge'
-              ? updatePlanParams('setPersonRetirementAge', {
-                  person: personType,
-                  retirementAge: inMonths,
+            type === 'currentAge'
+              ? updatePlanParams('setPersonCurrentAgeInfo', {
+                  personId,
+                  currentAgeInfo: {
+                    isDatedPlan: false,
+                    currentAge: inMonths,
+                  },
                 })
-              : type === 'maxAge'
-                ? updatePlanParams('setPersonMaxAge', {
-                    person: personType,
-                    maxAge: inMonths,
+              : type === 'retirementAge'
+                ? updatePlanParams('setPersonRetirementAge', {
+                    person: personId,
+                    retirementAge: inMonths,
                   })
-                : noCase(type)
+                : type === 'maxAge'
+                  ? updatePlanParams('setPersonMaxAge', {
+                      person: personId,
+                      maxAge: inMonths,
+                    })
+                  : noCase(type)
           }
         />
       </_Section>

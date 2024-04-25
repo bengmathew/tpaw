@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/nextjs'
 import {
+  CalendarDay,
   FGet,
   PlanParams,
   PlanParamsChangeAction,
@@ -14,7 +15,7 @@ import {
   planParamsMigrate,
 } from '@tpaw/common'
 import _ from 'lodash'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { appPaths } from '../../../AppPaths'
 import { sendAnalyticsEvent } from '../../../Utils/SendAnalyticsEvent'
 import { useNavGuard } from '../../../Utils/UseNavGuard'
@@ -208,53 +209,72 @@ const _Body = React.memo(
 
     const urlUpdater = useURLUpdater()
     const rewindToStr = useURLParam('rewindTo')
-    const rewindInfo = letIn(
-      typeof rewindToStr === 'string' ? parseInt(rewindToStr) : null,
-      (rewindToStrParsed) =>
-        !rewindToStrParsed || isNaN(rewindToStrParsed)
-          ? null
-          : serverHistoryPreBaseInfo.state.type === 'failed'
-            ? assertFalse()
-            : serverHistoryPreBaseInfo.state.type === 'fetching'
-              ? { type: 'fetching' as const }
-              : serverHistoryPreBaseInfo.state.type === 'fetched'
-                ? block(() => {
-                    const preBase = serverHistoryPreBaseInfo.state
-                    assert(preBase.type === 'fetched')
-                    const adjust = (x: number) =>
-                      _.clamp(
-                        getZonedTime(x).endOf('day').toMillis(),
-                        preBase.planParamsHistory[0].params.timestamp,
-                        currentTimeInfo.currentTimestamp,
-                      )
 
-                    const rewindTo = adjust(rewindToStrParsed)
-                    const setRewindTo = (rewindTo: number) => {
-                      const clamped = adjust(rewindTo)
-                      const url = new URL(window.location.href)
-                      url.searchParams.set('rewindTo', `${rewindTo}`)
-                      urlUpdater.push(url)
-                      return clamped === rewindTo
-                        ? ('withinRange' as const)
-                        : ('fixedToRange' as const)
-                    }
-                    return {
-                      type: 'fetched' as const,
-                      rewindTo,
-                      currentPortfolioBalanceInfoPreBase:
-                        preBase.currentPortfolioBalanceByMonthInfo,
-                      planParamsHistoryPreBase: preBase.planParamsHistory,
-                      setRewindTo,
-                    }
-                  })
-                : noCase(serverHistoryPreBaseInfo.state),
+    const setRewindTo = useCallback(
+      (rewindTo: 'lastUpdate' | CalendarDay | null) => {
+        const url = new URL(window.location.href)
+        if (rewindTo === null) {
+          url.searchParams.delete('rewindTo')
+        } else {
+          url.searchParams.set(
+            'rewindTo',
+            rewindTo === 'lastUpdate'
+              ? rewindTo
+              : `${rewindTo.day}-${rewindTo.month}-${rewindTo.year}`,
+          )
+        }
+        urlUpdater.push(url)
+      },
+      [urlUpdater],
     )
+
+    const rewindInfo = block(() => {
+      const rewindToTimestamp = block(() => {
+        if (!rewindToStr) return null
+        if (rewindToStr === 'lastUpdate') {
+          return fGet(_.last(workingPlanInfo.planParamsUndoRedoStack.undos))
+            .params.timestamp
+        }
+        const parts = rewindToStr.split('-')
+        if (parts.length !== 3) return null
+        const [day, month, year] = parts.map((x) => parseInt(x))
+        if (isNaN(year) || isNaN(month) || isNaN(day)) return null
+        return Math.min(
+          getZonedTime.fromObject({ year, month, day }).endOf('day').toMillis(),
+          currentTimeInfo.currentTimestamp,
+        )
+      })
+
+      if (rewindToTimestamp === null) return null
+      switch (serverHistoryPreBaseInfo.state.type) {
+        case 'failed':
+          assertFalse()
+        case 'fetching':
+          return { type: 'fetching' as const }
+        case 'fetched':
+          const preBase = serverHistoryPreBaseInfo.state
+          if (
+            rewindToTimestamp < preBase.planParamsHistory[0].params.timestamp
+          ) {
+            return null
+          }
+
+          return {
+            type: 'fetched' as const,
+            rewindTo: rewindToTimestamp,
+            currentPortfolioBalanceInfoPreBase:
+              preBase.currentPortfolioBalanceByMonthInfo,
+            planParamsHistoryPreBase: preBase.planParamsHistory,
+          }
+      }
+    })
 
     const simulationInfoBySrc: SimulationInfoForServerSrc = {
       src: 'server',
       plan: serverPlanIn,
       historyStatus: serverHistoryPreBaseInfo.state.type,
       syncState: serverSyncState,
+      setRewindTo,
     }
 
     const simulationParamsForPlanMode = useSimulationParamsForPlanMode(

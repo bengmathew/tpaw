@@ -8,8 +8,8 @@ import {
 import {
   _forTesting,
   getFromMFNToNumericAge,
-  normalizePlanParamsAges,
-} from './NormalizePlanParamsAges'
+  normalizeAges,
+} from './NormalizeAges'
 
 const {
   _forPerson,
@@ -59,8 +59,10 @@ describe('NormalizePlanParamsAges', () => {
           asMFN: 20 * 12 + 3 - 10 * 12,
           baseValue: person.maxAge,
           validRangeInMonths: {
-            start: 10 * 12 + 2,
-            end: PLAN_PARAMS_CONSTANTS.people.ages.person.maxAge,
+            includingLocalConstraints: {
+              start: 10 * 12 + 2,
+              end: PLAN_PARAMS_CONSTANTS.people.ages.person.maxAge,
+            },
           },
         },
         retirement: {
@@ -113,8 +115,10 @@ describe('NormalizePlanParamsAges', () => {
                 ? {
                     ...ageIfSpecified,
                     validRangeInMonths: {
-                      start: 10 * 12 + 1,
-                      end: 20 * 12 + 3 - 1,
+                      includingLocalConstraints: {
+                        start: 10 * 12 + 1,
+                        end: 20 * 12 + 3 - 1,
+                      },
                     },
                   }
                 : null,
@@ -204,7 +208,7 @@ describe('NormalizePlanParamsAges', () => {
   ])('getFromMFNToNumericAge', (personType, mfn, result) => {
     const nowAs = { calendarMonth: { year: 2024, month: 3 } }
     const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(nowAs.calendarMonth)
-    const ages = normalizePlanParamsAges(
+    const ages = normalizeAges(
       {
         withPartner: true,
         person1: {
@@ -231,8 +235,8 @@ describe('NormalizePlanParamsAges', () => {
       },
       nowAs.calendarMonth,
     )
-    expect(fGet(getFromMFNToNumericAge({ ages })[personType])(mfn)).toEqual(
-      result,
-    )
+    expect(
+      fGet(getFromMFNToNumericAge({ ages })[personType])(mfn).age.inMonths,
+    ).toEqual(result)
   })
 })

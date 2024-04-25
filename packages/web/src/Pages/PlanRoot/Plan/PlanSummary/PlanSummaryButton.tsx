@@ -30,7 +30,7 @@ import { PlanInputSpendingCeilingAndFloorSummary } from '../PlanInput/PlanInputS
 import { PlanInputStrategySummary } from '../PlanInput/PlanInputStrategy'
 import { usePlanColors } from '../UsePlanColors'
 import { CurrentPortfolioBalance } from '../../PlanRootHelpers/CurrentPortfolioBalance'
-import { PlanInputExpectedReturnsAndVolatilitySummary } from '../PlanInput/PlanInputExpectedReturnsAndVolatility/PlanInputExpectedReturnsAndVolatility'
+import { PlanInputExpectedReturnsAndVolatilitySummary } from '../PlanInput/PlanInputExpectedReturnsAndVolatility'
 
 type _Props = {
   padding: Padding

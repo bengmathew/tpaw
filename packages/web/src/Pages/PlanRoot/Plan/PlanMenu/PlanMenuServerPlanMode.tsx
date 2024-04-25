@@ -1,18 +1,22 @@
 import {
   faArrowUp,
+  faCalendar,
   faCaretDown,
   faCopy,
   faEraser,
   faGrid2,
   faHome,
+  faInfinity,
   faPlus,
+  faSlash,
   faTag,
+  faTimes,
   faTrash,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
 import Link from 'next/link'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { appPaths } from '../../../../AppPaths'
 import { ContextModal } from '../../../Common/Modal/ContextModal'
 import { setPlansOnDoneURL } from '../../../Plans/Plans'
@@ -32,6 +36,11 @@ import { PlanMenuActionModalSetAsMain } from './PlanMenuActions/PlanMenuActionMo
 import { PlanMenuActionViewPlanHistory } from './PlanMenuActions/PlanMenuActionViewPlanHistory'
 import { PlanMenuDivider } from './PlanMenuHelpers/PlanMenuDivider'
 import { PlanMenuSubMenuUndoRedo } from './PlanMenuSubMenu/PlanMenuSubMenuUndoRedo'
+import { PlanParamsHelperFns } from '../../../../UseSimulator/PlanParamsHelperFns'
+import { CurrentPortfolioBalance } from '../../PlanRootHelpers/CurrentPortfolioBalance'
+import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
+import { faBan } from '@fortawesome/pro-light-svg-icons'
+import { PlanMenuActionModalConvertDatingServer } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalConvertDatingServer'
 
 export const PlanMenuServerPlanMode = React.memo(
   ({
@@ -41,17 +50,37 @@ export const PlanMenuServerPlanMode = React.memo(
     simulationInfoForServerSrc: SimulationInfoForServerSrc
     simulationInfoForPlanMode: SimulationInfoForPlanMode
   }) => {
+    const { ianaTimezoneName } = useIANATimezoneName()
     const planColors = usePlanColors()
-    const { planPaths, planParamsNorm } = useSimulation()
+    const { planPaths, planParamsNorm, currentPortfolioBalanceInfo } =
+      useSimulation()
     const { datingInfo } = planParamsNorm
-    const { plan, historyStatus, syncState } = simulationInfoForServerSrc
+    const { plan, syncState } = simulationInfoForServerSrc
     const isSyncing = syncState.type !== 'synced'
     const label = plan.isMain ? 'Main Plan' : plan.label ?? 'Untitled'
+
+    const currentPortfolioBalanceAmount =
+      currentPortfolioBalanceInfo.isDatedPlan
+        ? CurrentPortfolioBalance.getAmountInfo(
+            currentPortfolioBalanceInfo.info,
+          ).amount
+        : currentPortfolioBalanceInfo.amount
+    const planParamsForDatingSwitch = useMemo(
+      () =>
+        planParamsNorm.datingInfo.isDated
+          ? PlanParamsHelperFns.toDatelessPlan(
+              planParamsNorm,
+              currentPortfolioBalanceAmount,
+            )
+          : PlanParamsHelperFns.toDatedPlan(planParamsNorm, ianaTimezoneName),
+      [currentPortfolioBalanceAmount, ianaTimezoneName, planParamsNorm],
+    )
 
     const [showCreatePlanModal, setShowCreatePlanModal] = useState(false)
     const [showEditLabelModal, setShowEditLabelModal] = useState(false)
     const [showSetAsMainModal, setShowSetAsMainModal] = React.useState(false)
     const [showCopyModal, setShowCopyModal] = useState(false)
+    const [showConvertDatingModal, setShowConvertDatingModal] = useState(false)
     const [showResetModal, setShowResetModal] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
 
@@ -59,7 +88,11 @@ export const PlanMenuServerPlanMode = React.memo(
       <div className="flex gap-x-2">
         <Menu>
           {({ open, close }) => (
-            <ContextModal align="right" open={open}>
+            <ContextModal
+              align="right"
+              open={open}
+              onOutsideClickOrEscape={null}
+            >
               {({ ref }) => (
                 <Menu.Button
                   ref={ref}
@@ -86,7 +119,7 @@ export const PlanMenuServerPlanMode = React.memo(
                   className="context-menu-item"
                   onClick={() => setShowCreatePlanModal(true)}
                 >
-                  <span className="inline-block w-[25px]">
+                  <span className="context-menu-icon">
                     <FontAwesomeIcon icon={faPlus} />
                   </span>{' '}
                   Create a New Plan
@@ -96,43 +129,68 @@ export const PlanMenuServerPlanMode = React.memo(
                   className="context-menu-item"
                   onClick={() => setShowCopyModal(true)}
                 >
-                  <span className="inline-block w-[25px]">
+                  <span className="context-menu-icon">
                     <FontAwesomeIcon icon={faCopy} />
                   </span>{' '}
                   Copy to New Plan
                 </Menu.Item>
+
                 {!plan.isMain && (
-                  <>
-                    <Menu.Item
-                      as="button"
-                      className=" context-menu-item "
-                      onClick={() => setShowSetAsMainModal(true)}
-                    >
-                      <span className="inline-block w-[25px]">
-                        <FontAwesomeIcon icon={faArrowUp} />
-                      </span>{' '}
-                      Make This the Main Plan
-                    </Menu.Item>
-                    <Menu.Item>
-                      <Link
-                        className={'context-menu-item '}
-                        href={appPaths.plan()}
-                      >
-                        <span className="inline-block w-[25px] ">
-                          <FontAwesomeIcon className="" icon={faHome} />
-                        </span>{' '}
-                        Switch to Main Plan
-                      </Link>
-                    </Menu.Item>
-                  </>
+                  <Menu.Item
+                    as="button"
+                    className=" context-menu-item "
+                    onClick={() => setShowSetAsMainModal(true)}
+                  >
+                    <span className="context-menu-icon">
+                      <FontAwesomeIcon icon={faArrowUp} />
+                    </span>{' '}
+                    Make This the Main Plan
+                  </Menu.Item>
                 )}
+                {plan.isDated ? (
+                  <Menu.Item
+                    as="button"
+                    className="context-menu-item"
+                    onClick={() => setShowConvertDatingModal(true)}
+                  >
+                    <span className="context-menu-icon ">
+                      <FontAwesomeIcon icon={faInfinity} />
+                    </span>{' '}
+                    Convert to Dateless Plan
+                  </Menu.Item>
+                ) : (
+                  <Menu.Item
+                    as="button"
+                    className="context-menu-item"
+                    onClick={() => setShowConvertDatingModal(true)}
+                  >
+                    <span className="context-menu-icon ">
+                      <FontAwesomeIcon icon={faCalendar} />
+                    </span>{' '}
+                    Convert to Dated Plan
+                  </Menu.Item>
+                )}
+                {!plan.isMain && (
+                  <Menu.Item>
+                    <Link
+                      className={'context-menu-item '}
+                      href={appPaths.plan()}
+                    >
+                      <span className="context-menu-icon ">
+                        <FontAwesomeIcon className="" icon={faHome} />
+                      </span>{' '}
+                      Switch to Main Plan
+                    </Link>
+                  </Menu.Item>
+                )}
+
                 <Menu.Item>
                   <Link
                     className={'context-menu-item '}
                     href={appPaths.plans()}
                     onClick={() => setPlansOnDoneURL()}
                   >
-                    <span className="inline-block w-[25px]">
+                    <span className="context-menu-icon">
                       <FontAwesomeIcon icon={faGrid2} />
                     </span>{' '}
                     View All Plans
@@ -146,7 +204,7 @@ export const PlanMenuServerPlanMode = React.memo(
                     className="context-menu-item"
                     onClick={() => setShowEditLabelModal(true)}
                   >
-                    <span className="inline-block w-[25px]">
+                    <span className="context-menu-icon">
                       <FontAwesomeIcon icon={faTag} />
                     </span>{' '}
                     Edit Label
@@ -160,7 +218,7 @@ export const PlanMenuServerPlanMode = React.memo(
                 {datingInfo.isDated && (
                   <PlanMenuActionViewPlanHistory
                     className="context-menu-item"
-                    historyStatus={historyStatus}
+                    simulationInfoForServerSrc={simulationInfoForServerSrc}
                     nowAsTimestamp={datingInfo.nowAsTimestamp}
                   />
                 )}
@@ -169,7 +227,7 @@ export const PlanMenuServerPlanMode = React.memo(
                   className="context-menu-item text-errorFG"
                   onClick={() => setShowResetModal(true)}
                 >
-                  <span className="inline-block w-[25px]">
+                  <span className="context-menu-icon">
                     <FontAwesomeIcon icon={faEraser} />
                   </span>{' '}
                   Reset
@@ -180,7 +238,7 @@ export const PlanMenuServerPlanMode = React.memo(
                     className="context-menu-item text-errorFG"
                     onClick={() => setShowDeleteModal(true)}
                   >
-                    <span className="inline-block w-[25px]">
+                    <span className="context-menu-icon">
                       <FontAwesomeIcon icon={faTrash} />
                     </span>{' '}
                     Delete
@@ -218,6 +276,13 @@ export const PlanMenuServerPlanMode = React.memo(
           isSyncing={isSyncing}
           hideOnSuccess={false}
           cutAfterId={null}
+          planParamsForDatingSwitch={planParamsForDatingSwitch}
+        />
+        <PlanMenuActionModalConvertDatingServer
+          show={showConvertDatingModal}
+          onHide={() => setShowConvertDatingModal(false)}
+          plan={plan}
+          isSyncing={isSyncing}
         />
         <PlanMenuActionModalDelete
           show={showDeleteModal}

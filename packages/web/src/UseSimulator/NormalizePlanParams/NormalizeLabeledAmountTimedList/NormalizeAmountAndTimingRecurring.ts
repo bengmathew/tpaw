@@ -14,7 +14,7 @@ import _ from 'lodash'
 import { InMonthsFns } from '../../../Utils/InMonthsFns'
 import { Record } from '../../../Utils/Record'
 import { SimpleRange } from '../../../Utils/SimpleRange'
-import { NormalizedAges, MonthToMFN } from '../NormalizePlanParamsAges'
+import { NormalizedAges, MonthToMFN } from '../NormalizeAges'
 import {
   NormalizedMonthInThePast,
   NormalizedMonthNotInThePast,

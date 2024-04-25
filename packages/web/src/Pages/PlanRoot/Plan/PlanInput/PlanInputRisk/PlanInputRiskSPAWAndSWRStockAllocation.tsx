@@ -1,4 +1,4 @@
-import { GlidePath } from '@tpaw/common'
+import { GlidePath, partialDefaultDatelessPlanParams } from '@tpaw/common'
 import React from 'react'
 import { paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { GlidePathInput } from '../../../../Common/Inputs/GlidePathInput'
@@ -14,7 +14,7 @@ export const PlanInputRiskSPAWAndSWRStockAllocationCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, updatePlanParams, defaultPlanParams } =
+    const { planParamsNorm, updatePlanParams } =
       useSimulation()
     const handleChange = (x: GlidePath) =>
       updatePlanParams('setSPAWAndSWRAllocation2', x)
@@ -38,7 +38,7 @@ export const PlanInputRiskSPAWAndSWRStockAllocationCard = React.memo(
         <button
           className="mt-6 underline"
           onClick={() =>
-            handleChange(defaultPlanParams.risk.spawAndSWR.allocation)
+            handleChange(partialDefaultDatelessPlanParams.risk.spawAndSWR.allocation)
           }
         >
           Reset to Default

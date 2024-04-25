@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/nextjs'
 import {
   CalendarMonthFns,
   LabeledAmountTimed,
@@ -16,13 +15,13 @@ import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { InMonthsFns } from '../../../../Utils/InMonthsFns'
 import { yourOrYourPartners } from '../../../../Utils/YourOrYourPartners'
 import { optGet } from '../../../../Utils/optGet'
+import { getExpectedReturnTypeLabelInfo } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatilityFns'
 import {
   getLabelStrTruncated,
   getLabeledAmountTimedLocationStr,
   getLabeledAmountTimedOrUntimedLocationStr,
   getPlanParamsChangeActionImpl,
 } from './GetPlanParamsChangeActionImpl'
-import { getExpectedReturnTypeLabelInfo } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility/GetExpectedReturnLabelInto'
 
 type _ActionFns = {
   render: (

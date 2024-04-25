@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<463618cb39b08ea8c8067fb0ac3e6220>>
+ * @generated SignedSource<<d051ed5c88c8a4a2b374df16f25d487b>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -190,6 +190,13 @@ return {
                     "kind": "ScalarField",
                     "name": "isMain",
                     "storageKey": null
+                  },
+                  {
+                    "alias": null,
+                    "args": null,
+                    "kind": "ScalarField",
+                    "name": "isDated",
+                    "storageKey": null
                   }
                 ],
                 "storageKey": null
@@ -236,12 +243,12 @@ return {
     ]
   },
   "params": {
-    "cacheID": "e34e7f5bf2eb04699a73b3fe7601d477",
+    "cacheID": "a0edbdb299bbddcfaae32ff45ac12595",
     "id": null,
     "metadata": {},
     "name": "PlanRootLinkQuery",
     "operationKind": "query",
-    "text": "query PlanRootLinkQuery(\n  $userId: ID!\n  $includeUser: Boolean!\n  $linkId: ID!\n  $includeLink: Boolean!\n) {\n  ...WithUser_query\n  linkBasedPlan(linkId: $linkId) @include(if: $includeLink) {\n    params\n    id\n  }\n}\n\nfragment WithUser_query on Query {\n  user(userId: $userId) @include(if: $includeUser) {\n    ...WithUser_user\n    id\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
+    "text": "query PlanRootLinkQuery(\n  $userId: ID!\n  $includeUser: Boolean!\n  $linkId: ID!\n  $includeLink: Boolean!\n) {\n  ...WithUser_query\n  linkBasedPlan(linkId: $linkId) @include(if: $includeLink) {\n    params\n    id\n  }\n}\n\nfragment WithUser_query on Query {\n  user(userId: $userId) @include(if: $includeUser) {\n    ...WithUser_user\n    id\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n    isDated\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
   }
 };
 })();

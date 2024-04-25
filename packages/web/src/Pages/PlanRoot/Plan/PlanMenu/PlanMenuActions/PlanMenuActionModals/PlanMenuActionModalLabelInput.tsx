@@ -11,6 +11,7 @@ export const PlanMenuActionModalLabelInput = React.memo(
     isRunning,
     onCancel,
     onAction,
+    children,
   }: {
     title: string
     initialLabel: string
@@ -18,45 +19,48 @@ export const PlanMenuActionModalLabelInput = React.memo(
     onCancel: () => void
     onAction: (label: string) => void
     isRunning: boolean
+    children?: React.ReactNode
   }) => {
-    const [labelRaw, setLabelRaw] = useState(initialLabel ?? '')
-    const label = labelRaw.trim()
+    const [labelUntrimmed, setLabelUntrimmed] = useState(initialLabel ?? '')
 
     const [validating, setValidating] = useState(false)
     const isValid = useMemo(
-      () => !API.UserPlanCreate.parts.label(labelRaw).error,
-      [labelRaw],
+      () => !API.UserPlanCreate.parts.label(labelUntrimmed.trim()).error,
+      [labelUntrimmed],
     )
     const handleAction = () => {
       if (!isValid) {
         setValidating(true)
       } else {
-        onAction(label)
+        onAction(labelUntrimmed.trim())
       }
     }
     const [inputElement, setInputElement] = useState<HTMLInputElement | null>(
       null,
     )
     useEffect(() => inputElement?.focus(), [inputElement])
-    
+
     return (
       <>
         <h2 className=" dialog-heading">{title}</h2>
-        <div className=" dialog-content-div flex items-center gap-x-4">
-          <h2 className="font-bold">Label</h2>
-          <input
-            ref={setInputElement}
-            type="text"
-            disabled={isRunning}
-            className={` border-2 bg-gray-200 disabled:lighten-2
-${validating && !isValid ? 'border-red-400' : 'border-gray-200'}
-px-2 py-1.5 rounded-lg w-full `}
-            value={labelRaw}
-            onChange={(e) => setLabelRaw(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleAction()
-            }}
-          />
+        <div className=" dialog-content-div">
+          <div className="flex items-center gap-x-4">
+            <h2 className="font-bold">Label</h2>
+            <input
+              ref={setInputElement}
+              type="text"
+              disabled={isRunning}
+              className={` border-2 bg-gray-200 disabled:lighten-2 max-w-[300x]
+            ${validating && !isValid ? 'border-red-400' : 'border-gray-200'}
+            px-2 py-1.5 rounded-lg w-full `}
+              value={labelUntrimmed}
+              onChange={(e) => setLabelUntrimmed(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAction()
+              }}
+            />
+          </div>
+          {children}
         </div>
         <div className=" dialog-button-div">
           <button

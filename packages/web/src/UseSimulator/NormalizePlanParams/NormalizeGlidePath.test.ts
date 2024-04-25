@@ -16,15 +16,15 @@ import { normalizedMonthErrorMsg } from './NormalizeLabeledAmountTimedList/Norma
 import {
   getFromMFNToNumericAge,
   getMonthToMFN,
-  normalizePlanParamsAges,
-} from './NormalizePlanParamsAges'
+  normalizeAges,
+} from './NormalizeAges'
 
 describe('NormalizeGlidePath', () => {
   const datingInfo = { nowAsCalendarMonth: { year: 2024, month: 3 } }
   const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(
     datingInfo.nowAsCalendarMonth,
   )
-  const ages = normalizePlanParamsAges(
+  const ages = normalizeAges(
     {
       withPartner: true,
       person1: {
@@ -53,11 +53,8 @@ describe('NormalizeGlidePath', () => {
   )
   const monthToMFN = getMonthToMFN(datingInfo.nowAsCalendarMonth, ages)
 
-  const m = (mfn: number): Month => ({
-    type: 'numericAge',
-    person: 'person1',
-    age: { inMonths: getFromMFNToNumericAge({ ages }).person1(mfn) },
-  })
+  const m = (mfn: number): Month =>
+    getFromMFNToNumericAge({ ages }).person1(mfn)
   const i = (
     month: Month,
     stocks: number,

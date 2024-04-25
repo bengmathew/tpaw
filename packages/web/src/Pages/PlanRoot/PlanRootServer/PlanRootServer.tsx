@@ -38,6 +38,7 @@ export const PlanRootServer = React.memo(
               slug
               addedToServerAt
               sortTime
+              isDated
               lastSyncAt
               reverseHeadIndex
               planParamsPostBase(targetCount: $targetCount) {

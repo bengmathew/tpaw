@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/nextjs'
 import { assert, assertFalse, block, noCase } from '@tpaw/common'
 import _ from 'lodash'
-import { use, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { AppError } from '../../App/AppError'
@@ -101,7 +101,7 @@ export const useServerSyncPlan = (
       historyForDebugRef.current.push({
         src,
         action,
-        currState: { onRender: prev.type, onSetState: prev.type },
+        currState: { onRender: state.type, onSetState: prev.type },
         targetState: targetState.type,
       })
       historyForDebugRef.current = historyForDebugRef.current.slice(-10)
@@ -110,10 +110,9 @@ export const useServerSyncPlan = (
   }
 
   // ---- INPUT ----
-  const input = useMemo(
-    () => _getInput(serverPlan, workingPlan),
-    [serverPlan, workingPlan],
-  )
+  // Use custom memoization because useMemo() is not guaranteed and we need
+  // the guarantee for correctness because of dependency array.
+  const input = _getInputMemoized(serverPlan, workingPlan)
 
   // ---- TO SYNCED STATE ----
   const toSyncedState = () => {
@@ -255,7 +254,7 @@ export const useServerSyncPlan = (
       failures,
       inputSummary: input.changeSummary,
       getInputSummaryAfterSync: (workingPlan) =>
-        _getInput(
+        _getInputMemoized(
           {
             planParamsPostBaseIds: newParamsHistoryPostBaseIds,
             reverseHeadIndex,
@@ -478,14 +477,26 @@ export const useServerSyncPlan = (
   }, [input, state, workingPlan])
 }
 
-type _Input = Exclude<ReturnType<typeof _getInput>, null>
-const _getInput = (
+// Use custom memoization because useMemo() is not guaranteed and we need
+// the guarantee for correctness.
+let _getInputPrev = null as { args: any; result: any } | null
+type _Input = Exclude<ReturnType<typeof _getInputMemoized>, null>
+const _getInputMemoized = (
   serverPlan: {
     planParamsPostBaseIds: readonly string[]
     reverseHeadIndex: number
   },
   workingPlan: WorkingPlanInfo['workingPlan'],
 ) => {
+  type _Input = typeof result
+  if (
+    _getInputPrev &&
+    _getInputPrev.args.length === 2 &&
+    _getInputPrev.args[0] === serverPlan &&
+    _getInputPrev.args[1] === workingPlan
+  )
+    return _getInputPrev.result as _Input
+
   const cutAfterIndex = _.findLastIndex(
     serverPlan.planParamsPostBaseIds,
     (x, i) => x === workingPlan.planParamsPostBase[i]?.id,
@@ -509,36 +520,39 @@ const _getInput = (
 
   const deleteCount =
     serverPlan.planParamsPostBaseIds.length - 1 - cutAfterIndex
-  return reverseHeadIndex === serverPlan.reverseHeadIndex &&
+  const result =
+    reverseHeadIndex === serverPlan.reverseHeadIndex &&
     deleteCount === 0 &&
     add.length === 0
-    ? null
-    : {
-        cutAfterId,
-        add,
-        reverseHeadIndex,
-        newParamsHistoryPostBaseIds,
-        changeSummary: block<
-          (
-            | { type: 'moveHead' }
-            | { type: 'cutBranch'; cutCount: number }
-            | { type: 'addItems'; addCount: number }
-          )[]
-        >(() => {
-          if (add.length === 0) {
-            // Delete can only happen when we undo and then add, or a merge,
-            // which is effectively an undo and add.
-            assert(deleteCount === 0)
-            return [{ type: 'moveHead' as const }]
-          } else {
-            return _.compact([
-              deleteCount > 0
-                ? { type: 'cutBranch', cutCount: deleteCount }
-                : null,
-              { type: 'addItems', addCount: add.length },
-              reverseHeadIndex === 0 ? null : { type: 'moveHead' },
-            ])
-          }
-        }),
-      }
+      ? null
+      : {
+          cutAfterId,
+          add,
+          reverseHeadIndex,
+          newParamsHistoryPostBaseIds,
+          changeSummary: block<
+            (
+              | { type: 'moveHead' }
+              | { type: 'cutBranch'; cutCount: number }
+              | { type: 'addItems'; addCount: number }
+            )[]
+          >(() => {
+            if (add.length === 0) {
+              // Delete can only happen when we undo and then add, or a merge,
+              // which is effectively an undo and add.
+              assert(deleteCount === 0)
+              return [{ type: 'moveHead' as const }]
+            } else {
+              return _.compact([
+                deleteCount > 0
+                  ? { type: 'cutBranch', cutCount: deleteCount }
+                  : null,
+                { type: 'addItems', addCount: add.length },
+                reverseHeadIndex === 0 ? null : { type: 'moveHead' },
+              ])
+            }
+          }),
+        }
+  _getInputPrev = { args: [serverPlan, workingPlan], result }
+  return result
 }

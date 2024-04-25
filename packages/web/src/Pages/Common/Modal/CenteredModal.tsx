@@ -1,6 +1,6 @@
 import { Transition } from '@headlessui/react'
 import clix from 'clsx'
-import React, { CSSProperties, ReactNode, useEffect } from 'react'
+import React, { CSSProperties, ReactNode, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 
 export const CenteredModal = React.memo(
@@ -19,13 +19,11 @@ export const CenteredModal = React.memo(
     style?: CSSProperties
     onLeave?: () => void
   }) => {
-    const forEventRefs = React.useRef({ onOutsideClickOrEscape })
-    forEventRefs.current = { onOutsideClickOrEscape }
+    const onOutsideClickOrEscapeRef = useRef(onOutsideClickOrEscape)
+    onOutsideClickOrEscapeRef.current = onOutsideClickOrEscape
     useEffect(() => {
-      const { onOutsideClickOrEscape } = forEventRefs.current
-      if (!onOutsideClickOrEscape) return
       const callback = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') onOutsideClickOrEscape()
+        if (e.key === 'Escape') onOutsideClickOrEscapeRef.current?.()
       }
       window.document.body.addEventListener('keyup', callback)
       return () => window.document.body.removeEventListener('keyup', callback)

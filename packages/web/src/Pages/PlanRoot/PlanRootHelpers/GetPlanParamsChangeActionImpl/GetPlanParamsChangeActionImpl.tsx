@@ -15,6 +15,7 @@ import {
   noCase,
   LabeledAmountTimedOrUntimedLocation,
   block,
+  partialDefaultDatelessPlanParams,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
@@ -24,8 +25,7 @@ import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { yourOrYourPartners } from '../../../../Utils/YourOrYourPartners'
 import { optGet } from '../../../../Utils/optGet'
 import { planSectionLabel } from '../../Plan/PlanInput/Helpers/PlanSectionLabel'
-import {} from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility/PlanInputExpectedReturnsAndVolatility'
-import { inflationTypeLabel } from '../../Plan/PlanInput/PlanInputInflation'
+import {} from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { getDeletePartnerChangeActionImpl } from './GetDeletePartnerChangeActionImpl'
 import { getSetPersonRetiredChangeActionImpl } from './GetSetPersonRetiredChangeActionImpl'
 import { InMonthsFns } from '../../../../Utils/InMonthsFns'
@@ -33,14 +33,15 @@ import {
   getExpectedReturnTypeLabelInfo,
   getExpectedReturnCustomStockBaseLabel,
   getExpectedReturnCustomBondBaseLabel,
-} from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility/GetExpectedReturnLabelInto'
+} from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatilityFns'
+import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
+import { inflationTypeLabel } from '../../Plan/PlanInput/PlanInputInflationFns'
 
 const { getPerson } = PlanParamsHelperFns
 export type PlanParamsChangeActionImpl = {
   applyToClone: (
     clone: PlanParams,
     planParamsNorm: PlanParamsNormalized,
-    defaultPlanParams: PlanParams,
   ) => void | PlanParams // If a value is returned, it supercedes the clone.
   render: (
     prevPlanParams: PlanParams,
@@ -83,6 +84,21 @@ export const getPlanParamsChangeActionImpl = (
         render: () => `Accepted migration to new inputs`,
         merge: false,
       }
+    // ---------
+    // SetMarketDataDay
+    // ---------
+    case 'setMarketDataDay': {
+      const { value } = action
+      return {
+        applyToClone: (clone) => {
+          assert(!clone.datingInfo.isDated)
+          clone.datingInfo.marketDataAsOfEndOfDayInNY = value
+        },
+        render: () => `Set market data date to ${CalendarDayFns.toStr(value)}`,
+        merge: false,
+      }
+    }
+
     // ---------
     // SetDialogPosition
     // ---------
@@ -152,9 +168,11 @@ export const getPlanParamsChangeActionImpl = (
     case 'setPersonNotRetired': {
       const personType = action.value
       return {
-        applyToClone: (clone, planParamsNorm, defaultPlanParams) => {
+        applyToClone: (clone, planParamsNorm) => {
           const currPerson = getPerson(clone, personType)
-          const defaultPerson = defaultPlanParams.people.person1
+          const defaultPerson = _.cloneDeep(
+            partialDefaultDatelessPlanParams.people.person1,
+          )
           assert(defaultPerson.ages.type === 'retirementDateSpecified')
           const retirementAge = {
             inMonths: _.clamp(
@@ -798,13 +816,13 @@ export const getPlanParamsChangeActionImpl = (
             case 'custom':
               assert(prev.type === 'custom')
               if (prev.stocks.base !== value.stocks.base) {
-                return `Set preset for custom expected return of stocks to ${getExpectedReturnCustomStockBaseLabel(value.stocks.base).lowercase}`
+                return `Set base for custom expected return of stocks to ${getExpectedReturnCustomStockBaseLabel(value.stocks.base).lowercase}`
               }
               if (prev.stocks.delta !== value.stocks.delta) {
                 return `Set delta for custom expected return of stocks to ${formatPercentage(1)(value.stocks.delta)}`
               }
               if (prev.bonds.base !== value.bonds.base) {
-                return `Set preset for custom expected return of bonds to ${getExpectedReturnCustomBondBaseLabel(value.bonds.base).lowercase}`
+                return `Set base for custom expected return of bonds to ${getExpectedReturnCustomBondBaseLabel(value.bonds.base).lowercase}`
               }
               if (prev.bonds.delta !== value.bonds.delta) {
                 return `Set delta for custom expected return of bonds fixed delta to ${formatPercentage(1)(value.bonds.delta)}`
@@ -885,17 +903,19 @@ export const getPlanParamsChangeActionImpl = (
     // ---------
     case 'setSamplingToDefault': {
       return {
-        applyToClone: (clone, __, defaultPlanParams) => {
-          const def = _.clone(defaultPlanParams.advanced.sampling)
-          assert(def.type === 'monteCarlo')
-          // Recreating this object instead of using _.clone(def) makes sure we
+        applyToClone: (clone) => {
+          const defaultSampling = _.clone(
+            partialDefaultDatelessPlanParams.advanced.sampling,
+          )
+          assert(defaultSampling.type === 'monteCarlo')
+          // Recreating this object instead of using defaultSampling makes sure we
           // are adding default data correctly. There is none currently , but if
           // gets added it will lead to a compilation error here.
           clone.advanced.sampling = {
-            type: def.type,
+            type: defaultSampling.type,
             data: {
-              blockSize: { inMonths: def.data.blockSize.inMonths },
-              staggerRunStarts: def.data.staggerRunStarts,
+              blockSize: { inMonths: defaultSampling.data.blockSize.inMonths },
+              staggerRunStarts: defaultSampling.data.staggerRunStarts,
             },
           }
         },
@@ -911,16 +931,19 @@ export const getPlanParamsChangeActionImpl = (
     case 'setSampling': {
       const { value } = action
       return {
-        applyToClone: (clone, __, defaultPlanParams) => {
+        applyToClone: (clone) => {
           switch (value) {
             case 'monteCarlo':
               if (clone.advanced.sampling.type === 'monteCarlo') return
-              assert(defaultPlanParams.advanced.sampling.type === 'monteCarlo')
+              const defaultSampling = _.cloneDeep(
+                partialDefaultDatelessPlanParams.advanced.sampling,
+              )
+              assert(defaultSampling.type === 'monteCarlo')
               clone.advanced.sampling = {
                 type: 'monteCarlo',
                 data:
                   clone.advanced.sampling.defaultData.monteCarlo ??
-                  defaultPlanParams.advanced.sampling.data,
+                  defaultSampling.data,
               }
               break
             case 'historical':

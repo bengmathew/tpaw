@@ -4,7 +4,7 @@ import _ from 'lodash'
 import React, { CSSProperties } from 'react'
 import { PERCENTILES_STR } from '../../../../../UseSimulator/Simulator/Simulator'
 import { useURLUpdater } from '../../../../../Utils/UseURLUpdater'
-import { ToggleSwitch } from '../../../../Common/Inputs/ToggleSwitch'
+import { SwitchAsToggle } from '../../../../Common/Inputs/SwitchAsToggle'
 import { usePlanColors } from '../../UsePlanColors'
 import {
     getPlanResultsChartSpendingTotalFundingSourcesPercentile,
@@ -55,7 +55,7 @@ export const PlanResultsChartCardFundingSourcesToggle = React.memo(
     return (
       <div className={clix(className, 'flex justify-start')} style={style}>
         <div className="flex items-center gap-x-2">
-          <ToggleSwitch
+          <SwitchAsToggle
             style={{
               bg: {
                 on: { color: planColors.shades.main[13].hex },

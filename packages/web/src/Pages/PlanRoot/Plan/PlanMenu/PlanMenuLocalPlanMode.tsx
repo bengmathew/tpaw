@@ -16,6 +16,7 @@ import { ContextModal } from '../../../Common/Modal/ContextModal'
 import {
   SimulationInfoForLocalMainSrc,
   SimulationInfoForPlanMode,
+  useSimulation,
 } from '../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../UsePlanColors'
 import { PlanMenuActionCopyToLink } from './PlanMenuActions/PlanMenuActionCopyToLink'
@@ -23,6 +24,11 @@ import { PlanMenuActionModalLoginRequired } from './PlanMenuActions/PlanMenuActi
 import { PlanMenuActionModalResetLocal } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalResetLocal'
 import { PlanMenuDivider } from './PlanMenuHelpers/PlanMenuDivider'
 import { PlanMenuSubMenuUndoRedo } from './PlanMenuSubMenu/PlanMenuSubMenuUndoRedo'
+import {
+  getFullDatedDefaultPlanParams,
+  getFullDatelessDefaultPlanParams,
+} from '@tpaw/common'
+import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
 
 export const PlanMenuLocalPlanMode = React.memo(
   ({
@@ -32,6 +38,8 @@ export const PlanMenuLocalPlanMode = React.memo(
     simulationInfoForLocalMainSrc: SimulationInfoForLocalMainSrc
     simulationInfoForPlanMode: SimulationInfoForPlanMode
   }) => {
+    const { ianaTimezoneName } = useIANATimezoneName()
+    const { planParamsNorm } = useSimulation()
     const planColors = usePlanColors()
     const { reset } = simulationInfoForLocalMainSrc
 
@@ -46,7 +54,11 @@ export const PlanMenuLocalPlanMode = React.memo(
       <div className="flex gap-x-2">
         <Menu>
           {({ open, close }) => (
-            <ContextModal align="right" open={open}>
+            <ContextModal
+              align="right"
+              open={open}
+              onOutsideClickOrEscape={null}
+            >
               {({ ref }) => (
                 <Menu.Button
                   ref={ref}
@@ -74,7 +86,7 @@ export const PlanMenuLocalPlanMode = React.memo(
                     className={'context-menu-item '}
                     href={appPaths.login(appPaths.plan())}
                   >
-                    <span className="inline-block w-[25px] ">
+                    <span className="context-menu-icon ">
                       <FontAwesomeIcon className="" icon={faUser} />
                     </span>{' '}
                     Save Plan to Account
@@ -91,7 +103,7 @@ export const PlanMenuLocalPlanMode = React.memo(
                     })
                   }
                 >
-                  <span className="inline-block w-[25px]">
+                  <span className="context-menu-icon">
                     <FontAwesomeIcon icon={faPlus} />
                   </span>{' '}
                   Create a New Plan
@@ -107,7 +119,7 @@ export const PlanMenuLocalPlanMode = React.memo(
                     })
                   }
                 >
-                  <span className="inline-block w-[25px]">
+                  <span className="context-menu-icon">
                     <FontAwesomeIcon icon={faCopy} />
                   </span>{' '}
                   Copy to New Plan
@@ -123,7 +135,7 @@ export const PlanMenuLocalPlanMode = React.memo(
                     })
                   }
                 >
-                  <span className="inline-block w-[25px]">
+                  <span className="context-menu-icon">
                     <FontAwesomeIcon icon={faGrid2} />
                   </span>{' '}
                   View All Plans
@@ -145,7 +157,7 @@ export const PlanMenuLocalPlanMode = React.memo(
                     })
                   }
                 >
-                  <span className="inline-block w-[25px]">
+                  <span className="context-menu-icon">
                     <FontAwesomeIcon icon={faCopy} />
                   </span>{' '}
                   View Plan History
@@ -155,7 +167,7 @@ export const PlanMenuLocalPlanMode = React.memo(
                   className="context-menu-item text-errorFG"
                   onClick={() => setShowResetModal(true)}
                 >
-                  <span className="inline-block w-[25px]">
+                  <span className="context-menu-icon">
                     <FontAwesomeIcon icon={faEraser} />
                   </span>{' '}
                   Reset
@@ -178,7 +190,13 @@ export const PlanMenuLocalPlanMode = React.memo(
           onHide={() => setShowResetModal(false)}
           title="Reset"
           message="Are you sure you want to reset this plan? This cannot be undone."
-          reset={reset}
+          reset={() =>
+            reset(
+              planParamsNorm.datingInfo.isDated
+                ? getFullDatedDefaultPlanParams(Date.now(), ianaTimezoneName)
+                : getFullDatelessDefaultPlanParams(Date.now()),
+            )
+          }
         />
       </div>
     )

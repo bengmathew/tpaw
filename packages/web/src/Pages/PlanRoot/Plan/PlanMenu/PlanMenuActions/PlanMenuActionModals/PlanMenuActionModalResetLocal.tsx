@@ -29,7 +29,7 @@ export const PlanMenuActionModalResetLocal = React.memo(
     }
     return (
       <CenteredModal
-        className="dialog-outer-div"
+        className="w-[560px] dialog-outer-div"
         show={show}
         onOutsideClickOrEscape={null}
       >

@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<20e9f208b0edeffdde9ebd8c97a6b640>>
+ * @generated SignedSource<<6101008fbb7579c0ee7a29c24261f683>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -21,6 +21,7 @@ export type PlanRootServerQuery$data = {
     readonly plan: {
       readonly addedToServerAt: number;
       readonly id: string;
+      readonly isDated: boolean;
       readonly isMain: boolean;
       readonly label: string | null | undefined;
       readonly lastSyncAt: number;
@@ -115,10 +116,17 @@ v11 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "lastSyncAt",
+  "name": "isDated",
   "storageKey": null
 },
 v12 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "lastSyncAt",
+  "storageKey": null
+},
+v13 = {
   "alias": null,
   "args": [
     {
@@ -139,6 +147,7 @@ v12 = {
     (v9/*: any*/),
     (v10/*: any*/),
     (v11/*: any*/),
+    (v12/*: any*/),
     {
       "alias": null,
       "args": null,
@@ -211,7 +220,7 @@ return {
             "name": "user",
             "plural": false,
             "selections": [
-              (v12/*: any*/)
+              (v13/*: any*/)
             ],
             "storageKey": null
           }
@@ -259,8 +268,9 @@ return {
                   (v8/*: any*/),
                   (v9/*: any*/),
                   (v10/*: any*/),
-                  (v11/*: any*/),
-                  (v6/*: any*/)
+                  (v12/*: any*/),
+                  (v6/*: any*/),
+                  (v11/*: any*/)
                 ],
                 "storageKey": null
               },
@@ -278,7 +288,7 @@ return {
                 "name": "nonPlanParams",
                 "storageKey": null
               },
-              (v12/*: any*/)
+              (v13/*: any*/)
             ],
             "storageKey": null
           }
@@ -287,16 +297,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "b4ce6d902ccbf7bac897052466bedf4c",
+    "cacheID": "f6ca7d8b920ccc45aa3e226956bcf076",
     "id": null,
     "metadata": {},
     "name": "PlanRootServerQuery",
     "operationKind": "query",
-    "text": "query PlanRootServerQuery(\n  $userId: ID!\n  $includeUser: Boolean!\n  $targetCount: Int!\n  $slug: String\n) {\n  ...WithUser_query\n  user(userId: $userId) @include(if: $includeUser) {\n    plan(slug: $slug) {\n      id\n      isMain\n      label\n      slug\n      addedToServerAt\n      sortTime\n      lastSyncAt\n      reverseHeadIndex\n      planParamsPostBase(targetCount: $targetCount) {\n        id\n        params\n        change\n      }\n    }\n    id\n  }\n}\n\nfragment WithUser_query on Query {\n  user(userId: $userId) @include(if: $includeUser) {\n    ...WithUser_user\n    id\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
+    "text": "query PlanRootServerQuery(\n  $userId: ID!\n  $includeUser: Boolean!\n  $targetCount: Int!\n  $slug: String\n) {\n  ...WithUser_query\n  user(userId: $userId) @include(if: $includeUser) {\n    plan(slug: $slug) {\n      id\n      isMain\n      label\n      slug\n      addedToServerAt\n      sortTime\n      isDated\n      lastSyncAt\n      reverseHeadIndex\n      planParamsPostBase(targetCount: $targetCount) {\n        id\n        params\n        change\n      }\n    }\n    id\n  }\n}\n\nfragment WithUser_query on Query {\n  user(userId: $userId) @include(if: $includeUser) {\n    ...WithUser_user\n    id\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n    isDated\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
   }
 };
 })();
 
-(node as any).hash = "ca43ae71e0699d6888534fffdd901ae5";
+(node as any).hash = "07299226df5587983dcb8f70f347dba2";
 
 export default node;

@@ -5,9 +5,8 @@ import {
   PlanPaths,
   assert,
   fGet,
-  getDefaultPlanParams,
   letIn,
-  planParamsGuard,
+  planParamsGuard
 } from '@tpaw/common'
 import cloneJSON from 'fast-json-clone'
 import _ from 'lodash'
@@ -54,11 +53,6 @@ export const useWorkingPlan = (
   const { ianaTimezoneName } = useIANATimezoneName()
   const { marketData } = useMarketData()
   const { wasm } = useWASM()
-  const defaultPlanParams = useMemo(
-    () =>
-      getDefaultPlanParams(currentTimeInfo.currentTimestamp, ianaTimezoneName),
-    [currentTimeInfo.currentTimestamp, ianaTimezoneName],
-  )
 
   const [workingPlan, setWorkingPlan] = useState(src)
   assert(workingPlan.reverseHeadIndex <= TARGET_UNDO_DEPTH)
@@ -107,8 +101,7 @@ export const useWorkingPlan = (
       const planParamsFromNorm = normalizePlanParamsInverse(planParamsNorm)
       const nextPlanParams = letIn(
         cloneJSON(planParamsFromNorm),
-        (clone) =>
-          applyToClone(clone, planParamsNorm, defaultPlanParams) ?? clone,
+        (clone) => applyToClone(clone, planParamsNorm) ?? clone,
       )
       if (_.isEqual(nextPlanParams, planParamsFromNorm)) {
         if (!nextPlanParams.datingInfo.isDated) return
@@ -169,7 +162,6 @@ export const useWorkingPlan = (
     },
     [
       currentTimeInfo,
-      defaultPlanParams,
       ianaTimezoneName,
       marketData,
       planParams,

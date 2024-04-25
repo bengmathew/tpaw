@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<e62e7332d119e804f35fa4ffa4800a3b>>
+ * @generated SignedSource<<0f6e2b01b911c624696a69d59c3ee86f>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,11 +8,12 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, FragmentRefs } from 'relay-runtime'
+import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { FragmentRefs } from "relay-runtime";
 export type UserPlanResetInput = {
-  ianaTimezoneName: string;
   lastSyncAt: number;
   planId: string;
+  planParams: string;
   userId: string;
 };
 export type PlanMenuActionModalResetMutation$variables = {

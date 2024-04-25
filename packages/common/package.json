@@ -1,6 +1,6 @@
 {
   "name": "@tpaw/common",
-  "version": "3.1.0",
+  "version": "4.1.0",
   "description": "",
   "main": "dist/main.js",
   "types": "dist/main.d.ts",
