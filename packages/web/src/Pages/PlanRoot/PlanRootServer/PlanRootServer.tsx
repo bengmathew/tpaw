@@ -86,7 +86,7 @@ const _Body = React.memo(
       // be stale. Note this will result in a double network call in dev
       // due to recreating the component for strict mode.
       // Note: network-only might not be working as expected: https://github.com/facebook/relay/issues/3502.
-      { fetchPolicy: 'network-only', fetchKey },
+      { fetchPolicy: 'network-only' },
     )
     assert(data.user)
     if (!data.user.plan) {
