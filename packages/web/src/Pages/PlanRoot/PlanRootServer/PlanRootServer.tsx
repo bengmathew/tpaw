@@ -1,5 +1,5 @@
 import { assert } from '@tpaw/common'
-import React from 'react'
+import React, { useState } from 'react'
 import { graphql, useLazyLoadQuery } from 'react-relay'
 import { AppError } from '../../App/AppError'
 import { useUserGQLArgs } from '../../App/WithFirebaseUser'
@@ -9,6 +9,7 @@ import { PlanRootServerQuery } from './__generated__/PlanRootServerQuery.graphql
 import { WithUser } from '../../App/WithUser'
 import { PlanServerImpl } from '../PlanServerImpl/PlanServerImpl'
 import { appPaths } from '../../../AppPaths'
+import * as uuid from 'uuid'
 
 export const PlanRootServer = React.memo(
   ({
@@ -40,6 +41,11 @@ const _Body = React.memo(
     reload: () => void
   }) => {
     const userGQLArgs = useUserGQLArgs()
+
+    // Random fetchKey will enforce a refetch on component reload. This is
+    // necessary because network-only fetchPolicy does not seem to work
+    // https://github.com/facebook/relay/issues/3502.
+    const [fetchKey] = useState(() => uuid.v4())
 
     const data = useLazyLoadQuery<PlanRootServerQuery>(
       graphql`
@@ -79,7 +85,8 @@ const _Body = React.memo(
       // Don't use the cache because we don't update it when syncing, so it will
       // be stale. Note this will result in a double network call in dev
       // due to recreating the component for strict mode.
-      { fetchPolicy: 'network-only' },
+      // Note: network-only might not be working as expected: https://github.com/facebook/relay/issues/3502.
+      { fetchPolicy: 'network-only', fetchKey },
     )
     assert(data.user)
     if (!data.user.plan) {
