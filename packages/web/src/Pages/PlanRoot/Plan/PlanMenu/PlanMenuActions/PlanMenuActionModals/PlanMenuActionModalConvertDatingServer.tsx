@@ -108,7 +108,6 @@ const _Body = React.memo(
           },
         },
         onCompleted: ({ userPlanReset }) => {
-          console.dir(userPlanReset)
           switch (userPlanReset.__typename) {
             case 'ConcurrentChangeError':
               setGlobalError(new AppError('concurrentChange'))
@@ -120,7 +119,6 @@ const _Body = React.memo(
                 url.searchParams.set(k, v),
               )
               urlUpdater.replace(url)
-              console.dir('reload')
               reload()
               // window.location.href = url.toString()
 

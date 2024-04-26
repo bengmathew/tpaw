@@ -19,7 +19,6 @@ export const PlanRootServer = React.memo(
     pdfReportInfo: SimulationParams['pdfReportInfo']
   }) => {
     const [key, setKey] = React.useState(0)
-    console.dir(key)
 
     const userGQLArgs = useUserGQLArgs()
 
