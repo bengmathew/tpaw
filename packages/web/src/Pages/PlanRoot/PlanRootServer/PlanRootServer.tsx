@@ -20,32 +20,8 @@ export const PlanRootServer = React.memo(
     pdfReportInfo: SimulationParams['pdfReportInfo']
   }) => {
     const [key, setKey] = React.useState(0)
-    return (
-      <_Body
-        key={key}
-        src={src}
-        pdfReportInfo={pdfReportInfo}
-        reload={() => setKey(key + 1)}
-      />
-    )
-  },
-)
-const _Body = React.memo(
-  ({
-    src,
-    pdfReportInfo,
-    reload,
-  }: {
-    src: { type: 'serverMain' } | { type: 'serverAlt'; slug: string }
-    pdfReportInfo: SimulationParams['pdfReportInfo']
-    reload: () => void
-  }) => {
-    const userGQLArgs = useUserGQLArgs()
 
-    // Random fetchKey will enforce a refetch on component reload. This is
-    // necessary because network-only fetchPolicy does not seem to work
-    // https://github.com/facebook/relay/issues/3502.
-    const [fetchKey] = useState(() => uuid.v4())
+    const userGQLArgs = useUserGQLArgs()
 
     const data = useLazyLoadQuery<PlanRootServerQuery>(
       graphql`
@@ -86,7 +62,7 @@ const _Body = React.memo(
       // be stale. Note this will result in a double network call in dev
       // due to recreating the component for strict mode.
       // Note: network-only might not be working as expected: https://github.com/facebook/relay/issues/3502.
-      { fetchPolicy: 'network-only' },
+      { fetchPolicy: 'network-only', fetchKey: key },
     )
     assert(data.user)
     if (!data.user.plan) {
@@ -95,14 +71,16 @@ const _Body = React.memo(
     }
 
     return (
-      <WithUser userFragmentOnQueryKey={data}>
+      <WithUser key={key} userFragmentOnQueryKey={data}>
         <PlanServerImpl
           plan={data.user.plan}
           planPaths={
             src.type === 'serverMain' ? appPaths.plan : appPaths['alt-plan']
           }
           pdfReportInfo={pdfReportInfo}
-          reload={reload}
+          reload={() => {
+            setKey((x) => x + 1)
+          }}
         />
       </WithUser>
     )

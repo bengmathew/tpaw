@@ -13,6 +13,8 @@ import { Spinner } from '../src/Utils/View/Spinner'
 import '../styles/globals.css'
 import { WithMergeToServer } from '../src/Pages/App/WithMergeToServer'
 
+
+
 const MyApp = React.memo(({ Component, pageProps }: AppProps) => {
   const router = useRouter()
   // Hard stop on static site generation. We are happy with static data fetching
