@@ -7,7 +7,6 @@ import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalE
 import { User, useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { setPlansOnDoneURL } from '../../../../../Plans/Plans'
-import { useSimulation } from '../../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionModalLabelInput } from './PlanMenuActionModalLabelInput'
 import { PlanMenuActionModalCopyServerCopyMutation } from './__generated__/PlanMenuActionModalCopyServerCopyMutation.graphql'
 
@@ -69,8 +68,6 @@ const _Body = React.memo(
     const [result, setResult] = React.useState<{ slug: string } | null>(null)
     const [label, setLabel] = useState(null as string | null)
     const user = fGet(useUser())
-    const { planParamsNorm } = useSimulation()
-    const { datingInfo } = planParamsNorm
 
     const [copyMutation, isCopyRunning] =
       useMutation<PlanMenuActionModalCopyServerCopyMutation>(graphql`
