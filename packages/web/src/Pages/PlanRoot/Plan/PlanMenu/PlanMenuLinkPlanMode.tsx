@@ -338,6 +338,7 @@ export const PlanMenuLinkPlanMode = React.memo(
           show={showSwitchDatingModal}
           onHide={() => setShowSwitchDatingModal(false)}
           onConvert={(planParams) => reset(planParams)}
+          skipNoUndoCopy
         />
       </div>
     )

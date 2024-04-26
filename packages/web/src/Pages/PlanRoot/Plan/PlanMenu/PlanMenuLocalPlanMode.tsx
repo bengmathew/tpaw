@@ -43,7 +43,7 @@ export const PlanMenuLocalPlanMode = React.memo(
   }) => {
     const { ianaTimezoneName } = useIANATimezoneName()
     const { planParamsNorm } = useSimulation()
-    const {datingInfo} = planParamsNorm
+    const { datingInfo } = planParamsNorm
     const planColors = usePlanColors()
     const { reset } = simulationInfoForLocalMainSrc
 
@@ -219,6 +219,7 @@ export const PlanMenuLocalPlanMode = React.memo(
           show={showSwitchDatingModal}
           onHide={() => setShowSwitchDatingModal(false)}
           onConvert={(planParams) => reset(planParams)}
+          skipNoUndoCopy={false}
         />
       </div>
     )

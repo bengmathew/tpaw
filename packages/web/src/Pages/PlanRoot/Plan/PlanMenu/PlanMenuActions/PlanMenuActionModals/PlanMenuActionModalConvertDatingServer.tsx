@@ -17,6 +17,8 @@ import {
   useSetGlobalError,
 } from '../../../../../App/GlobalErrorBoundary'
 import { useUser } from '../../../../../App/WithUser'
+import { useURLParam } from '../../../../../../Utils/UseURLParam'
+import { useURLUpdater } from '../../../../../../Utils/UseURLUpdater'
 
 export const PlanMenuActionModalConvertDatingServer = React.memo(
   ({
@@ -24,15 +26,22 @@ export const PlanMenuActionModalConvertDatingServer = React.memo(
     onHide,
     plan,
     isSyncing,
+    reload,
   }: {
     show: boolean
     onHide: () => void
     plan: SimulationInfoForServerSrc['plan']
     isSyncing: boolean
+    reload: () => void
   }) => {
     return (
       <CenteredModal show={show} onOutsideClickOrEscape={null}>
-        <_Body plan={plan} onHide={onHide} isSyncing={isSyncing} />
+        <_Body
+          plan={plan}
+          onHide={onHide}
+          isSyncing={isSyncing}
+          reload={reload}
+        />
       </CenteredModal>
     )
   },
@@ -43,10 +52,12 @@ const _Body = React.memo(
     plan,
     onHide,
     isSyncing,
+    reload,
   }: {
     plan: SimulationInfoForServerSrc['plan']
     onHide: () => void
     isSyncing: boolean
+    reload: () => void
   }) => {
     const user = fGet(useUser())
     const { defaultErrorHandlerForNetworkCall } =
@@ -60,6 +71,7 @@ const _Body = React.memo(
     >({
       type: 'confirm',
     })
+    const urlUpdater = useURLUpdater()
 
     const [mutation] = useMutation<PlanMenuActionModalResetMutation>(graphql`
       mutation PlanMenuActionModalResetMutation($input: UserPlanResetInput!) {
@@ -112,7 +124,10 @@ const _Body = React.memo(
               new URL(window.location.href).searchParams.forEach((v, k) =>
                 url.searchParams.set(k, v),
               )
-              window.location.href = url.toString()
+              urlUpdater.replace(url)
+              reload()
+              // window.location.href = url.toString()
+
               break
             case '%other':
               assertFalse()
@@ -143,6 +158,7 @@ const _Body = React.memo(
         onHide={onHide}
         onConvert={() => setState({ type: 'running' })}
         isRunning={state.type === 'running'}
+        skipNoUndoCopy={false}
       />
     )
   },

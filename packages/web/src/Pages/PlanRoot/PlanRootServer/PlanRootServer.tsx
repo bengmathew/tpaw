@@ -18,6 +18,27 @@ export const PlanRootServer = React.memo(
     src: { type: 'serverMain' } | { type: 'serverAlt'; slug: string }
     pdfReportInfo: SimulationParams['pdfReportInfo']
   }) => {
+    const [key, setKey] = React.useState(0)
+    return (
+      <_Body
+        key={key}
+        src={src}
+        pdfReportInfo={pdfReportInfo}
+        reload={() => setKey(key + 1)}
+      />
+    )
+  },
+)
+const _Body = React.memo(
+  ({
+    src,
+    pdfReportInfo,
+    reload,
+  }: {
+    src: { type: 'serverMain' } | { type: 'serverAlt'; slug: string }
+    pdfReportInfo: SimulationParams['pdfReportInfo']
+    reload: () => void
+  }) => {
     const userGQLArgs = useUserGQLArgs()
 
     const data = useLazyLoadQuery<PlanRootServerQuery>(
@@ -74,6 +95,7 @@ export const PlanRootServer = React.memo(
             src.type === 'serverMain' ? appPaths.plan : appPaths['alt-plan']
           }
           pdfReportInfo={pdfReportInfo}
+          reload={reload}
         />
       </WithUser>
     )

@@ -9,10 +9,12 @@ export const PlanMenuActionModalConvertDatingCommon = React.memo(
     onHide,
     onConvert,
     isRunning,
+    skipNoUndoCopy,
   }: {
     onHide: () => void
     onConvert: () => void
     isRunning: boolean
+    skipNoUndoCopy: boolean
   }) => {
     const { planParamsNorm } = useSimulation()
     const { datingInfo } = planParamsNorm
@@ -31,12 +33,16 @@ export const PlanMenuActionModalConvertDatingCommon = React.memo(
           )}
           <p className="p-base mt-2">
             Converting this plan to a {targetDatingStr} plan will delete history
-            for this plan. This cannot be undone.
+            for this plan. {!skipNoUndoCopy && `This cannot be undone.`}
           </p>
           <p className="p-base mt-2">Are you sure you want to continue?</p>
         </div>
         <div className=" dialog-button-div">
-          <button className=" dialog-button-cancel" onClick={onHide}>
+          <button
+            className=" dialog-button-cancel"
+            disabled={isRunning}
+            onClick={onHide}
+          >
             Cancel
           </button>
           <button

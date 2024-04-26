@@ -11,10 +11,12 @@ export const PlanMenuActionModalConvertDatingLocal = React.memo(
     show,
     onHide,
     onConvert,
+    skipNoUndoCopy
   }: {
     show: boolean
     onHide: () => void
     onConvert: (planParams: PlanParams) => void
+    skipNoUndoCopy:boolean
   }) => {
     const { ianaTimezoneName } = useIANATimezoneName()
     const { planParamsNorm, currentPortfolioBalanceInfo } = useSimulation()
@@ -32,6 +34,7 @@ export const PlanMenuActionModalConvertDatingLocal = React.memo(
             )
           }
           isRunning={false}
+          skipNoUndoCopy={skipNoUndoCopy}
         />
       </CenteredModal>
     )

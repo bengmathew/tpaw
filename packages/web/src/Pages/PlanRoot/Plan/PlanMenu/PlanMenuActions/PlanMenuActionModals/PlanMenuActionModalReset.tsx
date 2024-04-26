@@ -20,6 +20,7 @@ import { User, useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { useIANATimezoneName } from '../../../../PlanRootHelpers/WithNonPlanParams'
 import { PlanMenuActionModalResetMutation } from './__generated__/PlanMenuActionModalResetMutation.graphql'
+import { useURLUpdater } from '../../../../../../Utils/UseURLUpdater'
 
 export const PlanMenuActionModalReset = React.memo(
   ({
@@ -32,7 +33,7 @@ export const PlanMenuActionModalReset = React.memo(
     show: boolean
     plan: User['plans'][number]
     onHide: () => void
-    reloadOnSuccess: { planPaths: PlanPaths } | null
+    reloadOnSuccess: { planPaths: PlanPaths; reload: () => void } | null
     isSyncing: boolean
   }) => {
     return (
@@ -61,13 +62,14 @@ const _Body = React.memo(
   }: {
     plan: User['plans'][number]
     onHide: () => void
-    reloadOnSuccess: { planPaths: PlanPaths } | null
+    reloadOnSuccess: { planPaths: PlanPaths; reload: () => void } | null
     isSyncing: boolean
   }) => {
     const { defaultErrorHandlerForNetworkCall } =
       useDefaultErrorHandlerForNetworkCall()
     const { setGlobalError } = useSetGlobalError()
     const user = fGet(useUser())
+    const urlUpdater = useURLUpdater()
     const { ianaTimezoneName } = useIANATimezoneName()
     // Intentionally not using isRunning from useMutation because we want to
     // the state to stay true even after completion, otherwise it flashes to
@@ -128,7 +130,10 @@ const _Body = React.memo(
                 new URL(window.location.href).searchParams.forEach((v, k) =>
                   url.searchParams.set(k, v),
                 )
-                window.location.href = url.toString()
+
+                urlUpdater.replace(url)
+                reloadOnSuccess.reload()
+                // window.location.href = url.toString()
               } else {
                 setState({ type: 'success' })
               }

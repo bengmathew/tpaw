@@ -43,6 +43,7 @@ type _Props = {
   plan: FGet<Exclude<PlanRootServerQuery$data['user'], undefined>['plan']>
   planPaths: (typeof appPaths)['plan']
   pdfReportInfo: SimulationParams['pdfReportInfo']
+  reload: () => void
 }
 
 export const PlanServerImpl = React.memo((props: _Props) => {
@@ -87,10 +88,12 @@ const _Body = React.memo(
     plan: serverPlanIn,
     planPaths,
     pdfReportInfo,
+    reload,
   }: {
     plan: FGet<Exclude<PlanRootServerQuery$data['user'], undefined>['plan']>
     planPaths: (typeof appPaths)['plan']
     pdfReportInfo: SimulationParams['pdfReportInfo']
+    reload: () => void
   }) => {
     const user = fGet(useUser())
     const { getZonedTime } = useIANATimezoneName()
@@ -275,6 +278,7 @@ const _Body = React.memo(
       historyStatus: serverHistoryPreBaseInfo.state.type,
       syncState: serverSyncState,
       setRewindTo,
+      reload,
     }
 
     const simulationParamsForPlanMode = useSimulationParamsForPlanMode(

@@ -55,7 +55,7 @@ export const PlanMenuServerPlanMode = React.memo(
     const { planPaths, planParamsNorm, currentPortfolioBalanceInfo } =
       useSimulation()
     const { datingInfo } = planParamsNorm
-    const { plan, syncState } = simulationInfoForServerSrc
+    const { plan, syncState, reload } = simulationInfoForServerSrc
     const isSyncing = syncState.type !== 'synced'
     const label = plan.isMain ? 'Main Plan' : plan.label ?? 'Untitled'
 
@@ -283,6 +283,7 @@ export const PlanMenuServerPlanMode = React.memo(
           onHide={() => setShowConvertDatingModal(false)}
           plan={plan}
           isSyncing={isSyncing}
+          reload={reload}
         />
         <PlanMenuActionModalDelete
           show={showDeleteModal}
@@ -296,7 +297,7 @@ export const PlanMenuServerPlanMode = React.memo(
           isSyncing={isSyncing}
           plan={plan}
           onHide={() => setShowResetModal(false)}
-          reloadOnSuccess={{ planPaths }}
+          reloadOnSuccess={{ planPaths, reload }}
         />
       </div>
     )

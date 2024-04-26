@@ -86,6 +86,7 @@ export type SimulationInfo = {
         historyStatus: 'fetching' | 'fetched' | 'failed'
         syncState: ServerSyncState
         setRewindTo: (x: 'lastUpdate' | CalendarDay | null) => void
+        reload: () => void
       }
     | {
         src: 'link'

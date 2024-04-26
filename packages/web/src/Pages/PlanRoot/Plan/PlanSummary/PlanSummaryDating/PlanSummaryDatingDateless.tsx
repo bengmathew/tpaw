@@ -74,9 +74,9 @@ export const PlanSummaryDatingDateless = React.memo(
         {/* <h2 className="text-right">{dateStr.now}</h2> */}
         <p className="p-base">
           <FontAwesomeIcon className="text-base mr-1" icon={faInfinity} /> This
-          is a dateless plan. It is not tied to the current date and
-          does not change over time. Recommended for examples and not for
-          personal planning.{' '}
+          is a dateless plan. It is not tied to the current date and does not
+          change over time. Recommended for examples and not for personal
+          planning.{' '}
           <button
             className="underline"
             onClick={() => setShowConvertToDated(true)}
@@ -128,12 +128,14 @@ export const PlanSummaryDatingDateless = React.memo(
             onHide={() => setShowConvertToDated(false)}
             isSyncing={simulationInfoBySrc.syncState.type !== 'synced'}
             plan={simulationInfoBySrc.plan}
+            reload={simulationInfoBySrc.reload}
           />
         ) : (
           <PlanMenuActionModalConvertDatingLocal
             show={showConvertToDated}
             onHide={() => setShowConvertToDated(false)}
             onConvert={simulationInfoBySrc.reset}
+            skipNoUndoCopy={simulationInfoBySrc.src === 'link'}
           />
         )}
       </div>
