@@ -108,6 +108,7 @@ const _Body = React.memo(
           },
         },
         onCompleted: ({ userPlanReset }) => {
+          console.dir(userPlanReset)
           switch (userPlanReset.__typename) {
             case 'ConcurrentChangeError':
               setGlobalError(new AppError('concurrentChange'))
@@ -115,8 +116,11 @@ const _Body = React.memo(
             case 'PlanAndUserResult':
               const now = Date.now()
               if (userPlanReset.plan.lastSyncAt > now) {
-                throw new Error(
-                  `lastSyncAt is in the future: ${userPlanReset.plan.lastSyncAt} > ${now}`,
+                console.dir(`timeDiff: ${userPlanReset.plan.lastSyncAt - now}`)
+                setGlobalError(
+                  new Error(
+                    `lastSyncAt is in the future: ${userPlanReset.plan.lastSyncAt} > ${now}`,
+                  ),
                 )
               }
               // View will be removed from under us, so no need to setState.
@@ -125,6 +129,7 @@ const _Body = React.memo(
                 url.searchParams.set(k, v),
               )
               urlUpdater.replace(url)
+              console.dir('reload')
               reload()
               // window.location.href = url.toString()
 
