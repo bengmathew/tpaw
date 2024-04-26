@@ -114,15 +114,6 @@ const _Body = React.memo(
               setGlobalError(new AppError('concurrentChange'))
               return
             case 'PlanAndUserResult':
-              const now = Date.now()
-              if (userPlanReset.plan.lastSyncAt > now) {
-                console.dir(`timeDiff: ${userPlanReset.plan.lastSyncAt - now}`)
-                setGlobalError(
-                  new Error(
-                    `lastSyncAt is in the future: ${userPlanReset.plan.lastSyncAt} > ${now}`,
-                  ),
-                )
-              }
               // View will be removed from under us, so no need to setState.
               const url = planPaths()
               new URL(window.location.href).searchParams.forEach((v, k) =>

@@ -118,12 +118,6 @@ const _Body = React.memo(
               setGlobalError(new AppError('concurrentChange'))
               return
             case 'PlanAndUserResult':
-              const now = Date.now()
-              if (userPlanReset.plan.lastSyncAt > now) {
-                throw new Error(
-                  `lastSyncAt is in the future: ${userPlanReset.plan.lastSyncAt} > ${now}`,
-                )
-              }
               if (reloadOnSuccess) {
                 // View will be removed from under us, so no need to setState.
                 const url = reloadOnSuccess.planPaths()
