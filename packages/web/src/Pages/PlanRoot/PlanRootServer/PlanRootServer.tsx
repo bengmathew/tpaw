@@ -9,7 +9,6 @@ import { PlanRootServerQuery } from './__generated__/PlanRootServerQuery.graphql
 import { WithUser } from '../../App/WithUser'
 import { PlanServerImpl } from '../PlanServerImpl/PlanServerImpl'
 import { appPaths } from '../../../AppPaths'
-import * as uuid from 'uuid'
 
 export const PlanRootServer = React.memo(
   ({
@@ -20,6 +19,7 @@ export const PlanRootServer = React.memo(
     pdfReportInfo: SimulationParams['pdfReportInfo']
   }) => {
     const [key, setKey] = React.useState(0)
+    console.dir(key)
 
     const userGQLArgs = useUserGQLArgs()
 
