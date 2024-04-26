@@ -1,9 +1,11 @@
 import {
   faArrowUp,
+  faCalendar,
   faCaretDown,
   faEraser,
   faGrid2,
   faHome,
+  faInfinity,
   faPlus,
   faSave,
 } from '@fortawesome/pro-solid-svg-icons'
@@ -11,7 +13,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
 import clix from 'clsx'
 import Link from 'next/link'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { appPaths } from '../../../../AppPaths'
 import { useUser } from '../../../App/WithUser'
 import { ContextModal } from '../../../Common/Modal/ContextModal'
@@ -19,6 +21,7 @@ import { setPlansOnDoneURL } from '../../../Plans/Plans'
 import {
   SimulationInfoForLinkSrc,
   SimulationInfoForPlanMode,
+  useSimulation,
 } from '../../PlanRootHelpers/WithSimulation'
 import { PlanRootLinkUnsavedWarningAlert } from '../../PlanRootLink/PlanRootLinkUnsavedWarningAlert'
 import { PlanLocalStorage } from '../../PlanRootLocalMain/PlanLocalStorage'
@@ -32,6 +35,9 @@ import { PlanMenuActionModalResetLocal } from './PlanMenuActions/PlanMenuActionM
 import { PlanMenuActionModalSaveLinkPlanToAccount } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalSaveLinkPlanToAccount'
 import { PlanMenuDivider } from './PlanMenuHelpers/PlanMenuDivider'
 import { PlanMenuSubMenuUndoRedo } from './PlanMenuSubMenu/PlanMenuSubMenuUndoRedo'
+import { PlanParamsHelperFns } from '../../../../UseSimulator/PlanParamsHelperFns'
+import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
+import { PlanMenuActionModalConvertDatingLocal } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalConvertDatingLocal'
 
 export const PlanMenuLinkPlanMode = React.memo(
   ({
@@ -43,11 +49,14 @@ export const PlanMenuLinkPlanMode = React.memo(
   }) => {
     const planColors = usePlanColors()
     const user = useUser()
+    const { planParamsNorm } = useSimulation()
+    const { datingInfo } = planParamsNorm
 
     const [loginModalState, setLoginModalState] = useState<{
       heading: string
       message: string
     } | null>(null)
+    const [showSwitchDatingModal, setShowSwitchDatingModal] = useState(false)
     const [showOverwriteLocalModal, setShowOverwriteLocalModal] =
       useState(false)
     const [showModifiedAndCreateModal, setShowModifiedAndCreateModal] =
@@ -61,6 +70,21 @@ export const PlanMenuLinkPlanMode = React.memo(
     const [showLoginAndSavePlan, setShowLoginAndSavePlan] = useState(false)
     const { planParamsUndoRedoStack } = simulationInfoForPlanMode
     const { isModified, reset, setForceNav } = simulationInfoForLinkSrc
+
+    const convertToDatedElement = (
+      <Menu.Item
+        as="button"
+        className="context-menu-item"
+        onClick={() => setShowSwitchDatingModal(true)}
+      >
+        <span className="context-menu-icon ">
+          <FontAwesomeIcon
+            icon={datingInfo.isDated ? faInfinity : faCalendar}
+          />
+        </span>{' '}
+        Convert to {datingInfo.isDated ? 'Dateless' : 'Dated'} Plan
+      </Menu.Item>
+    )
 
     return (
       <div className="flex gap-x-2">
@@ -122,6 +146,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                       </span>{' '}
                       Create a New Plan
                     </Menu.Item>
+                    {convertToDatedElement}
                     <Menu.Item>
                       <Link
                         className={'context-menu-item '}
@@ -175,6 +200,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                       </span>{' '}
                       Create a New Plan
                     </Menu.Item>
+                    {convertToDatedElement}
                     <Menu.Item>
                       <Link
                         className={'context-menu-item '}
@@ -226,6 +252,7 @@ export const PlanMenuLinkPlanMode = React.memo(
                       </span>{' '}
                       Save Plan to Account
                     </Menu.Item>
+                    {convertToDatedElement}
                     <Menu.Item>
                       <Link
                         className={'context-menu-item '}
@@ -306,6 +333,11 @@ export const PlanMenuLinkPlanMode = React.memo(
           title="Undo Changes"
           message="Are you sure you want to undo the changes you made? This will reset the plan to the original version shared through the link."
           reset={() => reset(null)}
+        />
+        <PlanMenuActionModalConvertDatingLocal
+          show={showSwitchDatingModal}
+          onHide={() => setShowSwitchDatingModal(false)}
+          onConvert={(planParams) => reset(planParams)}
         />
       </div>
     )

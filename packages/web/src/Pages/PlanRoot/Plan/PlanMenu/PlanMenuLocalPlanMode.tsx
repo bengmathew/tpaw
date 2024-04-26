@@ -1,8 +1,10 @@
 import {
+  faCalendar,
   faCaretDown,
   faCopy,
   faEraser,
   faGrid2,
+  faInfinity,
   faPlus,
   faUser,
 } from '@fortawesome/pro-solid-svg-icons'
@@ -29,6 +31,7 @@ import {
   getFullDatelessDefaultPlanParams,
 } from '@tpaw/common'
 import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
+import { PlanMenuActionModalConvertDatingLocal } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalConvertDatingLocal'
 
 export const PlanMenuLocalPlanMode = React.memo(
   ({
@@ -40,6 +43,7 @@ export const PlanMenuLocalPlanMode = React.memo(
   }) => {
     const { ianaTimezoneName } = useIANATimezoneName()
     const { planParamsNorm } = useSimulation()
+    const {datingInfo} = planParamsNorm
     const planColors = usePlanColors()
     const { reset } = simulationInfoForLocalMainSrc
 
@@ -49,6 +53,7 @@ export const PlanMenuLocalPlanMode = React.memo(
       message: string
     } | null>(null)
     const [showResetModal, setShowResetModal] = useState(false)
+    const [showSwitchDatingModal, setShowSwitchDatingModal] = useState(false)
 
     return (
       <div className="flex gap-x-2">
@@ -126,6 +131,18 @@ export const PlanMenuLocalPlanMode = React.memo(
                 </Menu.Item>
                 <Menu.Item
                   as="button"
+                  className="context-menu-item"
+                  onClick={() => setShowSwitchDatingModal(true)}
+                >
+                  <span className="context-menu-icon ">
+                    <FontAwesomeIcon
+                      icon={datingInfo.isDated ? faInfinity : faCalendar}
+                    />
+                  </span>{' '}
+                  Convert to {datingInfo.isDated ? 'Dateless' : 'Dated'} Plan
+                </Menu.Item>
+                <Menu.Item
+                  as="button"
                   className="context-menu-item "
                   onClick={() =>
                     setLoginModalState({
@@ -197,6 +214,11 @@ export const PlanMenuLocalPlanMode = React.memo(
                 : getFullDatelessDefaultPlanParams(Date.now()),
             )
           }
+        />
+        <PlanMenuActionModalConvertDatingLocal
+          show={showSwitchDatingModal}
+          onHide={() => setShowSwitchDatingModal(false)}
+          onConvert={(planParams) => reset(planParams)}
         />
       </div>
     )

@@ -95,7 +95,7 @@ export const PlanRootLink = React.memo(
           startingParams={startingParams}
           startingParamsOverride={startingParamsOverride}
           reset={(planParams: PlanParams | null) => {
-            if (planParams) setStartingParamsOverride(planParams)
+            setStartingParamsOverride(planParams)
             setKey((x) => x + 1)
           }}
           pdfReportInfo={pdfReportInfo}

@@ -36,9 +36,8 @@ export const PlanRootLinkImpl = React.memo(
     pdfReportInfo: SimulationParams['pdfReportInfo']
   }) => {
     const planPaths = appPaths.link
-    const startingParamsMigrated = useMemo(
-      () => planParamsMigrate(startingParams),
-      [startingParams],
+    const [startingParamsMigrated] = useState(() =>
+      planParamsMigrate(startingParams),
     )
 
     const [startingSrc] = useState<WorkingPlanSrc>(() => ({
@@ -63,6 +62,7 @@ export const PlanRootLinkImpl = React.memo(
       planPaths,
     )
 
+    
     const isModified =
       fGet(_.last(workingPlanInfo.planParamsUndoRedoStack.undos)).params !==
       startingParamsMigrated
