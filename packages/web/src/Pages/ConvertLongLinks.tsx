@@ -111,6 +111,19 @@ export const _Body = React.memo(() => {
                 by selecting {`"${fileBasedPlansOpenFileLabel}"`} from the{' '}
                 {`"${fileBasedPlansLabel}"`} section of the plan menu.
               </p>
+              <p className="mt-4 p-base">
+                You can read more about this change{' '}
+                <a
+                  href="https://www.bogleheads.org/forum/viewtopic.php?p=7850328#p7850328"
+                  target='_blank'
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  here
+                </a>
+                .
+              </p>
+
               <h2 className="font-bold text-start text-lg mt-8">
                 Paste a Long Link Here
               </h2>
