@@ -42,7 +42,7 @@ HOW TO OPEN THIS FILE
 ---------------------
 
 This file contains a plan from TPAW Planner. 
-You can open this plan using the plan menu at:
+You can open this plan from the plan menu at:
 
 https://tpawplanner.com/plan
 
