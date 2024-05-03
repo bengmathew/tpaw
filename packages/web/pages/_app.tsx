@@ -24,6 +24,7 @@ const MyApp = React.memo(({ Component, pageProps }: AppProps) => {
   // when there are no query params.
   const [render, setRender] = useState(false)
   useEffect(() => setRender(true), [])
+
   if (!(render && router.isReady)) return <div></div>
 
   return (

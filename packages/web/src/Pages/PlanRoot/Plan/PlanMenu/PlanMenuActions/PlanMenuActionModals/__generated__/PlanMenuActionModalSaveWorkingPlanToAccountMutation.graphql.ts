@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<b6dddf9498bbef35262c565cbb149d89>>
+ * @generated SignedSource<<942178202fa15d32545c6776c50820bf>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -24,14 +24,12 @@ export type UserPlanCreatePlanParamsHistryInput = {
   id: string;
   params: string;
 };
-export type PlanMenuActionModalCopyServerCreateMutation$variables = {
+export type PlanMenuActionModalSaveWorkingPlanToAccountMutation$variables = {
   input: UserPlanCreateInput;
 };
-export type PlanMenuActionModalCopyServerCreateMutation$data = {
+export type PlanMenuActionModalSaveWorkingPlanToAccountMutation$data = {
   readonly userPlanCreate: {
     readonly plan: {
-      readonly id: string;
-      readonly label: string | null | undefined;
       readonly slug: string;
       readonly " $fragmentSpreads": FragmentRefs<"PlanWithoutParamsFragment">;
     };
@@ -40,9 +38,9 @@ export type PlanMenuActionModalCopyServerCreateMutation$data = {
     };
   };
 };
-export type PlanMenuActionModalCopyServerCreateMutation = {
-  response: PlanMenuActionModalCopyServerCreateMutation$data;
-  variables: PlanMenuActionModalCopyServerCreateMutation$variables;
+export type PlanMenuActionModalSaveWorkingPlanToAccountMutation = {
+  response: PlanMenuActionModalSaveWorkingPlanToAccountMutation$data;
+  variables: PlanMenuActionModalSaveWorkingPlanToAccountMutation$variables;
 };
 
 const node: ConcreteRequest = (function(){
@@ -64,28 +62,28 @@ v2 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "id",
+  "name": "slug",
   "storageKey": null
 },
 v3 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "label",
+  "name": "id",
   "storageKey": null
 },
 v4 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "slug",
+  "name": "isMain",
   "storageKey": null
 },
 v5 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "isMain",
+  "name": "label",
   "storageKey": null
 },
 v6 = {
@@ -114,7 +112,7 @@ return {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Fragment",
     "metadata": null,
-    "name": "PlanMenuActionModalCopyServerCreateMutation",
+    "name": "PlanMenuActionModalSaveWorkingPlanToAccountMutation",
     "selections": [
       {
         "alias": null,
@@ -133,8 +131,6 @@ return {
             "plural": false,
             "selections": [
               (v2/*: any*/),
-              (v3/*: any*/),
-              (v4/*: any*/),
               {
                 "args": null,
                 "kind": "FragmentSpread",
@@ -170,7 +166,7 @@ return {
   "operation": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
-    "name": "PlanMenuActionModalCopyServerCreateMutation",
+    "name": "PlanMenuActionModalSaveWorkingPlanToAccountMutation",
     "selections": [
       {
         "alias": null,
@@ -206,7 +202,7 @@ return {
             "name": "user",
             "plural": false,
             "selections": [
-              (v2/*: any*/),
+              (v3/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -215,13 +211,13 @@ return {
                 "name": "plans",
                 "plural": true,
                 "selections": [
-                  (v2/*: any*/),
                   (v3/*: any*/),
-                  (v4/*: any*/),
+                  (v5/*: any*/),
+                  (v2/*: any*/),
                   (v6/*: any*/),
                   (v7/*: any*/),
                   (v8/*: any*/),
-                  (v5/*: any*/),
+                  (v4/*: any*/),
                   {
                     "alias": null,
                     "args": null,
@@ -255,16 +251,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "4efec6af4babda2402f130997d9a93b9",
+    "cacheID": "7cb7f94b234e59916cdf49778ba0a3ce",
     "id": null,
     "metadata": {},
-    "name": "PlanMenuActionModalCopyServerCreateMutation",
+    "name": "PlanMenuActionModalSaveWorkingPlanToAccountMutation",
     "operationKind": "mutation",
-    "text": "mutation PlanMenuActionModalCopyServerCreateMutation(\n  $input: UserPlanCreateInput!\n) {\n  userPlanCreate(input: $input) {\n    plan {\n      id\n      label\n      slug\n      ...PlanWithoutParamsFragment\n    }\n    user {\n      ...WithUser_user\n      id\n    }\n  }\n}\n\nfragment PlanWithoutParamsFragment on PlanWithHistory {\n  id\n  isMain\n  label\n  slug\n  addedToServerAt\n  sortTime\n  lastSyncAt\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n    isDated\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
+    "text": "mutation PlanMenuActionModalSaveWorkingPlanToAccountMutation(\n  $input: UserPlanCreateInput!\n) {\n  userPlanCreate(input: $input) {\n    plan {\n      slug\n      ...PlanWithoutParamsFragment\n      id\n    }\n    user {\n      ...WithUser_user\n      id\n    }\n  }\n}\n\nfragment PlanWithoutParamsFragment on PlanWithHistory {\n  id\n  isMain\n  label\n  slug\n  addedToServerAt\n  sortTime\n  lastSyncAt\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n    isDated\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
   }
 };
 })();
 
-(node as any).hash = "28c0bea6b01105a5a4178d90c9e2e560";
+(node as any).hash = "f03eb6ff0eff3d9411117e86b1d3e484";
 
 export default node;

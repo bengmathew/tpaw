@@ -364,6 +364,7 @@ export namespace PlanParams29 {
 
   export type PlanParams = {
     v: typeof currentVersion
+    // TODO: Record tz info.
     timestamp: number
     datingInfo:
       | { isDated: true }
@@ -479,9 +480,7 @@ export namespace PlanParams29 {
 
   // ----------- GUARD  ---------//
 
-  const { uuid } = Guards
-  const notEmpty = (x: string) =>
-    x === '' ? failure('Empty string.') : success(x)
+  const { uuid, notEmpty } = Guards
 
   const maxPrecision = (precision: number) => (x: number) => {
     const split = x.toString().split('.')

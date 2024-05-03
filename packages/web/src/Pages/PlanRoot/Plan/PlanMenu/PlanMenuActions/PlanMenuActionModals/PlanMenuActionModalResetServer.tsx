@@ -19,10 +19,10 @@ import {
 import { User, useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { useIANATimezoneName } from '../../../../PlanRootHelpers/WithNonPlanParams'
-import { PlanMenuActionModalResetMutation } from './__generated__/PlanMenuActionModalResetMutation.graphql'
+import { PlanMenuActionModalResetServerMutation } from './__generated__/PlanMenuActionModalResetServerMutation.graphql'
 import { useURLUpdater } from '../../../../../../Utils/UseURLUpdater'
 
-export const PlanMenuActionModalReset = React.memo(
+export const PlanMenuActionModalResetServer = React.memo(
   ({
     show,
     plan,
@@ -80,23 +80,27 @@ const _Body = React.memo(
       type: 'confirm',
     })
 
-    const [mutation] = useMutation<PlanMenuActionModalResetMutation>(graphql`
-      mutation PlanMenuActionModalResetMutation($input: UserPlanResetInput!) {
-        userPlanReset(input: $input) {
-          __typename
-          ... on PlanAndUserResult {
-            plan {
-              id
-              lastSyncAt
-              ...PlanWithoutParamsFragment
+    const [mutation] = useMutation<PlanMenuActionModalResetServerMutation>(
+      graphql`
+        mutation PlanMenuActionModalResetServerMutation(
+          $input: UserPlanResetInput!
+        ) {
+          userPlanReset(input: $input) {
+            __typename
+            ... on PlanAndUserResult {
+              plan {
+                id
+                lastSyncAt
+                ...PlanWithoutParamsFragment
+              }
+            }
+            ... on ConcurrentChangeError {
+              _
             }
           }
-          ... on ConcurrentChangeError {
-            _
-          }
         }
-      }
-    `)
+      `,
+    )
 
     const handleReset = () => {
       mutation({

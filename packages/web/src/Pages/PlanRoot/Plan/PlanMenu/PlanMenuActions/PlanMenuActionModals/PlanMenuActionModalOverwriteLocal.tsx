@@ -17,7 +17,7 @@ export const PlanMenuActionModalOverwriteLocal = React.memo(
     show: boolean
     onHide: () => void
     planPramsUndoRedoStack: WorkingPlanInfo['planParamsUndoRedoStack']
-    setForceNav:()=>void
+    setForceNav: () => void
   }) => {
     const urlUpdater = useURLUpdater()
     const handleClick = () => {
@@ -25,15 +25,20 @@ export const PlanMenuActionModalOverwriteLocal = React.memo(
       PlanLocalStorage.write({
         v: 1,
         planId: uuid.v4(),
-        planParamsPostBase: [
+        planParamsPostBaseUnmigratedUnsorted: [
           ...planPramsUndoRedoStack.undos,
           ...planPramsUndoRedoStack.redos,
-        ],
+        ].map(({ id, change, params, paramsUnmigrated }) => ({
+          id,
+          change,
+          params: paramsUnmigrated ?? params,
+        })),
         reverseHeadIndex: planPramsUndoRedoStack.redos.length,
       })
       setForceNav()
-      urlUpdater.push(appPaths['guest']())
-      successToast('Successfully overwrote main plan.')
+      // Timeout needed for setForceNav() to take effect.
+      window.setTimeout(() => urlUpdater.push(appPaths.guest()), 1)
+      successToast('Overwrote and switched to guest plan.')
     }
     return (
       <CenteredModal
@@ -42,10 +47,10 @@ export const PlanMenuActionModalOverwriteLocal = React.memo(
         onOutsideClickOrEscape={null}
       >
         <div className=" dialog-outer-div">
-          <h2 className=" dialog-heading">Make This the Main Plan</h2>
+          <h2 className=" dialog-heading">Save as Guest Plan</h2>
           <div className=" dialog-content-div">
             <p className="p-base">
-              This will overwrite your main plan with the current plan.
+              This will overwrite your guest plan with the current plan.
             </p>
           </div>
           <div className=" dialog-button-div">

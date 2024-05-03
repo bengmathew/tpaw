@@ -43,7 +43,7 @@ export const PlanRootLoginOrLocal = React.memo(() => {
               </h2>
               <h2 className="flex items-center">
                 <FontAwesomeIcon className="text-[6px] mr-2" icon={faCircle} />{' '}
-                Multiple plans via links
+                Multiple plans via files or links
               </h2>
               <h2 className="flex items-center">
                 <FontAwesomeIcon className="text-[6px] mr-2" icon={faCircle} />{' '}

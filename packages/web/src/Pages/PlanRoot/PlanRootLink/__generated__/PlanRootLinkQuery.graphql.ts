@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<d051ed5c88c8a4a2b374df16f25d487b>>
+ * @generated SignedSource<<1b9f63e86b27d3a59e5d8579d4f64768>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -11,13 +11,12 @@
 import { ConcreteRequest, Query } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type PlanRootLinkQuery$variables = {
-  includeLink: boolean;
   includeUser: boolean;
   linkId: string;
   userId: string;
 };
 export type PlanRootLinkQuery$data = {
-  readonly linkBasedPlan?: {
+  readonly linkBasedPlan: {
     readonly params: string;
   } | null | undefined;
   readonly " $fragmentSpreads": FragmentRefs<"WithUser_query">;
@@ -31,38 +30,33 @@ const node: ConcreteRequest = (function(){
 var v0 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "includeLink"
+  "name": "includeUser"
 },
 v1 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "includeUser"
+  "name": "linkId"
 },
 v2 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "linkId"
-},
-v3 = {
-  "defaultValue": null,
-  "kind": "LocalArgument",
   "name": "userId"
 },
-v4 = [
+v3 = [
   {
     "kind": "Variable",
     "name": "linkId",
     "variableName": "linkId"
   }
 ],
-v5 = {
+v4 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "params",
   "storageKey": null
 },
-v6 = {
+v5 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
@@ -74,8 +68,7 @@ return {
     "argumentDefinitions": [
       (v0/*: any*/),
       (v1/*: any*/),
-      (v2/*: any*/),
-      (v3/*: any*/)
+      (v2/*: any*/)
     ],
     "kind": "Fragment",
     "metadata": null,
@@ -87,23 +80,16 @@ return {
         "name": "WithUser_query"
       },
       {
-        "condition": "includeLink",
-        "kind": "Condition",
-        "passingValue": true,
+        "alias": null,
+        "args": (v3/*: any*/),
+        "concreteType": "LinkBasedPlan",
+        "kind": "LinkedField",
+        "name": "linkBasedPlan",
+        "plural": false,
         "selections": [
-          {
-            "alias": null,
-            "args": (v4/*: any*/),
-            "concreteType": "LinkBasedPlan",
-            "kind": "LinkedField",
-            "name": "linkBasedPlan",
-            "plural": false,
-            "selections": [
-              (v5/*: any*/)
-            ],
-            "storageKey": null
-          }
-        ]
+          (v4/*: any*/)
+        ],
+        "storageKey": null
       }
     ],
     "type": "Query",
@@ -112,10 +98,9 @@ return {
   "kind": "Request",
   "operation": {
     "argumentDefinitions": [
-      (v3/*: any*/),
-      (v1/*: any*/),
       (v2/*: any*/),
-      (v0/*: any*/)
+      (v0/*: any*/),
+      (v1/*: any*/)
     ],
     "kind": "Operation",
     "name": "PlanRootLinkQuery",
@@ -139,7 +124,7 @@ return {
             "name": "user",
             "plural": false,
             "selections": [
-              (v6/*: any*/),
+              (v5/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -148,7 +133,7 @@ return {
                 "name": "plans",
                 "plural": true,
                 "selections": [
-                  (v6/*: any*/),
+                  (v5/*: any*/),
                   {
                     "alias": null,
                     "args": null,
@@ -221,38 +206,31 @@ return {
         ]
       },
       {
-        "condition": "includeLink",
-        "kind": "Condition",
-        "passingValue": true,
+        "alias": null,
+        "args": (v3/*: any*/),
+        "concreteType": "LinkBasedPlan",
+        "kind": "LinkedField",
+        "name": "linkBasedPlan",
+        "plural": false,
         "selections": [
-          {
-            "alias": null,
-            "args": (v4/*: any*/),
-            "concreteType": "LinkBasedPlan",
-            "kind": "LinkedField",
-            "name": "linkBasedPlan",
-            "plural": false,
-            "selections": [
-              (v5/*: any*/),
-              (v6/*: any*/)
-            ],
-            "storageKey": null
-          }
-        ]
+          (v4/*: any*/),
+          (v5/*: any*/)
+        ],
+        "storageKey": null
       }
     ]
   },
   "params": {
-    "cacheID": "a0edbdb299bbddcfaae32ff45ac12595",
+    "cacheID": "911193029660ba3ea9151eb78de12f66",
     "id": null,
     "metadata": {},
     "name": "PlanRootLinkQuery",
     "operationKind": "query",
-    "text": "query PlanRootLinkQuery(\n  $userId: ID!\n  $includeUser: Boolean!\n  $linkId: ID!\n  $includeLink: Boolean!\n) {\n  ...WithUser_query\n  linkBasedPlan(linkId: $linkId) @include(if: $includeLink) {\n    params\n    id\n  }\n}\n\nfragment WithUser_query on Query {\n  user(userId: $userId) @include(if: $includeUser) {\n    ...WithUser_user\n    id\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n    isDated\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
+    "text": "query PlanRootLinkQuery(\n  $userId: ID!\n  $includeUser: Boolean!\n  $linkId: ID!\n) {\n  ...WithUser_query\n  linkBasedPlan(linkId: $linkId) {\n    params\n    id\n  }\n}\n\nfragment WithUser_query on Query {\n  user(userId: $userId) @include(if: $includeUser) {\n    ...WithUser_user\n    id\n  }\n}\n\nfragment WithUser_user on User {\n  id\n  plans {\n    id\n    label\n    slug\n    addedToServerAt\n    sortTime\n    lastSyncAt\n    isMain\n    isDated\n  }\n  nonPlanParamsLastUpdatedAt\n  nonPlanParams\n}\n"
   }
 };
 })();
 
-(node as any).hash = "5b62182559d0f90d4af1b65805e60f66";
+(node as any).hash = "76beb3b8c9c16b130379d0d24c55296c";
 
 export default node;

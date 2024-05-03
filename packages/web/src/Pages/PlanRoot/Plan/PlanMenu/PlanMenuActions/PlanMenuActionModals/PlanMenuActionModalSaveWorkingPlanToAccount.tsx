@@ -6,24 +6,23 @@ import { useURLUpdater } from '../../../../../../Utils/UseURLUpdater'
 import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalErrorBoundary'
 import { useUser } from '../../../../../App/WithUser'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
-import {
-    SimulationInfoForLinkSrc,
-    SimulationInfoForPlanMode,
-} from '../../../../PlanRootHelpers/WithSimulation'
+import { SimulationInfoForPlanMode } from '../../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionModalLabelInput } from './PlanMenuActionModalLabelInput'
-import { PlanMenuActionModalSaveLinkPlanToAccountMutation } from './__generated__/PlanMenuActionModalSaveLinkPlanToAccountMutation.graphql'
+import { PlanMenuActionModalSaveWorkingPlanToAccountMutation } from './__generated__/PlanMenuActionModalSaveWorkingPlanToAccountMutation.graphql'
 
-export const PlanMenuActionModalSaveLinkPlanToAccount = React.memo(
+export const PlanMenuActionModalSaveWorkingPlanToAccount = React.memo(
   ({
     show,
     onHide,
-    simulationInfoForLinkSrc,
+    setForceNav,
     simulationInfoForPlanMode,
+    label,
   }: {
     show: boolean
     onHide: () => void
     simulationInfoForPlanMode: SimulationInfoForPlanMode
-    simulationInfoForLinkSrc: SimulationInfoForLinkSrc
+    setForceNav: () => void
+    label: string | null
   }) => {
     return (
       <CenteredModal
@@ -33,7 +32,8 @@ export const PlanMenuActionModalSaveLinkPlanToAccount = React.memo(
       >
         <_Body
           onHide={onHide}
-          simulationInfoForLinkSrc={simulationInfoForLinkSrc}
+          setForceNav={setForceNav}
+          label={label}
           simulationInfoForPlanMode={simulationInfoForPlanMode}
         />
       </CenteredModal>
@@ -45,24 +45,25 @@ export const PlanMenuActionModalSaveLinkPlanToAccount = React.memo(
 const _Body = React.memo(
   ({
     onHide,
-    simulationInfoForLinkSrc,
+    setForceNav,
     simulationInfoForPlanMode,
+    label,
   }: {
     onHide: () => void
-    simulationInfoForLinkSrc: SimulationInfoForLinkSrc
+    setForceNav: () => void
     simulationInfoForPlanMode: SimulationInfoForPlanMode
+    label: string | null
   }) => {
     const { defaultErrorHandlerForNetworkCall } =
       useDefaultErrorHandlerForNetworkCall()
-    const { setForceNav } = simulationInfoForLinkSrc
     const { planParamsUndoRedoStack } = simulationInfoForPlanMode
     const user = fGet(useUser())
 
     const urlUpdater = useURLUpdater()
 
     const [mutation, isRunning] =
-      useMutation<PlanMenuActionModalSaveLinkPlanToAccountMutation>(graphql`
-        mutation PlanMenuActionModalSaveLinkPlanToAccountMutation(
+      useMutation<PlanMenuActionModalSaveWorkingPlanToAccountMutation>(graphql`
+        mutation PlanMenuActionModalSaveWorkingPlanToAccountMutation(
           $input: UserPlanCreateInput!
         ) {
           userPlanCreate(input: $input) {
@@ -89,7 +90,7 @@ const _Body = React.memo(
                 ...planParamsUndoRedoStack.redos,
               ].map((x) => ({
                 id: x.id,
-                params: JSON.stringify(x.params),
+                params: JSON.stringify(x.paramsUnmigrated ?? x.params),
                 change: JSON.stringify(x.change),
               })),
               reverseHeadIndex: planParamsUndoRedoStack.redos.length,
@@ -113,7 +114,7 @@ const _Body = React.memo(
     return (
       <PlanMenuActionModalLabelInput
         title="Save Plan to Account"
-        initialLabel=""
+        initialLabel={label ?? ''}
         buttonLabel="Save Plan"
         onCancel={onHide}
         onAction={handleCopy}

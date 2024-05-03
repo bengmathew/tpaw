@@ -30,7 +30,8 @@ export const PlanMenuSubMenuUndoRedo = React.memo(
 
     return (
       <div
-        className="rounded-lg flex "
+        // m-0.5 gives space for focus ring
+        className="rounded-lg flex m-0.5 "
         style={{
           backgroundColor: planColors.results.bg,
           color: planColors.results.fg,

@@ -15,7 +15,7 @@ import { ContextModal } from '../Common/Modal/ContextModal'
 import { PlanMenuActionModalCopyServer } from '../PlanRoot/Plan/PlanMenu/PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalCopyServer'
 import { PlanMenuActionModalDelete } from '../PlanRoot/Plan/PlanMenu/PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalDelete'
 import { PlanMenuActionModalEditLabel } from '../PlanRoot/Plan/PlanMenu/PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalEditLabel'
-import { PlanMenuActionModalReset } from '../PlanRoot/Plan/PlanMenu/PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalReset'
+import { PlanMenuActionModalResetServer } from '../PlanRoot/Plan/PlanMenu/PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalResetServer'
 import { PlanMenuActionModalSetAsMain } from '../PlanRoot/Plan/PlanMenu/PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalSetAsMain'
 import clsx from 'clsx'
 
@@ -66,7 +66,7 @@ export const PlansActions = React.memo(
                     <span className="context-menu-icon">
                       <FontAwesomeIcon icon={faArrowUp} />
                     </span>{' '}
-                    Make This the Main Plan
+                    Set as Main
                   </Menu.Item>
                 )}
                 <Menu.Item
@@ -77,7 +77,7 @@ export const PlansActions = React.memo(
                   <span className="context-menu-icon">
                     <FontAwesomeIcon icon={faCopy} />
                   </span>{' '}
-                  Copy to New Plan
+                  Copy 
                 </Menu.Item>
                 <Menu.Item
                   as="button"
@@ -124,7 +124,6 @@ export const PlansActions = React.memo(
           hideOnSuccess
           cutAfterId={null}
           isSyncing={false}
-          planParamsForDatingSwitch={null}
         />
         <PlanMenuActionModalDelete
           show={showDelete}
@@ -133,7 +132,7 @@ export const PlansActions = React.memo(
           toPlansOnSuccess={false}
           isSyncing={false}
         />
-        <PlanMenuActionModalReset
+        <PlanMenuActionModalResetServer
           show={showReset}
           plan={plan}
           onHide={() => setShowReset(false)}

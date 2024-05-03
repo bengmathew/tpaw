@@ -13,14 +13,15 @@ import {
   noCase,
   nonPlanParamFns,
 } from '@tpaw/common'
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { processPlanParams } from '../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
-import { useSimulator } from '../../../UseSimulator/UseSimulator'
-import { createContext } from '../../../Utils/CreateContext'
-
 import cloneJSON from 'fast-json-clone'
 import _ from 'lodash'
-import React from 'react'
+import React, {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { appPaths } from '../../../AppPaths'
 import {
   PlanParamsNormalized,
@@ -28,13 +29,17 @@ import {
 } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { normalizePlanParamsInverse } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
 import { CallRust } from '../../../UseSimulator/PlanParamsProcessed/CallRust'
+import { processPlanParams } from '../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import { SimulationResult } from '../../../UseSimulator/Simulator/Simulator'
+import { useSimulator } from '../../../UseSimulator/UseSimulator'
+import { createContext } from '../../../Utils/CreateContext'
 import { infoToast } from '../../../Utils/CustomToasts'
 import { UnionToIntersection } from '../../../Utils/UnionToIntersection'
 import { useURLParam } from '../../../Utils/UseURLParam'
 import { User, useUser } from '../../App/WithUser'
 import { getMarketDataForTime } from '../../Common/GetMarketData'
 import { Plan } from '../Plan/Plan'
+import { PlanFileData, PlanFileDataFns } from '../PlanRootFile/PlanFileData'
 import { ServerSyncState } from '../PlanServerImpl/UseServerSyncPlan'
 import { CurrentPortfolioBalance } from './CurrentPortfolioBalance'
 import {
@@ -81,6 +86,17 @@ export type SimulationInfo = {
         reset: (planParams: PlanParams) => void
       }
     | {
+        src: 'file'
+        setSrc: (filename: string | null, data: PlanFileData) => void
+        isModified: boolean
+        reset: (planParams: PlanParams | null) => void
+        plan: {
+          filename: string | null
+          convertedToFilePlanAtTimestamp: number
+        }
+        setForceNav: () => void
+      }
+    | {
         src: 'server'
         plan: User['plans'][0]
         historyStatus: 'fetching' | 'fetched' | 'failed'
@@ -118,6 +134,10 @@ export type SimulationInfo = {
 export type SimulationInfoForLocalMainSrc = Extract<
   SimulationInfo['simulationInfoBySrc'],
   { src: 'localMain' }
+>
+export type SimulationInfoForFileSrc = Extract<
+  SimulationInfo['simulationInfoBySrc'],
+  { src: 'file' }
 >
 export type SimulationInfoForSrc = Extract<
   SimulationInfo['simulationInfoBySrc'],
@@ -183,6 +203,7 @@ export const useSimulationParamsForPlanMode = (
   planPaths: SimulationInfo['planPaths'],
   currentTimeInfo: CurrentTimeInfo,
   workingPlanInfo: WorkingPlanInfo,
+  // TODO: This is not necessary since PlanParamsHistory contains unmigrated version.
   planMigratedFromVersion: SomePlanParamsVersion,
   currentPortfolioBalanceInfoPreBase: CurrentPortfolioBalance.ByMonthInfo | null,
   simulationInfoBySrc: SimulationInfo['simulationInfoBySrc'],
@@ -483,9 +504,9 @@ const useShowPDFReportIfNeeded = (
         pdfReportSettings.pageSize,
       ),
 
-      embeddedLinkType:
-        nonPlanParamFns.resolvePDFReportSettingsDefaults.embeddedLinkType(
-          pdfReportSettings.embeddedLinkType,
+      shouldEmbedLink:
+        nonPlanParamFns.resolvePDFReportSettingsDefaults.getShouldEmbedLink(
+          pdfReportSettings.shouldEmbedLink,
           isLoggedIn,
         ),
       alwaysShowAllMonths: nonPlanParams.dev.alwaysShowAllMonths,
@@ -505,6 +526,10 @@ const useShowPDFReportIfNeeded = (
           case 'link':
           case 'localMain':
             return null
+          case 'file':
+            return PlanFileDataFns.labelFromFilename(
+              simulationInfo.simulationInfoBySrc.plan.filename,
+            )
           case 'server':
             return simulationInfo.simulationInfoBySrc.plan.label ?? null
           default:
@@ -544,7 +569,7 @@ const useShowPDFReportIfNeeded = (
         const clone = cloneJSON(nonPlanParams)
         clone.pdfReportSettings = {
           pageSize: settings.pageSize,
-          embeddedLinkType: settings.embeddedLinkType,
+          shouldEmbedLink: settings.shouldEmbedLink ? 'yes' : 'no',
         }
         setNonPlanParams(clone)
       },

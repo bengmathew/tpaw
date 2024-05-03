@@ -1,6 +1,6 @@
 import { faGear } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { RadioGroup } from '@headlessui/react'
+import { RadioGroup, Switch } from '@headlessui/react'
 import { noCase } from '@tpaw/common'
 import clsx from 'clsx'
 import React, { ReactNode, useState } from 'react'
@@ -11,6 +11,8 @@ import {
   PlanPrintViewSettingsClientSide,
   PlanPrintViewSettingsControlledClientSide,
 } from './PlanPrintViewArgs'
+import { SwitchAsToggle } from '../../../Common/Inputs/SwitchAsToggle'
+import { SwitchAsCheckBox } from '../../../Common/Inputs/SwitchAsCheckBox'
 
 export const PlanPrintViewSettings = React.memo(
   ({
@@ -49,11 +51,9 @@ export const PlanPrintViewSettings = React.memo(
             <h2 className="">Paper Size</h2>
             <h2 className="">:</h2>
             <h2 className="">{_pageSizeStr(settings.pageSize)}</h2>
-            <h2 className="">Link Type</h2>
+            <h2 className="">Add Link</h2>
             <h2 className="">:</h2>
-            <h2 className="">
-              {_embeddedLinkTypeStr(settings.embeddedLinkType)}
-            </h2>
+            <h2 className="">{settings.shouldEmbedLink ? 'Yes' : 'No'}</h2>
           </div>
         </button>
 
@@ -75,10 +75,6 @@ export const PlanPrintViewSettings = React.memo(
 const _pageSizeStr = (pageSize: PlanPrintViewSettingsClientSide['pageSize']) =>
   pageSize === 'A4' ? 'A4' : 'Letter'
 
-const _embeddedLinkTypeStr = (
-  x: PlanPrintViewSettingsClientSide['embeddedLinkType'],
-) => (x === 'long' ? 'Long' : x === 'short' ? 'Short' : noCase(x))
-
 const _EditSettings = React.memo(
   ({
     settings,
@@ -89,10 +85,10 @@ const _EditSettings = React.memo(
     updateSettings: (args: PlanPrintViewSettingsControlledClientSide) => void
     onDone: () => void
   }) => {
-    const { pageSize, embeddedLinkType } = settings
+    const { pageSize, shouldEmbedLink } = settings
     const currUpdatableSettings: PlanPrintViewSettingsControlledClientSide = {
       pageSize: settings.pageSize,
-      embeddedLinkType: settings.embeddedLinkType,
+      shouldEmbedLink: settings.shouldEmbedLink,
     }
 
     return (
@@ -100,10 +96,10 @@ const _EditSettings = React.memo(
         <h2 className=" dialog-heading">
           <span className="text-3xl">Settings</span>
         </h2>
-        <div className=" dialog-content-div">
+        <div className=" dialog-content-div max-w-[500px]">
           <h2 className="font-bold text-xl mt-10">Paper Size</h2>
           <RadioGroup
-            className="max-w-[500px]"
+            className=""
             value={pageSize}
             onChange={(pageSize) =>
               updateSettings({ ...currUpdatableSettings, pageSize })
@@ -124,31 +120,23 @@ const _EditSettings = React.memo(
               United States and Canada.
             </_RadioOption>
           </RadioGroup>
-          <h2 className="font-bold text-xl mt-10">Link to Plan Type</h2>
-          <RadioGroup
-            className="max-w-[500px]"
-            value={embeddedLinkType}
-            onChange={(embeddedLinkType) =>
-              updateSettings({ ...currUpdatableSettings, embeddedLinkType })
-            }
-          >
-            <p className="p-base mt-3">
-              The PDF report includes a link that recreates this plan. Select
-              the type of link to use:
-            </p>
-            <_RadioOption<PlanPrintViewSettingsClientSide['embeddedLinkType']>
-              value={'short'}
-              heading={_embeddedLinkTypeStr('short')}
-            >
-              Shortened link with inputs for the plan stored on the server.
-            </_RadioOption>
-            <_RadioOption<PlanPrintViewSettingsClientSide['embeddedLinkType']>
-              value={'long'}
-              heading={_embeddedLinkTypeStr('long')}
-            >
-              Link containing all the inputs for the plan directly in the link.
-            </_RadioOption>
-          </RadioGroup>
+          <h2 className="font-bold text-xl mt-10">Add Link</h2>
+          <Switch.Group>
+            <div className="flex  gap-x-2 mt-4">
+              <SwitchAsCheckBox
+                className="mr-1 shrink-0 mt-1"
+                checked={shouldEmbedLink}
+                setChecked={(shouldEmbedLink) =>
+                  updateSettings({ ...currUpdatableSettings, shouldEmbedLink })
+                }
+              />
+              <Switch.Label className="p-base cursor-pointer">
+                Add a link. This creates a copy of the plan and adds a link in
+                the pdf to view the copied plan.
+              </Switch.Label>
+            </div>
+          </Switch.Group>
+
           <div className=" dialog-button-div">
             <button className=" dialog-button-dark" onClick={onDone}>
               Done

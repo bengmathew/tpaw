@@ -171,7 +171,7 @@ describe('NormalizeAmountAndTimingRecurring', () => {
           101,
           1,
           { by: { type: 'percent', percent: 0.1 }, every: 'recurrence' },
-          () => assertFalse(),
+          { isDatedPlan: true, calendarMonth: () => assertFalse() },
         ),
       ).toEqual({
         month: {
@@ -205,7 +205,7 @@ describe('NormalizeAmountAndTimingRecurring', () => {
           101,
           recurrance,
           { by: { type: 'percent', percent: 0.1 }, every: 'recurrence' },
-          mfnToCalendarMonth,
+          { isDatedPlan: true, calendarMonth: mfnToCalendarMonth },
         ),
       ).toEqual(
         result

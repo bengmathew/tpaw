@@ -6,82 +6,86 @@ import {
   planParamsMigrate,
 } from '@tpaw/common'
 import { chain, json, string } from 'json-guard'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useLayoutEffect, useMemo, useState } from 'react'
 import { graphql, useLazyLoadQuery } from 'react-relay'
+import { appPaths } from '../../../AppPaths'
 import { useURLParam } from '../../../Utils/UseURLParam'
+import { useURLUpdater } from '../../../Utils/UseURLUpdater'
 import { useUserGQLArgs } from '../../App/WithFirebaseUser'
 import { WithUser } from '../../App/WithUser'
 import { SimulationParams } from '../PlanRootHelpers/WithSimulation'
 import { PlanRootLinkImpl } from './PlanRootLinkImpl'
 import { PlanRootLinkQuery } from './__generated__/PlanRootLinkQuery.graphql'
-import { set } from 'lodash'
 
 export const PlanRootLink = React.memo(
   ({ pdfReportInfo }: { pdfReportInfo: SimulationParams['pdfReportInfo'] }) => {
     const paramsStr = useURLParam('params')
     assert(paramsStr !== null)
-    const [startingState] = useState(() =>
-      paramsStr.length === 32
-        ? ({
-            shortOrLongLink: 'shortLink',
-            queryArgs: { linkId: paramsStr, includeLink: true },
-          } as const)
-        : ({
-            shortOrLongLink: 'longLink',
-            params: chain(
-              string,
-              json,
-              planParamsBackwardsCompatibleGuard,
-            )(paramsStr).force(),
-            queryArgs: { linkId: '', includeLink: false },
-          } as const),
-    )
+    const urlUpdater = useURLUpdater()
 
+    const parsed = useMemo(
+      () =>
+        paramsStr.length === 32
+          ? ({
+              isLongLink: false,
+              linkId: paramsStr,
+            } as const)
+          : ({
+              isLongLink: true,
+            } as const),
+      [paramsStr],
+    )
+    useLayoutEffect(() => {
+      if (!parsed.isLongLink) return
+      const searchParams = new URL(window.location.href).searchParams
+      const url = appPaths['convert-long-links']()
+      searchParams.forEach((value, key) => url.searchParams.set(key, value))
+      urlUpdater.replace(url)
+    }, [parsed.isLongLink, urlUpdater])
+
+    if (parsed.isLongLink) return <></>
+    return <_Body pdfReportInfo={pdfReportInfo} linkId={parsed.linkId} />
+  },
+)
+const _Body = React.memo(
+  ({
+    pdfReportInfo,
+    linkId,
+  }: {
+    pdfReportInfo: SimulationParams['pdfReportInfo']
+    linkId: string
+  }) => {
     const userGQLArgs = useUserGQLArgs()
 
-    const [fetchKey, setFetchKey] = useState(0)
     const data = useLazyLoadQuery<PlanRootLinkQuery>(
       graphql`
         query PlanRootLinkQuery(
           $userId: ID!
           $includeUser: Boolean!
           $linkId: ID!
-          $includeLink: Boolean!
         ) {
           ...WithUser_query
-
-          linkBasedPlan(linkId: $linkId) @include(if: $includeLink) {
+          linkBasedPlan(linkId: $linkId) {
             params
           }
         }
       `,
-      { ...userGQLArgs, ...startingState.queryArgs },
-      { fetchKey },
+      { ...userGQLArgs, linkId },
     )
-    useEffect(() => {
-      const interval = window.setInterval(
-        () => setFetchKey((x) => x + 1),
-        1000 * 60,
-      )
-      return () => window.clearInterval(interval)
-    }, [])
 
-    const startingParams = useMemo(() => {
-      const result =
-        startingState.shortOrLongLink === 'longLink'
-          ? startingState.params
-          : chain(
-              string,
-              json,
-              planParamsBackwardsCompatibleGuard,
-            )(fGet(data.linkBasedPlan).params).force()
+    const [startingParams] = useState(() => {
+      const result = chain(
+        string,
+        json,
+        planParamsBackwardsCompatibleGuard,
+      )(fGet(data.linkBasedPlan).params).force()
       const migrated = planParamsMigrate(result)
       assert(
         !migrated.wealth.portfolioBalance.isDatedPlan ||
           migrated.wealth.portfolioBalance.updatedHere,
       )
       return result
-    }, [startingState, data])
+    })
 
     const [key, setKey] = useState(0)
     const [startingParamsOverride, setStartingParamsOverride] = useState(

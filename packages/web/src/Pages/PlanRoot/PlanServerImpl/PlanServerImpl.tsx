@@ -100,11 +100,15 @@ const _Body = React.memo(
     const [startingServerPlan] = useState(() => ({
       planId: serverPlanIn.id,
       lastSyncAt: serverPlanIn.lastSyncAt,
-      planParamsPostBase: serverPlanIn.planParamsPostBase.map((x) => ({
-        id: x.id,
-        change: JSON.parse(x.change) as PlanParamsChangeAction,
-        params: planParamsMigrate(JSON.parse(x.params) as SomePlanParams),
-      })),
+      planParamsPostBase: serverPlanIn.planParamsPostBase.map((x) => {
+        const paramsUnmigrated: SomePlanParams = JSON.parse(x.params)
+        return {
+          id: x.id,
+          change: JSON.parse(x.change) as PlanParamsChangeAction,
+          paramsUnmigrated,
+          params: planParamsMigrate(paramsUnmigrated),
+        }
+      }),
       reverseHeadIndex: serverPlanIn.reverseHeadIndex,
     }))
     const [startTime] = useState(() => Date.now())

@@ -1,4 +1,9 @@
-import { NonPlanParams, assert, getDefaultNonPlanParams } from '@tpaw/common'
+import {
+  NonPlanParams,
+  assert,
+  block,
+  getDefaultNonPlanParams,
+} from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import React, { useMemo } from 'react'
@@ -11,9 +16,13 @@ import { usePlanResultsChartType } from '../../PlanResults/UsePlanResultsChartTy
 import { useChartData } from '../../WithPlanResultsChartData'
 import { PlanInputModifiedBadge } from '../Helpers/PlanInputModifiedBadge'
 import {
-    PlanInputBody,
-    PlanInputBodyPassThruProps,
+  PlanInputBody,
+  PlanInputBodyPassThruProps,
 } from '../PlanInputBody/PlanInputBody'
+import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { normalizePlanParamsInverse } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
+import { CurrentPortfolioBalance } from '../../../PlanRootHelpers/CurrentPortfolioBalance'
+import { appPaths } from '../../../../../AppPaths'
 
 export const PlanInputDevMisc = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -36,6 +45,7 @@ const _MiscCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
+    const { planParamsNorm, currentPortfolioBalanceInfo } = useSimulation()
     const isModified = useIsPlanInputDevMiscModified()
     const defaultNonPlanParams = useMemo(
       () => getDefaultNonPlanParams(Date.now()),
@@ -73,6 +83,35 @@ const _MiscCard = React.memo(
           <h2 className=""> Show Sync Status</h2>
         </div>
         <_ChartYRangeOverride className="mt-4" />
+        <button
+          className="py-2 underline mt-2"
+          onClick={() => {
+            const params = block(() => {
+              const clone = normalizePlanParamsInverse(planParamsNorm)
+              if (
+                clone.wealth.portfolioBalance.isDatedPlan &&
+                !clone.wealth.portfolioBalance.updatedHere
+              ) {
+                assert(planParamsNorm.datingInfo.isDated)
+                assert(currentPortfolioBalanceInfo.isDatedPlan)
+                clone.timestamp = planParamsNorm.datingInfo.nowAsTimestamp
+                clone.wealth.portfolioBalance = {
+                  isDatedPlan: true,
+                  updatedHere: true,
+                  amount: CurrentPortfolioBalance.getAmountInfo(
+                    currentPortfolioBalanceInfo.info,
+                  ).amount,
+                }
+              }
+              return clone
+            })
+            const url = appPaths.link()
+            url.searchParams.set('params', JSON.stringify(params))
+            void window.navigator.clipboard.writeText(url.href)
+          }}
+        >
+          Create a Long Link
+        </button>
 
         <button className="block btn-sm btn-outline mt-4" onClick={() => {}}>
           Test
@@ -163,12 +202,14 @@ export const useIsPlanInputDevMiscModified = () => {
 }
 const _getIsPlanInputDevMiscModified = (nonPlanParams: NonPlanParams) => {
   const defaultNonPlanParams = getDefaultNonPlanParams(Date.now())
-  return nonPlanParams.dev.showSyncStatus !==
-    defaultNonPlanParams.dev.showSyncStatus ||
+  return (
+    nonPlanParams.dev.showSyncStatus !==
+      defaultNonPlanParams.dev.showSyncStatus ||
     nonPlanParams.dev.alwaysShowAllMonths !==
       defaultNonPlanParams.dev.alwaysShowAllMonths ||
     nonPlanParams.dev.overridePlanResultChartYRange !==
       defaultNonPlanParams.dev.overridePlanResultChartYRange
+  )
 }
 export const PlanInputDevMiscSummary = React.memo(() => {
   const { nonPlanParams } = useNonPlanParams()

@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<0f6e2b01b911c624696a69d59c3ee86f>>
+ * @generated SignedSource<<8355f6e154ba330568c6d90712f684c3>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -16,10 +16,10 @@ export type UserPlanResetInput = {
   planParams: string;
   userId: string;
 };
-export type PlanMenuActionModalResetMutation$variables = {
+export type PlanMenuActionModalResetServerMutation$variables = {
   input: UserPlanResetInput;
 };
-export type PlanMenuActionModalResetMutation$data = {
+export type PlanMenuActionModalResetServerMutation$data = {
   readonly userPlanReset: {
     readonly __typename: "ConcurrentChangeError";
     readonly _: number;
@@ -36,9 +36,9 @@ export type PlanMenuActionModalResetMutation$data = {
     readonly __typename: "%other";
   };
 };
-export type PlanMenuActionModalResetMutation = {
-  response: PlanMenuActionModalResetMutation$data;
-  variables: PlanMenuActionModalResetMutation$variables;
+export type PlanMenuActionModalResetServerMutation = {
+  response: PlanMenuActionModalResetServerMutation$data;
+  variables: PlanMenuActionModalResetServerMutation$variables;
 };
 
 const node: ConcreteRequest = (function(){
@@ -96,7 +96,7 @@ return {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Fragment",
     "metadata": null,
-    "name": "PlanMenuActionModalResetMutation",
+    "name": "PlanMenuActionModalResetServerMutation",
     "selections": [
       {
         "alias": null,
@@ -144,7 +144,7 @@ return {
   "operation": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
-    "name": "PlanMenuActionModalResetMutation",
+    "name": "PlanMenuActionModalResetServerMutation",
     "selections": [
       {
         "alias": null,
@@ -217,16 +217,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "71568ba2d3126ed2d5864f2d031990b2",
+    "cacheID": "efa0206d5cdcabbc4a1c4fcfd0eac476",
     "id": null,
     "metadata": {},
-    "name": "PlanMenuActionModalResetMutation",
+    "name": "PlanMenuActionModalResetServerMutation",
     "operationKind": "mutation",
-    "text": "mutation PlanMenuActionModalResetMutation(\n  $input: UserPlanResetInput!\n) {\n  userPlanReset(input: $input) {\n    __typename\n    ... on PlanAndUserResult {\n      plan {\n        id\n        lastSyncAt\n        ...PlanWithoutParamsFragment\n      }\n    }\n    ... on ConcurrentChangeError {\n      _\n    }\n  }\n}\n\nfragment PlanWithoutParamsFragment on PlanWithHistory {\n  id\n  isMain\n  label\n  slug\n  addedToServerAt\n  sortTime\n  lastSyncAt\n}\n"
+    "text": "mutation PlanMenuActionModalResetServerMutation(\n  $input: UserPlanResetInput!\n) {\n  userPlanReset(input: $input) {\n    __typename\n    ... on PlanAndUserResult {\n      plan {\n        id\n        lastSyncAt\n        ...PlanWithoutParamsFragment\n      }\n    }\n    ... on ConcurrentChangeError {\n      _\n    }\n  }\n}\n\nfragment PlanWithoutParamsFragment on PlanWithHistory {\n  id\n  isMain\n  label\n  slug\n  addedToServerAt\n  sortTime\n  lastSyncAt\n}\n"
   }
 };
 })();
 
-(node as any).hash = "f000ad80d445293a42694fd46f856ecf";
+(node as any).hash = "bb6e0a6691fede846cd620dffe19a6b5";
 
 export default node;

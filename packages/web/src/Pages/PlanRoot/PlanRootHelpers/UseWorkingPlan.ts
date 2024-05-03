@@ -3,10 +3,11 @@ import {
   PlanParamsChangeAction,
   PlanParamsChangeActionCurrent,
   PlanPaths,
+  SomePlanParams,
   assert,
   fGet,
   letIn,
-  planParamsGuard
+  planParamsGuard,
 } from '@tpaw/common'
 import cloneJSON from 'fast-json-clone'
 import _ from 'lodash'
@@ -27,6 +28,7 @@ import { useWASM } from './WithWASM'
 export type PlanParamsHistoryItem = {
   readonly id: string
   readonly change: PlanParamsChangeAction
+  readonly paramsUnmigrated: SomePlanParams | null
   readonly params: PlanParams
 }
 export type WorkingPlanSrc = {
@@ -128,7 +130,12 @@ export const useWorkingPlan = (
 
       const planParamsPostBase = [
         ...planParamsUndoRedoStack.undos,
-        { id: uuid.v4(), params: nextPlanParams, change },
+        {
+          id: uuid.v4(),
+          paramsUnmigrated: null,
+          params: nextPlanParams,
+          change,
+        },
       ]
       if (
         currHistoryItem.change.type === change.type &&

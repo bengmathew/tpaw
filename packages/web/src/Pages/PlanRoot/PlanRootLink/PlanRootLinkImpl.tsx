@@ -6,7 +6,7 @@ import {
   planParamsMigrate,
 } from '@tpaw/common'
 import _ from 'lodash'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import * as uuid from 'uuid'
 import { appPaths } from '../../../AppPaths'
 import { useNavGuard } from '../../../Utils/UseNavGuard'
@@ -46,7 +46,12 @@ export const PlanRootLinkImpl = React.memo(
         {
           id: uuid.v4(),
           change: { type: 'startFromURL', value: null },
-          params: startingParamsOverride ?? startingParamsMigrated,
+          ...(startingParamsOverride
+            ? { paramsUnmigrated: null, params: startingParamsOverride }
+            : {
+                paramsUnmigrated: startingParams,
+                params: startingParamsMigrated,
+              }),
         },
       ],
       reverseHeadIndex: 0,
@@ -62,13 +67,11 @@ export const PlanRootLinkImpl = React.memo(
       planPaths,
     )
 
-    
     const isModified =
       fGet(_.last(workingPlanInfo.planParamsUndoRedoStack.undos)).params !==
       startingParamsMigrated
 
     const [forceNav, setForceNav] = useState(false)
-
     const { navGuardState, resetNavGuardState } = useNavGuard(
       isModified && !forceNav,
       planPaths,

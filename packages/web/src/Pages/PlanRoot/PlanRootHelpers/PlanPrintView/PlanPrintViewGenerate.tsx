@@ -24,7 +24,7 @@ export const PlanPrintViewGenerate = React.memo(
     fixedArgs,
     settings,
   }: {
-    linkToEmbed: URL | null
+    linkToEmbed: { isProcessing: boolean; link: string | null }
     fixedArgs: PlanPrintViewArgs['fixed']
     settings: PlanPrintViewSettingsClientSide
   }) => {
@@ -51,14 +51,15 @@ export const PlanPrintViewGenerate = React.memo(
 
     const cleanupRef = useRef<null | (() => void)>(null)
 
-    const handleGenerateEvent = (linkToEmbed: URL) => {
+    const handleGenerateEvent = (linkToEmbed: string | null) => {
+      console.dir(linkToEmbed)
       const url = block(() => {
         const params: PlanPrintViewArgsServerSide = {
           fixed: fixedArgs,
           settings: {
             isServerSidePrint: true,
             pageSize: settings.pageSize,
-            linkToEmbed: linkToEmbed.toString(),
+            linkToEmbed,
             alwaysShowAllMonths: settings.alwaysShowAllMonths,
           },
         }
@@ -102,9 +103,9 @@ export const PlanPrintViewGenerate = React.memo(
     handleGenerateEventRef.current = handleGenerateEvent
 
     useEffect(() => {
-      if (state.type === 'waitingForLinkToEmbed' && linkToEmbed)
-        handleGenerateEventRef.current(linkToEmbed)
-    }, [linkToEmbed, state.type])
+      if (state.type === 'waitingForLinkToEmbed' && !linkToEmbed.isProcessing)
+        handleGenerateEventRef.current(linkToEmbed.link)
+    }, [linkToEmbed.isProcessing, linkToEmbed.link, state.type])
 
     useEffect(() => {
       cleanupRef.current?.()
@@ -135,12 +136,12 @@ export const PlanPrintViewGenerate = React.memo(
                 <button
                   className="text-lg flex items-center justify-center gap-x-2 py-3 px-4 w-full "
                   onClick={() => {
-                    if (!linkToEmbed) {
+                    if (linkToEmbed.isProcessing) {
                       cleanupRef.current?.()
                       cleanupRef.current = null
                       setState({ type: 'waitingForLinkToEmbed' })
                     } else {
-                      handleGenerateEvent(linkToEmbed)
+                      handleGenerateEvent(linkToEmbed.link)
                     }
                   }}
                 >

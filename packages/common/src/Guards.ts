@@ -24,4 +24,7 @@ export namespace Guards {
 
   export const undef: JSONGuard<undefined> = (x: unknown) =>
     x === undefined ? success(x) : failure('Not "undefined".')
+
+  export const notEmpty = (x: string) =>
+    x === '' ? failure('Empty string.') : success(x)
 }

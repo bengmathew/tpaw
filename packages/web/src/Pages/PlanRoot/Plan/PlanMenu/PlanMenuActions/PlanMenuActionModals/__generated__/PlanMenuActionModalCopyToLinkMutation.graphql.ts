@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<aad378d00a52006ca8b06f167c91e41c>>
+ * @generated SignedSource<<2b368988624002c7c0a87b8eb1533aaa>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -12,17 +12,17 @@ import { ConcreteRequest, Mutation } from 'relay-runtime';
 export type CreateLinkBasedPlanInput = {
   params: string;
 };
-export type PlanMenuActionCopyToLinkShortLinkMutation$variables = {
+export type PlanMenuActionModalCopyToLinkMutation$variables = {
   input: CreateLinkBasedPlanInput;
 };
-export type PlanMenuActionCopyToLinkShortLinkMutation$data = {
+export type PlanMenuActionModalCopyToLinkMutation$data = {
   readonly createLinkBasedPlan: {
     readonly id: string;
   };
 };
-export type PlanMenuActionCopyToLinkShortLinkMutation = {
-  response: PlanMenuActionCopyToLinkShortLinkMutation$data;
-  variables: PlanMenuActionCopyToLinkShortLinkMutation$variables;
+export type PlanMenuActionModalCopyToLinkMutation = {
+  response: PlanMenuActionModalCopyToLinkMutation$data;
+  variables: PlanMenuActionModalCopyToLinkMutation$variables;
 };
 
 const node: ConcreteRequest = (function(){
@@ -64,7 +64,7 @@ return {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Fragment",
     "metadata": null,
-    "name": "PlanMenuActionCopyToLinkShortLinkMutation",
+    "name": "PlanMenuActionModalCopyToLinkMutation",
     "selections": (v1/*: any*/),
     "type": "Mutation",
     "abstractKey": null
@@ -73,20 +73,20 @@ return {
   "operation": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
-    "name": "PlanMenuActionCopyToLinkShortLinkMutation",
+    "name": "PlanMenuActionModalCopyToLinkMutation",
     "selections": (v1/*: any*/)
   },
   "params": {
-    "cacheID": "503c6cdaaa2672a5da705129535e3f4a",
+    "cacheID": "dfdea94e8c8aec0045a1c577754dd6e9",
     "id": null,
     "metadata": {},
-    "name": "PlanMenuActionCopyToLinkShortLinkMutation",
+    "name": "PlanMenuActionModalCopyToLinkMutation",
     "operationKind": "mutation",
-    "text": "mutation PlanMenuActionCopyToLinkShortLinkMutation(\n  $input: CreateLinkBasedPlanInput!\n) {\n  createLinkBasedPlan(input: $input) {\n    id\n  }\n}\n"
+    "text": "mutation PlanMenuActionModalCopyToLinkMutation(\n  $input: CreateLinkBasedPlanInput!\n) {\n  createLinkBasedPlan(input: $input) {\n    id\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "3344edcc946491f9a51ad84d3e7dce4c";
+(node as any).hash = "291c0450cb3012b2d1626fa105a76815";
 
 export default node;

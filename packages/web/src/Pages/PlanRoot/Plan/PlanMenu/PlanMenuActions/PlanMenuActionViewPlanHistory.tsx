@@ -52,7 +52,7 @@ export const PlanMenuActionViewPlanHistory = React.memo(
           if (historyStatus === 'fetched') {
             handleSwitchToHistoryMode()
           } else {
-            // This keeps the menu open (only  on click through, not on keyboard)
+            // This keeps the menu open (only on click though, not on keyboard)
             // As of Jun 2023, no solution for keyboard:
             // https://github.com/tailwindlabs/headlessui/discussions/1122
             e.preventDefault()

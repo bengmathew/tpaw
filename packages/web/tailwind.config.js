@@ -95,11 +95,24 @@ module.exports = {
         '.context-menu-outer-div': {
           '@apply py-2.5 rounded-lg': {},
         },
-        '.context-menu-item': {
-          '@apply block px-4 py-2.5 text-start ui-active:bg-gray-200 w-full':
+        '.context-menu-section': {
+          '@apply mt-5 first:mt-0': {},
+        },
+        // '.context-menu-section-heading': {
+        //   '@apply mx-4 pt-1 pb-0.5 mb-1 lighten-2 text-sm font-medium text-left  border-b inline-block border-gray-900': {},
+        // },
+        '.context-menu-section-heading': {
+          '@apply mx-4 pt-1 pb-0.5 mb-1 lighten-2 text-sm font-medium text-left':
             {},
         },
-
+        '.context-menu-item': {
+          '@apply block px-4 py-1.5 text-start ui-active:bg-gray-200 w-full':
+            {},
+        },
+        '.context-menu-item-indent': {
+          '@apply block pl-4 pr-4 py-1.5 text-start ui-active:bg-gray-200 w-full':
+            {},
+        },
         '.context-menu-icon': {
           '@apply inline-block w-[25px] mr-1 text-center': {},
         },

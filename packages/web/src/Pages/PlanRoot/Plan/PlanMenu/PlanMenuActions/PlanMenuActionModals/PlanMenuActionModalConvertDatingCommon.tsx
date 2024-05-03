@@ -32,8 +32,9 @@ export const PlanMenuActionModalConvertDatingCommon = React.memo(
             </p>
           )}
           <p className="p-base mt-2">
-            Converting this plan to a {targetDatingStr} plan will delete history
-            for this plan. {!skipNoUndoCopy && `This cannot be undone.`}
+            Converting this plan to a {targetDatingStr} plan will change all
+            calendar month references to ages and will delete history for this plan.{' '}
+            {!skipNoUndoCopy && `This cannot be undone.`}
           </p>
           <p className="p-base mt-2">Are you sure you want to continue?</p>
         </div>

@@ -11,7 +11,7 @@ import { assertFalse, fGet, noCase } from '@tpaw/common'
 import { useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { AppError } from '../../../../../App/AppError'
-import { PlanMenuActionModalResetMutation } from './__generated__/PlanMenuActionModalResetMutation.graphql'
+import { PlanMenuActionModalConvertDatingServerMutation } from './__generated__/PlanMenuActionModalConvertDatingServerMutation.graphql'
 import {
   useDefaultErrorHandlerForNetworkCall,
   useSetGlobalError,
@@ -73,8 +73,8 @@ const _Body = React.memo(
     })
     const urlUpdater = useURLUpdater()
 
-    const [mutation] = useMutation<PlanMenuActionModalResetMutation>(graphql`
-      mutation PlanMenuActionModalResetMutation($input: UserPlanResetInput!) {
+    const [mutation] = useMutation<PlanMenuActionModalConvertDatingServerMutation>(graphql`
+      mutation PlanMenuActionModalConvertDatingServerMutation($input: UserPlanResetInput!) {
         userPlanReset(input: $input) {
           __typename
           ... on PlanAndUserResult {

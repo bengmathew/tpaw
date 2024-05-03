@@ -5,7 +5,7 @@ import { clsx } from 'clsx'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import Link from 'next/link'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useLazyLoadQuery } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { appPaths } from '../../AppPaths'
@@ -48,7 +48,10 @@ const _Plans = React.memo(() => {
     return { mainPlan: mainPlans[0], altPlans }
   }, [user.plans])
 
-  const doneURL = getPlansOnDoneURL()
+  const [doneURL] = useState(_onDoneURL)
+  useEffect(() => {
+    _onDoneURL = null
+  }, [])
 
   return (
     <AppPage className=" pt-header min-h-screen" title="Plans - TPAW Planner">
@@ -131,7 +134,10 @@ const _Item = React.memo(
                 className="rounded-full px-2 "
                 style={{ backgroundColor: mainPlanColors.shades.light[8].hex }}
               >
-                <FontAwesomeIcon className="text-[12px] mr-1" icon={faInfinity} />
+                <FontAwesomeIcon
+                  className="text-[12px] mr-1"
+                  icon={faInfinity}
+                />
                 dateless plan
               </div>
             </div>
@@ -146,11 +152,7 @@ const _Item = React.memo(
   },
 )
 
-export const setPlansOnDoneURL = () =>
-  window.localStorage.setItem('Plans_OnDoneURL', window.location.href)
-
-const getPlansOnDoneURL = () =>
-  letIn(window.localStorage.getItem('Plans_OnDoneURL'), (str) => {
-    window.localStorage.removeItem('Plans_OnDoneURL')
-    return str ? new URL(str) : null
-  })
+let _onDoneURL = null as URL | null
+export const setPlansOnDoneURL = () => {
+  _onDoneURL = new URL(window.location.href)
+}

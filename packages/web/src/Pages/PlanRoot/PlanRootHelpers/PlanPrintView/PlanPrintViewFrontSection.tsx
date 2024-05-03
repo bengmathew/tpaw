@@ -15,7 +15,7 @@ export const PlanPrintViewFrontSection = React.memo(
     settings,
     planLabel,
   }: {
-    linkToEmbed: URL | null
+    linkToEmbed: { needsLink: boolean; link: string | null }
     settings: PlanPrintViewArgs['settings']
     planLabel: string | null
   }) => {
@@ -55,15 +55,13 @@ export const PlanPrintViewFrontSection = React.memo(
                 </p>
               </div>
             )}
-            <h2 className="text-[18px] lighten-2 mt-3 ml-1">
-              <a
-                className=""
-                target="_blank"
-                href={linkToEmbed?.toString() ?? ''}
-              >
-                <span className="underline">Link to Plan</span>{' '}
-              </a>
-            </h2>
+            {linkToEmbed.needsLink && (
+              <h2 className="text-[18px] lighten-2 mt-3 ml-1">
+                <a className="" target="_blank" href={linkToEmbed.link ?? ''}>
+                  <span className="underline">Link to Plan</span>{' '}
+                </a>
+              </h2>
+            )}
           </div>
           <div className="absolute bottom-[1in] print:bottom-0 right-[1in] flex flex-col items-end w-full">
             <h2 className="text-[25px] font-semibold ">TPAW Planner</h2>

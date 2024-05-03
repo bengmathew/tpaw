@@ -14,15 +14,14 @@ export const PlanRootLinkUnsavedWarningAlert = React.memo(
     return (
       <CenteredModal
         className="dialog-outer-div"
-        // If it is a browser nav, the browser alert is good enough.
         show={show}
         onOutsideClickOrEscape={null}
       >
         <h2 className=" dialog-heading">Unsaved Changes</h2>
         <div className=" dialog-content-div relative ">
           <p className=" p-base">
-            You have made changes to this plan that you originally loaded from a link. Leaving this page will discard
-            these changes.
+            You have made changes to this plan that you originally loaded from a
+            link. Leaving this page will discard these changes.
           </p>
           <p className=" p-base mt-4">
             If you would like to save your changes, select {`"`}

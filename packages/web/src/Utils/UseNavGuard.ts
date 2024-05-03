@@ -10,7 +10,7 @@ export const useNavGuard = (isSyncing: boolean, planPaths: PlanPaths) => {
   const [state, setState] = useState<
     | { isTriggered: false }
     | { isTriggered: true; isBrowserNav: true }
-    | { isTriggered: true; timestamp: number; isBrowserNav: false; url: URL }
+    | { isTriggered: true; isBrowserNav: false; timestamp: number; url: URL }
   >({ isTriggered: false })
 
   const handleSyncing = () => {

@@ -10,11 +10,15 @@ import {
   fGet,
   PickType,
 } from '@tpaw/common'
-import _ from 'lodash'
+import _, { isDate } from 'lodash'
 import { InMonthsFns } from '../../../Utils/InMonthsFns'
 import { Record } from '../../../Utils/Record'
 import { SimpleRange } from '../../../Utils/SimpleRange'
-import { NormalizedAges, MonthToMFN } from '../NormalizeAges'
+import {
+  NormalizedAges,
+  MonthToMFN,
+  getFromMFNToNumericAge,
+} from '../NormalizeAges'
 import {
   NormalizedMonthInThePast,
   NormalizedMonthNotInThePast,
@@ -119,9 +123,16 @@ export const normalizeAmountAndTimingRecurring = (
     baseAmount,
     delta,
   })
-  const mfnToCalendarMonth = nowAsCalendarMonth
-    ? CalendarMonthFns.getFromMFN(nowAsCalendarMonth)
-    : null
+
+  const mfnTo = nowAsCalendarMonth
+    ? ({
+        isDatedPlan: true,
+        calendarMonth: CalendarMonthFns.getFromMFN(nowAsCalendarMonth),
+      } as const)
+    : ({
+        isDatedPlan: false,
+        numericAge: getFromMFNToNumericAge({ ages }),
+      } as const)
 
   switch (monthRange.type) {
     case 'startAndEnd': {
@@ -147,7 +158,7 @@ export const normalizeAmountAndTimingRecurring = (
           baseAmount,
           everyXMonths,
           delta,
-          mfnToCalendarMonth,
+          mfnTo,
         )
         if (!startInfo) return null
         const start = getNormalizedMonthNotInThePast(
@@ -211,7 +222,7 @@ export const normalizeAmountAndTimingRecurring = (
         baseAmount,
         everyXMonths,
         delta,
-        mfnToCalendarMonth,
+        mfnTo,
       )
       if (!startInfo) return null
       const start = getNormalizedMonthNotInThePast(
@@ -316,7 +327,15 @@ const _stepStartToCurrent = (
   baseAmount: number,
   everyXMonths: _Orig['everyXMonths'],
   delta: _Orig['delta'],
-  mfnToCalendarMonth: null | ((mfn: number) => CalendarMonth),
+  mfnTo:
+    | {
+        isDatedPlan: true
+        calendarMonth: (mfn: number) => CalendarMonth
+      }
+    | {
+        isDatedPlan: false
+        numericAge: ReturnType<typeof getFromMFNToNumericAge>
+      },
 ): { month: { asMFN: number; value: Month }; baseAmount: number } | null => {
   const unchanged = {
     month: { asMFN: startMonth.asMFNPastNotElided, value: startMonth.value },
@@ -327,10 +346,18 @@ const _stepStartToCurrent = (
     month: {
       asMFN,
       value: block((): Month => {
-        const calendarMonth = fGet(mfnToCalendarMonth)(asMFN)
-        return asMFN === 0
-          ? { type: 'now', monthOfEntry: { isDatedPlan: true, calendarMonth } }
-          : { type: 'calendarMonth', calendarMonth }
+        if (mfnTo.isDatedPlan) {
+          const calendarMonth = mfnTo.calendarMonth(asMFN)
+          return asMFN === 0
+            ? {
+                type: 'now',
+                monthOfEntry: { isDatedPlan: true, calendarMonth },
+              }
+            : { type: 'calendarMonth', calendarMonth }
+        } else {
+          assert(startMonth.value.type === 'numericAge')
+          return fGet(mfnTo.numericAge[startMonth.value.person])(asMFN)
+        }
       }),
     },
     baseAmount,
@@ -348,7 +375,6 @@ const _stepStartToCurrent = (
   }
 
   // Undated plans cannot have been in the past.
-  assert(mfnToCalendarMonth)
   assert(endMonthAsMFNPastElided !== 'inThePast')
   const endMonthAsMFNNotInPast = endMonthAsMFNPastElided
 

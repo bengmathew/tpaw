@@ -166,6 +166,7 @@ const _Popup = React.memo(
       switch (simulationInfoBySrc.src) {
         case 'link':
         case 'localMain':
+        case 'file':
           return 'fetched' as const
         default:
           return simulationInfoBySrc.historyStatus

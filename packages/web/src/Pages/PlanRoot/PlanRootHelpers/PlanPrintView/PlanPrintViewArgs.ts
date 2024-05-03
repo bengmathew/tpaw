@@ -32,16 +32,13 @@ export type PlanPrintViewArgs = {
     | {
         isServerSidePrint: false
         pageSize: _PageSize_NoDefault
-        embeddedLinkType: Exclude<
-          NonPlanParams['pdfReportSettings']['embeddedLinkType'],
-          'default'
-        >
+        shouldEmbedLink: boolean
         alwaysShowAllMonths: boolean
       }
     | {
         isServerSidePrint: true
         pageSize: _PageSize_NoDefault
-        linkToEmbed: string
+        linkToEmbed: string | null
         alwaysShowAllMonths: boolean
       }
 }

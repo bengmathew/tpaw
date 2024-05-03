@@ -88,7 +88,7 @@ export const useServerSyncPlan = (
     [] as {
       src: string | null
       action: string
-      currState: { onRender: _State['type']; onSetState: _State['type'] }
+      currState: _State['type']
       targetState: _State['type']
     }[],
   )
@@ -98,10 +98,16 @@ export const useServerSyncPlan = (
     targetState: _State,
   ) => {
     setStateDirect((prev) => {
+      if (state.type !== prev.type) {
+        const message = `Double setState called:\n${JSON.stringify(historyForDebugRef.current, null, 2)}\n:${JSON.stringify({ src, action, targetState })}`
+        console.dir(message)
+        Sentry.captureMessage(message)
+        assertFalse()
+      }
       historyForDebugRef.current.push({
         src,
         action,
-        currState: { onRender: state.type, onSetState: prev.type },
+        currState: prev.type,
         targetState: targetState.type,
       })
       historyForDebugRef.current = historyForDebugRef.current.slice(-10)
@@ -370,11 +376,27 @@ export const useServerSyncPlan = (
   toErrorStateRef.current = toErrorState
 
   // ---- RESPOND TO INPUT CHANGES  ----
+  const debugLastChangeRef = useRef(
+    null as null | { state: typeof state; input: typeof input },
+  )
   useEffect(() => {
+    const whatChanged = block(() => {
+      const last = debugLastChangeRef.current
+      const inputChanged = last ? last.input !== input : true
+      const stateChanged = last ? last.state !== state : true
+      return inputChanged && stateChanged
+        ? 'both'
+        : inputChanged
+          ? 'input'
+          : stateChanged
+            ? 'state'
+            : 'neither'
+    })
+    debugLastChangeRef.current = { state, input }
     if (input) {
       switch (state.type) {
         case 'synced':
-          toSyncingStateRef.current('inputChangeEffect', {
+          toSyncingStateRef.current(`inputChangeEffect-${whatChanged}`, {
             input,
             failures: [],
           })

@@ -12,10 +12,11 @@ import {
   union,
 } from 'json-guard'
 import { Guards } from '../../Guards'
-import { assert, block, letIn } from '../../Utils'
-import { NonPlanParams23 as NonPlanParamsPrev } from './Old/NonPlanParams23'
-export namespace NonPlanParams24 {
-  export const currentVersion = 24 as const
+import { assert, block, letIn, noCase } from '../../Utils'
+import { NonPlanParams24 as NonPlanParamsPrev } from './Old/NonPlanParams24'
+export namespace NonPlanParams25 {
+  // Just to re-emphasize that currentVersion has the const type.
+  export const currentVersion = 25 as number as 25
   export type NonPlanParams = {
     v: typeof currentVersion
     timestamp: number
@@ -23,7 +24,7 @@ export namespace NonPlanParams24 {
     numOfSimulationForMonteCarloSampling: number
     pdfReportSettings: {
       pageSize: 'A4' | 'Letter' | 'default'
-      embeddedLinkType: 'short' | 'long' | 'default'
+      shouldEmbedLink: 'auto' | 'yes' | 'no'
     }
     dev: {
       showSyncStatus: boolean
@@ -43,15 +44,17 @@ export namespace NonPlanParams24 {
                 : ('Letter' as const),
             )
           : pageSize,
-      embeddedLinkType: (
-        embeddedLinkType: NonPlanParams['pdfReportSettings']['embeddedLinkType'],
+      getShouldEmbedLink: (
+        shouldEmbedLink: NonPlanParams['pdfReportSettings']['shouldEmbedLink'],
         isLoggedIn: boolean,
       ) =>
-        embeddedLinkType === 'default'
+        shouldEmbedLink === 'auto'
           ? isLoggedIn
-            ? 'short'
-            : 'long'
-          : embeddedLinkType,
+          : shouldEmbedLink === 'yes'
+            ? true
+            : shouldEmbedLink === 'no'
+              ? false
+              : noCase(shouldEmbedLink),
     }
 
     return { resolvePDFReportSettingsDefaults }
@@ -71,11 +74,7 @@ export namespace NonPlanParams24 {
     numOfSimulationForMonteCarloSampling: chain(number, integer, gt(0)),
     pdfReportSettings: object({
       pageSize: union(constant('A4'), constant('Letter'), constant('default')),
-      embeddedLinkType: union(
-        constant('short'),
-        constant('long'),
-        constant('default'),
-      ),
+      shouldEmbedLink: union(constant('auto'), constant('yes'), constant('no')),
     }),
     dev: object({
       showSyncStatus: boolean,
@@ -108,10 +107,20 @@ export namespace NonPlanParams24 {
     const result: NonPlanParams = {
       ...prev,
       v: currentVersion,
-      timestamp: 1704931412864,
       pdfReportSettings: {
-        pageSize: 'default',
-        embeddedLinkType: 'default',
+        pageSize: prev.pdfReportSettings.pageSize,
+        shouldEmbedLink: block(() => {
+          switch (prev.pdfReportSettings.embeddedLinkType) {
+            case 'default':
+              return 'auto' as const
+            case 'long':
+              return 'no' as const
+            case 'short':
+              return 'yes' as const
+            default:
+              noCase(prev.pdfReportSettings.embeddedLinkType)
+          }
+        }),
       },
     }
     assert(!guard(result).error)

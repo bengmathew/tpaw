@@ -3,13 +3,14 @@ import React, { useMemo } from 'react'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
 import {
-    PlanTransitionState,
-    simplifyPlanTransitionState5,
+  PlanTransitionState,
+  simplifyPlanTransitionState5,
 } from '../PlanTransition'
-import { PlanMenuLinkPlanMode } from './PlanMenuLinkPlanMode'
-import { PlanMenuLocalPlanMode } from './PlanMenuLocalPlanMode'
-import { PlanMenuServerHistoryMode } from './PlanMenuServerHistoryMode'
-import { PlanMenuServerPlanMode } from './PlanMenuServerPlanMode'
+import { PlanMenuLinkSrc } from './PlanMenuLinkSrc'
+import { PlanMenuLocalSrc } from './PlanMenuLocalPlanSrc'
+import { PlanMenuServerSrcHistoryMode } from './PlanMenuServerSrcHistoryMode'
+import { PlanMenuServerSrcPlanMode } from './PlanMenuServerSrcPlanMode'
+import { PlanMenuFileSrc } from './PlanMenuFileSrc'
 
 export type PlanMenuSizing = {
   dynamic: Record<
@@ -71,7 +72,7 @@ export const PlanMenu = React.memo(
       >
         {simulationInfoBySrc.src === 'localMain' ? (
           simulationInfoByMode.mode === 'plan' ? (
-            <PlanMenuLocalPlanMode
+            <PlanMenuLocalSrc
               simulationInfoForLocalMainSrc={simulationInfoBySrc}
               simulationInfoForPlanMode={simulationInfoByMode}
             />
@@ -82,12 +83,12 @@ export const PlanMenu = React.memo(
           )
         ) : simulationInfoBySrc.src === 'server' ? (
           simulationInfoByMode.mode === 'plan' ? (
-            <PlanMenuServerPlanMode
+            <PlanMenuServerSrcPlanMode
               simulationInfoForServerSrc={simulationInfoBySrc}
               simulationInfoForPlanMode={simulationInfoByMode}
             />
           ) : simulationInfoByMode.mode === 'history' ? (
-            <PlanMenuServerHistoryMode
+            <PlanMenuServerSrcHistoryMode
               simulationInfoForServerSrc={simulationInfoBySrc}
               simulationInfoForHistoryMode={simulationInfoByMode}
             />
@@ -96,8 +97,19 @@ export const PlanMenu = React.memo(
           )
         ) : simulationInfoBySrc.src === 'link' ? (
           simulationInfoByMode.mode === 'plan' ? (
-            <PlanMenuLinkPlanMode
+            <PlanMenuLinkSrc
               simulationInfoForLinkSrc={simulationInfoBySrc}
+              simulationInfoForPlanMode={simulationInfoByMode}
+            />
+          ) : simulationInfoByMode.mode === 'history' ? (
+            assertFalse()
+          ) : (
+            noCase(simulationInfoByMode)
+          )
+        ) : simulationInfoBySrc.src === 'file' ? (
+          simulationInfoByMode.mode === 'plan' ? (
+            <PlanMenuFileSrc
+              simulationInfoForFileSrc={simulationInfoBySrc}
               simulationInfoForPlanMode={simulationInfoByMode}
             />
           ) : simulationInfoByMode.mode === 'history' ? (

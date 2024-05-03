@@ -126,7 +126,7 @@ const _Body = React.memo(
     }
     return (
       <PlanMenuActionModalLabelInput
-        title="Create a New Plan"
+        title="New Plan"
         initialLabel=""
         buttonLabel="Create"
         onCancel={onCancel}

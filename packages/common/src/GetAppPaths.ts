@@ -36,6 +36,7 @@ export const getAppPaths = (base: URL) => {
   return {
     root: () => urlFromPath('/'),
     account: () => urlFromPath('/account'),
+    'convert-long-links': () => urlFromPath('/convert-long-links'),
     learn: () => urlFromPath('/learn'),
     auth: block(() => {
       const result = () => urlFromPath('/auth')
@@ -52,6 +53,7 @@ export const getAppPaths = (base: URL) => {
     guest: planFromPath('/guest'),
     serverSidePrint: planFromPath('/server-side-print'),
     link: planFromPath('/link'),
+    file: planFromPath('/file'),
     plans: () => urlFromPath('/plans'),
     plan: planFromPath('/plan'),
     'alt-plan': planFromPath('/alt-plan'),

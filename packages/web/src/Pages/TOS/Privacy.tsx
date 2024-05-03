@@ -12,13 +12,6 @@ export const Privacy = React.memo(() => {
       <div className="flex flex-col items-center mb-20 mt-6">
         <div className="w-full max-w-[650px] px-4 z-0">
           <div className=" ">
-            {/* <Contentful.RichText
-              body={content.TPAW}
-              h1="font-bold text-4xl "
-              h2="font-bold text-xl mt-6"
-              p="mt-4 p-base"
-              ul="list-disc ml-5"
-            /> */}
             <h1 className="font-bold text-4xl ">Privacy</h1>
             <h2 className="font-bold text-xl mt-6 ">Your Inputs and Results</h2>
             <p className="mt-4 p-base">
@@ -33,8 +26,8 @@ export const Privacy = React.memo(() => {
             <ul className="list-disc ml-5">
               <li>
                 <p className="mt-4 p-base">
-                  When you create a shortened link to a plan, that plan is
-                  stored on a server and associated with the link.
+                  When you create a link to a plan, that plan is stored on a
+                  server and associated with the link.
                 </p>
               </li>
               <li>

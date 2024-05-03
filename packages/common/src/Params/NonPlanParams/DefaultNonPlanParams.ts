@@ -1,15 +1,15 @@
-import { NonPlanParams } from './NonPlanParams'
+import { NonPlanParams, currentNonPlanParamsVersion } from './NonPlanParams'
 
 export const getDefaultNonPlanParams = (
   currentTimestamp: number,
 ): NonPlanParams => ({
-  v: 24,
+  v: currentNonPlanParamsVersion,
   timestamp: currentTimestamp,
   timezone: { type: 'auto' },
   numOfSimulationForMonteCarloSampling: 500,
   pdfReportSettings: {
     pageSize: 'default',
-    embeddedLinkType: 'default',
+    shouldEmbedLink: 'auto',
   },
   dev: {
     showSyncStatus: false,
@@ -18,4 +18,3 @@ export const getDefaultNonPlanParams = (
     overridePlanResultChartYRange: false,
   },
 })
-

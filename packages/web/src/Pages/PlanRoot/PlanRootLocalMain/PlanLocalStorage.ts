@@ -21,6 +21,7 @@ import {
   number,
   object,
   string,
+  nullable,
 } from 'json-guard'
 import _ from 'lodash'
 import * as uuid from 'uuid'
@@ -34,7 +35,10 @@ type _PlanParamsHistoryItemUnmigratedUnsorted = {
 type __PlanParamsHistoryItemMigrated = Omit<
   _PlanParamsHistoryItemUnmigratedUnsorted,
   'params'
-> & { readonly params: PlanParams }
+> & {
+  readonly paramsUnmigrated: SomePlanParams | null
+  readonly params: PlanParams
+}
 
 export type PlanLocalStorageUnmigratedUnsorted = {
   readonly v: 1
@@ -81,6 +85,7 @@ export namespace PlanLocalStorage {
         planParamsPostBase: [
           {
             id: uuid.v4(),
+            paramsUnmigrated: null,
             params: planParams,
             change: { type: 'start', value: null },
           },
@@ -161,6 +166,7 @@ export namespace PlanLocalStorage {
       ...restState,
       planParamsPostBase: planParamsPostBase.map((x) => ({
         id: x.id,
+        paramsUnmigrated: x.params.unmigrated,
         params: x.params.migrated,
         change: x.change,
       })),
@@ -181,7 +187,16 @@ export namespace PlanLocalStorage {
     const { planParamsPostBase, restState } = block(() => {
       if ('planParamsPostBase' in state) {
         const { planParamsPostBase, ...restState } = state
-        return { planParamsPostBase, restState }
+        return {
+          planParamsPostBase: planParamsPostBase.map(
+            (x): _PlanParamsHistoryItemUnmigratedUnsorted => ({
+              id: x.id,
+              params: x.params,
+              change: x.change,
+            }),
+          ),
+          restState,
+        }
       } else {
         const {
           planParamsPostBaseUnmigratedUnsorted: planParamsPostBase,

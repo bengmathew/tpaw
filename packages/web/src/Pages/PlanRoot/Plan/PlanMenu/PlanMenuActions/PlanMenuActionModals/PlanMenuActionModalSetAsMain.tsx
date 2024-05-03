@@ -69,7 +69,7 @@ export const PlanMenuActionModalSetAsMain = React.memo(
         onOutsideClickOrEscape={null}
       >
         <h2 className=" dialog-heading">
-          {isSyncing ? 'Syncing Plan to Server...' : 'Make This the Main Plan'}
+          {isSyncing ? 'Syncing Plan to Server...' : 'Set as Main Plan'}
         </h2>
         <div className=" dialog-content-div relative">
           <p className={clix('p-base', isSyncing && 'opacity-0')}>

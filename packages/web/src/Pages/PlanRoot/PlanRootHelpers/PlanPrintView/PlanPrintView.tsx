@@ -133,7 +133,7 @@ export const PlanPrintView = React.memo(
       simulationResult,
     ])
 
-    const [shortLink, setShortLink] = useState<URL | null>(null)
+    const [link, setLink] = useState<string | null>(null)
     const [commitGetShortLink] = useMutation<PlanPrintViewGetShortLinkMutation>(
       graphql`
         mutation PlanPrintViewGetShortLinkMutation(
@@ -145,10 +145,9 @@ export const PlanPrintView = React.memo(
         }
       `,
     )
-    const needsShortLink =
-      !settings.isServerSidePrint && settings.embeddedLinkType === 'short'
+    const needsLink = !settings.isServerSidePrint && settings.shouldEmbedLink
     useEffect(() => {
-      if (!needsShortLink || shortLink) return
+      if (!needsLink || link) return
       const { dispose } = commitGetShortLink({
         variables: {
           input: { params: JSON.stringify(planParamsForLink) },
@@ -156,30 +155,22 @@ export const PlanPrintView = React.memo(
         onCompleted: ({ createLinkBasedPlan }) => {
           const url = appPaths.link()
           url.searchParams.set('params', createLinkBasedPlan.id)
-          setShortLink(url)
+          setLink(url.toString())
         },
         onError: (e) => {
           setGlobalError(e)
         },
       })
       return () => dispose()
-    }, [
-      commitGetShortLink,
-      planParamsForLink,
-      needsShortLink,
-      setGlobalError,
-      shortLink,
-    ])
+    }, [commitGetShortLink, planParamsForLink, needsLink, setGlobalError, link])
 
     const linkToEmbed = settings.isServerSidePrint
-      ? new URL(settings.linkToEmbed)
-      : settings.embeddedLinkType === 'long'
-        ? block(() => {
-            const url = appPaths.link()
-            url.searchParams.set('params', JSON.stringify(planParamsForLink))
-            return url
-          })
-        : shortLink
+      ? { isProcessing: false, link: settings.linkToEmbed }
+      : !settings.shouldEmbedLink
+        ? { isProcessing: false, link: null }
+        : link
+          ? { isProcessing: false, link }
+          : { isProcessing: true, link: null }
 
     const planColors = mainPlanColors
 
@@ -293,7 +284,12 @@ export const PlanPrintView = React.memo(
                       )}
                     >
                       <PlanPrintViewFrontSection
-                        linkToEmbed={linkToEmbed}
+                        linkToEmbed={{
+                          needsLink: settings.isServerSidePrint
+                            ? !!settings.linkToEmbed
+                            : settings.shouldEmbedLink,
+                          link: linkToEmbed.link,
+                        }}
                         settings={settings}
                         planLabel={fixed.planLabel}
                       />

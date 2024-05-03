@@ -10,6 +10,7 @@ import { WithWASM } from './PlanRootHelpers/WithWASM'
 import { PlanRootLink } from './PlanRootLink/PlanRootLink'
 import { PlanRootLocalMain } from './PlanRootLocalMain/PlanRootLocalMain'
 import { PlanRootServer } from './PlanRootServer/PlanRootServer'
+import { PlanRootFile } from './PlanRootFile/PlanRootFile'
 
 type t = Extract<SimulationParams['pdfReportInfo'], { isShowing: false }>
 
@@ -26,6 +27,7 @@ export const PlanRoot = React.memo(
       | { type: 'localMain' }
       | { type: 'serverAlt'; slug: string }
       | { type: 'link' }
+      | { type: 'file' }
   }) => {
     const [pdfReportProps, setPDFReportProps] = useState<
       | Parameters<
@@ -71,6 +73,8 @@ export const PlanRoot = React.memo(
                 <PlanRootLocalMain pdfReportInfo={pdfReportInfo} />
               ) : src.type === 'link' ? (
                 <PlanRootLink pdfReportInfo={pdfReportInfo} />
+              ) : src.type === 'file' ? (
+                <PlanRootFile pdfReportInfo={pdfReportInfo} />
               ) : (
                 noCase(src)
               )}

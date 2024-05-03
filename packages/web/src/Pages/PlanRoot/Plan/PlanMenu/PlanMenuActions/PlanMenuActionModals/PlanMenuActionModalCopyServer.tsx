@@ -1,4 +1,4 @@
-import { PlanParams, block, fGet } from '@tpaw/common'
+import { block, fGet } from '@tpaw/common'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { graphql, useMutation } from 'react-relay'
@@ -18,7 +18,6 @@ export const PlanMenuActionModalCopyServer = React.memo(
     hideOnSuccess,
     cutAfterId,
     isSyncing,
-    planParamsForDatingSwitch,
   }: {
     plan: User['plans'][0]
     show: boolean
@@ -26,7 +25,6 @@ export const PlanMenuActionModalCopyServer = React.memo(
     hideOnSuccess: boolean
     cutAfterId: string | null
     isSyncing: boolean
-    planParamsForDatingSwitch: PlanParams | null
   }) => {
     return (
       <CenteredModal
@@ -40,7 +38,6 @@ export const PlanMenuActionModalCopyServer = React.memo(
           hideOnSuccess={hideOnSuccess}
           cutAfterId={cutAfterId}
           isSyncing={isSyncing}
-          planParamsForDatingSwitch={planParamsForDatingSwitch}
         />
       </CenteredModal>
     )
@@ -54,14 +51,12 @@ const _Body = React.memo(
     hideOnSuccess,
     cutAfterId,
     isSyncing,
-    planParamsForDatingSwitch,
   }: {
     plan: User['plans'][0]
     onHide: () => void
     hideOnSuccess: boolean
     cutAfterId: string | null
     isSyncing: boolean
-    planParamsForDatingSwitch: PlanParams | null
   }) => {
     const { defaultErrorHandlerForNetworkCall } =
       useDefaultErrorHandlerForNetworkCall()
@@ -124,7 +119,7 @@ const _Body = React.memo(
 
     return !result ? (
       <PlanMenuActionModalLabelInput
-        title="Copy to New Plan"
+        title="Copy Plan"
         initialLabel={plan.label ? `Copy of ${plan.label}` : ''}
         buttonLabel="Copy Plan"
         onCancel={onHide}

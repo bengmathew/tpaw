@@ -2,11 +2,11 @@ import {
   faArrowRightFromBracket,
   faCaretDown,
   faCopy,
+  faLink,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
 import clix from 'clsx'
-import Link from 'next/link'
 import React, { useState } from 'react'
 import { ContextModal } from '../../../Common/Modal/ContextModal'
 import {
@@ -15,12 +15,12 @@ import {
   useSimulation,
 } from '../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../UsePlanColors'
-import { PlanMenuActionCopyToLink } from './PlanMenuActions/PlanMenuActionCopyToLink'
 import { PlanMenuActionModalCopyServer } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalCopyServer'
 import { PlanMenuDivider } from './PlanMenuHelpers/PlanMenuDivider'
 import { PlanMenuSubMenuRewind } from './PlanMenuSubMenu/PlanMenuSubMenuRewind'
+import { PlanMenuActionModalCopyToLink } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalCopyToLink'
 
-export const PlanMenuServerHistoryMode = React.memo(
+export const PlanMenuServerSrcHistoryMode = React.memo(
   ({
     simulationInfoForServerSrc,
     simulationInfoForHistoryMode,
@@ -31,7 +31,8 @@ export const PlanMenuServerHistoryMode = React.memo(
     const planColors = usePlanColors()
     const { planParamsId } = useSimulation()
     const { plan, syncState, setRewindTo } = simulationInfoForServerSrc
-    const [showCopyModal, setShowCopyModal] = useState(false)
+    const [showCopy, setShowCopy] = useState(false)
+    const [showCopyToLink, setShowCopyToLink] = useState(false)
     const label = plan.isMain ? 'Main Plan' : plan.label ?? 'Untitled'
 
     return (
@@ -46,7 +47,7 @@ export const PlanMenuServerHistoryMode = React.memo(
               {({ ref }) => (
                 <Menu.Button
                   ref={ref}
-                  className={clix('px-3 py-1.5 rounded-lg')}
+                  className={clix('px-3 py-1.5 rounded-lg  m-0.5')}
                   style={{
                     backgroundColor: planColors.results.bg,
                     color: planColors.results.fg,
@@ -64,22 +65,30 @@ export const PlanMenuServerHistoryMode = React.memo(
                   </div>
                 </Menu.Button>
               )}
-              <Menu.Items className="flex flex-col py-2.5 rounded-lg">
+              <Menu.Items className="flex flex-col context-menu-outer-div">
                 <Menu.Item>
                   <button
                     className="context-menu-item "
-                    onClick={() => setShowCopyModal(true)}
+                    onClick={() => setShowCopy(true)}
                   >
                     <span className="context-menu-icon">
                       <FontAwesomeIcon icon={faCopy} />
                     </span>{' '}
-                    Copy to New Plan
+                    Copy as of This Date
                   </button>
                 </Menu.Item>
-                <PlanMenuActionCopyToLink
-                  className="context-menu-item"
-                  closeMenu={close}
-                />
+                <Menu.Item>
+                  <button
+                    className="context-menu-item "
+                    onClick={() => setShowCopyToLink(true)}
+                  >
+                    <span className="context-menu-icon">
+                      <FontAwesomeIcon icon={faLink} />
+                    </span>{' '}
+                    Copy to Link
+                  </button>
+                </Menu.Item>
+
                 <PlanMenuDivider />
                 <Menu.Item>
                   <button
@@ -102,13 +111,18 @@ export const PlanMenuServerHistoryMode = React.memo(
         />
 
         <PlanMenuActionModalCopyServer
-          show={showCopyModal}
+          show={showCopy}
           plan={plan}
-          onHide={() => setShowCopyModal(false)}
+          onHide={() => setShowCopy(false)}
           hideOnSuccess={false}
           cutAfterId={planParamsId}
           isSyncing={syncState.type !== 'synced'}
-          planParamsForDatingSwitch={null}
+        />
+
+        <PlanMenuActionModalCopyToLink
+          show={showCopyToLink}
+          onDone={() => setShowCopyToLink(false)}
+          suggestDateless={false}
         />
       </div>
     )

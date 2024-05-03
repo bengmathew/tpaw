@@ -1,5 +1,5 @@
 import { DialogPosition, block, noCase } from '@tpaw/common'
-import clix from 'clsx'
+import clsx from 'clsx'
 import getIsMobile from 'is-mobile'
 import _ from 'lodash'
 import { useRouter } from 'next/router'
@@ -56,7 +56,6 @@ const _Plan = React.memo(() => {
     simulationInfoByMode,
     simulationInfoBySrc,
   } = useSimulation()
-
 
   const isSWR = planParamsNorm.advanced.strategy === 'SWR'
   const isTallMenu =
@@ -127,6 +126,9 @@ const _Plan = React.memo(() => {
         return 'From Link'
       case 'localMain':
         return null
+      case 'file':
+        // Don't add label, because 
+        return 'From File'
       case 'server':
         return simulationInfoBySrc.plan.isMain
           ? null
@@ -146,17 +148,16 @@ const _Plan = React.memo(() => {
         alwaysShowAllMonths={nonPlanParams.dev.alwaysShowAllMonths}
       >
         <AppPage
-          // iPhone viewport height is the max viewport height, but the scroll
-          // that results does not properly hide the address and nav bar, so it
-          // just does not work. Tested on iOS 15.4. So dont use h-screen for
-          // iPhone, max out based on windowSize.
-          // className={`${i  sIPhone ? '' : 'h-screen'} bg-planBG overflow-hidden`}
-          className={clix(
+          className={clsx(
             isPrintView && 'hidden',
             planColors.pageBG,
             'overflow-hidden',
             !isIPhone && 'h-screen',
           )}
+          // iPhone viewport height is the max viewport height, but the scroll
+          // that results does not properly hide the address and nav bar, so it
+          // just does not work. Tested on iOS 15.4. So dont use h-screen for
+          // iPhone, max out based on windowSize.
           style={{ height: isIPhone ? `${windowSize.height}px` : undefined }}
           title={_.compact([
             `Plan ${planLabel ? `(${planLabel}) ` : ''}`,
