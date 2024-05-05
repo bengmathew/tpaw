@@ -1,7 +1,16 @@
-import { CalendarDay, CalendarMonthFns, getZonedTimeFns } from '@tpaw/common'
+import {
+  CalendarDay,
+  CalendarMonth,
+  CalendarMonthFns,
+  getZonedTimeFns,
+} from '@tpaw/common'
 import { DateTime } from 'luxon'
 
 export namespace CalendarDayFns {
+  export const toCalendarMonth = ({
+    year,
+    month,
+  }: CalendarDay): CalendarMonth => ({ year, month })
   export const toStr = (
     day: CalendarDay,
     opts: { shortMonth?: boolean; skipYear?: boolean } = {},

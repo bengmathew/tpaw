@@ -13,6 +13,7 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
+import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
 
 type _EditState = {
   isAdd: boolean
@@ -108,8 +109,9 @@ const _FutureSavingsCard = React.memo(
                     monthOfEntry: planParamsNorm.datingInfo.isDated
                       ? {
                           isDatedPlan: true,
-                          calendarMonth:
+                          calendarMonth: CalendarDayFns.toCalendarMonth(
                             planParamsNorm.datingInfo.nowAsCalendarDay,
+                          ),
                         }
                       : { isDatedPlan: false },
                   },

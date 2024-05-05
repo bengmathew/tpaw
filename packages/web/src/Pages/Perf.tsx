@@ -150,7 +150,7 @@ const getParams = (
   currentTimestamp: number,
   ianaTimezoneName: string,
 ): PlanParams => {
-  const nowAsCalendarDay = CalendarMonthFns.fromTimestamp(
+  const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
     currentTimestamp,
     ianaTimezoneName,
   )
@@ -167,7 +167,7 @@ const getParams = (
           type: 'retirementDateSpecified',
           currentAgeInfo: {
             isDatedPlan: true,
-            monthOfBirth: CalendarMonthFns.getFromMFN(nowAsCalendarDay)(
+            monthOfBirth: CalendarMonthFns.getFromMFN(nowAsCalendarMonth)(
               -35 * 12,
             ),
           },
@@ -220,7 +220,7 @@ const getParams = (
               type: 'now',
               monthOfEntry: {
                 isDatedPlan: true,
-                calendarMonth: nowAsCalendarDay,
+                calendarMonth: nowAsCalendarMonth,
               },
             },
             stocks: 0.5,

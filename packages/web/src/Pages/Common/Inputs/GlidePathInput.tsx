@@ -21,6 +21,7 @@ import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { getNormalizedMonthStr } from '../MonthOrDurationDisplay'
 import { AmountInput } from './AmountInput'
 import { MonthInput } from './MonthInput/MonthInput'
+import { CalendarDayFns } from '../../../Utils/CalendarDayFns'
 
 export const GlidePathInput = React.memo(
   ({
@@ -50,10 +51,7 @@ export const GlidePathInput = React.memo(
             className=""
             value={value.now.stocks}
             onChange={(stocks) => {
-              const clone = normalizeGlidePath.inverse(
-                value,
-                nowAsCalendarDay,
-              )
+              const clone = normalizeGlidePath.inverse(value, nowAsCalendarDay)
               clone.start.stocks = stocks
               onChange(clone)
             }}
@@ -63,10 +61,7 @@ export const GlidePathInput = React.memo(
           <_Intermediate
             values={value.intermediate}
             onChange={(intermediate) => {
-              const clone = normalizeGlidePath.inverse(
-                value,
-                nowAsCalendarDay,
-              )
+              const clone = normalizeGlidePath.inverse(value, nowAsCalendarDay)
               clone.intermediate = _.fromPairs(
                 [
                   ...intermediate,
@@ -81,10 +76,7 @@ export const GlidePathInput = React.memo(
             className=""
             value={value.end.stocks}
             onChange={(stocks) => {
-              const clone = normalizeGlidePath.inverse(
-                value,
-                nowAsCalendarDay,
-              )
+              const clone = normalizeGlidePath.inverse(value, nowAsCalendarDay)
               clone.end.stocks = stocks
               onChange(clone)
             }}
@@ -95,10 +87,7 @@ export const GlidePathInput = React.memo(
           <_Intermediate
             values={value.atOrPastEnd}
             onChange={(atOrPastEnd) => {
-              const clone = normalizeGlidePath.inverse(
-                value,
-                nowAsCalendarDay,
-              )
+              const clone = normalizeGlidePath.inverse(value, nowAsCalendarDay)
               clone.intermediate = _.fromPairs(
                 [
                   ...atOrPastEnd,
@@ -136,7 +125,11 @@ const _NewEntry = React.memo(
           month: {
             type: 'now',
             monthOfEntry: nowAsCalendarDay
-              ? { isDatedPlan: true, calendarMonth: nowAsCalendarDay }
+              ? {
+                  isDatedPlan: true,
+                  calendarMonth:
+                    CalendarDayFns.toCalendarMonth(nowAsCalendarDay),
+                }
               : { isDatedPlan: false },
           },
           stocks: 0.5,

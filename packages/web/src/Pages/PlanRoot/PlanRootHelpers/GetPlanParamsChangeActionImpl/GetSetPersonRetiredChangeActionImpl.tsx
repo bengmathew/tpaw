@@ -14,12 +14,14 @@ import {
   block,
   fGet,
   noCase,
+  CalendarDay,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { normalizePlanParamsInverse } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
 import { PlanParamsHelperFns } from '../../../../UseSimulator/PlanParamsHelperFns'
 import { PlanParamsChangeActionImpl } from './GetPlanParamsChangeActionImpl'
+import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
 
 export const getSetPersonRetiredChangeActionImpl = ({
   value: personType,
@@ -52,7 +54,7 @@ export const getSetPersonRetiredChangeActionImpl = ({
 const _removeRetirementReferencesFromLabeledAmountTimedList = (
   personType: 'person1' | 'person2',
   clone: PlanParams,
-  nowAsCalendarDay: CalendarMonth | null,
+  nowAsCalendarDay: CalendarDay | null,
 ) => {
   // Returns a new object only if month is changed.
   const handleMonth = (month: Month): Month | { type: 'inThePast' } => {
@@ -70,7 +72,11 @@ const _removeRetirementReferencesFromLabeledAmountTimedList = (
             return {
               type: 'now',
               monthOfEntry: nowAsCalendarDay
-                ? { isDatedPlan: true, calendarMonth: nowAsCalendarDay }
+                ? {
+                    isDatedPlan: true,
+                    calendarMonth:
+                      CalendarDayFns.toCalendarMonth(nowAsCalendarDay),
+                  }
                 : { isDatedPlan: false },
             }
           case 'max':
@@ -238,7 +244,7 @@ const _removeRetirementReferencesFromGlidePaths = (
 const _removeRetirementReferences = (
   personType: 'person1' | 'person2',
   clone: PlanParams,
-  nowAsCalendarDay: CalendarMonth | null,
+  nowAsCalendarDay: CalendarDay | null,
 ) => {
   // To make sure typechecking fails when new locations are added, so
   // we can update this code.

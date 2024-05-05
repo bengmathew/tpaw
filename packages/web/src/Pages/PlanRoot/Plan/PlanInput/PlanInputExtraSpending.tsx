@@ -26,6 +26,7 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
+import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
 
 export const PlanInputExtraSpending = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -55,7 +56,9 @@ export const PlanInputExtraSpending = React.memo(
               monthOfEntry: planParamsNorm.datingInfo.isDated
                 ? {
                     isDatedPlan: true,
-                    calendarMonth: planParamsNorm.datingInfo.nowAsCalendarDay,
+                    calendarMonth: CalendarDayFns.toCalendarMonth(
+                      planParamsNorm.datingInfo.nowAsCalendarDay,
+                    ),
                   }
                 : { isDatedPlan: false },
             }

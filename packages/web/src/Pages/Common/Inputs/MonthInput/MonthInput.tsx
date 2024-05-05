@@ -36,6 +36,7 @@ import { ContextModal } from '../../Modal/ContextModal'
 import { getNormalizedMonthStr } from '../../MonthOrDurationDisplay'
 import { CalendarMonthInput } from './CalendarMonthInput'
 import { InMonthsInput } from './InMonthsInput'
+import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
 
 export type MonthInputProps = React.ComponentProps<typeof MonthInput>
 
@@ -253,7 +254,9 @@ const _processChoices = (
                   monthOfEntry: datingInfo.isDated
                     ? {
                         isDatedPlan: true,
-                        calendarMonth: datingInfo.nowAsCalendarDay,
+                        calendarMonth: CalendarDayFns.toCalendarMonth(
+                          datingInfo.nowAsCalendarDay,
+                        ),
                       }
                     : { isDatedPlan: false },
                 },
