@@ -24,6 +24,7 @@ import { CurrentTimeInfo } from './UseCurrentTime'
 import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName } from './WithNonPlanParams'
 import { useWASM } from './WithWASM'
+import { CalendarDayFns } from '../../../Utils/CalendarDayFns'
 
 export type PlanParamsHistoryItem = {
   readonly id: string
@@ -97,7 +98,10 @@ export const useWorkingPlan = (
 
       const planParamsNorm = normalizePlanParams(planParams, {
         timestamp: currentTimeInfo.currentTimestamp,
-        calendarMonth: currentTimeInfo.nowAsCalendarMonth,
+        calendarDay: CalendarDayFns.fromTimestamp(
+          currentTimeInfo.currentTimestamp,
+          ianaTimezoneName,
+        ),
       })
 
       const planParamsFromNorm = normalizePlanParamsInverse(planParamsNorm)

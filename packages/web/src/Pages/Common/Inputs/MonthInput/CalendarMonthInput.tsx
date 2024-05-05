@@ -29,10 +29,10 @@ export const CalendarMonthInput = React.memo(
   }) => {
     const { planParamsNorm } = useSimulation()
     assert(planParamsNorm.datingInfo.isDated)
-    const nowAsCalendarMonth = planParamsNorm.datingInfo.nowAsCalendarMonth
+    const nowAsCalendarDay = planParamsNorm.datingInfo.nowAsCalendarDay
 
-    const toMFN = CalendarMonthFns.getToMFN(nowAsCalendarMonth)
-    const fromMFN = CalendarMonthFns.getFromMFN(nowAsCalendarMonth)
+    const toMFN = CalendarMonthFns.getToMFN(nowAsCalendarDay)
+    const fromMFN = CalendarMonthFns.getFromMFN(nowAsCalendarDay)
     const rangeAsCalendarMonth = validRangeAsMFN.includingLocalConstraints
       ? {
           start: fromMFN(validRangeAsMFN.includingLocalConstraints.start),

@@ -28,10 +28,13 @@ export const PlanPrintViewFrontSection = React.memo(
           {/* Removed the element on !isDated was causing footer to move to next page.*/}
           <div className={clsx(!datingInfo.isDated && 'invisible')}>
             <h2 className="font-bold text-[50px] leading-[50px]">
-              {DateTime.now().toFormat('yyyy')}
+              {datingInfo.isDated && `${datingInfo.nowAsCalendarDay.year}`}
             </h2>
             <h2 className="font-bold text-[25px] leading-[25px] ">
-              {DateTime.now().toFormat('MMMM dd')}
+              {datingInfo.isDated &&
+                CalendarDayFns.toStr(datingInfo.nowAsCalendarDay, {
+                  skipYear: true,
+                })}
             </h2>
           </div>
           <div className=" ">

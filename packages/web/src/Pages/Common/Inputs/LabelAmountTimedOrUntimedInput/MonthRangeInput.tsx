@@ -47,7 +47,7 @@ export const MonthRangeInput = React.memo(
         ? {
             type: 'calendarMonth',
             calendarMonth: CalendarMonthFns.getFromMFN(
-              datingInfo.nowAsCalendarMonth,
+              datingInfo.nowAsCalendarDay,
             )(mfn),
           }
         : mfnToNumericAge.auto(mfn)

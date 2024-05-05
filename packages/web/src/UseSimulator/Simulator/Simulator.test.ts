@@ -11,7 +11,7 @@ import * as Rust from '@tpaw/simulator'
 describe('simulator', () => {
   let now = Date.now()
   let ianaTimezoneName = 'America/New_York'
-  let nowAsCalendarMonth = letIn(
+  let nowAsCalendarDay = letIn(
     getZonedTimeFns(ianaTimezoneName)(now),
     (nowAsDateTime) => ({
       year: nowAsDateTime.year,
@@ -20,8 +20,8 @@ describe('simulator', () => {
   )
 
   let yearsFromNowAsCalendarMonth = (yearsFromNow: number) => ({
-    year: nowAsCalendarMonth.year + yearsFromNow,
-    month: nowAsCalendarMonth.month,
+    year: nowAsCalendarDay.year + yearsFromNow,
+    month: nowAsCalendarDay.month,
   })
 
   const getPlanParams = (

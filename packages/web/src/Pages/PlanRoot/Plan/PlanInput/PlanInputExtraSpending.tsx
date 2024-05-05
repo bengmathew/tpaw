@@ -55,7 +55,7 @@ export const PlanInputExtraSpending = React.memo(
               monthOfEntry: planParamsNorm.datingInfo.isDated
                 ? {
                     isDatedPlan: true,
-                    calendarMonth: planParamsNorm.datingInfo.nowAsCalendarMonth,
+                    calendarMonth: planParamsNorm.datingInfo.nowAsCalendarDay,
                   }
                 : { isDatedPlan: false },
             }

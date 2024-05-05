@@ -18,7 +18,7 @@ type SetFastForwardSpec = (
 
 export type CurrentTimeInfo = {
   currentTimestamp: number
-  nowAsCalendarMonth: CalendarMonth
+  nowAsCalendarDay: CalendarMonth
   forceUpdateCurrentTime: () => number
   fastForwardInfo:
     | {
@@ -90,7 +90,7 @@ export const useCurrentTime = ({
     return _FastForward.apply(newTime, ianaTimezoneName, fastForwardSpec)
   }, [fastForwardSpec, ianaTimezoneName])
 
-  const nowAsCalendarMonth = useMemo(
+  const nowAsCalendarDay = useMemo(
     () =>
       letIn(getZonedTime(currentTimestamp), (nowAsDateTime) => ({
         year: nowAsDateTime.year,
@@ -100,7 +100,7 @@ export const useCurrentTime = ({
   )
   return {
     currentTimestamp,
-    nowAsCalendarMonth,
+    nowAsCalendarDay,
     forceUpdateCurrentTime,
     fastForwardInfo,
   }

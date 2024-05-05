@@ -233,13 +233,13 @@ export namespace PlanParamsHelperFns {
     assert(!datingInfo.isDated)
     const {} = datingInfo
     const timestamp = datingInfo.nowAsTimestampNominal
-    const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
+    const nowAsCalendarDay = CalendarMonthFns.fromTimestamp(
       datingInfo.nowAsTimestampNominal,
       ianaTimezoneName,
     )
     const _forNowMonth = (): PickType<Month, 'now'> => ({
       type: 'now',
-      monthOfEntry: { isDatedPlan: true, calendarMonth: nowAsCalendarMonth },
+      monthOfEntry: { isDatedPlan: true, calendarMonth: nowAsCalendarDay },
     })
 
     const _forMonth = (month: Month): Month => {
@@ -273,7 +273,7 @@ export namespace PlanParamsHelperFns {
           assert(!x.isDatedPlan)
           return {
             isDatedPlan: true,
-            monthOfBirth: CalendarMonthFns.getFromMFN(nowAsCalendarMonth)(
+            monthOfBirth: CalendarMonthFns.getFromMFN(nowAsCalendarDay)(
               -x.currentAge.inMonths,
             ),
           }
@@ -327,8 +327,8 @@ export namespace PlanParamsHelperFns {
   ): PlanParams => {
     const { datingInfo } = planParamsNorm
     assert(datingInfo.isDated)
-    const { nowAsTimestamp: timestamp, nowAsCalendarMonth } = datingInfo
-    const calendarMonthToMFN = CalendarMonthFns.getToMFN(nowAsCalendarMonth)
+    const { nowAsTimestamp: timestamp, nowAsCalendarDay } = datingInfo
+    const calendarMonthToMFN = CalendarMonthFns.getToMFN(nowAsCalendarDay)
     const mfnToNumericAge = getFromMFNToNumericAge(planParamsNorm)
 
     const _forNowMonth = (): PickType<Month, 'now'> => ({
@@ -373,7 +373,7 @@ export namespace PlanParamsHelperFns {
             isDatedPlan: false,
             currentAge: {
               inMonths: CalendarMonthFns.diff(
-                nowAsCalendarMonth,
+                nowAsCalendarDay,
                 x.monthOfBirth,
               ),
             },

@@ -20,9 +20,9 @@ import {
 } from './NormalizeAges'
 
 describe('NormalizeGlidePath', () => {
-  const datingInfo = { nowAsCalendarMonth: { year: 2024, month: 3 } }
+  const datingInfo = { nowAsCalendarDay: { year: 2024, month: 3 } }
   const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(
-    datingInfo.nowAsCalendarMonth,
+    datingInfo.nowAsCalendarDay,
   )
   const ages = normalizeAges(
     {
@@ -49,9 +49,9 @@ describe('NormalizeGlidePath', () => {
       },
       withdrawalStart: 'person2',
     },
-    datingInfo.nowAsCalendarMonth,
+    datingInfo.nowAsCalendarDay,
   )
-  const monthToMFN = getMonthToMFN(datingInfo.nowAsCalendarMonth, ages)
+  const monthToMFN = getMonthToMFN(datingInfo.nowAsCalendarDay, ages)
 
   const m = (mfn: number): Month =>
     getFromMFNToNumericAge({ ages }).person1(mfn)
@@ -171,7 +171,7 @@ describe('NormalizeGlidePath', () => {
           },
           monthToMFN,
           ages,
-          datingInfo.nowAsCalendarMonth,
+          datingInfo.nowAsCalendarDay,
         ),
       ).toEqual({
         now: { stocks: resultNowStocks },

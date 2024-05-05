@@ -208,8 +208,8 @@ const _getHeaderSection = (
     components
   const { planParamsNorm } = data
   const { ages } = planParamsNorm
-  const calendarMonth = planParamsNorm.datingInfo.nowAsCalendarMonth
-    ? CalendarMonthFns.getFromMFN(planParamsNorm.datingInfo.nowAsCalendarMonth)(
+  const calendarMonth = planParamsNorm.datingInfo.nowAsCalendarDay
+    ? CalendarMonthFns.getFromMFN(planParamsNorm.datingInfo.nowAsCalendarDay)(
         dataX,
       )
     : null

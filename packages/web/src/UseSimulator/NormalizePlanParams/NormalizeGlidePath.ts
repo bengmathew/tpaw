@@ -33,7 +33,7 @@ export const normalizeGlidePath = (
   orig: GlidePath,
   monthToMFN: MonthToMFN,
   ages: NormalizedAges,
-  nowAsCalendarMonth: CalendarMonth | null,
+  nowAsCalendarDay: CalendarMonth | null,
 ): NormalizedGlidePath => {
   const { lastMonthAsMFN } = ages.simulationMonths
   const validRangeAsMFN = letIn({ start: 1, end: lastMonthAsMFN - 1 }, (x) => ({
@@ -41,7 +41,7 @@ export const normalizeGlidePath = (
     excludingLocalConstraints: x,
   }))
   const preNormStartAsMFN = orig.start.month.monthOfEntry.isDatedPlan
-    ? CalendarMonthFns.getToMFN(fGet(nowAsCalendarMonth))(
+    ? CalendarMonthFns.getToMFN(fGet(nowAsCalendarDay))(
         orig.start.month.monthOfEntry.calendarMonth,
       )
     : 0
@@ -122,13 +122,19 @@ export const normalizeGlidePath = (
 
 normalizeGlidePath.inverse = (
   n: NormalizedGlidePath,
-  nowAsCalendarMonth: CalendarMonth | null,
+  nowAsCalendarDay: CalendarMonth | null,
 ): GlidePath => ({
   start: {
     month: {
       type: 'now',
-      monthOfEntry: nowAsCalendarMonth
-        ? { isDatedPlan: true, calendarMonth: nowAsCalendarMonth }
+      monthOfEntry: nowAsCalendarDay
+        ? {
+            isDatedPlan: true,
+            calendarMonth: {
+              month: nowAsCalendarDay.month,
+              year: nowAsCalendarDay.year,
+            },
+          }
         : { isDatedPlan: false },
     },
     stocks: n.now.stocks,

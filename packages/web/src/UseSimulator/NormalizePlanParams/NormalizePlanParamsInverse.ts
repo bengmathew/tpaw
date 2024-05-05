@@ -31,11 +31,11 @@ export const normalizePlanParamsInverse = (
     originalNorm.datingInfo.isDated
       ? {
           timestamp: originalNorm.datingInfo.nowAsTimestamp,
-          calendarMonth: originalNorm.datingInfo.nowAsCalendarMonth,
+          calendarDay: originalNorm.datingInfo.nowAsCalendarDay,
         }
       : {
           timestamp: originalNorm.datingInfo.nowAsTimestampNominal,
-          calendarMonth: null,
+          calendarDay: null,
         },
   )
 
@@ -217,7 +217,7 @@ const _normalizePlanParamsInverseUnchecked = (
       spawAndSWR: {
         allocation: normalizeGlidePath.inverse(
           norm.risk.spawAndSWR.allocation,
-          norm.datingInfo.nowAsCalendarMonth,
+          norm.datingInfo.nowAsCalendarDay,
         ),
       },
       swr: norm.risk.swr,

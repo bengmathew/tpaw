@@ -26,6 +26,7 @@ import { runSimulationInWASM } from '../../../UseSimulator/Simulator/RunSimulati
 import { groupBy } from '../../../Utils/GroupBy'
 import { getMarketDataIndexForTime } from '../../Common/GetMarketData'
 import { CallRust } from '../../../UseSimulator/PlanParamsProcessed/CallRust'
+import { CalendarDayFns } from '../../../Utils/CalendarDayFns'
 
 export namespace CurrentPortfolioBalance {
   type _State = { estimate: number; allocation: { stocks: number } }
@@ -352,7 +353,7 @@ export namespace CurrentPortfolioBalance {
       const planParams = historyItem.params
       const planParamsNorm = normalizePlanParams(planParams, {
         timestamp,
-        calendarMonth: CalendarMonthFns.fromTimestamp(
+        calendarDay: CalendarDayFns.fromTimestamp(
           timestamp,
           ianaTimezoneName,
         ),

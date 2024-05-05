@@ -47,7 +47,7 @@ const testParams: PlanPrintViewArgsServerSide = {
     datingInfo: letIn(1704489409432, (nowAsTimestamp) => ({
       isDatedPlan: true,
       nowAsTimestamp,
-      nowAsCalendarMonth: getZonedTimeFns('America/Los_Angeles')(
+      nowAsCalendarDay: getZonedTimeFns('America/Los_Angeles')(
         nowAsTimestamp,
       ),
     })),

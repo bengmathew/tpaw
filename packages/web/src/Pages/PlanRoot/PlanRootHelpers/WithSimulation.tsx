@@ -51,6 +51,7 @@ import { CurrentTimeInfo } from './UseCurrentTime'
 import { WorkingPlanInfo } from './UseWorkingPlan'
 import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName, useNonPlanParams } from './WithNonPlanParams'
+import { CalendarDayFns } from '../../../Utils/CalendarDayFns'
 
 type UpdatePlanParamsFromAction<T> = UnionToIntersection<
   T extends PlanParamsChangeActionCurrent
@@ -167,7 +168,7 @@ export type SimulationInfoForHistoryMode = Extract<
 
 export type SimulationParams = Omit<
   SimulationInfo,
-  | 'nowAsCalendarMonth'
+  | 'nowAsCalendarDay'
   | 'defaultPlanParams'
   | 'planParamsExt'
   | 'planParamsNorm'
@@ -384,13 +385,12 @@ export const WithSimulation = React.memo(
       planParamsProcessed,
       planParamsRust,
     } = useMemo(() => {
-      const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
-        currentTimestamp,
-        ianaTimezoneName,
-      )
       const planParamsNorm = normalizePlanParams(planParams, {
         timestamp: currentTimestamp,
-        calendarMonth: nowAsCalendarMonth,
+        calendarDay: CalendarDayFns.fromTimestamp(
+          currentTimestamp,
+          ianaTimezoneName,
+        ),
       })
 
       const currentMarketData = {
@@ -540,7 +540,7 @@ const useShowPDFReportIfNeeded = (
         ? {
             isDatedPlan: true,
             nowAsTimestamp: datingInfo.nowAsTimestamp,
-            nowAsCalendarMonth: datingInfo.nowAsCalendarMonth,
+            nowAsCalendarDay: datingInfo.nowAsCalendarDay,
           }
         : {
             isDatedPlan: false,

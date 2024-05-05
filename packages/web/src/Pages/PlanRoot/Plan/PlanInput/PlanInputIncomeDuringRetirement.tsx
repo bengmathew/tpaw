@@ -62,7 +62,7 @@ export const PlanInputIncomeDuringRetirement = React.memo(
                             ? {
                                 isDatedPlan: true,
                                 calendarMonth:
-                                  planParamsNorm.datingInfo.nowAsCalendarMonth,
+                                  planParamsNorm.datingInfo.nowAsCalendarDay,
                               }
                             : { isDatedPlan: false },
                         }

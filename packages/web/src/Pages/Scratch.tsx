@@ -6,6 +6,7 @@ import { normalizePlanParams } from '../UseSimulator/NormalizePlanParams/Normali
 import { CallRust } from '../UseSimulator/PlanParamsProcessed/CallRust'
 import { processPlanParams } from '../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
 import { WithWASM, useWASM } from './PlanRoot/PlanRootHelpers/WithWASM'
+import { CalendarDayFns } from '../Utils/CalendarDayFns'
 
 export const Scratch = React.memo(({ className }: { className?: string }) => {
   return (
@@ -47,7 +48,10 @@ export const _Body = React.memo(({ className }: { className?: string }) => {
           const timestamp = planParams.timestamp + 1
           const planParamsNorm = normalizePlanParams(planParams, {
             timestamp,
-            calendarMonth: { year: 2024, month: 4 },
+            calendarDay: CalendarDayFns.fromTimestamp(
+              timestamp,
+              'America/Los_Angeles',
+            ),
           })
 
           const planParamsRust = CallRust.getPlanParamsRust(planParamsNorm)

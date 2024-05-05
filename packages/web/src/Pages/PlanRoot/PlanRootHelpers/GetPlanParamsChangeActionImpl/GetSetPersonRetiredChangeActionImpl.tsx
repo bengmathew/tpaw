@@ -32,7 +32,7 @@ export const getSetPersonRetiredChangeActionImpl = ({
       _removeRetirementReferences(
         personType,
         clone,
-        planParamsNorm.datingInfo.nowAsCalendarMonth,
+        planParamsNorm.datingInfo.nowAsCalendarDay,
       )
       const person = PlanParamsHelperFns.getPerson(clone, personType)
       person.ages = {
@@ -52,7 +52,7 @@ export const getSetPersonRetiredChangeActionImpl = ({
 const _removeRetirementReferencesFromLabeledAmountTimedList = (
   personType: 'person1' | 'person2',
   clone: PlanParams,
-  nowAsCalendarMonth: CalendarMonth | null,
+  nowAsCalendarDay: CalendarMonth | null,
 ) => {
   // Returns a new object only if month is changed.
   const handleMonth = (month: Month): Month | { type: 'inThePast' } => {
@@ -69,8 +69,8 @@ const _removeRetirementReferencesFromLabeledAmountTimedList = (
           case 'retirement':
             return {
               type: 'now',
-              monthOfEntry: nowAsCalendarMonth
-                ? { isDatedPlan: true, calendarMonth: nowAsCalendarMonth }
+              monthOfEntry: nowAsCalendarDay
+                ? { isDatedPlan: true, calendarMonth: nowAsCalendarDay }
                 : { isDatedPlan: false },
             }
           case 'max':
@@ -238,7 +238,7 @@ const _removeRetirementReferencesFromGlidePaths = (
 const _removeRetirementReferences = (
   personType: 'person1' | 'person2',
   clone: PlanParams,
-  nowAsCalendarMonth: CalendarMonth | null,
+  nowAsCalendarDay: CalendarMonth | null,
 ) => {
   // To make sure typechecking fails when new locations are added, so
   // we can update this code.
@@ -258,7 +258,7 @@ const _removeRetirementReferences = (
   _removeRetirementReferencesFromLabeledAmountTimedList(
     personType,
     clone,
-    nowAsCalendarMonth,
+    nowAsCalendarDay,
   )
   _removeRetirementReferencesFromGlidePaths(personType, clone)
 }
@@ -296,7 +296,7 @@ export const getRetirePersonAdjustments = (
     const inClone = _removeRetirementReferencesFromLabeledAmountTimedList(
       personType,
       clone,
-      planParamsNorm.datingInfo.nowAsCalendarMonth,
+      planParamsNorm.datingInfo.nowAsCalendarDay,
     )
     // If future savings is not going to be allowed, these will be handled
     // by futureSavingsEntryRemovals.

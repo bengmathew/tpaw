@@ -184,8 +184,8 @@ describe('NormalizeAmountAndTimingRecurring', () => {
         baseAmount: 101,
       })
     })
-    const nowAsCalendarMonth = { year: 2024, month: 3 }
-    const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(nowAsCalendarMonth)
+    const nowAsCalendarDay = { year: 2024, month: 3 }
+    const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(nowAsCalendarDay)
 
     test.each([
       [1, 1 as _1to12, [0, 101 * 1.1]],
@@ -234,8 +234,8 @@ describe('NormalizeAmountAndTimingRecurring', () => {
   })
 
   describe('normalizeAmountAndTimingRecurring', () => {
-    const nowAsCalendarMonth = { year: 2024, month: 3 }
-    const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(nowAsCalendarMonth)
+    const nowAsCalendarDay = { year: 2024, month: 3 }
+    const mfnToCalendarMonth = CalendarMonthFns.getFromMFN(nowAsCalendarDay)
     const mfnToMonth = (mfn: number): Month => ({
       type: 'calendarMonth',
       calendarMonth: mfnToCalendarMonth(mfn),
@@ -254,9 +254,9 @@ describe('NormalizeAmountAndTimingRecurring', () => {
           },
         },
       },
-      nowAsCalendarMonth,
+      nowAsCalendarDay,
     )
-    const monthToMFN = getMonthToMFN(nowAsCalendarMonth, ages)
+    const monthToMFN = getMonthToMFN(nowAsCalendarDay, ages)
     const validRangeAsMFN = { start: 1, end: 5 }
 
     test.each([
@@ -287,7 +287,7 @@ describe('NormalizeAmountAndTimingRecurring', () => {
         validRangeAsMFN,
         monthToMFN,
         ages,
-        nowAsCalendarMonth,
+        nowAsCalendarDay,
       )
 
       if (!result) {
@@ -376,7 +376,7 @@ describe('NormalizeAmountAndTimingRecurring', () => {
         validRangeAsMFN,
         monthToMFN,
         ages,
-        nowAsCalendarMonth,
+        nowAsCalendarDay,
       )
 
       if (!result) {
@@ -463,7 +463,7 @@ describe('NormalizeAmountAndTimingRecurring', () => {
         validRangeAsMFN,
         monthToMFN,
         ages,
-        nowAsCalendarMonth,
+        nowAsCalendarDay,
       )
       if (!result) {
         expect(r).toBeNull()

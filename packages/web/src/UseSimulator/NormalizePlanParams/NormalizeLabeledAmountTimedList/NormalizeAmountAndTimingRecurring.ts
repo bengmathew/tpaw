@@ -114,7 +114,7 @@ export const normalizeAmountAndTimingRecurring = (
   validRangeAsMFN: SimpleRange,
   monthToMFN: MonthToMFN,
   ages: NormalizedAges,
-  nowAsCalendarMonth: CalendarMonth | null,
+  nowAsCalendarDay: CalendarMonth | null,
 ): NormalizedAmountAndTimingRecurring | null => {
   const result = (monthRange: NormalizedMonthRange, baseAmount: number) => ({
     type: 'recurring' as const,
@@ -124,10 +124,10 @@ export const normalizeAmountAndTimingRecurring = (
     delta,
   })
 
-  const mfnTo = nowAsCalendarMonth
+  const mfnTo = nowAsCalendarDay
     ? ({
         isDatedPlan: true,
-        calendarMonth: CalendarMonthFns.getFromMFN(nowAsCalendarMonth),
+        calendarMonth: CalendarMonthFns.getFromMFN(nowAsCalendarDay),
       } as const)
     : ({
         isDatedPlan: false,

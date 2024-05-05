@@ -167,9 +167,9 @@ const _Table = React.memo(
               if (!shouldShow) return <React.Fragment key={i}></React.Fragment>
 
               const calendarMonth = args.planParamsNorm.datingInfo
-                .nowAsCalendarMonth
+                .nowAsCalendarDay
                 ? CalendarMonthFns.getFromMFN(
-                    args.planParamsNorm.datingInfo.nowAsCalendarMonth,
+                    args.planParamsNorm.datingInfo.nowAsCalendarDay,
                   )(mfn)
                 : null
               return (

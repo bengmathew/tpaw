@@ -34,7 +34,7 @@ export const normalizeLabeledAmountTimedList = (
   validRangeAsMFN: SimpleRange | null,
   monthToMFN: MonthToMFN,
   ages: NormalizedAges,
-  nowAsCalendarMonth: CalendarMonth | null,
+  nowAsCalendarDay: CalendarMonth | null,
 ): NormalizedLabeledAmountTimed[] =>
   !validRangeAsMFN
     ? []
@@ -45,7 +45,7 @@ export const normalizeLabeledAmountTimedList = (
             validRangeAsMFN,
             monthToMFN,
             ages,
-            nowAsCalendarMonth,
+            nowAsCalendarDay,
           ),
         )
         .sort((a, b) => a.sortIndex - b.sortIndex)
@@ -55,7 +55,7 @@ const _normalizeLabeledAmountTimed = (
   validRangeAsMFN: SimpleRange,
   monthToMFN: MonthToMFN,
   ages: NormalizedAges,
-  nowAsCalendarMonth: CalendarMonth | null,
+  nowAsCalendarDay: CalendarMonth | null,
 ): NormalizedLabeledAmountTimed => {
   const amountAndTiming = block(
     (): NormalizedLabeledAmountTimed['amountAndTiming'] | null => {
@@ -74,7 +74,7 @@ const _normalizeLabeledAmountTimed = (
             validRangeAsMFN,
             monthToMFN,
             ages,
-            nowAsCalendarMonth,
+            nowAsCalendarDay,
           )
         }
         case 'inThePast':

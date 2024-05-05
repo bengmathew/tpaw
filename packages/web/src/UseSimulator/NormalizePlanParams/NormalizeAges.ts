@@ -19,10 +19,10 @@ export type MonthToMFN = ReturnType<typeof getMonthToMFN>
 export type NormalizedAges = ReturnType<typeof normalizeAges>
 export const normalizeAges = (
   orig: PlanParams['people'],
-  nowAsCalendarMonth: CalendarMonth | null,
+  nowAsCalendarDay: CalendarMonth | null,
 ) => {
-  const calendarMonthToMFN = nowAsCalendarMonth
-    ? CalendarMonthFns.getToMFN(nowAsCalendarMonth)
+  const calendarMonthToMFN = nowAsCalendarDay
+    ? CalendarMonthFns.getToMFN(nowAsCalendarDay)
     : null
   const person1 = _forPerson(orig.person1.ages, calendarMonthToMFN)
   const person2 = orig.withPartner
@@ -62,7 +62,7 @@ export const normalizeAges = (
 }
 
 export const getMonthToMFN = (
-  nowAsCalendarMonth: CalendarMonth | null,
+  nowAsCalendarDay: CalendarMonth | null,
   {
     person1,
     person2,
@@ -71,8 +71,8 @@ export const getMonthToMFN = (
     person2: ReturnType<typeof _forPerson> | null
   },
 ) => {
-  const calendarMonthToMFN = nowAsCalendarMonth
-    ? CalendarMonthFns.getToMFN(nowAsCalendarMonth)
+  const calendarMonthToMFN = nowAsCalendarDay
+    ? CalendarMonthFns.getToMFN(nowAsCalendarDay)
     : null
 
   const pastNotElided = (month: Month) => {

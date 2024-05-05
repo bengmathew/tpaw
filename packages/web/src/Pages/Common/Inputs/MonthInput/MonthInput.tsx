@@ -233,7 +233,7 @@ const _processChoices = (
   },
   choicesPreFilter: MonthType[],
 ) => {
-  const monthToMFN = getMonthToMFN(datingInfo.nowAsCalendarMonth, ages)
+  const monthToMFN = getMonthToMFN(datingInfo.nowAsCalendarDay, ages)
   const preferredMonthAsMFN = value.isInThePast
     ? value.validRangeAsMFN.includingLocalConstraints
       ? value.validRangeAsMFN.includingLocalConstraints.start
@@ -253,7 +253,7 @@ const _processChoices = (
                   monthOfEntry: datingInfo.isDated
                     ? {
                         isDatedPlan: true,
-                        calendarMonth: datingInfo.nowAsCalendarMonth,
+                        calendarMonth: datingInfo.nowAsCalendarDay,
                       }
                     : { isDatedPlan: false },
                 },
@@ -305,7 +305,7 @@ const _processChoices = (
                   ? {
                       type: 'calendarMonth',
                       calendarMonth: CalendarMonthFns.getFromMFN(
-                        datingInfo.nowAsCalendarMonth,
+                        datingInfo.nowAsCalendarDay,
                       )(preferredMonthAsMFN),
                     }
                   : null,

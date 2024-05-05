@@ -95,12 +95,12 @@ export const PlanPrintView = React.memo(
           fixed.datingInfo.isDatedPlan
             ? {
                 timestamp: fixed.datingInfo.nowAsTimestamp,
-                calendarMonth: fixed.datingInfo.nowAsCalendarMonth,
+                calendarDay: fixed.datingInfo.nowAsCalendarDay,
               }
             : {
                 // Show not show up in the pdf report.
                 timestamp: 0,
-                calendarMonth: null,
+                calendarDay: null,
               },
         )
         const planParamsRust = CallRust.getPlanParamsRust(planParamsNorm)

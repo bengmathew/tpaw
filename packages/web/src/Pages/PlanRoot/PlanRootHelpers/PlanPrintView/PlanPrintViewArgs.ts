@@ -1,4 +1,4 @@
-import { CalendarMonth, NonPlanParams, PlanParams } from '@tpaw/common'
+import { CalendarDay, CalendarMonth, NonPlanParams, PlanParams } from '@tpaw/common'
 import * as Rust from '@tpaw/simulator'
 import { CurrentPortfolioBalance } from '../CurrentPortfolioBalance'
 import { isDate } from 'lodash'
@@ -15,7 +15,7 @@ export type PlanPrintViewArgs = {
       | {
           isDatedPlan: true
           nowAsTimestamp: number
-          nowAsCalendarMonth: CalendarMonth
+          nowAsCalendarDay: CalendarDay
         }
       | { isDatedPlan: false; timestampForMarketData: number }
     // We want the estimate to be resolved to an amount for printing and don't

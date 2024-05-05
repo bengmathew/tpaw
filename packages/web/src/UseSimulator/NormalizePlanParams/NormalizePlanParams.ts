@@ -21,7 +21,7 @@ export const normalizePlanParams = (
   nowAs: {
     timestamp: number
     // Cannot be null if dated plan.
-    calendarMonth: CalendarMonth | null
+    calendarDay: CalendarDay | null
   },
 ) => {
   const norm = normalizePlanParamsUnchecked(planParams, nowAs)
@@ -33,13 +33,13 @@ export const normalizePlanParams = (
 export type NormalizedDatingInfo =
   | {
       isDated: true
-      nowAsCalendarMonth: CalendarMonth
+      nowAsCalendarDay: CalendarDay
       timestampForMarketData: number
       nowAsTimestamp: number
     }
   | {
       isDated: false
-      nowAsCalendarMonth: null
+      nowAsCalendarDay: null
       timestampForMarketData: number
       marketDataAsOfEndOfDayInNY: CalendarDay
       nowAsTimestampNominal: number
@@ -48,19 +48,19 @@ export const normalizePlanParamsUnchecked = (
   planParams: PlanParams,
   nowAs: {
     timestamp: number
-    calendarMonth: CalendarMonth | null
+    calendarDay: CalendarDay | null
   },
 ) => {
   const datingInfo: NormalizedDatingInfo = planParams.datingInfo.isDated
     ? ({
         isDated: true,
         nowAsTimestamp: nowAs.timestamp,
-        nowAsCalendarMonth: fGet(nowAs.calendarMonth),
+        nowAsCalendarDay: fGet(nowAs.calendarDay),
         timestampForMarketData: nowAs.timestamp,
       } as const)
     : ({
         isDated: false,
-        nowAsCalendarMonth: null,
+        nowAsCalendarDay: null,
         marketDataAsOfEndOfDayInNY:
           planParams.datingInfo.marketDataAsOfEndOfDayInNY,
         timestampForMarketData: getNYZonedTime
@@ -69,9 +69,9 @@ export const normalizePlanParamsUnchecked = (
           .toMillis(),
         nowAsTimestampNominal: nowAs.timestamp,
       } as const)
-  const { nowAsCalendarMonth } = datingInfo
-  const ages = normalizeAges(planParams.people, nowAsCalendarMonth)
-  const monthToMFN = getMonthToMFN(nowAsCalendarMonth, ages)
+  const { nowAsCalendarDay } = datingInfo
+  const ages = normalizeAges(planParams.people, nowAsCalendarDay)
+  const monthToMFN = getMonthToMFN(nowAsCalendarDay, ages)
   return {
     v: planParams.v,
     timestamp: planParams.timestamp,
@@ -108,14 +108,14 @@ export const normalizePlanParamsUnchecked = (
         ages.validMonthRangesAsMFN.futureSavings,
         monthToMFN,
         ages,
-        nowAsCalendarMonth,
+        nowAsCalendarDay,
       ),
       incomeDuringRetirement: normalizeLabeledAmountTimedList(
         planParams.wealth.incomeDuringRetirement,
         ages.validMonthRangesAsMFN.incomeDuringRetirement,
         monthToMFN,
         ages,
-        nowAsCalendarMonth,
+        nowAsCalendarDay,
       ),
     },
 
@@ -126,14 +126,14 @@ export const normalizePlanParamsUnchecked = (
           ages.validMonthRangesAsMFN.extraSpending,
           monthToMFN,
           ages,
-          nowAsCalendarMonth,
+          nowAsCalendarDay,
         ),
         discretionary: normalizeLabeledAmountTimedList(
           planParams.adjustmentsToSpending.extraSpending.discretionary,
           ages.validMonthRangesAsMFN.extraSpending,
           monthToMFN,
           ages,
-          nowAsCalendarMonth,
+          nowAsCalendarDay,
         ),
       },
       tpawAndSPAW: {
@@ -159,7 +159,7 @@ export const normalizePlanParamsUnchecked = (
           planParams.risk.spawAndSWR.allocation,
           monthToMFN,
           ages,
-          nowAsCalendarMonth,
+          nowAsCalendarDay,
         ),
       },
       swr: planParams.risk.swr,

@@ -20,6 +20,7 @@ import { getMarketDataForTime } from './Common/GetMarketData'
 import { AmountInput } from './Common/Inputs/AmountInput'
 import { useMarketData } from './PlanRoot/PlanRootHelpers/WithMarketData'
 import { CallRust } from '../UseSimulator/PlanParamsProcessed/CallRust'
+import { CalendarDayFns } from '../Utils/CalendarDayFns'
 
 export const Perf = React.memo(() => {
   const { marketData } = useMarketData()
@@ -51,7 +52,7 @@ export const Perf = React.memo(() => {
               )
               const planParamsNorm = normalizePlanParams(planParams, {
                 timestamp: currentTime.toMillis(),
-                calendarMonth: CalendarMonthFns.fromTimestamp(
+                calendarDay: CalendarDayFns.fromTimestamp(
                   currentTime.toMillis(),
                   currentTime.zoneName,
                 ),
@@ -149,7 +150,7 @@ const getParams = (
   currentTimestamp: number,
   ianaTimezoneName: string,
 ): PlanParams => {
-  const nowAsCalendarMonth = CalendarMonthFns.fromTimestamp(
+  const nowAsCalendarDay = CalendarMonthFns.fromTimestamp(
     currentTimestamp,
     ianaTimezoneName,
   )
@@ -166,7 +167,7 @@ const getParams = (
           type: 'retirementDateSpecified',
           currentAgeInfo: {
             isDatedPlan: true,
-            monthOfBirth: CalendarMonthFns.getFromMFN(nowAsCalendarMonth)(
+            monthOfBirth: CalendarMonthFns.getFromMFN(nowAsCalendarDay)(
               -35 * 12,
             ),
           },
@@ -219,7 +220,7 @@ const getParams = (
               type: 'now',
               monthOfEntry: {
                 isDatedPlan: true,
-                calendarMonth: nowAsCalendarMonth,
+                calendarMonth: nowAsCalendarDay,
               },
             },
             stocks: 0.5,
