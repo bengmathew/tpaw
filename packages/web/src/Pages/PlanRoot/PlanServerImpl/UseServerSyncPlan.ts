@@ -84,14 +84,14 @@ export const useServerSyncPlan = (
   const { setGlobalError } = useSetGlobalError()
   const [state, setStateDirect] = useState<_State>({ type: 'synced' })
 
-  const historyForDebugRef = useRef(
-    [] as {
-      src: string | null
-      action: string
-      currState: _State['type']
-      targetState: _State['type']
-    }[],
-  )
+  const historyForDebugRef = useRef([] as string[])
+  const debug = (log: string) => {
+    historyForDebugRef.current.push(log)
+    historyForDebugRef.current = historyForDebugRef.current.slice(-20)
+  }
+  const debugRef = useRef(debug)
+  debugRef.current = debug
+
   const setStateDebug = (
     src: string | null,
     action: string,
@@ -104,12 +104,14 @@ export const useServerSyncPlan = (
         Sentry.captureMessage(message)
         assertFalse()
       }
-      historyForDebugRef.current.push({
-        src,
-        action,
-        currState: prev.type,
-        targetState: targetState.type,
-      })
+      debugRef.current(
+        JSON.stringify({
+          src,
+          action,
+          currState: prev.type,
+          targetState: targetState.type,
+        }),
+      )
       historyForDebugRef.current = historyForDebugRef.current.slice(-10)
       return targetState
     })
@@ -384,13 +386,18 @@ export const useServerSyncPlan = (
       const last = debugLastChangeRef.current
       const inputChanged = last ? last.input !== input : true
       const stateChanged = last ? last.state !== state : true
-      return inputChanged && stateChanged
-        ? 'both'
-        : inputChanged
-          ? 'input'
-          : stateChanged
-            ? 'state'
-            : 'neither'
+      const whatChanged =
+        inputChanged && stateChanged
+          ? 'both'
+          : inputChanged
+            ? 'input'
+            : stateChanged
+              ? 'state'
+              : 'neither'
+      debugRef.current(
+        `checkingInputAndState-${whatChanged}\n${JSON.stringify({ state, inputIsNull: input === null, ...(last ? { lastInputIsNull: last.input === null, lastState: last.state } : { last: null }) })}`,
+      )
+      return whatChanged
     })
     debugLastChangeRef.current = { state, input }
     if (input) {
