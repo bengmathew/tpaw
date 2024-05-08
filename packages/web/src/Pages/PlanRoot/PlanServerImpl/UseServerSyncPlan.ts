@@ -410,7 +410,7 @@ export const useServerSyncPlan = (
           ? {
               inputDeepChanged: _.isEqual(last?.input, input),
               inputChangeReason: _getInputPrev?.whatChanged,
-              lastInput: last?.input,
+              lastInput: last?.trace === 'start' ? last?.input : undefined,
               input,
             }
           : {}),
