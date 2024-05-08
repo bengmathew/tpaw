@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/nextjs'
-import { assert, assertFalse, block, noCase } from '@tpaw/common'
+import { assert, assertFalse, block, fGet, noCase } from '@tpaw/common'
 import _ from 'lodash'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from 'react-relay'
@@ -98,21 +98,25 @@ export const useServerSyncPlan = (
     targetState: _State,
   ) => {
     setStateDirect((prev) => {
+      debugRef.current(
+        JSON.stringify(
+          {
+            src,
+            action,
+            currState: prev.type,
+            targetState: targetState.type,
+          },
+          null,
+          2,
+        ),
+      )
       if (state.type !== prev.type) {
-        const message = `Double setState called:\n${JSON.stringify(historyForDebugRef.current, null, 2)}\n:${JSON.stringify({ src, action, targetState })}`
+        const message = `Double setState called:\n${historyForDebugRef.current.join('\n\n')}`
         console.dir(message)
         Sentry.captureMessage(message)
         assertFalse()
       }
-      debugRef.current(
-        JSON.stringify({
-          src,
-          action,
-          currState: prev.type,
-          targetState: targetState.type,
-        }),
-      )
-      historyForDebugRef.current = historyForDebugRef.current.slice(-10)
+      historyForDebugRef.current = historyForDebugRef.current.slice(-20)
       return targetState
     })
   }
@@ -379,7 +383,11 @@ export const useServerSyncPlan = (
 
   // ---- RESPOND TO INPUT CHANGES  ----
   const debugLastChangeRef = useRef(
-    null as null | { state: typeof state; input: typeof input },
+    null as null | {
+      state: typeof state
+      input: typeof input
+      trace: 'start' | 'end'
+    },
   )
   useEffect(() => {
     const whatChanged = block(() => {
@@ -394,12 +402,33 @@ export const useServerSyncPlan = (
             : stateChanged
               ? 'state'
               : 'neither'
+
+      const info = {
+        whatChanged,
+        state,
+        ...(inputChanged
+          ? {
+              inputDeepChanged: _.isEqual(last?.input, input),
+              inputChangeReason: _getInputPrev?.whatChanged,
+              lastInput: last?.input,
+              input,
+            }
+          : {}),
+        inputIsNull: input === null,
+        ...(last
+          ? {
+              lastInputIsNull: last.input === null,
+              lastState: last.state,
+              lastTrace: last.trace,
+            }
+          : { last: null }),
+      }
       debugRef.current(
-        `checkingInputAndState-${whatChanged}\n${JSON.stringify({ state, inputIsNull: input === null, ...(last ? { lastInputIsNull: last.input === null, lastState: last.state } : { last: null }) })}`,
+        `checkingInputAndState\n${JSON.stringify(info, null, 2)}`,
       )
       return whatChanged
     })
-    debugLastChangeRef.current = { state, input }
+    debugLastChangeRef.current = { state, input, trace: 'start' }
     if (input) {
       switch (state.type) {
         case 'synced':
@@ -433,6 +462,8 @@ export const useServerSyncPlan = (
           noCase(state)
       }
     }
+
+    debugLastChangeRef.current = { ...debugLastChangeRef.current, trace: 'end' }
   }, [state, input])
 
   // ---- CLEANUP EFFECT ----
@@ -508,7 +539,11 @@ export const useServerSyncPlan = (
 
 // Use custom memoization because useMemo() is not guaranteed and we need
 // the guarantee for correctness.
-let _getInputPrev = null as { args: any; result: any } | null
+let _getInputPrev = null as {
+  args: any
+  result: any
+  whatChanged: number[]
+} | null
 type _Input = Exclude<ReturnType<typeof _getInputMemoized>, null>
 const _getInputMemoized = (
   serverPlan: {
@@ -518,13 +553,15 @@ const _getInputMemoized = (
   workingPlan: WorkingPlanInfo['workingPlan'],
 ) => {
   type _Input = typeof result
-  if (
-    _getInputPrev &&
-    _getInputPrev.args.length === 2 &&
-    _getInputPrev.args[0] === serverPlan &&
-    _getInputPrev.args[1] === workingPlan
-  )
-    return _getInputPrev.result as _Input
+  assert(_getInputPrev === null || _getInputPrev.args.length === 2)
+  const whatChanged = block(() => {
+    if (!_getInputPrev) return [0, 1]
+    const result: number[] = []
+    if (_getInputPrev.args[0] !== serverPlan) result.push(0)
+    if (_getInputPrev.args[1] !== workingPlan) result.push(1)
+    return result
+  })
+  if (whatChanged.length === 0) return fGet(_getInputPrev).result as _Input
 
   const cutAfterIndex = _.findLastIndex(
     serverPlan.planParamsPostBaseIds,
@@ -582,6 +619,6 @@ const _getInputMemoized = (
             }
           }),
         }
-  _getInputPrev = { args: [serverPlan, workingPlan], result }
+  _getInputPrev = { args: [serverPlan, workingPlan], result, whatChanged }
   return result
 }
