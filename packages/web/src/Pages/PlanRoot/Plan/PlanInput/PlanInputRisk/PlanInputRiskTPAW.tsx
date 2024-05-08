@@ -9,10 +9,10 @@ import {
   DEFAULT_RISK_TPAW,
   PLAN_PARAMS_CONSTANTS,
   block,
-  partialDefaultDatelessPlanParams,
   fGet,
   letIn,
   monthlyToAnnualReturnRate,
+  partialDefaultDatelessPlanParams,
 } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
@@ -55,7 +55,9 @@ export const PlanInputRiskTPAW = React.memo(
             <FontAwesomeIcon icon={showAdvanced ? faCaretDown : faCaretRight} />
           </div>
           <h2 className="">
-            {advancedCount === 0 ? 'None modified' : `${advancedCount} modified`}
+            {advancedCount === 0
+              ? 'None modified'
+              : `${advancedCount} modified`}
           </h2>
         </button>
         {showAdvanced && (
@@ -302,7 +304,8 @@ const _SpendingTiltCard = React.memo(
     const handleChange = (value: number) =>
       updatePlanParams('setTPAWAdditionalSpendingTilt', value)
     const isModified =
-      partialDefaultDatelessPlanParams.risk.tpaw.additionalAnnualSpendingTilt !==
+      partialDefaultDatelessPlanParams.risk.tpaw
+        .additionalAnnualSpendingTilt !==
       planParamsNorm.risk.tpaw.additionalAnnualSpendingTilt
 
     const getSpendingTiltAtMFN = (mfn: number) => {
@@ -353,14 +356,17 @@ const _SpendingTiltCard = React.memo(
           {/* <li className="p-base mt-2"> */}
           <p className="p-base mt-2">
             This is automatically calculated for you based on your risk
-            tolerance and time preference. The risk tolerance input is located
-            above, and the time preference input is located in the advanced
-            section below.
+            tolerance and preference for the future. The risk tolerance input is
+            located above, and the preference for the future input is located in
+            the advanced section below.
           </p>
           <p className="p-base mt-2">
             Your base spending tilt will change with age if your risk tolerance
             changes with age. The default setting decreases risk tolerance by{' '}
-            {-partialDefaultDatelessPlanParams.risk.tpaw.riskTolerance.deltaAtMaxAge}{' '}
+            {
+              -partialDefaultDatelessPlanParams.risk.tpaw.riskTolerance
+                .deltaAtMaxAge
+            }{' '}
             between age 20 and max age. You can change this in the advanced
             section below.
           </p>
@@ -408,7 +414,8 @@ const _SpendingTiltCard = React.memo(
           className="mt-6 underline disabled:lighten-2"
           onClick={() =>
             handleChange(
-              partialDefaultDatelessPlanParams.risk.tpaw.additionalAnnualSpendingTilt,
+              partialDefaultDatelessPlanParams.risk.tpaw
+                .additionalAnnualSpendingTilt,
             )
           }
           disabled={!isModified}
@@ -653,18 +660,14 @@ const _TPAWTimePreferenceCard = React.memo(
         style={{ ...paddingCSSStyle(props.sizing.cardPadding) }}
       >
         <PlanInputModifiedBadge show={isModified} mainPage={false} />
-        <h2 className="font-bold text-lg mb-2">Time Preference</h2>
+        <h2 className="font-bold text-lg mb-2">Preference for the Future</h2>
         <p className="p-base">
-          This is a measure of how much you value spending now versus later. A
-          time preference of{' '}
+          This is a measure of how much you value spending later versus earlier.
+          A preference for the future of{' '}
           <span className=" font-font1 text-base italic">x%</span> means that
           next year’s spending is worth{' '}
           <span className=" font-font1 text-base italic">x%</span> more to you
-          than this year’s spending. So a positive rate of time preference means
-          that you value spending more in late retirement. This will increase
-          your base spending tilt. Conversely, a negative rate of time
-          preference means that you value spending more in early retirement and
-          will decrease your base spending tilt.
+          than this year’s spending.
         </p>
         <SliderInput
           className={`-mx-3 mt-4 `}
@@ -678,6 +681,21 @@ const _TPAWTimePreferenceCard = React.memo(
           format={(x) => formatPercentage(1)(-x)}
           ticks={(value, i) => (i % 10 === 0 ? 'large' : 'small')}
         />
+        <_ExpandableNote
+          className="mt-8"
+          title="Time preference rate (TPR) corresponding to this entry"
+        >
+          <p className="p-base">
+            Time preference rate is the negative of your preference for the
+            future. So your preference for the future of{' '}
+            {formatPercentage(1)(-planParamsNorm.risk.tpaw.timePreference)}{' '}
+            corresponds to a time preference rate of{' '}
+            <span className="font-bold">
+              {formatPercentage(1)(planParamsNorm.risk.tpaw.timePreference)}
+            </span>
+            .
+          </p>
+        </_ExpandableNote>
         <button
           className="mt-6 underline disabled:lighten-2"
           onClick={() => handleChange(defaultRisk.timePreference)}
@@ -741,7 +759,7 @@ export const PlanInputRiskTPAWSummary = React.memo(
             )}
             {DEFAULT_RISK_TPAW.timePreference !== risk.tpaw.timePreference && (
               <h2 className="ml-4">
-                Time Preference:{' '}
+                Preference for the Future:{' '}
                 {formatPercentage(1)(-risk.tpaw.timePreference)}
               </h2>
             )}

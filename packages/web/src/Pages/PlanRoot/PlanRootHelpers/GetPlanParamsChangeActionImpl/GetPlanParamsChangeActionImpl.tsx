@@ -702,7 +702,8 @@ export const getPlanParamsChangeActionImpl = (
         applyToClone: (clone) => {
           clone.risk.tpaw.timePreference = value
         },
-        render: () => `Set time preference to ${formatPercentage(1)(-value)}`,
+        render: () =>
+          `Set preference for the future to ${formatPercentage(1)(-value)}`,
         merge: () => true,
       }
     }
