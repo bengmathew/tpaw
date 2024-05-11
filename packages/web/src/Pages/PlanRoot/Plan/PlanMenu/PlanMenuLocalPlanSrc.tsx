@@ -12,7 +12,6 @@ import {
   SimulationInfoForPlanMode,
 } from '../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../UsePlanColors'
-import { PlanMenuDivider } from './PlanMenuHelpers/PlanMenuDivider'
 import { usePlanMenuSectionEditLocal } from './PlanMenuSection/PlanMenuSectionEditLocal'
 import { usePlanMenuSectionFile } from './PlanMenuSection/PlanMenuSectionFile'
 import { usePlanMenuSectionManagePlansNotLoggedIn } from './PlanMenuSection/PlanMenuSectionManagePlansNotLoggedIn'
@@ -94,14 +93,10 @@ export const PlanMenuLocalSrc = React.memo(
                     Save Plan to Account
                   </Link>
                 </Menu.Item>
-                <PlanMenuDivider />
 
                 {managePlansSection.menuItems}
-                <PlanMenuDivider />
                 {miscSection.menuItems}
-                <PlanMenuDivider />
                 {fileSection.menuItems}
-                <PlanMenuDivider />
                 {editSection.menuItems}
               </Menu.Items>
             </ContextModal>
