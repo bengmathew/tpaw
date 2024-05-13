@@ -71,7 +71,7 @@ export const PlanMenuServerSrcPlanMode = React.memo(
                   </div>
                 </Menu.Button>
               )}
-              <Menu.Items className="flex flex-col context-menu-outer-div min-w-[275px]">
+              <Menu.Items className="flex flex-col context-menu-outer-div w-[275px]">
                 {managePlansSection.menuItems}
                 {miscSection.menuItems}
                 {offlinePlansSection.menuItems}

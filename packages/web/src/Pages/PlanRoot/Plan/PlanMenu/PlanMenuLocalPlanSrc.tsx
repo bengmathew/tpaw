@@ -81,7 +81,7 @@ export const PlanMenuLocalSrc = React.memo(
                   </div>
                 </Menu.Button>
               )}
-              <Menu.Items className="flex flex-col context-menu-outer-div min-w-[250px] max-w-[400px]">
+              <Menu.Items className="flex flex-col context-menu-outer-div w-[275px]">
                 <Menu.Item>
                   <Link
                     className={'context-menu-item '}

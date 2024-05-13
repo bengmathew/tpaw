@@ -93,7 +93,7 @@ export const PlanMenuLinkSrc = React.memo(
                   <FontAwesomeIcon className="ml-2" icon={faCaretDown} />
                 </Menu.Button>
               )}
-              <Menu.Items className="flex flex-col context-menu-outer-div min-w-[250px] max-w-[400px]">
+              <Menu.Items className="flex flex-col context-menu-outer-div w-[275px]">
                 {topSection.menuItems}
                 {managePlansSection.menuItems}
                 {miscSection.menuItems}

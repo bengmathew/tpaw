@@ -65,7 +65,7 @@ export const PlanMenuServerSrcHistoryMode = React.memo(
                   </div>
                 </Menu.Button>
               )}
-              <Menu.Items className="flex flex-col context-menu-outer-div">
+              <Menu.Items className="flex flex-col context-menu-outer-div w-[275px]">
                 <Menu.Item>
                   <button
                     className="context-menu-item "

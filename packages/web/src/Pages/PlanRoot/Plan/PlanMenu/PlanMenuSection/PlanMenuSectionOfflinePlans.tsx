@@ -122,7 +122,7 @@ export const usePlanMenuSectionOfflinePlans = ({
           </button>
         </div>
         {isOpen && (
-          <div className="text-xs lighten max-w-[240px]">
+          <div className="text-xs lighten ">
             Optional. Alternative to saving plans in account.
           </div>
         )}
