@@ -1,4 +1,4 @@
-import { NonPlanParams25 as NonPlanParamsCurr } from './NonPlanParams25'
+import { NonPlanParams26 as NonPlanParamsCurr } from './NonPlanParams26'
 
 export type NonPlanParams = NonPlanParamsCurr.NonPlanParams
 export type SomeNonPlanParams = NonPlanParamsCurr.SomeNonPlanParams

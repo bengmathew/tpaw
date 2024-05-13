@@ -17,7 +17,7 @@ export const usePlanMenuSectionManagePlansNotLoggedIn = () => {
       <h2 className=" context-menu-section-heading">Manage Plans</h2>
       <Menu.Item
         as="button"
-        className="context-menu-item-indent"
+        className="context-menu-item"
         onClick={() => {
           hasLocal
             ? setShowLoginNeededModal(true)
@@ -31,7 +31,7 @@ export const usePlanMenuSectionManagePlansNotLoggedIn = () => {
       </Menu.Item>
       <Menu.Item
         as="button"
-        className="context-menu-item-indent"
+        className="context-menu-item"
         onClick={() => setShowLoginNeededModal(true)}
       >
         <span className="context-menu-icon">
@@ -42,7 +42,7 @@ export const usePlanMenuSectionManagePlansNotLoggedIn = () => {
 
       <Menu.Item
         as="button"
-        className="context-menu-item-indent"
+        className="context-menu-item"
         onClick={() => setShowLoginNeededModal(true)}
       >
         <span className="context-menu-icon">

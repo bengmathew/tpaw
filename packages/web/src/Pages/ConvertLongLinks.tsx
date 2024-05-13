@@ -17,9 +17,9 @@ import { AppPage } from './App/AppPage'
 import { useUserGQLArgs } from './App/WithFirebaseUser'
 import { WithUser } from './App/WithUser'
 import {
-  fileBasedPlansLabel,
-  fileBasedPlansOpenFileLabel,
-} from './PlanRoot/Plan/PlanMenu/PlanMenuSection/PlanMenuSectionFile'
+  offlinePlansLabel,
+  offlinePlansOpenFileLabel,
+} from './PlanRoot/Plan/PlanMenu/PlanMenuSection/PlanMenuSectionOfflinePlans'
 import {
   PLAN_FILE_EXTENSION,
   PlanFileDataFns,
@@ -108,8 +108,8 @@ export const _Body = React.memo(() => {
                 <Link href={appPaths.plan().href} className="underline">
                   {appPaths.plan().href}
                 </Link>{' '}
-                by selecting {`"${fileBasedPlansOpenFileLabel}"`} from the{' '}
-                {`"${fileBasedPlansLabel}"`} section of the plan menu.
+                by selecting {`"${offlinePlansOpenFileLabel}"`} from the{' '}
+                {`"${offlinePlansLabel}"`} section of the plan menu.
               </p>
               <p className="mt-4 p-base">
                 You can read more about this change{' '}

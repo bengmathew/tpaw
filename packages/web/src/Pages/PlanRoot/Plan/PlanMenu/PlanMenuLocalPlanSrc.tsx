@@ -13,7 +13,7 @@ import {
 } from '../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../UsePlanColors'
 import { usePlanMenuSectionEditLocal } from './PlanMenuSection/PlanMenuSectionEditLocal'
-import { usePlanMenuSectionFile } from './PlanMenuSection/PlanMenuSectionFile'
+import { usePlanMenuSectionOfflinePlans } from './PlanMenuSection/PlanMenuSectionOfflinePlans'
 import { usePlanMenuSectionManagePlansNotLoggedIn } from './PlanMenuSection/PlanMenuSectionManagePlansNotLoggedIn'
 import { usePlanMenuSectionMisc } from './PlanMenuSection/PlanMenuSectionMisc'
 import { PlanMenuSubMenuUndoRedo } from './PlanMenuSubMenu/PlanMenuSubMenuUndoRedo'
@@ -38,7 +38,7 @@ export const PlanMenuLocalSrc = React.memo(
     const miscSection = usePlanMenuSectionMisc({
       simulationInfoForServerSrc: null,
     })
-    const fileSection = usePlanMenuSectionFile({
+    const offlinePlansSection = usePlanMenuSectionOfflinePlans({
       info: { isCurrentlyFile: false, label: null },
       simulationInfoForPlanMode,
     })
@@ -58,7 +58,7 @@ export const PlanMenuLocalSrc = React.memo(
               align="right"
               open={open}
               onOutsideClickOrEscape={null}
-              afterLeave={() => fileSection.afterMenuClose()}
+              afterLeave={() => offlinePlansSection.afterMenuClose()}
             >
               {({ ref }) => (
                 <Menu.Button
@@ -96,7 +96,7 @@ export const PlanMenuLocalSrc = React.memo(
 
                 {managePlansSection.menuItems}
                 {miscSection.menuItems}
-                {fileSection.menuItems}
+                {offlinePlansSection.menuItems}
                 {editSection.menuItems}
               </Menu.Items>
             </ContextModal>
@@ -114,7 +114,7 @@ export const PlanMenuLocalSrc = React.memo(
         {managePlansSection.modals}
 
         {miscSection.modals}
-        {fileSection.modals}
+        {offlinePlansSection.modals}
         {editSection.modals}
       </div>
     )

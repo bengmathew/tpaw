@@ -6,6 +6,7 @@ export const getDefaultNonPlanParams = (
   v: currentNonPlanParamsVersion,
   timestamp: currentTimestamp,
   timezone: { type: 'auto' },
+  showOfflinePlansMenuSection: false,
   numOfSimulationForMonteCarloSampling: 500,
   pdfReportSettings: {
     pageSize: 'default',

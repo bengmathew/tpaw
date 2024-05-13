@@ -20,15 +20,18 @@ import {
   PlanFileData,
 } from '../../../PlanRootFile/PlanFileData'
 import { setPlanRootFileOpenWith } from '../../../PlanRootFile/PlanRootFile'
-import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
+import {
+  useIANATimezoneName,
+  useNonPlanParams,
+} from '../../../PlanRootHelpers/WithNonPlanParams'
 import {
   SimulationInfoForFileSrc,
   SimulationInfoForPlanMode,
 } from '../../../PlanRootHelpers/WithSimulation'
 
-export const fileBasedPlansLabel = 'File Based Plans'
-export const fileBasedPlansOpenFileLabel = 'Open File'
-export const usePlanMenuSectionFile = ({
+export const offlinePlansLabel = 'Save Plans Offline'
+export const offlinePlansOpenFileLabel = 'Open File'
+export const usePlanMenuSectionOfflinePlans = ({
   info,
   simulationInfoForPlanMode,
 }: {
@@ -43,6 +46,7 @@ export const usePlanMenuSectionFile = ({
       }
   simulationInfoForPlanMode: SimulationInfoForPlanMode
 }) => {
+  const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
   const { undos, redos } = simulationInfoForPlanMode.planParamsUndoRedoStack
   const { ianaTimezoneName, getZonedTime } = useIANATimezoneName()
   const [isOpen, setIsOpen] = useState(false)
@@ -94,27 +98,39 @@ export const usePlanMenuSectionFile = ({
 
   const menuItems = (
     <div className="context-menu-section">
-      <Menu.Item>
-        <div className="context-menu-section-heading ">
+      <div className="context-menu-section-heading ">
+        <div className="flex gap-x-2">
+          <h2 className={clsx(' block', !isOpen && '')}>
+            {offlinePlansLabel}{' '}
+          </h2>
           <button
-            className={clsx(' block', !isOpen && '')}
+            className="underline"
             onClick={(e) => {
               // This keeps the menu open (only on click though, not on keyboard)
               // As of Jun 2023, no solution for keyboard:
               // https://github.com/tailwindlabs/headlessui/discussions/1122
               e.preventDefault()
               setIsOpen((x) => !x)
+              setNonPlanParams({
+                ...nonPlanParams,
+                showOfflinePlansMenuSection:
+                  !nonPlanParams.showOfflinePlansMenuSection,
+              })
             }}
           >
-            {fileBasedPlansLabel}{' '}
-            <FontAwesomeIcon className="ml-1" icon={faCaretDown} />
+            {nonPlanParams.showOfflinePlansMenuSection ? 'hide' : 'show'}
           </button>
         </div>
-      </Menu.Item>
+        {isOpen && (
+          <div className="text-xs lighten max-w-[240px]">
+            Optional. Alternative to saving plans in account.
+          </div>
+        )}
+      </div>
       {isOpen && (
         <div className="">
           <Menu.Item>
-            <button className={'context-menu-item-indent'} onClick={handleSave}>
+            <button className={'context-menu-item'} onClick={handleSave}>
               <span className="context-menu-icon">
                 <FontAwesomeIcon className="" icon={faSave} />
               </span>{' '}
@@ -123,7 +139,7 @@ export const usePlanMenuSectionFile = ({
           </Menu.Item>
           <Menu.Item>
             <button
-              className={'context-menu-item-indent'}
+              className={'context-menu-item'}
               onClick={() => {
                 const action = () => fGet(fileInputElementRef.current).click()
                 if (
@@ -139,12 +155,12 @@ export const usePlanMenuSectionFile = ({
               <span className="context-menu-icon">
                 <FontAwesomeIcon className="" icon={faFolderOpen} />
               </span>{' '}
-              {fileBasedPlansOpenFileLabel}
+              {offlinePlansOpenFileLabel}
             </button>
           </Menu.Item>
           <Menu.Item>
             <button
-              className={'context-menu-item-indent '}
+              className={'context-menu-item '}
               onClick={() => {
                 const action = () =>
                   handleOpen(

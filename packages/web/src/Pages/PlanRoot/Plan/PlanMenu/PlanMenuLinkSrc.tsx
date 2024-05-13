@@ -14,7 +14,7 @@ import { PlanMenuActionModalLoginAndSaveLink } from './PlanMenuActions/PlanMenuA
 import { PlanMenuActionModalOverwriteLocal } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalOverwriteLocal'
 import { PlanMenuActionModalSaveWorkingPlanToAccount } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalSaveWorkingPlanToAccount'
 import { usePlanMenuSectionEditLocal } from './PlanMenuSection/PlanMenuSectionEditLocal'
-import { usePlanMenuSectionFile } from './PlanMenuSection/PlanMenuSectionFile'
+import { usePlanMenuSectionOfflinePlans } from './PlanMenuSection/PlanMenuSectionOfflinePlans'
 import { usePlanMenuSectionManagePlansLoggedIn } from './PlanMenuSection/PlanMenuSectionManagePlansLoggedIn'
 import { usePlanMenuSectionManagePlansNotLoggedIn } from './PlanMenuSection/PlanMenuSectionManagePlansNotLoggedIn'
 import { usePlanMenuSectionMisc } from './PlanMenuSection/PlanMenuSectionMisc'
@@ -51,7 +51,7 @@ export const PlanMenuLinkSrc = React.memo(
     const miscSection = usePlanMenuSectionMisc({
       simulationInfoForServerSrc: null,
     })
-    const fileSection = usePlanMenuSectionFile({
+    const offlinePlansSection = usePlanMenuSectionOfflinePlans({
       info: { isCurrentlyFile: false, label: null },
       simulationInfoForPlanMode,
     })
@@ -71,7 +71,7 @@ export const PlanMenuLinkSrc = React.memo(
               align="right"
               open={open}
               onOutsideClickOrEscape={null}
-              afterLeave={() => fileSection.afterMenuClose()}
+              afterLeave={() => offlinePlansSection.afterMenuClose()}
             >
               {({ ref }) => (
                 <Menu.Button
@@ -97,7 +97,7 @@ export const PlanMenuLinkSrc = React.memo(
                 {topSection.menuItems}
                 {managePlansSection.menuItems}
                 {miscSection.menuItems}
-                {fileSection.menuItems}
+                {offlinePlansSection.menuItems}
                 {editSection.menuItems}
               </Menu.Items>
             </ContextModal>
@@ -111,7 +111,7 @@ export const PlanMenuLinkSrc = React.memo(
         {topSection.modals}
         {managePlansSection.modals}
         {miscSection.modals}
-        {fileSection.modals}
+        {offlinePlansSection.modals}
         {editSection.modals}
       </div>
     )

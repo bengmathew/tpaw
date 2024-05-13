@@ -9,7 +9,7 @@ import {
 } from '../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../UsePlanColors'
 import { usePlanMenuSectionEditServer } from './PlanMenuSection/PlanMenuSectionEditServer'
-import { usePlanMenuSectionFile } from './PlanMenuSection/PlanMenuSectionFile'
+import { usePlanMenuSectionOfflinePlans } from './PlanMenuSection/PlanMenuSectionOfflinePlans'
 import { usePlanMenuSectionManagePlansLoggedIn } from './PlanMenuSection/PlanMenuSectionManagePlansLoggedIn'
 import { usePlanMenuSectionMisc } from './PlanMenuSection/PlanMenuSectionMisc'
 import { PlanMenuSubMenuUndoRedo } from './PlanMenuSubMenu/PlanMenuSubMenuUndoRedo'
@@ -33,7 +33,7 @@ export const PlanMenuServerSrcPlanMode = React.memo(
     const miscSection = usePlanMenuSectionMisc({
       simulationInfoForServerSrc,
     })
-    const fileSection = usePlanMenuSectionFile({
+    const offlinePlansSection = usePlanMenuSectionOfflinePlans({
       info: { isCurrentlyFile: false, label: plan.label ?? null },
       simulationInfoForPlanMode,
     })
@@ -48,7 +48,7 @@ export const PlanMenuServerSrcPlanMode = React.memo(
               align="right"
               open={open}
               onOutsideClickOrEscape={null}
-              afterLeave={() => fileSection.afterMenuClose()}
+              afterLeave={() => offlinePlansSection.afterMenuClose()}
             >
               {({ ref }) => (
                 <Menu.Button
@@ -74,7 +74,7 @@ export const PlanMenuServerSrcPlanMode = React.memo(
               <Menu.Items className="flex flex-col context-menu-outer-div min-w-[275px]">
                 {managePlansSection.menuItems}
                 {miscSection.menuItems}
-                {fileSection.menuItems}
+                {offlinePlansSection.menuItems}
                 {editSection.menuItems}
               </Menu.Items>
             </ContextModal>
@@ -86,7 +86,7 @@ export const PlanMenuServerSrcPlanMode = React.memo(
         />
         {managePlansSection.modals}
         {miscSection.modals}
-        {fileSection.modals}
+        {offlinePlansSection.modals}
         {editSection.modals}
       </div>
     )

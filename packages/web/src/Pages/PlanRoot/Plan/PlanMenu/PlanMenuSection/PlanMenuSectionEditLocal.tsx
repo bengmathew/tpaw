@@ -47,7 +47,7 @@ export const usePlanMenuSectionEditLocal = ({
       {editLabelInfo && (
         <Menu.Item
           as="button"
-          className="context-menu-item-indent"
+          className="context-menu-item"
           onClick={() => setShowEditLabelModal(true)}
         >
           <span className="context-menu-icon">
@@ -58,7 +58,7 @@ export const usePlanMenuSectionEditLocal = ({
       )}
       <Menu.Item
         as="button"
-        className="context-menu-item-indent"
+        className="context-menu-item"
         onClick={() => setShowConvertDatingModal(true)}
       >
         <span className="context-menu-icon ">
@@ -72,7 +72,7 @@ export const usePlanMenuSectionEditLocal = ({
         resetTo.original.isModified && (
           <Menu.Item
             as="button"
-            className="context-menu-item-indent text-errorFG"
+            className="context-menu-item text-errorFG"
             onClick={() => setShowUndoChangesModal(true)}
           >
             <span className="context-menu-icon">
@@ -84,7 +84,7 @@ export const usePlanMenuSectionEditLocal = ({
       ) : (
         <Menu.Item
           as="button"
-          className="context-menu-item-indent text-errorFG"
+          className="context-menu-item text-errorFG"
           onClick={() => setShowResetModal(true)}
         >
           <span className="context-menu-icon">

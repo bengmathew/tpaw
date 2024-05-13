@@ -39,7 +39,7 @@ export const usePlanMenuSectionEditServer = ({
       {!plan.isMain && (
         <Menu.Item
           as="button"
-          className="context-menu-item-indent"
+          className="context-menu-item"
           onClick={() => setShowEditLabelModal(true)}
         >
           <span className="context-menu-icon">
@@ -50,7 +50,7 @@ export const usePlanMenuSectionEditServer = ({
       )}
       <Menu.Item
         as="button"
-        className="context-menu-item-indent"
+        className="context-menu-item"
         onClick={() => setShowConvertDatingModal(true)}
       >
         <span className="context-menu-icon ">
@@ -60,7 +60,7 @@ export const usePlanMenuSectionEditServer = ({
       </Menu.Item>
       <Menu.Item
         as="button"
-        className="context-menu-item-indent text-errorFG"
+        className="context-menu-item text-errorFG"
         onClick={() => setShowResetModal(true)}
       >
         <span className="context-menu-icon">
@@ -71,7 +71,7 @@ export const usePlanMenuSectionEditServer = ({
       {!plan.isMain && (
         <Menu.Item
           as="button"
-          className="context-menu-item-indent text-errorFG"
+          className="context-menu-item text-errorFG"
           onClick={() => setShowDeleteModal(true)}
         >
           <span className="context-menu-icon">

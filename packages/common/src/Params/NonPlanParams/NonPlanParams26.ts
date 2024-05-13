@@ -13,15 +13,16 @@ import {
 } from 'json-guard'
 import { Guards } from '../../Guards'
 import { assert, block, letIn, noCase } from '../../Utils'
-import { NonPlanParams24 as NonPlanParamsPrev } from './Old/NonPlanParams24'
-export namespace NonPlanParams25 {
+import { NonPlanParams25 as NonPlanParamsPrev } from './Old/NonPlanParams25'
+export namespace NonPlanParams26 {
   // Just to re-emphasize that currentVersion has the const type.
-  export const currentVersion = 25 as number as 25
+  export const currentVersion = 26 as number as 26
   export type NonPlanParams = {
     v: typeof currentVersion
     timestamp: number
     timezone: { type: 'auto' } | { type: 'manual'; ianaTimezoneName: string }
     numOfSimulationForMonteCarloSampling: number
+    showOfflinePlansMenuSection: boolean
     pdfReportSettings: {
       pageSize: 'A4' | 'Letter' | 'default'
       shouldEmbedLink: 'auto' | 'yes' | 'no'
@@ -71,6 +72,7 @@ export namespace NonPlanParams25 {
         ianaTimezoneName: Guards.ianaTimezoneName,
       }),
     ),
+    showOfflinePlansMenuSection: boolean,
     numOfSimulationForMonteCarloSampling: chain(number, integer, gt(0)),
     pdfReportSettings: object({
       pageSize: union(constant('A4'), constant('Letter'), constant('default')),
@@ -107,21 +109,7 @@ export namespace NonPlanParams25 {
     const result: NonPlanParams = {
       ...prev,
       v: currentVersion,
-      pdfReportSettings: {
-        pageSize: prev.pdfReportSettings.pageSize,
-        shouldEmbedLink: block(() => {
-          switch (prev.pdfReportSettings.embeddedLinkType) {
-            case 'default':
-              return 'auto' as const
-            case 'long':
-              return 'no' as const
-            case 'short':
-              return 'yes' as const
-            default:
-              noCase(prev.pdfReportSettings.embeddedLinkType)
-          }
-        }),
-      },
+      showOfflinePlansMenuSection: false,
     }
     assert(!guard(result).error)
     return result

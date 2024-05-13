@@ -35,7 +35,7 @@ export const usePlanMenuSectionManagePlansLoggedIn = ({
       <h2 className=" context-menu-section-heading">Manage Plans</h2>
       <Menu.Item
         as="button"
-        className="context-menu-item-indent"
+        className="context-menu-item"
         onClick={() => {
           isModified
             ? setShowModifiedAndCreateModal(true)
@@ -50,7 +50,7 @@ export const usePlanMenuSectionManagePlansLoggedIn = ({
       {simulationInfoForServerSrc && (
         <Menu.Item
           as="button"
-          className="context-menu-item-indent"
+          className="context-menu-item"
           onClick={() => setShowDuplicateModal(true)}
         >
           <span className="context-menu-icon">
@@ -64,7 +64,7 @@ export const usePlanMenuSectionManagePlansLoggedIn = ({
         !simulationInfoForServerSrc.plan.isMain && (
           <Menu.Item
             as="button"
-            className=" context-menu-item-indent "
+            className=" context-menu-item "
             onClick={() => setShowSetAsMainModal(true)}
           >
             <span className="context-menu-icon">
@@ -76,7 +76,7 @@ export const usePlanMenuSectionManagePlansLoggedIn = ({
       {(!simulationInfoForServerSrc ||
         !simulationInfoForServerSrc.plan.isMain) && (
         <Menu.Item>
-          <Link className={'context-menu-item-indent '} href={appPaths.plan()}>
+          <Link className={'context-menu-item '} href={appPaths.plan()}>
             <span className="context-menu-icon ">
               <FontAwesomeIcon className="" icon={faHome} />
             </span>{' '}
@@ -87,7 +87,7 @@ export const usePlanMenuSectionManagePlansLoggedIn = ({
 
       <Menu.Item>
         <Link
-          className={'context-menu-item-indent'}
+          className={'context-menu-item'}
           href={appPaths.plans()}
           onClick={() => setPlansOnDoneURL()}
         >

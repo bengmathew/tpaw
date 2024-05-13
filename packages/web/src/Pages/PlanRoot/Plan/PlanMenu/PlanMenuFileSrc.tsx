@@ -12,7 +12,7 @@ import {
 import { PlanLocalStorage } from '../../PlanRootLocalMain/PlanLocalStorage'
 import { usePlanColors } from '../UsePlanColors'
 import { usePlanMenuSectionEditLocal } from './PlanMenuSection/PlanMenuSectionEditLocal'
-import { usePlanMenuSectionFile } from './PlanMenuSection/PlanMenuSectionFile'
+import { usePlanMenuSectionOfflinePlans } from './PlanMenuSection/PlanMenuSectionOfflinePlans'
 import { usePlanMenuSectionManagePlansLoggedIn } from './PlanMenuSection/PlanMenuSectionManagePlansLoggedIn'
 import { usePlanMenuSectionManagePlansNotLoggedIn } from './PlanMenuSection/PlanMenuSectionManagePlansNotLoggedIn'
 import { usePlanMenuSectionMisc } from './PlanMenuSection/PlanMenuSectionMisc'
@@ -47,7 +47,7 @@ export const PlanMenuFileSrc = React.memo(
     const miscSection = usePlanMenuSectionMisc({
       simulationInfoForServerSrc: null,
     })
-    const fileSection = usePlanMenuSectionFile({
+    const offlinePlansSection = usePlanMenuSectionOfflinePlans({
       info: { isCurrentlyFile: true, simulationInfoForFileSrc },
       simulationInfoForPlanMode,
     })
@@ -70,7 +70,7 @@ export const PlanMenuFileSrc = React.memo(
               align="right"
               open={open}
               onOutsideClickOrEscape={null}
-              afterLeave={() => fileSection.afterMenuClose()}
+              afterLeave={() => offlinePlansSection.afterMenuClose()}
             >
               {({ ref }) => (
                 <Menu.Button
@@ -104,7 +104,7 @@ export const PlanMenuFileSrc = React.memo(
                 {topSection.menuItems}
                 {managePlansSection.menuItems}
                 {miscSection.menuItems}
-                {fileSection.menuItems}
+                {offlinePlansSection.menuItems}
                 {editSection.menuItems}
               </Menu.Items>
             </ContextModal>
@@ -118,7 +118,7 @@ export const PlanMenuFileSrc = React.memo(
         {topSection.modals}
         {managePlansSection.modals}
         {miscSection.modals}
-        {fileSection.modals}
+        {offlinePlansSection.modals}
         {editSection.modals}
       </div>
     )

@@ -24,7 +24,7 @@ export const usePlanMenuSectionMisc = ({
       <h2 className=" context-menu-section-heading">Misc</h2>
       <Menu.Item
         as="button"
-        className={'context-menu-item-indent'}
+        className={'context-menu-item'}
         onClick={() => setShowCopyToLink(true)}
       >
         <span className="context-menu-icon">
@@ -35,7 +35,7 @@ export const usePlanMenuSectionMisc = ({
 
       {simulationInfoForServerSrc && datingInfo.isDated && (
         <PlanMenuActionViewPlanHistory
-          className="context-menu-item-indent"
+          className="context-menu-item"
           simulationInfoForServerSrc={simulationInfoForServerSrc}
           nowAsTimestamp={datingInfo.nowAsTimestamp}
         />
