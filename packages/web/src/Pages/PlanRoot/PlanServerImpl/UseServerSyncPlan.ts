@@ -11,6 +11,7 @@ import {
   UseServerSyncPlanMutation,
   UserPlanSyncAddInput,
 } from './__generated__/UseServerSyncPlanMutation.graphql'
+import jsonpatch, { Operation } from 'fast-json-patch'
 
 export const SERVER_SYNC_PLAN_THROTTLE_WAIT_TIME = 5 * 1000
 export const SERVER_SYNC_PLAN_ERROR_WAIT_TIME = 20 * 1000
@@ -116,7 +117,6 @@ export const useServerSyncPlan = (
         Sentry.captureMessage(message)
         assertFalse()
       }
-      historyForDebugRef.current = historyForDebugRef.current.slice(-20)
       return targetState
     })
   }
@@ -408,10 +408,14 @@ export const useServerSyncPlan = (
         state,
         ...(inputChanged
           ? {
-              inputDeepChanged: _.isEqual(last?.input, input),
+              inputDeepChanged: !_.isEqual(last?.input, input),
               inputChangeReason: _getInputPrev?.whatChanged,
-              lastInput: last?.trace === 'start' ? last?.input : undefined,
-              input,
+              ...(last?.input && input
+                ? {
+                    inputDiff1: jsonpatch.compare(last.input, input),
+                    inputDiff2: jsonpatch.compare(input, last.input),
+                  }
+                : {}),
             }
           : {}),
         inputIsNull: input === null,
