@@ -11,7 +11,7 @@ import {
 } from '@tpaw/common'
 import cloneJSON from 'fast-json-clone'
 import _ from 'lodash'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as uuid from 'uuid'
 import { normalizePlanParams } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { normalizePlanParamsInverse } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
@@ -84,19 +84,15 @@ export const useWorkingPlan = (
     }
   }, [headIndex, workingPlan])
 
-  const updatingRef = useRef(false)
-  updatingRef.current = false
+  const isUpdatingRef = useRef(false)
+  useEffect(() => {
+    isUpdatingRef.current = false
+  }, [workingPlan])
   const updatePlanParams = useCallback(
     <T extends PlanParamsChangeActionCurrent>(
       type: T['type'],
       value: T['value'],
     ) => {
-      if (updatingRef.current) {
-        Sentry.captureMessage('simultaneous updatePlanParams detected.')
-        return
-      }
-      updatingRef.current = true
-
       const currHistoryItem = fGet(_.last(planParamsUndoRedoStack.undos))
       assert(planParams === currHistoryItem.params)
 
@@ -174,6 +170,12 @@ export const useWorkingPlan = (
 
       planParamsGuard(nextPlanParams).force()
 
+      if (isUpdatingRef.current) {
+        console.dir('simultaneous updatePlanParams detected.')
+        Sentry.captureMessage('simultaneous updatePlanParams detected.')
+        return
+      }
+      isUpdatingRef.current = true
       setWorkingPlan({
         planId: workingPlan.planId,
         planParamsPostBase,
