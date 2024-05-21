@@ -11,7 +11,7 @@ import {
 } from '@tpaw/common'
 import cloneJSON from 'fast-json-clone'
 import _ from 'lodash'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import * as uuid from 'uuid'
 import { normalizePlanParams } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 import { normalizePlanParamsInverse } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
@@ -25,6 +25,7 @@ import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName } from './WithNonPlanParams'
 import { useWASM } from './WithWASM'
 import { CalendarDayFns } from '../../../Utils/CalendarDayFns'
+import * as Sentry from '@sentry/nextjs'
 
 export type PlanParamsHistoryItem = {
   readonly id: string
@@ -83,11 +84,19 @@ export const useWorkingPlan = (
     }
   }, [headIndex, workingPlan])
 
+  const updatingRef = useRef(false)
+  updatingRef.current = false
   const updatePlanParams = useCallback(
     <T extends PlanParamsChangeActionCurrent>(
       type: T['type'],
       value: T['value'],
     ) => {
+      if (updatingRef.current) {
+        Sentry.captureMessage('simultaneous updatePlanParams detected.')
+        return
+      }
+      updatingRef.current = true
+
       const currHistoryItem = fGet(_.last(planParamsUndoRedoStack.undos))
       assert(planParams === currHistoryItem.params)
 

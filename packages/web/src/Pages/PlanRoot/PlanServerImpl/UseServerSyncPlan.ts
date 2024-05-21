@@ -409,13 +409,13 @@ export const useServerSyncPlan = (
         ...(inputChanged
           ? {
               inputDeepChanged: !_.isEqual(last?.input, input),
-              inputChangeReason: _getInputPrev?.whatChanged,
-              ...(last?.input && input
-                ? {
-                    inputDiff1: jsonpatch.compare(last.input, input),
-                    inputDiff2: jsonpatch.compare(input, last.input),
-                  }
-                : {}),
+              // inputChangeReason: _getInputPrev?.whatChanged,
+              // ...(last?.input && input
+              //   ? {
+              //       inputDiff1: jsonpatch.compare(last.input, input),
+              //       inputDiff2: jsonpatch.compare(input, last.input),
+              //     }
+              //   : {}),
             }
           : {}),
         inputIsNull: input === null,
@@ -456,12 +456,12 @@ export const useServerSyncPlan = (
         // Will let sync finish. input will probably change to non-null due to
         // server state being updated at sync end.
         case 'syncing':
-          return
+          break
         case 'waitDueToError':
         case 'waitDueToThrottle':
           state.dispose()
           toSyncedStateRef.current()
-          return
+          break
         default:
           noCase(state)
       }
