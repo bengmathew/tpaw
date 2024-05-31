@@ -49,7 +49,7 @@ export const usePlanMenuSectionOfflinePlans = ({
   const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
   const { undos, redos } = simulationInfoForPlanMode.planParamsUndoRedoStack
   const { ianaTimezoneName, getZonedTime } = useIANATimezoneName()
-  const [isOpen, setIsOpen] = useState(false)
+  // const [isOpen, setIsOpen] = useState(false)
   const [showOverwriteModal, setShowOverwriteLocalModal] = useState(
     false as false | { action: () => void },
   )
@@ -92,15 +92,16 @@ export const usePlanMenuSectionOfflinePlans = ({
     )
   }
 
-  const afterMenuClose = () => {
-    setIsOpen(false)
-  }
-
   const menuItems = (
     <div className="context-menu-section">
       <div className="context-menu-section-heading ">
         <div className="flex gap-x-2">
-          <h2 className={clsx(' block', !isOpen && '')}>
+          <h2
+            className={clsx(
+              ' block',
+              !nonPlanParams.showOfflinePlansMenuSection && '',
+            )}
+          >
             {offlinePlansLabel}{' '}
           </h2>
           <button
@@ -110,7 +111,6 @@ export const usePlanMenuSectionOfflinePlans = ({
               // As of Jun 2023, no solution for keyboard:
               // https://github.com/tailwindlabs/headlessui/discussions/1122
               e.preventDefault()
-              setIsOpen((x) => !x)
               setNonPlanParams({
                 ...nonPlanParams,
                 showOfflinePlansMenuSection:
@@ -121,13 +121,13 @@ export const usePlanMenuSectionOfflinePlans = ({
             {nonPlanParams.showOfflinePlansMenuSection ? 'hide' : 'show'}
           </button>
         </div>
-        {isOpen && (
+        {nonPlanParams.showOfflinePlansMenuSection && (
           <div className="text-xs lighten ">
             Optional. Alternative to saving plans in account.
           </div>
         )}
       </div>
-      {isOpen && (
+      {nonPlanParams.showOfflinePlansMenuSection && (
         <div className="">
           <Menu.Item>
             <button className={'context-menu-item'} onClick={handleSave}>
@@ -248,5 +248,5 @@ export const usePlanMenuSectionOfflinePlans = ({
       </CenteredModal>
     </>
   )
-  return { menuItems, modals, afterMenuClose }
+  return { menuItems, modals }
 }

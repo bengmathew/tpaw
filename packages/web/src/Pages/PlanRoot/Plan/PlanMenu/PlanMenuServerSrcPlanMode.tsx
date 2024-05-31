@@ -48,7 +48,6 @@ export const PlanMenuServerSrcPlanMode = React.memo(
               align="right"
               open={open}
               onOutsideClickOrEscape={null}
-              afterLeave={() => offlinePlansSection.afterMenuClose()}
             >
               {({ ref }) => (
                 <Menu.Button
