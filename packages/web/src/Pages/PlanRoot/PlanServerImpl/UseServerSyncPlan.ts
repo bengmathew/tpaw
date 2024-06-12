@@ -11,7 +11,6 @@ import {
   UseServerSyncPlanMutation,
   UserPlanSyncAddInput,
 } from './__generated__/UseServerSyncPlanMutation.graphql'
-import jsonpatch, { Operation } from 'fast-json-patch'
 
 export const SERVER_SYNC_PLAN_THROTTLE_WAIT_TIME = 5 * 1000
 export const SERVER_SYNC_PLAN_ERROR_WAIT_TIME = 20 * 1000
@@ -389,7 +388,15 @@ export const useServerSyncPlan = (
       trace: 'start' | 'end'
     },
   )
+  const isEffectRunningRef = useRef(false)
+  isEffectRunningRef.current = false
+  const [effectTriggerDelay, setEffectTriggerDelay] = useState(0)
   useEffect(() => {
+    if (isEffectRunningRef.current) {
+      setEffectTriggerDelay((prev) => prev + 1)
+      return
+    }
+    isEffectRunningRef.current = true
     const whatChanged = block(() => {
       const last = debugLastChangeRef.current
       const inputChanged = last ? last.input !== input : true
@@ -407,16 +414,7 @@ export const useServerSyncPlan = (
         whatChanged,
         state,
         ...(inputChanged
-          ? {
-              inputDeepChanged: !_.isEqual(last?.input, input),
-              // inputChangeReason: _getInputPrev?.whatChanged,
-              // ...(last?.input && input
-              //   ? {
-              //       inputDiff1: jsonpatch.compare(last.input, input),
-              //       inputDiff2: jsonpatch.compare(input, last.input),
-              //     }
-              //   : {}),
-            }
+          ? { inputDeepChanged: !_.isEqual(last?.input, input) }
           : {}),
         inputIsNull: input === null,
         ...(last
@@ -468,7 +466,7 @@ export const useServerSyncPlan = (
     }
 
     debugLastChangeRef.current = { ...debugLastChangeRef.current, trace: 'end' }
-  }, [state, input])
+  }, [state, input, effectTriggerDelay])
 
   // ---- CLEANUP EFFECT ----
   const handleDispose = () => {
