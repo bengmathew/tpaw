@@ -28,6 +28,7 @@ import {
   getPlanResultsChartLabelInfoForSpending,
   planResultsChartLabel,
 } from './PlanResultsChartLabel'
+import { NormalizedLabeledAmountTimed } from '../../../../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 
 const maxWidth = 700
 export type PlanChartMainCardMenuStateful = {
@@ -54,15 +55,29 @@ export const PlanResultsChartCardMenu = React.memo(
 
     const chartH = windowWidthName === 'xs' ? 50 : 55
 
+    const isNotInThePast = ({
+      amountAndTiming,
+    }: NormalizedLabeledAmountTimed) => {
+      switch (amountAndTiming.type) {
+        case 'inThePast':
+          return false
+        case 'oneTime':
+        case 'recurring':
+          return true
+        default:
+          noCase(amountAndTiming)
+      }
+    }
+
     const essentialArray =
-      planParamsNorm.adjustmentsToSpending.extraSpending.essential.sort(
-        (a, b) => a.sortIndex - b.sortIndex,
-      )
+      planParamsNorm.adjustmentsToSpending.extraSpending.essential
+        .filter(isNotInThePast)
+        .sort((a, b) => a.sortIndex - b.sortIndex)
 
     const discretionaryArray =
-      planParamsNorm.adjustmentsToSpending.extraSpending.discretionary.sort(
-        (a, b) => a.sortIndex - b.sortIndex,
-      )
+      planParamsNorm.adjustmentsToSpending.extraSpending.discretionary
+        .filter(isNotInThePast)
+        .sort((a, b) => a.sortIndex - b.sortIndex)
 
     const spendingLabelInfo =
       getPlanResultsChartLabelInfoForSpending(planParamsNorm)
