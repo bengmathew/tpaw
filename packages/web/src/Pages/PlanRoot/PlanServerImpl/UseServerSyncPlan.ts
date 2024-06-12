@@ -393,6 +393,7 @@ export const useServerSyncPlan = (
   const [effectTriggerDelay, setEffectTriggerDelay] = useState(0)
   useEffect(() => {
     if (isEffectRunningRef.current) {
+      Sentry.captureMessage('Double effect handled.')
       setEffectTriggerDelay((prev) => prev + 1)
       return
     }
