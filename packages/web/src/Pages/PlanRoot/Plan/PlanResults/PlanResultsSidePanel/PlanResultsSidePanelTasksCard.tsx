@@ -18,10 +18,6 @@ import {
   useSimulationResult,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
-import {
-  PlanParamsProcessed,
-  ProcessedValueForMonthRanges,
-} from '@tpaw/simulator'
 
 export const PlanResultsSidePanelTasksCard = React.memo(
   ({
@@ -146,9 +142,9 @@ const _getProps = (simulationResult: SimulationResult): _Props => {
     simulationResult.savingsPortfolio.withdrawals[type].byId.map(
       ({ id, byPercentileByMonthsFromNow }) => {
         const { label } = fGet(
-          args.planParamsNorm.adjustmentsToSpending.extraSpending[type].find(
-            (x) => x.id === id,
-          ),
+          args.planParamsNorm.adjustmentsToSpending.extraSpending[type]
+            .filter((x) => x.amountAndTiming.type !== 'inThePast')
+            .find((x) => x.id === id),
         )
         const amount = byPercentileByMonthsFromNow[0].data[0]
         return { id, label, amount }

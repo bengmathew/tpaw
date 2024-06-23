@@ -66,42 +66,50 @@ export const BalanceSheetContent = React.memo(
       const estimatedCurrentPortfolioBalance =
         args.currentPortfolioBalanceAmount
 
+      const _filter = (x: NormalizedLabeledAmountTimed) =>
+        x.amountAndTiming.type !== 'inThePast'
       const byMonthData = {
         wealth: {
-          futureSavings: args.planParamsNorm.wealth.futureSavings.map((x) =>
-            _processLabeledAmountTimed(
-              x,
-              netPresentValue.tpaw.wealth.futureSavings,
-            ),
-          ),
-          incomeDuringRetirement:
-            args.planParamsNorm.wealth.incomeDuringRetirement.map((x) =>
+          futureSavings: args.planParamsNorm.wealth.futureSavings
+            .filter(_filter)
+            .map((x) =>
               _processLabeledAmountTimed(
                 x,
-                netPresentValue.tpaw.wealth.incomeDuringRetirement,
+                netPresentValue.tpaw.wealth.futureSavings,
               ),
             ),
+          incomeDuringRetirement:
+            args.planParamsNorm.wealth.incomeDuringRetirement
+              .filter(_filter)
+              .map((x) =>
+                _processLabeledAmountTimed(
+                  x,
+                  netPresentValue.tpaw.wealth.incomeDuringRetirement,
+                ),
+              ),
         },
         adjustmentsToSpending: {
           extraSpending: {
             essential:
-              args.planParamsNorm.adjustmentsToSpending.extraSpending.essential.map(
-                (x) =>
+              args.planParamsNorm.adjustmentsToSpending.extraSpending.essential
+                .filter(_filter)
+                .map((x) =>
                   _processLabeledAmountTimed(
                     x,
                     netPresentValue.tpaw.adjustmentsToSpending.extraSpending
                       .essential,
                   ),
-              ),
+                ),
             discretionary:
-              args.planParamsNorm.adjustmentsToSpending.extraSpending.discretionary.map(
-                (x) =>
+              args.planParamsNorm.adjustmentsToSpending.extraSpending.discretionary
+                .filter(_filter)
+                .map((x) =>
                   _processLabeledAmountTimed(
                     x,
                     netPresentValue.tpaw.adjustmentsToSpending.extraSpending
                       .discretionary,
                   ),
-              ),
+                ),
           },
         },
       }
