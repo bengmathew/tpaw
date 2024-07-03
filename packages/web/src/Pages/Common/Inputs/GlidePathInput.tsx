@@ -391,7 +391,7 @@ const _Percent = React.memo(
         <AmountInput
           className="w-[45px] text-right text-input"
           value={Math.round(value * 100)}
-          onChange={handleChange}
+          onChange={x=>handleChange(x/100)}
           decimals={0}
           modalLabel={modalLabel}
         />
