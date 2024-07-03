@@ -90,6 +90,6 @@ export const getMonthRangeDurationStr = (
 ) =>
   value.end.isInThePast || value.end.asMFN < value.start.asMFN
     ? null
-    : `Thats ${InMonthsFns.toStr({
+    : `That's ${InMonthsFns.toStr({
         inMonths: value.end.asMFN - value.start.asMFN + 1,
       })}`
