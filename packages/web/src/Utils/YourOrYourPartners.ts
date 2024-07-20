@@ -13,5 +13,5 @@ export const youAreOrYourPartnerIs = (
   typeof person === 'string'
     ? person === 'person1'
       ? 'you are'
-      : `your partner's is`
+      : `your partner is`
     : yourOrYourPartners(person.person)
