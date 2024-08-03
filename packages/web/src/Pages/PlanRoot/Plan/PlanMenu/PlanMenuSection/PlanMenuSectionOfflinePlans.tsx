@@ -134,7 +134,7 @@ export const usePlanMenuSectionOfflinePlans = ({
               <span className="context-menu-icon">
                 <FontAwesomeIcon className="" icon={faSave} />
               </span>{' '}
-              Copy to File
+              Save to File
             </button>
           </Menu.Item>
           <Menu.Item>
