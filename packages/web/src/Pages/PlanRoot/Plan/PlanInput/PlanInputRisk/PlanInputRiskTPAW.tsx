@@ -149,10 +149,10 @@ const _TPAWRiskToleranceCard = React.memo(
           title="Stock allocation corresponding to this risk tolerance"
         >
           <p className="p-base">
-            Your risk tolerance, together with other inputs such as essential
-            expenses and retirement income, determine how much of your portfolio
-            should be allocated to stocks versus bonds. Your current inputs
-            result in the following stock allocation:
+            Your risk tolerance, together with other inputs such as your essential
+            expenses and retirement income and the equity premium, determine how
+            much of your portfolio should be allocated to stocks versus bonds.
+            Your current inputs result in the following stock allocation:
           </p>
           <h2 className="font-semibold mt-4">Stock Allocation</h2>
           <div
