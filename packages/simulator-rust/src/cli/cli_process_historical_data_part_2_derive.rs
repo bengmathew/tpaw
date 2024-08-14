@@ -11,6 +11,7 @@ use simulator::{
                 V2_RAW_MONTHLY_NON_LOG_SERIES, V2_RAW_MONTHLY_NON_LOG_SERIES_START,
             },
             v3::v3_raw_monthly_non_log_series::{V3_RAW_MONTHLY_NON_LOG_SERIES, V3_RAW_MONTHLY_NON_LOG_SERIES_START},
+            v4::v4_raw_monthly_non_log_series::{V4_RAW_MONTHLY_NON_LOG_SERIES, V4_RAW_MONTHLY_NON_LOG_SERIES_START},
             AnnualLogMeanFromOneOverCAPERegressionInfo, EmpiricalStats32,
             FiveTenTwentyThirtyYearsSlopeAndIntercept, RawCAPESeriesEntry,
             RawMonthlyNonLogSeriesEntry,
@@ -45,6 +46,7 @@ fn get_raw_monthly_non_log_series(
         HistoricalReturnsId::V1 => &V1_RAW_MONTHLY_NON_LOG_SERIES,
         HistoricalReturnsId::V2 => &V2_RAW_MONTHLY_NON_LOG_SERIES,
         HistoricalReturnsId::V3 => &V3_RAW_MONTHLY_NON_LOG_SERIES,
+        HistoricalReturnsId::V4 => &V4_RAW_MONTHLY_NON_LOG_SERIES,
     }
 }
 
@@ -64,6 +66,7 @@ fn generate_regressions(returns_id: &HistoricalReturnsId, base_dir: &str) {
         HistoricalReturnsId::V1 => &V1_RAW_MONTHLY_NON_LOG_SERIES_START,
         HistoricalReturnsId::V2 => &V2_RAW_MONTHLY_NON_LOG_SERIES_START,
         HistoricalReturnsId::V3 => &V3_RAW_MONTHLY_NON_LOG_SERIES_START,
+        HistoricalReturnsId::V4 => &V4_RAW_MONTHLY_NON_LOG_SERIES_START,
     };
 
     assert!(

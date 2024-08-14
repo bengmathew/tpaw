@@ -22,7 +22,7 @@ pub struct AverageAnnualRealEarningsForSP500For10Years {
 // NOTE: added_date_ms is the date it was *added* to the array, not when it was true in the
 // world.
 pub const AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS:
-    [AverageAnnualRealEarningsForSP500For10Years; 4] = [
+    [AverageAnnualRealEarningsForSP500For10Years; 5] = [
     AverageAnnualRealEarningsForSP500For10Years {
         added_date_ms: MIN_PLAN_PARAM_TIME_MS - 30 * 30 * 24 * 60 * 60 * 1000, // ~`30 months before.
         ten_year_duration: TenYearDuration {
@@ -81,5 +81,20 @@ pub const AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS:
             },
         },
         value: 150.89,
+    },
+    AverageAnnualRealEarningsForSP500For10Years {
+        // Wednesday, August 14, 2024 12:01:00 PM PDT
+        added_date_ms: 1723662060000,
+        ten_year_duration: TenYearDuration {
+            start: YearAndMonth {
+                year: 2014,
+                month: 4,
+            },
+            end: YearAndMonth {
+                year: 2024,
+                month: 3,
+            },
+        },
+        value: 154.61,
     },
 ];

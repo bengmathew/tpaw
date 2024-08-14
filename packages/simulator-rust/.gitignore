@@ -6,3 +6,4 @@ bin/
 pkg/
 wasm-pack.log
 .env
+.vscode

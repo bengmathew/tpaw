@@ -18,6 +18,7 @@ enum Version {
     V1,
     V2,
     V3,
+    V4,
 }
 
 #[derive(Subcommand)]
@@ -34,6 +35,7 @@ fn return_id_map(
         Version::V1 => simulator::historical_monthly_returns::HistoricalReturnsId::V1,
         Version::V2 => simulator::historical_monthly_returns::HistoricalReturnsId::V2,
         Version::V3 => simulator::historical_monthly_returns::HistoricalReturnsId::V3,
+        Version::V4 => simulator::historical_monthly_returns::HistoricalReturnsId::V4,
     }
 }
 

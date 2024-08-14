@@ -1,19 +1,19 @@
 module.exports = {
   apps: [
     {
-      name: 'tpaw-dev-web',
+      name: 'web',
       cwd:'./packages/web',
       script: 'npm',
       args: 'run dev',
     },
     {
-      name: 'tpaw-dev-server',
+      name: 'server',
       cwd:'./packages/server',
       script: 'npm',
       args: 'run start:dev',
     },
     {
-      name: 'tpaw-dev-printserver',
+      name: 'printserver',
       cwd:'./packages/printserver',
       script: 'npm',
       args: 'run start:dev',

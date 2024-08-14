@@ -2,21 +2,27 @@ pub mod data;
 
 use self::data::process_raw_monthly_non_log_series;
 use self::data::v1::v1_raw_monthly_non_log_series::V1_RAW_MONTHLY_NON_LOG_SERIES;
+use self::data::v1::v1_raw_monthly_non_log_series::V1_RAW_MONTHLY_NON_LOG_SERIES_START;
 use self::data::v1::V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS;
 use self::data::v2::v2_annual_log_mean_from_one_over_cape_regression_info_stocks::V2_ANNUAL_LOG_MEAN_FROM_ONE_OVER_CAPE_REGRESSION_INFO_STOCKS;
 use self::data::v2::v2_empirical_stats_by_block_size_bonds::V2_EMPIRICAL_STATS_BY_BLOCK_SIZE_BONDS;
 use self::data::v2::v2_empirical_stats_by_block_size_stocks::V2_EMPIRICAL_STATS_BY_BLOCK_SIZE_STOCKS;
 use self::data::v2::v2_raw_monthly_non_log_series::V2_RAW_MONTHLY_NON_LOG_SERIES;
+use self::data::v2::v2_raw_monthly_non_log_series::V2_RAW_MONTHLY_NON_LOG_SERIES_START;
 use self::data::v2::V2_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS;
 use self::data::v3::v3_annual_log_mean_from_one_over_cape_regression_info_stocks::V3_ANNUAL_LOG_MEAN_FROM_ONE_OVER_CAPE_REGRESSION_INFO_STOCKS;
 use self::data::v3::v3_empirical_stats_by_block_size_bonds::V3_EMPIRICAL_STATS_BY_BLOCK_SIZE_BONDS;
 use self::data::v3::v3_empirical_stats_by_block_size_stocks::V3_EMPIRICAL_STATS_BY_BLOCK_SIZE_STOCKS;
 use self::data::v3::v3_raw_monthly_non_log_series::V3_RAW_MONTHLY_NON_LOG_SERIES;
+use self::data::v3::v3_raw_monthly_non_log_series::V3_RAW_MONTHLY_NON_LOG_SERIES_START;
 use self::data::v3::V3_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS;
+use self::data::v4::v4_annual_log_mean_from_one_over_cape_regression_info_stocks::V4_ANNUAL_LOG_MEAN_FROM_ONE_OVER_CAPE_REGRESSION_INFO_STOCKS;
+use self::data::v4::v4_empirical_stats_by_block_size_bonds::V4_EMPIRICAL_STATS_BY_BLOCK_SIZE_BONDS;
+use self::data::v4::v4_empirical_stats_by_block_size_stocks::V4_EMPIRICAL_STATS_BY_BLOCK_SIZE_STOCKS;
+use self::data::v4::v4_raw_monthly_non_log_series::V4_RAW_MONTHLY_NON_LOG_SERIES;
+use self::data::v4::v4_raw_monthly_non_log_series::V4_RAW_MONTHLY_NON_LOG_SERIES_START;
+use self::data::v4::V4_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS;
 use self::data::{AnnualLogMeanFromOneOverCAPERegressionInfo, EmpiricalStats64};
-use crate::historical_monthly_returns::data::v1::v1_raw_monthly_non_log_series::V1_RAW_MONTHLY_NON_LOG_SERIES_START;
-use crate::historical_monthly_returns::data::v2::v2_raw_monthly_non_log_series::V2_RAW_MONTHLY_NON_LOG_SERIES_START;
-use crate::historical_monthly_returns::data::v3::v3_raw_monthly_non_log_series::V3_RAW_MONTHLY_NON_LOG_SERIES_START;
 use crate::shared_types::{SimpleRange, YearAndMonth};
 use crate::{
     expected_value_of_returns::EmpiricalAnnualNonLogExpectedReturnInfo,
@@ -226,6 +232,7 @@ pub enum HistoricalReturnsId {
     V1,
     V2,
     V3,
+    V4,
 }
 
 impl HistoricalReturnsId {
@@ -234,6 +241,7 @@ impl HistoricalReturnsId {
             HistoricalReturnsId::V1 => "v1",
             HistoricalReturnsId::V2 => "v2",
             HistoricalReturnsId::V3 => "v3",
+            HistoricalReturnsId::V4 => "v4",
         }
     }
 }
@@ -323,7 +331,31 @@ fn get_all_historical_returns_infos() -> Vec<HistoricalReturnsInfo> {
             },
         }
     };
-    let result = vec![v1, v2, v3];
+
+    let v4 = {
+        let monthly_series = process_raw_monthly_non_log_series(&V4_RAW_MONTHLY_NON_LOG_SERIES);
+        HistoricalReturnsInfo {
+            id: HistoricalReturnsId::V4,
+            timestamp_ms: V4_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
+            month_range: get_month_range(
+                &V4_RAW_MONTHLY_NON_LOG_SERIES_START,
+                V4_RAW_MONTHLY_NON_LOG_SERIES.len(),
+            ),
+            returns: StocksAndBonds {
+                stocks: HistoricalMonthlyReturns::new(
+                    monthly_series.log.stocks,
+                    &V4_EMPIRICAL_STATS_BY_BLOCK_SIZE_STOCKS,
+                    V4_ANNUAL_LOG_MEAN_FROM_ONE_OVER_CAPE_REGRESSION_INFO_STOCKS,
+                ),
+                bonds: HistoricalMonthlyReturns::new(
+                    monthly_series.log.bonds,
+                    &V4_EMPIRICAL_STATS_BY_BLOCK_SIZE_BONDS,
+                    AnnualLogMeanFromOneOverCAPERegressionInfo::new_zero(),
+                ),
+            },
+        }
+    };
+    let result = vec![v1, v2, v3, v4];
     assert!(result
         .windows(2)
         .all(|x| (x[0].timestamp_ms < x[1].timestamp_ms)));
@@ -363,9 +395,11 @@ mod tests {
             v1::V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
             v2::V2_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
             v3::V3_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
+            v4::V4_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
         },
         get_historical_monthly_returns_info, HistoricalReturnsId,
     };
+    use crate::historical_monthly_returns::HistoricalMonthlyReturns;
     use rstest::*;
 
     enum StocksOrBonds {
@@ -376,11 +410,12 @@ mod tests {
     fn resolve_historical_monthly_returns(
         returns_id: &HistoricalReturnsId,
         src: &StocksOrBonds,
-    ) -> &'static crate::historical_monthly_returns::HistoricalMonthlyReturns {
+    ) -> &'static HistoricalMonthlyReturns {
         let timestamp_ms = match returns_id {
             HistoricalReturnsId::V1 => V1_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
             HistoricalReturnsId::V2 => V2_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
             HistoricalReturnsId::V3 => V3_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
+            HistoricalReturnsId::V4 => V4_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS,
         };
         let h = &get_historical_monthly_returns_info(timestamp_ms).returns;
         match src {
@@ -394,7 +429,8 @@ mod tests {
         #[values(
             HistoricalReturnsId::V1,
             HistoricalReturnsId::V2,
-            HistoricalReturnsId::V3
+            HistoricalReturnsId::V3,
+            HistoricalReturnsId::V4
         )]
         returns_id: HistoricalReturnsId,
         #[values(StocksOrBonds::Stocks, StocksOrBonds::Bonds)] src: StocksOrBonds,
@@ -420,7 +456,8 @@ mod tests {
         #[values(
             HistoricalReturnsId::V1,
             HistoricalReturnsId::V2,
-            HistoricalReturnsId::V3
+            HistoricalReturnsId::V3,
+            HistoricalReturnsId::V4
         )]
         returns_id: HistoricalReturnsId,
         #[values(StocksOrBonds::Stocks, StocksOrBonds::Bonds)] src: StocksOrBonds,
@@ -444,7 +481,8 @@ mod tests {
         #[values(
             HistoricalReturnsId::V1,
             HistoricalReturnsId::V2,
-            HistoricalReturnsId::V3
+            HistoricalReturnsId::V3,
+            HistoricalReturnsId::V4
         )]
         returns_id: HistoricalReturnsId,
         #[values(StocksOrBonds::Stocks, StocksOrBonds::Bonds)] src: StocksOrBonds,
@@ -473,7 +511,8 @@ mod tests {
         #[values(
             HistoricalReturnsId::V1,
             HistoricalReturnsId::V2,
-            HistoricalReturnsId::V3
+            HistoricalReturnsId::V3,
+            HistoricalReturnsId::V4
         )]
         returns_id: HistoricalReturnsId,
         #[values(StocksOrBonds::Stocks, StocksOrBonds::Bonds)] src: StocksOrBonds,
