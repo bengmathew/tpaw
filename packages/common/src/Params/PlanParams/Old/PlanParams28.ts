@@ -967,7 +967,11 @@ export namespace PlanParams28 {
         type: 'recurring',
         monthRange: _migrateMonthRange(prev.monthRange),
         everyXMonths: 1,
-        baseAmount: prev.value,
+        // This should be an integer to start with, but we did not enforce it at
+        // the guard level and some decimals have crept in, prehaps due to
+        // copy-paste, which was causing crashes. So we assume not rounded
+        // before and we round here in the migration.
+        baseAmount: Math.round(prev.value),
         delta: null,
       },
     })
