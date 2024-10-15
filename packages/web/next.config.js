@@ -33,6 +33,10 @@ const moduleExports = {
         source: '/__/auth/:path*',
         destination: `https://${process.env.NEXT_PUBLIC_GOOGLE_FIREBASE_AUTH_DOMAIN_REDIRECT}/__/auth/:path*`,
       },
+      {
+        source: '/__sentry_envelope/:path*',
+        destination: `${process.env.SENTRY_TUNNEL_ENDPOINT}/envelope/:path*`,
+      },
     ]
   },
 }
