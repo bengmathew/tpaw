@@ -2,7 +2,6 @@ import * as Sentry from '@sentry/nextjs'
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  tunnel: '/__sentry_envelope',
   maxValueLength: 10000,
   // We recommend adjusting this value in production, or using tracesSampler
   // for finer control
