@@ -13,6 +13,7 @@ const moduleExports = {
   sentry: {
     hideSourceMaps: false,
     widenClientFileUpload: true,
+    tunnelRoute: '/__sentry_tunnel',
   },
   webpack: (config, options) => {
     config.experiments.asyncWebAssembly = true
@@ -53,5 +54,4 @@ const SentryWebpackPluginOptions = {
 // ensure that your source maps include changes from all other Webpack plugins
 module.exports = withSentryConfig(
   withBundleAnalyzer(moduleExports, SentryWebpackPluginOptions),
-  { tunnelRoute: '/__sentry_tunnel' },
 )
