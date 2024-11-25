@@ -247,8 +247,8 @@ const getParams = (
       historicalReturnsAdjustment: {
         standardDeviation: {
           bonds: { scale: { log: 1 } },
-          overrideToFixedForTesting: false,
         },
+        overrideToFixedForTesting: { type: 'none' },
       },
       annualInflation: { type: 'manual', value: 0.02 },
       sampling: {

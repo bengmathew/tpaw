@@ -275,8 +275,8 @@ const testPlanParams: PlanParams = {
     historicalReturnsAdjustment: {
       standardDeviation: {
         bonds: { scale: { log: 1 } },
-        overrideToFixedForTesting: false,
       },
+      overrideToFixedForTesting: { type: 'none' },
     },
     annualInflation: {
       type: 'suggested',

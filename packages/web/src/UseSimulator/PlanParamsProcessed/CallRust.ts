@@ -233,8 +233,8 @@ export namespace CallRust {
           standardDeviation: {
             bonds: advanced.historicalReturnsAdjustment.standardDeviation.bonds,
             overrideToFixedForTesting:
-              advanced.historicalReturnsAdjustment.standardDeviation
-                .overrideToFixedForTesting,
+              advanced.historicalReturnsAdjustment
+                .overrideToFixedForTesting.type !== 'none',
           },
         },
         sampling:

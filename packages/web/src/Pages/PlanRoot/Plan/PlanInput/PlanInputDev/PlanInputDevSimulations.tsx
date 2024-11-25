@@ -157,7 +157,7 @@ const _SimulationsCard = React.memo(
           <SwitchAsToggle
             checked={
               planParamsNorm.advanced.historicalReturnsAdjustment
-                .standardDeviation.overrideToFixedForTesting
+                .overrideToFixedForTesting.type !== 'none'
             }
             setChecked={(value) => {
               updatePlanParams(
@@ -225,8 +225,8 @@ export const PlanInputDevSimulationsSummary = React.memo(() => {
       </h2>
       <h2>
         Override Historical Returns To Fixed:{' '}
-        {planParamsNorm.advanced.historicalReturnsAdjustment.standardDeviation
-          .overrideToFixedForTesting
+        {planParamsNorm.advanced.historicalReturnsAdjustment
+          .overrideToFixedForTesting.type !== 'none'
           ? 'yes'
           : 'no'}
       </h2>

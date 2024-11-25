@@ -11,7 +11,7 @@ import {
 import { PlanParams21 as V21 } from './Old/PlanParams21'
 import { PlanParams22 as V22 } from './Old/PlanParams22'
 import { PlanParams28 as V28 } from './Old/PlanParams28'
-import { PlanParams29 as V29 } from './PlanParams29'
+import { PlanParams29 as V29 } from './Old/PlanParams29'
 import {
   PlanParamsChangeActionDeprecated,
   planParamsChangeActionGuardDeprecated,

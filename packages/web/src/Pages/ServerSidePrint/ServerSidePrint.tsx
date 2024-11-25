@@ -153,8 +153,8 @@ const testParams: PlanPrintViewArgsServerSide = {
         historicalReturnsAdjustment: {
           standardDeviation: {
             bonds: { scale: { log: 1.0 } },
-            overrideToFixedForTesting: false,
           },
+          overrideToFixedForTesting: { type: 'none' },
         },
       },
       adjustmentsToSpending: {

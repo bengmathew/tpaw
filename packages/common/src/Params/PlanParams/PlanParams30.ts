@@ -30,14 +30,12 @@ import {
   preciseRange,
 } from '../../Utils'
 import { PlanParams27 as V27 } from './Old/PlanParams27'
-import {
-  PlanParams28 as PlanParamsPrev,
-  PlanParams28 as V28,
-} from './Old/PlanParams28'
+import { PlanParams28 as V28 } from './Old/PlanParams28'
+import { PlanParams29 as PlanParamsPrev } from './Old/PlanParams29'
 
-export namespace PlanParams29 {
+export namespace PlanParams30 {
   // Just to re-emphasize that currentVersion has the const type.
-  export const currentVersion = 29 as number as 29
+  export const currentVersion = 30 as number as 30
 
   export const CONSTANTS = block(() => {
     const labeledAmountTimedLocations = [
@@ -464,9 +462,11 @@ export namespace PlanParams29 {
           bonds: {
             scale: { log: number }
           }
-          // FEATURE: Remove after adding expected value to results.
-          overrideToFixedForTesting: boolean
         }
+        overrideToFixedForTesting:
+          | { type: 'none' }
+          | { type: 'useExpectedReturnsForPlanning' }
+          | { type: 'manual'; stocks: number; bonds: number }
       }
 
       sampling: Sampling
@@ -1186,8 +1186,12 @@ export namespace PlanParams29 {
             ),
           }),
         }),
-        overrideToFixedForTesting: boolean,
       }),
+      overrideToFixedForTesting: union(
+        object({ type: constant('none') }),
+        object({ type: constant('useExpectedReturnsForPlanning') }),
+        object({ type: constant('manual'), stocks: number, bonds: number }),
+      ),
     })
     return object({
       returnsStatsForPlanning,
@@ -1253,188 +1257,20 @@ export namespace PlanParams29 {
     if ('v' in x && x.v === currentVersion) return x
     const prev = PlanParamsPrev.migrate(x)
 
-    const _forGlidePath = (prev: PlanParamsPrev.GlidePath): GlidePath => ({
-      ...prev,
-      start: {
-        month: {
-          type: 'now',
-          monthOfEntry: { isDatedPlan: true, calendarMonth: prev.start.month },
-        },
-        stocks: prev.start.stocks,
-      },
-      intermediate: _.mapValues(prev.intermediate, (x) => ({
-        ...x,
-        month: _forMonth(x.month),
-      })),
-      end: { stocks: prev.end.stocks },
-    })
-
-    const _forPerson = ({
-      ages: { monthOfBirth, ...prev },
-    }: PlanParamsPrev.Person): Person => ({
-      ages: {
-        ...prev,
-        currentAgeInfo: { isDatedPlan: true, monthOfBirth },
-      },
-    })
-
-    const _forMonth = (prev: PlanParamsPrev.Month): Month =>
-      prev.type === 'calendarMonthAsNow'
-        ? {
-            type: 'now',
-            monthOfEntry: {
-              isDatedPlan: true,
-              calendarMonth: prev.monthOfEntry,
-            },
-          }
-        : prev
-
-    const _forMonthRange = (prev: PlanParamsPrev.MonthRange): MonthRange => {
-      switch (prev.type) {
-        case 'startAndEnd':
-          return {
-            type: 'startAndEnd',
-            start: _forMonth(prev.start),
-            end:
-              prev.end.type === 'inThePast'
-                ? { type: 'inThePast' }
-                : _forMonth(prev.end),
-          }
-        case 'startAndDuration':
-          return {
-            type: 'startAndDuration',
-            start: _forMonth(prev.start),
-            duration: prev.duration,
-          }
-        case 'endAndDuration':
-          return {
-            type: 'endAndDuration',
-            end: _forMonth(prev.end),
-            duration: prev.duration,
-          }
-        default:
-          noCase(prev)
-      }
-    }
-
-    const _forLabeledAmountTimed = (
-      prev: PlanParamsPrev.LabeledAmountTimed,
-    ): LabeledAmountTimed => ({
-      ...prev,
-      amountAndTiming:
-        prev.amountAndTiming.type === 'inThePast'
-          ? { type: 'inThePast' }
-          : prev.amountAndTiming.type === 'oneTime'
-            ? {
-                type: 'oneTime',
-                amount: prev.amountAndTiming.amount,
-                month: _forMonth(prev.amountAndTiming.month),
-              }
-            : {
-                type: 'recurring',
-                monthRange: _forMonthRange(prev.amountAndTiming.monthRange),
-                everyXMonths: prev.amountAndTiming.everyXMonths,
-                baseAmount: prev.amountAndTiming.baseAmount,
-                delta: prev.amountAndTiming.delta,
-              },
-    })
-
-    const _forLabeldAmountTimedList = (
-      prev: PlanParamsPrev.LabeledAmountTimedList,
-    ): LabeledAmountTimedList => _.mapValues(prev, _forLabeledAmountTimed)
-
     const result: PlanParams = {
       ...prev,
       v: currentVersion,
-      people: prev.people.withPartner
-        ? {
-            ...prev.people,
-            person1: _forPerson(prev.people.person1),
-            person2: _forPerson(prev.people.person2),
-          }
-        : {
-            ...prev.people,
-            person1: _forPerson(prev.people.person1),
-          },
-      datingInfo: { isDated: true },
-      wealth: {
-        portfolioBalance: {
-          ...prev.wealth.portfolioBalance,
-          isDatedPlan: true,
-        },
-        futureSavings: _forLabeldAmountTimedList(prev.wealth.futureSavings),
-        incomeDuringRetirement: _forLabeldAmountTimedList(
-          prev.wealth.incomeDuringRetirement,
-        ),
-      },
-      adjustmentsToSpending: {
-        ...prev.adjustmentsToSpending,
-        extraSpending: {
-          ...prev.adjustmentsToSpending.extraSpending,
-          essential: _forLabeldAmountTimedList(
-            prev.adjustmentsToSpending.extraSpending.essential,
-          ),
-          discretionary: _forLabeldAmountTimedList(
-            prev.adjustmentsToSpending.extraSpending.discretionary,
-          ),
-        },
-      },
-      risk: {
-        ...prev.risk,
-        spawAndSWR: {
-          allocation: _forGlidePath(prev.risk.spawAndSWR.allocation),
-        },
-      },
       advanced: {
-        returnsStatsForPlanning: {
-          expectedValue: {
-            empiricalAnnualNonLog: letIn(
-              prev.advanced.expectedReturnsForPlanning,
-              (prev) =>
-                prev.type === 'manual'
-                  ? { type: 'fixed', stocks: prev.stocks, bonds: prev.bonds }
-                  : prev,
-            ),
-          },
-          standardDeviation: {
-            stocks: {
-              scale: {
-                log: prev.advanced.historicalMonthlyLogReturnsAdjustment
-                  .standardDeviation.stocks.scale,
-              },
-            },
-            bonds: { scale: { log: 0 } },
-          },
-        },
-        historicalReturnsAdjustment: letIn(
-          prev.advanced.historicalMonthlyLogReturnsAdjustment,
-          (prev) => ({
-            standardDeviation: {
-              bonds: {
-                scale: {
-                  log: prev.standardDeviation.bonds.enableVolatility ? 1 : 0,
-                },
-              },
-              overrideToFixedForTesting: prev.overrideToFixedForTesting,
-            },
-          }),
-        ),
-        sampling:
-          prev.advanced.sampling.type === 'monteCarlo'
-            ? {
-                type: 'monteCarlo',
-                data: prev.advanced.sampling.forMonteCarlo,
-              }
-            : prev.advanced.sampling.type === 'historical'
-              ? {
-                  type: 'historical',
-                  defaultData: {
-                    monteCarlo: prev.advanced.sampling.forMonteCarlo,
-                  },
-                }
-              : noCase(prev.advanced.sampling.type),
-        annualInflation: prev.advanced.annualInflation,
-        strategy: prev.advanced.strategy,
+        ...prev.advanced,
+        historicalReturnsAdjustment: block(() => {
+          const p = prev.advanced.historicalReturnsAdjustment.standardDeviation
+          return {
+            standardDeviation: { bonds: p.bonds },
+            overrideToFixedForTesting: p.overrideToFixedForTesting
+              ? { type: 'useExpectedReturnsForPlanning' }
+              : { type: 'none' },
+          }
+        }),
       },
     }
     assert(!guard(result).error)

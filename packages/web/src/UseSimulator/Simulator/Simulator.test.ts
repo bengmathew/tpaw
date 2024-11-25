@@ -278,8 +278,8 @@ describe('simulator', () => {
         historicalReturnsAdjustment: {
           standardDeviation: {
             bonds: { scale: { log: 1 } },
-            overrideToFixedForTesting: true,
           },
+          overrideToFixedForTesting: { type: 'useExpectedReturnsForPlanning' },
         },
         annualInflation: { type: 'manual', value: 0.02 },
         sampling: {

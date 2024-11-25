@@ -1027,8 +1027,8 @@ export const getPlanParamsChangeActionImpl = (
       const { value } = action
       return {
         applyToClone: (clone) => {
-          clone.advanced.historicalReturnsAdjustment.standardDeviation.overrideToFixedForTesting =
-            value
+          clone.advanced.historicalReturnsAdjustment.overrideToFixedForTesting =
+            value ? { type: 'useExpectedReturnsForPlanning' } : { type: 'none' }
         },
         render: () =>
           `Set historical monthly log returns adjustment override to fixed for testing to ${value}`,
