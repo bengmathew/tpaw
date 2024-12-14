@@ -10,6 +10,8 @@ import {
 } from './Simulator/Simulator'
 import * as Rust from '@tpaw/simulator'
 
+
+
 // Singleton so this is created only one for speedup.
 let _singleton: Simulator | null = null
 export const getSimulatorSingleton = () => {

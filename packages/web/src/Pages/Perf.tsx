@@ -75,8 +75,7 @@ export const Perf = React.memo(() => {
                   marketData: currMarketDataExt,
                   planParamsNorm,
                   planParamsProcessed,
-                  numOfSimulationForMonteCarloSampling:
-                    nonPlanParams.numOfSimulationForMonteCarloSampling,
+                  numOfSimulationForMonteCarloSampling: 500,
                   randomSeed: DEFAULT_MONTE_CARLO_SIMULATION_SEED,
                 },
               )
@@ -110,19 +109,7 @@ export const Perf = React.memo(() => {
         </button>
         <div className="flex items-center justify-center">
           <h2 className=""># Runs: </h2>
-          <AmountInput
-            className="text-input mt-2"
-            value={nonPlanParams.numOfSimulationForMonteCarloSampling}
-            onChange={(x) => {
-              setNonPlanParams((prev) => {
-                const clone = _.cloneDeep(prev)
-                clone.numOfSimulationForMonteCarloSampling = x
-                return clone
-              })
-            }}
-            decimals={0}
-            modalLabel="Number of Simulations"
-          />
+          
         </div>
 
         <div className="grid" style={{ grid: 'auto / auto' }}>

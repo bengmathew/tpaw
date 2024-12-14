@@ -11,9 +11,9 @@ import {
   success,
   union,
 } from 'json-guard'
-import { Guards } from '../../Guards'
-import { assert, block, letIn, noCase } from '../../Utils'
-import { NonPlanParams25 as NonPlanParamsPrev } from './Old/NonPlanParams25'
+import { Guards } from '../../../Guards'
+import { assert, block, letIn, noCase } from '../../../Utils'
+import { NonPlanParams25 as NonPlanParamsPrev } from './NonPlanParams25'
 export namespace NonPlanParams26 {
   // Just to re-emphasize that currentVersion has the const type.
   export const currentVersion = 26 as number as 26

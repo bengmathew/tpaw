@@ -358,11 +358,16 @@ const _newRandomSeed = () => {
   return Math.floor(Math.random() * 1000000000)
 }
 let globalRandomSeed = DEFAULT_MONTE_CARLO_SIMULATION_SEED
+export const APPLY_DEFAULT_NUM_OF_SIMULATIONS = (x: number | 'default') =>
+  x === 'default' ? 500 : x
 
 export const WithSimulation = React.memo(
   ({ params }: { params: SimulationParams }) => {
     const { nonPlanParams } = useNonPlanParams()
-    const { numOfSimulationForMonteCarloSampling } = nonPlanParams
+    const numOfSimulationForMonteCarloSampling =
+      APPLY_DEFAULT_NUM_OF_SIMULATIONS(
+        nonPlanParams.numOfSimulationForMonteCarloSampling,
+      )
     const [randomSeed, setRandomSeed] = useState(globalRandomSeed)
     const reRun = useCallback((seed: 'random' | number) => {
       globalRandomSeed = seed === 'random' ? _newRandomSeed() : seed

@@ -77,7 +77,7 @@ const _SimulationsCard = React.memo(
         <PlanInputModifiedBadge show={isModified} mainPage={false} />
         <div className="mt-2 flex gap-x-4 items-center">
           <h2 className="">Num of Simulations</h2>
-          <AmountInput
+          {/* <AmountInput
             className="text-input"
             value={nonPlanParams.numOfSimulationForMonteCarloSampling}
             onChange={(numOfSimulations) => {
@@ -87,7 +87,7 @@ const _SimulationsCard = React.memo(
             }}
             decimals={0}
             modalLabel="Number of Simulations"
-          />
+          /> */}
         </div>
 
         <div className="mt-2 flex items-center gap-x-2">
