@@ -19,9 +19,17 @@ export const Privacy = React.memo(() => {
               results of the computations.
             </p>
             <p className="mt-4 p-base">
-              When you are not logged into an account, your plans are stored on
-              the browser and not sent to a server, except in the following
-              circumstances:
+              When a plan is loaded or modified it is sent to a simulation
+              server which computes the results. The simulation server does not
+              store the inputs or the results.
+            </p>
+            <p className="mt-4 p-base">
+              When you are logged into an account, we store your plans on a
+              server.
+            </p>
+            <p className="mt-4 p-base">
+              When you are not logged into an account, we do not store your
+              plans on a server except in the following circumstances:
             </p>
             <ul className="list-disc ml-5">
               <li>
@@ -41,10 +49,6 @@ export const Privacy = React.memo(() => {
                 </p>
               </li>
             </ul>
-            <p className="mt-4 p-base">
-              When you are logged into an account, your plans are stored on a
-              server.
-            </p>
             <p className="mt-4 p-base">
               Plans stored on the server are saved on{' '}
               <_A href="https://cloud.google.com/">Google Cloud Platform</_A>.
