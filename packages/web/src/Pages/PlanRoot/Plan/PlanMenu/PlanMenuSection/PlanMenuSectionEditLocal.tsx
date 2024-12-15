@@ -14,7 +14,7 @@ import {
 import { useState } from 'react'
 import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
 import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { useSimulationResultInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionModalConvertDatingLocal } from '../PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalConvertDatingLocal'
 import { PlanMenuActionModalLabelInput } from '../PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalLabelInput'
 import { PlanMenuActionModalResetLocal } from '../PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalResetLocal'
@@ -34,8 +34,9 @@ export const usePlanMenuSectionEditLocal = ({
   }
 }) => {
   const { ianaTimezoneName } = useIANATimezoneName()
-  const { planParamsNorm } = useSimulation()
-  const { datingInfo } = planParamsNorm
+
+  const { simulationResult } = useSimulationResultInfo()
+
   const [showEditLabelModal, setShowEditLabelModal] = useState(false)
   const [showConvertDatingModal, setShowConvertDatingModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
@@ -56,18 +57,26 @@ export const usePlanMenuSectionEditLocal = ({
           Edit Label
         </Menu.Item>
       )}
-      <Menu.Item
-        as="button"
-        className="context-menu-item"
-        onClick={() => setShowConvertDatingModal(true)}
-      >
-        <span className="context-menu-icon ">
-          <FontAwesomeIcon
-            icon={datingInfo.isDated ? faInfinity : faCalendar}
-          />
-        </span>{' '}
-        {datingInfo.isDated ? convertToDatelessLabel : 'Convert to  Dated'}
-      </Menu.Item>
+      {
+        <Menu.Item
+          as="button"
+          className="context-menu-item"
+          onClick={() => setShowConvertDatingModal(true)}
+        >
+          <span className="context-menu-icon ">
+            <FontAwesomeIcon
+              icon={
+                simulationResult.planParamsNormOfResult.datingInfo.isDated
+                  ? faInfinity
+                  : faCalendar
+              }
+            />
+          </span>{' '}
+          {simulationResult.planParamsNormOfResult.datingInfo.isDated
+            ? convertToDatelessLabel
+            : 'Convert to  Dated'}
+        </Menu.Item>
+      }
       {resetTo.original ? (
         resetTo.original.isModified && (
           <Menu.Item
@@ -130,7 +139,7 @@ export const usePlanMenuSectionEditLocal = ({
         message="Are you sure you want to reset this plan? This cannot be undone."
         reset={() =>
           resetTo.params(
-            datingInfo.isDated
+            simulationResult.planParamsNormOfResult.datingInfo.isDated
               ? getFullDatedDefaultPlanParams(Date.now(), ianaTimezoneName)
               : getFullDatelessDefaultPlanParams(Date.now()),
           )

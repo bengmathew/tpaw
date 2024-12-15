@@ -12,6 +12,7 @@ import { PlanParams21 as V21 } from './Old/PlanParams21'
 import { PlanParams22 as V22 } from './Old/PlanParams22'
 import { PlanParams28 as V28 } from './Old/PlanParams28'
 import { PlanParams29 as V29 } from './Old/PlanParams29'
+import { PlanParams30 as V30 } from './PlanParams30'
 import {
   PlanParamsChangeActionDeprecated,
   planParamsChangeActionGuardDeprecated,
@@ -196,8 +197,8 @@ export type PlanParamsChangeActionCurrent =
 
   // -------------- DEV
   | {
-      type: 'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting'
-      value: boolean
+      type: 'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting2'
+      value: V30.PlanParams['advanced']['historicalReturnsAdjustment']['overrideToFixedForTesting']
     }
 
 export type PlanParamsChangeAction =
@@ -212,6 +213,7 @@ const v21CG = V21.componentGuards
 const v22CG = V22.componentGuards
 const v28CG = V28.componentGuards
 const v29CG = V29.componentGuards
+const v30CG = V30.componentGuards
 
 const _guard = <T extends string, V>(
   type: T,
@@ -348,8 +350,8 @@ export const planParamsChangeActionGuardCurrent: JSONGuard<PlanParamsChangeActio
 
     // -------------- DEV
     _guard(
-      'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting',
-      boolean,
+      'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting2',
+      v30CG.historicalReturnsAdjustment.overrideToFixedForTesting,
     ),
   )
 

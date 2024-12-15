@@ -3,6 +3,7 @@ use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use std::sync::Mutex;
 
+// TODO: After duration matching, remove this.
 struct Store {
     data: Vec<Vec<usize>>,
     // This should be all the args into generate_random_index_sequences.

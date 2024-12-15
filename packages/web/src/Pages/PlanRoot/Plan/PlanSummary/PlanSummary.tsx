@@ -3,9 +3,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { MonthLocation, assert, noCase } from '@tpaw/common'
 import _ from 'lodash'
 import React, { ReactNode, useMemo, useState } from 'react'
-import { NormalizedGlidePath } from '../../../../UseSimulator/NormalizePlanParams/NormalizeGlidePath'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { NormalizedLabeledAmountTimed } from '../../../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
+import { NormalizedGlidePath } from '../../../../Simulator/NormalizePlanParams/NormalizeGlidePath'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { NormalizedLabeledAmountTimed } from '../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 import {
   Padding,
   Size,
@@ -18,12 +18,12 @@ import {
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import { Config } from '../../../Config'
 import { useNonPlanParams } from '../../PlanRootHelpers/WithNonPlanParams'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../PlanRootHelpers/WithSimulation'
 import { PlanInputType } from '../PlanInput/Helpers/PlanInputType'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import { useGetPlanInputVisibility } from '../PlanInput/Helpers/UseGetPlanInputVisibility'
 import { useIsPlanInputDevMiscModified } from '../PlanInput/PlanInputDev/PlanInputDevMisc'
-import { useIsPlanInputDevTimeModified } from '../PlanInput/PlanInputDev/PlanInputDevTime'
+import { useIsPlanInputDevTimeModified } from '../PlanInput/PlanInputDev/PlanInputDevTimeFns'
 import { useIsPlanInputDevSimulationsModified } from '../PlanInput/PlanInputDev/UseIsPlanInputDevSimulationsModified'
 import { useIsPlanInputSimulationModifed } from '../PlanInput/PlanInputSimulation'
 import { useIsPlanInputStrategyModified } from '../PlanInput/PlanInputStrategy'
@@ -97,8 +97,8 @@ export const PlanSummary = React.memo(
     const [adjustmentsToSpendingElement, setAdjustmentsToSpendingElement] =
       useState<HTMLElement | null>(null)
 
-    const { planParamsNorm } = useSimulation()
-    const { dialogPosition } = planParamsNorm
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { dialogPosition } = planParamsNormInstant
 
     const [expandAdvanced, setExpandAdvanced] = useState(false)
     const [showDevClickCount, setShowDevClickCount] = useState(0)
@@ -164,7 +164,14 @@ export const PlanSummary = React.memo(
         }}
       >
         <div className="mt-0" ref={setBodyElement}>
-          {dialogPosition.effective !== 'done' && (
+          {dialogPosition.effective !== 'done' &&
+          outerElement &&
+          bodyElement &&
+          ageElement &&
+          currentPortfolioBalanceElement &&
+          futureSavingsElement &&
+          incomeDuringRetirementElement &&
+          adjustmentsToSpendingElement && (
             <PlanSummaryDialog
               elements={{
                 outer: outerElement,
@@ -213,14 +220,17 @@ export const PlanSummary = React.memo(
                   section={section}
                   padding={cardPadding}
                 />
-                {planParamsNorm.ages.validMonthRangesAsMFN.futureSavings ? (
+                {planParamsNormInstant.ages.validMonthRangesAsMFN
+                  .futureSavings ? (
                   <PlanSummaryButton
                     ref={setFutureSavingsElement}
                     type="future-savings"
                     section={section}
-                    warn={!_paramsOk(planParamsNorm, 'future-savings')}
+                    warn={!_paramsOk(planParamsNormInstant, 'future-savings')}
                     padding={cardPadding}
-                    empty={planParamsNorm.wealth.futureSavings.length === 0}
+                    empty={
+                      planParamsNormInstant.wealth.futureSavings.length === 0
+                    }
                   />
                 ) : (
                   // This avoids managing null/non-null future savings element
@@ -234,10 +244,16 @@ export const PlanSummary = React.memo(
                   ref={setIncomeDuringRetirementElement}
                   type="income-during-retirement"
                   section={section}
-                  warn={!_paramsOk(planParamsNorm, 'income-during-retirement')}
+                  warn={
+                    !_paramsOk(
+                      planParamsNormInstant,
+                      'income-during-retirement',
+                    )
+                  }
                   padding={cardPadding}
                   empty={
-                    planParamsNorm.wealth.incomeDuringRetirement.length === 0
+                    planParamsNormInstant.wealth.incomeDuringRetirement
+                      .length === 0
                   }
                 />
               </div>
@@ -256,38 +272,38 @@ export const PlanSummary = React.memo(
                   <PlanSummaryButton
                     type="extra-spending"
                     section={section}
-                    warn={!_paramsOk(planParamsNorm, 'extra-spending')}
+                    warn={!_paramsOk(planParamsNormInstant, 'extra-spending')}
                     padding={cardPadding}
                     empty={
-                      planParamsNorm.adjustmentsToSpending.extraSpending
+                      planParamsNormInstant.adjustmentsToSpending.extraSpending
                         .discretionary.length === 0 &&
-                      planParamsNorm.adjustmentsToSpending.extraSpending
+                      planParamsNormInstant.adjustmentsToSpending.extraSpending
                         .essential.length === 0
                     }
                   />
 
-                  {planParamsNorm.advanced.strategy !== 'SWR' && (
+                  {planParamsNormInstant.advanced.strategy !== 'SWR' && (
                     <PlanSummaryButton
                       type="legacy"
                       section={section}
                       padding={cardPadding}
                       empty={
-                        planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy
-                          .external.length === 0 &&
-                        planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy
-                          .total === 0
+                        planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW
+                          .legacy.external.length === 0 &&
+                        planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW
+                          .legacy.total === 0
                       }
                     />
                   )}
-                  {planParamsNorm.advanced.strategy !== 'SWR' && (
+                  {planParamsNormInstant.advanced.strategy !== 'SWR' && (
                     <PlanSummaryButton
                       type="spending-ceiling-and-floor"
                       section={section}
                       padding={cardPadding}
                       empty={
-                        planParamsNorm.adjustmentsToSpending.tpawAndSPAW
+                        planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW
                           .monthlySpendingCeiling === null &&
-                        planParamsNorm.adjustmentsToSpending.tpawAndSPAW
+                        planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW
                           .monthlySpendingFloor === null
                       }
                     />
@@ -304,7 +320,7 @@ export const PlanSummary = React.memo(
                     type="risk"
                     section={section}
                     padding={cardPadding}
-                    warn={!_paramsOk(planParamsNorm, 'risk')}
+                    warn={!_paramsOk(planParamsNormInstant, 'risk')}
                     hideTitle
                   />
                 </div>
@@ -429,8 +445,10 @@ const _Heading = React.memo(
     firstItem: Exclude<PlanInputType, 'history'>
     children: ReactNode
   }) => {
-    const { planParamsNorm } = useSimulation()
-    const visibility = useGetPlanInputVisibility(planParamsNorm)(firstItem)
+    const { planParamsNormInstant } = useSimulationInfo()
+    const visibility = useGetPlanInputVisibility(planParamsNormInstant)(
+      firstItem,
+    )
     // This just happens to be true for now. Will have to pass more than just
     // firstItem it if is not true. Deal with that when if we end up needing it
     // in the future.

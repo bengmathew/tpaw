@@ -18,7 +18,7 @@ import {
 import {
   SimulationParams,
   WithSimulation,
-  useSimulationParamsForPlanMode,
+  getSimulationParamsForPlanMode,
 } from '../PlanRootHelpers/WithSimulation'
 import { PlanFileData } from './PlanFileData'
 import { CenteredModal } from '../../Common/Modal/CenteredModal'
@@ -54,9 +54,8 @@ export const PlanRootFileImpl = React.memo(
       reverseHeadIndex: data.reverseHeadIndex,
     }))
 
-    //TODO: Move this to common location
     const planMigratedFromVersion = letIn(
-      // Intentionally last and not the one pointer to by reverseHeadIndex.
+      // Intentionally last and not the one pointed to by reverseHeadIndex.
       fGet(_.last(data.planParamsHistory)).params,
       (lastParamsUnmigrated) =>
         'v' in lastParamsUnmigrated ? lastParamsUnmigrated.v : (1 as const),
@@ -102,12 +101,12 @@ export const PlanRootFileImpl = React.memo(
       planPaths,
     )
 
-    const simulationParams = useSimulationParamsForPlanMode(
+    const simulationParams = getSimulationParamsForPlanMode(
       planPaths,
       currentTimeInfo,
       workingPlanInfo,
-      planMigratedFromVersion,
       null,
+      planMigratedFromVersion,
       {
         src: 'file',
         setSrc: (filename: string | null, src: PlanFileData) =>

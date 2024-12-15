@@ -12,7 +12,7 @@ import {
 } from '../../../../../Utils/Geometry'
 import { fGet } from '../../../../../Utils/Utils'
 import { ModalBase } from '../../../../Common/Modal/ModalBase'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputType } from '../Helpers/PlanInputType'
 import { PlanInputSizing } from '../PlanInput'
 import { PlanInputBodyGuide } from './PlanInputBodyGuide/PlanInputBodyGuide'
@@ -37,8 +37,8 @@ export const PlanInputBodyMobile = React.memo(
       input?: (transitionOut: (onDone: () => void) => void) => ReactElement
     }
   }) => {
-    const { planParamsNorm } = useSimulation()
-    const { dialogPosition } = planParamsNorm
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { dialogPosition } = planParamsNormInstant
     const { padding } =
       dialogPosition.effective !== 'done'
         ? sizing.dialogMode

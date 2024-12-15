@@ -9,8 +9,8 @@ import { formatCurrency } from '../../../../../../Utils/FormatCurrency'
 import { getNetPresentValue } from '../../../../../../Utils/GetNetPresentValue'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import {
-  useSimulation,
-  useSimulationResult,
+  useSimulationInfo,
+  useSimulationResultInfo,
 } from '../../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../../UsePlanColors'
 import { Sankey } from './SankeyChart'
@@ -22,7 +22,7 @@ import {
   amber,
 } from '../../../../../../Utils/ColorPalette'
 import clsx from 'clsx'
-import { NormalizedLabeledAmountTimed } from '../../../../../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
+import { NormalizedLabeledAmountTimed } from '../../../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 
 export const PlanResultsSidePanelMenuBalanceSheet = React.memo(
   ({ show, onHide }: { show: boolean; onHide: () => void }) => {
@@ -51,9 +51,9 @@ export const BalanceSheetContent = React.memo(
     className?: string
     forPrint?: boolean
   }) => {
-    const simulationResult = useSimulationResult()
+    const { simulationResult } = useSimulationResultInfo()
     const {
-      estimatedCurrentPortfolioBalance,
+      portfolioBalance,
       sankeyModel,
       totalWealth,
       hasLegacy,
@@ -61,60 +61,59 @@ export const BalanceSheetContent = React.memo(
       netPresentValue,
       generalSpending,
     } = useMemo(() => {
-      const { args } = simulationResult
-      const { netPresentValue } = args.planParamsProcessed
-      const estimatedCurrentPortfolioBalance =
-        args.currentPortfolioBalanceAmount
+      const {
+        planParamsProcessed,
+        planParamsNormOfResult,
+        portfolioBalanceEstimationByDated,
+        tpawApproxNetPresentValueForBalanceSheet,
+      } = simulationResult
+      const netPresentValue = fGet(tpawApproxNetPresentValueForBalanceSheet)
+      const portfolioBalance = portfolioBalanceEstimationByDated.currentBalance
 
       const _filter = (x: NormalizedLabeledAmountTimed) =>
         x.amountAndTiming.type !== 'inThePast'
       const byMonthData = {
         wealth: {
-          futureSavings: args.planParamsNorm.wealth.futureSavings
+          futureSavings: planParamsNormOfResult.wealth.futureSavings
             .filter(_filter)
             .map((x) =>
-              _processLabeledAmountTimed(
-                x,
-                netPresentValue.tpaw.wealth.futureSavings,
-              ),
+              _processLabeledAmountTimed(x, netPresentValue.futureSavings),
             ),
           incomeDuringRetirement:
-            args.planParamsNorm.wealth.incomeDuringRetirement
+            planParamsNormOfResult.wealth.incomeDuringRetirement
               .filter(_filter)
               .map((x) =>
                 _processLabeledAmountTimed(
                   x,
-                  netPresentValue.tpaw.wealth.incomeDuringRetirement,
-                ),
+                  netPresentValue.incomeDuringRetirement,
               ),
+            ),
         },
         adjustmentsToSpending: {
           extraSpending: {
             essential:
-              args.planParamsNorm.adjustmentsToSpending.extraSpending.essential
+              planParamsNormOfResult.adjustmentsToSpending.extraSpending.essential
                 .filter(_filter)
                 .map((x) =>
                   _processLabeledAmountTimed(
                     x,
-                    netPresentValue.tpaw.adjustmentsToSpending.extraSpending
-                      .essential,
+                    netPresentValue.essentialExpenses,
                   ),
-                ),
+              ),
             discretionary:
-              args.planParamsNorm.adjustmentsToSpending.extraSpending.discretionary
+              planParamsNormOfResult.adjustmentsToSpending.extraSpending.discretionary
                 .filter(_filter)
                 .map((x) =>
                   _processLabeledAmountTimed(
                     x,
-                    netPresentValue.tpaw.adjustmentsToSpending.extraSpending
-                      .discretionary,
+                    netPresentValue.discretionaryExpenses,
                   ),
-                ),
+              ),
           },
         },
       }
       const totalWealth = _.sum([
-        estimatedCurrentPortfolioBalance,
+        portfolioBalanceEstimationByDated.currentBalance,
         ...byMonthData.wealth.futureSavings.map((x) => x.netPresentValue),
         ...byMonthData.wealth.incomeDuringRetirement.map(
           (x) => x.netPresentValue,
@@ -127,7 +126,7 @@ export const BalanceSheetContent = React.memo(
         ...byMonthData.adjustmentsToSpending.extraSpending.discretionary.map(
           (x) => x.netPresentValue,
         ),
-        netPresentValue.tpaw.adjustmentsToSpending.legacy,
+        netPresentValue.legacyTarget,
       ])
       const generalSpending = totalWealth - totalAdjustmentsToSpending
 
@@ -177,7 +176,7 @@ export const BalanceSheetContent = React.memo(
           ),
           color: colors.cpb,
           hidden: true,
-          quantity: estimatedCurrentPortfolioBalance,
+          quantity: portfolioBalanceEstimationByDated.currentBalance,
         } as const,
 
         futureSavings: byMonthData.wealth.futureSavings
@@ -288,9 +287,7 @@ export const BalanceSheetContent = React.memo(
       const hasCol5 =
         byMonthData.adjustmentsToSpending.extraSpending.essential.length > 0 ||
         byMonthData.adjustmentsToSpending.extraSpending.discretionary.length > 0
-      const hasLegacy =
-        simulationResult.args.planParamsProcessed.adjustmentsToSpending
-          .tpawAndSPAW.legacy.target > 0
+      const hasLegacy = netPresentValue.legacyTarget > 0
       const col4Nodes = (() => {
         const [
           generalSpendingNode,
@@ -338,7 +335,7 @@ export const BalanceSheetContent = React.memo(
           hasLegacy
             ? {
                 label: <_ChartLabel label="Legacy" forPrint={forPrint} />,
-                quantity: netPresentValue.tpaw.adjustmentsToSpending.legacy,
+                quantity: netPresentValue.legacyTarget,
                 color: colors.legacy,
                 hidden: false,
               }
@@ -393,16 +390,16 @@ export const BalanceSheetContent = React.memo(
               : null,
           }
       const sankeyModel: Sankey.Model = _.compact([
-        noCol1
-          ? null
-          : {
-              labelPosition: 'left',
-              nodes: [
+        {
+          labelPosition: 'left',
+          nodes: noCol1
+            ? []
+            : [
                 col1Nodes.currentPortfolioBalance,
                 ...col1Nodes.futureSavings,
                 ...col1Nodes.incomeDuringRetirement,
               ],
-            },
+        },
         {
           labelPosition: 'left',
           nodes: _.compact([
@@ -424,25 +421,36 @@ export const BalanceSheetContent = React.memo(
             col4Nodes.legacy,
           ]),
         },
-        col5Nodes
-          ? {
-              labelPosition: 'right',
-              nodes: _.compact([
+        {
+          labelPosition: 'right',
+          nodes: col5Nodes
+            ? _.compact([
                 col5Nodes.generalSpending,
                 ...col5Nodes.essentialSpending,
                 ...col5Nodes.discretionarySpending,
                 col5Nodes.legacy,
-              ]),
-            }
-          : null,
+              ])
+            : [],
+        },
       ])
+      // If start and end are empty, remove both. We display the empty columns
+      // only for centering, so removing them symmetrically keeps the centering
+      // while not having dead space on either side if not needed.
+      while (
+        fGet(_.first(sankeyModel)).nodes.length === 0 &&
+        fGet(_.last(sankeyModel)).nodes.length === 0
+      ) {
+        sankeyModel.pop()
+        sankeyModel.shift()
+      }
+
       return {
         sankeyModel,
         byMonthData,
         netPresentValue,
         generalSpending,
         totalWealth,
-        estimatedCurrentPortfolioBalance,
+        portfolioBalance,
         hasLegacy,
       }
     }, [forPrint, simulationResult])
@@ -486,7 +494,7 @@ export const BalanceSheetContent = React.memo(
               {
                 type: 'namedValue',
                 label: 'Current Portfolio Balance',
-                value: estimatedCurrentPortfolioBalance,
+                value: portfolioBalance,
               },
               {
                 type: 'valueForMonthRange',
@@ -528,9 +536,7 @@ export const BalanceSheetContent = React.memo(
               {
                 type: 'namedValue',
                 label: 'Legacy',
-                value: hasLegacy
-                  ? netPresentValue.tpaw.adjustmentsToSpending.legacy
-                  : 'None',
+                value: hasLegacy ? netPresentValue.legacyTarget : 'None',
               },
             ]}
           />
@@ -549,14 +555,11 @@ export const BalanceSheetContent = React.memo(
 
 const _processLabeledAmountTimed = (
   x: NormalizedLabeledAmountTimed,
-  netPresentValue: {
-    byId: { id: string; values: { withCurrentMonth: number } }[]
-  },
+  netPresentValue: { id: string; value: number }[],
 ) => ({
   id: x.id,
   label: x.label ?? '<No label>',
-  netPresentValue: fGet(netPresentValue.byId.find(({ id }) => id === x.id))
-    .values.withCurrentMonth,
+  netPresentValue: fGet(netPresentValue.find(({ id }) => id === x.id)).value,
 })
 
 const _Section = React.memo(

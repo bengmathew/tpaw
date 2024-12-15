@@ -2,7 +2,7 @@ import { LabeledAmountTimed } from '@tpaw/common'
 import { clsx } from 'clsx'
 import _ from 'lodash'
 import React, { useRef, useState } from 'react'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { Contentful } from '../../../../Utils/Contentful'
 import { paddingCSS, paddingCSSStyleHorz } from '../../../../Utils/Geometry'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
@@ -11,7 +11,7 @@ import {
   LabelAmountOptMonthRangeInputStateful,
 } from '../../../Common/Inputs/LabelAmountTimedOrUntimedInput/LabeledAmountTimedOrUntimedInput'
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../PlanRootHelpers/WithSimulation'
 import {
   isPlanResultsChartSpendingDiscretionaryType,
   isPlanResultsChartSpendingEssentialType,
@@ -30,8 +30,8 @@ import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
 
 export const PlanInputExtraSpending = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const { planParamsNorm } = useSimulation()
-    const { ages } = planParamsNorm
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { ages } = planParamsNormInstant
     const getPlanChartURL = useGetPlanResultsChartURL()
     const chartType = usePlanResultsChartType()
     const urlUpdater = useURLUpdater()
@@ -53,11 +53,11 @@ export const PlanInputExtraSpending = React.memo(
         start: ages.person1.retirement.isRetired
           ? {
               type: 'now',
-              monthOfEntry: planParamsNorm.datingInfo.isDated
+              monthOfEntry: planParamsNormInstant.datingInfo.isDated
                 ? {
                     isDatedPlan: true,
                     calendarMonth: CalendarDayFns.toCalendarMonth(
-                      planParamsNorm.datingInfo.nowAsCalendarDay,
+                      planParamsNormInstant.datingInfo.nowAsCalendarDay,
                     ),
                   }
                 : { isDatedPlan: false },
@@ -70,9 +70,9 @@ export const PlanInputExtraSpending = React.memo(
     }
 
     const showDiscretionary =
-      planParamsNorm.advanced.strategy !== 'SWR' ||
-      planParamsNorm.adjustmentsToSpending.extraSpending.discretionary.length >
-        0
+      planParamsNormInstant.advanced.strategy !== 'SWR' ||
+      planParamsNormInstant.adjustmentsToSpending.extraSpending.discretionary
+        .length > 0
 
     const editRef = useRef<LabelAmountOptMonthRangeInputStateful>(null)
     return (
@@ -90,13 +90,13 @@ export const PlanInputExtraSpending = React.memo(
             <Contentful.RichText
               body={
                 content['extra-spending'].intro[
-                  planParamsNorm.advanced.strategy
+                  planParamsNormInstant.advanced.strategy
                 ]
               }
               p="p-base"
             />
             {showDiscretionary &&
-              planParamsNorm.advanced.strategy === 'SWR' && (
+              planParamsNormInstant.advanced.strategy === 'SWR' && (
                 <div className="p-base mt-2">
                   <span className="bg-gray-300 px-2 rounded-lg ">Note</span> You
                   have selected the SWR strategy. This strategy treats essential
@@ -114,7 +114,7 @@ export const PlanInputExtraSpending = React.memo(
             <Contentful.RichText
               body={
                 content['extra-spending'].essential[
-                  planParamsNorm.advanced.strategy
+                  planParamsNormInstant.advanced.strategy
                 ]
               }
               p="p-base"
@@ -149,7 +149,7 @@ export const PlanInputExtraSpending = React.memo(
               <Contentful.RichText
                 body={
                   content['extra-spending'].discretionary[
-                    planParamsNorm.advanced.strategy
+                    planParamsNormInstant.advanced.strategy
                   ]
                 }
                 p="p-base"

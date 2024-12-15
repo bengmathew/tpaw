@@ -9,7 +9,7 @@ import {
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
 import { noCase } from '../../../../Utils/Utils'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../PlanRootHelpers/WithSimulation'
 import { useGetSectionURL } from '../Plan'
 import {
   PlanTransitionState,
@@ -133,8 +133,8 @@ const _Body = React.memo(
     planInputType: PlanInputType
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm } = useSimulation()
-    const visibility = useGetPlanInputVisibility(planParamsNorm)(planInputType)
+    const { planParamsNormInstant } = useSimulationInfo()
+    const visibility = useGetPlanInputVisibility(planParamsNormInstant)(planInputType)
     const show = visibility.visible && !visibility.disabled
     const summarySectionURL = useGetSectionURL()('summary')
     const urlUpdater = useURLUpdater()

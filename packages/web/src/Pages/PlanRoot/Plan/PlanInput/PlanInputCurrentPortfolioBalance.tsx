@@ -1,21 +1,24 @@
 import { faMinus, faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { faTurnDownLeft } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { assert, block, getZonedTimeFns, noCase } from '@tpaw/common'
+import { assert, fGet, getZonedTimeFns, letIn, noCase } from '@tpaw/common'
 import { default as clix, default as clsx } from 'clsx'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../Utils/Geometry'
-import { Spinner } from '../../../../Utils/View/Spinner'
 import { AmountInput } from '../../../Common/Inputs/AmountInput'
 import { smartDeltaFnForAmountInput } from '../../../Common/Inputs/SmartDeltaFnForAmountInput'
 import { CenteredModal } from '../../../Common/Modal/CenteredModal'
-import { CurrentPortfolioBalance } from '../../PlanRootHelpers/CurrentPortfolioBalance'
+import { PortfolioBalanceEstimation } from '../../PlanRootHelpers/PortfolioBalanceEstimation'
 import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../../PlanRootHelpers/WithSimulation'
 import { planSectionLabel } from './Helpers/PlanSectionLabel'
 import {
   PlanInputBody,
@@ -40,25 +43,25 @@ export const _CurrentPortfolioBalanceCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const [showExplanation, setShowHistory] = useState(false)
-    const { currentPortfolioBalanceInfo, updatePlanParams } = useSimulation()
-    const amountInfo = currentPortfolioBalanceInfo.isDatedPlan
-      ? ({
-          isDatedPlan: true,
-          info: CurrentPortfolioBalance.getAmountInfo(
-            currentPortfolioBalanceInfo.info,
-          ),
-        } as const)
-      : ({
-          isDatedPlan: false,
-          amount: currentPortfolioBalanceInfo.amount,
-        } as const)
-    const amount = amountInfo.isDatedPlan
-      ? amountInfo.info.amount
-      : amountInfo.amount
+    const [showHistory, setShowHistory] = useState(false)
+    const { updatePlanParams } = useSimulationInfo()
+    const { simulationResult } = useSimulationResultInfo()
+    const estimateInfo = useEstimateInfo()
 
-    const handleChange = (amount: number) =>
+    // Need to keep a local copy of amount and not use directly from
+    // simulationResult because the update rate is far too slow.
+    const [amount, setAmount] = useState('fromResult' as 'fromResult' | number)
+
+    useEffect(() => {
+      setAmount(
+        simulationResult.portfolioBalanceEstimationByDated.currentBalance,
+      )
+    }, [simulationResult])
+
+    const handleChange = (amount: number) => {
+      setAmount(amount)
       updatePlanParams('setCurrentPortfolioBalance', amount)
+    }
 
     return (
       <div className="">
@@ -72,78 +75,95 @@ export const _CurrentPortfolioBalanceCard = React.memo(
         or the value of real estate holdings.`}
           </p>
           <div className="mt-4 flex">
-            <AmountInput
-              className="text-input"
-              prefix="$"
-              value={amount}
-              onChange={(x) => {
-                // This happens on blur and enter. The check for real change is
-                // especially important when amount is an estimate when
-                // handleChange() is called, we mark it as not a estimate, which
-                // is materially different. We don't want to do that on blur and
-                // enter if the value has not changed.
-                if (x !== amount) handleChange(x)
-              }}
-              decimals={0}
-              modalLabel={planSectionLabel('current-portfolio-balance')}
-            />
-            <button
-              className="ml-2 px-3"
-              onClick={() => {
-                handleChange(smartDeltaFnForAmountInput.increment(amount))
-              }}
-            >
-              <FontAwesomeIcon icon={faPlus} />
-            </button>
-            <button
-              className="px-3"
-              onClick={() => {
-                handleChange(smartDeltaFnForAmountInput.decrement(amount))
-              }}
-            >
-              <FontAwesomeIcon icon={faMinus} />
-            </button>
-          </div>
-          {amountInfo.isDatedPlan &&
-            amountInfo.info.isEstimate &&
-            amountInfo.info.lastEnteredAmount !== amountInfo.info.amount && (
-              <div className={'mt-4 ml-2 flex items-top gap-x-1'}>
-                <FontAwesomeIcon
-                  className="rotate-90 mr-1"
-                  icon={faTurnDownLeft}
-                />
-                <div className="">
-                  <p className="p-base">
-                    This is an estimate calculated from your last entry of{' '}
-                    {formatCurrency(amountInfo.info.lastEnteredAmount)} on{' '}
-                    {getZonedTimeFns(amountInfo.info.ianaTimezoneName)(
-                      amountInfo.info.lastEnteredTimestamp,
-                    ).toLocaleString(DateTime.DATE_MED)}
-                    .{' '}
-                  </p>
-                </div>
-              </div>
+            {letIn(
+              amount === 'fromResult'
+                ? simulationResult.portfolioBalanceEstimationByDated
+                    .currentBalance
+                : amount,
+              (amount) => (
+                <>
+                  <AmountInput
+                    className="text-input"
+                    prefix="$"
+                    value={amount}
+                    onChange={(x) => {
+                      // This happens on blur and enter. The check for real change is
+                      // especially important when amount is an estimate when
+                      // handleChange() is called, we mark it as not a estimate, which
+                      // is materially different. We don't want to do that on blur and
+                      // enter if the value has not changed.
+                      if (x !== amount) handleChange(x)
+                    }}
+                    decimals={0}
+                    modalLabel={planSectionLabel('current-portfolio-balance')}
+                  />
+                  <button
+                    className="ml-2 px-3"
+                    onClick={() => {
+                      handleChange(smartDeltaFnForAmountInput.increment(amount))
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faPlus} />
+                  </button>
+                  <button
+                    className="px-3"
+                    onClick={() => {
+                      handleChange(smartDeltaFnForAmountInput.decrement(amount))
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faMinus} />
+                  </button>
+                </>
+              ),
             )}
-          {amountInfo.isDatedPlan && (
-            <button
-              className="underline block mt-4"
-              onClick={() => setShowHistory(true)}
-            >
-              View Balance History
-            </button>
+          </div>
+          {estimateInfo.type === 'notAnEstimate' ? (
+            <></>
+          ) : estimateInfo.type === 'estimate' ? (
+            <div className={'mt-4 ml-2 flex items-top gap-x-1'}>
+              <FontAwesomeIcon
+                className="rotate-90 mr-1"
+                icon={faTurnDownLeft}
+              />
+              <div className="">
+                <p className="p-base">
+                  This is an estimate calculated from your last entry of{' '}
+                  {formatCurrency(estimateInfo.lastEnteredAmount)} on{' '}
+                  {getZonedTimeFns(estimateInfo.ianaTimezoneName)(
+                    estimateInfo.lastEnteredTimestamp,
+                  ).toLocaleString(DateTime.DATE_MED)}
+                  .{' '}
+                </p>
+              </div>
+            </div>
+          ) : (
+            noCase(estimateInfo)
+          )}
+          {simulationResult.portfolioBalanceEstimationByDated.isDatedPlan && (
+            <>
+              <button
+                className="underline block mt-4"
+                onClick={() => setShowHistory(true)}
+              >
+                View Balance History
+              </button>
+              <CenteredModal
+                className=" dialog-outer-div"
+                show={showHistory}
+                onOutsideClickOrEscape={() => setShowHistory(false)}
+              >
+                <_Popup
+                  detail={
+                    simulationResult.portfolioBalanceEstimationByDated.detail
+                  }
+                  planParamsNormOfResult={
+                    simulationResult.planParamsNormOfResult
+                  }
+                />
+              </CenteredModal>
+            </>
           )}
         </div>
-        {currentPortfolioBalanceInfo.isDatedPlan && (
-          <CenteredModal
-            className=" dialog-outer-div"
-            show={showExplanation}
-            onOutsideClickOrEscape={() => setShowHistory(false)}
-          >
-            <_Popup
-              currentPortfolioBalanceInfo={currentPortfolioBalanceInfo.info}
-            />
-          </CenteredModal>
-        )}
       </div>
     )
   },
@@ -151,64 +171,35 @@ export const _CurrentPortfolioBalanceCard = React.memo(
 
 const _Popup = React.memo(
   ({
-    currentPortfolioBalanceInfo,
+    detail,
+    planParamsNormOfResult,
   }: {
-    currentPortfolioBalanceInfo: CurrentPortfolioBalance.CutInfo
+    detail: PortfolioBalanceEstimation.Detail
+    planParamsNormOfResult: PlanParamsNormalized
   }) => {
-    const { simulationInfoBySrc, planParamsNorm } = useSimulation()
-    const { datingInfo } = planParamsNorm
+    const { ianaTimezoneName, getZonedTime } = useIANATimezoneName()
+    const byMonthDetail = useMemo(
+      () =>
+        PortfolioBalanceEstimation.getByMonthDetail(detail, ianaTimezoneName),
+      [detail, ianaTimezoneName],
+    )
+    const { datingInfo } = planParamsNormOfResult
     assert(datingInfo.isDated)
     const currentTimestamp = datingInfo.nowAsTimestamp
-    const amountInfo = CurrentPortfolioBalance.getAmountInfo(
-      currentPortfolioBalanceInfo,
-    )
-    const historyModeInfo = block(() => {
-      switch (simulationInfoBySrc.src) {
-        case 'link':
-        case 'localMain':
-        case 'file':
-          return 'fetched' as const
-        default:
-          return simulationInfoBySrc.historyStatus
-      }
-    })
-    const byMonth = useMemo(
-      () =>
-        CurrentPortfolioBalance.mergeByMonthInfo(
-          ..._.compact([
-            currentPortfolioBalanceInfo.preBase,
-            currentPortfolioBalanceInfo.postBase
-              ? CurrentPortfolioBalance.getByMonthInfo(
-                  currentPortfolioBalanceInfo.postBase,
-                )
-              : null,
-          ]),
-        ),
-      [
-        currentPortfolioBalanceInfo.postBase,
-        currentPortfolioBalanceInfo.preBase,
-      ],
-    )
-    const { getZonedTime } = useIANATimezoneName()
+    const currentEstimate =
+      _.last(detail.actions)?.stateChange.end.estimate ??
+      detail.startState.estimate
 
     const formatTime = (x: number) => getZonedTime(x).toFormat('LLLL d, yyyy')
     return (
       <div className="p-2 min-w-[600px] sm:min-w-auto">
-        {/* <h2 className="text-right">Zone: {currentTime.toFormat('ZZZZ')}</h2> */}
         <div className="ml-4">
-          {/* <h2 className="font-bold text-lg">You Entered</h2>
-          <div className="">
-            <h2>
-              {' '}
-              {formatCurrency(start.amount)} on {formatTime(start.timestamp)}
-            </h2>
-          </div> */}
           <h2 className="font-bold mt-2 text-lg">Current Estimate</h2>
           <div className="">
             <h2>
               {' '}
-              <span className="">{formatCurrency(amountInfo.amount)}</span> as
-              of {formatTime(currentTimestamp)}
+              <span className="">{formatCurrency(currentEstimate)}</span> as of{' '}
+              {formatTime(currentTimestamp)}
             </h2>
           </div>
           <h2 className="mt-2">This estimate assumes you are invested in:</h2>
@@ -221,32 +212,19 @@ const _Popup = React.memo(
           </div>
         </div>
 
-        {byMonth.monthsDesc.map((info) => (
+        {byMonthDetail.monthsDesc.map((info) => (
           <_Month
             key={`month-${info.month}`}
             className="mt-4 mb-10 rounded-lg  bg-gray-100 px-4 pb-4"
             info={info}
           />
         ))}
-        {historyModeInfo === 'fetched' ? (
-          <></>
-        ) : historyModeInfo === 'failed' ? (
-          <div className="mt-5 text-errorFG text-center">
-            Failed to fetch full history. Please reload to try again.
-          </div>
-        ) : historyModeInfo === 'fetching' ? (
-          <div className="relative h-[50px]">
-            <Spinner size="text-3xl" />
-          </div>
-        ) : (
-          noCase(historyModeInfo)
-        )}
       </div>
     )
   },
 )
 
-type MonthInfo = CurrentPortfolioBalance.ByMonthInfo['monthsDesc'][0]
+type MonthInfo = PortfolioBalanceEstimation.ByMonthInfo['monthsDesc'][0]
 const _Month = React.memo(
   ({
     className = '',
@@ -338,7 +316,7 @@ const _Action = React.memo(
     isLastActionForDay,
     ianaTimezoneName,
   }: {
-    action: CurrentPortfolioBalance.Action
+    action: PortfolioBalanceEstimation.Action
     isLastActionForDay: boolean
     ianaTimezoneName: string
   }) => {
@@ -405,7 +383,7 @@ const _Action = React.memo(
               )
             case 'planChange':
               return <h2 className="">Plan Updated </h2>
-            case 'withdarwalAndContribution':
+            case 'withdrawalAndContribution':
               return (
                 <h2 className="">
                   {args.netContributionOrWithdrawal.type === 'contribution'
@@ -432,42 +410,93 @@ const _Action = React.memo(
 )
 
 export const PlanInputCurrentPortfolioBalanceSummary = React.memo(
-  ({
-    amountInfo,
-    forPrint,
-  }: {
-    amountInfo:
-      | { isDatedPlan: true; info: CurrentPortfolioBalance.AmountInfo }
-      | { isDatedPlan: false; amount: number }
-    forPrint: boolean
-  }) => {
-    const amount = amountInfo.isDatedPlan
-      ? amountInfo.info.amount
-      : amountInfo.amount
+  ({ forPrint }: { forPrint: boolean }) => {
+    const estimateInfo = useEstimateInfo()
+    const { simulationResult } = useSimulationResultInfo()
     return (
       <>
-        <h2>{formatCurrency(amount)}</h2>
-        {amountInfo.isDatedPlan &&
-          amountInfo.info.isEstimate &&
-          amountInfo.info.lastEnteredAmount !== amountInfo.info.amount && (
-            <div className={'ml-2 flex items-top gap-x-1'}>
-              <FontAwesomeIcon
-                className={clsx('rotate-90 mr-1', forPrint && 'text-[10px]')}
-                icon={faTurnDownLeft}
-              />
-              <div className="">
-                <p className={clsx(forPrint ? '' : 'font-font2 text-base')}>
-                  This is an estimate calculated from your last entry of{' '}
-                  {formatCurrency(amountInfo.info.lastEnteredAmount)} on{' '}
-                  {getZonedTimeFns(amountInfo.info.ianaTimezoneName)(
-                    amountInfo.info.lastEnteredTimestamp,
-                  ).toLocaleString(DateTime.DATE_MED)}
-                  .{' '}
-                </p>
-              </div>
-            </div>
+        <h2>
+          {formatCurrency(
+            simulationResult.portfolioBalanceEstimationByDated.currentBalance,
           )}
+        </h2>
+        {estimateInfo.type === 'notAnEstimate' ? (
+          <></>
+        ) : estimateInfo.type === 'estimate' ? (
+          <div className={'ml-2 flex items-top gap-x-1'}>
+            <FontAwesomeIcon
+              className={clsx('rotate-90 mr-1', forPrint && 'text-[10px]')}
+              icon={faTurnDownLeft}
+            />
+            <div className="">
+              <p className={clsx(forPrint ? '' : 'font-font2 text-base')}>
+                This is an estimate calculated from your last entry of{' '}
+                {formatCurrency(estimateInfo.lastEnteredAmount)} on{' '}
+                {getZonedTimeFns(estimateInfo.ianaTimezoneName)(
+                  estimateInfo.lastEnteredTimestamp,
+                ).toLocaleString(DateTime.DATE_MED)}
+                .{' '}
+              </p>
+            </div>
+          </div>
+        ) : (
+          noCase(estimateInfo)
+        )}
       </>
     )
   },
 )
+
+type EstimateInfo =
+  | { type: 'notAnEstimate' }
+  | {
+      type: 'estimate'
+      lastEnteredAmount: number
+      lastEnteredTimestamp: number
+      ianaTimezoneName: string
+    }
+const useEstimateInfo = (): EstimateInfo => {
+  const { simulationResult } = useSimulationResultInfo()
+  return useMemo((): EstimateInfo => {
+    const { portfolioBalanceEstimationByDated } = simulationResult
+    if (!portfolioBalanceEstimationByDated.isDatedPlan)
+      return { type: 'notAnEstimate' }
+    const { detail } = portfolioBalanceEstimationByDated
+    if (detail.actions.length === 0) return { type: 'notAnEstimate' }
+
+    const lastPortfolioUpdateIndex = _.findLastIndex(
+      detail.actions,
+      (action) =>
+        action.args.type === 'planChange' &&
+        action.args.portfolioUpdate !== null,
+    )
+    if (lastPortfolioUpdateIndex === detail.actions.length - 1)
+      return { type: 'notAnEstimate' }
+    const ianaTimezoneName = fGet(
+      simulationResult.ianaTimezoneNameIfDatedPlanOfResult,
+    )
+    const result: EstimateInfo =
+      lastPortfolioUpdateIndex === -1
+        ? {
+            type: 'estimate',
+            lastEnteredAmount: detail.startState.estimate,
+            lastEnteredTimestamp: detail.startTimestamp,
+            ianaTimezoneName,
+          }
+        : letIn(detail.actions[lastPortfolioUpdateIndex], ({ args }) => {
+            assert(args.type === 'planChange' && args.portfolioUpdate)
+            return {
+              type: 'estimate',
+              lastEnteredAmount: args.portfolioUpdate.amount,
+              lastEnteredTimestamp: args.portfolioUpdate.exactTimestamp,
+              ianaTimezoneName,
+            }
+          })
+    if (
+      result.lastEnteredAmount ==
+      simulationResult.portfolioBalanceEstimationByDated.currentBalance
+    )
+      return { type: 'notAnEstimate' }
+    return result
+  }, [simulationResult])
+}

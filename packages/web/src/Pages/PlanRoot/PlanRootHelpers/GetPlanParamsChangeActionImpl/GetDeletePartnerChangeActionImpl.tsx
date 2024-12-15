@@ -15,9 +15,9 @@ import {
   noCase,
 } from '@tpaw/common'
 import _ from 'lodash'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { normalizePlanParamsInverse } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
-import { PlanParamsHelperFns } from '../../../../UseSimulator/PlanParamsHelperFns'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { normalizePlanParamsInverse } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParamsInverse'
+import { PlanParamsHelperFns } from '../../../../Simulator/PlanParamsHelperFns'
 import { PlanParamsChangeActionImpl } from './GetPlanParamsChangeActionImpl'
 
 export const getDeletePartnerChangeActionImpl =

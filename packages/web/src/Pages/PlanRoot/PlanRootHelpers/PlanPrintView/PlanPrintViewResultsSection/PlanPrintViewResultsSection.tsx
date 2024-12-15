@@ -19,7 +19,7 @@ import {
 } from '../../../Plan/PlanResults/PlanResultsSidePanel/PlanResultsSidePanelLegacyCard'
 import { mainPlanColors } from '../../../Plan/UsePlanColors'
 import { useChartDataForPDF } from '../../../Plan/WithPlanResultsChartData'
-import { useSimulationResult } from '../../WithSimulation'
+import { useSimulationResultInfo } from '../../WithSimulation'
 import { getPlanPrintChartLabel } from '../Helpers/GetPlanPrintChartLabel'
 import { PlanPrintViewPageGroup } from '../Helpers/PlanPrintViewPageGroup'
 import { PlanPrintViewSVGBackground } from '../Helpers/PlanPrintViewSVGBackground'
@@ -31,9 +31,12 @@ import {
 
 export const PlanPrintViewResultsSection = React.memo(
   ({ settings }: { settings: PlanPrintViewArgs['settings'] }) => {
-    const { args, numSimulationsActual, numRunsWithInsufficientFunds } =
-      useSimulationResult()
-    const { extraSpending } = args.planParamsNorm.adjustmentsToSpending
+    const {
+      planParamsNormOfResult,
+      numSimulationsActual,
+      numRunsWithInsufficientFunds,
+    } = useSimulationResultInfo().simulationResult
+    const { extraSpending } = planParamsNormOfResult.adjustmentsToSpending
 
     const secondaryCharts: PlanResultsChartType[] = _.compact([
       extraSpending.discretionary.length > 0 ||
@@ -61,7 +64,7 @@ export const PlanPrintViewResultsSection = React.memo(
         </PlanPrintViewPageGroup>
         <PlanPrintViewPageGroup settings={settings}>
           <_Chart className="mt-8" type="spending-total" />
-          {args.planParamsNorm.advanced.strategy === 'SWR' && (
+          {planParamsNormOfResult.advanced.strategy === 'SWR' && (
             <h2 className=" mt-4 text-right">
               Success Rate:{' '}
               <span className="text-xl">
@@ -73,11 +76,11 @@ export const PlanPrintViewResultsSection = React.memo(
             </h2>
           )}
           <_Legacy className="mt-12" />
-          {args.planParamsNorm.wealth.incomeDuringRetirement.length > 0 && (
+          {planParamsNormOfResult.wealth.incomeDuringRetirement.length > 0 && (
             <div className=" break-inside-avoid-page">
               <_Chart
                 className="mt-12"
-                type="spending-total-funding-sources-5"
+                type="spending-total-funding-sources-low"
               />
               <_MonthlySpendingBreakdownLegend className="" />
             </div>
@@ -94,7 +97,7 @@ export const PlanPrintViewResultsSection = React.memo(
 const _MonthlySpendingBreakdownLegend = React.memo(
   ({ className }: { className?: string }) => {
     const planColors = mainPlanColors
-    const chartData = useChartDataForPDF('spending-total-funding-sources-5')
+    const chartData = useChartDataForPDF('spending-total-funding-sources-low')
     assert(chartData.type === 'breakdown')
     const parts = [
       ...chartData.breakdown.parts
@@ -150,12 +153,12 @@ const _MonthlySpendingBreakdownLegend = React.memo(
 )
 
 const _Legacy = React.memo(({ className }: { className?: string }) => {
-  const { args } = useSimulationResult()
+  const { planParamsNormOfResult } = useSimulationResultInfo().simulationResult
   const data = usePlanResultsLegacyCardData()
   const maxLegacy = Math.max(...data.map((x) => x.amount))
   const hasLegacy =
     maxLegacy > 0 ||
-    args.planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0
+    planParamsNormOfResult.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0
   return (
     <div className={clix(className)}>
       <h2 className="text-xl font-bold">Legacy</h2>
@@ -197,11 +200,12 @@ const _Legacy = React.memo(({ className }: { className?: string }) => {
 
 const _Chart = React.memo(
   ({ className, type }: { className?: string; type: PlanResultsChartType }) => {
-    const { args } = useSimulationResult()
+    const { planParamsNormOfResult, percentilesOfResult } =
+      useSimulationResultInfo().simulationResult
     const chartData = useChartDataForPDF(type)
     const outerDivRef = useRef<HTMLDivElement>(null)
 
-    const hasPartner = !!args.planParamsNorm.ages.person2
+    const hasPartner = !!planParamsNormOfResult.ages.person2
     const [chart, setChart] = useState<ChartReactStatefull<{
       data: PlanResultsChartDataForPDF
     }> | null>(null)
@@ -219,7 +223,7 @@ const _Chart = React.memo(
     }, [chart, hasPartner])
 
     const { label, subLabel, yAxisDescriptionStr, description } =
-      getPlanPrintChartLabel(args.planParamsNorm, type)
+      getPlanPrintChartLabel(planParamsNormOfResult, percentilesOfResult, type)
 
     return (
       <div className={clix(className, ' break-inside-avoid-page')}>

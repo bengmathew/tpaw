@@ -14,10 +14,10 @@ import {
   NormalizedGlidePath,
   NormalizedGlidePathEntry,
   normalizeGlidePath,
-} from '../../../UseSimulator/NormalizePlanParams/NormalizeGlidePath'
-import { getMonthToMFN } from '../../../UseSimulator/NormalizePlanParams/NormalizeAges'
+} from '../../../Simulator/NormalizePlanParams/NormalizeGlidePath'
+import { getMonthToMFN } from '../../../Simulator/NormalizePlanParams/NormalizeAges'
 import { assert } from '../../../Utils/Utils'
-import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { getNormalizedMonthStr } from '../MonthOrDurationDisplay'
 import { AmountInput } from './AmountInput'
 import { MonthInput } from './MonthInput/MonthInput'
@@ -33,8 +33,8 @@ export const GlidePathInput = React.memo(
     value: NormalizedGlidePath
     onChange: (glidePath: GlidePath) => void
   }) => {
-    const { planParamsNorm } = useSimulation()
-    const { nowAsCalendarDay } = planParamsNorm.datingInfo
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { nowAsCalendarDay } = planParamsNormInstant.datingInfo
     return (
       <div className={`${className}`}>
         <div className="flex justify-between pb-3 border-b border-gray-500 mb-3">
@@ -112,9 +112,9 @@ export const GlidePathInput = React.memo(
 
 const _NewEntry = React.memo(
   ({ onAdd }: { onAdd: (x: GlidePath['intermediate']['string']) => void }) => {
-    const { planParamsNorm } = useSimulation()
-    const { ages } = planParamsNorm
-    const { nowAsCalendarDay } = planParamsNorm.datingInfo
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { ages } = planParamsNormInstant
+    const { nowAsCalendarDay } = planParamsNormInstant.datingInfo
     const [dummyGlidePath, setDummyGlidePath] = useState<GlidePath | null>(
       () => null,
     )
@@ -167,16 +167,16 @@ const _NewEntry = React.memo(
       const { intermediate, atOrPastEnd } = normalizeGlidePath(
         dummyGlidePath,
         getMonthToMFN(
-          planParamsNorm.datingInfo.nowAsCalendarDay,
-          planParamsNorm.ages,
+          planParamsNormInstant.datingInfo.nowAsCalendarDay,
+          planParamsNormInstant.ages,
         ),
-        planParamsNorm.ages,
-        planParamsNorm.datingInfo.nowAsCalendarDay,
+        planParamsNormInstant.ages,
+        planParamsNormInstant.datingInfo.nowAsCalendarDay,
       )
       const norm = fGet(_.first([...intermediate, ...atOrPastEnd]))
       // Don't display errors during entry creation.
       return { ...norm, month: { ...norm.month, errorMsg: null } }
-    }, [dummyGlidePath, planParamsNorm])
+    }, [dummyGlidePath, planParamsNormInstant])
 
     return dummyGlidePath ? (
       <div className="border-t border-gray-300 rounded-x pt-4 mt-4">

@@ -1,14 +1,13 @@
-import { block } from '@tpaw/common'
+import { block, fGet } from '@tpaw/common'
 import clix from 'clsx'
-import _ from 'lodash'
 import React, { CSSProperties } from 'react'
-import { PERCENTILES_STR } from '../../../../../UseSimulator/Simulator/Simulator'
 import { useURLUpdater } from '../../../../../Utils/UseURLUpdater'
 import { SwitchAsToggle } from '../../../../Common/Inputs/SwitchAsToggle'
+import { useSimulationResultInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
 import {
-    getPlanResultsChartSpendingTotalFundingSourcesPercentile,
-    isPlanResultsChartSpendingTotalFundingSourcesType,
+  getPlanResultsChartSpendingTotalFundingSourcesPercentile,
+  isPlanResultsChartSpendingTotalFundingSourcesType,
 } from '../PlanResultsChartType'
 import { useGetPlanResultsChartURL } from '../UseGetPlanResultsChartURL'
 import { usePlanResultsChartType } from '../UsePlanResultsChartType'
@@ -27,30 +26,17 @@ export const PlanResultsChartCardFundingSourcesToggle = React.memo(
     const getPlanChartURL = useGetPlanResultsChartURL()
     const chartType = usePlanResultsChartType()
     const urlUpdater = useURLUpdater()
+    const { simulationResult } = useSimulationResultInfo()
+    const { percentilesOfResult } = simulationResult
 
     const currPrecentile = isPlanResultsChartSpendingTotalFundingSourcesType(
       chartType,
     )
       ? getPlanResultsChartSpendingTotalFundingSourcesPercentile(chartType)
-      : '50'
+      : 'mid'
     const isShowingFundingSources =
       isPlanResultsChartSpendingTotalFundingSourcesType(chartType)
 
-    const handleDelta = (delta: 1 | -1) => {
-      urlUpdater.push(
-        getPlanChartURL(
-          `spending-total-funding-sources-${
-            PERCENTILES_STR[
-              _.clamp(
-                PERCENTILES_STR.indexOf(currPrecentile) + delta,
-                0,
-                PERCENTILES_STR.length - 1,
-              )
-            ]
-          }`,
-        ),
-      )
-    }
 
     return (
       <div className={clix(className, 'flex justify-start')} style={style}>
@@ -73,7 +59,7 @@ export const PlanResultsChartCardFundingSourcesToggle = React.memo(
                 getPlanChartURL(
                   !checked
                     ? 'spending-total'
-                    : `spending-total-funding-sources-50`,
+                    : `spending-total-funding-sources-mid`,
                 ),
               )
             }
@@ -96,13 +82,13 @@ export const PlanResultsChartCardFundingSourcesToggle = React.memo(
                           transitionProperty: 'transform',
                           transitionDuration: '300ms',
                           transform: `translateX(${
-                            PERCENTILES_STR.indexOf(currPrecentile) * w
+                            ['low', 'mid', 'high'].indexOf(currPrecentile) * w
                           }px)`,
                           width: `${w}px`,
                           backgroundColor: planColors.shades.light[10].hex,
                         }}
                       />
-                      {PERCENTILES_STR.map((percentileStr, i) => (
+                      {(['low', 'mid', 'high'] as const).map((percentileStr, i) => (
                         <button
                           key={percentileStr}
                           className={clix(
@@ -127,7 +113,7 @@ export const PlanResultsChartCardFundingSourcesToggle = React.memo(
                             )
                           }}
                         >
-                          {percentileStr}
+                          {percentilesOfResult[percentileStr]}
                           <span className=" align-super text-[8px] sm:text-[10px]">
                             th
                           </span>

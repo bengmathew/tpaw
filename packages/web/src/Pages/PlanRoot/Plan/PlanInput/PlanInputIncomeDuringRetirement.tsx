@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { Contentful } from '../../../../Utils/Contentful'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import {
@@ -7,7 +7,7 @@ import {
   LabelAmountOptMonthRangeInputStateful,
 } from '../../../Common/Inputs/LabelAmountTimedOrUntimedInput/LabeledAmountTimedOrUntimedInput'
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../PlanRootHelpers/WithSimulation'
 import { LabeledAmountTimedListInput } from '../../../Common/Inputs/LabeledAmountTimedListInput'
 import { PlanInputSummaryLabeledAmountTimedList } from './Helpers/PlanInputSummaryLabeledAmountTimedList'
 import {
@@ -18,8 +18,8 @@ import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
 
 export const PlanInputIncomeDuringRetirement = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const { planParamsNorm } = useSimulation()
-    const { ages } = planParamsNorm
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { ages } = planParamsNormInstant
     const content = usePlanContent()
     const [editState, setEditState] = useState<{
       isAdd: boolean
@@ -41,7 +41,7 @@ export const PlanInputIncomeDuringRetirement = React.memo(
             <Contentful.RichText
               body={
                 content['income-during-retirement'].intro[
-                  planParamsNorm.advanced.strategy
+                  planParamsNormInstant.advanced.strategy
                 ]
               }
               p="p-base mb-4"
@@ -59,11 +59,11 @@ export const PlanInputIncomeDuringRetirement = React.memo(
                     start: ages.person1.retirement.isRetired
                       ? {
                           type: 'now',
-                          monthOfEntry: planParamsNorm.datingInfo.isDated
+                          monthOfEntry: planParamsNormInstant.datingInfo.isDated
                             ? {
                                 isDatedPlan: true,
                                 calendarMonth: CalendarDayFns.toCalendarMonth(
-                                  planParamsNorm.datingInfo.nowAsCalendarDay,
+                                  planParamsNormInstant.datingInfo.nowAsCalendarDay,
                                 ),
                               }
                             : { isDatedPlan: false },

@@ -1,0 +1,37 @@
+steps:
+  # ---- DOCKER BUILD ----
+  - name: gcr.io/cloud-builders/docker
+    args:
+      [
+        'build',
+        '-t',
+        'simulator',
+        '-f',
+        'packages/simulator-rust/Dockerfile',
+        'packages',
+      ]
+  
+
+  # # ---- DEPLOY ----
+  # - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  #   entrypoint: gcloud
+  #   args:
+  #     [
+  #       'run',
+  #       'deploy',
+  #       'apiserver',
+  #       '--image',
+  #       '$_TAG',
+  #       '--region',
+  #       'us-central1',
+  #       '--update-env-vars',
+  #       'DOWN_FOR_MAINTENANCE=$_DOWN_FOR_MAINTENANCE',
+  #       '--update-env-vars',
+  #       'DOWN_FOR_UPDATE=$_DOWN_FOR_UPDATE',
+  #     ]
+
+timeout: 1600s
+availableSecrets:
+  secretManager:
+    - versionName: 'projects/${PROJECT_ID}/secrets/TPAW_NPM_AUTH_TOKEN/versions/latest'
+      env: TPAW_NPM_AUTH_TOKEN

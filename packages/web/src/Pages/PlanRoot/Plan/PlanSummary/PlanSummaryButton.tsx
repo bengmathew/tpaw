@@ -7,7 +7,7 @@ import { gray, orange } from '../../../../Utils/ColorPalette'
 import { Padding, paddingCSSStyle } from '../../../../Utils/Geometry'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
 import { noCase } from '../../../../Utils/Utils'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../PlanRootHelpers/WithSimulation'
 import { useGetSectionURL } from '../Plan'
 import { PlanInputModifiedBadge } from '../PlanInput/Helpers/PlanInputModifiedBadge'
 import { PlanInputType } from '../PlanInput/Helpers/PlanInputType'
@@ -29,7 +29,7 @@ import { PlanInputSimulationSummary } from '../PlanInput/PlanInputSimulation'
 import { PlanInputSpendingCeilingAndFloorSummary } from '../PlanInput/PlanInputSpendingCeilingAndFloor'
 import { PlanInputStrategySummary } from '../PlanInput/PlanInputStrategy'
 import { usePlanColors } from '../UsePlanColors'
-import { CurrentPortfolioBalance } from '../../PlanRootHelpers/CurrentPortfolioBalance'
+import { PortfolioBalanceEstimation } from '../../PlanRootHelpers/PortfolioBalanceEstimation'
 import { PlanInputExpectedReturnsAndVolatilitySummary } from '../PlanInput/PlanInputExpectedReturnsAndVolatility'
 
 type _Props = {
@@ -55,12 +55,12 @@ export const PlanSummaryButton = React.memo(
       }: _Props,
       ref,
     ) => {
-      const { planParamsNorm } = useSimulation()
-      const { dialogPosition } = planParamsNorm
+      const { planParamsNormInstant } = useSimulationInfo()
+      const { dialogPosition } = planParamsNormInstant
       const getSectionURL = useGetSectionURL()
       const urlUpdater = useURLUpdater()
       const highlightColorDark = gray[400]
-      const visibility = useGetPlanInputVisibility(planParamsNorm)(type)
+      const visibility = useGetPlanInputVisibility(planParamsNormInstant)(type)
       const highlightColor =
         section === type
           ? highlightColorDark
@@ -139,70 +139,66 @@ export const PlanSummaryButton = React.memo(
 
 const _SectionSummary = React.memo(
   ({ type }: { type: Exclude<PlanInputType, 'history'> }) => {
-    const { planParamsNorm, simulationResult, currentPortfolioBalanceInfo } =
-      useSimulation()
+    const { planParamsNormInstant } = useSimulationInfo()
     switch (type) {
       case 'age':
-        return <PlanInputAgeSummary planParamsNorm={planParamsNorm} />
+        return <PlanInputAgeSummary planParamsNorm={planParamsNormInstant} />
       case 'current-portfolio-balance':
+        return <PlanInputCurrentPortfolioBalanceSummary forPrint={false} />
+      case 'future-savings':
         return (
-          <PlanInputCurrentPortfolioBalanceSummary
-            amountInfo={
-              currentPortfolioBalanceInfo.isDatedPlan
-                ? {
-                    isDatedPlan: true,
-                    info: CurrentPortfolioBalance.getAmountInfo(
-                      currentPortfolioBalanceInfo.info,
-                    ),
-                  }
-                : {
-                    isDatedPlan: false,
-                    amount: currentPortfolioBalanceInfo.amount,
-                  }
-            }
-            forPrint={false}
+          <PlanInputFutureSavingsSummary
+            planParamsNorm={planParamsNormInstant}
           />
         )
-      case 'future-savings':
-        return <PlanInputFutureSavingsSummary planParamsNorm={planParamsNorm} />
       case 'income-during-retirement':
         return (
           <PlanInputIncomeDuringRetirementSummary
-            planParamsNorm={planParamsNorm}
+            planParamsNorm={planParamsNormInstant}
           />
         )
       case 'extra-spending':
-        return <PlanInputExtraSpendingSummary planParamsNorm={planParamsNorm} />
-      case 'legacy':
         return (
-          <PlanInputLegacySummary
-            planParamsNorm={planParamsNorm}
+          <PlanInputExtraSpendingSummary
+            planParamsNorm={planParamsNormInstant}
           />
         )
+      case 'legacy':
+        return <PlanInputLegacySummary planParamsNorm={planParamsNormInstant} />
       case 'spending-ceiling-and-floor':
         return (
           <PlanInputSpendingCeilingAndFloorSummary
-            planParamsNorm={planParamsNorm}
+            planParamsNorm={planParamsNormInstant}
           />
         )
       case 'risk':
-        return <PlanInputRiskSummary planParamsNorm={planParamsNorm} />
+        return (
+          <PlanInputRiskSummary planParamsNorm={planParamsNormInstant} />
+        )
       case 'expected-returns-and-volatility':
         return (
           <PlanInputExpectedReturnsAndVolatilitySummary
-            planParamsNorm={planParamsNorm}
+            planParamsNorm={planParamsNormInstant}
           />
         )
       case 'inflation':
         return (
           <PlanInputInflationSummary
-            planParamsNorm={planParamsNorm}
+            planParamsNorm={planParamsNormInstant}
           />
         )
       case 'strategy':
-        return <PlanInputStrategySummary planParamsNorm={planParamsNorm} />
+        return (
+          <PlanInputStrategySummary
+            planParamsNorm={planParamsNormInstant}
+          />
+        )
       case 'simulation':
-        return <PlanInputSimulationSummary planParamsNorm={planParamsNorm} />
+        return (
+          <PlanInputSimulationSummary
+            planParamsNorm={planParamsNormInstant}
+          />
+        )
       case 'dev-misc':
         return <PlanInputDevMiscSummary />
       case 'dev-simulations':

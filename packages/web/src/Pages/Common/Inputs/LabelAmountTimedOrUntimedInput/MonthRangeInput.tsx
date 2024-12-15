@@ -12,14 +12,14 @@ import {
 } from '@tpaw/common'
 import clsx from 'clsx'
 import React from 'react'
-import { NormalizedMonthRange } from '../../../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
-import { useSimulation } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { NormalizedMonthRange } from '../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
+import { useSimulationInfo } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { ContextModal } from '../../Modal/ContextModal'
 import { getMonthRangeDurationStr } from '../../MonthRangeDisplay'
 import { MonthInput, MonthType } from '../MonthInput/MonthInput'
 import { MonthRangeDurationInput } from '../MonthInput/MonthRangeDurationInput'
 import { SimpleModalListbox } from '../../Modal/SimpleModalListbox'
-import { getFromMFNToNumericAge } from '../../../../UseSimulator/NormalizePlanParams/NormalizeAges'
+import { getFromMFNToNumericAge } from '../../../../Simulator/NormalizePlanParams/NormalizeAges'
 
 export type MonthRangeInputProps = React.ComponentProps<typeof MonthRangeInput>
 
@@ -38,9 +38,9 @@ export const MonthRangeInput = React.memo(
     className,
     ...props
   }: { normValue: NormalizedMonthRange } & _PropsWithoutValue) => {
-    const { planParamsNorm } = useSimulation()
-    const { datingInfo } = planParamsNorm
-    const mfnToNumericAge = getFromMFNToNumericAge(planParamsNorm)
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { datingInfo } = planParamsNormInstant
+    const mfnToNumericAge = getFromMFNToNumericAge(planParamsNormInstant)
 
     const getMonth = (mfn: number): Month =>
       datingInfo.isDated

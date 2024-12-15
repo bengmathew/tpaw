@@ -25,7 +25,7 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { NormalizedLabeledAmountTimed } from '../../../../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
+import { NormalizedLabeledAmountTimed } from '../../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 import { InMonthsFns } from '../../../../../Utils/InMonthsFns'
 import { yourOrYourPartners } from '../../../../../Utils/YourOrYourPartners'
 import { SwitchAsCheckBox } from '../../../../Common/Inputs/SwitchAsCheckBox'
@@ -41,11 +41,11 @@ import {
   RetirePersonAdjustments,
   getRetirePersonAdjustments,
 } from '../../../PlanRootHelpers/GetPlanParamsChangeActionImpl/GetSetPersonRetiredChangeActionImpl'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
 import { planSectionLabel } from '../Helpers/PlanSectionLabel'
 import { PlanInputAgeOpenableSection } from './PlanInputAge'
-import { NormalizedAges } from '../../../../../UseSimulator/NormalizePlanParams/NormalizeAges'
+import { NormalizedAges } from '../../../../../Simulator/NormalizePlanParams/NormalizeAges'
 
 export const PlanInputAgePerson = React.memo(
   ({
@@ -61,20 +61,20 @@ export const PlanInputAgePerson = React.memo(
     openSection: PlanInputAgeOpenableSection
     setOpenSection: (x: PlanInputAgeOpenableSection) => void
   }) => {
-    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
     const divRef = useRef<HTMLDivElement>(null)
-    const person = fGet(planParamsNorm.ages[personId])
+    const person = fGet(planParamsNormInstant.ages[personId])
 
     const retireAdjustments = useMemo(
-      () => getRetirePersonAdjustments(personId, planParamsNorm),
-      [personId, planParamsNorm],
+      () => getRetirePersonAdjustments(personId, planParamsNormInstant),
+      [personId, planParamsNormInstant],
     )
 
     const [showRetireWarnings, setShowRetireWarnings] = useState(false)
 
     const deletePartnerAdjustments = useMemo(
-      () => getRemovePartnerAdjustments(planParamsNorm),
-      [planParamsNorm],
+      () => getRemovePartnerAdjustments(planParamsNormInstant),
+        [planParamsNormInstant],
     )
     const [showDeletePartnerWarnings, setShowDeletePartnerWarnings] =
       useState(false)
@@ -288,7 +288,7 @@ export const _MonthOfBirthInput = React.memo(
     currSection: PlanInputAgeOpenableSection
     setCurrSection: (open: PlanInputAgeOpenableSection) => void
   }) => {
-    const { updatePlanParams } = useSimulation()
+    const { updatePlanParams } = useSimulationInfo()
 
     return (
       <_Section
@@ -334,9 +334,9 @@ export const _AgeInput = React.memo(
     currSection: PlanInputAgeOpenableSection
     setCurrSection: (open: PlanInputAgeOpenableSection) => void
   }) => {
-    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
     const age = (() => {
-      const person = fGet(planParamsNorm.ages[personId])
+      const person = fGet(planParamsNormInstant.ages[personId])
       if (type === 'currentAge') {
         assert(!person.currentAgeInfo.isDatedPlan)
         return person.currentAgeInfo
@@ -399,7 +399,6 @@ const RetirementWarningsModal = React.memo(
     adjustments: RetirePersonAdjustments | null
     personType: 'person1' | 'person2'
   }) => {
-    const { planParamsNorm } = useSimulation()
     const [adjustments, setAdjustments] = useState(
       null as null | RetirePersonAdjustments,
     )
@@ -633,7 +632,7 @@ const _MonthRangesIssueList = React.memo(
 
 const _StockAllocationIssueSection = React.memo(
   ({ referenceStr }: { referenceStr: string }) => {
-    const { planParamsNorm } = useSimulation()
+    const { planParamsNormInstant } = useSimulationInfo()
     return (
       <div className={clsx('mt-6')}>
         <h2 className="font-bold text-xl mt-6">Stock Allocation</h2>
@@ -642,7 +641,7 @@ const _StockAllocationIssueSection = React.memo(
                         ${referenceStr}. The
                          corresponding entries will be removed from the table.`}
         </p>
-        {planParamsNorm.advanced.strategy === 'TPAW' && (
+        {planParamsNormInstant.advanced.strategy === 'TPAW' && (
           <p className="p-base mt-2">
             {`Note: The stock allocation table is visible only when the strategy
                           is set to "SPAW" or "SWR".`}
@@ -650,7 +649,7 @@ const _StockAllocationIssueSection = React.memo(
         )}
         <PlanInputSummaryGlidePath
           className="mt-2"
-          normValue={planParamsNorm.risk.spawAndSWR.allocation}
+          normValue={planParamsNormInstant.risk.spawAndSWR.allocation}
         />
       </div>
     )

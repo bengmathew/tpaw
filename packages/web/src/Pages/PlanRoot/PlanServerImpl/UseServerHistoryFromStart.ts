@@ -11,12 +11,8 @@ import { useRelayEnvironment } from 'react-relay'
 import { fetchQuery, graphql } from 'relay-runtime'
 import { useAssertConst } from '../../../Utils/UseAssertConst'
 import { useUser } from '../../App/WithUser'
-import {
-  useCurrentPortfolioBalanceGetMonthInfoInWorker,
-  useParseAndMigratePlanParamsHistoryInWorker,
-} from '../PlanRootHelpers/UsePlanParamsHistoryWorker'
+import { useParseAndMigratePlanParamsHistoryInWorker } from '../PlanRootHelpers/UsePlanParamsHistoryWorker'
 import { PlanParamsHistoryItem } from '../PlanRootHelpers/UseWorkingPlan'
-import { useMarketData } from '../PlanRootHelpers/WithMarketData'
 import { useIANATimezoneName } from '../PlanRootHelpers/WithNonPlanParams'
 import { UseServerHistoryFromStartQuery } from './__generated__/UseServerHistoryFromStartQuery.graphql'
 
@@ -28,7 +24,6 @@ export const useServerHistoryPreBase = (
   base: PlanParamsHistoryItem,
 ) => {
   const { ianaTimezoneName } = useIANATimezoneName()
-  const { marketData } = useMarketData()
   const fetchState = useFetchFromServer(planId, base)
   const paramsHistoryFromServer = useParseAndMigratePlanParamsHistoryInWorker(
     fetchState.type === 'fetched' ? fetchState.result : null,
@@ -38,13 +33,6 @@ export const useServerHistoryPreBase = (
   >(null)
 
   const planParamsHistory = paramsHistoryFromRebase ?? paramsHistoryFromServer
-
-  const currentPortfolioBalanceByMonthInfo =
-    useCurrentPortfolioBalanceGetMonthInfoInWorker(
-      planId,
-      true,
-      planParamsHistory,
-    )
 
   const rebase = (
     currPreBase: { id: string; params: PlanParams }[],
@@ -58,11 +46,7 @@ export const useServerHistoryPreBase = (
         planParamsChangeId: x.id,
         timestamp: new Date(x.params.timestamp),
       })),
-      marketCloses: [
-        ...new Set(
-          marketData.map((x) => x.dailyStockMarketPerformance.closingTime),
-        ).values(),
-      ].sort((a, b) => a - b),
+      marketCloses: 'useConservativeGuess',
     })
     setParamsHistoryFromRebase(
       planParamsHistoryUnfiltered.filter((y) => !idsToDelete.has(y.id)),
@@ -74,19 +58,15 @@ export const useServerHistoryPreBase = (
       case 'fetching':
         return { type: 'fetching' as const }
       case 'fetched':
-        return planParamsHistory && currentPortfolioBalanceByMonthInfo
-          ? {
-              type: 'fetched' as const,
-              planParamsHistory,
-              currentPortfolioBalanceByMonthInfo,
-            }
+        return planParamsHistory
+          ? { type: 'fetched' as const, planParamsHistory }
           : { type: 'fetching' as const }
       case 'failed':
         return { type: 'failed' as const }
       default:
         noCase(fetchState)
     }
-  }, [currentPortfolioBalanceByMonthInfo, fetchState, planParamsHistory])
+  }, [fetchState, planParamsHistory])
   return { state, rebase }
 }
 

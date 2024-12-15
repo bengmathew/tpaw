@@ -1,8 +1,7 @@
-import { PlanParams, block, fGet, noCase } from '@tpaw/common'
-import _ from 'lodash'
+import { block, fGet, letIn, noCase } from '@tpaw/common'
+import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { pluralize } from '../../../../../Utils/Pluralize'
 import { trimAndNullify } from '../../../../../Utils/TrimAndNullify'
-import { optGet } from '../../../../../Utils/optGet'
 import {
   PlanResultsChartType,
   PlanResultsSpendingChartType,
@@ -13,10 +12,9 @@ import {
   planResultsChartSpendingDiscretionaryTypeID,
   planResultsChartSpendingEssentialTypeID,
 } from '../PlanResultsChartType'
-import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
 
 export const planResultsChartLabel = (
-  planParamsNorm: PlanParamsNormalized,
+  planParamsNormOfResult: PlanParamsNormalized,
   panelType: PlanResultsChartType,
 ) => {
   switch (panelType) {
@@ -58,7 +56,7 @@ export const planResultsChartLabel = (
     default:
       if (isPlanResultsChartSpendingType(panelType)) {
         return getPlanResultsChartLabelInfoForSpending(
-          planParamsNorm,
+          planParamsNormOfResult,
         ).getLabelInfo(panelType)
       }
       noCase(panelType)
@@ -68,17 +66,17 @@ export const planResultsChartLabel = (
 export const getPlanResultsChartLabelInfoForSpending = (
   planParamsNorm: PlanParamsNormalized,
 ) => {
-  const { essential, discretionary } =
-    planParamsNorm.adjustmentsToSpending.extraSpending
-  const spendingTotalInfo = block(() => {
-    const full = ['Monthly Spending During Retirement']
-    return {
+  const spendingTotalInfo = letIn(
+    { full: ['Monthly Spending During Retirement'] },
+    ({ full }) => ({
       label: { full, forMenu: full },
       subLabel: null,
       description: 'Total retirement spending',
       yAxisDescription: _yAxisDescriptionType.realDollarsExplanation,
-    }
-  })
+    }),
+  )
+  const { essential, discretionary } =
+    planParamsNorm.adjustmentsToSpending.extraSpending
   if (essential.length + discretionary.length === 0) {
     return {
       hasExtra: false,

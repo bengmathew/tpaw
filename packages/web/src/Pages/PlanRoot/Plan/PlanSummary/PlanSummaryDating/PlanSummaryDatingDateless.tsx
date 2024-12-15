@@ -2,21 +2,21 @@ import { faCaretDown, faInfinity } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   PLAN_PARAMS_CONSTANTS,
-  PlanParams,
   getLastMarketDataDayForUndatedPlans,
   getNYZonedTime,
 } from '@tpaw/common'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
 import React, { useMemo, useState } from 'react'
-import { NormalizedDatingInfo } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { PlanParamsHelperFns } from '../../../../../UseSimulator/PlanParamsHelperFns'
+import { NormalizedDatingInfo } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { CalendarDayFns } from '../../../../../Utils/CalendarDayFns'
 import { CalendarDayInput } from '../../../../Common/Inputs/CalendarDayInput'
-import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
 import { ContextModal } from '../../../../Common/Modal/ContextModal'
 import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionModalConvertDatingLocal } from '../../PlanMenu/PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalConvertDatingLocal'
 import { PlanMenuActionModalConvertDatingServer } from '../../PlanMenu/PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalConvertDatingServer'
 
@@ -28,7 +28,8 @@ export const PlanSummaryDatingDateless = React.memo(
     className?: string
     datingInfo: Extract<NormalizedDatingInfo, { isDated: false }>
   }) => {
-    const { updatePlanParams, simulationInfoBySrc } = useSimulation()
+    const { updatePlanParams, simulationInfoBySrc } = useSimulationInfo()
+    const { simulationResult } = useSimulationResultInfo()
     const { getZonedTime } = useIANATimezoneName()
     const [isCalendarOpen, setIsCalendarOpen] = React.useState(false)
     const [showConvertToDated, setShowConvertToDated] = useState(false)

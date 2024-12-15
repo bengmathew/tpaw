@@ -1,10 +1,15 @@
-import { GlidePath, partialDefaultDatelessPlanParams } from '@tpaw/common'
+import {
+  getPartialDefaultPlanParams,
+  GlidePath,
+  partialDefaultDatelessPlanParams,
+} from '@tpaw/common'
 import React from 'react'
 import { paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { GlidePathInput } from '../../../../Common/Inputs/GlidePathInput'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { AssetAllocationChart } from '../Helpers/AssetAllocationChart'
 import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
+import _ from 'lodash'
 
 export const PlanInputRiskSPAWAndSWRStockAllocationCard = React.memo(
   ({
@@ -14,10 +19,12 @@ export const PlanInputRiskSPAWAndSWRStockAllocationCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, updatePlanParams } =
-      useSimulation()
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
     const handleChange = (x: GlidePath) =>
       updatePlanParams('setSPAWAndSWRAllocation2', x)
+
+    const defaultDatelessAllocation =
+      partialDefaultDatelessPlanParams.risk.spawAndSWR.allocation
 
     return (
       <div
@@ -27,7 +34,7 @@ export const PlanInputRiskSPAWAndSWRStockAllocationCard = React.memo(
         <h2 className="font-bold text-lg">Stock Allocation</h2>
         <GlidePathInput
           className="mt-4 border border-gray-300 p-2 rounded-lg"
-          value={planParamsNorm.risk.spawAndSWR.allocation}
+          value={planParamsNormInstant.risk.spawAndSWR.allocation}
           onChange={handleChange}
         />
         <h2 className="mt-6">Graph of this asset allocation:</h2>
@@ -37,9 +44,26 @@ export const PlanInputRiskSPAWAndSWRStockAllocationCard = React.memo(
         />
         <button
           className="mt-6 underline"
-          onClick={() =>
-            handleChange(partialDefaultDatelessPlanParams.risk.spawAndSWR.allocation)
-          }
+          onClick={() => {
+            handleChange(
+              getPartialDefaultPlanParams(
+                planParamsNormInstant.datingInfo.isDated
+                  ? {
+                      isDatedPlan: true,
+                      nowAsCalendarMonth: {
+                        year: planParamsNormInstant.datingInfo.nowAsCalendarDay
+                          .year,
+                        month:
+                          planParamsNormInstant.datingInfo.nowAsCalendarDay
+                            .month,
+                      },
+                    }
+                  : {
+                      isDatedPlan: false,
+                    },
+              ).risk.spawAndSWR.allocation,
+            )
+          }}
         >
           Reset to Default
         </button>

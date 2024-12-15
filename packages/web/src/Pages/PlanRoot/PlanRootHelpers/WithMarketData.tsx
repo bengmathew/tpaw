@@ -27,6 +27,8 @@ const [Context, useMarketData] = createContext<{
 
 export { useMarketData }
 
+
+// TODO: Testing. Remove all market data from client side.
 export const WithMarketData = React.memo(
   ({
     marketData: marketDataIn,

@@ -1,0 +1,20 @@
+CompileFlags:
+  # database is buildtest not builddev because that will bring the TEST_CASE
+  # macros into the compilation, which we want.
+  CompilationDatabase: "./buildtest"
+  Add: 
+    - -xcuda
+    - --cuda-gpu-arch=sm_80
+    - -Wall
+    - -Winvalid-pch
+    - -Wnon-virtual-dtor
+    - -Wextra
+    - -Werror=missing-field-initializers
+  Remove: 
+    - -Xcompiler=-fPIC #added when building shared library
+    - -Xcompiler=-Wall,-Winvalid-pch
+    - -Xcompiler=-Wextra,-Werror=missing-field-initializers
+    - -rdc=true 
+    - -gencode=arch=compute_80,code=sm_80
+    - -gencode=arch=compute_86,code=sm_86
+    - -gencode=arch=compute_90,code=sm_90

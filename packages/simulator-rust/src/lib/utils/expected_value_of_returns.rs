@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
-use tsify::Tsify;
-use wasm_bindgen::prelude::*;
 
-#[derive(Serialize, Deserialize, Tsify, Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct EmpiricalAnnualNonLogExpectedReturnInfo {
     pub value: f64,

@@ -19,7 +19,7 @@ import {
 import {
   SimulationParams,
   WithSimulation,
-  useSimulationParamsForPlanMode,
+  getSimulationParamsForPlanMode,
 } from '../PlanRootHelpers/WithSimulation'
 import { PlanRootLinkUnsavedWarningAlert } from './PlanRootLinkUnsavedWarningAlert'
 
@@ -82,12 +82,12 @@ export const PlanRootLinkImpl = React.memo(
       rebase?.({ hard: true })
     }, [rebase])
 
-    const simulationParams = useSimulationParamsForPlanMode(
+    const simulationParams = getSimulationParamsForPlanMode(
       planPaths,
       currentTimeInfo,
       workingPlanInfo,
-      'v' in startingParams ? startingParams.v : 1,
       null,
+      'v' in startingParams ? startingParams.v : 1,
       {
         src: 'link',
         isModified,

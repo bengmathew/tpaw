@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import React, { useMemo } from 'react'
-import { NormalizedDatingInfo } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { NormalizedDatingInfo } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
 import { DateTime } from 'luxon'
 import { formatDistance } from 'date-fns'
@@ -15,21 +15,21 @@ export const PlanSummaryDatingDated = React.memo(
     datingInfo: Extract<NormalizedDatingInfo, { isDated: true }>
   }) => {
     const { getZonedTime } = useIANATimezoneName()
-    const { planParamsNorm } = useSimulation()
+    const { planParamsNormInstant } = useSimulationInfo()
 
     const dateStr = useMemo(() => {
       const currentDateTime = getZonedTime(datingInfo.nowAsTimestamp)
-      const lastUpdatedDateTime = getZonedTime(planParamsNorm.timestamp)
+      const lastUpdatedDateTime = getZonedTime(planParamsNormInstant.timestamp)
       return {
         currentTime: currentDateTime.toLocaleString(DateTime.DATETIME_MED),
         lastUpdated: lastUpdatedDateTime.toLocaleString(DateTime.DATETIME_MED),
         timeSinceLastUpdate: formatDistance(
-          planParamsNorm.timestamp,
+          planParamsNormInstant.timestamp,
           datingInfo.nowAsTimestamp,
           { addSuffix: true },
         ),
       }
-    }, [datingInfo, getZonedTime, planParamsNorm.timestamp])
+    }, [datingInfo, getZonedTime, planParamsNormInstant.timestamp])
 
     return (
       <div className={clsx(className)}>

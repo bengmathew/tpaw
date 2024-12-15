@@ -4,7 +4,7 @@ import {
   block,
   noCase,
 } from '@tpaw/common'
-import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { PlanInputType } from './PlanInputType'
 import { isPlanSectionDialogInOverlayMode } from './PlanSectionDialogPosition'
 

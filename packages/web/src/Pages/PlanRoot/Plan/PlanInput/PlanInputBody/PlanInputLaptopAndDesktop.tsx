@@ -13,7 +13,7 @@ import {
   paddingCSSStyleHorz,
 } from '../../../../../Utils/Geometry'
 import { assert, fGet } from '../../../../../Utils/Utils'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputType } from '../Helpers/PlanInputType'
 import { PlanInputSizing } from '../PlanInput'
 import { PlanInputBodyGuide } from './PlanInputBodyGuide/PlanInputBodyGuide'
@@ -24,7 +24,6 @@ const duration = 500
 
 export const PlanInputLaptopAndDesktop = React.memo(
   ({
-    layout,
     sizing,
     children,
     type,
@@ -46,8 +45,8 @@ export const PlanInputLaptopAndDesktop = React.memo(
       | { mainOrInput: 'main'; onDone: (() => void) | null }
       | { mainOrInput: 'input' }
     >({ mainOrInput: 'main', onDone: null })
-    const { planParamsNorm } = useSimulation()
-    const { dialogPosition } = planParamsNorm
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { dialogPosition } = planParamsNormInstant
     const hasInput = children?.input !== undefined
     useLayoutEffect(() => {
       if (hasInput) {

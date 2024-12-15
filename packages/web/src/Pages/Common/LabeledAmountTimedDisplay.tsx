@@ -3,7 +3,7 @@ import React from 'react'
 import { formatCurrency } from '../../Utils/FormatCurrency'
 import { trimAndNullify } from '../../Utils/TrimAndNullify'
 import { MonthRangeDisplay } from './MonthRangeDisplay'
-import { NormalizedLabeledAmountTimed } from '../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
+import { NormalizedLabeledAmountTimed } from '../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 
 export const LabeledAmountTimedDisplay = React.memo(
   ({

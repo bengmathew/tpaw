@@ -1,0 +1,90 @@
+syntax = "proto2";
+
+package wire;
+
+import "wire_common.proto";
+import "wire_plan_params_server.proto";
+
+
+// -----------------------------------------
+// Args
+// -----------------------------------------
+enum WirePortfolioBalanceEstimationArgsNonMarketActionType {
+  WITHDRAWAL_AND_CONTRIBUTION = 1;
+  MONTHLY_REBALANCE = 2;
+  PLAN_CHANGE = 3;
+}
+
+message WirePortfolioBalanceEstimationArgsParamsForNonMarketAction {
+  required string id = 1;
+  required WirePlanParamsServer plan_params = 2;
+  required WirePortfolioBalanceEstimationArgsNonMarketActionType action_type = 3;
+}
+
+message WirePortfolioBalanceEstimationArgs {
+  required double start_balance = 1;
+  repeated WirePortfolioBalanceEstimationArgsParamsForNonMarketAction plan_params_for_non_market_actions_unsorted = 2;
+}
+
+
+// -----------------------------------------
+// Result
+// -----------------------------------------
+message WirePortfolioBalanceEstimationState {
+  required {{float_wire}} estimate = 1;
+  required WireStockAllocation allocation = 2;
+}
+
+message WirePortfolioBalanceEstimationStateChange {
+  required WirePortfolioBalanceEstimationState start = 1;
+  required WirePortfolioBalanceEstimationState end = 2;
+}
+
+message WireVTAndBNDPercentageChange {
+  required {{float_wire}} vt_x10000 = 1;
+  required {{float_wire}} bnd_x10000 = 2;
+}
+
+message WirePortfolioBalanceEstimationActionArgsMarketClose {
+  required WireVTAndBNDPercentageChange percentage_change_from_last_close = 1;
+}
+
+message WirePortfolioBalanceEstimationActionArgsWithdrawalAndContribution {
+  oneof withdrawal_or_contribution {
+    {{float_wire}} contribution = 1;
+    {{float_wire}} withdrawal = 2;
+  }
+}
+
+message WirePortfolioBalanceEstimationActionArgsMonthlyRebalance {
+  required WireStockAllocation allocation = 1;
+}
+
+message WirePortfolioBalanceEstimationActionArgsPlanChangePortfolioUpdate {
+  required {{float_wire}} amount = 1;
+  required int64 exact_timestamp_ms = 2;
+  
+}
+message WirePortfolioBalanceEstimationActionArgsPlanChange {
+  required WireStockAllocation allocation = 1;
+  optional WirePortfolioBalanceEstimationActionArgsPlanChangePortfolioUpdate portfolio_update_opt = 2;
+}
+
+
+message WirePortfolioBalanceEstimationAction {
+  required int64 timestamp_ms = 1;
+   oneof args{
+    WirePortfolioBalanceEstimationActionArgsMarketClose market_close = 2;
+    WirePortfolioBalanceEstimationActionArgsWithdrawalAndContribution withdrawal_and_contribution = 3;
+    WirePortfolioBalanceEstimationActionArgsMonthlyRebalance monthly_rebalance = 4;
+    WirePortfolioBalanceEstimationActionArgsPlanChange plan_change = 5;
+  }
+  required WirePortfolioBalanceEstimationStateChange state_change = 6;
+}
+
+message WirePortfolioBalanceEstimationResult {
+    required int64 start_timestamp_ms = 1;
+    required int64 end_timestamp_ms = 2;
+    required WirePortfolioBalanceEstimationState start_state = 3;
+    repeated WirePortfolioBalanceEstimationAction actions = 4;
+}

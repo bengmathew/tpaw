@@ -9,7 +9,7 @@ import {
   object,
   string,
 } from 'json-guard'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useIANATimezoneName } from './WithNonPlanParams'
 
 type SetFastForwardSpec = (
@@ -17,6 +17,7 @@ type SetFastForwardSpec = (
 ) => void
 
 export type CurrentTimeInfo = {
+  startTime: number
   currentTimestamp: number
   nowAsCalendarDay: CalendarMonth
   forceUpdateCurrentTime: () => number
@@ -35,19 +36,21 @@ export type CurrentTimeInfo = {
 
 export const useCurrentTime = ({
   planId,
-  startTime,
+  startTime: startTimeIn,
 }: {
   planId: string
   startTime?: number
 }): CurrentTimeInfo => {
   const { ianaTimezoneName, getZonedTime } = useIANATimezoneName()
 
+  const startTimeBeforeFastForwardRef = useRef(startTimeIn ?? Date.now())
+
   const [currentTimestampWithoutFastForward, setCurrentTimeWithoutFastForward] =
-    useState(() => startTime ?? Date.now())
+    useState(startTimeBeforeFastForwardRef.current)
   useEffect(() => {
     const interval = window.setInterval(
       () => setCurrentTimeWithoutFastForward(Date.now()),
-      1000 * 15, // Every 15 seconds
+      1000 * 60 * 15, // Every 15 minutes
     )
     return () => window.clearInterval(interval)
   }, [])
@@ -74,6 +77,16 @@ export const useCurrentTime = ({
         setFastForwardSpec,
       }
 
+  const startTime = useMemo(
+    () =>
+      _FastForward.apply(
+        startTimeBeforeFastForwardRef.current,
+        ianaTimezoneName,
+        fastForwardSpec,
+      ),
+    [ianaTimezoneName, fastForwardSpec],
+  )
+
   const currentTimestamp = useMemo(
     () =>
       _FastForward.apply(
@@ -99,6 +112,7 @@ export const useCurrentTime = ({
     [currentTimestamp, getZonedTime],
   )
   return {
+    startTime,
     currentTimestamp,
     nowAsCalendarDay,
     forceUpdateCurrentTime,

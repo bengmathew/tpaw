@@ -1,7 +1,10 @@
 import { faCaretDown, faChevronRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React from 'react'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../../../PlanRootHelpers/WithSimulation'
 import { PlanResultsTransitionState } from '../PlanResults'
 import { usePlanResultsChartType } from '../UsePlanResultsChartType'
 import { planResultsChartLabel } from './PlanResultsChartLabel'
@@ -14,10 +17,13 @@ type Props = {
 export const PlanResultsChartCardMenuButton = React.memo(
   React.forwardRef<HTMLDivElement, Props>(
     ({ className = '', style }: Props, ref) => {
-      const { simulationResult } = useSimulation()
-      const { planParamsNorm } = simulationResult.args
+      const { simulationResult } = useSimulationResultInfo()
+      const { planParamsNormOfResult } = simulationResult
       const type = usePlanResultsChartType()
-      const { label, subLabel } = planResultsChartLabel(planParamsNorm, type)
+      const { label, subLabel } = planResultsChartLabel(
+        planParamsNormOfResult,
+        type,
+      )
 
       return (
         <div

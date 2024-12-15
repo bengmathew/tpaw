@@ -1,0 +1,259 @@
+// Using proto2 because the absence of required fields in proto3 is painful.
+syntax = "proto2";
+
+
+package wire;
+
+import "wire_common.proto";
+
+
+// -------- UTILS --------
+
+message WireInt32Range {
+  required int32 start = 1;
+  required int32 end = 2;
+}
+
+message WireLogDouble { required double log = 1; }
+message WireScaleLogDouble { required WireLogDouble scale = 1; }
+
+message WireStocksAndBondsDouble {
+  required double stocks = 1;
+  required double bonds = 2;
+}
+
+
+message WirePlanParamsServerAmountTimed {
+  required string id = 1;
+  required bool is_nominal = 2;
+  optional WireInt32Range month_range = 3;
+  required WireInt32Range valid_month_range = 4;
+  required int32 every_x_months = 5;
+  required double base_amount = 6;
+  oneof delta_every_recurrence {
+    double percent = 7;
+    double amount = 8;
+  }
+}
+
+message WirePlanParamsServerAmountNotTimed {
+  required bool is_nominal = 1;
+  required double amount = 2;
+}
+
+message WireGlidePathIntermediate {
+  required uint32 month = 1;
+  required double value = 2;
+}
+
+message WireGlidePath {
+  required double now = 1;
+  repeated WireGlidePathIntermediate intermediate = 2;
+  required double end = 3;
+}
+
+// ------- CONSTANTS -------
+message WirePlanParamsServerConstantsDefaultSWRWithdrawalConstants {
+  required double coeff1 = 1;
+  required double coeff2 = 2;
+}
+message WirePlanParamsServerConstants {
+  required int32 risk_tolerance_num_integer_values_starting_from_0 = 1;
+  required double risk_tolerance_start_rra = 2;
+  required double risk_tolerance_end_rra = 3;
+}
+
+// ------- AGES -------
+message WirePlanParamsServerAgesSimulationMonths {
+  required uint32 num_months = 1;
+  required uint32 withdrawal_start_month = 2;
+}
+message WirePlanParamsServerAgesPerson {
+  required uint32 current_age = 1;
+  required uint32 max_age = 2;
+}
+message WirePlanParamsServerAges {
+  required WirePlanParamsServerAgesSimulationMonths simulation_months = 1;
+  required WirePlanParamsServerAgesPerson longer_lived_person = 2;
+}
+
+// ----- WEALTH -----
+message WirePlanParamsServerPortfolioBalanceUpdatedAt {
+  required int64 updated_to = 1;
+  required string updated_at_id = 2;
+  required int64 updated_at_timestamp_ms = 3;
+}
+
+message WirePlanParamsServerWealth {
+  oneof portfolio_balance {
+    int64 updated_here = 1;
+    WirePlanParamsServerPortfolioBalanceUpdatedAt not_updated_here = 2;
+  }
+  repeated WirePlanParamsServerAmountTimed income_during_retirement = 3;
+  repeated WirePlanParamsServerAmountTimed future_savings = 4;
+}
+
+// ------- ADJUSTMENTS TO SPENDING -------
+message WirePlanParamsServerAdjustmentsToSpendingTpawAndSpawLegacy {
+  required double total = 1;
+  repeated WirePlanParamsServerAmountNotTimed external = 2;
+}
+
+message WirePlanParamsServerAdjustmentsToSpendingTpawAndSpaw {
+  optional WireBoxedDouble spending_ceiling = 1;
+  optional WireBoxedDouble spending_floor = 2;
+  required WirePlanParamsServerAdjustmentsToSpendingTpawAndSpawLegacy legacy = 3;
+}
+
+message WirePlanParamsServerAdjustmentsToSpendingExtraSpending {
+  repeated WirePlanParamsServerAmountTimed essential = 1;
+  repeated WirePlanParamsServerAmountTimed discretionary = 2;
+}
+
+message WirePlanParamsServerAdjustmentsToSpending {
+  required WirePlanParamsServerAdjustmentsToSpendingExtraSpending
+      extra_spending = 1;
+  required WirePlanParamsServerAdjustmentsToSpendingTpawAndSpaw tpawAndSpaw = 2;
+}
+
+// ------- RISK -------
+message WirePlanParamsServerRiskTPAWRiskTolerance {
+  required double at20 = 1;
+  required double delta_at_max_age = 2;
+  required double for_legacy_as_delta_from_at20 = 3;
+}
+
+message WirePlanParamsServerRiskTPAW {
+  required WirePlanParamsServerRiskTPAWRiskTolerance risk_tolerance = 1;
+  required double time_preference = 2;
+  required double additional_annual_spending_tilt = 3;
+}
+
+message WirePlanParamsServerRiskSPAW { required double annual_spending_tilt = 1; }
+
+message WirePlanParamsServerRiskSPAWAndSWR {
+  required WireGlidePath stock_allocation = 1;
+}
+
+message WirePlanParamsServerRiskSWR {
+  oneof withdrawal {
+    double percent_per_year = 1;
+    double amount_per_month = 2;
+  }
+}
+
+message WirePlanParamsServerRisk {
+  required WirePlanParamsServerRiskTPAW tpaw = 1;
+  required WirePlanParamsServerRiskSPAW spaw = 2;
+  required WirePlanParamsServerRiskSPAWAndSWR spaw_and_swr = 3;
+  required WirePlanParamsServerRiskSWR swr = 4;
+}
+
+// ------- ADVANCED -------
+
+enum WirePlanParamsServerExpectedReturnsForPlanningCustomStocksBase {
+  RegressionPrediction = 0;
+  ConservativeEstimate = 1;
+  OneOverCape = 2;
+  HistoricalStocks = 3;
+}
+enum WirePlanParamsServerExpectedReturnsForPlanningCustomBondsBase {
+  TwentyYearTipsYield = 0;
+  HistoricalBonds = 1;
+}
+
+message WirePlanParamsServerExpectedReturnsForPlanningCustomStocks {
+  required WirePlanParamsServerExpectedReturnsForPlanningCustomStocksBase base =
+      1;
+  required double delta = 2;
+}
+
+message WirePlanParamsServerExpectedReturnsForPlanningCustomBonds {
+  required WirePlanParamsServerExpectedReturnsForPlanningCustomBondsBase base =
+      1;
+  required double delta = 2;
+}
+
+message WirePlanParamsServerExpectedReturnsForPlanningCustom {
+  required WirePlanParamsServerExpectedReturnsForPlanningCustomStocks stocks = 1;
+  required WirePlanParamsServerExpectedReturnsForPlanningCustomBonds bonds = 2;
+}
+
+message WirePlanParamsServerExpectedReturnsForPlanning {
+  oneof empirical_annual_non_log {
+    NoMessage regression_prediction_20_year_tips_yield = 1;
+    NoMessage conservative_estimate_20_year_tips_yield = 2;
+    NoMessage one_over_cape_20_year_tips_yield = 3;
+    NoMessage historical = 4;
+    double fixed_equity_premium = 5;
+    WirePlanParamsServerExpectedReturnsForPlanningCustom custom = 7;
+    WireStocksAndBondsDouble fixed = 6;
+  }
+}
+
+message WirePlanParamsServerReturnStatsForPlanningStandardDeviation {
+  required WireScaleLogDouble stocks = 1;
+}
+
+message WirePlanParamsServerReturnStatsForPlanning {
+  required WirePlanParamsServerExpectedReturnsForPlanning expected_value = 1;
+  required WirePlanParamsServerReturnStatsForPlanningStandardDeviation
+      standard_deviation = 2;
+}
+
+
+message WirePlanParamsServerHistoricalReturnsAdjustmentStandardDeviation {
+  required WireScaleLogDouble bonds = 1;
+}
+
+message WirePlanParamsServerHistoricalReturnsAdjustment {
+  required WirePlanParamsServerHistoricalReturnsAdjustmentStandardDeviation
+      standard_deviation = 1;
+  oneof override_to_fixed_for_testing {
+    NoMessage none = 2;
+    NoMessage to_expected_returns_for_planning = 3;
+    WireStocksAndBondsDouble manual = 4;
+  }
+}
+
+message WirePlanParamsServerSamplingMonteCarlo {
+  required uint64 seed = 1;
+  required uint32 num_runs = 2;
+  required uint32 block_size = 3;
+  required bool stagger_run_starts = 4;
+}
+
+enum WirePlanParamsServerStrategy {
+  StrategyTpaw = 0;
+  StrategySpaw = 1;
+  StrategySwr = 2;
+}
+
+message WirePlanParamsServerAdvanced {
+  required WirePlanParamsServerReturnStatsForPlanning
+      return_stats_for_planning = 1;
+  required WirePlanParamsServerHistoricalReturnsAdjustment
+      historical_returns_adjustment = 2;
+  oneof annual_inflation {
+    NoMessage suggested = 3;
+    double manual = 4;
+  }
+  oneof sampling {
+    NoMessage historical = 5;
+    WirePlanParamsServerSamplingMonteCarlo monte_carlo = 6;
+  }
+  required WirePlanParamsServerStrategy strategy = 7;
+}
+
+// -------  PLAN PARAMS SERVER -------
+message WirePlanParamsServer {
+  // Note, this is not the time the plan params were created, but the evaluation
+  // timestamp (which is also the timestamp for plan param normalization).
+  required int64 evaluation_timestamp_ms = 1;
+  required WirePlanParamsServerConstants constants = 2;
+  required WirePlanParamsServerAges ages = 3;
+  required WirePlanParamsServerWealth wealth = 4;
+  required WirePlanParamsServerAdjustmentsToSpending adjustments_to_spending = 5;
+  required WirePlanParamsServerRisk risk = 6;
+  required WirePlanParamsServerAdvanced advanced = 7;
+}

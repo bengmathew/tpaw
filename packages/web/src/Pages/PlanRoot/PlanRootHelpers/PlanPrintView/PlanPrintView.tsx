@@ -1,23 +1,26 @@
 import { faLeftLong } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { CalendarMonthFns, assert, block, noCase } from '@tpaw/common'
+import { block, getZonedTimeFns, noCase } from '@tpaw/common'
 import clsx from 'clsx'
+import _ from 'lodash'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useMemo, useState } from 'react'
 import { graphql, useMutation } from 'react-relay'
 import { appPaths } from '../../../../AppPaths'
-import { normalizePlanParams } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { processPlanParams } from '../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
-import { SimulationResult } from '../../../../UseSimulator/Simulator/Simulator'
-import { getSimulatorSingleton } from '../../../../UseSimulator/UseSimulator'
-import { asyncEffect } from '../../../../Utils/AsyncEffect'
+import { normalizePlanParams } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { CallRust } from '../../../../Simulator/PlanParamsProcessed/CallRust'
+import { processPlanParams } from '../../../../Simulator/PlanParamsProcessed/PlanParamsProcessed'
+import { simulateOnServer } from '../../../../Simulator/SimulateOnServer/SimulateOnServer'
+import { SimulationResult } from '../../../../Simulator/Simulator/Simulator'
 import { setCSSPageValue } from '../../../../Utils/SetCSSPageValue'
 import { useSetGlobalError } from '../../../App/GlobalErrorBoundary'
 import { useSystemInfo } from '../../../App/WithSystemInfo'
+import { getMarketDataForTime } from '../../../Common/GetMarketData'
 import { mainPlanColors } from '../../Plan/UsePlanColors'
 import { WithPlanResultsChartDataForPDF } from '../../Plan/WithPlanResultsChartData'
-import { SimulationResultContext } from '../WithSimulation'
+import { useMarketData } from '../WithMarketData'
+import { SimulationResultInfoContext } from '../WithSimulation'
 import { PlanPrintViewAppendixSection } from './PlanPrintViewAppendixSection'
 import {
   PlanPrintViewArgs,
@@ -31,15 +34,14 @@ import { PlanPrintViewResultsSection } from './PlanPrintViewResultsSection/PlanP
 import { PlanPrintViewSettings } from './PlanPrintViewSettings'
 import { PlanPrintViewTasksForThisMonthSection } from './PlanPrintViewTasksForThisMonthSection'
 import { PlanPrintViewGetShortLinkMutation } from './__generated__/PlanPrintViewGetShortLinkMutation.graphql'
-import _ from 'lodash'
-import { useMarketData } from '../WithMarketData'
-import { getMarketDataForTime } from '../../../Common/GetMarketData'
-import { CallRust } from '../../../../UseSimulator/PlanParamsProcessed/CallRust'
+import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
+import { getPortfolioBalanceEstimationCacheHandlerForDatelessPlan } from '../../../../Simulator/UsePortfolioBalanceEstimationCache'
+import { SimulationResult2 } from '../../../../Simulator/UseSimulator'
 
 export type PlanPrintViewProps = {
   fixed: PlanPrintViewArgs['fixed']
   settings: PlanPrintViewArgs['settings']
-  simulationResult: SimulationResult | null
+  simulationResult: SimulationResult2 | null
   updateSettings: (x: PlanPrintViewSettingsControlledClientSide) => void
 }
 
@@ -58,19 +60,7 @@ export const PlanPrintView = React.memo(
     const { pageSize } = settings
     const { setGlobalError } = useSetGlobalError()
     const [simulationResult, setSimulationResult] =
-      useState<SimulationResult | null>(simulationResultIn)
-
-    const { marketData } = useMarketData()
-
-    const currentMarketData = useMemo(() => {
-      const timestampForMarketData = fixed.datingInfo.isDatedPlan
-        ? fixed.datingInfo.nowAsTimestamp
-        : fixed.datingInfo.timestampForMarketData
-      return {
-        ...getMarketDataForTime(timestampForMarketData, marketData),
-        timestampForMarketData,
-      }
-    }, [fixed.datingInfo, marketData])
+      useState<SimulationResult2 | null>(simulationResultIn)
 
     const planParamsForLink = useMemo(() => {
       const clone = _.cloneDeep(fixed.planParams)
@@ -89,42 +79,72 @@ export const PlanPrintView = React.memo(
 
     useEffect(() => {
       if (simulationResult) return
-      return asyncEffect(async (status) => {
+      const abortController = new AbortController()
+      block(async () => {
         const planParamsNorm = normalizePlanParams(
           fixed.planParams,
           fixed.datingInfo.isDatedPlan
             ? {
-                timestamp: fixed.datingInfo.nowAsTimestamp,
-                calendarDay: fixed.datingInfo.nowAsCalendarDay,
+                timestamp: fixed.datingInfo.simulationTimestamp,
+                calendarDay: CalendarDayFns.fromTimestamp(
+                  fixed.datingInfo.simulationTimestamp,
+                  fixed.datingInfo.ianaTimezoneName,
+                ),
               }
             : {
-                // Show not show up in the pdf report.
+                // Should not show up in the pdf report.
                 timestamp: 0,
                 calendarDay: null,
               },
         )
-        const planParamsRust = CallRust.getPlanParamsRust(planParamsNorm)
-        const planParamsProcessed = processPlanParams(
-          planParamsNorm,
-          currentMarketData,
-        )
 
-        setSimulationResult(
-          await getSimulatorSingleton().runSimulations(status, {
-            currentPortfolioBalanceAmount: fixed.currentPortfolioBalanceAmount,
-            planParamsRust,
-            marketData: currentMarketData,
-            planParamsNorm,
-            planParamsProcessed,
-            numOfSimulationForMonteCarloSampling:
-              fixed.numOfSimulationForMonteCarloSampling,
-            randomSeed: fixed.randomSeed,
-          }),
+        const simulateOnServerResult = await simulateOnServer(
+          abortController.signal,
+          fixed.dailyMarketSeriesSrc,
+          getPortfolioBalanceEstimationCacheHandlerForDatelessPlan(
+            fixed.currentPortfolioBalanceAmount,
+          ),
+          [
+            fixed.percentiles.low,
+            fixed.percentiles.mid,
+            fixed.percentiles.high,
+          ],
+          planParamsNorm,
+          fixed.numOfSimulationForMonteCarloSampling,
+          fixed.randomSeed,
         )
+        setSimulationResult({
+          ...simulateOnServerResult,
+          planParamsNormOfResult: planParamsNorm,
+          dailyMarketSeriesSrcOfResult: fixed.dailyMarketSeriesSrc,
+          ianaTimezoneNameIfDatedPlanOfResult: fixed.datingInfo.isDatedPlan
+            ? fixed.datingInfo.ianaTimezoneName
+            : null,
+          percentilesOfResult: fixed.percentiles,
+          numOfSimulationForMonteCarloSamplingOfResult:
+            fixed.numOfSimulationForMonteCarloSampling,
+          randomSeedOfResult: fixed.randomSeed,
+        })
+        // await getSimulatorSingleton().runSimulations(status, {
+        //   currentPortfolioBalanceAmount: fixed.currentPortfolioBalanceAmount,
+        //   planParamsRust,
+        //   marketData: currentMarketData,
+        //   planParamsNorm,
+        //   planParamsProcessed,
+        //   numOfSimulationForMonteCarloSampling:
+        //     fixed.numOfSimulationForMonteCarloSampling,
+        //   randomSeed: fixed.randomSeed,
+        // }),
+        // )
+      }).catch((e) => {
+        if (abortController.signal.aborted) return
+        throw e
       })
+      return () => abortController.abort()
     }, [
       fixed.datingInfo,
-      currentMarketData,
+      fixed.dailyMarketSeriesSrc,
+      fixed.percentiles,
       fixed.numOfSimulationForMonteCarloSampling,
       fixed.planParams,
       fixed.randomSeed,
@@ -200,6 +220,9 @@ export const PlanPrintView = React.memo(
     }, [hasSimulationResult])
 
     const { windowSize } = useSystemInfo()
+    const simulationIsRunningInfo = useMemo(() => {
+      return { isRunning: false as const }
+    }, [])
 
     if (!simulationResult) return <></>
 
@@ -214,7 +237,12 @@ export const PlanPrintView = React.memo(
 
     return (
       <>
-        <SimulationResultContext.Provider value={simulationResult}>
+        <SimulationResultInfoContext.Provider
+          value={{
+            simulationResult,
+            simulationIsRunningInfo,
+          }}
+        >
           <WithPlanResultsChartDataForPDF
             planColors={planColors}
             layout="desktop"
@@ -303,7 +331,7 @@ export const PlanPrintView = React.memo(
                       <PlanPrintViewTasksForThisMonthSection
                         settings={settings}
                       />
-                      {simulationResult.args.planParamsNorm.advanced
+                      {simulationResult.planParamsNormOfResult.advanced
                         .strategy === 'TPAW' && (
                         <PlanPrintViewBalanceSheetSection settings={settings} />
                       )}
@@ -314,7 +342,7 @@ export const PlanPrintView = React.memo(
               </div>
             </div>
           </WithPlanResultsChartDataForPDF>
-        </SimulationResultContext.Provider>
+        </SimulationResultInfoContext.Provider>
       </>
     )
   },

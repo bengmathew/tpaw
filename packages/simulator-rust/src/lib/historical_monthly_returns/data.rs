@@ -4,15 +4,14 @@ pub mod v2;
 pub mod v3;
 pub mod v4;
 
+use crate::utils::random::generate_random_index_sequences;
 use crate::shared_types::{Log, StocksAndBonds};
+use crate::wire::{WireCapeBasedRegressionResults, WireFiveTenTwentyThirtyYearsF64};
 use crate::{
-    random::generate_random_index_sequences,
     return_series::{periodize_log_returns, Mean, Stats},
     shared_types::SlopeAndIntercept,
 };
 use serde::{Deserialize, Serialize};
-use tsify::Tsify;
-use wasm_bindgen::prelude::*;
 
 pub struct RawMonthlyNonLogSeriesEntry {
     pub stocks: f32,
@@ -41,6 +40,7 @@ pub fn process_raw_monthly_non_log_series(
     }
 }
 
+// TODO: After duration matching, check all the serialization and deserialization.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct RawCAPESeriesEntry {
@@ -57,13 +57,24 @@ pub struct FiveTenTwentyThirtyYearsSlopeAndIntercept {
     pub thirty_year: SlopeAndIntercept,
 }
 
-#[derive(Serialize, Deserialize, Tsify, Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FiveTenTwentyThirtyYearsF64 {
     pub five_year: f64,
     pub ten_year: f64,
     pub twenty_year: f64,
     pub thirty_year: f64,
+}
+
+impl From<FiveTenTwentyThirtyYearsF64> for WireFiveTenTwentyThirtyYearsF64 {
+    fn from(value: FiveTenTwentyThirtyYearsF64) -> Self {
+        Self {
+            five_year: value.five_year,
+            ten_year: value.ten_year,
+            twenty_year: value.twenty_year,
+            thirty_year: value.thirty_year,
+        }
+    }
 }
 
 impl FiveTenTwentyThirtyYearsF64 {
@@ -78,11 +89,20 @@ impl FiveTenTwentyThirtyYearsF64 {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, Tsify)]
+#[derive(Serialize, Deserialize, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CAPEBasedRegressionResults {
     pub full: FiveTenTwentyThirtyYearsF64,
     pub restricted: FiveTenTwentyThirtyYearsF64,
+}
+
+impl From<CAPEBasedRegressionResults> for WireCapeBasedRegressionResults {
+    fn from(value: CAPEBasedRegressionResults) -> Self {
+        Self {
+            full: value.full.into(),
+            restricted: value.restricted.into(),
+        }
+    }
 }
 
 impl CAPEBasedRegressionResults {
@@ -182,6 +202,8 @@ pub fn get_empirical_stats_for_block_size(
 ) -> EmpiricalStats32 {
     let mut sampled_annual_log_returns = {
         let sampled_monthly_log_returns: Vec<f64> = {
+            // TODO: After duration matching, remove this and use random indexes
+            // from cuda.
             let indexes = generate_random_index_sequences(
                 seed,
                 0,

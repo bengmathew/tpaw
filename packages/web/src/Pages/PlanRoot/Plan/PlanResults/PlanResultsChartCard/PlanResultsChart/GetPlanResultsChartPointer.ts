@@ -206,10 +206,10 @@ const _getHeaderSection = (
 ) => {
   const { text, style, getLabel, oneRowGrid, fixedWidth, grid, group, gap } =
     components
-  const { planParamsNorm } = data
-  const { ages } = planParamsNorm
-  const calendarMonth = planParamsNorm.datingInfo.nowAsCalendarDay
-    ? CalendarMonthFns.getFromMFN(planParamsNorm.datingInfo.nowAsCalendarDay)(
+  const { planParamsNormOfResult } = data
+  const { ages } = planParamsNormOfResult
+  const calendarMonth = planParamsNormOfResult.datingInfo.nowAsCalendarDay
+    ? CalendarMonthFns.getFromMFN(planParamsNormOfResult.datingInfo.nowAsCalendarDay)(
         dataX,
       )
     : null
@@ -689,9 +689,9 @@ const _getRangeExplanation = (chartType: PlanResultsChartType) => {
   }
   switch (chartType) {
     case 'spending-total':
-    case 'spending-total-funding-sources-5':
-    case 'spending-total-funding-sources-50':
-    case 'spending-total-funding-sources-95':
+    case 'spending-total-funding-sources-low':
+    case 'spending-total-funding-sources-mid':
+    case 'spending-total-funding-sources-high':
     case 'portfolio':
     case 'spending-general':
       return proportional

@@ -3,7 +3,7 @@ pub fn nominal_to_real(
     value: f64,
     is_nominal: bool,
     monthly_inflation: f64,
-    months_from_now: i64,
+    months_from_now: u32,
 ) -> f64 {
     if is_nominal {
         value / (1.0 + monthly_inflation).powi(months_from_now as i32)
@@ -25,7 +25,7 @@ mod test {
         #[case] value: f64,
         #[case] is_nominal: bool,
         #[case] monthly_inflation: f64,
-        #[case] months_from_now: i64,
+        #[case] months_from_now: u32,
         #[case] expected: f64,
     ) {
         let diff =

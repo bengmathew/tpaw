@@ -1,14 +1,10 @@
 import { PlanParams, noCase } from '@tpaw/common'
 import _ from 'lodash'
-import {
-  PERCENTILES_STR,
-  Percentile,
-} from '../../../../UseSimulator/Simulator/Simulator'
 import { optGet } from '../../../../Utils/optGet'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 
 type SpendingTotalFundingSources =
-  `spending-total-funding-sources-${Percentile}`
+  `spending-total-funding-sources-${'low' | 'mid' | 'high'}`
 
 // Embedding id into type instead of expanding to {type:..., index:number}
 // because it helps when adding to useEffect dep list.
@@ -53,12 +49,16 @@ export const isPlanResultsChartSpendingTotalFundingSourcesType = (
   x: PlanResultsChartType,
 ): x is SpendingTotalFundingSources =>
   x.startsWith('spending-total-funding-sources-') &&
-  (PERCENTILES_STR as readonly string[]).includes(
+  ['low', 'mid', 'high'].includes(
     x.substring('spending-total-funding-sources-'.length),
   )
 export const getPlanResultsChartSpendingTotalFundingSourcesPercentile = (
   x: SpendingTotalFundingSources,
-) => x.substring('spending-total-funding-sources-'.length) as Percentile
+) =>
+  x.substring('spending-total-funding-sources-'.length) as
+    | 'low'
+    | 'mid'
+    | 'high'
 
 export const isPlanResultsChartSpendingEssentialType = (
   x: PlanResultsChartType,
@@ -88,29 +88,31 @@ const _checkType = (x: string): x is PlanResultsChartType =>
   x === 'asset-allocation-total-portfolio' ||
   x === 'withdrawal'
 
-export const isPlanResultsChartType = (
-  planParamsNorm: PlanParamsNormalized,
+export const getPlanResultsChartTypeFromStr = (
+  // Everything in the result panel is based on planParamsNormOfResult, not
+  // planParamsNormInstant
+  planParamsNormOfResult: PlanParamsNormalized,
   type: string,
-): type is PlanResultsChartType => {
-  const { essential, discretionary } =
-    planParamsNorm.adjustmentsToSpending.extraSpending
-  if (!_checkType(type)) return false
+): PlanResultsChartType | null => {
+  if (!_checkType(type)) return null
   if (isPlanResultsChartSpendingType(type)) {
     if (
       type === 'spending-total' ||
       isPlanResultsChartSpendingTotalFundingSourcesType(type)
     )
-      return true
+      return type
+    const { essential, discretionary } =
+      planParamsNormOfResult.adjustmentsToSpending.extraSpending
     if (type === 'spending-general') {
-      return essential.length + discretionary.length > 0
+      return essential.length + discretionary.length > 0 ? type : null
     }
     if (isPlanResultsChartSpendingEssentialType(type)) {
       const id = planResultsChartSpendingEssentialTypeID(type)
-      return essential.find((x) => x.id === id) !== undefined
+      return essential.find((x) => x.id === id) !== undefined ? type : null
     }
     if (isPlanResultsChartSpendingDiscretionaryType(type)) {
       const id = planResultsChartSpendingDiscretionaryTypeID(type)
-      return discretionary.find((x) => x.id === id) !== undefined
+      return discretionary.find((x) => x.id === id) !== undefined ? type : null
     }
     noCase(type)
   }
@@ -119,7 +121,7 @@ export const isPlanResultsChartType = (
     case 'asset-allocation-savings-portfolio':
     case 'asset-allocation-total-portfolio':
     case 'withdrawal':
-      return true
+      return type
     default:
       noCase(type)
   }

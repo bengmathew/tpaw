@@ -3,10 +3,10 @@ import { useMemo } from 'react'
 import { indigo } from '../../../Utils/ColorPalette'
 import { RGB, makeShades } from '../../../Utils/ColorUtils'
 import { Record } from '../../../Utils/Record'
-import { useSimulation } from '../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../PlanRootHelpers/WithSimulation'
 
 export const usePlanColors = () => {
-  const { simulationInfoByMode } = useSimulation()
+  const { simulationInfoByMode } = useSimulationInfo()
 
   return useMemo(
     () => _planColors[`mainPlan`](simulationInfoByMode.mode),

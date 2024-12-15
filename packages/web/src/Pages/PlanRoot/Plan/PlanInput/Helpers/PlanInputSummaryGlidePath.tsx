@@ -3,7 +3,7 @@ import React from 'react'
 import {
   NormalizedGlidePath,
   NormalizedGlidePathEntry,
-} from '../../../../../UseSimulator/NormalizePlanParams/NormalizeGlidePath'
+} from '../../../../../Simulator/NormalizePlanParams/NormalizeGlidePath'
 import { getNormalizedMonthStr } from '../../../../Common/MonthOrDurationDisplay'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTurnDownLeft } from '@fortawesome/pro-solid-svg-icons'

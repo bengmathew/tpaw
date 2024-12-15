@@ -1,6 +1,6 @@
 import { PlanParams, partialDefaultDatelessPlanParams } from '@tpaw/common'
 import _ from 'lodash'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../PlanRootHelpers/WithSimulation'
 
 export const inflationTypeLabel = ({
   type,
@@ -16,9 +16,9 @@ export const inflationTypeLabel = ({
 }
 
 export const useIsPlanInputInflationModified = () => {
-  const { planParamsNorm } = useSimulation()
+  const { planParamsNormInstant } = useSimulationInfo()
   return !_.isEqual(
     partialDefaultDatelessPlanParams.advanced.annualInflation,
-    planParamsNorm.advanced.annualInflation,
+    planParamsNormInstant.advanced.annualInflation,
   )
 }

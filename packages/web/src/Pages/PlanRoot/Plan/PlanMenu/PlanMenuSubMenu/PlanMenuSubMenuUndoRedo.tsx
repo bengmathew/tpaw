@@ -14,7 +14,7 @@ import {
 } from '../../../PlanRootHelpers/UseWorkingPlan'
 import {
   SimulationInfoForPlanMode,
-  useSimulation,
+  useSimulationInfo,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
 
@@ -305,8 +305,8 @@ const _Item = React.memo(
     onMouseMove: () => void
     className?: string
   }) => {
-    const { planParamsNorm } = useSimulation()
-    const { datingInfo } = planParamsNorm
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { datingInfo } = planParamsNormInstant
     const currentTimestamp = datingInfo.isDated
       ? datingInfo.nowAsTimestamp
       : datingInfo.nowAsTimestampNominal

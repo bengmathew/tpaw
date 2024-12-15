@@ -33,7 +33,7 @@ export const Header = React.memo(
       curr === 'plan' ? new URL(window.location.href) : appPaths.plan()
     return (
       <>
-        {/* This is a portal so that it will show over the PDF report even though it is technicall in a hidden element. */}
+        {/* This is a portal so that it will show over the PDF report even though it is technically in a hidden element. */}
         {isPortal ? (
           ReactDOM.createPortal(
             <_Body

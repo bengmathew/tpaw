@@ -15,13 +15,20 @@ import { useMarketData } from '../../../PlanRootHelpers/WithMarketData'
 import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
 import {
   SimulationInfo,
-  useSimulation,
+  useDailyMarketSeriesSrc,
+  useSimulationInfo,
+  useSimulationResultInfo,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputModifiedBadge } from '../Helpers/PlanInputModifiedBadge'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from '../PlanInputBody/PlanInputBody'
+import { RadioGroup } from '@headlessui/react'
+import {
+  useIsPlanInputDevTimeFastForwardCardModified,
+  useIsPlanInputDevTimeSynthesizeMarketDataCardModified,
+} from './PlanInputDevTimeFns'
 
 export const PlanInputDevFastForward = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -44,21 +51,21 @@ const _FastForwardCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, fastForwardInfo } = useSimulation()
-    const { datingInfo } = planParamsNorm
+    const { planParamsNormInstant, fastForwardInfo } = useSimulationInfo()
+    const { datingInfo } = planParamsNormInstant
     const currentTimestamp = datingInfo.isDated
       ? datingInfo.nowAsTimestamp
       : datingInfo.nowAsTimestampNominal
     const { getZonedTime } = useIANATimezoneName()
     const currentTime: DateTime = getZonedTime(currentTimestamp)
-    const { portfolioBalance } = planParamsNorm.wealth
+    const { portfolioBalance } = planParamsNormInstant.wealth
     const portfolioBalanceUpdatedAt = portfolioBalance.isDatedPlan
       ? portfolioBalance.updatedHere
-        ? planParamsNorm.timestamp
+        ? planParamsNormInstant.timestamp
         : portfolioBalance.updatedAtTimestamp
       : null
 
-    const isModified = useIsFastForwardCardModified()
+    const isModified = useIsPlanInputDevTimeFastForwardCardModified()
 
     const formatDistanceFromNow = (x: DateTime | number) => {
       const diff = getZonedTime(currentTimestamp).diff(
@@ -90,10 +97,10 @@ const _FastForwardCard = React.memo(
           <h2 className="text-right">Params</h2>
           <div className="">
             <h2 className="font-mono text-sm">
-              {_formatDateTime(getZonedTime(planParamsNorm.timestamp))}
+              {_formatDateTime(getZonedTime(planParamsNormInstant.timestamp))}
             </h2>
             <h2 className="text-sm font-font1 lighten">
-              {formatDistanceFromNow(planParamsNorm.timestamp)} ago
+              {formatDistanceFromNow(planParamsNormInstant.timestamp)} ago
             </h2>
           </div>
           <h2 className="text-right">Portfolio</h2>
@@ -210,14 +217,10 @@ const _SynthesizeMarketDataCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const isModified = useIsSynthesizeMarketDataCardModified()
-    const { planParamsNorm, simulationResult } = useSimulation()
-    const {args} = simulationResult
-    const {
-      synthesizeMarketDataSpec,
-      setSynthesizeMarketDataSpec,
-      applySynthesizeMarketDataSpec,
-    } = useMarketData()
+    const isModified = useIsPlanInputDevTimeSynthesizeMarketDataCardModified()
+    const { planParamsProcessed } = useSimulationResultInfo().simulationResult
+    const { dailyMarketSeriesSrc, setDailyMarketSeriesSrc } =
+      useDailyMarketSeriesSrc()
 
     return (
       <div
@@ -226,223 +229,87 @@ const _SynthesizeMarketDataCard = React.memo(
       >
         <PlanInputModifiedBadge show={isModified} mainPage={false} />
 
-        <div className="flex items-center gap-x-4 mb-2">
-          <h2 className="font-bold text-lg ">Synthesize Market Data</h2>
-
-          <SwitchAsToggle
-            className=""
-            checked={synthesizeMarketDataSpec !== null}
-            setChecked={(enabled) => {
-              setSynthesizeMarketDataSpec(
-                enabled
-                  ? {
-                      v: 1,
-                      yearsBeforeNow: 0,
-                      yearsAfterNow: 0,
-                      strategy: {
-                        dailyStockMarketPerformance: {
-                          type: 'roundRobinOfRealData',
-                        },
-                      },
-                    }
-                  : null,
-              )
-            }}
-          />
-        </div>
-        {synthesizeMarketDataSpec && (
-          <div className="mt-4">
-            <div
-              className="grid gap-x-4 gap-y-2 mt-6"
-              style={{ grid: 'auto/auto 1fr' }}
-            >
-              <h2 className="text-right">Years Before Now</h2>
-              <NumberInput
-                className=""
-                value={synthesizeMarketDataSpec.yearsBeforeNow}
-                setValue={(value: number) => {
-                  assert(synthesizeMarketDataSpec)
-                  const clone = writableCloneDeep(synthesizeMarketDataSpec)
-                  const clamped = Math.max(0, value)
-                  if (clamped === clone.yearsBeforeNow) return true
-                  clone.yearsBeforeNow = clamped
-                  setSynthesizeMarketDataSpec(clone)
-                  return false
-                }}
-                modalLabel="Years Before Now"
-              />
-              <h2 className="text-right">Years After Now</h2>
-              <NumberInput
-                className=""
-                value={synthesizeMarketDataSpec.yearsAfterNow}
-                setValue={(value: number) => {
-                  assert(synthesizeMarketDataSpec)
-                  const clone = writableCloneDeep(synthesizeMarketDataSpec)
-                  const clamped = Math.max(0, value)
-                  if (clamped === clone.yearsAfterNow) return true
-                  clone.yearsAfterNow = clamped
-                  setSynthesizeMarketDataSpec(clone)
-                  return false
-                }}
-                modalLabel="Years After Now"
-              />
-            </div>
-            <h2 className="font-semibold mt-6">
-              CAPE, Bond Rates, and Inflation:{' '}
-            </h2>
-            <div className="flex items-start gap-x-2 cursor-pointer mt-2">
-              <FontAwesomeIcon
-                className="text-sm mt-1.5"
-                icon={faCircleSelected}
-              />
-              <h2 className="">
-                Round robin of last 30 days before fast forward.
-              </h2>
-            </div>
-            <h2 className="font-semibold mt-6 mb-2">
-              Daily VT and BND Performance{' '}
-            </h2>
-
-            <div
-              className=""
-              onClick={() => {
-                assert(synthesizeMarketDataSpec)
-                setSynthesizeMarketDataSpec({
-                  ...synthesizeMarketDataSpec,
-                  strategy: {
-                    dailyStockMarketPerformance: {
-                      type: 'constant',
-                      annualBND:
-                        args.planParamsProcessed.returnsStatsForPlanning.stocks
-                          .empiricalAnnualNonLogExpectedReturnInfo.value,
-                      annualVT:
-                        args.planParamsProcessed.returnsStatsForPlanning.bonds
-                          .empiricalAnnualNonLogExpectedReturnInfo.value,
-                    },
-                  },
-                })
-              }}
-            >
-              <div className="flex items-start gap-x-2 cursor-pointer">
-                <FontAwesomeIcon
-                  className="text-sm mt-1.5"
-                  icon={
-                    synthesizeMarketDataSpec.strategy
-                      .dailyStockMarketPerformance.type === 'constant'
-                      ? faCircleSelected
-                      : faCircleRegular
-                  }
-                />
-                <div className="">
-                  <h2 className="">
-                    Constant (copy from expected annual return)
-                  </h2>
-                  {synthesizeMarketDataSpec.strategy.dailyStockMarketPerformance
-                    .type === 'constant' &&
-                    block(() => {
-                      const strategy = fGet(synthesizeMarketDataSpec).strategy
-                        .dailyStockMarketPerformance
-                      assert(strategy.type === 'constant')
-
-                      return (
-                        <>
-                          <div
-                            className="grid gap-x-4 gap-y-2 mt-2"
-                            style={{ grid: 'auto/auto 1fr' }}
-                          >
-                            <h2 className="text-right">VT Annual Return:</h2>
-                            <h2 className="">
-                              {formatPercentage(1)(strategy.annualVT)}
-                            </h2>
-                            <h2 className="text-right">BND Annual Return:</h2>
-                            <h2 className="">
-                              {formatPercentage(1)(strategy.annualBND)}
-                            </h2>
-                          </div>
-                          <div className="mt-2">
-                            {planParamsNorm.advanced.returnsStatsForPlanning
-                              .expectedValue.empiricalAnnualNonLog.type ===
-                            'fixed' ? (
-                              <h2 className="">
-                                NOTE: Expected return is fixed.
-                              </h2>
-                            ) : (
-                              <h2 className="text-errorFG">
-                                NOTE: Expected return is NOT fixed.
-                              </h2>
-                            )}
-                          </div>
-                        </>
-                      )
-                    })}
-                </div>
-              </div>
-            </div>
-            <button
-              className="block mt-1.5"
-              onClick={() => {
-                assert(synthesizeMarketDataSpec)
-                setSynthesizeMarketDataSpec({
-                  ...synthesizeMarketDataSpec,
-                  strategy: {
-                    dailyStockMarketPerformance: {
-                      type: 'roundRobinOfRealData',
-                    },
-                  },
-                })
-              }}
-            >
-              <div className="flex items-start gap-x-2 cursor-pointer">
-                <FontAwesomeIcon
-                  className="text-sm mt-1.5"
-                  icon={
-                    synthesizeMarketDataSpec.strategy
-                      .dailyStockMarketPerformance.type ===
-                    'roundRobinOfRealData'
-                      ? faCircleSelected
-                      : faCircleRegular
-                  }
-                />
-                <h2 className="">Round robin of real data.</h2>
-              </div>
-            </button>
-            <button
-              className="block mt-1.5"
-              onClick={() => {
-                assert(synthesizeMarketDataSpec)
-                setSynthesizeMarketDataSpec({
-                  ...synthesizeMarketDataSpec,
-                  strategy: {
-                    dailyStockMarketPerformance: {
-                      type: 'repeatGrowShrinkZero',
-                    },
-                  },
-                })
-              }}
-            >
-              <div className="flex items-start gap-x-2 cursor-pointer">
-                <FontAwesomeIcon
-                  className="text-sm mt-1.5"
-                  icon={
-                    synthesizeMarketDataSpec.strategy
-                      .dailyStockMarketPerformance.type ===
-                    'repeatGrowShrinkZero'
-                      ? faCircleSelected
-                      : faCircleRegular
-                  }
-                />
-                <h2 className="">Cycle through grow (5%), shrink, flat.</h2>
-              </div>
-            </button>
-          </div>
-        )}
-        <div className="flex justify-end mt-4">
+        <h2 className="font-bold text-lg ">Daily Market Series Source</h2>
+        <div className="mt-2">
           <button
-            className="btn-sm btn-dark disabled:lighten-2"
-            disabled={!applySynthesizeMarketDataSpec}
-            onClick={() => fGet(applySynthesizeMarketDataSpec)()}
+            className="flex items-center gap-x-2 py-2"
+            onClick={() => setDailyMarketSeriesSrc({ type: 'live' })}
           >
-            Apply
+            <FontAwesomeIcon
+              icon={
+                dailyMarketSeriesSrc.type === 'live'
+                  ? faCircleSelected
+                  : faCircleRegular
+              }
+            />
+            Live
+          </button>
+          <button
+            className="flex items-start  gap-x-2 py-2"
+            onClick={() => {
+              setDailyMarketSeriesSrc({
+                type: 'syntheticConstant',
+                annualPercentageChangeVT:
+                  planParamsProcessed.returnsStatsForPlanning.stocks
+                    .empiricalAnnualNonLogExpectedReturn,
+                annualPercentageChangeBND:
+                  planParamsProcessed.returnsStatsForPlanning.bonds
+                    .empiricalAnnualNonLogExpectedReturn,
+              })
+            }}
+          >
+            <FontAwesomeIcon
+              className="mt-1"
+              icon={
+                dailyMarketSeriesSrc.type === 'syntheticConstant'
+                  ? faCircleSelected
+                  : faCircleRegular
+              }
+            />
+
+            <div className="text-start">
+              <div className="">Synthetic Constant</div>
+
+              {dailyMarketSeriesSrc.type === 'syntheticConstant' && (
+                <>
+                  <div className="">
+                    VT:{' '}
+                    {formatPercentage(1)(
+                      dailyMarketSeriesSrc.annualPercentageChangeVT,
+                    )}
+                  </div>
+                  <div className="">
+                    BND:{' '}
+                    {formatPercentage(1)(
+                      dailyMarketSeriesSrc.annualPercentageChangeBND,
+                    )}
+                  </div>
+                  <div className="text-sm lighten">
+                    VT and BND are copied from expected annual return.
+                  </div>
+                  <div className="text-sm lighten">
+                    The other market data series like Inflation, SP500, and Bond
+                    Rates are fixed to some constant. Check the code for the
+                    constants
+                  </div>
+                </>
+              )}
+            </div>
+          </button>
+          <button
+            className="flex items-center gap-x-2 py-2"
+            onClick={() =>
+              setDailyMarketSeriesSrc({ type: 'syntheticLiveRepeated' })
+            }
+          >
+            <FontAwesomeIcon
+              icon={
+                dailyMarketSeriesSrc.type === 'syntheticLiveRepeated'
+                  ? faCircleSelected
+                  : faCircleRegular
+              }
+            />
+            Synthetic Live Repeated
           </button>
         </div>
       </div>
@@ -450,27 +317,11 @@ const _SynthesizeMarketDataCard = React.memo(
   },
 )
 
-export const useIsPlanInputDevTimeModified = () => {
-  const m1 = useIsFastForwardCardModified()
-  const m2 = useIsSynthesizeMarketDataCardModified()
-  return m1 || m2
-}
-
-const useIsFastForwardCardModified = () => {
-  const { fastForwardInfo } = useSimulation()
-  return fastForwardInfo.isFastForwarding
-}
-
-const useIsSynthesizeMarketDataCardModified = () => {
-  const { synthesizeMarketDataSpec } = useMarketData()
-  return synthesizeMarketDataSpec !== null
-}
-
 export const PlanInputDevTimeSummary = React.memo(() => {
-  const { synthesizeMarketDataSpec } = useMarketData()
+  const { dailyMarketSeriesSrc } = useDailyMarketSeriesSrc()
   const { getZonedTime } = useIANATimezoneName()
-  const { fastForwardInfo, planParamsNorm } = useSimulation()
-  const { datingInfo } = planParamsNorm
+  const { fastForwardInfo, planParamsNormInstant } = useSimulationInfo()
+  const { datingInfo } = planParamsNormInstant
   const currentTimestamp = datingInfo.isDated
     ? datingInfo.nowAsTimestamp
     : datingInfo.nowAsTimestampNominal
@@ -491,55 +342,21 @@ export const PlanInputDevTimeSummary = React.memo(() => {
       ) : (
         <h2 className="ml-4">None</h2>
       )}
-      <h2>Synthesize Market Data:</h2>
-      {synthesizeMarketDataSpec ? (
-        <div className="ml-4">
-          <h2 className="">
-            Years Before Now: {synthesizeMarketDataSpec.yearsBeforeNow}
+      <h2>Market Data Series Source:</h2>
+      {dailyMarketSeriesSrc.type === 'live' ? (
+        <h2 className="ml-4">Live</h2>
+      ) : dailyMarketSeriesSrc.type === 'syntheticConstant' ? (
+        <>
+          <h2 className="ml-4">
+            {`Synthetic Constant (VT: ${formatPercentage(1)(
+              dailyMarketSeriesSrc.annualPercentageChangeVT,
+            )} BND: ${formatPercentage(1)(
+              dailyMarketSeriesSrc.annualPercentageChangeBND,
+            )})`}
           </h2>
-          <h2 className="">
-            Years After Now: {synthesizeMarketDataSpec.yearsAfterNow}
-          </h2>
-          <h2 className="">
-            {' '}
-            Strategy For Daily Stock Market Performance:{' '}
-            {block(() => {
-              const { dailyStockMarketPerformance } =
-                synthesizeMarketDataSpec.strategy
-              return (
-                <div className="ml-4">
-                  <h2 className="">{dailyStockMarketPerformance.type}</h2>
-                  {dailyStockMarketPerformance.type === 'constant' ? (
-                    <>
-                      <h2 className="">
-                        Annual VT:
-                        {formatPercentage(1)(
-                          dailyStockMarketPerformance.annualVT,
-                        )}
-                      </h2>
-                      <h2 className="">
-                        Annual BND:
-                        {formatPercentage(1)(
-                          dailyStockMarketPerformance.annualBND,
-                        )}
-                      </h2>
-                    </>
-                  ) : dailyStockMarketPerformance.type ===
-                    'repeatGrowShrinkZero' ? (
-                    <></>
-                  ) : dailyStockMarketPerformance.type ===
-                    'roundRobinOfRealData' ? (
-                    <></>
-                  ) : (
-                    noCase(dailyStockMarketPerformance)
-                  )}
-                </div>
-              )
-            })}
-          </h2>
-        </div>
+        </>
       ) : (
-        <h2 className="ml-4">None</h2>
+        <h2 className="ml-4">Synthetic Live Repeated</h2>
       )}
     </>
   )

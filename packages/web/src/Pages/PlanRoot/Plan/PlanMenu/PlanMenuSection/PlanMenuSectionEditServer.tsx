@@ -4,7 +4,8 @@ import { Menu } from '@headlessui/react'
 import { useState } from 'react'
 import {
   SimulationInfoForServerSrc,
-  useSimulation,
+  useSimulationInfo,
+  useSimulationResultInfo,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionModalResetServer } from '../PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalResetServer'
 import { PlanMenuActionModalConvertDatingServer } from '../PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalConvertDatingServer'
@@ -23,8 +24,8 @@ export const usePlanMenuSectionEditServer = ({
 }: {
   simulationInfoForServerSrc: SimulationInfoForServerSrc
 }) => {
-  const { planPaths } = useSimulation()
-
+  const { planPaths } = useSimulationInfo()
+  const { simulationResult } = useSimulationResultInfo()
   const [showEditLabelModal, setShowEditLabelModal] = useState(false)
   const [showConvertDatingModal, setShowConvertDatingModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)

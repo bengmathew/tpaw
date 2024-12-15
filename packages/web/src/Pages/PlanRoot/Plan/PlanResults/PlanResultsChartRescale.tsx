@@ -3,10 +3,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { useCallback, useEffect } from 'react'
 import { SimpleRange } from '../../../../Utils/SimpleRange'
 import { useNonPlanParams } from '../../PlanRootHelpers/WithNonPlanParams'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../../PlanRootHelpers/WithSimulation'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import { useChartData } from '../WithPlanResultsChartData'
 import { PlanResultsChartType } from './PlanResultsChartType'
+import { fGet } from '@tpaw/common'
 
 export const PlanResultsChartRescale = React.memo(
   ({
@@ -20,8 +24,9 @@ export const PlanResultsChartRescale = React.memo(
     mainYRange: SimpleRange
     setMainYRange: (x: SimpleRange) => void
   }) => {
-    const { planParamsNorm } = useSimulation()
-    const { dialogPosition } = planParamsNorm
+    const { planParamsNormOfResult } =
+      useSimulationResultInfo().simulationResult
+
     const { nonPlanParams } = useNonPlanParams()
     const chartData = useChartData(chartType)
     const targetYRange = nonPlanParams.dev.overridePlanResultChartYRange
@@ -42,10 +47,11 @@ export const PlanResultsChartRescale = React.memo(
 
     // This is so chart will be scaled when results are first shown.
     useEffect(() => {
-      if (dialogPosition.effective === 'show-results') handleRescale()
+      if (planParamsNormOfResult.dialogPosition.effective === 'show-results')
+        handleRescale()
       // Additional section dep and ignore handleRescale.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [section, dialogPosition.effective])
+    }, [section, planParamsNormOfResult.dialogPosition.effective])
 
     return (
       <button

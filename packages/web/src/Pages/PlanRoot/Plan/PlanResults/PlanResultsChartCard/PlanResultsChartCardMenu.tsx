@@ -1,7 +1,7 @@
 import { faCaretRight, faChevronRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
-import { noCase } from '@tpaw/common'
+import { fGet, noCase } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import Link from 'next/link'
@@ -15,7 +15,10 @@ import {
 import { ContextModal } from '../../../../Common/Modal/ContextModal'
 import { Config } from '../../../../Config'
 import { useNonPlanParams } from '../../../PlanRootHelpers/WithNonPlanParams'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
 import { useChartData } from '../../WithPlanResultsChartData'
 import { PlanResultsTransitionState } from '../PlanResults'
@@ -28,7 +31,7 @@ import {
   getPlanResultsChartLabelInfoForSpending,
   planResultsChartLabel,
 } from './PlanResultsChartLabel'
-import { NormalizedLabeledAmountTimed } from '../../../../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
+import { NormalizedLabeledAmountTimed } from '../../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
 
 const maxWidth = 700
 export type PlanChartMainCardMenuStateful = {
@@ -45,8 +48,8 @@ export const PlanResultsChartCardMenu = React.memo(
     transition: { target: PlanResultsTransitionState; duration: number }
   }) => {
     const { windowWidthName } = useSystemInfo()
-    const { simulationResult } = useSimulation()
-    const { planParamsNorm } = simulationResult.args
+    const { simulationResult } = useSimulationResultInfo()
+    const { planParamsNormOfResult } = simulationResult
     const planColors = usePlanColors()
     const { nonPlanParams } = useNonPlanParams()
 
@@ -70,17 +73,18 @@ export const PlanResultsChartCardMenu = React.memo(
     }
 
     const essentialArray =
-      planParamsNorm.adjustmentsToSpending.extraSpending.essential
+      planParamsNormOfResult.adjustmentsToSpending.extraSpending.essential
         .filter(isNotInThePast)
         .sort((a, b) => a.sortIndex - b.sortIndex)
 
     const discretionaryArray =
-      planParamsNorm.adjustmentsToSpending.extraSpending.discretionary
+      planParamsNormOfResult.adjustmentsToSpending.extraSpending.discretionary
         .filter(isNotInThePast)
         .sort((a, b) => a.sortIndex - b.sortIndex)
 
-    const spendingLabelInfo =
-      getPlanResultsChartLabelInfoForSpending(planParamsNorm)
+    const spendingLabelInfo = getPlanResultsChartLabelInfoForSpending(
+      planParamsNormOfResult,
+    )
     const marginToWindow = windowWidthName === 'xs' ? 0 : 10
     return (
       <Menu>
@@ -190,8 +194,8 @@ export const PlanResultsChartCardMenu = React.memo(
                       />
                       {expandEssential &&
                         [
-                          ...planParamsNorm.adjustmentsToSpending.extraSpending
-                            .essential,
+                          ...planParamsNormOfResult.adjustmentsToSpending
+                            .extraSpending.essential,
                         ]
                           .sort((a, b) => a.sortIndex - b.sortIndex)
                           .map((x) => (
@@ -204,8 +208,8 @@ export const PlanResultsChartCardMenu = React.memo(
                           ))}
                       {expandEssential &&
                         [
-                          ...planParamsNorm.adjustmentsToSpending.extraSpending
-                            .discretionary,
+                          ...planParamsNormOfResult.adjustmentsToSpending
+                            .extraSpending.discretionary,
                         ]
                           .sort((a, b) => a.sortIndex - b.sortIndex)
                           .map((x) => (
@@ -347,12 +351,15 @@ const _Link = React.memo(
     indent: 0 | 1 | 2
     chartH: number
   }) => {
-    const { simulationResult } = useSimulation()
-    const { planParamsNorm } = simulationResult.args
+    const { simulationResult } = useSimulationResultInfo()
+    const { planParamsNormOfResult } = simulationResult
     const getPlanChartURL = useGetPlanResultsChartURL()
     const chartData = useChartData(type)
 
-    const { label, description } = planResultsChartLabel(planParamsNorm, type)
+    const { label, description } = planResultsChartLabel(
+      planParamsNormOfResult,
+      type,
+    )
     const { windowWidthName } = useSystemInfo()
     const width = windowWidthName === 'xs' ? 120 : 145
 

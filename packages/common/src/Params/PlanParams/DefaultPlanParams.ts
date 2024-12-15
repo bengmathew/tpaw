@@ -8,7 +8,7 @@ import {
 } from './PlanParams'
 import { getLastMarketDataDayForUndatedPlans } from './GetLastMarketDataDayForUndatedPlans'
 
-// TODO: Remove in favor of Rust version
+// NOTE: This is duplicated in simulator-rust
 export const DEFAULT_ANNUAL_SWR_WITHDRAWAL_PERCENT = (
   retirementLengthInMonths: number,
 ) => {

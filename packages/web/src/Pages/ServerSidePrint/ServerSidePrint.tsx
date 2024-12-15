@@ -1,18 +1,16 @@
 import {
-  CalendarMonthFns,
   MarketData,
   assertFalse,
   currentPlanParamsVersion,
   fGet,
-  getZonedTimeFns,
-  letIn,
+  letIn
 } from '@tpaw/common'
 import React, { useMemo } from 'react'
 import { useURLParam } from '../../Utils/UseURLParam'
 import { PlanPrintView } from '../PlanRoot/PlanRootHelpers/PlanPrintView/PlanPrintView'
 import { PlanPrintViewArgsServerSide } from '../PlanRoot/PlanRootHelpers/PlanPrintView/PlanPrintViewArgs'
-import { WithWASM } from '../PlanRoot/PlanRootHelpers/WithWASM'
 import { WithMarketData } from '../PlanRoot/PlanRootHelpers/WithMarketData'
+import { WithWASM } from '../PlanRoot/PlanRootHelpers/WithWASM'
 
 export const ServerSidePrint = React.memo(
   ({ marketData }: { marketData: MarketData.Data }) => {
@@ -44,13 +42,15 @@ const testParams: PlanPrintViewArgsServerSide = {
   fixed: {
     planLabel: 'Test Plan',
 
-    datingInfo: letIn(1704489409432, (nowAsTimestamp) => ({
+    datingInfo: letIn(1704489409432, (simulationTimestamp) => ({
       isDatedPlan: true,
-      nowAsTimestamp,
-      nowAsCalendarDay: getZonedTimeFns('America/Los_Angeles')(
-        nowAsTimestamp,
-      ),
+      simulationTimestamp,
+      ianaTimezoneName: 'America/Los_Angeles',
     })),
+    dailyMarketSeriesSrc: { type: 'live' },
+    percentiles: { low: 5, mid: 50, high: 95 },
+    numOfSimulationForMonteCarloSampling: 500,
+    randomSeed: 0,
     currentPortfolioBalanceAmount: 1547440,
     planParams: {
       v: currentPlanParamsVersion,
@@ -173,10 +173,6 @@ const testParams: PlanPrintViewArgsServerSide = {
       },
       dialogPositionNominal: 'done',
     },
-
-    numOfSimulationForMonteCarloSampling: 500,
-
-    randomSeed: 0,
   },
   settings: {
     isServerSidePrint: true,

@@ -1,0 +1,16 @@
+Checks:
+  - clang-diagnostic-*
+  - clang-analyzer-*
+  - cppcoreguidelines-*
+  - modernize-*
+  - bugprone-implicit-widening-of-multiplication-result
+  - -modernize-use-trailing-return-type
+  - -cppcoreguidelines-pro-bounds-pointer-arithmetic
+  - -cppcoreguidelines-avoid-magic-numbers
+  - -cppcoreguidelines-pro-type-union-access
+  # needed for printf which is needed for printing in device code.
+  - -cppcoreguidelines-pro-type-vararg
+  # CHECK() from doctest uses do-while loops
+  - -cppcoreguidelines-avoid-do-while
+WarningsAsErrors: true
+FormatStyle: google

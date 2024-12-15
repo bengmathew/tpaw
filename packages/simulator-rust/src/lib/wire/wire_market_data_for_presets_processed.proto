@@ -1,0 +1,91 @@
+syntax = "proto2";
+
+package wire;
+
+import "wire_common.proto";
+
+message WireDailyMarketDataForPresetsSP500 {
+  required int64 closing_timestamp_ms = 1;
+  required double value = 2;
+}
+
+message WireDailyMarketDataForPresetsBondRates {
+  required int64 closing_timestamp_ms = 1;
+  required double five_year = 2;
+  required double seven_year = 3;
+  required double ten_year = 4;
+  required double twenty_year = 5;
+  required double thirty_year = 6;
+}
+
+message WireDailyMarketDataForPresetsInflation {
+  required int64 closing_timestamp_ms = 1;
+  required double value = 2;
+}
+
+message WireDailyMarketDataForPresets {
+  required int64 closing_timestamp_ms = 1;
+  required WireDailyMarketDataForPresetsSP500 sp500 = 2;
+  required WireDailyMarketDataForPresetsBondRates bond_rates = 3;
+  required WireDailyMarketDataForPresetsInflation inflation = 4;
+}
+
+
+message WireTenYearDuration {
+  required WireYearAndMonth start = 1;
+  required WireYearAndMonth end = 2;
+}
+
+message WireAverageAnnualRealEarningsForSP500For10Years {
+  required int64 added_date_ms = 1;
+  required WireTenYearDuration ten_year_duration = 2;
+  required double value = 3;
+}
+
+message WireMarketDataForPresetsProcessedSource {
+  required WireDailyMarketDataForPresets daily_market_data = 1;
+  required WireAverageAnnualRealEarningsForSP500For10Years average_annual_real_earnings_for_sp500_for_10_years = 2;
+}
+
+
+message WireFiveTenTwentyThirtyYearsF64 {
+    required double five_year = 1;
+    required double ten_year = 2;
+    required double twenty_year = 3;
+    required double thirty_year = 4;
+}
+
+message WireCAPEBasedRegressionResults {
+  required WireFiveTenTwentyThirtyYearsF64 full = 1;
+  required WireFiveTenTwentyThirtyYearsF64 restricted = 2;
+}
+
+message WireMarketDataForPresetsProcessedStocks {
+  required double cape_not_rounded = 1;
+  required double one_over_cape_not_rounded = 2;
+  required double one_over_cape_rounded = 3;
+  required WireCAPEBasedRegressionResults empirical_annual_non_log_regressions_stocks = 4;
+  required double regression_prediction = 5;
+  required double conservative_estimate = 6;
+  required double historical = 7;
+}
+
+message WireMarketDataForPresetsProcessedBonds {
+  required double tips_yield_20_year = 1;
+  required double historical = 2;
+}
+
+message WireMarketDataForPresetsProcessedExpectedReturns {
+  required WireMarketDataForPresetsProcessedStocks stocks = 1;
+  required WireMarketDataForPresetsProcessedBonds bonds = 2;
+}
+
+message WireMarketDataForPresetsProcessedInflation {
+  required double suggested_annual = 1;
+}
+
+message WireMarketDataForPresetsProcessed {
+  required WireMarketDataForPresetsProcessedSource source_rounded = 1;
+  required WireMarketDataForPresetsProcessedExpectedReturns expected_returns = 2;
+  required WireMarketDataForPresetsProcessedInflation inflation = 3;
+}

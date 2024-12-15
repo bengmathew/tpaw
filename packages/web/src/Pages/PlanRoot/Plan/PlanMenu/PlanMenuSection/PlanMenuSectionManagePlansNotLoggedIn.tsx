@@ -6,9 +6,11 @@ import { appPaths } from '../../../../../AppPaths'
 import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
 import { useURLUpdater } from '../../../../../Utils/UseURLUpdater'
 import { PlanLocalStorage } from '../../../PlanRootLocalMain/PlanLocalStorage'
+import { useSimulationResultInfo } from '../../../PlanRootHelpers/WithSimulation'
 
 export const usePlanMenuSectionManagePlansNotLoggedIn = () => {
   const urlUpdater = useURLUpdater()
+  const { simulationResult } = useSimulationResultInfo()
   const [hasLocal] = useState(() => PlanLocalStorage.read() !== null)
   const [showLoginNeededModal, setShowLoginNeededModal] = useState(false)
 

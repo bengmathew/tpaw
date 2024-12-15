@@ -5,12 +5,12 @@ import { CalendarMonthFns, fGet, noCase } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import React, { useRef, useState } from 'react'
-import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { PlanParamsHelperFns } from '../../../../../UseSimulator/PlanParamsHelperFns'
+import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsHelperFns } from '../../../../../Simulator/PlanParamsHelperFns'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { joinWithCommaAnd } from '../../../../../Utils/JoinWithAnd'
 import { yourOrYourPartners } from '../../../../../Utils/YourOrYourPartners'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { planSectionLabel } from '../Helpers/PlanSectionLabel'
 import {
   PlanInputBody,
@@ -24,14 +24,14 @@ export type PlanInputAgeOpenableSection =
   | `${'person1' | 'person2'}-${'currentAgeInfo' | 'retirementAge' | 'maxAge'}`
   | 'none'
 export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
-  const { planParamsNorm, updatePlanParams } = useSimulation()
+  const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
   const contentDivRef = useRef<HTMLDivElement>(null)
   const [openSection, setOpenSection] =
     useState<PlanInputAgeOpenableSection>('none')
 
   const planSectionsWithIssues = _.uniq(
     PlanParamsHelperFns.mapAllLabeledAmountTimedList(
-      planParamsNorm,
+      planParamsNormInstant,
       ({ amountAndTiming }, location) => {
         switch (amountAndTiming.type) {
           case 'inThePast':
@@ -89,7 +89,7 @@ export const PlanInputAge = React.memo((props: PlanInputBodyPassThruProps) => {
           openSection={openSection}
           setOpenSection={setOpenSection}
         />
-        {planParamsNorm.ages.person2 ? (
+        {planParamsNormInstant.ages.person2 ? (
           <>
             <PlanInputAgePerson
               className="mt-10 params-card"

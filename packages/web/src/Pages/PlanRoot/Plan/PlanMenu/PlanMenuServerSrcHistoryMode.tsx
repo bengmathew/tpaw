@@ -12,7 +12,7 @@ import { ContextModal } from '../../../Common/Modal/ContextModal'
 import {
   SimulationInfoForHistoryMode,
   SimulationInfoForServerSrc,
-  useSimulation,
+  useSimulationInfo,
 } from '../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../UsePlanColors'
 import { PlanMenuActionModalCopyServer } from './PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalCopyServer'
@@ -29,7 +29,7 @@ export const PlanMenuServerSrcHistoryMode = React.memo(
     simulationInfoForHistoryMode: SimulationInfoForHistoryMode
   }) => {
     const planColors = usePlanColors()
-    const { planParamsId } = useSimulation()
+    const { planParamsId } = useSimulationInfo()
     const { plan, syncState, setRewindTo } = simulationInfoForServerSrc
     const [showCopy, setShowCopy] = useState(false)
     const [showCopyToLink, setShowCopyToLink] = useState(false)

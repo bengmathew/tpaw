@@ -111,7 +111,6 @@ export const PlanMenuLocalSrc = React.memo(
           onHide={() => setLoginModalState(null)}
         />
         {managePlansSection.modals}
-
         {miscSection.modals}
         {offlinePlansSection.modals}
         {editSection.modals}

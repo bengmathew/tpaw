@@ -1,29 +1,30 @@
+use std::ops::RangeInclusive;
 use serde::{Deserialize, Serialize};
-use tsify::Tsify;
-use wasm_bindgen::prelude::*;
 
-#[derive(Serialize, Deserialize, Tsify, Copy, Clone)]
+use crate::wire::{WireMonthRange, WireYearAndMonth};
+
+#[derive(Serialize, Deserialize, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LogAndNonLog<T> {
     pub log: T,
     pub non_log: T,
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, Tsify)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StocksAndBonds<T> {
     pub stocks: T,
     pub bonds: T,
 }
 
-#[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MonthAndStocks {
     pub month: i64,
     pub stocks: f64,
 }
 
-#[derive(Serialize, Deserialize, Tsify, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Stocks {
     pub stocks: f64,
@@ -48,7 +49,7 @@ pub struct BaseAndLog<T> {
     pub log: T,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Tsify)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SlopeAndIntercept {
     pub slope: f64,
@@ -66,11 +67,21 @@ pub enum StocksOrBonds {
     Bonds,
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Tsify, PartialEq, Eq, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct YearAndMonth {
+    // TODO: After duration matching, make this i64.
     pub year: u16,
     pub month: u8,
+}
+
+impl From<&YearAndMonth> for WireYearAndMonth {
+    fn from(value: &YearAndMonth) -> Self {
+        Self {
+            year: value.year as i64,
+            month: value.month as i64,
+        }
+    }
 }
 
 impl YearAndMonth {
@@ -87,11 +98,14 @@ impl YearAndMonth {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Tsify, PartialEq, Debug, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct SimpleRange<T> {
-    pub start: T,
-    pub end: T,
+
+impl From<RangeInclusive<YearAndMonth>> for WireMonthRange {
+    fn from(value: RangeInclusive<YearAndMonth>) -> Self {
+        Self {
+            start: value.start().into(),
+            end: value.end().into(),
+        }
+    }
 }
 
 #[cfg(test)]

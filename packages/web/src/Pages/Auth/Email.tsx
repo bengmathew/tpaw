@@ -11,6 +11,7 @@ import { useURLParam } from '../../Utils/UseURLParam'
 import { useURLUpdater } from '../../Utils/UseURLUpdater'
 import { useFirebaseUser } from '../App/WithFirebaseUser'
 import { assert } from '../../Utils/Utils'
+import { AppError } from '../App/AppError'
 
 type _State =
   | { type: 'error'; message: string }
@@ -60,6 +61,8 @@ export const Email = React.memo(() => {
               type: 'error',
               message: 'This link is no longer valid.',
             })
+          } else if (e.code === 'auth/network-request-failed') {
+            throw new AppError('networkError')
           } else {
             throw e
           }

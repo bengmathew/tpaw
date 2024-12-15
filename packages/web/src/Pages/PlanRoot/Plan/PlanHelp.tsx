@@ -1,8 +1,10 @@
 import { Document } from '@contentful/rich-text-types'
 import { faCaretDown, faCaretRight } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { CalendarMonthFns, block } from '@tpaw/common'
 import React, { useMemo, useState } from 'react'
 import { Contentful } from '../../../Utils/Contentful'
+import { formatPercentage } from '../../../Utils/FormatPercentage'
 import {
   Size,
   XY,
@@ -14,16 +16,15 @@ import {
 import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity0Transition'
 import { fGet } from '../../../Utils/Utils'
 import { usePlanContent } from '../PlanRootHelpers/WithPlanContent'
-import { useSimulation } from '../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../PlanRootHelpers/WithSimulation'
 import { PlanInputBodyHeader } from './PlanInput/PlanInputBody/PlanInputBodyHeader'
 import {
   PlanTransitionState,
   simplifyPlanTransitionState2,
 } from './PlanTransition'
-import { CalendarMonthFns, block } from '@tpaw/common'
-import { fWASM } from '../../../UseSimulator/Simulator/GetWASM'
-import { formatPercentage } from '../../../Utils/FormatPercentage'
-import { CallRust } from '../../../UseSimulator/PlanParamsProcessed/CallRust'
 
 export type PlanHelpSizing = {
   dynamic: Record<_PlanHelpTransitionState, { origin: XY; opacity: number }>
@@ -75,26 +76,33 @@ export const PlanHelp = React.memo(
 )
 
 const _Body = React.memo(({ sizing }: { sizing: PlanHelpSizing }) => {
-  const { planParamsNorm, simulationResult } = useSimulation()
-  const { marketData } = simulationResult.info
+  const { planParamsNormInstant } = useSimulationInfo()
+  const { planParamsProcessed, numOfSimulationForMonteCarloSamplingOfResult } =
+    useSimulationResultInfo().simulationResult
+
   const contentBeforeVars =
-    usePlanContent().help[planParamsNorm.advanced.strategy]
+    usePlanContent().help[planParamsNormInstant.advanced.strategy]
   const contentAfterVars = block(() => {
     const variables = {
+      numOfSimulationForMonteCarloSampling:
+        numOfSimulationForMonteCarloSamplingOfResult.toString(),
       historicalExpectedStockReturn: formatPercentage(1)(
-        marketData.expectedReturns.stocks.historical,
+        planParamsProcessed.marketDataForPresets.expectedReturns.stocks
+          .historical,
       ),
       historicalExpectedBondReturn: formatPercentage(1)(
-        marketData.expectedReturns.bonds.historical,
+        planParamsProcessed.marketDataForPresets.expectedReturns.bonds
+          .historical,
       ),
       historicalReturnDataStartMonth: CalendarMonthFns.toStr(
-        marketData.historicalReturnsMonthRange.start,
+        planParamsProcessed.historicalReturns.monthRange.start,
       ),
       historicalReturnDataEndMonth: CalendarMonthFns.toStr(
-        marketData.historicalReturnsMonthRange.end,
+        planParamsProcessed.historicalReturns.monthRange.end,
       ),
       tipsYield20Year: formatPercentage(1)(
-        marketData.expectedReturns.bonds.tipsYield20Year,
+        planParamsProcessed.marketDataForPresets.expectedReturns.bonds
+          .tipsYield20Year,
       ),
     }
     return Contentful.replaceVariables(variables, contentBeforeVars)

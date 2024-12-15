@@ -1,0 +1,101 @@
+// Using proto2 because the absence of required fields in proto3 is painful.
+syntax = "proto2";
+
+// A note on floating point numbers: 
+//
+// Large arrays (and only large arrays) of floating point numbers may be 
+// represented by int64/10^precision on wire. This is meant to force rounding to
+// prevent unnecessary precision from consuming bandwidth on the wire where 
+// large arrays are being sent. This conversion should happen at the wire 
+// boundary and not leak into rust (for reading and writing).
+
+package wire;
+
+import "wire_plan_params_server.proto";
+import "wire_estimate_portfolio_balance_api.proto";
+import "wire_plan_params_processed.proto";
+import "wire_common.proto";
+// -----------------------------------------
+// Args
+// -----------------------------------------
+
+message WireMarketDailySeriesSrcSyntheticConstant {
+    required double annual_percentage_change_vt = 1;
+    required double annual_percentage_change_bnd = 2;
+}
+
+message WireSimulationArgs {
+  oneof current_portfolio_balance {
+      WirePortfolioBalanceEstimationArgs estimate = 1;
+      double no_estimate = 2;
+    }
+
+  oneof market_daily_series_src {
+    NoMessage live =3;
+    NoMessage synthetic_live_repeated =4;
+    WireMarketDailySeriesSrcSyntheticConstant synthetic_constant = 5;
+  }
+
+  repeated uint32 percentiles = 6;
+  // Don't rely on evaluation_timestamp_ms in plan_params because it may be
+  // for dateless plans we want this to vary independently.
+  required int64 timestamp_for_market_data_ms = 7;
+  required WirePlanParamsServer plan_params = 8;
+}
+
+
+// -----------------------------------------
+// Result
+// -----------------------------------------
+
+message WireSimulationResultArrays {
+  repeated {{float_wire}}
+      by_percentile_by_mfn_simulated_percentile_major_balance_start_x100 = 1;
+  repeated {{float_wire}}
+      by_percentile_by_mfn_simulated_percentile_major_withdrawals_essential_x100 = 2;
+  repeated {{float_wire}}
+      by_percentile_by_mfn_simulated_percentile_major_withdrawals_discretionary_x100 =
+          3;
+  repeated {{float_wire}}
+      by_percentile_by_mfn_simulated_percentile_major_withdrawals_general_x100 = 4;
+  repeated {{float_wire}}
+      by_percentile_by_mfn_simulated_percentile_major_withdrawals_total_x100 = 5;
+  repeated {{float_wire}}
+      by_percentile_by_mfn_simulated_percentile_major_withdrawals_from_savings_portfolio_rate_x10000 =
+          6;
+  repeated {{float_wire}}
+      by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_savings_portfolio_x100 =
+          7;
+  repeated {{float_wire}}
+      by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_total_portfolio_or_zero_if_no_wealth_x100 =
+          8;
+  repeated {{float_wire}}
+      tpaw_by_percentile_by_mfn_simulated_percentile_major_spending_tilt_x10000 =
+          9;
+  repeated double by_percentile_ending_balance = 10;
+}
+
+message WireSimulationResultTpawNetPresentValueApproxForBalanceSheet {
+    repeated WireIdAndDouble future_savings = 1;
+    repeated WireIdAndDouble income_during_retirement = 2;
+    repeated WireIdAndDouble essential_expenses = 3;
+    repeated WireIdAndDouble discretionary_expenses = 4;
+    required double legacy_target = 5;
+}
+
+message WireSimulationPerformance {
+    required int64 portfolio_balance_estimation_in_ms = 1;
+    required int64 simulation_in_ms = 2;
+    required int64 total_in_ms = 3;
+}
+
+
+message WireSimulationResult {
+    optional WirePortfolioBalanceEstimationResult portfolio_balance_estimation_result_opt = 1;
+    required WirePlanParamsProcessed plan_params_processed = 2;
+    required WireSimulationResultArrays arrays = 3;
+    required uint32 num_runs = 4;
+    required uint32 num_runs_with_insufficient_funds = 5;
+    optional WireSimulationResultTpawNetPresentValueApproxForBalanceSheet tpaw_net_present_value_approx_for_balance_sheet_opt = 6;
+    required WireSimulationPerformance performance = 7;
+}

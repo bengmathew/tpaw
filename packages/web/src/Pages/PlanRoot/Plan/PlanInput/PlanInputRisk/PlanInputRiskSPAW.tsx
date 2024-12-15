@@ -1,13 +1,12 @@
 import { PLAN_PARAMS_CONSTANTS, partialDefaultDatelessPlanParams } from '@tpaw/common'
 import React from 'react'
-import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { SliderInput } from '../../../../Common/Inputs/SliderInput/SliderInput'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
 import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
-import { PlanInputRiskLMPCard } from './PlanInputRiskLMPCard'
 import { PlanInputRiskSPAWAndSWRStockAllocationCard } from './PlanInputRiskSPAWAndSWRStockAllocation'
 
 export const PlanInputRiskSPAW = React.memo(
@@ -19,7 +18,6 @@ export const PlanInputRiskSPAW = React.memo(
           props={props}
         />
         <_SpendingTiltCard className="mt-8" props={props} />
-        <PlanInputRiskLMPCard className="mt-8" props={props} />
       </>
     )
   },
@@ -33,7 +31,7 @@ const _SpendingTiltCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
     const handleChange = (value: number) =>
       updatePlanParams('setSPAWAnnualSpendingTilt', value)
 
@@ -54,7 +52,7 @@ const _SpendingTiltCard = React.memo(
           height={60}
           maxOverflowHorz={props.sizing.cardPadding}
           data={PLAN_PARAMS_CONSTANTS.risk.spaw.annualSpendingTilt.values}
-          value={planParamsNorm.risk.spaw.annualSpendingTilt}
+          value={planParamsNormInstant.risk.spaw.annualSpendingTilt}
           onChange={handleChange}
           format={formatPercentage(1)}
           ticks={(value, i) =>
@@ -75,8 +73,8 @@ const _SpendingTiltCard = React.memo(
 )
 
 export const PlanInputRiskSPAWSummary = React.memo(
-  ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
-    const { risk } = planParamsNorm
+  ({ planParamsNormInstant }: { planParamsNormInstant: PlanParamsNormalized }) => {
+    const { risk } = planParamsNormInstant
     return (
       <>
         <h2>Stock Allocation</h2>

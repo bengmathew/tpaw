@@ -4,11 +4,10 @@ import { CalendarMonthFns, block, fGet, noCase } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import React from 'react'
-import { PERCENTILES_STR } from '../../../../UseSimulator/Simulator/Simulator'
 import { SimpleRange } from '../../../../Utils/SimpleRange'
 import { PlanResultsChartType } from '../../Plan/PlanResults/PlanResultsChartType'
 import { useChartDataForPDF } from '../../Plan/WithPlanResultsChartData'
-import { useSimulationResult } from '../WithSimulation'
+import { useSimulationResultInfo } from '../WithSimulation'
 import { getPlanPrintChartLabel } from './Helpers/GetPlanPrintChartLabel'
 import { PlanPrintViewPageGroup } from './Helpers/PlanPrintViewPageGroup'
 import { PlanPrintViewArgs } from './PlanPrintViewArgs'
@@ -16,8 +15,8 @@ import { InMonthsFns } from '../../../../Utils/InMonthsFns'
 
 export const PlanPrintViewAppendixSection = React.memo(
   ({ settings }: { settings: PlanPrintViewArgs['settings'] }) => {
-    const { args } = useSimulationResult()
-    const { extraSpending } = args.planParamsNorm.adjustmentsToSpending
+    const { planParamsNormOfResult } = useSimulationResultInfo().simulationResult
+    const { extraSpending } = planParamsNormOfResult.adjustmentsToSpending
 
     const secondaryCharts: PlanResultsChartType[] = _.compact([
       extraSpending.discretionary.length > 0 ||
@@ -45,10 +44,10 @@ export const PlanPrintViewAppendixSection = React.memo(
         </PlanPrintViewPageGroup>
         <PlanPrintViewPageGroup settings={settings}>
           <_Table className="mt-10" type="spending-total" />
-          {args.planParamsNorm.wealth.incomeDuringRetirement.length > 0 && (
+          {planParamsNormOfResult.wealth.incomeDuringRetirement.length > 0 && (
             <_Table
               className="mt-10"
-              type="spending-total-funding-sources-50"
+              type="spending-total-funding-sources-mid"
             />
           )}
           {secondaryCharts.map((x, i) => (
@@ -62,16 +61,18 @@ export const PlanPrintViewAppendixSection = React.memo(
 
 const _Table = React.memo(
   ({ className, type }: { className?: string; type: PlanResultsChartType }) => {
-    const { args } = useSimulationResult()
+    const { planParamsNormOfResult, percentilesOfResult } =
+      useSimulationResultInfo().simulationResult
     const chartData = useChartDataForPDF(type)
-    const { ages } = args.planParamsNorm
+    const { ages } = planParamsNormOfResult
 
     const months = _.range(
       chartData.displayRange.x.start,
       chartData.displayRange.x.end + 1,
     )
     const { label, subLabel, yAxisDescriptionStr } = getPlanPrintChartLabel(
-      args.planParamsNorm,
+      planParamsNormOfResult,
+      percentilesOfResult,
       type,
     )
 
@@ -92,7 +93,7 @@ const _Table = React.memo(
         <table className=" border-collapse mt-2 border border-black">
           <thead className="">
             <tr className="">
-              {args.planParamsNorm.datingInfo.isDated && (
+              {planParamsNormOfResult.datingInfo.isDated && (
                 <th className="px-4 border-l border-black" rowSpan={2}>
                   Month
                 </th>
@@ -137,15 +138,15 @@ const _Table = React.memo(
               {chartData.type === 'range' ? (
                 <>
                   <th className="px-4  border-l border-black">
-                    {PERCENTILES_STR[0]}
+                    {percentilesOfResult.low}
                     <span className=" align-super text-[8px]">th</span>
                   </th>
                   <th className="px-4">
-                    {PERCENTILES_STR[1]}
+                    {percentilesOfResult.mid}
                     <span className=" align-super text-[8px]">th</span>
                   </th>
                   <th className="px-4">
-                    {PERCENTILES_STR[2]}
+                    {percentilesOfResult.high}
                     <span className=" align-super text-[8px]">th</span>
                   </th>
                 </>
@@ -166,10 +167,10 @@ const _Table = React.memo(
                 i === 0
               if (!shouldShow) return <React.Fragment key={i}></React.Fragment>
 
-              const calendarMonth = args.planParamsNorm.datingInfo
+              const calendarMonth = planParamsNormOfResult.datingInfo
                 .nowAsCalendarDay
                 ? CalendarMonthFns.getFromMFN(
-                    args.planParamsNorm.datingInfo.nowAsCalendarDay,
+                    planParamsNormOfResult.datingInfo.nowAsCalendarDay,
                   )(mfn)
                 : null
               return (

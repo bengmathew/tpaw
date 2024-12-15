@@ -1,18 +1,17 @@
-import { assert, block, noCase } from '@tpaw/common'
+import { faCheck } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { assert, block, fGet, noCase } from '@tpaw/common'
 import React, { useEffect, useRef, useState } from 'react'
 import { useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { appPaths } from '../../../../../../AppPaths'
-import { normalizePlanParamsInverse } from '../../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
+import { normalizePlanParamsInverse } from '../../../../../../Simulator/NormalizePlanParams/NormalizePlanParamsInverse'
+import { Spinner } from '../../../../../../Utils/View/Spinner'
 import { useDefaultErrorHandlerForNetworkCall } from '../../../../../App/GlobalErrorBoundary'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
-import { CurrentPortfolioBalance } from '../../../../PlanRootHelpers/CurrentPortfolioBalance'
-import { useSimulation } from '../../../../PlanRootHelpers/WithSimulation'
-import { PlanMenuActionModalCopyToLinkMutation } from './__generated__/PlanMenuActionModalCopyToLinkMutation.graphql'
-import { Spinner } from '../../../../../../Utils/View/Spinner'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCheck } from '@fortawesome/pro-solid-svg-icons'
+import { useSimulationResultInfo } from '../../../../PlanRootHelpers/WithSimulation'
 import { convertToDatelessLabel } from '../../PlanMenuSection/PlanMenuSectionEditLocal'
+import { PlanMenuActionModalCopyToLinkMutation } from './__generated__/PlanMenuActionModalCopyToLinkMutation.graphql'
 
 export const PlanMenuActionModalCopyToLink = React.memo(
   ({
@@ -59,8 +58,8 @@ const _Body = React.memo(
       if (state.type === 'copied') setTimeout(onDoneRef.current, 500)
     }, [state])
 
-    const { planParamsNorm, currentPortfolioBalanceInfo } = useSimulation()
-    const { datingInfo } = planParamsNorm
+    const { simulationResult } = useSimulationResultInfo()
+    const { datingInfo } = simulationResult.planParamsNormOfResult
 
     const [commitGetLink] = useMutation<PlanMenuActionModalCopyToLinkMutation>(
       graphql`
@@ -76,20 +75,21 @@ const _Body = React.memo(
 
     const handleGetLink = () => {
       const params = block(() => {
-        const clone = normalizePlanParamsInverse(planParamsNorm)
+        const clone = normalizePlanParamsInverse(
+          simulationResult.planParamsNormOfResult,
+        )
         if (
           clone.wealth.portfolioBalance.isDatedPlan &&
           !clone.wealth.portfolioBalance.updatedHere
         ) {
-          assert(planParamsNorm.datingInfo.isDated)
-          assert(currentPortfolioBalanceInfo.isDatedPlan)
-          clone.timestamp = planParamsNorm.datingInfo.nowAsTimestamp
+          assert(datingInfo.isDated)
+
+          clone.timestamp = datingInfo.nowAsTimestamp
           clone.wealth.portfolioBalance = {
             isDatedPlan: true,
             updatedHere: true,
-            amount: CurrentPortfolioBalance.getAmountInfo(
-              currentPortfolioBalanceInfo.info,
-            ).amount,
+            amount:
+              simulationResult.portfolioBalanceEstimationByDated.currentBalance,
           }
         }
         return clone
@@ -119,8 +119,11 @@ const _Body = React.memo(
         <div className=" dialog-content-div">
           <p className="p-base">
             This creates a copy of the plan and a link to view the copied plan.
-            The copy does not contain any plan history and cannot be modifed.
+            The copy does not contain any plan history. The link will always
+            load the plan with these parameter values. Any changes made after loading
+            the link will not be reflected back in the link.
           </p>
+
           {suggestDateless === 'auto' && datingInfo.isDated && (
             <div className="mt-4">
               <p className="p-base">

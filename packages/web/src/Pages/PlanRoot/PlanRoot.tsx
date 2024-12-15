@@ -65,7 +65,7 @@ export const PlanRoot = React.memo(
                 />
               ) : src.type === 'serverAlt' ? (
                 <PlanRootServer
-                  key={src.slug}
+                  key={`alt-${src.slug}`}
                   src={src}
                   pdfReportInfo={pdfReportInfo}
                 />

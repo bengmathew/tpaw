@@ -1,0 +1,5 @@
+Language: Cpp
+AlignAfterOpenBracket: Align
+BinPackArguments: false
+BinPackParameters: false
+NamespaceIndentation: All

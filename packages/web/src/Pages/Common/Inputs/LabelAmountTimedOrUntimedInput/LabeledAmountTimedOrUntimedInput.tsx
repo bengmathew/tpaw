@@ -16,10 +16,10 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { PlanParamsHelperFns } from '../../../../UseSimulator/PlanParamsHelperFns'
+import { PlanParamsHelperFns } from '../../../../Simulator/PlanParamsHelperFns'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { Padding } from '../../../../Utils/Geometry'
-import { useSimulation } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { CenteredModal } from '../../Modal/CenteredModal'
 import { MonthRangeDisplay } from '../../MonthRangeDisplay'
 import { AmountInput } from '../AmountInput'
@@ -89,11 +89,11 @@ export const LabelAmountOptMonthRangeInput = React.forwardRef(
     }: _Props,
     forwardedRef: React.ForwardedRef<LabelAmountOptMonthRangeInputStateful>,
   ) => {
-    const { updatePlanParams } = useSimulation()
+    const { updatePlanParams } = useSimulationInfo()
     const outerDivRef = useRef<HTMLDivElement>(null)
     const buttonDivRef = useRef<HTMLDivElement>(null)
 
-    const { planParamsNorm } = useSimulation()
+    const { planParamsNormInstant } = useSimulationInfo()
     const [{ dialogMode, currSection }, setState] = useState({
       dialogMode: addOrEdit === 'add',
       currSection: addOrEdit === 'add' ? 'label' : ('none' as _Section),
@@ -153,11 +153,11 @@ export const LabelAmountOptMonthRangeInput = React.forwardRef(
     const hasEntry = useMemo(() => {
       const entries =
         PlanParamsHelperFns.getLabeledAmountTimedOrUntimedListFromLocation(
-          planParamsNorm,
+          planParamsNormInstant,
           props.location,
         )
       return !!entries.find((x) => x.id === entryId)
-    }, [entryId, planParamsNorm, props.location])
+    }, [entryId, planParamsNormInstant, props.location])
     const handleNoEntry = () => transitionOut(() => {})
     const handleNoEntryRef = useRef(handleNoEntry)
     handleNoEntryRef.current = handleNoEntry
@@ -280,17 +280,17 @@ type _SectionProps =
 
 const _LabelSection = React.memo(
   (props: _SectionProps & { labelPlaceholder: string }) => {
-    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
     const { entryId, labelPlaceholder, location } = props
     const entry = useMemo(
       () =>
         fGet(
           PlanParamsHelperFns.getLabeledAmountTimedOrUntimedListFromLocation(
-            planParamsNorm,
+            planParamsNormInstant,
             location,
           ).find((x) => x.id === entryId),
         ),
-      [entryId, location, planParamsNorm],
+      [entryId, location, planParamsNormInstant],
     )
 
     const [value, setValue] = useState(entry.label ?? '')
@@ -329,7 +329,7 @@ const _LabelSection = React.memo(
   },
 )
 const _AmountSection = React.memo((props: _SectionProps) => {
-  const { planParamsNorm, updatePlanParams } = useSimulation()
+  const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
   const { entryId, location, hasMonthRange } = props
   const { increment, decrement } = smartDeltaFnForMonthlyAmountInput
   const { amount, nominal } = useMemo((): {
@@ -340,7 +340,7 @@ const _AmountSection = React.memo((props: _SectionProps) => {
       case 'legacyExternalSources': {
         const entry = fGet(
           PlanParamsHelperFns.getLabeledAmountUntimedListFromLocation(
-            planParamsNorm,
+            planParamsNormInstant,
             location,
           ).find((x) => x.id === entryId),
         )
@@ -349,7 +349,7 @@ const _AmountSection = React.memo((props: _SectionProps) => {
       default: {
         const entry = fGet(
           PlanParamsHelperFns.getLabeledAmountTimedListFromLocation(
-            planParamsNorm,
+            planParamsNormInstant,
             location,
           ).find((x) => x.id === entryId),
         )
@@ -363,7 +363,7 @@ const _AmountSection = React.memo((props: _SectionProps) => {
         }
       }
     }
-  }, [entryId, location, planParamsNorm])
+  }, [entryId, location, planParamsNormInstant])
 
   const handleAmountChange = (amount: number) => {
     switch (location) {
@@ -444,18 +444,18 @@ const _MonthRangeSection = React.memo(
   }: Extract<_SectionProps, { hasMonthRange: true }> & {
     choices: MonthRangeInputProps['choicesPreFilter']
   }) => {
-    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
     const { location, entryId } = props
     const { amountAndTiming } = useMemo(
       () =>
         fGet(
           PlanParamsHelperFns.getLabeledAmountTimedListFromLocationAndId(
-            planParamsNorm,
+            planParamsNormInstant,
             location,
             entryId,
           ),
         ),
-      [entryId, location, planParamsNorm],
+      [entryId, location, planParamsNormInstant],
     )
     assert(amountAndTiming.type !== 'inThePast')
     assert(amountAndTiming.type !== 'oneTime')

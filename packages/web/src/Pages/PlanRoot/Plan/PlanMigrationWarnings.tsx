@@ -1,9 +1,9 @@
 import React, { ReactNode, useState } from 'react'
 import { CenteredModal } from '../../Common/Modal/CenteredModal'
-import { useSimulation } from '../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../PlanRootHelpers/WithSimulation'
 
 export const PlanMigrationWarnings = React.memo(() => {
-  const { planMigratedFromVersion, updatePlanParams } = useSimulation()
+  const { planMigratedFromVersion, updatePlanParams } = useSimulationInfo()
 
   // FEATURE:
   // On next migration, consider whether to show once per user or one per plan.

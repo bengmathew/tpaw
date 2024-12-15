@@ -1,8 +1,11 @@
+import { fGet } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import React, { CSSProperties, useMemo } from 'react'
 import { formatCurrency } from '../../../../../Utils/FormatCurrency'
-import { useSimulation, useSimulationResult } from '../../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationResultInfo
+} from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
 
 export const PlanResultsSidePanelLegacyCard = React.memo(
@@ -15,7 +18,8 @@ export const PlanResultsSidePanelLegacyCard = React.memo(
     style: CSSProperties
     layout: 'laptop' | 'desktop' | 'mobile'
   }) => {
-    const { planParamsNorm } = useSimulation()
+    const { simulationResult } = useSimulationResultInfo()
+    const { planParamsNormOfResult } = simulationResult
     const data = usePlanResultsLegacyCardData()
     const maxLegacy = Math.max(...data.map((x) => x.amount))
 
@@ -27,7 +31,8 @@ export const PlanResultsSidePanelLegacyCard = React.memo(
       >
         <h2 className="font-bold text-[16px] sm:text-[22px]">Legacy</h2>
         {maxLegacy > 0 ||
-        planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.total > 0 ? (
+        planParamsNormOfResult.adjustmentsToSpending.tpawAndSPAW.legacy.total >
+          0 ? (
           <>
             <h2
               className="text-xs sm:text-sm border-b mt-1 "
@@ -68,13 +73,15 @@ export const PlanResultsSidePanelLegacyCard = React.memo(
 )
 
 export function usePlanResultsLegacyCardData() {
-  const simulationResult = useSimulationResult()
+  const { simulationResult } = useSimulationResultInfo()
   return useMemo(() => {
-    const { endingBalanceOfSavingsPortfolioByPercentile, args } = simulationResult
+    const { endingBalanceOfSavingsPortfolioByPercentile, planParamsProcessed } =
+      simulationResult
     return _.sortBy(
       endingBalanceOfSavingsPortfolioByPercentile.map((x) => ({
         amount:
-          x.data + args.planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.external,
+          x.data +
+          planParamsProcessed.adjustmentsToSpending.tpawAndSpaw.legacy.external,
         percentile: x.percentile,
       })),
       (x) => -x.percentile,
@@ -90,6 +97,6 @@ export const planResultsLegacyCardFormat = (
   return x < 1000
     ? `${formatCurrency(x)}`
     : x < 1000000
-    ? `${formatCurrency(Math.round(x / 1000))}K`
-    : `${formatCurrency(_.round(x / 1000000, 1), 1)}M`
+      ? `${formatCurrency(Math.round(x / 1000))}K`
+      : `${formatCurrency(_.round(x / 1000000, 1), 1)}M`
 }

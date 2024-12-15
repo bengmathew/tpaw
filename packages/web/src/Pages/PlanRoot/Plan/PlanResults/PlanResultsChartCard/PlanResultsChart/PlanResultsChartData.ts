@@ -1,11 +1,10 @@
 import { assert, block, noCase } from '@tpaw/common'
 import _ from 'lodash'
-import { PlanParamsNormalized } from '../../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { PlanParamsProcessed } from '../../../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
-import {
-  NumberArrByPercentileByMonthsFromNow,
-  SimulationResult,
-} from '../../../../../../UseSimulator/Simulator/Simulator'
+import { PlanParamsNormalized } from '../../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { getPlanParamsServer } from '../../../../../../Simulator/SimulateOnServer/GetPlanParamsServer'
+import { PlanParamsProcessed2 } from '../../../../../../Simulator/SimulateOnServer/SimulateOnServer'
+import { NumberArrByPercentileByMonthsFromNow } from '../../../../../../Simulator/Simulator/Simulator'
+import { SimulationResult2 } from '../../../../../../Simulator/UseSimulator'
 import { formatCurrency } from '../../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../../Utils/FormatPercentage'
 import { XY } from '../../../../../../Utils/Geometry'
@@ -26,8 +25,8 @@ import {
 
 export type PlanResultsChartDataForPDF = {
   chartType: PlanResultsChartType
-  planParamsNorm: PlanParamsNormalized
-  planParamsProcessed: PlanParamsProcessed
+  planParamsNormOfResult: PlanParamsNormalized
+  planParamsProcessed: PlanParamsProcessed2
   displayRange: { x: SimpleRange; y: SimpleRange }
   formatY: (x: number) => string
   layout: 'laptop' | 'mobile' | 'desktop'
@@ -74,20 +73,22 @@ export type PlanResultsChartData = PlanResultsChartDataForPDF & {
 
 export const getPlanResultsChartDataForPDF = (
   chartType: PlanResultsChartType,
-  simulationResult: SimulationResult,
+  simulationResult: SimulationResult2,
   layout: 'laptop' | 'mobile' | 'desktop',
   // planSizing: PlanSizing,
   // planTransitionState: PlanTransitionState,
   planColors: PlanColors,
   alwaysShowAllMonths: boolean,
 ): PlanResultsChartDataForPDF => {
-  const { planParamsProcessed, planParamsNorm } = simulationResult.args
-  const { ages } = planParamsNorm
+  const { planParamsProcessed, planParamsNormOfResult, percentilesOfResult } =
+    simulationResult
+  const { ages } = planParamsNormOfResult
   const { lastMonthAsMFN, withdrawalStartMonth } = ages.simulationMonths
 
   const hasLegacy =
-    planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy.total !== 0 ||
-    planParamsProcessed.adjustmentsToSpending.tpawAndSPAW
+    planParamsNormOfResult.adjustmentsToSpending.tpawAndSPAW.legacy.total !==
+      0 ||
+    planParamsNormOfResult.adjustmentsToSpending.tpawAndSPAW
       .monthlySpendingCeiling !== null
 
   const xRangeAsMFN = block(() => {
@@ -112,8 +113,9 @@ export const getPlanResultsChartDataForPDF = (
   const spendingMonthsAsMFN = block(() => {
     const withdrawalStartAsMFN = withdrawalStartMonth.asMFN
     return [
-      ...planParamsNorm.adjustmentsToSpending.extraSpending.essential,
-      ...planParamsNorm.adjustmentsToSpending.extraSpending.discretionary,
+      ...planParamsNormOfResult.adjustmentsToSpending.extraSpending.essential,
+      ...planParamsNormOfResult.adjustmentsToSpending.extraSpending
+        .discretionary,
     ].some((x) => {
       switch (x.amountAndTiming.type) {
         case 'inThePast':
@@ -149,7 +151,7 @@ export const getPlanResultsChartDataForPDF = (
   const common = {
     chartType,
     planParamsProcessed,
-    planParamsNorm,
+    planParamsNormOfResult,
     layout,
     planColors,
   }
@@ -162,9 +164,9 @@ export const getPlanResultsChartDataForPDF = (
   }): Extract<PlanResultsChartDataForPDF, { type: 'range' }> => {
     const { range, mfnRange, formatY, minYDisplayRangeEnd } = x
     const percentiles = {
-      start: _getPercentile(range, 5),
-      mid: _getPercentile(range, 50),
-      end: _getPercentile(range, 95),
+      start: _getPercentile(range, percentilesOfResult.low),
+      mid: _getPercentile(range, percentilesOfResult.mid),
+      end: _getPercentile(range, percentilesOfResult.high),
     }
     const minMax = block(() => {
       const xs = _.range(mfnRange.start, mfnRange.end + 1)
@@ -309,7 +311,8 @@ export const getPlanResultsChartDataForPDF = (
     case 'asset-allocation-total-portfolio':
       return _processRange({
         range:
-          simulationResult.totalPortfolio.afterWithdrawals.allocation.stocks,
+          simulationResult.totalPortfolio.afterWithdrawals
+            .allocationOrZeroIfNoWealth.stocks,
         mfnRange: hasLegacy
           ? xRangeAsMFN.allMonthsNoLegacy
           : xRangeAsMFN.allMonthsButLast,
@@ -327,9 +330,10 @@ export const getPlanResultsChartDataForPDF = (
       })
     default:
       if (isPlanResultsChartSpendingTotalFundingSourcesType(chartType)) {
-        const percentile = parseInt(
-          getPlanResultsChartSpendingTotalFundingSourcesPercentile(chartType),
-        )
+        const percentile =
+          percentilesOfResult[
+            getPlanResultsChartSpendingTotalFundingSourcesPercentile(chartType)
+          ]
         return _processBreakdown({
           mfnRange: spendingMonthsAsMFN,
           formatY: (y) => formatCurrency(y),
@@ -339,24 +343,28 @@ export const getPlanResultsChartDataForPDF = (
               (x) => x.percentile === percentile,
             ),
           ).data,
-          parts:
-            planParamsProcessed.byMonth.wealth.incomeDuringRetirement.byId.map(
-              (x) => {
-                const normEntry = fGet(
-                  planParamsNorm.wealth.incomeDuringRetirement.find(
-                    (y) => y.id === x.id,
-                  ),
-                )
-                return {
-                  yByX: x.values,
-                  xRange: x.validRange,
-                  id: `incomeDuringRetirement-${x.id}`,
-                  label: normEntry.label,
-                  sortIndex: normEntry.sortIndex,
-                  colorIndex: normEntry.colorIndex,
-                }
-              },
-            ),
+          parts: planParamsProcessed.amountTimed.wealth.incomeDuringRetirement.byId.map(
+            ({ id, values }) => {
+              const normEntry = fGet(
+                planParamsNormOfResult.wealth.incomeDuringRetirement.find(
+                  (y) => y.id === id,
+                ),
+              )
+              // If it is in the past, it is not sent to the server, and will not
+              // be part of planParamsProcessed.
+              assert(normEntry.amountAndTiming.type !== 'inThePast')
+              return {
+                yByX: values,
+                xRange: getPlanParamsServer.getValidMonthRangeForAmountTimed(
+                  normEntry.amountAndTiming,
+                ),
+                id: `incomeDuringRetirement-${id}`,
+                label: normEntry.label,
+                sortIndex: normEntry.sortIndex,
+                colorIndex: normEntry.colorIndex,
+              }
+            },
+          ),
           minYDisplayRangeEnd: 10,
         })
       }

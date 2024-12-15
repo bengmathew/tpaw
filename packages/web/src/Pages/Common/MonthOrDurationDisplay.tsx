@@ -1,11 +1,11 @@
 import { CalendarMonthFns, Month, noCase } from '@tpaw/common'
 import _ from 'lodash'
 import React from 'react'
-import { NormalizedDurationNotInThePast } from '../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
+import { NormalizedDurationNotInThePast } from '../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
 import {
   NormalizedMonthInThePast,
   NormalizedMonthNotInThePast,
-} from '../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizedMonth'
+} from '../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizedMonth'
 import {
   youAreOrYourPartnerIs,
   yourOrYourPartners,

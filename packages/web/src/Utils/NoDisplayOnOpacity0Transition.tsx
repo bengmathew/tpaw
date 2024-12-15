@@ -12,7 +12,7 @@ type _Props = {
   onTransitionEnd?: () => void
   onHidden?: () => void
   noDisplayMeans?: 'visibility:hidden' | 'return <></>'
-  onClick?: () => void
+  onClick?: React.MouseEventHandler<HTMLDivElement> | undefined
 }
 export const NoDisplayOnOpacity0Transition = React.memo(
   React.forwardRef<HTMLDivElement, _Props>(

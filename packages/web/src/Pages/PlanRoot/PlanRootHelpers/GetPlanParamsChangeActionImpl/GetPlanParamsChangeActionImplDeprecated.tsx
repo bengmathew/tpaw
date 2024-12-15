@@ -9,7 +9,7 @@ import {
   noCase,
 } from '@tpaw/common'
 import _ from 'lodash'
-import { PlanParamsHelperFns } from '../../../../UseSimulator/PlanParamsHelperFns'
+import { PlanParamsHelperFns } from '../../../../Simulator/PlanParamsHelperFns'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { InMonthsFns } from '../../../../Utils/InMonthsFns'
@@ -450,6 +450,17 @@ export const processPlanParamsChangeActionDeprecated = (
         render: () => {
           return `Added ${getLabeledAmountTimedLocationStr(location)} entry`
         },
+      }
+    }
+
+    // ---------
+    // setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting
+    // ---------
+    case 'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting': {
+      const { value } = action
+      return {
+        render: () =>
+          `Set historical monthly log returns adjustment override to fixed for testing to ${value}`,
       }
     }
 

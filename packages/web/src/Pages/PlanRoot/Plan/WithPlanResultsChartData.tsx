@@ -1,9 +1,7 @@
 import { fGet } from '@tpaw/common'
-import _ from 'lodash'
-import { ReactNode, use, useEffect, useMemo } from 'react'
-import { PERCENTILES_STR } from '../../../UseSimulator/Simulator/Simulator'
+import { ReactNode, useMemo } from 'react'
 import { createContext } from '../../../Utils/CreateContext'
-import { useSimulationResult } from '../PlanRootHelpers/WithSimulation'
+import { useSimulationResultInfo } from '../PlanRootHelpers/WithSimulation'
 import {
   PlanResultsChartData,
   PlanResultsChartDataForPDF,
@@ -14,9 +12,10 @@ import { PlanSizing } from './PlanSizing/PlanSizing'
 import { PlanTransitionState } from './PlanTransition'
 import { PlanColors } from './UsePlanColors'
 
-type _Value = Map<PlanResultsChartType, PlanResultsChartDataForPDF>
-
-const [PDFContext, usePDFContext] = createContext<_Value>('ChartDataForPDF')
+const [PDFContext, usePDFContext] =
+  createContext<Map<PlanResultsChartType, PlanResultsChartDataForPDF>>(
+    'ChartDataForPDF',
+  )
 const [NonPDFContext, useNonPDFContext] = createContext<{
   planSizing: PlanSizing
   planTransitionState: PlanTransitionState
@@ -24,7 +23,10 @@ const [NonPDFContext, useNonPDFContext] = createContext<{
 
 export const useChartDataForPDF = (
   type: PlanResultsChartType,
-): PlanResultsChartDataForPDF => fGet(usePDFContext().get(type))
+): PlanResultsChartDataForPDF => {
+  const pdfContext = usePDFContext()
+  return fGet(pdfContext.get(type))
+}
 
 export const useChartData = (
   type: PlanResultsChartType,
@@ -49,9 +51,9 @@ export const WithPlanResultsChartDataForPDF = ({
   planColors: PlanColors
   alwaysShowAllMonths: boolean
 }) => {
-  const simulationResult = useSimulationResult()
+  const { simulationResult } = useSimulationResultInfo()
   const value = useMemo(() => {
-    const { planParamsProcessed } = simulationResult.args
+    const { planParamsProcessed } = simulationResult
     const result = new Map<PlanResultsChartType, PlanResultsChartDataForPDF>()
     const _add = (type: PlanResultsChartType) => {
       result.set(
@@ -66,20 +68,20 @@ export const WithPlanResultsChartDataForPDF = ({
       )
     }
 
-    _add('spending-total')
-    PERCENTILES_STR.forEach((percentile) =>
-      _add(`spending-total-funding-sources-${percentile}`),
-    )
+    _add('spending-total'),
+      (['low', 'mid', 'high'] as const).forEach((percentile) =>
+        _add(`spending-total-funding-sources-${percentile}`),
+      )
     _add('spending-general')
     // Get keys from planParamsProcessed, not planParamsNorm because some keys
     // might be in the past, and not show up in planParamsProcessed. We don't
     // want to surface those in the UI.
 
-    planParamsProcessed.byMonth.adjustmentsToSpending.extraSpending.essential.byId.forEach(
+    planParamsProcessed.amountTimed.adjustmentsToSpending.extraSpending.essential.byId.forEach(
       ({ id }) => [id, _add(`spending-essential-${id}`)],
     )
 
-    planParamsProcessed.byMonth.adjustmentsToSpending.extraSpending.discretionary.byId.forEach(
+    planParamsProcessed.amountTimed.adjustmentsToSpending.extraSpending.discretionary.byId.forEach(
       ({ id }) => [id, _add(`spending-discretionary-${id}`)],
     )
     _add('portfolio')

@@ -23,9 +23,12 @@ use self::data::v4::v4_raw_monthly_non_log_series::V4_RAW_MONTHLY_NON_LOG_SERIES
 use self::data::v4::v4_raw_monthly_non_log_series::V4_RAW_MONTHLY_NON_LOG_SERIES_START;
 use self::data::v4::V4_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS;
 use self::data::{AnnualLogMeanFromOneOverCAPERegressionInfo, EmpiricalStats64};
-use crate::shared_types::{SimpleRange, YearAndMonth};
+use crate::shared_types::YearAndMonth;
+use crate::utils::fget_item_at_or_before_key::FGetItemAtOrBeforeKey;
+use crate::wire::{
+    WireHistoricalMonthlyLogReturnsAdjustedInfoArgs, WireHistoricalMonthlyLogReturnsAdjustedStats,
+};
 use crate::{
-    expected_value_of_returns::EmpiricalAnnualNonLogExpectedReturnInfo,
     historical_monthly_returns::data::{
         v1::{
             v1_annual_log_mean_from_one_over_cape_regression_info_stocks::V1_ANNUAL_LOG_MEAN_FROM_ONE_OVER_CAPE_REGRESSION_INFO_STOCKS,
@@ -36,12 +39,11 @@ use crate::{
     },
     return_series::{adjust_log_returns, periodize_log_returns, SeriesAndStats, Stats},
     shared_types::{LogAndNonLog, StocksAndBonds},
+    utils::expected_value_of_returns::EmpiricalAnnualNonLogExpectedReturnInfo,
 };
 use lazy_static::lazy_static;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tsify::Tsify;
-use wasm_bindgen::prelude::*;
+use std::ops::RangeInclusive;
 
 pub struct HistoricalMonthlyReturns {
     pub log: SeriesAndStats,
@@ -51,27 +53,44 @@ pub struct HistoricalMonthlyReturns {
         AnnualLogMeanFromOneOverCAPERegressionInfo,
 }
 
-#[derive(Serialize, Deserialize, Tsify, Copy, Clone)]
-#[serde(rename_all = "camelCase")]
+#[derive(Copy, Clone)]
 pub struct HistoricalMonthlyLogReturnsAdjustedInfoArgs {
     empirical_annual_non_log_expected_return_info: EmpiricalAnnualNonLogExpectedReturnInfo,
     empirical_annual_log_variance: f64,
 }
 
-#[derive(Serialize, Deserialize, Tsify, Copy, Clone)]
-#[serde(rename_all = "camelCase")]
-#[tsify(into_wasm_abi, from_wasm_abi)]
+impl From<HistoricalMonthlyLogReturnsAdjustedInfoArgs>
+    for WireHistoricalMonthlyLogReturnsAdjustedInfoArgs
+{
+    fn from(value: HistoricalMonthlyLogReturnsAdjustedInfoArgs) -> Self {
+        Self {
+            empirical_annual_non_log_expected_return: value
+                .empirical_annual_non_log_expected_return_info
+                .value,
+            empirical_annual_log_variance: value.empirical_annual_log_variance,
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct HistoricalMonthlyLogReturnsAdjustedStats {
     pub log: Stats,
     pub annualized: LogAndNonLog<Stats>,
 }
 
-#[derive(Serialize, Deserialize, Tsify, Clone)]
-#[serde(rename_all = "camelCase")]
+impl From<HistoricalMonthlyLogReturnsAdjustedStats>
+    for WireHistoricalMonthlyLogReturnsAdjustedStats
+{
+    fn from(value: HistoricalMonthlyLogReturnsAdjustedStats) -> Self {
+        Self {
+            log: value.log.into(),
+            annualized: value.annualized.into(),
+        }
+    }
+}
+
 pub struct HistoricalMonthlyLogReturnsAdjustedInfo {
-    #[serde(skip)]
     pub log_series: Vec<f64>,
-    #[serde(skip)]
     pub non_log_series: Vec<f64>,
     pub stats: HistoricalMonthlyLogReturnsAdjustedStats,
     pub args: HistoricalMonthlyLogReturnsAdjustedInfoArgs,
@@ -248,17 +267,14 @@ impl HistoricalReturnsId {
 pub struct HistoricalReturnsInfo {
     pub id: HistoricalReturnsId,
     pub timestamp_ms: i64,
-    pub month_range: SimpleRange<YearAndMonth>,
+    pub month_range: RangeInclusive<YearAndMonth>,
     pub returns: StocksAndBonds<HistoricalMonthlyReturns>,
 }
 
 fn get_all_historical_returns_infos() -> Vec<HistoricalReturnsInfo> {
-    fn get_month_range(start: &YearAndMonth, n: usize) -> SimpleRange<YearAndMonth> {
+    fn get_month_range(start: &YearAndMonth, n: usize) -> RangeInclusive<YearAndMonth> {
         let end = start.add_months(n as i64 - 1);
-        SimpleRange {
-            start: start.clone(),
-            end,
-        }
+        start.clone()..=end
     }
     let v1 = {
         let monthly_series = process_raw_monthly_non_log_series(&V1_RAW_MONTHLY_NON_LOG_SERIES);
@@ -362,19 +378,17 @@ fn get_all_historical_returns_infos() -> Vec<HistoricalReturnsInfo> {
     result
 }
 
+// TODO: After duration matching, get this along with the other market data
 lazy_static! {
     pub static ref HISTORICAL_MONTHLY_RETURNS: Vec<HistoricalReturnsInfo> =
         get_all_historical_returns_infos();
 }
+pub fn get_historical_monthly_returns_vec() -> &'static Vec<HistoricalReturnsInfo> {
+    &HISTORICAL_MONTHLY_RETURNS
+}
 
 pub fn get_historical_monthly_returns_info(timestamp_ms: i64) -> &'static HistoricalReturnsInfo {
-    let x1: &'static Vec<HistoricalReturnsInfo> = &HISTORICAL_MONTHLY_RETURNS;
-    let result = &x1
-        .iter()
-        .rev()
-        .find(|x| x.timestamp_ms <= timestamp_ms)
-        .unwrap();
-    &result
+    HISTORICAL_MONTHLY_RETURNS.fget_item_at_or_before_key(timestamp_ms, |x| x.timestamp_ms)
 }
 
 #[cfg(test)]

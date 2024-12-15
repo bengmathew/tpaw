@@ -1,13 +1,10 @@
-import { DateTime } from 'luxon'
+import clsx from 'clsx'
 import React from 'react'
 import { appPaths } from '../../../../AppPaths'
+import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
+import { useSimulationResultInfo } from '../WithSimulation'
 import { PlanPrintViewPageGroup } from './Helpers/PlanPrintViewPageGroup'
 import { PlanPrintViewArgs } from './PlanPrintViewArgs'
-import { useSimulationResult } from '../WithSimulation'
-import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
-import { useIANATimezoneName } from '../WithNonPlanParams'
-import { getNYZonedTime } from '@tpaw/common'
-import clsx from 'clsx'
 
 export const PlanPrintViewFrontSection = React.memo(
   ({
@@ -19,8 +16,8 @@ export const PlanPrintViewFrontSection = React.memo(
     settings: PlanPrintViewArgs['settings']
     planLabel: string | null
   }) => {
-    const { args } = useSimulationResult()
-    const { datingInfo } = args.planParamsNorm
+    const { datingInfo } = useSimulationResultInfo().simulationResult
+      .planParamsNormOfResult
 
     return (
       <PlanPrintViewPageGroup className="relative" settings={settings}>

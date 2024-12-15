@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { PlanMenuActionModalConvertDatingCommon } from './PlanMenuActionModalConvertDatingCommon'
-import { PlanParamsHelperFns } from '../../../../../../UseSimulator/PlanParamsHelperFns'
+import { PlanParamsHelperFns } from '../../../../../../Simulator/PlanParamsHelperFns'
 import { useIANATimezoneName } from '../../../../PlanRootHelpers/WithNonPlanParams'
 import {
   SimulationInfoForServerSrc,
-  useSimulation,
+  useSimulationInfo,
+  useSimulationResultInfo,
 } from '../../../../PlanRootHelpers/WithSimulation'
-import { assertFalse, fGet, noCase } from '@tpaw/common'
+import { assert, assertFalse, fGet, noCase } from '@tpaw/common'
 import { useMutation } from 'react-relay'
 import { graphql } from 'relay-runtime'
 import { AppError } from '../../../../../App/AppError'
@@ -63,9 +64,9 @@ const _Body = React.memo(
     const { defaultErrorHandlerForNetworkCall } =
       useDefaultErrorHandlerForNetworkCall()
     const { setGlobalError } = useSetGlobalError()
+    const { planPaths } = useSimulationInfo()
+    const { simulationResult } = useSimulationResultInfo()
     const { ianaTimezoneName } = useIANATimezoneName()
-    const { planParamsNorm, currentPortfolioBalanceInfo, planPaths } =
-      useSimulation()
     const [state, setState] = useState<
       { type: 'confirm' } | { type: 'running' }
     >({
@@ -73,23 +74,26 @@ const _Body = React.memo(
     })
     const urlUpdater = useURLUpdater()
 
-    const [mutation] = useMutation<PlanMenuActionModalConvertDatingServerMutation>(graphql`
-      mutation PlanMenuActionModalConvertDatingServerMutation($input: UserPlanResetInput!) {
-        userPlanReset(input: $input) {
-          __typename
-          ... on PlanAndUserResult {
-            plan {
-              id
-              lastSyncAt
-              ...PlanWithoutParamsFragment
+    const [mutation] =
+      useMutation<PlanMenuActionModalConvertDatingServerMutation>(graphql`
+        mutation PlanMenuActionModalConvertDatingServerMutation(
+          $input: UserPlanResetInput!
+        ) {
+          userPlanReset(input: $input) {
+            __typename
+            ... on PlanAndUserResult {
+              plan {
+                id
+                lastSyncAt
+                ...PlanWithoutParamsFragment
+              }
+            }
+            ... on ConcurrentChangeError {
+              _
             }
           }
-          ... on ConcurrentChangeError {
-            _
-          }
         }
-      }
-    `)
+      `)
 
     const handleConvert = () => {
       mutation({
@@ -100,8 +104,9 @@ const _Body = React.memo(
             lastSyncAt: plan.lastSyncAt,
             planParams: JSON.stringify(
               PlanParamsHelperFns.switchDating(
-                planParamsNorm,
-                currentPortfolioBalanceInfo,
+                simulationResult.planParamsNormOfResult,
+                simulationResult.portfolioBalanceEstimationByDated
+                  .currentBalance,
                 ianaTimezoneName,
               ),
             ),

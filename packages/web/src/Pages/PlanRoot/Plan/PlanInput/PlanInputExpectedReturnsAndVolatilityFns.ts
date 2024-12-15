@@ -4,7 +4,7 @@ import {
   partialDefaultDatelessPlanParams,
 } from '@tpaw/common'
 import _ from 'lodash'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../PlanRootHelpers/WithSimulation'
 
 type ExpectedReturnsForPlanning =
   PlanParams['advanced']['returnsStatsForPlanning']['expectedValue']['empiricalAnnualNonLog']
@@ -117,27 +117,27 @@ export const useIsPlanInputExpectedReturnsAndVolatilityModified = () => {
 }
 
 export const useIsPlanInputExpectedReturnsCardModified = () => {
-  const { planParamsNorm } = useSimulation()
+  const { planParamsNormInstant } = useSimulationInfo()
   return !_.isEqual(
     partialDefaultDatelessPlanParams.advanced.returnsStatsForPlanning
       .expectedValue,
-    planParamsNorm.advanced.returnsStatsForPlanning.expectedValue,
+    planParamsNormInstant.advanced.returnsStatsForPlanning.expectedValue,
   )
 }
 export const useIsPlanInputStockVolatilityCardModified = () => {
-  const { planParamsNorm } = useSimulation()
+  const { planParamsNormInstant } = useSimulationInfo()
   return !_.isEqual(
     partialDefaultDatelessPlanParams.advanced.returnsStatsForPlanning
       .standardDeviation.stocks,
-    planParamsNorm.advanced.returnsStatsForPlanning.standardDeviation.stocks,
+    planParamsNormInstant.advanced.returnsStatsForPlanning.standardDeviation.stocks,
   )
 }
 
 export const useIsPlanInputBondVolatilityCardModified = () => {
-  const { planParamsNorm } = useSimulation()
+  const { planParamsNormInstant } = useSimulationInfo()
   return !_.isEqual(
     partialDefaultDatelessPlanParams.advanced.historicalReturnsAdjustment
       .standardDeviation.bonds,
-    planParamsNorm.advanced.historicalReturnsAdjustment.standardDeviation.bonds,
+    planParamsNormInstant.advanced.historicalReturnsAdjustment.standardDeviation.bonds,
   )
 }

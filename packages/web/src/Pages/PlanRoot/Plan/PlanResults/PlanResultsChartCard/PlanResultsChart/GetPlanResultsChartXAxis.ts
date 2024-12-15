@@ -11,8 +11,8 @@ export const getPlanResultsChartXAxis = (
   },
 ) =>
   new ChartXAxis<{ data: PlanResultsChartDataForPDF }>(
-    ({ data: { planParamsNorm, layout, planColors } }) => {
-      const { ages } = planParamsNorm
+    ({ data: { planParamsNormOfResult, layout, planColors } }) => {
+      const { ages } = planParamsNormOfResult
       if (personType === 'person2' && !ages.person2) return null
       const person = fGet(ages[personType])
       return {

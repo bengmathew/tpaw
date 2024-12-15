@@ -18,8 +18,8 @@ import {
   partialDefaultDatelessPlanParams,
 } from '@tpaw/common'
 import _ from 'lodash'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { PlanParamsHelperFns } from '../../../../UseSimulator/PlanParamsHelperFns'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsHelperFns } from '../../../../Simulator/PlanParamsHelperFns'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { yourOrYourPartners } from '../../../../Utils/YourOrYourPartners'
@@ -1021,17 +1021,28 @@ export const getPlanParamsChangeActionImpl = (
     }
 
     // ---------
-    // setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting
+    // setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting2
     // ---------
-    case 'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting': {
+    case 'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting2': {
       const { value } = action
       return {
         applyToClone: (clone) => {
           clone.advanced.historicalReturnsAdjustment.overrideToFixedForTesting =
-            value ? { type: 'useExpectedReturnsForPlanning' } : { type: 'none' }
+            value
         },
-        render: () =>
-          `Set historical monthly log returns adjustment override to fixed for testing to ${value}`,
+        render: () => {
+          const valueStr = block(() => {
+            switch (value.type) {
+              case 'none':
+                return 'No Override'
+              case 'useExpectedReturnsForPlanning':
+                return 'Expected Returns'
+              case 'manual':
+                return `Manual: (stocks: ${formatPercentage(1)(value.stocks)}, bonds: ${formatPercentage(1)(value.bonds)})`
+            }
+          })
+          return `Set historical returns adjustment override to fixed for testing: ${valueStr}`
+        },
         merge: false,
       }
     }

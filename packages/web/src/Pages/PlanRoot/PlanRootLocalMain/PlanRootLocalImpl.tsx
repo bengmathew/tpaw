@@ -13,7 +13,7 @@ import { useIANATimezoneName } from '../PlanRootHelpers/WithNonPlanParams'
 import {
   SimulationParams,
   WithSimulation,
-  useSimulationParamsForPlanMode,
+  getSimulationParamsForPlanMode,
 } from '../PlanRootHelpers/WithSimulation'
 import { PlanLocalStorage } from './PlanLocalStorage'
 
@@ -69,12 +69,12 @@ export const PlanRootLocalImpl = React.memo(
       [reload],
     )
 
-    const simulationParams = useSimulationParamsForPlanMode(
+    const simulationParams = getSimulationParamsForPlanMode(
       planPaths,
       currentTimeInfo,
       workingPlanInfo,
-      startingSrc.planMigratedFromVersion,
       null,
+      startingSrc.planMigratedFromVersion,
       { src: 'localMain', reset },
       pdfReportInfo,
     )

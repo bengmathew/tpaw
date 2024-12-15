@@ -1,7 +1,7 @@
 import { DialogPosition, noCase } from '@tpaw/common'
 import React from 'react'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../UsePlanColors'
 
 const _state = (dialogPosition: DialogPosition) => {
@@ -22,8 +22,8 @@ const _state = (dialogPosition: DialogPosition) => {
 }
 export const PlanResultsDialogCurtain = React.memo(
   ({ layout }: { layout: 'mobile' | 'laptop' | 'desktop' }) => {
-    const { planParamsNorm } = useSimulation()
-    const { dialogPosition } = planParamsNorm
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { dialogPosition } = planParamsNormInstant
     const state = _state(dialogPosition.effective)
 
     const planColors = usePlanColors()

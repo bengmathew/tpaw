@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Switch } from '@headlessui/react'
 import _ from 'lodash'
 import React, { useMemo, useState } from 'react'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { Contentful } from '../../../../Utils/Contentful'
 import { errorToast } from '../../../../Utils/CustomToasts'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
@@ -13,7 +13,10 @@ import { AmountInput } from '../../../Common/Inputs/AmountInput'
 import { smartDeltaFnForMonthlyAmountInput } from '../../../Common/Inputs/SmartDeltaFnForAmountInput'
 import { SwitchAsToggle } from '../../../Common/Inputs/SwitchAsToggle'
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../../PlanRootHelpers/WithSimulation'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
@@ -21,9 +24,10 @@ import {
 
 export const PlanInputSpendingCeilingAndFloor = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const { planParamsNorm, simulationResult } = useSimulation()
-    const { initialCeiling, initialFloor } = useMemo(() => {
-      const { ages } = planParamsNorm
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { simulationResult } = useSimulationResultInfo()
+    const initialValues = useMemo(() => {
+      const { ages } = simulationResult.planParamsNormOfResult
 
       const last = fGet(
         _.last(
@@ -43,31 +47,32 @@ export const PlanInputSpendingCeilingAndFloor = React.memo(
       const minWithdrawal = Math.min(
         ...first.slice(ages.simulationMonths.withdrawalStartMonth.asMFN),
       )
-      const initialCeiling = smartDeltaFnForMonthlyAmountInput.increment(
+      const ceiling = smartDeltaFnForMonthlyAmountInput.increment(
         minWithdrawal + (maxWithdrawal - minWithdrawal) / 2,
       )
-      const initialFloor = Math.min(
+      const floor = Math.min(
         smartDeltaFnForMonthlyAmountInput.increment(
           minWithdrawal + (maxWithdrawal - minWithdrawal) * 0.05,
         ),
-        planParamsNorm.adjustmentsToSpending.tpawAndSPAW
+        planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW
           .monthlySpendingCeiling ?? Number.MAX_SAFE_INTEGER,
       )
 
-      return { initialCeiling, initialFloor }
-    }, [planParamsNorm, simulationResult])
+      return { ceiling, floor }
+    }, [planParamsNormInstant, simulationResult])
+
     return (
       <PlanInputBody {...props}>
         <>
           <_SpendingCeilingCard
             className=""
             props={props}
-            initialCeiling={initialCeiling}
+            initialCeiling={initialValues.ceiling}
           />
           <_SpendingFloorCard
             className="mt-8"
             props={props}
-            initialFloor={initialFloor}
+            initialFloor={initialValues.floor}
           />
         </>
       </PlanInputBody>
@@ -86,21 +91,23 @@ export const _SpendingCeilingCard = React.memo(
     initialCeiling: number
   }) => {
     const content = usePlanContent()['spending-ceiling-and-floor']
-    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
 
     const [entryOnEnabled, setEntryOnEnabled] = useState(initialCeiling)
 
     const handleAmount = (amount: number | null) => {
       if (
         amount ===
-        planParamsNorm.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling
+        planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW
+          .monthlySpendingCeiling
       )
         return
       amount = (() => {
         if (amount === null) return null
         if (amount < 0) return 0
         const floor =
-          planParamsNorm.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor
+          planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW
+            .monthlySpendingFloor
         if (floor !== null && amount < floor) {
           errorToast('Spending ceiling cannot be lower that spending floor.')
           return floor
@@ -113,7 +120,8 @@ export const _SpendingCeilingCard = React.memo(
     }
 
     const value =
-      planParamsNorm.adjustmentsToSpending.tpawAndSPAW.monthlySpendingCeiling
+      planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW
+        .monthlySpendingCeiling
 
     return (
       <div
@@ -123,7 +131,7 @@ export const _SpendingCeilingCard = React.memo(
         <h2 className="font-bold text-lg mb-2">Spending Ceiling</h2>
         <div className="">
           <Contentful.RichText
-            body={content.ceiling[planParamsNorm.advanced.strategy]}
+            body={content.ceiling[planParamsNormInstant.advanced.strategy]}
             p=" p-base"
           />
         </div>
@@ -199,21 +207,22 @@ export const _SpendingFloorCard = React.memo(
     initialFloor: number
   }) => {
     const content = usePlanContent()['spending-ceiling-and-floor']
-    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
 
     const [entryOnEnabled, setEntryOnEnabled] = useState(initialFloor)
 
     const handleAmount = (amount: number | null) => {
       if (
         amount ===
-        planParamsNorm.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor
+        planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW
+          .monthlySpendingFloor
       )
         return
       amount = (() => {
         if (amount === null) return null
         if (amount < 0) return 0
         const ceiling =
-          planParamsNorm.adjustmentsToSpending.tpawAndSPAW
+          planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW
             .monthlySpendingCeiling
         if (ceiling !== null && amount > ceiling) {
           errorToast('Spending floor cannot be higher that spending ceiling.')
@@ -227,7 +236,8 @@ export const _SpendingFloorCard = React.memo(
     }
 
     const value =
-      planParamsNorm.adjustmentsToSpending.tpawAndSPAW.monthlySpendingFloor
+      planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW
+        .monthlySpendingFloor
 
     return (
       <div
@@ -237,7 +247,7 @@ export const _SpendingFloorCard = React.memo(
         <h2 className="font-bold text-lg mb-2">Spending Floor</h2>
         <div className="">
           <Contentful.RichText
-            body={content.floor[planParamsNorm.advanced.strategy]}
+            body={content.floor[planParamsNormInstant.advanced.strategy]}
             p=" p-base mt-2"
           />
         </div>

@@ -1,12 +1,12 @@
 import { fGet } from '@tpaw/common'
 import { default as React, useRef, useState } from 'react'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import {
   LabelAmountOptMonthRangeInput,
   LabelAmountOptMonthRangeInputStateful,
 } from '../../../Common/Inputs/LabelAmountTimedOrUntimedInput/LabeledAmountTimedOrUntimedInput'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../PlanRootHelpers/WithSimulation'
 import { LabeledAmountTimedListInput } from '../../../Common/Inputs/LabeledAmountTimedListInput'
 import { PlanInputSummaryLabeledAmountTimedList } from './Helpers/PlanInputSummaryLabeledAmountTimedList'
 import {
@@ -22,8 +22,8 @@ type _EditState = {
 }
 export const PlanInputFutureSavings = React.memo(
   (props: PlanInputBodyPassThruProps) => {
-    const { planParamsNorm } = useSimulation()
-    const { ages } = planParamsNorm
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { ages } = planParamsNormInstant
     const [editState, setEditState] = useState<{
       isAdd: boolean
       entryId: string
@@ -84,8 +84,8 @@ const _FutureSavingsCard = React.memo(
     editState: _EditState | null
     setEditState: (x: _EditState | null) => void
   }) => {
-    const { planParamsNorm } = useSimulation()
-    const { ages } = planParamsNorm
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { ages } = planParamsNormInstant
 
     return (
       <div className={`${className}`}>
@@ -106,11 +106,11 @@ const _FutureSavingsCard = React.memo(
                   type: 'startAndEnd',
                   start: {
                     type: 'now',
-                    monthOfEntry: planParamsNorm.datingInfo.isDated
+                    monthOfEntry: planParamsNormInstant.datingInfo.isDated
                       ? {
                           isDatedPlan: true,
                           calendarMonth: CalendarDayFns.toCalendarMonth(
-                            planParamsNorm.datingInfo.nowAsCalendarDay,
+                            planParamsNormInstant.datingInfo.nowAsCalendarDay,
                           ),
                         }
                       : { isDatedPlan: false },

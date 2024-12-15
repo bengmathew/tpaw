@@ -5,17 +5,18 @@ import {
   getPlanResultsChartSpendingTotalFundingSourcesPercentile,
   isPlanResultsChartSpendingTotalFundingSourcesType,
 } from '../../../Plan/PlanResults/PlanResultsChartType'
-import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 
 export const getPlanPrintChartLabel = (
-  planParamsNorm: PlanParamsNormalized,
+  planParamsNormOfResult: PlanParamsNormalized,
+  percentilesOfResult: { low: number; mid: number; high: number },
   type: PlanResultsChartType,
 ) => {
   const {
     label: labelIn,
     subLabel: subLabelIn,
     yAxisDescription,
-  } = planResultsChartLabel(planParamsNorm, type)
+  } = planResultsChartLabel(planParamsNormOfResult, type)
   const label = labelIn
   const subLabel = isPlanResultsChartSpendingTotalFundingSourcesType(type)
     ? `Funding Sources for the ${getPlanResultsChartSpendingTotalFundingSourcesPercentile(
@@ -26,20 +27,22 @@ export const getPlanPrintChartLabel = (
     ? yAxisDescription.notMobile.map((x) => x.value).join(' ')
     : null
   const description =
-    type === 'spending-total-funding-sources-5' ? (
+    type === 'spending-total-funding-sources-low' ? (
       <span>
-        The graph also shows the 50
-        <span className=" align-super text-[10px]">th</span> and 95
+        The graph also shows the {percentilesOfResult.mid}
+        <span className=" align-super text-[10px]">th</span> and{' '}
+        {percentilesOfResult.high}
         <span className=" align-super text-[10px]">th</span> percentiles of
         spending in the background.
       </span>
     ) : (
       <span>
-        The graph shows the 5
-        <span className=" align-super text-[10px]">th</span> to 95
+        The graph shows the {percentilesOfResult.low}
+        <span className=" align-super text-[10px]">th</span> to{' '}
+        {percentilesOfResult.high}
         <span className=" align-super text-[10px]">th</span> percentile range
-        with the 50<span className=" align-super text-[10px]">th</span>{' '}
-        percentile in bold.
+        with the {percentilesOfResult.mid}
+        <span className=" align-super text-[10px]">th</span> percentile in bold.
       </span>
     )
 

@@ -12,7 +12,10 @@ import { useState } from 'react'
 import { appPaths } from '../../../../../AppPaths'
 import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
 import { setPlansOnDoneURL } from '../../../../Plans/Plans'
-import { SimulationInfoForServerSrc } from '../../../PlanRootHelpers/WithSimulation'
+import {
+  SimulationInfoForServerSrc,
+  useSimulationResultInfo,
+} from '../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionModalCopyServer } from '../PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalCopyServer'
 import { PlanMenuActionModalCreatePlan } from '../PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalCreatePlan'
 import { PlanMenuActionModalSetAsMain } from '../PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalSetAsMain'
@@ -24,6 +27,7 @@ export const usePlanMenuSectionManagePlansLoggedIn = ({
   simulationInfoForServerSrc: SimulationInfoForServerSrc | null
   isModified: false | { setForceNav: () => void }
 }) => {
+  const { simulationResult } = useSimulationResultInfo()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showDuplicateModal, setShowDuplicateModal] = useState(false)
   const [showSetAsMainModal, setShowSetAsMainModal] = useState(false)
@@ -80,7 +84,7 @@ export const usePlanMenuSectionManagePlansLoggedIn = ({
             <span className="context-menu-icon ">
               <FontAwesomeIcon className="" icon={faHome} />
             </span>{' '}
-            Open Main 
+            Open Main
           </Link>
         </Menu.Item>
       )}

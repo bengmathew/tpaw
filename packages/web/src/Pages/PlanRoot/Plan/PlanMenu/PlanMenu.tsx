@@ -1,7 +1,7 @@
 import { assertFalse, noCase } from '@tpaw/common'
 import React, { useMemo } from 'react'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../PlanRootHelpers/WithSimulation'
 import {
   PlanTransitionState,
   simplifyPlanTransitionState5,
@@ -42,7 +42,12 @@ const _toPlanMenuTransitionState = simplifyPlanTransitionState5(
   },
 )
 type _PlanUndoTransitionState = ReturnType<typeof _toPlanMenuTransitionState>
-
+// Note: The plan menu, execpt for the undo/redo menu and rewind menu uses
+// params from simulationResult similar to PlanResults and not directly from
+// simulationInfo. This is because actions rely on results (e.g. portfolio
+// balance, etc) which are available only in simulationResult and it is
+// complicated and  sematically hard to reason about correctness if we use some
+// data from simulationInfo.
 export const PlanMenu = React.memo(
   ({
     sizing,
@@ -56,7 +61,7 @@ export const PlanMenu = React.memo(
       [planTransition.target, sizing],
     )
 
-    const { simulationInfoByMode, simulationInfoBySrc } = useSimulation()
+    const { simulationInfoByMode, simulationInfoBySrc } = useSimulationInfo()
 
     return (
       <NoDisplayOnOpacity0Transition

@@ -473,6 +473,7 @@ export namespace PlanParams29 {
       annualInflation: { type: 'suggested' } | { type: 'manual'; value: number }
       strategy: 'TPAW' | 'SPAW' | 'SWR'
     }
+    // TODO: No longer necessary.
     results: {
       displayedAssetAllocation: { stocks: number }
     } | null

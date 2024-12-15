@@ -3,7 +3,7 @@ import { faCircle as faCircleSolid } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { RadioGroup } from '@headlessui/react'
 import React from 'react'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 
 export const PlanInputAgeWithdrawalStart = React.memo(
   ({
@@ -13,8 +13,8 @@ export const PlanInputAgeWithdrawalStart = React.memo(
     className?: string
     style?: React.CSSProperties
   }) => {
-    const { planParamsNorm, updatePlanParams } = useSimulation()
-    const { person1, person2, simulationMonths } = planParamsNorm.ages
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
+    const { person1, person2, simulationMonths } = planParamsNormInstant.ages
     if (!person2) return <></>
     if (person1.retirement.isRetired && person2.retirement.isRetired)
       return <></>

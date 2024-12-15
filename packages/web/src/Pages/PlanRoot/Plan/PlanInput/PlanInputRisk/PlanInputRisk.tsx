@@ -1,7 +1,7 @@
 import { noCase } from '@tpaw/common'
 import React from 'react'
-import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
@@ -17,19 +17,19 @@ import {
 } from './PlanInputRiskTPAW'
 
 export const PlanInputRisk = React.memo((props: PlanInputBodyPassThruProps) => {
-  const { planParamsNorm } = useSimulation()
+  const { planParamsNormInstant } = useSimulationInfo()
 
   return (
     <PlanInputBody {...props}>
       <>
-        {planParamsNorm.advanced.strategy === 'TPAW' ? (
+        {planParamsNormInstant.advanced.strategy === 'TPAW' ? (
           <PlanInputRiskTPAW props={props} />
-        ) : planParamsNorm.advanced.strategy === 'SPAW' ? (
+        ) : planParamsNormInstant.advanced.strategy === 'SPAW' ? (
           <PlanInputRiskSPAW props={props} />
-        ) : planParamsNorm.advanced.strategy === 'SWR' ? (
+        ) : planParamsNormInstant.advanced.strategy === 'SWR' ? (
           <PlanInputRiskSWR props={props} />
         ) : (
-          noCase(planParamsNorm.advanced.strategy)
+          noCase(planParamsNormInstant.advanced.strategy)
         )}
       </>
     </PlanInputBody>
@@ -40,11 +40,15 @@ export const PlanInputRiskSummary = React.memo(
   ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
     switch (planParamsNorm.advanced.strategy) {
       case 'TPAW':
-        return <PlanInputRiskTPAWSummary planParamsNorm={planParamsNorm} />
+        return <PlanInputRiskTPAWSummary planParamsNormInstant={planParamsNorm} />
       case 'SPAW':
-        return <PlanInputRiskSPAWSummary planParamsNorm={planParamsNorm} />
+        return (
+          <PlanInputRiskSPAWSummary planParamsNormInstant={planParamsNorm} />
+        )
       case 'SWR':
-        return <PlanInputRiskSWRSummary planParamsNorm={planParamsNorm} />
+        return (
+          <PlanInputRiskSWRSummary planParamsNormInstant={planParamsNorm} />
+        )
       default:
         noCase(planParamsNorm.advanced.strategy)
     }

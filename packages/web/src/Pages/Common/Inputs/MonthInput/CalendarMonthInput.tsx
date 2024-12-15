@@ -10,10 +10,10 @@ import clsx from 'clsx'
 import _ from 'lodash'
 import React, { useEffect, useMemo, useState } from 'react'
 import { SimpleRange } from '../../../../Utils/SimpleRange'
-import { useSimulation } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { ModalListbox } from '../../Modal/ModalListbox'
 
-// TODO: Handle validRangeAsMFN = null (currently crashes)
+// NOTE: Edge case where validRangeAsMFN === null may be crashing.
 export const CalendarMonthInput = React.memo(
   ({
     className,
@@ -27,9 +27,9 @@ export const CalendarMonthInput = React.memo(
     }
     onChange: (x: CalendarMonth) => void
   }) => {
-    const { planParamsNorm } = useSimulation()
-    assert(planParamsNorm.datingInfo.isDated)
-    const nowAsCalendarDay = planParamsNorm.datingInfo.nowAsCalendarDay
+    const { planParamsNormInstant  } = useSimulationInfo()
+    assert(planParamsNormInstant.datingInfo.isDated)
+    const nowAsCalendarDay = planParamsNormInstant.datingInfo.nowAsCalendarDay
 
     const toMFN = CalendarMonthFns.getToMFN(nowAsCalendarDay)
     const fromMFN = CalendarMonthFns.getFromMFN(nowAsCalendarDay)

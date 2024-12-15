@@ -1,47 +1,42 @@
 import {
   CalendarDay,
-  CalendarMonthFns,
-  DEFAULT_MONTE_CARLO_SIMULATION_SEED,
   PlanParams,
   PlanParamsChangeActionCurrent,
-  PlanParamsHistoryFns,
   SomePlanParamsVersion,
-  assert,
-  block,
   fGet,
   getNYZonedTime,
+  getZonedTimeFns,
   noCase,
   nonPlanParamFns,
 } from '@tpaw/common'
 import cloneJSON from 'fast-json-clone'
-import _ from 'lodash'
 import React, {
   useCallback,
+  useEffect,
+  useInsertionEffect,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react'
+import { useGlobalSuspenseFallbackContext } from '../../../../pages/_app'
 import { appPaths } from '../../../AppPaths'
+import { PlanParamsNormalized } from '../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { normalizePlanParamsInverse } from '../../../Simulator/NormalizePlanParams/NormalizePlanParamsInverse'
+import { DailyMarketSeriesSrc } from '../../../Simulator/SimulateOnServer/SimulateOnServer'
 import {
-  PlanParamsNormalized,
-  normalizePlanParams,
-} from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { normalizePlanParamsInverse } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
-import { CallRust } from '../../../UseSimulator/PlanParamsProcessed/CallRust'
-import { processPlanParams } from '../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
-import { SimulationResult } from '../../../UseSimulator/Simulator/Simulator'
-import { useSimulator } from '../../../UseSimulator/UseSimulator'
+  SimulationResult2,
+  useSimulator,
+} from '../../../Simulator/UseSimulator'
 import { createContext } from '../../../Utils/CreateContext'
 import { infoToast } from '../../../Utils/CustomToasts'
 import { UnionToIntersection } from '../../../Utils/UnionToIntersection'
+import { useAssertConst } from '../../../Utils/UseAssertConst'
 import { useURLParam } from '../../../Utils/UseURLParam'
 import { User, useUser } from '../../App/WithUser'
-import { getMarketDataForTime } from '../../Common/GetMarketData'
 import { Plan } from '../Plan/Plan'
 import { PlanFileData, PlanFileDataFns } from '../PlanRootFile/PlanFileData'
 import { ServerSyncState } from '../PlanServerImpl/UseServerSyncPlan'
-import { CurrentPortfolioBalance } from './CurrentPortfolioBalance'
 import {
   PlanPrintViewArgs,
   PlanPrintViewSettingsClientSide,
@@ -49,10 +44,10 @@ import {
 } from './PlanPrintView/PlanPrintViewArgs'
 import { CurrentTimeInfo } from './UseCurrentTime'
 import { WorkingPlanInfo } from './UseWorkingPlan'
-import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName, useNonPlanParams } from './WithNonPlanParams'
-import { CalendarDayFns } from '../../../Utils/CalendarDayFns'
 
+export const DEFAULT_MONTE_CARLO_SIMULATION_SEED = 860336713
+const PERCENTILES = { low: 5, mid: 50, high: 95 }
 type UpdatePlanParamsFromAction<T> = UnionToIntersection<
   T extends PlanParamsChangeActionCurrent
     ? (x: T['type'], v: T['value']) => void
@@ -66,20 +61,14 @@ export type SimulationInfo = {
   planPaths: (typeof appPaths)['plan']
   fastForwardInfo: CurrentTimeInfo['fastForwardInfo']
 
-  // defaultPlanParams: PlanParams
-
-  currentPortfolioBalanceInfo:
-    | {
-        isDatedPlan: true
-        info: CurrentPortfolioBalance.CutInfo
-      }
-    | { isDatedPlan: false; amount: number }
-
   planParamsId: string
-  planParamsNorm: PlanParamsNormalized
+  // "Instant" to distinguish from planParamsNormInResult which matches the
+  // result exactly, while this instantly reflects the changes made by the user.
+  planParamsNormInstant: PlanParamsNormalized
   planMigratedFromVersion: SomePlanParamsVersion
 
   updatePlanParams: UpdatePlanParams
+  planParamsHistoryDays: Set<number>
 
   simulationInfoBySrc:
     | {
@@ -121,14 +110,11 @@ export type SimulationInfo = {
     | {
         mode: 'history'
         actualCurrentTimestamp: number
-        planParamsHistory: { id: string; params: PlanParams }[]
-        planParamsHistoryDays: Set<number>
       }
 
-  simulationResult: SimulationResult
-  simulationResultIsCurrent: boolean
   numOfSimulationForMonteCarloSampling: number
   randomSeed: number
+
   reRun: (seed: 'random' | number) => void
 }
 
@@ -156,7 +142,6 @@ export type SimulationInfoForServerSidePrintSrc = Extract<
   SimulationInfo['simulationInfoBySrc'],
   { src: 'serverSidePrint' }
 >
-
 export type SimulationInfoForPlanMode = Extract<
   SimulationInfo['simulationInfoByMode'],
   { mode: 'plan' }
@@ -168,22 +153,17 @@ export type SimulationInfoForHistoryMode = Extract<
 
 export type SimulationParams = Omit<
   SimulationInfo,
-  | 'nowAsCalendarDay'
-  | 'defaultPlanParams'
-  | 'planParamsExt'
-  | 'planParamsNorm'
-  | 'planParamsProcessed'
-  | 'simulationResult'
-  | 'simulationResultIsCurrent'
-  | 'reRun'
-  | 'currentPortfolioBalanceInfo'
+  | 'planParamsId'
+  | 'planParamsNormInstant'
+  | 'planParamsHistoryDays'
   | 'numOfSimulationForMonteCarloSampling'
   | 'randomSeed'
+  | 'reRun'
 > & {
-  currentTimestamp: number
-  planParams: PlanParams
-  currentPortfolioBalanceInfoPreBase: CurrentPortfolioBalance.ByMonthInfo | null
-  currentPortfolioBalanceInfoPostBase: CurrentPortfolioBalance.Info
+  simulationTimestamp: number
+  planParamsHistoryPreBase: null | readonly { id: string; params: PlanParams }[]
+  planParamsHistoryPostBase: { id: string; params: PlanParams }[]
+
   pdfReportInfo:
     | {
         isShowing: true
@@ -194,39 +174,31 @@ export type SimulationParams = Omit<
         show: (args: {
           fixed: PlanPrintViewArgs['fixed']
           settings: PlanPrintViewSettingsClientSide
-          simulationResult: SimulationResult | null
+          simulationResult: SimulationResult2 | null
           updateSettings: (x: PlanPrintViewSettingsControlledClientSide) => void
         }) => void
       }
 }
 
-export const useSimulationParamsForPlanMode = (
+export const getSimulationParamsForPlanMode = (
   planPaths: SimulationInfo['planPaths'],
   currentTimeInfo: CurrentTimeInfo,
   workingPlanInfo: WorkingPlanInfo,
-  // TODO: This is not necessary since PlanParamsHistory contains unmigrated version.
+  planParamsHistoryPreBase:
+    | null
+    | readonly { id: string; params: PlanParams }[],
   planMigratedFromVersion: SomePlanParamsVersion,
-  currentPortfolioBalanceInfoPreBase: CurrentPortfolioBalance.ByMonthInfo | null,
   simulationInfoBySrc: SimulationInfo['simulationInfoBySrc'],
   pdfReportInfo: SimulationParams['pdfReportInfo'],
 ): SimulationParams => ({
   planId: workingPlanInfo.workingPlan.planId,
   planPaths,
+  planParamsHistoryPreBase,
+  planParamsHistoryPostBase: workingPlanInfo.planParamsUndoRedoStack.undos,
 
-  currentTimestamp: currentTimeInfo.currentTimestamp,
+  simulationTimestamp: currentTimeInfo.currentTimestamp,
   fastForwardInfo: currentTimeInfo.fastForwardInfo,
-
-  ...block(() => {
-    const { id, params } = fGet(
-      _.last(workingPlanInfo.planParamsUndoRedoStack.undos),
-    )
-    return { planParamsId: id, planParams: params }
-  }),
   planMigratedFromVersion,
-
-  currentPortfolioBalanceInfoPreBase,
-  currentPortfolioBalanceInfoPostBase:
-    workingPlanInfo.currentPortfolioBalanceInfoPostBase,
 
   updatePlanParams: workingPlanInfo.updatePlanParams,
   simulationInfoBySrc,
@@ -242,7 +214,6 @@ export const useSimulationParamsForHistoryMode = (
   // Null means not actually history mode, we can return null.
   rewindInfo: {
     rewindTo: number
-    currentPortfolioBalanceInfoPreBase: CurrentPortfolioBalance.ByMonthInfo
     planParamsHistoryPreBase: { id: string; params: PlanParams }[]
   } | null,
   planPaths: SimulationInfo['planPaths'],
@@ -252,114 +223,74 @@ export const useSimulationParamsForHistoryMode = (
   simulationInfoBySrc: SimulationInfo['simulationInfoBySrc'],
   pdfReportInfo: SimulationParams['pdfReportInfo'],
 ): SimulationParams | null => {
-  // Note. Avoid computation if returning null. We don't want to slow things
-  // down when not in history mode.
-  const { ianaTimezoneName, getZonedTime } = useIANATimezoneName()
-
   const updatePlanParams = useCallback(
     () => infoToast('Cannot update plan in history mode.'),
     [],
   )
-  const returnNull = rewindInfo === null
-  const rewindTo = rewindInfo?.rewindTo ?? null
 
-  const currentPortfolioBalanceInfoPreBase =
-    rewindInfo?.currentPortfolioBalanceInfoPreBase ?? null
-  const planParamsHistoryPreBase = rewindInfo?.planParamsHistoryPreBase ?? null
-
-  const planParamsHistory = useMemo(() => {
-    if (returnNull) return []
-    assert(planParamsHistoryPreBase)
-    assert(
-      fGet(_.last(planParamsHistoryPreBase)).id ===
-        fGet(_.first(workingPlanInfo.planParamsUndoRedoStack.undos)).id,
-    )
-    const unfiltered = [
-      ...planParamsHistoryPreBase,
-      ...workingPlanInfo.planParamsUndoRedoStack.undos.slice(1),
-    ]
-    const { idsToDelete } = PlanParamsHistoryFns.filterForLastChangePerDay({
-      ianaTimezoneName,
-      planParamsHistory: unfiltered.map((x) => ({
-        planParamsChangeId: x.id,
-        timestamp: new Date(x.params.timestamp),
-      })),
-      intersectWithIds: null,
-    })
-    return unfiltered.filter((x) => !idsToDelete.has(x.id))
-  }, [
-    ianaTimezoneName,
-    planParamsHistoryPreBase,
-    returnNull,
-    workingPlanInfo.planParamsUndoRedoStack.undos,
-  ])
-
-  const planParamsHistoryDays = useMemo(
-    () =>
-      new Set(
-        planParamsHistory.map((x) =>
-          getZonedTime(x.params.timestamp).startOf('day').toMillis(),
-        ),
-      ),
-    [planParamsHistory, getZonedTime],
-  )
-
-  const headIndex = useMemo(() => {
-    if (returnNull) return 0
-    assert(rewindTo !== null)
-    return (
-      _.sortedLastIndexBy<{ params: { timestamp: number } }>(
-        planParamsHistory,
-        { params: { timestamp: rewindTo } },
-        (x) => x.params.timestamp,
-      ) - 1
-    )
-  }, [planParamsHistory, returnNull, rewindTo])
-
-  if (returnNull) return null
-
-  assert(rewindTo !== null)
+  if (!rewindInfo) return null
 
   return {
     planId: workingPlanInfo.workingPlan.planId,
     planPaths,
-
-    currentTimestamp: rewindTo,
+    simulationTimestamp: rewindInfo.rewindTo,
     fastForwardInfo: currentTimeInfo.fastForwardInfo,
-
-    planParamsId: planParamsHistory[headIndex].id,
-    planParams: planParamsHistory[headIndex].params,
     planMigratedFromVersion,
-
-    currentPortfolioBalanceInfoPreBase,
-    currentPortfolioBalanceInfoPostBase:
-      workingPlanInfo.currentPortfolioBalanceInfoPostBase,
+    planParamsHistoryPreBase: fGet(
+      rewindInfo?.planParamsHistoryPreBase ?? null,
+    ),
+    planParamsHistoryPostBase: workingPlanInfo.planParamsUndoRedoStack.undos,
 
     updatePlanParams,
     simulationInfoBySrc,
     simulationInfoByMode: {
       mode: 'history',
       actualCurrentTimestamp: currentTimeInfo.currentTimestamp,
-      planParamsHistory,
-      planParamsHistoryDays,
     },
     pdfReportInfo,
   }
 }
 
-const [SimulationInfoContext, useSimulation] =
+// Info and result contexts are split up because in print view, we have
+// the result, but not the info.
+const [SimulationInfoContext, useSimulationInfo] =
   createContext<SimulationInfo>('SimulationInfo')
-const [SimulationResultContext, useSimulationResult] =
-  createContext<SimulationResult>('SimulationResult')
 
-// Get a random number.
+// TODO: Testing. Remove.
+const [RunTestsInfoContext, useRunTestsInfo] = createContext<{
+  runTests: boolean
+  setRunTests: (x: boolean) => void
+}>('RunTestsInfo')
+export { useRunTestsInfo }
 
-const _newRandomSeed = () => {
-  return Math.floor(Math.random() * 1000000000)
+export type SimulationResultInfo = {
+  // TODO: Testing. Rename to SimulationResult
+  simulationResult: SimulationResult2
+  simulationIsRunningInfo:
+    | {
+        isRunning: true
+        simulationStartTimestamp: {
+          countingFromThisSimulation: number
+          countingFromTheFirstDebouncedSimulation: number
+        }
+      }
+    | {
+        isRunning: false
+      }
 }
-let globalRandomSeed = DEFAULT_MONTE_CARLO_SIMULATION_SEED
+
+const [SimulationResultInfoContext, useSimulationResultInfo] =
+  createContext<SimulationResultInfo>('SimulationResultInfo')
+
+const [DailyMarketSeriesSrcContext, useDailyMarketSeriesSrc] = createContext<{
+  dailyMarketSeriesSrc: DailyMarketSeriesSrc
+  setDailyMarketSeriesSrc: (x: DailyMarketSeriesSrc) => void
+}>('DailyMarketSeriesSrc')
+
 export const APPLY_DEFAULT_NUM_OF_SIMULATIONS = (x: number | 'default') =>
-  x === 'default' ? 500 : x
+  x === 'default' ? 1000 : x
+
+export { useDailyMarketSeriesSrc }
 
 export const WithSimulation = React.memo(
   ({ params }: { params: SimulationParams }) => {
@@ -368,138 +299,117 @@ export const WithSimulation = React.memo(
       APPLY_DEFAULT_NUM_OF_SIMULATIONS(
         nonPlanParams.numOfSimulationForMonteCarloSampling,
       )
-    const [randomSeed, setRandomSeed] = useState(globalRandomSeed)
+    const [randomSeed, setRandomSeed] = useState(
+      DEFAULT_MONTE_CARLO_SIMULATION_SEED,
+    )
     const reRun = useCallback((seed: 'random' | number) => {
-      globalRandomSeed = seed === 'random' ? _newRandomSeed() : seed
-      setRandomSeed(globalRandomSeed)
+      setRandomSeed(
+        seed === 'random' ? Math.floor(Math.random() * 1000000000) : seed,
+      )
     }, [])
-
-    const {
-      planParams,
-      currentTimestamp,
-      currentPortfolioBalanceInfoPreBase,
-      currentPortfolioBalanceInfoPostBase,
-    } = params
     const { ianaTimezoneName } = useIANATimezoneName()
-    const { marketData } = useMarketData()
-
-    const {
-      currentPortfolioBalanceInfo,
-      planParamsNorm,
-      currentMarketData,
-      planParamsProcessed,
-      planParamsRust,
-    } = useMemo(() => {
-      const planParamsNorm = normalizePlanParams(planParams, {
-        timestamp: currentTimestamp,
-        calendarDay: CalendarDayFns.fromTimestamp(
-          currentTimestamp,
-          ianaTimezoneName,
-        ),
+    const [dailyMarketSeriesSrc, setDailyMarketSeriesSrc] =
+      useState<DailyMarketSeriesSrc>({
+        type: 'live',
       })
 
-      const currentMarketData = {
-        ...getMarketDataForTime(
-          planParamsNorm.datingInfo.timestampForMarketData,
-          marketData,
-        ),
-        timestampForMarketData:
-          planParamsNorm.datingInfo.timestampForMarketData,
-      }
-
-      const currentPortfolioBalanceInfo = planParamsNorm.wealth.portfolioBalance
-        .isDatedPlan
-        ? ({
-            isDatedPlan: true,
-            info: CurrentPortfolioBalance.cutInfo(currentTimestamp, {
-              preBase: currentPortfolioBalanceInfoPreBase,
-              postBase: currentPortfolioBalanceInfoPostBase,
-            }),
-          } as const)
-        : ({
-            isDatedPlan: false,
-            amount: planParamsNorm.wealth.portfolioBalance.amount,
-          } as const)
-
-      const planParamsRust = CallRust.getPlanParamsRust(planParamsNorm)
-      const planParamsProcessed = processPlanParams(
-        planParamsNorm,
-        currentMarketData,
-      )
-
-      return {
-        currentPortfolioBalanceInfo,
-        currentMarketData,
-        planParamsRust,
-        planParamsNorm,
-        planParamsProcessed,
-      }
-    }, [
-      currentTimestamp,
-      ianaTimezoneName,
-      planParams,
-      marketData,
-      currentPortfolioBalanceInfoPreBase,
-      currentPortfolioBalanceInfoPostBase,
-    ])
-
-    const {
-      result: simulationResult,
-      resultIsCurrent: simulationResultIsCurrent,
-    } = useSimulator(
-      currentPortfolioBalanceInfo.isDatedPlan
-        ? CurrentPortfolioBalance.getAmountInfo(
-            currentPortfolioBalanceInfo.info,
-          ).amount
-        : currentPortfolioBalanceInfo.amount,
-      planParamsRust,
-      currentMarketData,
-      planParamsNorm,
-      planParamsProcessed,
-      numOfSimulationForMonteCarloSampling,
-      randomSeed,
+    // Join pre and post base history.
+    const planParamsHistoryUpToActualCurrentTimestamp = useMemo(
+      () =>
+        params.planParamsHistoryPreBase
+          ? [
+              ...params.planParamsHistoryPreBase,
+              ...params.planParamsHistoryPostBase.slice(1), // First item is base which is repeated.
+            ]
+          : params.planParamsHistoryPostBase,
+      [params.planParamsHistoryPreBase, params.planParamsHistoryPostBase],
     )
 
-    const simulationInfo: SimulationInfo | null = simulationResult
-      ? {
-          ...params,
-          planParamsNorm,
-          currentPortfolioBalanceInfo,
-          simulationResult,
-          simulationResultIsCurrent,
-          numOfSimulationForMonteCarloSampling,
-          reRun,
-          randomSeed,
-        }
-      : null
+    const getHistoryDay = useMemo(
+      () => _getHistoryDayMemoized(params.planId, ianaTimezoneName),
+      [params.planId, ianaTimezoneName],
+    )
+    const planParamsHistoryDays = useMemo(
+      () =>
+        new Set(
+          planParamsHistoryUpToActualCurrentTimestamp.map((x) =>
+            getHistoryDay(x.params.timestamp),
+          ),
+        ),
+      [planParamsHistoryUpToActualCurrentTimestamp, getHistoryDay],
+    )
 
-    useShowPDFReportIfNeeded(simulationInfo, params.pdfReportInfo)
-    return (
-      simulationInfo && (
-        <SimulationInfoContext.Provider value={simulationInfo}>
-          <SimulationResultContext.Provider
-            value={simulationInfo.simulationResult}
-          >
-            <Plan />
-          </SimulationResultContext.Provider>
-        </SimulationInfoContext.Provider>
+    const [runTests, setRunTests] = useState(false)
+
+    const { simulationResult, isRunningInfo, planParamsId, planParamsNorm } =
+      useSimulator(
+        params.planId,
+        dailyMarketSeriesSrc,
+        planParamsHistoryUpToActualCurrentTimestamp,
+        params.simulationTimestamp,
+        ianaTimezoneName,
+        PERCENTILES,
+        numOfSimulationForMonteCarloSampling,
+        randomSeed,
+        runTests,
       )
+
+    const simulationInfo: SimulationInfo = {
+      ...params,
+      planParamsNormInstant: planParamsNorm,
+      planParamsId,
+      planParamsHistoryDays,
+      numOfSimulationForMonteCarloSampling,
+      reRun,
+      randomSeed,
+    }
+
+    useShowPDFReportIfNeeded(
+      simulationResult,
+      _getPlanLabel(simulationInfo.simulationInfoBySrc),
+      params.pdfReportInfo,
+    )
+
+    const { setGlobalSuspend } = useGlobalSuspenseFallbackContext()
+    useEffect(() => {
+      setGlobalSuspend(!simulationResult)
+    }, [simulationResult, setGlobalSuspend])
+    useAssertConst([setGlobalSuspend])
+
+    if (!simulationResult) return <div></div>
+    return (
+      <DailyMarketSeriesSrcContext.Provider
+        value={{ dailyMarketSeriesSrc, setDailyMarketSeriesSrc }}
+      >
+        <RunTestsInfoContext.Provider value={{ runTests, setRunTests }}>
+          <SimulationInfoContext.Provider value={simulationInfo}>
+            <SimulationResultInfoContext.Provider
+              value={{
+                simulationResult,
+                simulationIsRunningInfo: isRunningInfo,
+              }}
+            >
+              <Plan />
+            </SimulationResultInfoContext.Provider>
+          </SimulationInfoContext.Provider>
+        </RunTestsInfoContext.Provider>
+      </DailyMarketSeriesSrcContext.Provider>
     )
   },
 )
-export { SimulationResultContext, useSimulation, useSimulationResult }
+export {
+  SimulationResultInfoContext,
+  useSimulationInfo,
+  useSimulationResultInfo,
+}
 
 const useShowPDFReportIfNeeded = (
-  simulationInfo: SimulationInfo | null,
+  simulationResult: SimulationResult2 | null,
+  planLabel: string | null,
   pdfReportInfo: SimulationParams['pdfReportInfo'],
 ) => {
   const isLoggedIn = useUser() !== null
   const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
-  const shouldShowPrint =
-    useURLParam('pdf-report') === 'true' &&
-    !pdfReportInfo.isShowing &&
-    !!simulationInfo &&
-    simulationInfo.simulationResultIsCurrent
 
   const settings = useMemo((): PlanPrintViewSettingsClientSide => {
     const { pdfReportSettings } = nonPlanParams
@@ -518,34 +428,21 @@ const useShowPDFReportIfNeeded = (
     }
   }, [isLoggedIn, nonPlanParams])
 
-  const handleShowPrintEvent = () => {
-    assert(simulationInfo && !pdfReportInfo.isShowing)
-
+  const handleShowPrintEvent = (simulationResult: SimulationResult2) => {
+    if (pdfReportInfo.isShowing) return
     const printPlanParams = normalizePlanParamsInverse(
-      simulationInfo.planParamsNorm,
+      simulationResult.planParamsNormOfResult,
     )
-    const { datingInfo } = simulationInfo.planParamsNorm
+    const { datingInfo } = simulationResult.planParamsNormOfResult
     const fixed: PlanPrintViewArgs['fixed'] = {
-      planLabel: block(() => {
-        switch (simulationInfo.simulationInfoBySrc.src) {
-          case 'link':
-          case 'localMain':
-            return null
-          case 'file':
-            return PlanFileDataFns.labelFromFilename(
-              simulationInfo.simulationInfoBySrc.plan.filename,
-            )
-          case 'server':
-            return simulationInfo.simulationInfoBySrc.plan.label ?? null
-          default:
-            noCase(simulationInfo.simulationInfoBySrc)
-        }
-      }),
+      planLabel,
       datingInfo: datingInfo.isDated
         ? {
             isDatedPlan: true,
-            nowAsTimestamp: datingInfo.nowAsTimestamp,
-            nowAsCalendarDay: datingInfo.nowAsCalendarDay,
+            simulationTimestamp: datingInfo.nowAsTimestamp,
+            ianaTimezoneName: fGet(
+              simulationResult.ianaTimezoneNameIfDatedPlanOfResult,
+            ),
           }
         : {
             isDatedPlan: false,
@@ -554,22 +451,19 @@ const useShowPDFReportIfNeeded = (
               .endOf('day')
               .toMillis(),
           },
-      currentPortfolioBalanceAmount: simulationInfo.currentPortfolioBalanceInfo
-        .isDatedPlan
-        ? CurrentPortfolioBalance.getAmountInfo(
-            simulationInfo.currentPortfolioBalanceInfo.info,
-          ).amount
-        : simulationInfo.currentPortfolioBalanceInfo.amount,
+      dailyMarketSeriesSrc: simulationResult.dailyMarketSeriesSrcOfResult,
+      percentiles: simulationResult.percentilesOfResult,
+      currentPortfolioBalanceAmount:
+        simulationResult.portfolioBalanceEstimationByDated.currentBalance,
       planParams: printPlanParams,
       numOfSimulationForMonteCarloSampling:
-        simulationInfo.numOfSimulationForMonteCarloSampling,
-      randomSeed: simulationInfo.randomSeed,
+        simulationResult.numOfSimulationForMonteCarloSamplingOfResult,
+      randomSeed: simulationResult.randomSeedOfResult,
     }
-
     pdfReportInfo.show({
       fixed,
       settings,
-      simulationResult: simulationInfo.simulationResult,
+      simulationResult,
       updateSettings: (settings) => {
         const clone = cloneJSON(nonPlanParams)
         clone.pdfReportSettings = {
@@ -581,10 +475,15 @@ const useShowPDFReportIfNeeded = (
     })
   }
   const handleShowPrintEventRef = useRef(handleShowPrintEvent)
-  handleShowPrintEventRef.current = handleShowPrintEvent
+  useInsertionEffect(() => {
+    handleShowPrintEventRef.current = handleShowPrintEvent
+  }, [handleShowPrintEvent])
+  const shouldShowPrint = useURLParam('pdf-report') === 'true'
   useLayoutEffect(() => {
-    if (shouldShowPrint) handleShowPrintEventRef.current()
-  }, [shouldShowPrint])
+    if (shouldShowPrint && simulationResult) {
+      handleShowPrintEventRef.current(simulationResult)
+    }
+  }, [shouldShowPrint, simulationResult])
 
   const handleUpdateSettingsEvent = (
     settings: PlanPrintViewSettingsClientSide,
@@ -596,4 +495,34 @@ const useShowPDFReportIfNeeded = (
   useLayoutEffect(() => {
     handleUpdateSettingsEventRef.current(settings)
   }, [settings])
+}
+
+const _getHistoryDayMemoized = (planId: string, ianaTimezoneName: string) => {
+  const cache = new Map<number, number>()
+  const getZonedTime = getZonedTimeFns(ianaTimezoneName)
+  return (timestamp: number) => {
+    if (!cache.has(timestamp)) {
+      const value = getZonedTime(timestamp).startOf('day').toMillis()
+      cache.set(timestamp, value)
+    }
+    return cache.get(timestamp)!
+  }
+}
+
+const _getPlanLabel = (
+  simulationInfoBySrc: SimulationInfo['simulationInfoBySrc'],
+) => {
+  switch (simulationInfoBySrc.src) {
+    case 'link':
+    case 'localMain':
+      return null
+    case 'file':
+      return PlanFileDataFns.labelFromFilename(
+        simulationInfoBySrc.plan.filename,
+      )
+    case 'server':
+      return simulationInfoBySrc.plan.label ?? null
+    default:
+      noCase(simulationInfoBySrc)
+  }
 }

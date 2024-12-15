@@ -5,7 +5,7 @@ import {
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from '@headlessui/react'
-import { assert, fGet } from '@tpaw/common'
+import { assert, fGet, letIn } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
@@ -15,11 +15,12 @@ import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
 import {
   SimulationInfoForHistoryMode,
   SimulationInfoForServerSrc,
-  useSimulation,
+  useSimulationInfo,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
 import { CalendarDayInput } from '../../../../Common/Inputs/CalendarDayInput'
 import { CalendarDayFns } from '../../../../../Utils/CalendarDayFns'
+
 
 export const PlanMenuSubMenuRewind = React.memo(
   ({
@@ -29,26 +30,24 @@ export const PlanMenuSubMenuRewind = React.memo(
     simulationInfoForServerSrc: SimulationInfoForServerSrc
     simulationInfoForHistoryMode: SimulationInfoForHistoryMode
   }) => {
-    const {setRewindTo} = simulationInfoForServerSrc
-    const { planParamsNorm } = useSimulation()
-    assert(planParamsNorm.datingInfo.isDated)
-    const { nowAsTimestamp } = planParamsNorm.datingInfo
+    const { setRewindTo } = simulationInfoForServerSrc
+    const { planParamsNormInstant, planParamsHistoryDays } = useSimulationInfo()
+    assert(planParamsNormInstant.datingInfo.isDated)
+    const { nowAsTimestamp } = planParamsNormInstant.datingInfo
     const { getZonedTime } = useIANATimezoneName()
-    const {
-      planParamsHistory,
-      actualCurrentTimestamp,
-      planParamsHistoryDays,
-    } = simulationInfoForHistoryMode
+    const { actualCurrentTimestamp } = simulationInfoForHistoryMode
     const planColors = usePlanColors()
 
     const range_memoized = useMemo(
-      () => ({
-        start: getZonedTime(
-          fGet(_.first(planParamsHistory)).params.timestamp,
-        ).startOf('day'),
-        end: getZonedTime(actualCurrentTimestamp).startOf('day'),
-      }),
-      [getZonedTime, planParamsHistory, actualCurrentTimestamp],
+      () =>
+        letIn(
+          Array.from(planParamsHistoryDays.values()).sort(),
+          (sortedDays) => ({
+            start: getZonedTime(sortedDays[0]), // this is already start of day
+            end: getZonedTime(actualCurrentTimestamp).startOf('day'),
+          }),
+        ),
+      [getZonedTime, planParamsHistoryDays, actualCurrentTimestamp],
     )
     const { value, prevDay, nextDay } = useMemo(() => {
       const value = getZonedTime(nowAsTimestamp).startOf('day')
@@ -119,7 +118,7 @@ export const PlanMenuSubMenuRewind = React.memo(
                     <h2 className="font-bold text-xl">Rewind To</h2>
                     <CalendarDayInput
                       className=""
-                      // TODO: handle no value.
+                      // NOTE: think about what happens if no value.
                       valueInfo={{ hasValue: true, value }}
                       range_memoized={range_memoized}
                       shouldHighlightDay={(day) =>

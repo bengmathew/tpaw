@@ -168,6 +168,8 @@ export namespace PlanParamsHistoryFns {
     }
   }
 
+
+// Note: This is mirrored in packages/simulator-rust.
   export const combineActionsForPortfolioBalanceEstimation = <T>(
     x: {
       marketCloseActions: T[]

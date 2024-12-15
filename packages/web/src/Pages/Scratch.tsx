@@ -1,12 +1,12 @@
-import { PlanParams, currentPlanParamsVersion } from '@tpaw/common'
-import * as Rust from '@tpaw/simulator'
+import {
+  PlanParams,
+  currentPlanParamsVersion
+} from '@tpaw/common'
 import clsx from 'clsx'
 import React from 'react'
-import { normalizePlanParams } from '../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { CallRust } from '../UseSimulator/PlanParamsProcessed/CallRust'
-import { processPlanParams } from '../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
-import { WithWASM, useWASM } from './PlanRoot/PlanRootHelpers/WithWASM'
+import { normalizePlanParams } from '../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { CalendarDayFns } from '../Utils/CalendarDayFns'
+import { WithWASM, useWASM } from './PlanRoot/PlanRootHelpers/WithWASM'
 
 export const Scratch = React.memo(({ className }: { className?: string }) => {
   return (
@@ -24,71 +24,16 @@ export const _Body = React.memo(({ className }: { className?: string }) => {
       <button
         className=" btn2-lg btn2-dark rounded-full"
         onClick={() => {
-          const marketData: Rust.DataForMarketBasedPlanParamValues = {
-            closingTime: 1706648400000,
-            inflation: {
-              closingTime: 1706648400000,
-              value: 0.0239,
-            },
-            sp500: {
-              closingTime: 1706648400000,
-              value: 4924.9702,
-            },
-            bondRates: {
-              closingTime: 1706648400000,
-              fiveYear: 0.0157,
-              sevenYear: 0.0152,
-              tenYear: 0.0149,
-              twentyYear: 0.015,
-              thirtyYear: 0.0154,
-            },
-            timestampForMarketData: Number.MAX_SAFE_INTEGER,
-          }
-          const planParams = testPlanParams
-          const timestamp = planParams.timestamp + 1
-          const planParamsNorm = normalizePlanParams(planParams, {
+          const timestamp = 1693440000000
+          const ianaTimezoneName = 'America/Los_Angeles'
+
+          const planParamsNorm = normalizePlanParams(problemParams, {
             timestamp,
             calendarDay: CalendarDayFns.fromTimestamp(
               timestamp,
-              'America/Los_Angeles',
+              ianaTimezoneName,
             ),
           })
-
-          const planParamsRust = CallRust.getPlanParamsRust(planParamsNorm)
-          let start = performance.now()
-
-          CallRust.processPlanParams(planParamsNorm, marketData)
-          console.log('fn0 took:', performance.now() - start)
-          start = performance.now()
-
-          processPlanParams(planParamsNorm, marketData)
-          console.log('fn1 took:', performance.now() - start)
-          start = performance.now()
-
-          // const riskJS = planParamsProcessRisk(
-          //   planParamsNorm,
-          //   planParamsProcessed.returnsStatsForPlanning,
-          // )
-          // console.log('riskjs took:', performance.now() - start)
-          // start = performance.now()
-
-          // const data = result.get()
-          // console.log('get bufffer took:', performance.now() - start)
-          // start = performance.now()
-
-          // const decoded = unpack(data)
-          // console.dir(decoded)
-          // console.log('decoding took:', performance.now() - start)
-          // start = performance.now()
-
-          // let decoder = avro
-          //   .createBlobDecoder(new Blob([data]))
-          //   .on('metadata', (data: any) => console.dir(data))
-          //   .on('data', (data: any) => {
-          //     console.log('decode took:', performance.now() - start)
-          //     start = performance.now()
-          //     console.dir(data)
-          //   })
         }}
       >
         run
@@ -96,6 +41,221 @@ export const _Body = React.memo(({ className }: { className?: string }) => {
     </div>
   )
 })
+
+const problemMarketDataAtTime = {
+  closingTime: 1693425600000,
+  inflation: {
+    closingTime: 1693425600000,
+    value: 0.0226,
+  },
+  sp500: {
+    closingTime: 1693425600000,
+    value: 4514.8701,
+  },
+  bondRates: {
+    closingTime: 1693425600000,
+    fiveYear: 0.0211,
+    sevenYear: 0.0196,
+    tenYear: 0.0186,
+    twentyYear: 0.0189,
+    thirtyYear: 0.0197,
+  },
+  dailyStockMarketPerformance: {
+    closingTime: 1693425600000,
+    percentageChangeFromLastClose: {
+      vt: 0.0024558095835295213,
+      bnd: -0.00041873124432973823,
+    },
+  },
+  timestampForMarketData: 1693440000000,
+}
+
+const problemParams: PlanParams = {
+  v: currentPlanParamsVersion,
+  timestamp: 1689083666832,
+  dialogPositionNominal: 'done',
+  people: {
+    person1: {
+      ages: {
+        type: 'retiredWithNoRetirementDateSpecified',
+        maxAge: {
+          inMonths: 1200,
+        },
+        currentAgeInfo: {
+          isDatedPlan: true,
+          monthOfBirth: {
+            year: 1947,
+            month: 5,
+          },
+        },
+      },
+    },
+    person2: {
+      ages: {
+        type: 'retiredWithNoRetirementDateSpecified',
+        maxAge: {
+          inMonths: 1200,
+        },
+        currentAgeInfo: {
+          isDatedPlan: true,
+          monthOfBirth: {
+            year: 1947,
+            month: 3,
+          },
+        },
+      },
+    },
+    withPartner: true,
+    withdrawalStart: 'person1',
+  },
+  wealth: {
+    portfolioBalance: {
+      updatedHere: true,
+      amount: 3000000,
+      isDatedPlan: true,
+    },
+    futureSavings: {},
+    incomeDuringRetirement: {
+      qlsqyrquuv: {
+        label: 'Social Securiry',
+        nominal: false,
+        id: 'qlsqyrquuv',
+        sortIndex: 0,
+        colorIndex: 0,
+        amountAndTiming: {
+          type: 'recurring',
+          monthRange: {
+            type: 'startAndEnd',
+            start: {
+              type: 'now',
+              monthOfEntry: {
+                isDatedPlan: true,
+                calendarMonth: {
+                  year: 2023,
+                  month: 7,
+                },
+              },
+            },
+            end: {
+              age: 'max',
+              type: 'namedAge',
+              person: 'person1',
+            },
+          },
+          everyXMonths: 1,
+          baseAmount: 2615,
+          delta: null,
+        },
+      },
+    },
+  },
+  adjustmentsToSpending: {
+    extraSpending: {
+      essential: {},
+      discretionary: {},
+    },
+    tpawAndSPAW: {
+      monthlySpendingCeiling: null,
+      monthlySpendingFloor: null,
+      legacy: {
+        total: 500000,
+        external: {},
+      },
+    },
+  },
+  risk: {
+    tpaw: {
+      riskTolerance: {
+        at20: 17,
+        deltaAtMaxAge: -2,
+        forLegacyAsDeltaFromAt20: 2,
+      },
+      timePreference: 0,
+      additionalAnnualSpendingTilt: 0,
+    },
+    tpawAndSPAW: {
+      lmp: 0,
+    },
+    spaw: {
+      annualSpendingTilt: 0.008,
+    },
+    spawAndSWR: {
+      allocation: {
+        start: {
+          month: {
+            type: 'now',
+            monthOfEntry: {
+              isDatedPlan: true,
+              calendarMonth: {
+                year: 2023,
+                month: 6,
+              },
+            },
+          },
+          stocks: 0.5,
+        },
+        intermediate: {},
+        end: {
+          stocks: 0.5,
+        },
+      },
+    },
+    swr: {
+      withdrawal: {
+        type: 'asPercentPerYear',
+        percentPerYear: 0.047,
+      },
+    },
+  },
+  advanced: {
+    returnsStatsForPlanning: {
+      expectedValue: {
+        empiricalAnnualNonLog: {
+          type: 'conservativeEstimate,20YearTIPSYield',
+        },
+      },
+      standardDeviation: {
+        stocks: {
+          scale: {
+            log: 1,
+          },
+        },
+        bonds: {
+          scale: {
+            log: 0,
+          },
+        },
+      },
+    },
+    historicalReturnsAdjustment: {
+      standardDeviation: {
+        bonds: {
+          scale: {
+            log: 1,
+          },
+        },
+      },
+      overrideToFixedForTesting: { type: 'none' },
+    },
+    sampling: {
+      type: 'monteCarlo',
+      data: {
+        blockSize: {
+          inMonths: 60,
+        },
+        staggerRunStarts: true,
+      },
+    },
+    annualInflation: {
+      type: 'suggested',
+    },
+    strategy: 'TPAW',
+  },
+  results: null,
+  datingInfo: {
+    isDated: true,
+  },
+}
 
 const testPlanParams: PlanParams = {
   v: currentPlanParamsVersion,

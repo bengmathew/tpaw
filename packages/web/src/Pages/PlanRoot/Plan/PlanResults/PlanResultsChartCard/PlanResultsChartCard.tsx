@@ -19,7 +19,9 @@ import { HeightsForWidths } from '../../../../../Utils/View/HeightsForWidths'
 import { ChartPointerPortal } from '../../../../Common/Chart/ChartComponent/ChartPointerPortal'
 import { ChartReactStatefull } from '../../../../Common/Chart/ChartReact'
 import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationResultInfo
+} from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
 import { useChartData } from '../../WithPlanResultsChartData'
 import {
@@ -72,10 +74,10 @@ export const PlanResultsChartCard = React.memo(
     onChartHover: (hover: boolean) => void
     chartHover: boolean
   }) => {
-    const { planParamsNorm, simulationResult } = useSimulation()
+    const simulationResult = useSimulationResultInfo().simulationResult
     const type = usePlanResultsChartType()
     const yAxisDescriptionByLayout = planResultsChartLabel(
-      planParamsNorm,
+      simulationResult.planParamsNormOfResult,
       type,
     ).yAxisDescription
 
@@ -123,8 +125,9 @@ export const PlanResultsChartCard = React.memo(
           : yAxisDescriptionByLayout.notMobile
         : null
     const showYAxisDescription = !!getYAxisDescription(layout === 'mobile')
-    const showSuccessRate = planParamsNorm.advanced.strategy === 'SWR'
-    const hasPartner = !!simulationResult.args.planParamsNorm.ages.person2
+    const showSuccessRate =
+      simulationResult.planParamsNormOfResult.advanced.strategy === 'SWR'
+    const hasPartner = !!simulationResult.planParamsNormOfResult.ages.person2
 
     const sizing = useMemo(() => {
       const _map = (
@@ -336,7 +339,7 @@ export const PlanResultsChartCard = React.memo(
               : successRate < 0.99
                 ? formatPercentage(1)(successRate)
                 : formatPercentage(2)(successRate)}
-            {simulationResult.args.planParamsNorm.advanced.sampling.type ===
+            {simulationResult.planParamsNormOfResult.advanced.sampling.type ===
               'historical' && (
               <span className="sm:inline hidden ml-2 font-normal text-sm lighten">
                 {numSuccessfullRuns} of {simulationResult.numSimulationsActual}

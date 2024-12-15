@@ -2,7 +2,7 @@ import { faSpider } from '@fortawesome/pro-light-svg-icons'
 import { faCopy, faEnvelope } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as Sentry from '@sentry/nextjs'
-import { block, noCase } from '@tpaw/common'
+import { block, fGet, noCase } from '@tpaw/common'
 import { useRouter } from 'next/dist/client/router'
 import Head from 'next/head'
 import Image from 'next/image'
@@ -17,6 +17,8 @@ import { Config } from '../Config'
 import { AppError } from './AppError'
 import { Footer } from './Footer'
 import clsx from 'clsx'
+import _ from 'lodash'
+import { asyncEffect2 } from '../../Utils/AsyncEffect'
 
 const [Context, useSetGlobalError] = createContext<{
   setGlobalError: (error: Error) => void
@@ -35,7 +37,6 @@ export const useDefaultErrorHandlerForNetworkCall = () => {
       toast: string | null
       toastId?: string
     }) => {
-      Sentry.captureException(e)
       if (e instanceof AppError) {
         const toastOpts: ToastOptions = { toastId }
         if (e.code === 'serverDownForMaintenance') {
@@ -90,12 +91,16 @@ export const GlobalErrorBoundary = React.memo(
         )
       }
     }, [])
-    if (error) return <_ErrorFallback error={error} />
+
     return (
       <Context.Provider value={{ setGlobalError }}>
-        <ErrorBoundary fallback={(error) => <_ErrorFallback error={error} />}>
-          {children}
-        </ErrorBoundary>
+        {error ? (
+          <_ErrorFallback error={error} />
+        ) : (
+          <ErrorBoundary fallback={(error) => <_ErrorFallback error={error} />}>
+            {children}
+          </ErrorBoundary>
+        )}
       </Context.Provider>
     )
   },
@@ -104,12 +109,38 @@ export const GlobalErrorBoundary = React.memo(
 export const _ErrorFallback = React.memo(({ error }: { error: Error }) => {
   !Config.client.isProduction && console.dir(error)
 
+  useEffect(() => {
+    return asyncEffect2(async () => {
+      // Wait for sentry to call the event processor added using
+      // addEventProcessor(). It would be straightforward to use errorId =
+      // Sentry.captureException(error) here, and not try to read it from
+      // __sentryLastErrorId (which is set in the custom event processor added
+      // in Sentry.init()). But Sentry.captureException(error) will not capture
+      // the error and not return an errorId that exists in Sentry if Sentry has
+      // already captured the error. This is true even if Dedupe integration is
+      // disabled (see
+      // https://github.com/getsentry/sentry-javascript/issues/14690#issue-2736707488).
+      // So we assume the errorId is the last sent to sentry and write that to
+      // the global context in the event processor and read it here, but we need
+      // the timeout of make sure it has time to run.
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      let errorId =
+        ((window as any).__sentryLastErrorId as string | undefined) ??
+        Sentry.captureException(error)
+      setErrorId(errorId)
+      ;(window as any).showLastError = () => {
+        console.log(
+          `Name: ${error.name}\nMessage: ${error.message}\nStack: ${error.stack?.toString() ?? ''}`,
+        )
+      }
+    })
+  }, [error])
+
   const [errorId, setErrorId] = useState<string | null>(null)
   const router = useRouter()
   useEffect(() => {
-    setErrorId(Sentry.captureException(error))
     router.events.on('routeChangeComplete', () => window.location.reload())
-  }, [error, router])
+  }, [router])
 
   useEffect(() => {
     ;(window as any).__APP_ERROR__ = true
@@ -160,7 +191,13 @@ export const _ErrorFallback = React.memo(({ error }: { error: Error }) => {
                   message="Cloud not access the network. Please check your internet connection."
                   action="reload"
                 />
-              ) : error.code === '413' || error.code === 'serverError' ? (
+              ) : error.code === 'serverError' ? (
+                <_Custom
+                  title=" Server Error"
+                  message="The server is experiencing issues. Please try again later."
+                  action="reload"
+                />
+              ) : error.code === '413' ? (
                 <_SomethingWentWrong errorId={errorId} />
               ) : (
                 noCase(error.code)
@@ -203,30 +240,24 @@ const _SomethingWentWrong = React.memo(
             sequence of steps, we would still love to hear from you — we might
             still be able to fix the problem.
           </p>
-          {errorId && (
-            <>
-              <p className="p-base mt-4">
-                You can reference the following error ID to help us identify the
-                corresponding crash report.
-              </p>
-              {/* <p className="font-font2 text-base lighten mt-4 ">
-                Error: {errorId}
-              </p> */}
-              <button
-                className="py-1 px-2 rounded-md border border-gray-400 mt-4 text-sm flex items-center lighten"
-                onClick={() => {
-                  void navigator.clipboard.writeText(errorId)
-                }}
-              >
-                Error: {errorId}
-                <FontAwesomeIcon className="ml-2 text-base" icon={faCopy} />
-              </button>
-            </>
-          )}
+          <p className="p-base mt-4">
+            You can reference the following error ID to help us identify the
+            corresponding crash report.
+          </p>
+          <>
+            <button
+              className="py-1 px-2 rounded-md border border-gray-400 mt-4 text-sm flex items-center lighten disabled:opacity-30"
+              disabled={!errorId}
+              onClick={() => {
+                void navigator.clipboard.writeText(fGet(errorId))
+              }}
+            >
+              Error: {errorId ?? 'waiting for error id...'}
+              <FontAwesomeIcon className="ml-2 text-base" icon={faCopy} />
+            </button>
+          </>
           <p className="p-base mt-4">You can contact us at:</p>
           <div className="mt-2 ">
-            {/* <h2 className="font-bold text-2xl">Contact</h2> */}
-
             <a
               className="flex items-center py-2 cursor-pointer"
               href={emailHref}

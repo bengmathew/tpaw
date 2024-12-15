@@ -6,8 +6,13 @@
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
   "cSpell.words": [
+    "Cuda",
     "curr",
+    "fcuda",
+    "fcurrency",
+    "fget",
     "spaw",
     "TPAW"
   ],
+  "explorer.sortOrder": "mixed",
 }

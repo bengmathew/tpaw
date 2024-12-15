@@ -896,6 +896,13 @@ export namespace PlanParams30 {
     const glidePathLocation: JSONGuard<GlidePathLocation> = constant(
       'spawAndSWRStockAllocation',
     )
+    const historicalReturnsAdjustment = {
+      overrideToFixedForTesting: union(
+        object({ type: constant('none') }),
+        object({ type: constant('useExpectedReturnsForPlanning') }),
+        object({ type: constant('manual'), stocks: number, bonds: number }),
+      ),
+    }
 
     return {
       calendarMonth,
@@ -921,6 +928,7 @@ export namespace PlanParams30 {
       labeledAmountTimedOrUntimedLocation,
       labeledAmountUntimedLocation,
       glidePathLocation,
+      historicalReturnsAdjustment,
     }
   })
   const cg = componentGuards
@@ -1187,11 +1195,8 @@ export namespace PlanParams30 {
           }),
         }),
       }),
-      overrideToFixedForTesting: union(
-        object({ type: constant('none') }),
-        object({ type: constant('useExpectedReturnsForPlanning') }),
-        object({ type: constant('manual'), stocks: number, bonds: number }),
-      ),
+      overrideToFixedForTesting:
+        cg.historicalReturnsAdjustment.overrideToFixedForTesting,
     })
     return object({
       returnsStatsForPlanning,

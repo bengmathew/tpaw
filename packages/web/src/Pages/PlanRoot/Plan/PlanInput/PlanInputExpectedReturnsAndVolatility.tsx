@@ -16,8 +16,6 @@ import {
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useState } from 'react'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { SimulationResult } from '../../../../UseSimulator/Simulator/Simulator'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { paddingCSSStyle } from '../../../../Utils/Geometry'
@@ -26,8 +24,8 @@ import { CenteredModal } from '../../../Common/Modal/CenteredModal'
 import { SimpleModalListbox } from '../../../Common/Modal/SimpleModalListbox'
 import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
 import {
-  useSimulation,
-  useSimulationResult,
+  useSimulationInfo,
+  useSimulationResultInfo,
 } from '../../PlanRootHelpers/WithSimulation'
 import { mainPlanColors } from '../UsePlanColors'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
@@ -44,6 +42,9 @@ import {
   useIsPlanInputStockVolatilityCardModified,
 } from './PlanInputExpectedReturnsAndVolatilityFns'
 import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { SimulationResult2 } from '../../../../Simulator/UseSimulator'
+import { PlanParamsProcessed2 } from '../../../../Simulator/SimulateOnServer/SimulateOnServer'
 
 type ExpectedReturnsForPlanning =
   PlanParams['advanced']['returnsStatsForPlanning']['expectedValue']['empiricalAnnualNonLog']
@@ -78,12 +79,13 @@ export const _ExpectedReturnsCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { updatePlanParams, planParamsNorm, simulationResult } =
-      useSimulation()
+    const { updatePlanParams, planParamsNormInstant } = useSimulationInfo()
+    const { simulationResult } = useSimulationResultInfo()
     const { empiricalAnnualNonLog } =
-      planParamsNorm.advanced.returnsStatsForPlanning.expectedValue
+      planParamsNormInstant.advanced.returnsStatsForPlanning.expectedValue
 
-    const marketData = simulationResult.info.marketData.expectedReturns
+    const sourceRounded =
+      simulationResult.planParamsProcessed.marketDataForPresets.sourceRounded
 
     const [defaultData, setDefaultData] = useState<_DefaultData>({
       fixedEquityPremium:
@@ -128,7 +130,7 @@ export const _ExpectedReturnsCard = React.memo(
 
         <h2 className="font-bold text-lg ">Expected Returns</h2>
         <div className="mt-2">
-          {planParamsNorm.datingInfo.isDated ? (
+          {planParamsNormInstant.datingInfo.isDated ? (
             <>
               <p className="p-base mb-2 mt-1">
                 Pick the expected annual real returns for stocks and bonds. All
@@ -144,9 +146,16 @@ export const _ExpectedReturnsCard = React.memo(
               </p>
               <p className="p-base">
                 The current data is from NYSE close on{' '}
-                {formatNYDate(marketData.stocks.sp500.closingTime)} for stocks
-                and {formatNYDate(marketData.bonds.bondRates.closingTime)} for
-                bonds. To see the calculations and data used for these options,
+                {_formatNYDate(
+                  sourceRounded?.dailyMarketData.sp500.closingTimestamp ?? null,
+                )}{' '}
+                for stocks and{' '}
+                {_formatNYDate(
+                  sourceRounded?.dailyMarketData.bondRates.closingTimestamp ??
+                    null,
+                )}{' '}
+                for bonds. To see the calculations and data used for these
+                options,
                 {` `}
                 <button
                   className="underline"
@@ -174,12 +183,19 @@ export const _ExpectedReturnsCard = React.memo(
                 This is a dateless plan and you have chosen to use market data
                 as of{' '}
                 {CalendarDayFns.toStr(
-                  planParamsNorm.datingInfo.marketDataAsOfEndOfDayInNY,
+                  planParamsNormInstant.datingInfo.marketDataAsOfEndOfDayInNY,
                 )}
                 . The latest data available on that day was from NYSE close on{' '}
-                {formatNYDate(marketData.stocks.sp500.closingTime)} for stocks
-                and {formatNYDate(marketData.bonds.bondRates.closingTime)} for
-                bonds. To see the calculations and data used for these options,
+                {_formatNYDate(
+                  sourceRounded?.dailyMarketData.sp500.closingTimestamp ?? null,
+                )}{' '}
+                for stocks and{' '}
+                {_formatNYDate(
+                  sourceRounded?.dailyMarketData.bondRates.closingTimestamp ??
+                    null,
+                )}
+                for bonds. To see the calculations and data used for these
+                options,
                 {` `}
                 <button
                   className="underline"
@@ -305,9 +321,11 @@ export const _ExpectedReturnsCard = React.memo(
         >
           Reset to Default
         </button>
+
         <_ExpectedReturnsPresetPopup
           show={showCalculationPopup}
           onHide={() => setShowCalculationPopup(false)}
+          simulationResult={simulationResult}
         />
       </div>
     )
@@ -315,9 +333,17 @@ export const _ExpectedReturnsCard = React.memo(
 )
 
 const _ExpectedReturnsPresetPopup = React.memo(
-  ({ show, onHide }: { show: boolean; onHide: () => void }) => {
-    const { simulationResult } = useSimulation()
-    const marketData = simulationResult.info.marketData.expectedReturns
+  ({
+    show,
+    onHide,
+    simulationResult,
+  }: {
+    show: boolean
+    onHide: () => void
+    simulationResult: SimulationResult2
+  }) => {
+    const { marketDataForPresets } = simulationResult.planParamsProcessed
+    const { sourceRounded } = marketDataForPresets
     const { getZonedTime } = useIANATimezoneName()
 
     const getPresetLabelForStocks = (x: ExpectedReturnsForPlanning['type']) => {
@@ -346,16 +372,22 @@ const _ExpectedReturnsPresetPopup = React.memo(
           </p>
           <h2 className="p-base mt-3">
             Data from NYSE close on{' '}
-            {formatNYDate(marketData.stocks.sp500.closingTime)}:
+            {_formatNYDate(
+              sourceRounded.dailyMarketData.sp500.closingTimestamp,
+            )}
+            :
           </h2>
           <h2 className=" font-bold mt-4">CAPE Ratio</h2>
           <div className="p-base">
             {/* <p className="mt-3">CAPE calculation for the S&P 500 index:</p> */}
             <p className="mt-3 p-base">
               Price: The S&P 500 price at NYSE close on{' '}
-              {formatNYDate(marketData.stocks.sp500.closingTime)} was{' '}
+              {_formatNYDate(
+                sourceRounded.dailyMarketData.sp500.closingTimestamp,
+              )}
+              was{' '}
               <span className="font-bold">
-                {formatCurrency(marketData.stocks.sp500.value, 2)}
+                {formatCurrency(sourceRounded.dailyMarketData.sp500.value, 2)}
               </span>
               .
             </p>
@@ -364,27 +396,30 @@ const _ExpectedReturnsPresetPopup = React.memo(
               from{' '}
               {getZonedTime
                 .fromObject({
-                  year: marketData.stocks.averageRealEarningsForSP500For10Years
-                    .tenYearDuration.start.year,
+                  year: sourceRounded
+                    .averageAnnualRealEarningsForSp500For10Years.tenYearDuration
+                    .start.year,
                   month:
-                    marketData.stocks.averageRealEarningsForSP500For10Years
+                    sourceRounded.averageAnnualRealEarningsForSp500For10Years
                       .tenYearDuration.start.month,
                 })
                 .toFormat('MMMM yyyy')}{' '}
               to{' '}
               {getZonedTime
                 .fromObject({
-                  year: marketData.stocks.averageRealEarningsForSP500For10Years
-                    .tenYearDuration.end.year,
+                  year: sourceRounded
+                    .averageAnnualRealEarningsForSp500For10Years.tenYearDuration
+                    .end.year,
                   month:
-                    marketData.stocks.averageRealEarningsForSP500For10Years
+                    sourceRounded.averageAnnualRealEarningsForSp500For10Years
                       .tenYearDuration.end.month,
                 })
                 .toFormat('MMMM yyyy')}{' '}
               was{' '}
               <span className="font-bold">
                 {formatCurrency(
-                  marketData.stocks.averageRealEarningsForSP500For10Years.value,
+                  sourceRounded.averageAnnualRealEarningsForSp500For10Years
+                    .value,
                   2,
                 )}
               </span>
@@ -418,11 +453,11 @@ const _ExpectedReturnsPresetPopup = React.memo(
               <h2 className="">=</h2>
               <div className="">
                 <h2 className="text-center">
-                  {formatCurrency(marketData.stocks.sp500.value, 2)}
+                  {formatCurrency(sourceRounded.dailyMarketData.sp500.value, 2)}
                 </h2>
                 <h2 className="text-center border-t border-gray-700">
                   {formatCurrency(
-                    marketData.stocks.averageRealEarningsForSP500For10Years
+                    sourceRounded.averageAnnualRealEarningsForSp500For10Years
                       .value,
                     2,
                   )}
@@ -430,7 +465,9 @@ const _ExpectedReturnsPresetPopup = React.memo(
               </div>
               <h2 className="">=</h2>
               <h2 className="text-center font-bold">
-                {marketData.stocks.capeNotRounded.toFixed(2)}
+                {marketDataForPresets.expectedReturns.stocks.capeNotRounded.toFixed(
+                  2,
+                )}
               </h2>
             </div>
           </div>
@@ -446,7 +483,10 @@ const _ExpectedReturnsPresetPopup = React.memo(
               <div className="mt-3">
                 1/CAPE:{' '}
                 <span className="font-bold">
-                  {format(marketData.stocks.oneOverCAPERounded)}
+                  {formatPercentage(1)(
+                    marketDataForPresets.expectedReturns.stocks
+                      .oneOverCapeRounded,
+                  )}
                 </span>
               </div>
               <div className="mt-3">
@@ -458,30 +498,32 @@ const _ExpectedReturnsPresetPopup = React.memo(
                   >
                     <h2 className="text-righ">5 year expected return: </h2>
                     <h2 className="font-bold">
-                      {format(
-                        marketData.stocks.empiricalAnnualNonLogRegressionsStocks
-                          .full.fiveYear,
+                      {formatPercentage(1)(
+                        marketDataForPresets.expectedReturns.stocks
+                          .empiricalAnnualNonLogRegressionsStocks.full.fiveYear,
                       )}
                     </h2>{' '}
                     <h2 className="text-righ">10 year expected return: </h2>
                     <h2 className="font-bold">
-                      {format(
-                        marketData.stocks.empiricalAnnualNonLogRegressionsStocks
-                          .full.tenYear,
+                      {formatPercentage(1)(
+                        marketDataForPresets.expectedReturns.stocks
+                          .empiricalAnnualNonLogRegressionsStocks.full.tenYear,
                       )}
                     </h2>{' '}
                     <h2 className="text-righ">20 year expected return: </h2>
                     <h2 className="font-bold">
-                      {format(
-                        marketData.stocks.empiricalAnnualNonLogRegressionsStocks
-                          .full.twentyYear,
+                      {formatPercentage(1)(
+                        marketDataForPresets.expectedReturns.stocks
+                          .empiricalAnnualNonLogRegressionsStocks.full
+                          .twentyYear,
                       )}
                     </h2>{' '}
                     <h2 className="text-righ">30 year expected return: </h2>
                     <h2 className="font-bold">
-                      {format(
-                        marketData.stocks.empiricalAnnualNonLogRegressionsStocks
-                          .full.thirtyYear,
+                      {formatPercentage(1)(
+                        marketDataForPresets.expectedReturns.stocks
+                          .empiricalAnnualNonLogRegressionsStocks.full
+                          .thirtyYear,
                       )}
                     </h2>{' '}
                   </div>
@@ -496,30 +538,34 @@ const _ExpectedReturnsPresetPopup = React.memo(
                   >
                     <h2 className="text-righ">5 year expected return: </h2>
                     <h2 className="font-bold">
-                      {format(
-                        marketData.stocks.empiricalAnnualNonLogRegressionsStocks
-                          .restricted.fiveYear,
+                      {formatPercentage(1)(
+                        marketDataForPresets.expectedReturns.stocks
+                          .empiricalAnnualNonLogRegressionsStocks.restricted
+                          .fiveYear,
                       )}
                     </h2>{' '}
                     <h2 className="text-righ">10 year expected return: </h2>
                     <h2 className="font-bold">
-                      {format(
-                        marketData.stocks.empiricalAnnualNonLogRegressionsStocks
-                          .restricted.tenYear,
+                      {formatPercentage(1)(
+                        marketDataForPresets.expectedReturns.stocks
+                          .empiricalAnnualNonLogRegressionsStocks.restricted
+                          .tenYear,
                       )}
                     </h2>{' '}
                     <h2 className="text-righ">20 year expected return: </h2>
                     <h2 className="font-bold">
-                      {format(
-                        marketData.stocks.empiricalAnnualNonLogRegressionsStocks
-                          .restricted.twentyYear,
+                      {formatPercentage(1)(
+                        marketDataForPresets.expectedReturns.stocks
+                          .empiricalAnnualNonLogRegressionsStocks.restricted
+                          .twentyYear,
                       )}
                     </h2>{' '}
                     <h2 className="text-righ">30 year expected return: </h2>
                     <h2 className="font-bold">
-                      {format(
-                        marketData.stocks.empiricalAnnualNonLogRegressionsStocks
-                          .restricted.thirtyYear,
+                      {formatPercentage(1)(
+                        marketDataForPresets.expectedReturns.stocks
+                          .empiricalAnnualNonLogRegressionsStocks.restricted
+                          .thirtyYear,
                       )}
                     </h2>{' '}
                   </div>
@@ -539,7 +585,10 @@ const _ExpectedReturnsPresetPopup = React.memo(
                 )}{' '}
                 — average of the eight regression based core estimates above:{' '}
                 <span className="font-bold">
-                  {format(marketData.stocks.regressionPrediction)}
+                  {formatPercentage(1)(
+                    marketDataForPresets.expectedReturns.stocks
+                      .regressionPrediction,
+                  )}
                 </span>{' '}
               </li>
               <li className="mt-1">
@@ -548,21 +597,29 @@ const _ExpectedReturnsPresetPopup = React.memo(
                 )}{' '}
                 — average of the four lowest of the nine core estimates above:{' '}
                 <span className="font-bold">
-                  {format(marketData.stocks.conservativeEstimate)}
+                  {formatPercentage(1)(
+                    marketDataForPresets.expectedReturns.stocks
+                      .conservativeEstimate,
+                  )}
                 </span>{' '}
               </li>
               <li className="mt-1">
                 {getPresetLabelForStocks('1/CAPE,20YearTIPSYield')}
                 {': '}
                 <span className="font-bold">
-                  {format(marketData.stocks.oneOverCAPERounded)}
+                  {formatPercentage(1)(
+                    marketDataForPresets.expectedReturns.stocks
+                      .oneOverCapeRounded,
+                  )}
                 </span>
               </li>
               <li className="mt-1">
                 {getPresetLabelForStocks('historical')} — average of the
                 historical stock returns:{' '}
                 <span className="font-bold">
-                  {format(marketData.stocks.historical)}
+                  {formatPercentage(1)(
+                    marketDataForPresets.expectedReturns.stocks.historical,
+                  )}
                 </span>{' '}
               </li>
             </ul>
@@ -587,7 +644,10 @@ const _ExpectedReturnsPresetPopup = React.memo(
               </p>
               <p className="mt-3">
                 Data from NYSE close on{' '}
-                {formatNYDate(marketData.bonds.bondRates.closingTime)}:
+                {_formatNYDate(
+                  sourceRounded.dailyMarketData.bondRates.closingTimestamp,
+                )}
+                :
               </p>
             </div>
 
@@ -601,19 +661,27 @@ const _ExpectedReturnsPresetPopup = React.memo(
               >
                 <h2 className="">5 year TIPS yield: </h2>
                 <h2 className="font-bold">
-                  {format(marketData.bonds.bondRates.fiveYear)}
+                  {formatPercentage(1)(
+                    sourceRounded.dailyMarketData.bondRates.fiveYear,
+                  )}
                 </h2>
                 <h2 className="">10 year TIPS yield: </h2>
                 <h2 className="font-bold">
-                  {format(marketData.bonds.bondRates.tenYear)}
+                  {formatPercentage(1)(
+                    sourceRounded.dailyMarketData.bondRates.tenYear,
+                  )}
                 </h2>
                 <h2 className="">20 year TIPS yield: </h2>
                 <h2 className="font-bold">
-                  {format(marketData.bonds.bondRates.twentyYear)}
+                  {formatPercentage(1)(
+                    sourceRounded.dailyMarketData.bondRates.twentyYear,
+                  )}
                 </h2>
                 <h2 className="">30 year TIPS yield: </h2>
                 <h2 className="font-bold">
-                  {format(marketData.bonds.bondRates.thirtyYear)}
+                  {formatPercentage(1)(
+                    sourceRounded.dailyMarketData.bondRates.thirtyYear,
+                  )}
                 </h2>
               </div>
             </div>
@@ -631,14 +699,19 @@ const _ExpectedReturnsPresetPopup = React.memo(
                   )}
                   :{' '}
                   <span className="font-bold">
-                    {format(marketData.bonds.bondRates.twentyYear)}
+                    {formatPercentage(1)(
+                      marketDataForPresets.expectedReturns.bonds
+                        .tipsYield20Year,
+                    )}
                   </span>{' '}
                 </li>
                 <li className="mt-1">
                   {getPresetLabelForBonds('historical')} — average of the
                   historical bond returns:{' '}
                   <span className="font-bold">
-                    {format(marketData.bonds.historical)}
+                    {formatPercentage(1)(
+                      marketDataForPresets.expectedReturns.bonds.historical,
+                    )}
                   </span>{' '}
                 </li>
               </ul>
@@ -666,10 +739,13 @@ const _Preset = React.memo(
     type: _PresetType
     onChange: (expected: ExpectedReturnsForPlanning) => void
   }) => {
-    const { planParamsNorm, simulationResult } = useSimulation()
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { simulationResult } = useSimulationResultInfo()
 
-    const marketData = simulationResult.info.marketData.expectedReturns
-    const { stocks, bonds } = _resolveExpectedReturnPreset(type, marketData)
+    const { stocks, bonds } = _resolveExpectedReturnPreset(
+      type,
+      simulationResult.planParamsProcessed.marketDataForPresets.expectedReturns,
+    )
     const isDefault =
       partialDefaultDatelessPlanParams.advanced.returnsStatsForPlanning
         .expectedValue.empiricalAnnualNonLog.type === type
@@ -684,7 +760,7 @@ const _Preset = React.memo(
         <FontAwesomeIcon
           className="mt-1"
           icon={
-            planParamsNorm.advanced.returnsStatsForPlanning.expectedValue
+            planParamsNormInstant.advanced.returnsStatsForPlanning.expectedValue
               .empiricalAnnualNonLog.type === type
               ? faCircleSelected
               : faCircleRegular
@@ -707,7 +783,8 @@ const _Preset = React.memo(
             </h2>
             <h2 className="text-start">Bonds: {labelInfo.bonds}</h2>
             <h2 className="text-start lighten-2 text-sm">
-              Stocks: {format(stocks)}, Bonds: {format(bonds)}
+              Stocks: {formatPercentage(1)(stocks)}, Bonds:{' '}
+              {formatPercentage(1)(bonds)}
             </h2>
             {isDefault && (
               <h2 className="sm:hidden text-start">
@@ -721,7 +798,8 @@ const _Preset = React.memo(
           <div className="">
             <h2 className="text-start">{labelInfo.stocksAndBonds}</h2>
             <h2 className="text-start lighten-2 text-sm">
-              Stocks: {format(stocks)}, Bonds: {format(bonds)}
+              Stocks: {formatPercentage(1)(stocks)}, Bonds:{' '}
+              {formatPercentage(1)(bonds)}
             </h2>
           </div>
         )}
@@ -742,19 +820,21 @@ export const _FixedEquityPremium = React.memo(
     props: PlanInputBodyPassThruProps
     defaultData: PickType<ExpectedReturnsForPlanning, 'fixedEquityPremium'>
   }) => {
-    const { planParamsNorm, simulationResult } = useSimulation()
-    const marketData = simulationResult.info.marketData.expectedReturns
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { simulationResult } = useSimulationResultInfo()
+    const marketDataForExpectedReturns =
+      simulationResult.planParamsProcessed.marketDataForPresets.expectedReturns
     const stocks =
-      simulationResult.args.planParamsProcessed.returnsStatsForPlanning.stocks
-        .empiricalAnnualNonLogExpectedReturnInfo.value
+      simulationResult.planParamsProcessed.returnsStatsForPlanning.stocks
+        .empiricalAnnualNonLogExpectedReturn
     const { empiricalAnnualNonLog } =
-      planParamsNorm.advanced.returnsStatsForPlanning.expectedValue
+      planParamsNormInstant.advanced.returnsStatsForPlanning.expectedValue
     const labelInfo = getExpectedReturnTypeLabelInfo({
       type: 'fixedEquityPremium',
     })
     const bonds20YearTIPSYield = _resolveExpectedReturnBondsPreset(
       '20YearTIPSYield',
-      marketData,
+      marketDataForExpectedReturns,
     )
     assert(!labelInfo.isSplit)
 
@@ -783,7 +863,7 @@ export const _FixedEquityPremium = React.memo(
                 getExpectedReturnCustomBondBaseLabel('20YearTIPSYield')
                   .titleCase
               }
-              : {format(bonds20YearTIPSYield)}
+              : {formatPercentage(1)(bonds20YearTIPSYield)}
             </h2>
           </div>
         </button>
@@ -791,7 +871,8 @@ export const _FixedEquityPremium = React.memo(
           <div className="mt-4 ml-6 bg-gray-100 rounded-lg px-4 py-4">
             <div className="col-span-2 flex justify-end">
               <h2 className="text-sm lighten-2 -mt-2 -mr-2 ">
-                Stocks: {format(stocks)}, Bonds: {format(bonds20YearTIPSYield)}
+                Stocks: {formatPercentage(1)(stocks)}, Bonds:{' '}
+                {formatPercentage(1)(bonds20YearTIPSYield)}
               </h2>
             </div>
             <h2 className=" ">Fixed Equity Premium</h2>
@@ -799,7 +880,7 @@ export const _FixedEquityPremium = React.memo(
               className="-mx-3"
               height={60}
               maxOverflowHorz={props.sizing.cardPadding}
-              format={format}
+              format={formatPercentage(1)}
               data={
                 PLAN_PARAMS_CONSTANTS.advanced.returnsStatsForPlanning
                   .expectedValue.fixedEquityPremium.values
@@ -829,15 +910,19 @@ export const _FixedEquityPremium = React.memo(
               >
                 <h2 className=""></h2>
                 <h2 className="">Bonds</h2>
-                <h2 className="">{format(bonds20YearTIPSYield)} </h2>
+                <h2 className="">
+                  {formatPercentage(1)(bonds20YearTIPSYield)}{' '}
+                </h2>
                 <h2 className="">+</h2>
                 <h2 className="mr-2">Fixed Equity Premium</h2>
                 <h2 className="">
-                  {format(empiricalAnnualNonLog.equityPremium)}{' '}
+                  {formatPercentage(1)(empiricalAnnualNonLog.equityPremium)}{' '}
                 </h2>
                 <h2 className="">=</h2>
                 <h2 className="">Stocks</h2>
-                <h2 className="border-t border-gray-500">{format(stocks)}</h2>
+                <h2 className="border-t border-gray-500">
+                  {formatPercentage(1)(stocks)}
+                </h2>
               </div>
             </div>
           </div>
@@ -859,18 +944,20 @@ export const _Custom = React.memo(
     props: PlanInputBodyPassThruProps
     defaultData: PickType<ExpectedReturnsForPlanning, 'custom'>
   }) => {
-    const { planParamsNorm, simulationResult } = useSimulation()
-    const marketData = simulationResult.info.marketData.expectedReturns
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { simulationResult } = useSimulationResultInfo()
+    const marketDataForExpectedReturns =
+      simulationResult.planParamsProcessed.marketDataForPresets.expectedReturns
     const { empiricalAnnualNonLog } =
-      planParamsNorm.advanced.returnsStatsForPlanning.expectedValue
+      planParamsNormInstant.advanced.returnsStatsForPlanning.expectedValue
 
     const curr = {
       stocks:
-        simulationResult.args.planParamsProcessed.returnsStatsForPlanning.stocks
-          .empiricalAnnualNonLogExpectedReturnInfo.value,
+        simulationResult.planParamsProcessed.returnsStatsForPlanning.stocks
+          .empiricalAnnualNonLogExpectedReturn,
       bonds:
-        simulationResult.args.planParamsProcessed.returnsStatsForPlanning.bonds
-          .empiricalAnnualNonLogExpectedReturnInfo.value,
+        simulationResult.planParamsProcessed.returnsStatsForPlanning.bonds
+          .empiricalAnnualNonLogExpectedReturn,
     }
     return (
       <div id="erPreset:custom" className={`${className}`}>
@@ -911,7 +998,8 @@ export const _Custom = React.memo(
           >
             <div className="col-span-2 flex justify-end">
               <h2 className="text-sm lighten-2 -mt-2 -mr-2 ">
-                Stocks: {format(curr.stocks)}, Bonds: {format(curr.bonds)}
+                Stocks: {formatPercentage(1)(curr.stocks)}, Bonds:{' '}
+                {formatPercentage(1)(curr.bonds)}
               </h2>
             </div>
             <h2 className=" col-span-2 font-bold  mb-2">Stocks</h2>
@@ -932,12 +1020,12 @@ export const _Custom = React.memo(
                 getLabel={(x) => {
                   const value = _resolveExpectedReturnStocksPreset(
                     x,
-                    marketData,
+                    marketDataForExpectedReturns,
                   )
                   const label =
                     getExpectedReturnCustomStockBaseLabel(x).titleCase
 
-                  return `${label} (${format(value)})`
+                  return `${label} (${formatPercentage(1)(value)})`
                 }}
               />
             </div>
@@ -946,7 +1034,7 @@ export const _Custom = React.memo(
               className="-mx-3"
               height={60}
               maxOverflowHorz={props.sizing.cardPadding}
-              format={format}
+              format={formatPercentage(1)}
               data={
                 PLAN_PARAMS_CONSTANTS.advanced.returnsStatsForPlanning
                   .expectedValue.custom.deltaValues
@@ -970,14 +1058,14 @@ export const _Custom = React.memo(
             <div className="col-span-2">
               <p className="p-base mt-2">
                 This results in an expected return for stocks of{' '}
-                {format(
+                {formatPercentage(1)(
                   _resolveExpectedReturnStocksPreset(
                     empiricalAnnualNonLog.stocks.base,
-                    marketData,
+                    marketDataForExpectedReturns,
                   ),
                 )}{' '}
-                + {format(empiricalAnnualNonLog.stocks.delta)} ={' '}
-                {format(curr.stocks)}.
+                + {formatPercentage(1)(empiricalAnnualNonLog.stocks.delta)} ={' '}
+                {formatPercentage(1)(curr.stocks)}.
               </p>
             </div>
             <h2 className="col-span-2 mt-6 font-bold mb-2">Bonds</h2>
@@ -996,10 +1084,13 @@ export const _Custom = React.memo(
                   })
                 }}
                 getLabel={(x) => {
-                  const value = _resolveExpectedReturnBondsPreset(x, marketData)
+                  const value = _resolveExpectedReturnBondsPreset(
+                    x,
+                    marketDataForExpectedReturns,
+                  )
                   const label =
                     getExpectedReturnCustomBondBaseLabel(x).titleCase
-                  return `${label} (${format(value)})`
+                  return `${label} (${formatPercentage(1)(value)})`
                 }}
               />
             </div>
@@ -1008,7 +1099,7 @@ export const _Custom = React.memo(
               className="-mx-3"
               height={60}
               maxOverflowHorz={props.sizing.cardPadding}
-              format={format}
+              format={formatPercentage(1)}
               data={
                 PLAN_PARAMS_CONSTANTS.advanced.returnsStatsForPlanning
                   .expectedValue.custom.deltaValues
@@ -1032,14 +1123,14 @@ export const _Custom = React.memo(
             <div className="col-span-2">
               <p className="p-base mt-2">
                 This results in an expected return for bonds of{' '}
-                {format(
+                {formatPercentage(1)(
                   _resolveExpectedReturnBondsPreset(
                     empiricalAnnualNonLog.bonds.base,
-                    marketData,
+                    marketDataForExpectedReturns,
                   ),
                 )}{' '}
-                + {format(empiricalAnnualNonLog.bonds.delta)} ={' '}
-                {format(curr.bonds)}.
+                + {formatPercentage(1)(empiricalAnnualNonLog.bonds.delta)} ={' '}
+                {formatPercentage(1)(curr.bonds)}.
               </p>
             </div>
           </div>
@@ -1061,9 +1152,9 @@ export const _Fixed = React.memo(
     props: PlanInputBodyPassThruProps
     defaultData: PickType<ExpectedReturnsForPlanning, 'fixed'>
   }) => {
-    const { planParamsNorm } = useSimulation()
+    const { planParamsNormInstant } = useSimulationInfo()
     const { empiricalAnnualNonLog } =
-      planParamsNorm.advanced.returnsStatsForPlanning.expectedValue
+      planParamsNormInstant.advanced.returnsStatsForPlanning.expectedValue
 
     return (
       <div id="erPreset:fixed" className={`${className}`}>
@@ -1092,8 +1183,8 @@ export const _Fixed = React.memo(
           <div className="mt-4 ml-6 bg-gray-100 rounded-lg px-4 py-4">
             <div className="col-span-2 flex justify-end">
               <h2 className="text-sm lighten-2 -mt-2 -mr-2 ">
-                Stocks: {format(empiricalAnnualNonLog.stocks)}, Bonds:{' '}
-                {format(empiricalAnnualNonLog.bonds)}
+                Stocks: {formatPercentage(1)(empiricalAnnualNonLog.stocks)},
+                Bonds: {formatPercentage(1)(empiricalAnnualNonLog.bonds)}
               </h2>
             </div>
             <h2 className="mt-2 ">Stocks</h2>
@@ -1101,7 +1192,7 @@ export const _Fixed = React.memo(
               className="-mx-2"
               height={60}
               maxOverflowHorz={props.sizing.cardPadding}
-              format={format}
+              format={formatPercentage(1)}
               data={
                 PLAN_PARAMS_CONSTANTS.advanced.returnsStatsForPlanning
                   .expectedValue.fixed.values
@@ -1124,7 +1215,7 @@ export const _Fixed = React.memo(
               className="-mx-2"
               height={60}
               maxOverflowHorz={props.sizing.cardPadding}
-              format={format}
+              format={formatPercentage(1)}
               data={
                 PLAN_PARAMS_CONSTANTS.advanced.returnsStatsForPlanning
                   .expectedValue.fixed.values
@@ -1153,14 +1244,20 @@ export const _Fixed = React.memo(
 
 const _resolveExpectedReturnPreset = (
   type: _PresetType,
-  marketData: SimulationResult['info']['marketData']['expectedReturns'],
+  marketDataForExpectedReturns: PlanParamsProcessed2['marketDataForPresets']['expectedReturns'],
 ) => {
   const _resolve = (
     stocks: _CustomType['stocks']['base'],
     bonds: _CustomType['bonds']['base'],
   ) => ({
-    stocks: _resolveExpectedReturnStocksPreset(stocks, marketData),
-    bonds: _resolveExpectedReturnBondsPreset(bonds, marketData),
+    stocks: _resolveExpectedReturnStocksPreset(
+      stocks,
+      marketDataForExpectedReturns,
+    ),
+    bonds: _resolveExpectedReturnBondsPreset(
+      bonds,
+      marketDataForExpectedReturns,
+    ),
   })
 
   switch (type) {
@@ -1179,17 +1276,17 @@ const _resolveExpectedReturnPreset = (
 
 const _resolveExpectedReturnStocksPreset = (
   type: _CustomType['stocks']['base'],
-  marketData: SimulationResult['info']['marketData']['expectedReturns'],
+  marketDataForExpectedReturns: PlanParamsProcessed2['marketDataForPresets']['expectedReturns'],
 ) => {
   switch (type) {
     case 'regressionPrediction':
-      return marketData.stocks.regressionPrediction
+      return marketDataForExpectedReturns.stocks.regressionPrediction
     case 'conservativeEstimate':
-      return marketData.stocks.conservativeEstimate
+      return marketDataForExpectedReturns.stocks.conservativeEstimate
     case '1/CAPE':
-      return marketData.stocks.oneOverCAPERounded
+      return marketDataForExpectedReturns.stocks.oneOverCapeRounded
     case 'historical':
-      return marketData.stocks.historical
+      return marketDataForExpectedReturns.stocks.historical
     default:
       noCase(type)
   }
@@ -1197,13 +1294,13 @@ const _resolveExpectedReturnStocksPreset = (
 
 const _resolveExpectedReturnBondsPreset = (
   type: _CustomType['bonds']['base'],
-  marketData: SimulationResult['info']['marketData']['expectedReturns'],
+  marketDataForExpectedReturns: PlanParamsProcessed2['marketDataForPresets']['expectedReturns'],
 ) => {
   switch (type) {
     case '20YearTIPSYield':
-      return marketData.bonds.tipsYield20Year
+      return marketDataForExpectedReturns.bonds.tipsYield20Year
     case 'historical':
-      return marketData.bonds.historical
+      return marketDataForExpectedReturns.bonds.historical
     default:
       noCase(type)
   }
@@ -1222,9 +1319,9 @@ export const _BondVolatilityCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, simulationResult, updatePlanParams } =
-      useSimulation()
-    const { planParamsProcessed } = simulationResult.args
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
+    const { simulationResult } = useSimulationResultInfo()
+    const planParamsProcessed = simulationResult.planParamsProcessed
     const isModified = useIsPlanInputBondVolatilityCardModified()
     const handleChange = (volatilityScale: number) => {
       updatePlanParams(
@@ -1259,7 +1356,7 @@ export const _BondVolatilityCard = React.memo(
               .standardDeviation.bonds.scale.log.values
           }
           value={
-            planParamsNorm.advanced.historicalReturnsAdjustment
+            planParamsNormInstant.advanced.historicalReturnsAdjustment
               .standardDeviation.bonds.scale.log
           }
           onChange={(x) => handleChange(x)}
@@ -1272,7 +1369,7 @@ export const _BondVolatilityCard = React.memo(
           This corresponds to a standard deviation of log bond returns of{' '}
           {formatPercentage(2)(
             Math.sqrt(
-              planParamsProcessed.historicalReturnsAdjusted.bonds.args
+              planParamsProcessed.historicalReturns.bonds.args
                 .empiricalAnnualLogVariance,
             ),
           )}
@@ -1304,8 +1401,9 @@ export const _StockVolatilityCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, updatePlanParams } = useSimulation()
-    const { planParamsProcessed } = useSimulationResult().args
+    const { updatePlanParams, planParamsNormInstant } = useSimulationInfo()
+    const { simulationResult } = useSimulationResultInfo()
+    const planParamsProcessed = simulationResult.planParamsProcessed
     const isModified = useIsPlanInputStockVolatilityCardModified()
     const handleChange = (volatilityScale: number) => {
       updatePlanParams(
@@ -1340,8 +1438,8 @@ export const _StockVolatilityCard = React.memo(
               .standardDeviation.stocks.scale.log.values
           }
           value={
-            planParamsNorm.advanced.returnsStatsForPlanning.standardDeviation
-              .stocks.scale.log
+            planParamsNormInstant.advanced.returnsStatsForPlanning
+              .standardDeviation.stocks.scale.log
           }
           onChange={(x) => handleChange(x)}
           format={(x) => x.toFixed(2)}
@@ -1379,19 +1477,21 @@ export const _StockVolatilityCard = React.memo(
 
 export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(
   ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
-    const { args, info } = useSimulationResult()
+    const { simulationResult } = useSimulationResultInfo()
+    const planParamsProcessed = simulationResult.planParamsProcessed
     const { empiricalAnnualNonLog } =
       planParamsNorm.advanced.returnsStatsForPlanning.expectedValue
-    const marketData = info.marketData.expectedReturns
+    const marketDataForExpectedReturns =
+      simulationResult.planParamsProcessed.marketDataForPresets.expectedReturns
 
     const labelInfo = getExpectedReturnTypeLabelInfo(empiricalAnnualNonLog)
     const expectedReturns = {
       stocks:
-        args.planParamsProcessed.returnsStatsForPlanning.stocks
-          .empiricalAnnualNonLogExpectedReturnInfo.value,
+        planParamsProcessed.returnsStatsForPlanning.stocks
+          .empiricalAnnualNonLogExpectedReturn,
       bonds:
-        args.planParamsProcessed.returnsStatsForPlanning.bonds
-          .empiricalAnnualNonLogExpectedReturnInfo.value,
+        planParamsProcessed.returnsStatsForPlanning.bonds
+          .empiricalAnnualNonLogExpectedReturn,
     }
     const volatilityScale = {
       stocks:
@@ -1404,11 +1504,11 @@ export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(
 
     const volatilityAfterScaling = {
       stocks: Math.sqrt(
-        args.planParamsProcessed.returnsStatsForPlanning.stocks
+        planParamsProcessed.returnsStatsForPlanning.stocks
           .empiricalAnnualLogVariance,
       ),
       bonds: Math.sqrt(
-        args.planParamsProcessed.historicalReturnsAdjusted.bonds.args
+        planParamsProcessed.historicalReturns.bonds.args
           .empiricalAnnualLogVariance,
       ),
     }
@@ -1431,16 +1531,18 @@ export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(
                   {/* <h2 className="ml-4">{labelInfo.stocksAndBonds}</h2> */}
                   <h2 className=""></h2>
                   <h2 className="mr-2">Bonds: 20 Year TIPS Yield</h2>
-                  <h2 className="">{format(expectedReturns.bonds)}</h2>
+                  <h2 className="">
+                    {formatPercentage(1)(expectedReturns.bonds)}
+                  </h2>
                   <h2 className="">+</h2>
                   <h2 className="">Fixed Equity Premium:</h2>
                   <h2 className="">
-                    {format(empiricalAnnualNonLog.equityPremium)}
+                    {formatPercentage(1)(empiricalAnnualNonLog.equityPremium)}
                   </h2>
                   <h2 className="">=</h2>
                   <h2 className="">Stocks:</h2>
                   <h2 className="border-t border-gray-400 -mt-0.5 py-0.5">
-                    {format(expectedReturns.stocks)}
+                    {formatPercentage(1)(expectedReturns.stocks)}
                   </h2>
                 </div>
               </div>
@@ -1461,14 +1563,14 @@ export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(
                     ).titleCase
                   }{' '}
                   (
-                  {format(
+                  {formatPercentage(1)(
                     _resolveExpectedReturnStocksPreset(
                       empiricalAnnualNonLog.stocks.base,
-                      marketData,
+                      marketDataForExpectedReturns,
                     ),
                   )}
-                  ) + {format(empiricalAnnualNonLog.stocks.delta)} ={' '}
-                  {format(expectedReturns.stocks)}
+                  ) + {formatPercentage(1)(empiricalAnnualNonLog.stocks.delta)}{' '}
+                  = {formatPercentage(1)(expectedReturns.stocks)}
                 </h2>
                 <h2 className="ml-4">
                   Bonds:{' '}
@@ -1478,14 +1580,14 @@ export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(
                     ).titleCase
                   }{' '}
                   (
-                  {format(
+                  {formatPercentage(1)(
                     _resolveExpectedReturnBondsPreset(
                       empiricalAnnualNonLog.bonds.base,
-                      marketData,
+                      marketDataForExpectedReturns,
                     ),
                   )}
-                  ) + {format(empiricalAnnualNonLog.bonds.delta)} ={' '}
-                  {format(expectedReturns.bonds)}
+                  ) + {formatPercentage(1)(empiricalAnnualNonLog.bonds.delta)} ={' '}
+                  {formatPercentage(1)(expectedReturns.bonds)}
                 </h2>
               </>
             )
@@ -1493,17 +1595,22 @@ export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(
         ) : labelInfo.isSplit ? (
           <>
             <h2 className="ml-4">
-              Stocks: {labelInfo.stocks}, {format(expectedReturns.stocks)}
+              Stocks: {labelInfo.stocks},{' '}
+              {formatPercentage(1)(expectedReturns.stocks)}
             </h2>
             <h2 className="ml-4">
-              Bonds: {labelInfo.bonds}, {format(expectedReturns.bonds)}
+              Bonds: {labelInfo.bonds},{' '}
+              {formatPercentage(1)(expectedReturns.bonds)}
             </h2>
           </>
         ) : (
           <>
-            {/* <h2 className="ml-4">{labelInfo.stocksAndBonds}</h2> */}
-            <h2 className="ml-4">Stocks: {format(expectedReturns.stocks)}</h2>
-            <h2 className="ml-4">Bonds: {format(expectedReturns.bonds)}</h2>
+            <h2 className="ml-4">
+              Stocks: {formatPercentage(1)(expectedReturns.stocks)}
+            </h2>
+            <h2 className="ml-4">
+              Bonds: {formatPercentage(1)(expectedReturns.bonds)}
+            </h2>
           </>
         )}
         <h2 className="">Stock Volatility</h2>
@@ -1521,7 +1628,5 @@ export const PlanInputExpectedReturnsAndVolatilitySummary = React.memo(
   },
 )
 
-const format = formatPercentage(1)
-
-const formatNYDate = (timestamp: number) =>
+const _formatNYDate = (timestamp: number) =>
   getNYZonedTime(timestamp).toLocaleString(DateTime.DATE_MED)

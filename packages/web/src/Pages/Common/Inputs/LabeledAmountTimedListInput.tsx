@@ -7,9 +7,9 @@ import {
 } from '@tpaw/common'
 import clsx from 'clsx'
 import React, { useMemo } from 'react'
-import { NormalizedLabeledAmountTimed } from '../../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
-import { PlanParamsHelperFns } from '../../../UseSimulator/PlanParamsHelperFns'
-import { useSimulation } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { NormalizedLabeledAmountTimed } from '../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
+import { PlanParamsHelperFns } from '../../../Simulator/PlanParamsHelperFns'
+import { useSimulationInfo } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { LabeledAmountTimedDisplay } from '../LabeledAmountTimedDisplay'
 
 export const LabeledAmountTimedListInput = React.memo(
@@ -30,14 +30,14 @@ export const LabeledAmountTimedListInput = React.memo(
       onEdit: (entryId: string, isAdd: boolean) => void
     }
   }) => {
-    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
     const entries = useMemo(
       () =>
         PlanParamsHelperFns.getLabeledAmountTimedListFromLocation(
-          planParamsNorm,
+          planParamsNormInstant,
           location,
         ).sort((a, b) => a.sortIndex - b.sortIndex),
-      [location, planParamsNorm],
+      [location, planParamsNormInstant],
     )
 
     const editProps = {

@@ -5,19 +5,20 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   PLAN_PARAMS_CONSTANTS,
   PlanParams,
+  fGet,
   getNYZonedTime,
   noCase,
   partialDefaultDatelessPlanParams,
 } from '@tpaw/common'
 import { DateTime } from 'luxon'
 import React from 'react'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import { SliderInput } from '../../../Common/Inputs/SliderInput/SliderInput'
 import {
-  useSimulation,
-  useSimulationResult,
+  useSimulationInfo,
+  useSimulationResultInfo,
 } from '../../PlanRootHelpers/WithSimulation'
 import { PlanInputModifiedBadge } from './Helpers/PlanInputModifiedBadge'
 import {
@@ -49,11 +50,9 @@ export const _InflationCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, updatePlanParams, simulationResult } =
-      useSimulation()
-
-    const marketData = simulationResult.info.marketData.inflation
-    const suggestedInflation = marketData.suggestedAnnual
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
+    const { simulationResult } = useSimulationResultInfo()
+    const planParamsProcessed = simulationResult.planParamsProcessed
 
     const handleChange = (
       annualInflation: PlanParams['advanced']['annualInflation'],
@@ -68,7 +67,7 @@ export const _InflationCard = React.memo(
       >
         <PlanInputModifiedBadge show={isModified} mainPage={false} />
 
-        {planParamsNorm.datingInfo.isDated ? (
+        {planParamsNormInstant.datingInfo.isDated ? (
           <>
             <p className="p-base mt-2">
               Enter your estimate for the annual inflation rate. The{' '}
@@ -77,7 +76,11 @@ export const _InflationCard = React.memo(
             </p>
             <p className="p-base mt-2">
               The current inflation data is from NYSE close on{' '}
-              {formatNYDate(marketData.closingTime)}.
+              {_formatNYDate(
+                planParamsProcessed.marketDataForPresets.sourceRounded
+                  .dailyMarketData.inflation.closingTimestamp,
+              )}
+              .
             </p>
           </>
         ) : (
@@ -91,10 +94,15 @@ export const _InflationCard = React.memo(
               This is a dateless plan and you have chosen to use market data as
               of{' '}
               {CalendarDayFns.toStr(
-                planParamsNorm.datingInfo.marketDataAsOfEndOfDayInNY,
+                planParamsNormInstant.datingInfo.marketDataAsOfEndOfDayInNY,
               )}
               . The latest inflation data available on that day was from NYSE
-              close on {formatNYDate(marketData.closingTime)}.
+              close on{' '}
+              {_formatNYDate(
+                planParamsProcessed.marketDataForPresets.sourceRounded
+                  .dailyMarketData.inflation.closingTimestamp,
+              )}
+              .
             </p>
           </>
         )}
@@ -106,7 +114,8 @@ export const _InflationCard = React.memo(
           <FontAwesomeIcon
             className="mt-1"
             icon={
-              planParamsNorm.advanced.annualInflation.type === 'suggested'
+              planParamsNormInstant.advanced.annualInflation.type ===
+              'suggested'
                 ? faCircleSelected
                 : faCircleRegular
             }
@@ -124,7 +133,10 @@ export const _InflationCard = React.memo(
               </span>
             </h2>
             <h2 className="text-left text-sm lighten-2">
-              {formatPercentage(1)(suggestedInflation)}
+              {formatPercentage(1)(
+                planParamsProcessed.marketDataForPresets.inflation
+                  .suggestedAnnual,
+              )}
             </h2>
           </div>
         </button>
@@ -132,24 +144,27 @@ export const _InflationCard = React.memo(
         <button
           className={`${className} flex gap-x-2 mt-3`}
           onClick={() => {
-            switch (planParamsNorm.advanced.annualInflation.type) {
+            switch (planParamsNormInstant.advanced.annualInflation.type) {
               case 'suggested':
                 handleChange({
                   type: 'manual',
-                  value: suggestedInflation,
+                  value: fGet(
+                    planParamsProcessed.marketDataForPresets.inflation
+                      .suggestedAnnual,
+                  ),
                 })
                 break
               case 'manual':
                 return
               default:
-                noCase(planParamsNorm.advanced.annualInflation)
+                noCase(planParamsNormInstant.advanced.annualInflation)
             }
           }}
         >
           <FontAwesomeIcon
             className="mt-1"
             icon={
-              planParamsNorm.advanced.annualInflation.type === 'manual'
+              planParamsNormInstant.advanced.annualInflation.type === 'manual'
                 ? faCircleSelected
                 : faCircleRegular
             }
@@ -160,14 +175,14 @@ export const _InflationCard = React.memo(
             </h2>
           </div>
         </button>
-        {planParamsNorm.advanced.annualInflation.type === 'manual' && (
+        {planParamsNormInstant.advanced.annualInflation.type === 'manual' && (
           <SliderInput
             className=""
             height={60}
             maxOverflowHorz={props.sizing.cardPadding}
             format={formatPercentage(1)}
             data={PLAN_PARAMS_CONSTANTS.advanced.inflation.manual.values}
-            value={planParamsNorm.advanced.annualInflation.value}
+            value={planParamsNormInstant.advanced.annualInflation.value}
             onChange={(value) => handleChange({ type: 'manual', value })}
             ticks={(value, i) =>
               i % 10 === 0
@@ -196,15 +211,15 @@ export const _InflationCard = React.memo(
 
 export const PlanInputInflationSummary = React.memo(
   ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
-    const { args } = useSimulationResult()
-    const format = formatPercentage(1)
+    const { simulationResult } = useSimulationResultInfo()
+    const { planParamsProcessed } = simulationResult
     return (
       <h2>
         {inflationTypeLabel(planParamsNorm.advanced.annualInflation)}:{' '}
-        {format(args.planParamsProcessed.inflation.annual)}
+        {formatPercentage(1)(planParamsProcessed.annualInflation)}
       </h2>
     )
   },
 )
-const formatNYDate = (timestamp: number) =>
+const _formatNYDate = (timestamp: number) =>
   getNYZonedTime(timestamp).toLocaleString(DateTime.DATE_MED)

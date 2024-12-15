@@ -13,14 +13,17 @@ import {
 } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
-import { PlanParamsNormalized } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { formatCurrency } from '../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { AmountInput } from '../../../../Common/Inputs/AmountInput'
 import { smartDeltaFnForAmountInput } from '../../../../Common/Inputs/SmartDeltaFnForAmountInput'
 import { usePlanContent } from '../../../PlanRootHelpers/WithPlanContent'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
 import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
 import { PlanInputRiskSPAWAndSWRStockAllocationCard } from './PlanInputRiskSPAWAndSWRStockAllocation'
@@ -66,9 +69,9 @@ const _WithdrawalCard = React.memo(
 )
 
 const _Rate = React.memo(({ className = '' }: { className?: string }) => {
-  const {  updatePlanParams, planParamsNorm } = useSimulation()
-  const { withdrawal } = planParamsNorm.risk.swr
-  const { ages } = planParamsNorm
+  const { updatePlanParams, planParamsNormInstant } = useSimulationInfo()
+  const { withdrawal } = planParamsNormInstant.risk.swr
+  const { ages } = planParamsNormInstant
 
   const [lastEntry, setLastEntry] = useState(
     withdrawal.type === 'asPercentPerYear'
@@ -151,25 +154,31 @@ const _Rate = React.memo(({ className = '' }: { className?: string }) => {
   )
 })
 const _Amount = React.memo(({ className = '' }: { className?: string }) => {
-  const { planParamsNorm, updatePlanParams, simulationResult } = useSimulation()
-  const { ages } = planParamsNorm
-  const { withdrawal } = planParamsNorm.risk.swr
+  const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
+  const { simulationResult } = useSimulationResultInfo()
+  const { withdrawal } = planParamsNormInstant.risk.swr
 
-  const [lastEntry, setLastEntry] = useState(
-    _.round(
-      fGet(
-        simulationResult.savingsPortfolio.withdrawals.regular.byPercentileByMonthsFromNow.find(
-          (x) => x.percentile === 50,
-        ),
-      ).data[ages.simulationMonths.withdrawalStartMonth.asMFN],
-      -2,
-    ),
-  )
+  const [lastEntry, setLastEntry] = useState<number | null>(null)
+
   useEffect(() => {
-    if (withdrawal.type === 'asAmountPerMonth') {
-      setLastEntry(withdrawal.amountPerMonth)
-    }
-  }, [withdrawal])
+    setLastEntry((prev) => {
+      if (withdrawal.type === 'asAmountPerMonth') {
+        return withdrawal.amountPerMonth
+      }
+      if (prev !== null) return prev
+      return _.round(
+        fGet(
+          simulationResult.savingsPortfolio.withdrawals.regular.byPercentileByMonthsFromNow.find(
+            (x) => x.percentile === 50,
+          ),
+        ).data[
+          simulationResult.planParamsNormOfResult.ages.simulationMonths
+            .withdrawalStartMonth.asMFN
+        ],
+        -2,
+      )
+    })
+  }, [withdrawal, simulationResult])
 
   const handleChange = (amountPerMonth: number) =>
     updatePlanParams('setSWRWithdrawalAsAmountPerMonth', amountPerMonth)
@@ -177,8 +186,8 @@ const _Amount = React.memo(({ className = '' }: { className?: string }) => {
     <div className={`${className}`}>
       <button
         className={`w-full text-left`}
-        disabled={withdrawal.type === 'asAmountPerMonth'}
-        onClick={() => handleChange(lastEntry)}
+        disabled={withdrawal.type === 'asAmountPerMonth' || lastEntry === null}
+        onClick={() => handleChange(fGet(lastEntry))}
       >
         <FontAwesomeIcon
           className="mr-2"
@@ -239,8 +248,12 @@ const _Amount = React.memo(({ className = '' }: { className?: string }) => {
 })
 
 export const PlanInputRiskSWRSummary = React.memo(
-  ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
-    const { risk } = planParamsNorm
+  ({
+    planParamsNormInstant,
+  }: {
+    planParamsNormInstant: PlanParamsNormalized
+  }) => {
+    const { risk } = planParamsNormInstant
 
     return (
       <>
@@ -255,7 +268,7 @@ export const PlanInputRiskSWRSummary = React.memo(
         <h2 className="ml-4">
           {risk.swr.withdrawal.type === 'asPercentPerYear'
             ? `${formatPercentage(1)(risk.swr.withdrawal.percentPerYear)} of ${
-                planParamsNorm.ages.simulationMonths.withdrawalStartMonth
+                planParamsNormInstant.ages.simulationMonths.withdrawalStartMonth
                   .asMFN === 0
                   ? 'current portfolio balance'
                   : 'savings portfolio at retirement'

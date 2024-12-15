@@ -9,11 +9,22 @@ import { GlobalErrorBoundary } from '../src/Pages/App/GlobalErrorBoundary'
 import { WithFirebaseUser } from '../src/Pages/App/WithFirebaseUser'
 import { WithRelayEnvironment } from '../src/Pages/App/WithRelayEnvironment'
 import { WithSystemInfo } from '../src/Pages/App/WithSystemInfo'
-import { Spinner } from '../src/Utils/View/Spinner'
 import '../styles/globals.css'
 import { WithMergeToServer } from '../src/Pages/App/WithMergeToServer'
+import { createContext } from '../src/Utils/CreateContext'
 
+import { Spinner } from '../src/Utils/View/Spinner'
+import { clsx } from 'clsx'
 
+// This is a hack to get around not being able to suspend in WithSimulation
+// until the first simulation is completed. Alternative is to render the
+// suspense component inside WithSimulation, but that means the spinner resets
+// because it is a different component.
+const [GlobalSuspenseFallbackContext, useGlobalSuspenseFallbackContext] =
+  createContext<{
+    setGlobalSuspend: (suspend: boolean) => void
+  }>('GlobalSuspenseFallbackContext')
+export { useGlobalSuspenseFallbackContext }
 
 const MyApp = React.memo(({ Component, pageProps }: AppProps) => {
   const router = useRouter()
@@ -25,6 +36,7 @@ const MyApp = React.memo(({ Component, pageProps }: AppProps) => {
   const [render, setRender] = useState(false)
   useEffect(() => setRender(true), [])
 
+  const [globalSuspend, setGlobalSuspend] = useState(false)
   if (!(render && router.isReady)) return <div></div>
 
   return (
@@ -32,17 +44,23 @@ const MyApp = React.memo(({ Component, pageProps }: AppProps) => {
       <WithFirebaseUser>
         <WithRelayEnvironment>
           <WithMergeToServer>
-            <Suspense
-              fallback={
-                <div className="page h-screen flex flex-col justify-center items-center">
-                  <Spinner size="text-4xl" />
-                </div>
-              }
+            <GlobalSuspenseFallbackContext.Provider
+              value={{ setGlobalSuspend }}
             >
-              <WithSystemInfo>
-                <Component {...pageProps} />
-              </WithSystemInfo>
-            </Suspense>
+              <Suspense
+                fallback={
+                  <TriggerSuspenseFallback
+                    setGlobalSuspend={setGlobalSuspend}
+                  />
+                }
+              >
+                <WithSystemInfo>
+                  <Component {...pageProps} />
+                </WithSystemInfo>
+              </Suspense>
+            </GlobalSuspenseFallbackContext.Provider>
+            {/* After the component, so it will be on top. */}
+            <_TopLevelSuspenseFallback show={globalSuspend} />
           </WithMergeToServer>
         </WithRelayEnvironment>
         <ToastContainer position="bottom-center" transition={Slide} />
@@ -51,3 +69,29 @@ const MyApp = React.memo(({ Component, pageProps }: AppProps) => {
   )
 })
 export default MyApp
+
+const TriggerSuspenseFallback = ({
+  setGlobalSuspend,
+}: {
+  setGlobalSuspend: (suspend: boolean) => void
+}) => {
+  useEffect(() => {
+    setGlobalSuspend(true)
+    return () => setGlobalSuspend(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  return <></>
+}
+
+const _TopLevelSuspenseFallback = ({ show }: { show: boolean }) => {
+  return (
+    <div
+      className={clsx(
+        'page absolute top-0 left-0 w-full h-screen flex flex-col justify-center items-center bg-white',
+        show ? 'block' : 'hidden',
+      )}
+    >
+      <Spinner size="text-4xl" />
+    </div>
+  )
+}

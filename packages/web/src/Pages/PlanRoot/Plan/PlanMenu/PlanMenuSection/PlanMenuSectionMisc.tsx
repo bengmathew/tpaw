@@ -4,7 +4,8 @@ import { Menu } from '@headlessui/react'
 import { useState } from 'react'
 import {
   SimulationInfoForServerSrc,
-  useSimulation,
+  useSimulationInfo,
+  useSimulationResultInfo,
 } from '../../../PlanRootHelpers/WithSimulation'
 import { PlanMenuActionModalCopyToLink } from '../PlanMenuActions/PlanMenuActionModals/PlanMenuActionModalCopyToLink'
 import { PlanMenuActionViewPlanHistory } from '../PlanMenuActions/PlanMenuActionViewPlanHistory'
@@ -14,8 +15,7 @@ export const usePlanMenuSectionMisc = ({
 }: {
   simulationInfoForServerSrc: SimulationInfoForServerSrc | null
 }) => {
-  const { planParamsNorm } = useSimulation()
-  const { datingInfo } = planParamsNorm
+  const { simulationResult } = useSimulationResultInfo()
 
   const [showCopyToLink, setShowCopyToLink] = useState(false)
 
@@ -33,17 +33,20 @@ export const usePlanMenuSectionMisc = ({
         Copy to Link
       </Menu.Item>
 
-      {simulationInfoForServerSrc && datingInfo.isDated && (
-        <PlanMenuActionViewPlanHistory
-          className="context-menu-item"
-          simulationInfoForServerSrc={simulationInfoForServerSrc}
-          nowAsTimestamp={datingInfo.nowAsTimestamp}
-        />
-      )}
+      {simulationInfoForServerSrc &&
+        simulationResult.planParamsNormOfResult.datingInfo.isDated && (
+          <PlanMenuActionViewPlanHistory
+            className="context-menu-item"
+            simulationInfoForServerSrc={simulationInfoForServerSrc}
+            nowAsTimestamp={
+              simulationResult.planParamsNormOfResult.datingInfo.nowAsTimestamp
+            }
+          />
+        )}
     </div>
   )
 
-  const modals = (
+  const modals = simulationResult && (
     <>
       <PlanMenuActionModalCopyToLink
         show={showCopyToLink}

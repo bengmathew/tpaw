@@ -1,4 +1,4 @@
-import { DialogPosition, block, noCase } from '@tpaw/common'
+import { DialogPosition, block, fGet, noCase } from '@tpaw/common'
 import clsx from 'clsx'
 import getIsMobile from 'is-mobile'
 import _ from 'lodash'
@@ -14,7 +14,10 @@ import {
 import { useSystemInfo } from '../../App/WithSystemInfo'
 import { ChartPointerPortal } from '../../Common/Chart/ChartComponent/ChartPointerPortal'
 import { useNonPlanParams } from '../PlanRootHelpers/WithNonPlanParams'
-import { useSimulation } from '../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../PlanRootHelpers/WithSimulation'
 import { PlanChartPointer } from './PlanChartPointer/PlanChartPointer'
 import { PlanContact } from './PlanContact/PlanContact'
 import { PlanDialogOverlay } from './PlanDialogOverlay'
@@ -35,9 +38,10 @@ import { useGetPlanResultsChartURL } from './PlanResults/UseGetPlanResultsChartU
 import { usePlanResultsChartType } from './PlanResults/UsePlanResultsChartType'
 import { planSizing } from './PlanSizing/PlanSizing'
 import { PlanSummary } from './PlanSummary/PlanSummary'
-import { PlanSyncStateDev } from './PlanSyncStateDev'
+import { PlanSyncState } from './PlanSyncState'
 import { usePlanColors } from './UsePlanColors'
 import { WithPlanResultsChartData } from './WithPlanResultsChartData'
+import { PlanSimulationDelayModal } from './PlanSimulationDelayModal'
 
 export const Plan = React.memo(() => {
   return (
@@ -50,14 +54,11 @@ Plan.displayName = 'Plan'
 
 const _Plan = React.memo(() => {
   const { nonPlanParams } = useNonPlanParams()
-  const {
-    planParamsNorm,
-    simulationResult,
-    simulationInfoByMode,
-    simulationInfoBySrc,
-  } = useSimulation()
+  const { planParamsNormInstant, simulationInfoByMode, simulationInfoBySrc } =
+    useSimulationInfo()
+  const { simulationResult } = useSimulationResultInfo()
 
-  const isSWR = planParamsNorm.advanced.strategy === 'SWR'
+  const isSWR = planParamsNormInstant.advanced.strategy === 'SWR'
   const isTallMenu =
     simulationInfoBySrc.src === 'localMain' ||
     simulationInfoByMode.mode === 'history'
@@ -79,7 +80,11 @@ const _Plan = React.memo(() => {
   const planChartType = usePlanResultsChartType()
   const spendingTotalURL = useGetPlanResultsChartURL()('spending-total')
   const urlUpdater = useURLUpdater()
-  const chartLabel = planResultsChartLabel(planParamsNorm, planChartType)
+
+  const chartLabel = planResultsChartLabel(
+    fGet(simulationResult?.planParamsNormOfResult),
+    planChartType,
+  )
   const state = usePlanState()
 
   const [transition, setTransition] = useState(() => {
@@ -127,7 +132,7 @@ const _Plan = React.memo(() => {
       case 'localMain':
         return null
       case 'file':
-        // Don't add label, because 
+        // Don't add label, because
         return 'From File'
       case 'server':
         return simulationInfoBySrc.plan.isMain
@@ -138,7 +143,7 @@ const _Plan = React.memo(() => {
     }
   })
 
-  const isPrintView = useURLParam('pdf-report') === 'true'
+  const isPDFReportView = useURLParam('pdf-report') === 'true'
   return (
     <>
       <WithPlanResultsChartData
@@ -149,7 +154,7 @@ const _Plan = React.memo(() => {
       >
         <AppPage
           className={clsx(
-            isPrintView && 'hidden',
+            isPDFReportView && 'hidden',
             planColors.pageBG,
             'overflow-hidden',
             !isIPhone && 'h-screen',
@@ -161,13 +166,13 @@ const _Plan = React.memo(() => {
           style={{ height: isIPhone ? `${windowSize.height}px` : undefined }}
           title={_.compact([
             `Plan ${planLabel ? `(${planLabel}) ` : ''}`,
-            ...(isPrintView
+            ...(isPDFReportView
               ? ['PDF Report']
               : [
                   planChartType === 'spending-total'
                     ? undefined
                     : `View: ${_.compact([
-                        ...chartLabel.label.full,
+                        chartLabel.label.full,
                         chartLabel.subLabel,
                       ]).join(' > ')}`,
                   state.section === 'summary'
@@ -176,8 +181,9 @@ const _Plan = React.memo(() => {
                 ]),
             'TPAW Planner',
           ]).join(' - ')}
-          // Otherwise header will be hidden.
-          isHeaderAPortal={isPrintView}
+          // This is to show header even when we are hidden for PDF report view.
+          // If header is not a portal it will inherit the hidden property.
+          isHeaderAPortal={isPDFReportView}
         >
           {({ setDarkHeader }) => (
             <>
@@ -231,8 +237,8 @@ const _Plan = React.memo(() => {
                 }}
                 chartHover={chartHover}
               />
-              {/* <PlanSyncState /> */}
-              <PlanSyncStateDev />
+              <PlanSyncState />
+              <PlanSimulationDelayModal />
             </>
           )}
         </AppPage>
@@ -243,8 +249,8 @@ const _Plan = React.memo(() => {
 _Plan.displayName = '_Plan'
 
 function usePlanState() {
-  const { planParamsNorm, updatePlanParams, simulationInfoByMode } =
-    useSimulation()
+  const { planParamsNormInstant, updatePlanParams, simulationInfoByMode } =
+    useSimulationInfo()
 
   const urlSection = useURLSection()
 
@@ -254,7 +260,7 @@ function usePlanState() {
   // this?)
   const [state, setState] = useState({
     section: urlSection,
-    dialogPosition: planParamsNorm.dialogPosition.effective,
+    dialogPosition: planParamsNormInstant.dialogPosition.effective,
   })
   const handleURLSectionChange = (section: typeof urlSection) =>
     setState({
@@ -263,7 +269,7 @@ function usePlanState() {
         state.dialogPosition !== 'done' &&
         urlSection === 'summary' &&
         state.section === state.dialogPosition
-          ? planParamsNorm.dialogPosition.next
+          ? planParamsNormInstant.dialogPosition.next
           : state.dialogPosition,
     })
   const handleURLSectionChangeRef = useRef(handleURLSectionChange)
@@ -272,7 +278,8 @@ function usePlanState() {
 
   const handleDialogPosition = (dialogPosition: DialogPosition) => {
     if (simulationInfoByMode.mode === 'history') return
-    if (planParamsNorm.dialogPosition.effective === dialogPosition) return
+    if (planParamsNormInstant.dialogPosition.effective === dialogPosition)
+      return
     updatePlanParams('setDialogPosition', dialogPosition)
   }
   const handleDialogPositionRef = useRef(handleDialogPosition)
@@ -284,14 +291,14 @@ function usePlanState() {
 
   useEffect(() => {
     setState((prev) =>
-      planParamsNorm.dialogPosition.effective === prev.dialogPosition
+      planParamsNormInstant.dialogPosition.effective === prev.dialogPosition
         ? prev
         : {
             section: prev.section,
-            dialogPosition: planParamsNorm.dialogPosition.effective,
+            dialogPosition: planParamsNormInstant.dialogPosition.effective,
           },
     )
-  }, [planParamsNorm.dialogPosition.effective])
+  }, [planParamsNormInstant.dialogPosition.effective])
 
   return state
 }
@@ -316,7 +323,7 @@ function useURLSection() {
 }
 
 export const useGetSectionURL = () => {
-  const { planPaths } = useSimulation()
+  const { planPaths } = useSimulationInfo()
   const path = useRouter().asPath
   return useCallback(
     (section: PlanSectionName) => {

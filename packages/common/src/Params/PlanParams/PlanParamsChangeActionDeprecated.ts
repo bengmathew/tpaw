@@ -173,7 +173,14 @@ export type PlanParamsChangeActionDeprecated =
       }
     }
 
-// ------- end Deprecated in v29
+  // ------- end Deprecated in v29
+
+  // ------- Deprecated in v30
+  | {
+      type: 'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting'
+      value: boolean
+    }
+// ------- end Deprecated in v30
 
 const _guard = <T extends string, V>(
   type: T,
@@ -310,4 +317,10 @@ export const planParamsChangeActionGuardDeprecated: JSONGuard<PlanParamsChangeAc
     ),
 
     // ------- end Deprecated in v29
+    // -------------- Deprecated in v30
+    _guard(
+      'setHistoricalMonthlyLogReturnsAdjustmentOverrideToFixedForTesting',
+      boolean,
+    ),
+    // ------- end Deprecated in v30
   )

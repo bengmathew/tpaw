@@ -4,7 +4,10 @@ import { Menu } from '@headlessui/react'
 import clix from 'clsx'
 import React, { CSSProperties } from 'react'
 import { ContextModal } from '../../../../../Common/Modal/ContextModal'
-import { useSimulation } from '../../../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../../UsePlanColors'
 import { PlanResultsSidePanelMenuBalanceSheet } from './PlanResultsSidePanelMenuBalanceSheet'
 import { PlanResultsSidePanelMenuPDFReportItem } from './PlanResultsSidePanelMenuPDFReportItem'
@@ -13,14 +16,19 @@ import clsx from 'clsx'
 export const PlanResultsSidePanelMenu = React.memo(
   ({ className, style }: { className?: string; style?: CSSProperties }) => {
     const [showBalanceSheet, setShowBalanceSheet] = React.useState(false)
-    const { planParamsNorm } = useSimulation()
+    const { simulationResult } = useSimulationResultInfo()
+    const { planParamsNormOfResult } = simulationResult
     const planColors = usePlanColors()
 
     return (
       <>
         <Menu>
           {({ open }) => (
-            <ContextModal open={open} align={'right'} onOutsideClickOrEscape={null}>
+            <ContextModal
+              open={open}
+              align={'right'}
+              onOutsideClickOrEscape={null}
+            >
               {({ ref }) => (
                 <Menu.Button
                   ref={ref}
@@ -46,7 +54,7 @@ export const PlanResultsSidePanelMenu = React.memo(
                   color: planColors.results.fg,
                 }}
               >
-                {planParamsNorm.advanced.strategy === 'TPAW' && (
+                {planParamsNormOfResult.advanced.strategy === 'TPAW' && (
                   <Menu.Item
                     as="button"
                     className="context-menu-item"

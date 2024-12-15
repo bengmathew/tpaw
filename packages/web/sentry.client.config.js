@@ -6,7 +6,17 @@ Sentry.init({
   // We recommend adjusting this value in production, or using tracesSampler
   // for finer control
   tracesSampleRate: 1.0,
-  // ...
+  // integrations will be all default integrations
+  integrations: (integrations) => {
+    const result = [
+      ...integrations.filter(
+        // (integration) => integration.name != 'BrowserApiErrors',
+        (integration) => true
+      ),
+    ]
+    return result
+  },
+  
   // Note: if you want to override the automatic release value, do not set a
   // `release` value here - use the environment variable `SENTRY_RELEASE`, so
   // that it will also get attached to your source maps
@@ -27,4 +37,11 @@ Sentry.init({
     }
     return event
   },
+})
+
+Sentry.addEventProcessor((event) => {
+  if (event.exception?.values?.length > 0) {
+    window.__sentryLastErrorId = event.event_id
+  }
+  return event
 })

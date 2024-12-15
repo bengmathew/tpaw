@@ -1,8 +1,12 @@
 import _ from 'lodash'
 import React from 'react'
-import { useSimulation } from '../../../../PlanRootHelpers/WithSimulation'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../../../../PlanRootHelpers/WithSimulation'
 import clsx from 'clsx'
 import { Spinner } from '../../../../../../Utils/View/Spinner'
+import { fGet } from '@tpaw/common'
 
 export const PlanMenuActionModalConvertDatingCommon = React.memo(
   ({
@@ -16,8 +20,9 @@ export const PlanMenuActionModalConvertDatingCommon = React.memo(
     isRunning: boolean
     skipNoUndoCopy: boolean
   }) => {
-    const { planParamsNorm } = useSimulation()
-    const { datingInfo } = planParamsNorm
+    const { planParamsNormOfResult } =
+      useSimulationResultInfo().simulationResult
+    const { datingInfo } = planParamsNormOfResult
     const targetDatingStr = datingInfo.isDated ? 'dateless' : 'dated'
     return (
       <div className=" dialog-outer-div">
@@ -33,8 +38,8 @@ export const PlanMenuActionModalConvertDatingCommon = React.memo(
           )}
           <p className="p-base mt-2">
             Converting this plan to a {targetDatingStr} plan will change all
-            calendar month references to ages and will delete history for this plan.{' '}
-            {!skipNoUndoCopy && `This cannot be undone.`}
+            calendar month references to ages and will delete history for this
+            plan. {!skipNoUndoCopy && `This cannot be undone.`}
           </p>
           <p className="p-base mt-2">Are you sure you want to continue?</p>
         </div>

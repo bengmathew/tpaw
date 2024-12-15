@@ -1,7 +1,7 @@
 import { block, noCase } from '@tpaw/common'
 import clsx from 'clsx'
 import React from 'react'
-import { NormalizedMonthRange } from '../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
+import { NormalizedMonthRange } from '../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
 import { MonthOrDurationDisplay } from './MonthOrDurationDisplay'
 import { InMonthsFns } from '../../Utils/InMonthsFns'
 

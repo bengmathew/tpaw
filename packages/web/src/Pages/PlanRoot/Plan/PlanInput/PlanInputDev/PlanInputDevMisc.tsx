@@ -19,9 +19,12 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from '../PlanInputBody/PlanInputBody'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
-import { normalizePlanParamsInverse } from '../../../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
-import { CurrentPortfolioBalance } from '../../../PlanRootHelpers/CurrentPortfolioBalance'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../../../PlanRootHelpers/WithSimulation'
+import { normalizePlanParamsInverse } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParamsInverse'
+import { PortfolioBalanceEstimation } from '../../../PlanRootHelpers/PortfolioBalanceEstimation'
 import { appPaths } from '../../../../../AppPaths'
 
 export const PlanInputDevMisc = React.memo(
@@ -45,7 +48,8 @@ const _MiscCard = React.memo(
     props: PlanInputBodyPassThruProps
   }) => {
     const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
-    const { planParamsNorm, currentPortfolioBalanceInfo } = useSimulation()
+    const { planParamsNormInstant } = useSimulationInfo()
+    const { simulationResult } = useSimulationResultInfo()
     const isModified = useIsPlanInputDevMiscModified()
     const defaultNonPlanParams = useMemo(
       () => getDefaultNonPlanParams(Date.now()),
@@ -87,20 +91,24 @@ const _MiscCard = React.memo(
           className="py-2 underline mt-2"
           onClick={() => {
             const params = block(() => {
-              const clone = normalizePlanParamsInverse(planParamsNorm)
+              const clone = normalizePlanParamsInverse(
+                simulationResult.planParamsNormOfResult,
+              )
               if (
                 clone.wealth.portfolioBalance.isDatedPlan &&
                 !clone.wealth.portfolioBalance.updatedHere
               ) {
-                assert(planParamsNorm.datingInfo.isDated)
-                assert(currentPortfolioBalanceInfo.isDatedPlan)
-                clone.timestamp = planParamsNorm.datingInfo.nowAsTimestamp
+                assert(
+                  simulationResult.planParamsNormOfResult.datingInfo.isDated,
+                )
+                clone.timestamp =
+                  simulationResult.planParamsNormOfResult.datingInfo.nowAsTimestamp
                 clone.wealth.portfolioBalance = {
                   isDatedPlan: true,
                   updatedHere: true,
-                  amount: CurrentPortfolioBalance.getAmountInfo(
-                    currentPortfolioBalanceInfo.info,
-                  ).amount,
+                  amount:
+                    simulationResult.portfolioBalanceEstimationByDated
+                      .currentBalance,
                 }
               }
               return clone

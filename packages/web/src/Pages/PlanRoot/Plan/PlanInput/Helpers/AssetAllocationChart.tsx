@@ -3,8 +3,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import { rectExt } from '../../../../../Utils/Geometry'
 import { fGet } from '../../../../../Utils/Utils'
 import {
-    ChartReact,
-    ChartReactStatefull,
+  ChartReact,
+  ChartReactStatefull,
 } from '../../../../Common/Chart/ChartReact'
 import { getPlanResultsChartRange } from '../../PlanResults/PlanResultsChartCard/PlanResultsChart/GetPlanResultsChartRange'
 import { getPlanResultsChartSalientPoints } from '../../PlanResults/PlanResultsChartCard/PlanResultsChart/GetPlanResultsChartSalientPoints'

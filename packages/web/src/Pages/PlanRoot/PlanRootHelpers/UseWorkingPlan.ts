@@ -11,21 +11,18 @@ import {
 } from '@tpaw/common'
 import cloneJSON from 'fast-json-clone'
 import _ from 'lodash'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import * as uuid from 'uuid'
-import { normalizePlanParams } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
-import { normalizePlanParamsInverse } from '../../../UseSimulator/NormalizePlanParams/NormalizePlanParamsInverse'
-import { sendAnalyticsEvent } from '../../../Utils/SendAnalyticsEvent'
+import { normalizePlanParams } from '../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { normalizePlanParamsInverse } from '../../../Simulator/NormalizePlanParams/NormalizePlanParamsInverse'
+import { CalendarDayFns } from '../../../Utils/CalendarDayFns'
 import { useAssertConst } from '../../../Utils/UseAssertConst'
 import { Config } from '../../Config'
-import { CurrentPortfolioBalance } from './CurrentPortfolioBalance'
 import { getPlanParamsChangeActionImpl } from './GetPlanParamsChangeActionImpl/GetPlanParamsChangeActionImpl'
 import { CurrentTimeInfo } from './UseCurrentTime'
 import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName } from './WithNonPlanParams'
 import { useWASM } from './WithWASM'
-import { CalendarDayFns } from '../../../Utils/CalendarDayFns'
-import * as Sentry from '@sentry/nextjs'
 
 export type PlanParamsHistoryItem = {
   readonly id: string
@@ -84,10 +81,6 @@ export const useWorkingPlan = (
     }
   }, [headIndex, workingPlan])
 
-  const isUpdatingRef = useRef(false)
-  useEffect(() => {
-    isUpdatingRef.current = false
-  }, [workingPlan])
   const updatePlanParams = useCallback(
     <T extends PlanParamsChangeActionCurrent>(
       type: T['type'],
@@ -154,28 +147,9 @@ export const useWorkingPlan = (
         planParamsPostBase.splice(-2, 1)
 
       nextPlanParams.results = null
-      const displayedAssetAllocation = fGet(
-        _.last(
-          CurrentPortfolioBalance.getInfo(
-            workingPlan.planId,
-            planParamsPostBase,
-            nextPlanParams.timestamp,
-            ianaTimezoneName,
-            marketData,
-            wasm,
-          ).actions,
-        ),
-      ).stateChange.end.allocation
-      nextPlanParams.results = { displayedAssetAllocation }
 
       planParamsGuard(nextPlanParams).force()
 
-      if (isUpdatingRef.current) {
-        console.dir('simultaneous updatePlanParams detected.')
-        Sentry.captureMessage('simultaneous updatePlanParams detected.')
-        return
-      }
-      isUpdatingRef.current = true
       setWorkingPlan({
         planId: workingPlan.planId,
         planParamsPostBase,
@@ -185,10 +159,8 @@ export const useWorkingPlan = (
     [
       currentTimeInfo,
       ianaTimezoneName,
-      marketData,
       planParams,
       planParamsUndoRedoStack.undos,
-      wasm,
       workingPlan.planId,
     ],
   )
@@ -248,40 +220,11 @@ export const useWorkingPlan = (
     }
   }, [workingPlan.planParamsPostBase])
 
-  const currentPortfolioBalanceInfoPostBase = useMemo(() => {
-    const start = performance.now()
-    const result = CurrentPortfolioBalance.getInfo(
-      workingPlan.planId,
-      planParamsUndoRedoStack.undos,
-      currentTimeInfo.currentTimestamp,
-      ianaTimezoneName,
-      marketData,
-      wasm,
-    )
-
-    const runTime = performance.now() - start
-    if (_.random(25) === 0)
-      if (runTime > 1000)
-        // sendAnalyticsEvent('current_portfolio_balance_estimation', { runTime })
-        sendAnalyticsEvent('current_portfolio_balance_estimation_slow', {
-          runTime,
-        })
-    return result
-  }, [
-    currentTimeInfo.currentTimestamp,
-    ianaTimezoneName,
-    marketData,
-    planParamsUndoRedoStack.undos,
-    wasm,
-    workingPlan.planId,
-  ])
-
   return {
     workingPlan,
     planParamsUndoRedoStack,
     updatePlanParams,
     setPlanParamsHeadIndex,
     rebase,
-    currentPortfolioBalanceInfoPostBase,
   }
 }

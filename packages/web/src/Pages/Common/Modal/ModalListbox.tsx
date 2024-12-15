@@ -17,7 +17,7 @@ import { useSystemInfo } from '../../App/WithSystemInfo'
 const duration = 300
 
 // TODO: Deprecated in favor of ContextModal & HeadlessUI Listbox
-const _ModalListbox = <T extends string | number>({
+const ModalListboxImpl = <T extends string | number>({
   className = '',
   choices,
   value,
@@ -68,7 +68,7 @@ const _ModalListbox = <T extends string | number>({
   )
 }
 
-const __Options = <T extends string | number>({
+const Options = <T extends string | number>({
   value,
   referenceElement,
   align,
@@ -237,6 +237,6 @@ const __Group = <T extends string | number>({
   )
 }
 
-const _Options = React.memo(__Options) as typeof __Options
+const _Options = React.memo(Options) as typeof Options
 const _Group = React.memo(__Group) as typeof __Group
-export const ModalListbox = React.memo(_ModalListbox) as typeof _ModalListbox
+export const ModalListbox = React.memo(ModalListboxImpl) as typeof ModalListboxImpl

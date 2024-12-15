@@ -1,4 +1,4 @@
-import { assert, fGet, noCase } from '@tpaw/common'
+import { assert, block, fGet, noCase } from '@tpaw/common'
 import clix from 'clsx'
 import { path } from 'd3-path'
 import _ from 'lodash'
@@ -45,13 +45,13 @@ export namespace Sankey {
         )
         const width = sizingIn.nodeWidth * numCols + nodeXGap * (numCols - 1)
         const colQuantities = model.map((col) =>
-          _.sumBy(col.nodes, getNodeQuantity),
+          _.sumBy(col.nodes, (x) => Math.max(0, getNodeQuantityPossiblyNeg(x))),
         )
         const maxColumnQuantity = fGet(_.max(colQuantities))
         const scale = maxColumnQuantity / heightOfMaxQuantity
         const getColInfo = (col: ColumnModel) => {
           const height =
-            _.sumBy(col.nodes, getNodeQuantity) / scale +
+            _.sumBy(col.nodes, (x) => getNodeQuantityPossiblyNeg(x)) / scale +
             sizingIn.nodeYGap * (col.nodes.length - 1)
           return { height }
         }
@@ -78,14 +78,15 @@ export namespace Sankey {
           const rowIndex = col.nodes.indexOf(node)
           assert(rowIndex !== -1)
           const y =
-            _.sumBy(col.nodes.slice(0, rowIndex), getNodeQuantity) /
-              sizing.scale +
+            _.sumBy(col.nodes.slice(0, rowIndex), (x) =>
+              Math.max(0, getNodeQuantityPossiblyNeg(x)),
+            ) / sizing.scale +
             rowIndex * sizingIn.nodeYGap +
             sizingIn.paddingTop +
             (vertAlign === 'top' ? 0 : (sizing.height - colHeight) / 2)
-          const quantity = getNodeQuantity(node)
-          const height = Math.max(0.5, quantity / sizing.scale)
-          return { y, height, colIndex, quantity }
+          const quantityPossiblyNeg = getNodeQuantityPossiblyNeg(node)
+          const height = Math.max(0.5, Math.max(0, quantityPossiblyNeg) / sizing.scale)
+          return { y, height, colIndex, quantityPossiblyNeg }
         }
         return { getNodeInfo, getColInfo, sizing }
       }, [
@@ -100,12 +101,12 @@ export namespace Sankey {
         vertAlign,
       ])
 
-      const elements = (() =>
-        model.map((col, columnIndex) => {
-          return col.nodes.map((node, rowIndex) => {
+      const elements = block(() =>
+        model.map((col, columnIndex) =>
+          col.nodes.map((node, rowIndex) => {
             if (node.hidden) return null
-            const { y, height, quantity } = getNodeInfo(node)
-            const lineElements = (() => {
+            const { y, height, quantityPossiblyNeg } = getNodeInfo(node)
+            const lineElements = block(() => {
               switch (node.type) {
                 case 'start':
                   return null
@@ -154,14 +155,14 @@ export namespace Sankey {
                 default:
                   noCase(node)
               }
-            })()
+            })
 
             const nodeElement = (
               <_Node
                 key={`${columnIndex}-${rowIndex}`}
                 columnIndex={columnIndex}
                 y={y}
-                quantity={quantity}
+                quantity={quantityPossiblyNeg}
                 label={node.label}
                 height={height}
                 labelPosition={col.labelPosition}
@@ -170,8 +171,9 @@ export namespace Sankey {
               />
             )
             return { lineElements, nodeElement }
-          })
-        }))()
+          }),
+        ),
+      )
       return (
         <div
           className={clix(className, ' overflow-x-auto ')}
@@ -228,13 +230,13 @@ export namespace Sankey {
 
   export type Model = ColumnModel[]
 
-  const getNodeQuantity = (node: NodeModel): number => {
+  const getNodeQuantityPossiblyNeg = (node: NodeModel): number => {
     switch (node.type) {
       case 'split':
       case 'start':
         return node.quantity
       case 'merge':
-        return _.sumBy(node.srcs, getNodeQuantity)
+        return _.sumBy(node.srcs, getNodeQuantityPossiblyNeg)
       default:
         noCase(node)
     }
@@ -261,7 +263,7 @@ export namespace Sankey {
         offset,
         src,
       }
-      offset += part.quantity
+      offset += Math.max(0, part.quantity)
       return node
     })
   }

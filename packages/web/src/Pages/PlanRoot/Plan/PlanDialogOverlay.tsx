@@ -1,11 +1,11 @@
-import { fGet } from '@tpaw/common'
+import { block, fGet } from '@tpaw/common'
 import React, { ReactNode, useEffect, useLayoutEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { colorPalette, gray, orange } from '../../../Utils/ColorPalette'
 import { RectExt, Size, newPadding, rectExt } from '../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../Utils/NoDisplayOnOpacity0Transition'
 import { DialogBubble } from '../../Common/DialogBubble'
-import { useSimulation } from '../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../PlanRootHelpers/WithSimulation'
 import { isPlanSectionDialogInOverlayMode } from './PlanInput/Helpers/PlanSectionDialogPosition'
 
 export const PlanDialogOverlay = React.memo(
@@ -15,9 +15,9 @@ export const PlanDialogOverlay = React.memo(
     // Because this resizes with animation on window resizing.
     chartDiv: HTMLElement | null
   }) => {
-    const { planParamsNorm, updatePlanParams, simulationInfoByMode } =
-      useSimulation()
-    const { dialogPosition } = planParamsNorm
+    const { planParamsNormInstant, updatePlanParams, simulationInfoByMode } =
+      useSimulationInfo()
+    const { dialogPosition } = planParamsNormInstant
     if (
       !(
         isPlanSectionDialogInOverlayMode(dialogPosition.effective) ||
@@ -32,84 +32,86 @@ export const PlanDialogOverlay = React.memo(
       if (dialogPosition.effective === 'done') return
       updatePlanParams('setDialogPosition', dialogPosition.next)
     }
-    const body = (() => {
-      switch (dialogPosition.effective) {
-        case 'show-results':
-          return (
-            <_Overlay
-              dialogPosition={dialogPosition.effective}
-              chartDiv={chartDiv}
-              elementId="planResultsDialogCurtionShowResultsButton"
-              padding={{ horz: 0, vert: 0 }}
-              // Need a fill to make clickable (at least on chrome.)
-              fill={colorPalette.withOpacity(gray[50], 0.1)}
-              border={null}
-              rounding={(size) => size.height / 2}
-              hidden={false}
-              onClick={handleNext}
-            >
-              {(targetSize) => (
-                <DialogBubble
-                  arrowOffset={100}
-                  arrowDirection={'up'}
-                  x={targetSize.x + 100}
-                  y={targetSize.bottom}
-                  zIndex={0}
-                >
-                  <div className="max-w-[260px] sm:max-w-[320px] text-base  ">
-                    You have entered the minimum inputs needed to simulate your
-                    retirement. Click here to view the results panel.
-                  </div>
-                </DialogBubble>
-              )}
-            </_Overlay>
-          )
-        case 'show-all-inputs':
-        case 'done':
-          return (
-            <_Overlay
-              dialogPosition={'show-all-inputs'}
-              chartDiv={chartDiv}
-              elementId="planSummaryInputsAfterDialog"
-              padding={{ horz: 20, vert: 20 }}
-              fill={colorPalette.withOpacity(orange[200], 0.4)}
-              // fill="none"
-              border={null}
-              rounding={() => 25}
-              hidden={dialogPosition.effective === 'done'}
-              onClick={null}
-            >
-              {(targetSize) => (
-                <DialogBubble
-                  arrowOffset={40}
-                  arrowDirection={'down'}
-                  x={targetSize.x + 80}
-                  y={targetSize.y}
-                  zIndex={0}
-                >
-                  <div className="max-w-[260px] sm:max-w-[320px] text-base ">
-                    There are additional inputs you can enter here.
-                  </div>
-                  {
-                    <div className="flex justify-end mt-2">
-                      <button
-                        className="btn-sm rounded-full bg-orange-200"
-                        onClick={handleNext}
-                      >
-                        OK
-                      </button>
-                    </div>
-                  }
-                </DialogBubble>
-              )}
-            </_Overlay>
-          )
-        default:
-          return <></>
-      }
-    })()
 
-    return ReactDOM.createPortal(body, window.document.body)
+    return ReactDOM.createPortal(
+      block(() => {
+        switch (dialogPosition.effective) {
+          case 'show-results':
+            return (
+              <_Overlay
+                dialogPosition={dialogPosition.effective}
+                chartDiv={chartDiv}
+                elementId="planResultsDialogCurtionShowResultsButton"
+                padding={{ horz: 0, vert: 0 }}
+                // Need a fill to make clickable (at least on chrome.)
+                fill={colorPalette.withOpacity(gray[50], 0.1)}
+                border={null}
+                rounding={(size) => size.height / 2}
+                hidden={false}
+                onClick={handleNext}
+              >
+                {(targetSize) => (
+                  <DialogBubble
+                    arrowOffset={100}
+                    arrowDirection={'up'}
+                    x={targetSize.x + 100}
+                    y={targetSize.bottom}
+                    zIndex={0}
+                  >
+                    <div className="max-w-[260px] sm:max-w-[320px] text-base  ">
+                      You have entered the minimum inputs needed to simulate
+                      your retirement. Click here to view the results panel.
+                    </div>
+                  </DialogBubble>
+                )}
+              </_Overlay>
+            )
+          case 'show-all-inputs':
+          case 'done':
+            return (
+              <_Overlay
+                dialogPosition={'show-all-inputs'}
+                chartDiv={chartDiv}
+                elementId="planSummaryInputsAfterDialog"
+                padding={{ horz: 20, vert: 20 }}
+                fill={colorPalette.withOpacity(orange[200], 0.4)}
+                // fill="none"
+                border={null}
+                rounding={() => 25}
+                hidden={dialogPosition.effective === 'done'}
+                onClick={null}
+              >
+                {(targetSize) => (
+                  <DialogBubble
+                    arrowOffset={40}
+                    arrowDirection={'down'}
+                    x={targetSize.x + 80}
+                    y={targetSize.y}
+                    zIndex={0}
+                  >
+                    <div className="max-w-[260px] sm:max-w-[320px] text-base ">
+                      There are additional inputs you can enter here.
+                    </div>
+                    {
+                      <div className="flex justify-end mt-2">
+                        <button
+                          className="btn-sm rounded-full bg-orange-200"
+                          onClick={handleNext}
+                        >
+                          OK
+                        </button>
+                      </div>
+                    }
+                  </DialogBubble>
+                )}
+              </_Overlay>
+            )
+          default:
+            return <></>
+        }
+      }),
+      window.document.body,
+    )
   },
 )
 

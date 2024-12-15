@@ -32,7 +32,7 @@ import {
   SimulationParams,
   WithSimulation,
   useSimulationParamsForHistoryMode,
-  useSimulationParamsForPlanMode,
+  getSimulationParamsForPlanMode,
 } from '../PlanRootHelpers/WithSimulation'
 import { PlanRootServerQuery$data } from '../PlanRootServer/__generated__/PlanRootServerQuery.graphql'
 import { PlanServerImplSyncState } from './PlanServerImplSyncState'
@@ -269,8 +269,6 @@ const _Body = React.memo(
           return {
             type: 'fetched' as const,
             rewindTo: rewindToTimestamp,
-            currentPortfolioBalanceInfoPreBase:
-              preBase.currentPortfolioBalanceByMonthInfo,
             planParamsHistoryPreBase: preBase.planParamsHistory,
           }
       }
@@ -285,17 +283,14 @@ const _Body = React.memo(
       reload,
     }
 
-    const simulationParamsForPlanMode = useSimulationParamsForPlanMode(
+    const simulationParamsForPlanMode = getSimulationParamsForPlanMode(
       planPaths,
       currentTimeInfo,
       workingPlanInfo,
-      planMigratedFromVersion,
       serverHistoryPreBaseInfo.state.type === 'fetched'
-        ? serverHistoryPreBaseInfo.state.currentPortfolioBalanceByMonthInfo
-        : serverHistoryPreBaseInfo.state.type === 'fetching' ||
-            serverHistoryPreBaseInfo.state.type === 'failed'
-          ? null
-          : noCase(serverHistoryPreBaseInfo.state),
+        ? serverHistoryPreBaseInfo.state.planParamsHistory
+        : null,
+      planMigratedFromVersion,
       simulationInfoBySrc,
       pdfReportInfo,
     )

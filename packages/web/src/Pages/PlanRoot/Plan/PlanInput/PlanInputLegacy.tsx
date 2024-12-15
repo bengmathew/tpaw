@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { PlanParams, generateSmallId } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useState } from 'react'
-import { PlanParamsProcessed } from '../../../../UseSimulator/PlanParamsProcessed/PlanParamsProcessed'
+import { PlanParamsProcessed } from '../../../../Simulator/PlanParamsProcessed/PlanParamsProcessed'
 import { Contentful } from '../../../../Utils/Contentful'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { paddingCSSStyle } from '../../../../Utils/Geometry'
@@ -14,14 +14,14 @@ import { AmountInput } from '../../../Common/Inputs/AmountInput'
 import { LabelAmountOptMonthRangeInput } from '../../../Common/Inputs/LabelAmountTimedOrUntimedInput/LabeledAmountTimedOrUntimedInput'
 import { usePlanContent } from '../../PlanRootHelpers/WithPlanContent'
 import {
-  useSimulation,
-  useSimulationResult,
+  useSimulationInfo,
+  useSimulationResultInfo,
 } from '../../PlanRootHelpers/WithSimulation'
 import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 
 type _EditState = { isAdd: boolean; entryId: string; hideInMain: boolean }
 
@@ -78,7 +78,7 @@ const _TotalTargetCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
     const handleAmount = (amount: number) =>
       updatePlanParams('setLegacyTotal', amount)
 
@@ -90,7 +90,7 @@ const _TotalTargetCard = React.memo(
       >
         <h2 className="font-bold text-lg mb-3">Total Legacy Target</h2>
         <Contentful.RichText
-          body={content.introAmount[planParamsNorm.advanced.strategy]}
+          body={content.introAmount[planParamsNormInstant.advanced.strategy]}
           p="p-base"
         />
         <div className={`flex items-center gap-x-2 mt-4`}>
@@ -98,7 +98,8 @@ const _TotalTargetCard = React.memo(
             className=" text-input"
             prefix="$"
             value={
-              planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.total
+              planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW.legacy
+                .total
             }
             onChange={handleAmount}
             decimals={0}
@@ -109,7 +110,8 @@ const _TotalTargetCard = React.memo(
             onClick={() =>
               handleAmount(
                 increment(
-                  planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.total,
+                  planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW.legacy
+                    .total,
                 ),
               )
             }
@@ -121,7 +123,8 @@ const _TotalTargetCard = React.memo(
             onClick={() =>
               handleAmount(
                 decrement(
-                  planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.total,
+                  planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW.legacy
+                    .total,
                 ),
               )
             }
@@ -146,13 +149,13 @@ const _NonPortfolioSourcesCard = React.memo(
     editState: _EditState | null
     setEditState: (x: _EditState | null) => void
   }) => {
-    const { planParamsNorm, updatePlanParams } = useSimulation()
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
     const content = usePlanContent()['legacy']
     const handleAdd = () => {
       const sortIndex =
         Math.max(
           -1,
-          ...planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
+          ...planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
             (x) => x.sortIndex,
           ),
         ) + 1
@@ -173,7 +176,7 @@ const _NonPortfolioSourcesCard = React.memo(
       >
         <h2 className="font-bold text-lg mb-3">Non-portfolio Sources</h2>
         <Contentful.RichText
-          body={content.introAssets[planParamsNorm.advanced.strategy]}
+          body={content.introAssets[planParamsNormInstant.advanced.strategy]}
           p="p-base mb-4"
         />
         <div className="flex justify-start gap-x-4 items-center  my-2 ">
@@ -186,7 +189,7 @@ const _NonPortfolioSourcesCard = React.memo(
           </button>
         </div>
         <div className="flex flex-col gap-y-6 mt-4 ">
-          {planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
+          {planParamsNormInstant.adjustmentsToSpending.tpawAndSPAW.legacy.external.map(
             (entry) =>
               !(
                 editState &&
@@ -224,7 +227,6 @@ const _Entry = React.memo(
     onEdit: () => void
   }) => (
     <button
-      // className={`${className} flex flex-row justify-between items-stretch rounded-lg `}
       className={`${className} block text-start border border-gray-200 rounded-2xl p-3  `}
       onClick={onEdit}
     >
@@ -258,7 +260,7 @@ const _RemainderCard = React.memo(
     className?: string
     props: PlanInputBodyPassThruProps
   }) => {
-    const { args } = useSimulationResult()
+    const { planParamsProcessed } = useSimulationResultInfo().simulationResult
 
     return (
       <div
@@ -270,8 +272,7 @@ const _RemainderCard = React.memo(
         </h2>
         <h2 className="">
           {formatCurrency(
-            args.planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy
-              .target,
+            planParamsProcessed.adjustmentsToSpending.tpawAndSpaw.legacy.target,
           )}{' '}
           <span className="">real</span>
         </h2>
@@ -282,7 +283,7 @@ const _RemainderCard = React.memo(
 
 export const PlanInputLegacySummary = React.memo(
   ({ planParamsNorm }: { planParamsNorm: PlanParamsNormalized }) => {
-    const { args } = useSimulationResult()
+    const { planParamsProcessed } = useSimulationResultInfo().simulationResult
     const { total, external } =
       planParamsNorm.adjustmentsToSpending.tpawAndSPAW.legacy
 
@@ -311,7 +312,7 @@ export const PlanInputLegacySummary = React.memo(
           <h2 className="mt-2">Remaining Target</h2>
           <h2 className="mt-2 text-right">
             {formatCurrency(
-              args.planParamsProcessed.adjustmentsToSpending.tpawAndSPAW.legacy
+              planParamsProcessed.adjustmentsToSpending.tpawAndSpaw.legacy
                 .target,
             )}{' '}
           </h2>

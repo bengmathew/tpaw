@@ -1,15 +1,15 @@
 import clsx from 'clsx'
 import React from 'react'
-import { useSimulation } from '../../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
 import { PlanSummaryDatingDated } from './PlanSummaryDatingDated'
 import { PlanSummaryDatingDateless } from './PlanSummaryDatingDateless'
 
 export const PlanSummaryDating = React.memo(
   ({ className }: { className?: string }) => {
-    const { planParamsNorm } = useSimulation()
+    const { planParamsNormInstant } = useSimulationInfo()
 
-    if (planParamsNorm.datingInfo.isDated) return <></>
+    if (planParamsNormInstant.datingInfo.isDated) return <></>
 
     return (
       <div
@@ -18,15 +18,15 @@ export const PlanSummaryDating = React.memo(
           'border-[1px border-gray-400  rounded-md p-2 mt-4 -mb-10 ',
         )}
       >
-        {planParamsNorm.datingInfo.isDated ? (
+        {planParamsNormInstant.datingInfo.isDated ? (
           <PlanSummaryDatingDated
             className=""
-            datingInfo={planParamsNorm.datingInfo}
+            datingInfo={planParamsNormInstant.datingInfo}
           />
         ) : (
           <PlanSummaryDatingDateless
             className=""
-            datingInfo={planParamsNorm.datingInfo}
+            datingInfo={planParamsNormInstant.datingInfo}
           />
         )}
       </div>

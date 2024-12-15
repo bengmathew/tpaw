@@ -18,20 +18,20 @@ import {
 import clsx from 'clsx'
 import _ from 'lodash'
 import React, { useMemo } from 'react'
-import { PlanParamsNormalized } from '../../../../UseSimulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import {
   NormalizedAges,
   getFromMFNToNumericAge,
   getMonthToMFN,
-} from '../../../../UseSimulator/NormalizePlanParams/NormalizeAges'
+} from '../../../../Simulator/NormalizePlanParams/NormalizeAges'
 import {
   NormalizedMonthInThePast,
   NormalizedMonthNotInThePast,
-} from '../../../../UseSimulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizedMonth'
+} from '../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizedMonth'
 import { InMonthsFns } from '../../../../Utils/InMonthsFns'
 import { Record } from '../../../../Utils/Record'
 import { SimpleRange } from '../../../../Utils/SimpleRange'
-import { useSimulation } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { ContextModal } from '../../Modal/ContextModal'
 import { getNormalizedMonthStr } from '../../MonthOrDurationDisplay'
 import { CalendarMonthInput } from './CalendarMonthInput'
@@ -64,11 +64,11 @@ export const MonthInput = React.memo(
     choicesPreFilter: MonthType[]
     modalTextInputOnMobile: boolean
   }) => {
-    const { planParamsNorm } = useSimulation()
+    const { planParamsNormInstant } = useSimulationInfo()
 
     const choices = useMemo(
-      () => _processChoices(normValue, planParamsNorm, choicesPreFilter),
-      [choicesPreFilter, planParamsNorm, normValue],
+      () => _processChoices(normValue, planParamsNormInstant, choicesPreFilter),
+      [choicesPreFilter, planParamsNormInstant, normValue],
     )
     const currChoiceIndex = useMemo(() => {
       const _getMonthStructure = (month: Month) => {

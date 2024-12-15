@@ -1,21 +1,43 @@
 use crate::constants::MIN_PLAN_PARAM_TIME_MS;
-use crate::shared_types::YearAndMonth;
+use crate::utils::shared_types::YearAndMonth;
+use crate::wire::{WireAverageAnnualRealEarningsForSp500For10Years, WireTenYearDuration};
 use serde::{Deserialize, Serialize};
-use tsify::Tsify;
 
-#[derive(Serialize, Deserialize, Clone, Copy, Tsify)]
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TenYearDuration {
     pub start: YearAndMonth,
     pub end: YearAndMonth,
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Tsify)]
+impl From<TenYearDuration> for WireTenYearDuration {
+    fn from(value: TenYearDuration) -> Self {
+        Self {
+            start: (&value.start).into(),
+            end: (&value.end).into(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct AverageAnnualRealEarningsForSP500For10Years {
     pub added_date_ms: i64,
     pub ten_year_duration: TenYearDuration,
     pub value: f64,
+}
+
+impl From<AverageAnnualRealEarningsForSP500For10Years>
+    for WireAverageAnnualRealEarningsForSp500For10Years
+{
+    fn from(value: AverageAnnualRealEarningsForSP500For10Years) -> Self {
+        Self {
+            added_date_ms: value.added_date_ms,
+            ten_year_duration: value.ten_year_duration.into(),
+            value: value.value,
+        }
+    }
 }
 
 // FEATURE: Version this the next time it is updated.

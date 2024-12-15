@@ -9,3 +9,17 @@ export function asyncEffect(
     status.canceled = true
   }
 }
+
+export function asyncEffect2(fn: (signal: AbortSignal) => Promise<void>) {
+  const abortController = new AbortController()
+  void fn(abortController.signal).catch((e) => {
+    if (e instanceof Error && e.name === 'AbortError') {
+      console.log('ABORTED')
+      return
+    }
+    throw e
+  })
+  return () => {
+    abortController.abort()
+  }
+}

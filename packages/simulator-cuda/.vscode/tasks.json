@@ -1,0 +1,165 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "foo",
+      "type": "shell",
+      "command": "echo",
+      "args": ["$PATH"],
+      "options": {
+        "env": {
+          "PATH": "/root/.cargo/bin:/usr/local/cuda/bin:${env:PATH}"
+        }
+      }
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "ninja",
+      "args": [],
+      "options": {
+        "cwd": "${workspaceFolder}/builddev",
+        "env": {
+          "PATH": "/root/.cargo/bin:/usr/local/cuda/bin:${env:PATH}"
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$nvcc"]
+    },
+    {
+      "label": "install",
+      "type": "shell",
+      "command": "ninja install",
+      "args": [],
+      "options": {
+        "cwd": "${workspaceFolder}/builddev",
+        "env": {
+          "PATH": "/root/.cargo/bin:/usr/local/cuda/bin:${env:PATH}"
+        }
+      },
+      "problemMatcher": [],
+      "dependsOn": ["build"]
+    },
+    {
+      "label": "clean",
+      "type": "shell",
+      "command": "ninja clean",
+      "args": [],
+      "options": {
+        "cwd": "${workspaceFolder}/builddev",
+        "env": {
+          "PATH": "/root/.cargo/bin:/usr/local/cuda/bin:${env:PATH}"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "test-build",
+      "type": "shell",
+      "command": "ninja",
+      "args": [],
+      "options": {
+        "cwd": "${workspaceFolder}/buildtest",
+        "env": {
+          "PATH": "/root/.cargo/bin:/usr/local/cuda/bin:${env:PATH}"
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$nvcc"]
+    },
+    {
+      "label": "test-run",
+      "type": "shell",
+      "command": "./simulator-cuda-test",
+      "args": ["--test-case-exclude=*bench::*"],
+      "options": {
+        "cwd": "${workspaceFolder}/buildtest",
+        "env": {
+          "PATH": "/root/.cargo/bin:/usr/local/cuda/bin:${env:PATH}"
+        }
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "dependsOn": ["test-build"]
+    },
+    {
+      "label": "test-run-STAR",
+      "type": "shell",
+      "command": "./simulator-cuda-test",
+      "args": ["--test-case-exclude=*bench::*", 
+      "--test-case=STAR::*",
+      "--subcase=STAR::*",
+    ],
+      "options": {
+        "cwd": "${workspaceFolder}/buildtest",
+        "env": {
+          "PATH": "/root/.cargo/bin:/usr/local/cuda/bin:${env:PATH}"
+        }
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "dependsOn": ["test-build"]
+    },
+    {
+      "label": "test-run-bench",
+      "type": "shell",
+      "command": "./simulator-cuda-test",
+      "args": ["--test-case=*bench::*"],
+      "options": {
+        "cwd": "${workspaceFolder}/buildtest",
+        "env": {
+          "PATH": "/root/.cargo/bin:/usr/local/cuda/bin:${env:PATH}"
+        }
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "dependsOn": ["test-build"]
+    },
+    {
+      "label": "test-run-bench-STAR",
+      "type": "shell",
+      "command": "./simulator-cuda-test",
+      "args": ["--test-case=STAR::bench::*"],
+      "options": {
+        "cwd": "${workspaceFolder}/buildtest",
+        "env": {
+          "PATH": "/root/.cargo/bin:/usr/local/cuda/bin:${env:PATH}"
+        }
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "dependsOn": ["test-build"]
+    },
+    {
+      "label": "test-clean",
+      "type": "shell",
+      "command": "ninja clean",
+      "args": [],
+      "options": {
+        "cwd": "${workspaceFolder}/buildtest",
+        "env": {
+          "PATH": "/root/.cargo/bin:/usr/local/cuda/bin:${env:PATH}"
+        }
+      },
+      "problemMatcher": []
+    }
+  ]
+}

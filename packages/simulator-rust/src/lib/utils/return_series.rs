@@ -1,16 +1,36 @@
 use core::iter::Iterator;
-use js_sys::*;
 use serde::{Deserialize, Serialize};
-use tsify::Tsify;
-use wasm_bindgen::prelude::*;
+use crate::wire::{WireLogAndNonLogStats, WireStats};
 
-#[derive(Copy, Clone, Serialize, Deserialize, Debug, Tsify)]
+use super::shared_types::LogAndNonLog;
+
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Stats {
     pub mean: f64,
     pub variance: f64,
     pub standard_deviation: f64,
     pub n: usize,
+}
+
+impl From<Stats> for  WireStats {
+    fn from(stats: Stats) -> Self {
+        Self { 
+            mean: stats.mean, 
+            variance: stats.variance, 
+            standard_deviation: stats.standard_deviation, 
+            n: stats.n as i64 
+        }
+    }
+}
+
+impl From<LogAndNonLog<Stats>> for WireLogAndNonLogStats {
+    fn from(value: LogAndNonLog<Stats>) -> Self {
+        Self {
+            log: value.log.into(),
+            non_log: value.non_log.into(),
+        }
+    }
 }
 
 impl Stats {

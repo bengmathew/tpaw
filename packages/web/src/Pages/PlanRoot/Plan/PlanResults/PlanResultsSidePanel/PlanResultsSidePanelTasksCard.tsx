@@ -2,22 +2,15 @@ import { PlanParams, fGet } from '@tpaw/common'
 import { default as clix, default as clsx } from 'clsx'
 import _ from 'lodash'
 import React, { CSSProperties, ReactNode, useState } from 'react'
-import { FirstMonthSavingsPortfolioDetail } from '../../../../../UseSimulator/Simulator/GetFirstMonthSavingsPortfolioDetail'
-import {
-  NumberArrByPercentileByMonthsFromNow,
-  NumberArrWithIdByPercentileByMonthsFromNow,
-  SimulationResult,
-} from '../../../../../UseSimulator/Simulator/Simulator'
+import { FirstMonthSavingsPortfolioDetail } from '../../../../../Simulator/Simulator/GetFirstMonthSavingsPortfolioDetail'
 import { formatCurrency } from '../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { Padding } from '../../../../../Utils/Geometry'
 import { getPrecision } from '../../../../../Utils/GetPrecision'
 import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
-import {
-  useSimulation,
-  useSimulationResult,
-} from '../../../PlanRootHelpers/WithSimulation'
+import { useSimulationResultInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
+import { SimulationResult2 } from '../../../../../Simulator/UseSimulator'
 
 export const PlanResultsSidePanelTasksCard = React.memo(
   ({
@@ -31,7 +24,7 @@ export const PlanResultsSidePanelTasksCard = React.memo(
     cardPadding: Padding
     layout: 'laptop' | 'desktop' | 'mobile'
   }) => {
-    const { simulationResult } = useSimulation()
+    const { simulationResult } = useSimulationResultInfo()
     const [showModal, setShowModal] = useState(false)
     const { contributionToOrWithdrawalFromSavingsPortfolio, afterWithdrawals } =
       _getProps(simulationResult)
@@ -131,18 +124,19 @@ type _Props = Omit<FirstMonthSavingsPortfolioDetail, 'withdrawals'> & {
   strategy: PlanParams['advanced']['strategy']
 }
 
-const _getProps = (simulationResult: SimulationResult): _Props => {
+const _getProps = (simulationResult: SimulationResult2): _Props => {
   const original = simulationResult.firstMonthOfSomeRun
-  const { args } = simulationResult
+  const { planParamsNormOfResult } = simulationResult
 
   const withdrawalsStarted =
-    args.planParamsNorm.ages.simulationMonths.withdrawalStartMonth.asMFN === 0
+    planParamsNormOfResult.ages.simulationMonths.withdrawalStartMonth.asMFN ===
+    0
 
   const getWithdrawals = (type: 'essential' | 'discretionary') =>
     simulationResult.savingsPortfolio.withdrawals[type].byId.map(
       ({ id, byPercentileByMonthsFromNow }) => {
         const { label } = fGet(
-          args.planParamsNorm.adjustmentsToSpending.extraSpending[type]
+          planParamsNormOfResult.adjustmentsToSpending.extraSpending[type]
             .filter((x) => x.amountAndTiming.type !== 'inThePast')
             .find((x) => x.id === id),
         )
@@ -159,7 +153,7 @@ const _getProps = (simulationResult: SimulationResult): _Props => {
       discretionaryByEntry: getWithdrawals('discretionary'),
     },
     withdrawalsStarted,
-    strategy: args.planParamsNorm.advanced.strategy,
+    strategy: planParamsNormOfResult.advanced.strategy,
   }
 }
 
@@ -171,7 +165,7 @@ export const TasksForThisMonthContent = React.memo(
     className?: string
     forPrint?: boolean
   }) => {
-    const simulationResult = useSimulationResult()
+    const { simulationResult } = useSimulationResultInfo()
     const props = _getProps(simulationResult)
 
     const { withdrawals, withdrawalsStarted } = props
@@ -558,10 +552,8 @@ const _AllocationTable = React.memo(
     const { allocation } = props.afterWithdrawals
     const stocks = props.afterWithdrawals.balance * allocation.stocks
     const bonds = props.afterWithdrawals.balance - stocks
-    // Using full precision in display because rounding should happen at the
-    // data level.
-    const stocksFullStr = formatPercentage('full')(allocation.stocks)
-    const bondsFullStr = formatPercentage('full')(
+    const stocksFullStr = formatPercentage(2)(allocation.stocks)
+    const bondsFullStr = formatPercentage(2)(
       _.round(1 - allocation.stocks, getPrecision(allocation.stocks)),
     )
     return (

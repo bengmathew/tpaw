@@ -27,6 +27,7 @@ import {
 import {
   SimulationInfoForFileSrc,
   SimulationInfoForPlanMode,
+  useSimulationResultInfo,
 } from '../../../PlanRootHelpers/WithSimulation'
 
 export const offlinePlansLabel = 'Save Plans Offline'
@@ -49,7 +50,8 @@ export const usePlanMenuSectionOfflinePlans = ({
   const { nonPlanParams, setNonPlanParams } = useNonPlanParams()
   const { undos, redos } = simulationInfoForPlanMode.planParamsUndoRedoStack
   const { ianaTimezoneName, getZonedTime } = useIANATimezoneName()
-  // const [isOpen, setIsOpen] = useState(false)
+  const { simulationResult } = useSimulationResultInfo()
+  const [isOpen, setIsOpen] = useState(false)
   const [showOverwriteModal, setShowOverwriteLocalModal] = useState(
     false as false | { action: () => void },
   )

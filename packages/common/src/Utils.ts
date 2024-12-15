@@ -73,30 +73,6 @@ export const preciseRange = (
   )
 }
 
-// TODO: Deprecate in favor of Rust
-export function annualToMonthlyReturnRate(
-  annual: number,
-  // correction: number,
-): number
-export function annualToMonthlyReturnRate(
-  annual: {
-    stocks: number
-    bonds: number
-  },
-  // correction: number,
-): { stocks: number; bonds: number }
-export function annualToMonthlyReturnRate(
-  annual: number | { stocks: number; bonds: number },
-  // correction: number,
-): number | { stocks: number; bonds: number } {
-  return typeof annual === 'number'
-    ? Math.pow(1 + annual, 1 / 12) - 1
-    : {
-        stocks: annualToMonthlyReturnRate(annual.stocks),
-        bonds: annualToMonthlyReturnRate(annual.bonds),
-      }
-}
-
 export function monthlyToAnnualReturnRate(monthly: number): number
 export function monthlyToAnnualReturnRate(monthly: {
   stocks: number

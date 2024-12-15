@@ -2,6 +2,7 @@ import clix from 'clsx'
 import { Power1, Power4 } from 'gsap'
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { block } from '@tpaw/common'
 import getIsMobile from 'is-mobile'
 import {
   Padding,
@@ -15,6 +16,11 @@ import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpac
 import { Record } from '../../../../Utils/Record'
 import { ChartAnimation } from '../../../Common/Chart/Chart'
 import { ChartPointerPortal } from '../../../Common/Chart/ChartComponent/ChartPointerPortal'
+import { SwitchAsToggle } from '../../../Common/Inputs/SwitchAsToggle'
+import {
+  useRunTestsInfo,
+  useSimulationResultInfo,
+} from '../../PlanRootHelpers/WithSimulation'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
 import {
   PlanTransitionState,
@@ -26,12 +32,15 @@ import { PlanResultsChartCard } from './PlanResultsChartCard/PlanResultsChartCar
 import { PlanResultsChartRescale } from './PlanResultsChartRescale'
 import { PlanResultsDialogCurtain } from './PlanResultsDialogCurtain'
 import { PlanResultsHelp } from './PlanResultsHelp'
+import { PlanResultsLoading } from './PlanResultsLoading'
 import { PlanResultsSidePanel } from './PlanResultsSidePanel/PlanResultsSidePanel'
 import {
   planResultsLegacyCardFormat,
   usePlanResultsLegacyCardData,
 } from './PlanResultsSidePanel/PlanResultsSidePanelLegacyCard'
 import { usePlanResultsChartType } from './UsePlanResultsChartType'
+import { useNonPlanParams } from '../../PlanRootHelpers/WithNonPlanParams'
+import { Config } from '../../../Config'
 
 export const planResultsMorphAnimation: ChartAnimation = {
   ease: Power4.easeOut,
@@ -92,6 +101,7 @@ type _Props = {
   onChartHover: (hover: boolean) => void
   chartHover: boolean
 }
+
 export const PlanResults = React.forwardRef<HTMLDivElement, _Props>(
   (
     {
@@ -105,10 +115,12 @@ export const PlanResults = React.forwardRef<HTMLDivElement, _Props>(
     }: _Props,
     ref,
   ) => {
+    const { nonPlanParams } = useNonPlanParams()
     const chartType = usePlanResultsChartType()
-
     const chartData = useChartData(chartType)
+    const { simulationIsRunningInfo } = useSimulationResultInfo()
 
+    const { runTests, setRunTests } = useRunTestsInfo()
     const [mainYRange, setMainYRange] = useState(chartData.displayRange.y)
 
     const [measures, setMeasures] = useState({
@@ -159,7 +171,6 @@ export const PlanResults = React.forwardRef<HTMLDivElement, _Props>(
         }}
       >
         <PlanResultsDialogCurtain layout={layout} />
-
         <PlanResultsSidePanel
           layout={layout}
           targetDynamicSizing={targetSizing.sidePanel}
@@ -210,6 +221,28 @@ export const PlanResults = React.forwardRef<HTMLDivElement, _Props>(
             setMainYRange={setMainYRange}
           />
         </div>
+        <div
+          className="absolute"
+          style={{
+            transitionDuration: `${transition.duration}ms`,
+            transitionProperty: 'top, width, right',
+            top: `${targetSizing.loading.y}px`,
+            right: `${targetSizing.loading.right}px`,
+            width: `${targetSizing.loading.width}px`,
+          }}
+        >
+          <PlanResultsLoading
+            showText={layout !== 'mobile'}
+            isRunning={simulationIsRunningInfo.isRunning}
+            dontHide={false}
+          />
+        </div>
+        {/* {!Config.client.isProduction && (
+          <div className="absolute bottom-0 right-0 flex items-center gap-2 bg-blue-500 p-2 rounded-lg">
+            <h2>Test Suite</h2>
+            <SwitchAsToggle checked={runTests} setChecked={setRunTests} />
+          </div>
+        )} */}
       </NoDisplayOnOpacity0Transition>
     )
   },
@@ -263,14 +296,29 @@ const _transformSizing = (
     const heading = {
       origin: { x: padding.left + cardPadding.left, y: mainCard.region.y - 30 },
     }
-    const rescale = (() => {
+    const rescale = block(() => {
       const height = 30
       const origin = {
         x: padding.left + 3,
         y: mainCard.region.bottom - 3 - height,
       }
       return { height, origin }
-    })()
+    })
+    const loading = block(() => {
+      const width = 100
+      const loadingRegion = rectExt({
+        x: mainCard.region.right - cardPadding.right - width,
+        y: mainCard.region.bottom + 3,
+        width,
+        height: 0, // Does not matter
+      })
+      const inset = insetExt(loadingRegion, region)
+      return {
+        y: inset.top,
+        right: inset.right,
+        width,
+      }
+    })
     const help = {
       inset: {
         bottom:
@@ -285,6 +333,7 @@ const _transformSizing = (
         ...orig,
         mainCard,
         sidePanel,
+        loading,
         heading,
         help,
         rescale,

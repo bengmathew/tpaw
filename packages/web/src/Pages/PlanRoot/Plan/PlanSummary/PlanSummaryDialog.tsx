@@ -1,8 +1,8 @@
-import { DialogPosition, fGet } from '@tpaw/common'
+import { DialogPosition, fGet, noCase } from '@tpaw/common'
 import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { RectExt, rectExt } from '../../../../Utils/Geometry'
 import { DialogBubble } from '../../../Common/DialogBubble'
-import { useSimulation } from '../../PlanRootHelpers/WithSimulation'
+import { useSimulationInfo } from '../../PlanRootHelpers/WithSimulation'
 
 export const PlanSummaryDialog = React.memo(
   ({
@@ -11,18 +11,18 @@ export const PlanSummaryDialog = React.memo(
     fixedSizing,
   }: {
     elements: {
-      outer: HTMLElement | null
-      body: HTMLElement | null
-      age: HTMLElement | null
-      currentPortfolioBalance: HTMLElement | null
-      futureSavings: HTMLElement | null
-      incomeDuringRetirement: HTMLElement | null
-      adjustmentsToSpending: HTMLElement | null
+      outer: HTMLElement
+      body: HTMLElement
+      age: HTMLElement
+      currentPortfolioBalance: HTMLElement
+      futureSavings: HTMLElement
+      incomeDuringRetirement: HTMLElement
+      adjustmentsToSpending: HTMLElement
     }
     dialogPosition: Exclude<DialogPosition, 'done'>
     fixedSizing: { padding: { top: number } }
   }) => {
-    const { updatePlanParams, planParamsNorm } = useSimulation()
+    const { updatePlanParams, planParamsNormInstant } = useSimulationInfo()
 
     const [measures, setMeasures] = useState({
       age: rectExt(0),
@@ -32,11 +32,8 @@ export const PlanSummaryDialog = React.memo(
       'adjustments-to-spending': rectExt(0),
     })
 
-    const [forceScroll, setForceScroll] = useState(0)
-
     useLayoutEffect(() => {
       const outer = elements.outer
-      if (!outer) return
       const scroll = (
         target: keyof typeof elements,
         opts: {
@@ -108,32 +105,29 @@ export const PlanSummaryDialog = React.memo(
         case 'income-during-retirement':
           scroll('incomeDuringRetirement')
           break
-        case 'show-results': {
+        case 'show-results':
+        case 'show-all-inputs': {
+          // scrolling on  show-all-inputs is needed for loading directly into 'show-all-inputs'.
           scroll('adjustmentsToSpending', {
             // Delay is because on desktop the outer height may change at start of
             // show-results and we need to get the height after the change.
             delay: true,
             behavior: 'auto',
-            modify: (measure) => {
-              return rectExt({
+            modify: (measure) =>
+              rectExt({
                 y: measure.y - 50,
                 bottom: measure.y + 150,
                 x: 0,
                 width: 0,
-              })
-            },
+              }),
           })
           break
         }
+        default:
+          noCase(dialogPosition)
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dialogPosition, forceScroll])
-
-    useEffect(() => {
-      // Initial scroll. Delay is needed to get measures.
-      window.setTimeout(() => setForceScroll((x) => x + 1), 100)
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [dialogPosition])
 
     useLayoutEffect(() => {
       if (
@@ -194,7 +188,7 @@ export const PlanSummaryDialog = React.memo(
                     onClick={() =>
                       updatePlanParams(
                         'setDialogPosition',
-                        planParamsNorm.dialogPosition.next,
+                        planParamsNormInstant.dialogPosition.next,
                       )
                     }
                   >
