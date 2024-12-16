@@ -2,7 +2,7 @@ import { block, noCase } from '@tpaw/common'
 import { useEffect, useState } from 'react'
 import { usePlanColors } from '../UsePlanColors'
 
-const DELAY_MS = 500
+const DELAY_MS = 750
 type _Stage = 'loading' | 'loaded' | 'hiding' | 'hidden'
 export const PlanResultsLoading = ({
   showText,
