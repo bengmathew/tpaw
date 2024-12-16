@@ -19,9 +19,9 @@ export const Privacy = React.memo(() => {
               results of the computations.
             </p>
             <p className="mt-4 p-base">
-              When a plan is loaded or modified it is sent to a simulation
+              When a plan is loaded or modified, it is sent to a simulation
               server which computes the results. The simulation server does not
-              store the inputs or the results.
+              store the plan or the results.
             </p>
             <p className="mt-4 p-base">
               When you are logged into an account, we store your plans on a
