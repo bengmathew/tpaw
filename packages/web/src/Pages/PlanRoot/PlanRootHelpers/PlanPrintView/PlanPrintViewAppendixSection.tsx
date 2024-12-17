@@ -15,18 +15,25 @@ import { InMonthsFns } from '../../../../Utils/InMonthsFns'
 
 export const PlanPrintViewAppendixSection = React.memo(
   ({ settings }: { settings: PlanPrintViewArgs['settings'] }) => {
-    const { planParamsNormOfResult } = useSimulationResultInfo().simulationResult
+    const { planParamsNormOfResult } =
+      useSimulationResultInfo().simulationResult
     const { extraSpending } = planParamsNormOfResult.adjustmentsToSpending
 
+    const essentialSpendingCurrent = extraSpending.essential.filter(
+      (x) => x.amountAndTiming.type !== 'inThePast',
+    )
+    const discretionarySpendingCurrent = extraSpending.discretionary.filter(
+      (x) => x.amountAndTiming.type !== 'inThePast',
+    )
     const secondaryCharts: PlanResultsChartType[] = _.compact([
-      extraSpending.discretionary.length > 0 ||
-      extraSpending.essential.length > 0
+      essentialSpendingCurrent.length > 0 ||
+      discretionarySpendingCurrent.length > 0
         ? 'spending-general'
         : undefined,
-      ...extraSpending.essential
+      ...essentialSpendingCurrent
         .sort((a, b) => a.sortIndex - b.sortIndex)
         .map((x) => `spending-essential-${x.id}` as const),
-      ...extraSpending.discretionary
+      ...discretionarySpendingCurrent
         .sort((a, b) => a.sortIndex - b.sortIndex)
         .map((x) => `spending-discretionary-${x.id}` as const),
       'portfolio' as const,
