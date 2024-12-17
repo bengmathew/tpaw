@@ -1,6 +1,9 @@
 #![allow(non_camel_case_types)]
 
-use crate::cuda_bridge::{PlanParamsCuda_Risk, PlanParamsCuda_Risk_SWR, PlanParamsCuda_Risk_SWR_WithdrawalType_Amount, PlanParamsCuda_Risk_SWR_WithdrawalType_Percent, PlanParamsCuda_Risk_TPAW};
+use crate::cuda_bridge::{
+    PlanParamsCuda_Risk, PlanParamsCuda_Risk_SWR, PlanParamsCuda_Risk_SWR_WithdrawalType_Amount,
+    PlanParamsCuda_Risk_SWR_WithdrawalType_Percent, PlanParamsCuda_Risk_TPAW,
+};
 use crate::cuda_bridge_utils::f_cuda;
 use crate::simulate::plan_params_server::{
     PlanParamsServer_Ages, PlanParamsServer_Ages_SimulationMonths, PlanParamsServer_Constants,
@@ -296,5 +299,22 @@ fn _risk_tolerance_to_rra_with_infinity_at_zero(
         f64::INFINITY
     } else {
         _risk_tolerance_to_rra_without_infinity_at_zero(constants, risk_tolerance)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_risk_tolerance_to_rra_without_infinity_at_zero() {
+        let constants = PlanParamsServer_Constants {
+            risk_tolerance_num_integer_values_starting_from_0: 25,
+            risk_tolerance_start_rra: 16.0,
+            risk_tolerance_end_rra: 0.5,
+        };
+        let risk_tolerance = 12.0;
+        let rra = _risk_tolerance_to_rra_without_infinity_at_zero(&constants, risk_tolerance);
+        println!("rra: {}", rra);
     }
 }

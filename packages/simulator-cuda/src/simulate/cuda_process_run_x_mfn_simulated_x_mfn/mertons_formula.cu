@@ -72,7 +72,7 @@ namespace _plain_mertons_formula {
     return results[0];
   }
 
-  TEST_CASE("plain_mertons_formula") {
+  TEST_CASE("STAR::plain_mertons_formula") {
 
     auto do_test = [&](const FLOAT annual_stock_returns,
                        const FLOAT annual_bond_returns,
@@ -94,6 +94,11 @@ namespace _plain_mertons_formula {
       CHECK(result.stock_allocation == doctest::Approx(truth_stock_allocation));
       CHECK(result.spending_tilt == doctest::Approx(truth_spending_tilt));
     };
+
+    const MertonsFormulaResult result =
+        _test_fn(0.04, 0.0, 0.18 * 0.18, 3.04975986789893, .02, 0.0);
+    result.print(0);
+
     SUBCASE("rra range") {
       SUBCASE("4") {
         do_test(0.05,                   // annual_stock_returns

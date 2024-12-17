@@ -552,10 +552,10 @@ const _AllocationTable = React.memo(
     const { allocation } = props.afterWithdrawals
     const stocks = props.afterWithdrawals.balance * allocation.stocks
     const bonds = props.afterWithdrawals.balance - stocks
-    const stocksFullStr = formatPercentage(2)(allocation.stocks)
-    const bondsFullStr = formatPercentage(2)(
-      _.round(1 - allocation.stocks, getPrecision(allocation.stocks)),
-    )
+    // const stocksFullStr = formatPercentage(2)(allocation.stocks)
+    // const bondsFullStr = formatPercentage(2)(
+    //   _.round(1 - allocation.stocks, getPrecision(allocation.stocks)),
+    // )
     return (
       <div
         className={`${className} inline-grid justify-start gap-x-2`}
@@ -568,11 +568,12 @@ const _AllocationTable = React.memo(
         <h2 className="text-right ml-4">
           {formatPercentage(0)(allocation.stocks)}
         </h2>
-        {stocksFullStr.indexOf('.') !== -1 ? (
+        {/* {stocksFullStr.indexOf('.') !== -1 ? (
           <h2 className="text-right">({stocksFullStr})</h2>
         ) : (
           <h2></h2>
-        )}
+        )} */}
+        <h2></h2>
         <h2 className="">Bonds</h2>
         <h2 className="ml-8 text-right">
           <_Value>{bonds}</_Value>
@@ -580,11 +581,12 @@ const _AllocationTable = React.memo(
         <h2 className="text-right ml-4">
           {formatPercentage(0)(1 - allocation.stocks)}
         </h2>
-        {bondsFullStr.indexOf('.') !== -1 ? (
+        {/* {bondsFullStr.indexOf('.') !== -1 ? (
           <h2 className="text-right">({bondsFullStr})</h2>
-        ) : (
-          <h2></h2>
-        )}
+          ) : (
+            <h2></h2>
+            )} */}
+        <h2></h2>
       </div>
     )
   },
