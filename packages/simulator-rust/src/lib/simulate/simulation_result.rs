@@ -34,8 +34,8 @@ impl From<SimulationResultArrays> for WireSimulationResultArrays {
             by_percentile_by_mfn_simulated_percentile_major_withdrawals_general_x100: other.by_percentile_by_mfn_simulated_percentile_major_withdrawals_general.to_float_wire(100),
             by_percentile_by_mfn_simulated_percentile_major_withdrawals_total_x100: other.by_percentile_by_mfn_simulated_percentile_major_withdrawals_total.to_float_wire(100),
             by_percentile_by_mfn_simulated_percentile_major_withdrawals_from_savings_portfolio_rate_x10000: other.by_percentile_by_mfn_simulated_percentile_major_withdrawals_from_savings_portfolio_rate.to_float_wire(10000),
-            by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_savings_portfolio_x100: other.by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_savings_portfolio.to_float_wire(100),
-            by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_total_portfolio_or_zero_if_no_wealth_x100: other.by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_total_portfolio_or_zero_if_no_wealth.to_float_wire(100),
+            by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_savings_portfolio_x10000: other.by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_savings_portfolio.to_float_wire(10000),
+            by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_total_portfolio_or_zero_if_no_wealth_x10000: other.by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_total_portfolio_or_zero_if_no_wealth.to_float_wire(10000),
             tpaw_by_percentile_by_mfn_simulated_percentile_major_spending_tilt_x10000: other.tpaw_by_percentile_by_mfn_simulated_percentile_major_spending_tilt.to_float_wire(10000),
             by_percentile_ending_balance: other.by_percentile_ending_balance,
         }

@@ -50,8 +50,8 @@ export interface WireSimulationResultArrays {
   byPercentileByMfnSimulatedPercentileMajorWithdrawalsGeneralX100: number[];
   byPercentileByMfnSimulatedPercentileMajorWithdrawalsTotalX100: number[];
   byPercentileByMfnSimulatedPercentileMajorWithdrawalsFromSavingsPortfolioRateX10000: number[];
-  byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100: number[];
-  byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100: number[];
+  byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000: number[];
+  byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000: number[];
   tpawByPercentileByMfnSimulatedPercentileMajorSpendingTiltX10000: number[];
   byPercentileEndingBalance: number[];
 }
@@ -430,8 +430,8 @@ function createBaseWireSimulationResultArrays(): WireSimulationResultArrays {
     byPercentileByMfnSimulatedPercentileMajorWithdrawalsGeneralX100: [],
     byPercentileByMfnSimulatedPercentileMajorWithdrawalsTotalX100: [],
     byPercentileByMfnSimulatedPercentileMajorWithdrawalsFromSavingsPortfolioRateX10000: [],
-    byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100: [],
-    byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100: [],
+    byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000: [],
+    byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000: [],
     tpawByPercentileByMfnSimulatedPercentileMajorSpendingTiltX10000: [],
     byPercentileEndingBalance: [],
   };
@@ -470,14 +470,14 @@ export const WireSimulationResultArrays = {
     }
     writer.ldelim();
     writer.uint32(58).fork();
-    for (const v of message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100) {
+    for (const v of message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000) {
       writer.int64(v);
     }
     writer.ldelim();
     writer.uint32(66).fork();
     for (
       const v of message
-        .byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100
+        .byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000
     ) {
       writer.int64(v);
     }
@@ -630,7 +630,7 @@ export const WireSimulationResultArrays = {
           break;
         case 7:
           if (tag === 56) {
-            message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100.push(
+            message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000.push(
               longToNumber(reader.int64() as Long),
             );
 
@@ -640,7 +640,7 @@ export const WireSimulationResultArrays = {
           if (tag === 58) {
             const end2 = reader.uint32() + reader.pos;
             while (reader.pos < end2) {
-              message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100.push(
+              message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000.push(
                 longToNumber(reader.int64() as Long),
               );
             }
@@ -652,7 +652,7 @@ export const WireSimulationResultArrays = {
         case 8:
           if (tag === 64) {
             message
-              .byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100
+              .byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000
               .push(longToNumber(reader.int64() as Long));
 
             continue;
@@ -662,7 +662,7 @@ export const WireSimulationResultArrays = {
             const end2 = reader.uint32() + reader.pos;
             while (reader.pos < end2) {
               message
-                .byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100
+                .byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000
                 .push(longToNumber(reader.int64() as Long));
             }
 
@@ -751,20 +751,21 @@ export const WireSimulationResultArrays = {
             globalThis.Number(e)
           )
           : [],
-      byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100:
+      byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000:
         globalThis.Array.isArray(
-            object?.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100,
+            object?.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000,
           )
-          ? object.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100.map((
+          ? object.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000.map((
             e: any,
           ) => globalThis.Number(e))
           : [],
-      byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100:
+      byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000:
         globalThis.Array.isArray(
             object
-              ?.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100,
+              ?.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000,
           )
-          ? object.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100
+          ? object
+            .byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000
             .map((e: any) => globalThis.Number(e))
           : [],
       tpawByPercentileByMfnSimulatedPercentileMajorSpendingTiltX10000:
@@ -803,18 +804,18 @@ export const WireSimulationResultArrays = {
       obj.byPercentileByMfnSimulatedPercentileMajorWithdrawalsFromSavingsPortfolioRateX10000 = message
         .byPercentileByMfnSimulatedPercentileMajorWithdrawalsFromSavingsPortfolioRateX10000.map((e) => Math.round(e));
     }
-    if (message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100?.length) {
-      obj.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100 = message
-        .byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100.map((e) =>
+    if (message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000?.length) {
+      obj.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000 = message
+        .byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000.map((e) =>
           Math.round(e)
         );
     }
     if (
-      message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100
+      message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000
         ?.length
     ) {
-      obj.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100 =
-        message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100
+      obj.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000 =
+        message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000
           .map((e) => Math.round(e));
     }
     if (message.tpawByPercentileByMfnSimulatedPercentileMajorSpendingTiltX10000?.length) {
@@ -844,13 +845,12 @@ export const WireSimulationResultArrays = {
       object.byPercentileByMfnSimulatedPercentileMajorWithdrawalsTotalX100?.map((e) => e) || [];
     message.byPercentileByMfnSimulatedPercentileMajorWithdrawalsFromSavingsPortfolioRateX10000 =
       object.byPercentileByMfnSimulatedPercentileMajorWithdrawalsFromSavingsPortfolioRateX10000?.map((e) => e) || [];
-    message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100 =
-      object.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX100?.map((e) => e) ||
+    message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000 =
+      object.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationSavingsPortfolioX10000?.map((e) => e) ||
       [];
-    message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100 =
-      object.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX100?.map(
-        (e) => e
-      ) || [];
+    message.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000 =
+      object.byPercentileByMfnSimulatedPercentileMajorAfterWithdrawalsAllocationTotalPortfolioOrZeroIfNoWealthX10000
+        ?.map((e) => e) || [];
     message.tpawByPercentileByMfnSimulatedPercentileMajorSpendingTiltX10000 =
       object.tpawByPercentileByMfnSimulatedPercentileMajorSpendingTiltX10000?.map((e) => e) || [];
     message.byPercentileEndingBalance = object.byPercentileEndingBalance?.map((e) => e) || [];

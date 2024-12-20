@@ -17,10 +17,6 @@ const nextConfig = {
         source: '/__/auth/:path*',
         destination: `https://${process.env.NEXT_PUBLIC_GOOGLE_FIREBASE_AUTH_DOMAIN_REDIRECT}/__/auth/:path*`,
       },
-      {
-        source: '/__/simulator/:path*',
-        destination: `${process.env.NEXT_PUBLIC_URL_SIMULATOR}/:path*`,
-      },
     ]
   },
 }

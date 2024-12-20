@@ -64,10 +64,10 @@ message WireSimulationResultArrays {
       by_percentile_by_mfn_simulated_percentile_major_withdrawals_from_savings_portfolio_rate_x10000 =
           6;
   repeated {{float_wire}}
-      by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_savings_portfolio_x100 =
+      by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_savings_portfolio_x10000 =
           7;
   repeated {{float_wire}}
-      by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_total_portfolio_or_zero_if_no_wealth_x100 =
+      by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_total_portfolio_or_zero_if_no_wealth_x10000 =
           8;
   repeated {{float_wire}}
       tpaw_by_percentile_by_mfn_simulated_percentile_major_spending_tilt_x10000 =

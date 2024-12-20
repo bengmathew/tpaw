@@ -2,7 +2,9 @@ use crate::config::CONFIG;
 use crate::estimate_portfolio_balance::estimate_portfolio_balance;
 use crate::estimate_portfolio_balance::portfolio_balance_estimation_args::PortfolioBalanceEstimationArgs;
 use crate::market_data::downloaded_market_data::{
-    dowload_data, get_daily_market_data_for_portfolio_balance_estimation_synthetic_override, get_market_data_series_for_portfolio_balance_estimation, get_market_data_series_for_simulation, get_market_data_series_for_simulation_synthetic_override, DailyMarketSeriesSrc, DownloadedData
+    dowload_data, get_daily_market_data_for_portfolio_balance_estimation_synthetic_override,
+    get_market_data_series_for_portfolio_balance_estimation, get_market_data_series_for_simulation,
+    get_market_data_series_for_simulation_synthetic_override, DailyMarketSeriesSrc, DownloadedData,
 };
 use crate::market_data::get_daily_market_data_series_from_source::get_daily_market_data_series_from_source;
 use crate::market_data::upload_daily_market_data_series::upload_daily_market_data_series;
@@ -12,12 +14,13 @@ use axum::body::Body;
 use axum::extract::Request;
 use axum::response::{AppendHeaders, IntoResponse, Response};
 use axum::{body::Bytes, extract::Path, routing, Router};
-use http::{header, StatusCode};
+use http::{header, HeaderValue, StatusCode};
 use prost::Message;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
-use std::sync::{Arc};
-use std::time::Instant;
 use tower_http::compression::CompressionLayer;
+use tower_http::cors::CorsLayer;
 use tower_http::decompression::RequestDecompressionLayer;
 use tower_http::trace::TraceLayer;
 
@@ -49,9 +52,20 @@ pub async fn serve() {
         )
         .route(
             "/:version/simulate",
-            routing::post(move |Path(version_str): Path<String>, request_body: Bytes| {
-                handle_simulate(downloaded_data1, version_str, request_body)
-            }),
+            routing::post(
+                move |Path(version_str): Path<String>, request_body: Bytes| {
+                    handle_simulate(downloaded_data1, version_str, request_body)
+                },
+            ),
+        )
+        .layer(
+            CorsLayer::new()
+                .allow_methods(tower_http::cors::Any)
+                // Authorization needs to be added in addition to * because
+                // https://stackoverflow.com/a/68649111/2771609
+                .allow_headers([header::AUTHORIZATION, "*".parse().unwrap()])
+                .allow_origin(CONFIG.cors_allow_origin.parse::<HeaderValue>().unwrap())
+                .max_age(Duration::from_secs(60 * 60 * 24 * 365)),
         )
         .layer(CompressionLayer::new())
         .layer(RequestDecompressionLayer::new())
@@ -66,7 +80,10 @@ pub async fn serve() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn handle_update_daily_market_data_series(downloaded_data: Arc<RwLock<DownloadedData>>, request: Request<Body>) -> Response {
+async fn handle_update_daily_market_data_series(
+    downloaded_data: Arc<RwLock<DownloadedData>>,
+    request: Request<Body>,
+) -> Response {
     let token = request.headers().get("x-server-to-server-token");
     if token.is_none() || token.unwrap().to_str().unwrap() != CONFIG.server_to_server_token {
         return (StatusCode::UNAUTHORIZED, "Invalid token").into_response();
@@ -104,8 +121,10 @@ async fn handle_simulate(
 
 // Note: If handler panics, the server will respond with a 500 error but will not crash. It will
 // continue to accept requests.
-async fn handle_simulate_current(downloaded_data: Arc<RwLock<DownloadedData>>, request_body: Bytes) -> Response {
-    
+async fn handle_simulate_current(
+    downloaded_data: Arc<RwLock<DownloadedData>>,
+    request_body: Bytes,
+) -> Response {
     let start = Instant::now();
     let downloaded_data_ref = downloaded_data.read().await;
     println!("downloaded_data_ref read took {:?}", start.elapsed());
