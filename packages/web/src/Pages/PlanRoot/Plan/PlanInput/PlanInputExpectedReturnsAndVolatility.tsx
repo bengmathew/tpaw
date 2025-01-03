@@ -193,7 +193,7 @@ export const _ExpectedReturnsCard = React.memo(
                 {_formatNYDate(
                   sourceRounded?.dailyMarketData.bondRates.closingTimestamp ??
                     null,
-                )}
+                )}{' '}
                 for bonds. To see the calculations and data used for these
                 options,
                 {` `}
