@@ -20,7 +20,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use tower_http::compression::CompressionLayer;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::decompression::RequestDecompressionLayer;
 use tower_http::trace::TraceLayer;
 
@@ -64,7 +64,23 @@ pub async fn serve() {
                 // Authorization needs to be added in addition to * because
                 // https://stackoverflow.com/a/68649111/2771609
                 .allow_headers([header::AUTHORIZATION, "*".parse().unwrap()])
-                .allow_origin(CONFIG.cors_allow_origin.parse::<HeaderValue>().unwrap())
+                .allow_origin(AllowOrigin::predicate(
+                    |origin: &HeaderValue, _: &http::request::Parts| {
+                        if let Some(origin_str) = origin.to_str().ok() {
+                            if !origin_str.starts_with("https://") {
+                                false
+                            } else {
+                                let host = &origin_str["https://".len()..];
+                                CONFIG
+                                    .cors_allow_origin_ending_list
+                                    .iter()
+                                    .any(|ending| host.ends_with(ending))
+                            }
+                        } else {
+                            false
+                        }
+                    },
+                ))
                 .max_age(Duration::from_secs(60 * 60 * 24 * 365)),
         )
         .layer(CompressionLayer::new())

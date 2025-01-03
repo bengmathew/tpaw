@@ -8,7 +8,7 @@ pub struct Config {
     pub sentry_dsn: String,
     pub gcp_key_path: String,
     pub server_to_server_token: String,
-    pub cors_allow_origin: String,
+    pub cors_allow_origin_ending_list: Vec<String>,
 }
 
 lazy_static! {
@@ -20,6 +20,10 @@ lazy_static! {
         sentry_dsn: std::env::var("SENTRY_DSN").unwrap(),
         gcp_key_path: std::env::var("GCP_KEY_PATH").unwrap(),
         server_to_server_token: std::env::var("SERVER_TO_SERVER_TOKEN").unwrap(),
-        cors_allow_origin: std::env::var("CORS_ALLOW_ORIGIN").unwrap(),
+        cors_allow_origin_ending_list: std::env::var("CORS_ALLOW_ORIGIN_ENDING_LIST")
+            .unwrap()
+            .split(',')
+            .map(|s| s.to_string())
+            .collect(),
     };
 }
