@@ -3,6 +3,7 @@ pub mod v1;
 pub mod v2;
 pub mod v3;
 pub mod v4;
+pub mod v5;
 
 use crate::utils::random::generate_random_index_sequences;
 use crate::shared_types::{Log, StocksAndBonds};

@@ -384,7 +384,7 @@ const _ExpectedReturnsPresetPopup = React.memo(
               Price: The S&P 500 price at NYSE close on{' '}
               {_formatNYDate(
                 sourceRounded.dailyMarketData.sp500.closingTimestamp,
-              )}
+              )}{' '}
               was{' '}
               <span className="font-bold">
                 {formatCurrency(sourceRounded.dailyMarketData.sp500.value, 2)}
