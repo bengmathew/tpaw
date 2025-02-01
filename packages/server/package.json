@@ -25,7 +25,7 @@
     "@prisma/client": "^6.3.0",
     "@sentry/node": "^8.53.0",
     "@sentry/tracing": "^7.17.4",
-    "@tpaw/common": "^11.0.0",
+    "@tpaw/common": "^12.0.0",
     "@types/compression": "^1.7.2",
     "chalk": "^5.1.2",
     "commander": "^13.1.0",

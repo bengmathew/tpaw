@@ -1006,12 +1006,12 @@ export namespace PlanParams30 {
         portfolioBalance: union(
           object({
             isDatedPlan: constant(false),
-            amount: chain(number, gte(0)),
+            amount: chain(number, integer, gte(0)),
           }),
           object({
             isDatedPlan: constant(true),
             updatedHere: constant(true),
-            amount: chain(number, gte(0)),
+            amount: chain(number, integer, gte(0)),
           }),
           object({
             isDatedPlan: constant(true),
@@ -1265,6 +1265,16 @@ export namespace PlanParams30 {
     const result: PlanParams = {
       ...prev,
       v: currentVersion,
+      wealth: {
+        ...prev.wealth,
+        portfolioBalance: prev.wealth.portfolioBalance.isDatedPlan && prev.wealth.portfolioBalance.updatedHere ? {
+          ...prev.wealth.portfolioBalance,
+          // This should have been rounded to start with, but some floating
+          // point has leaked into existing parameters. Rounding to deal with
+          // that.
+          amount: Math.round(prev.wealth.portfolioBalance.amount),
+        } : prev.wealth.portfolioBalance,
+      },
       advanced: {
         ...prev.advanced,
         historicalReturnsAdjustment: block(() => {
