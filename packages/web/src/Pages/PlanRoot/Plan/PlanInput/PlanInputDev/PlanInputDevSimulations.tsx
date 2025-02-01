@@ -33,7 +33,7 @@ import {
 import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
 import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
-import { SimulationResult2 } from '../../../../../Simulator/UseSimulator'
+import { SimulationResult } from '../../../../../Simulator/UseSimulator'
 
 export const PlanInputDevSimulations = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -222,7 +222,7 @@ const _PerformanceTable = ({
   stats,
 }: {
   className?: string
-  stats: SimulationResult2['performance']
+  stats: SimulationResult['performance']
 }) => {
   return (
     <div className={clsx(className)}>

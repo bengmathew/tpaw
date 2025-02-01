@@ -1,13 +1,12 @@
 import { ApolloServer, ApolloServerPlugin } from '@apollo/server'
 import { expressMiddleware } from '@apollo/server/express4'
 import { Prisma } from '@prisma/client'
-import Sentry from '@sentry/node'
+import * as Sentry from '@sentry/node'
 import {
   API,
   PlanParams,
   assert,
   block,
-  fGet,
   getDefaultNonPlanParams,
   getFullDatedDefaultPlanParams,
   getSlug,
@@ -25,7 +24,6 @@ import morgan from 'morgan'
 import path from 'path'
 import * as uuid from 'uuid'
 import { cli } from '../CLI/CLI.js'
-import { pushMarketData } from '../CLI/CLIMisc/CLIMiscPushMarketData.js'
 import { Clients } from '../Clients.js'
 import { Config } from '../Config.js'
 import { serialTransaction } from '../Utils/PrismaTransaction.js'
@@ -43,23 +41,10 @@ async function _impl() {
     )
   }
   const server = express()
-  Sentry.init({
-    dsn: Config.sentry.dsn,
-    integrations: [
-      new Sentry.Integrations.Http({ tracing: true }),
-      new Sentry.Integrations.Express({ app: server }),
-    ],
-    tracesSampleRate: 0.01,
-  })
-
+  
   if (!Config.isProduction) server.use(morgan('tiny'))
 
   server.use(
-    // RequestHandler creates a separate execution context, so that all
-    // transactions/spans/breadcrumbs are isolated across requests
-    Sentry.Handlers.requestHandler(),
-    // TracingHandler creates a trace for every incoming request
-    Sentry.Handlers.tracingHandler(),
     // slice() to strip the trailing slash.
     cors({ origin: Config.frontend.paths.root().toString().slice(0, -1) }),
     // GCP Cloud Run does not gzip for us so do it here.
@@ -103,31 +88,6 @@ async function _impl() {
     }),
   )
 
-  server.get(
-    '/marketDataURL',
-    asyncHandler(async (req, res) => {
-      const bucket = Clients.gcs.bucket(Config.google.marketDataBucket)
-      const [currentLatest] = await bucket.getFiles({ prefix: 'latest/' })
-      assert(currentLatest.length === 1)
-      const file = fGet(currentLatest[0])
-      const filename = file.publicUrl()
-      res.send(filename)
-    }),
-  )
-
-  server.get(
-    '/deploy-frontend',
-    asyncHandler(async (req, res) => {
-      if (req.query['token'] !== Config.frontend.deploy.token) {
-        res.status(401)
-        res.send('Unauthorized')
-      } else {
-        await pushMarketData()
-        await fetch(Config.frontend.deploy.url)
-        res.send('ok')
-      }
-    }),
-  )
   const apollo = new ApolloServer<Context>({
     schema,
     plugins: [loggingPlugin, sentryPlugin],
@@ -135,7 +95,7 @@ async function _impl() {
   await apollo.start()
   server.use(
     '/gql',
-    // Important that this comes after health checks, and marketDataURL etc.
+    // Important that this comes after health checks, etc.
     // What we are really stopping is the actual API, not any access to the
     // server.
     (req, res, next) => {
@@ -251,8 +211,7 @@ async function _impl() {
     }),
   )
 
-  // This should come after all routes.
-  server.use(Sentry.Handlers.errorHandler({ shouldHandleError: () => true }))
+  Sentry.setupExpressErrorHandler(server, { shouldHandleError: () => true })
   server.listen(Config.port)
 }
 

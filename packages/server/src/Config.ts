@@ -16,10 +16,6 @@ export const Config = {
   },
   frontend: {
     paths: getAppPaths(new URL(fGet(process.env['WEBSITE_URL']))),
-    deploy: {
-      token: fGet(process.env['DEPLOY_FRONTEND_TOKEN']),
-      url: fGet(process.env['DEPLOY_FRONTEND_URL']),
-    },
   },
   google: {
     sql: {
@@ -30,7 +26,6 @@ export const Config = {
     // JSON key file.
     applicationDefaultCredentials:
       process.env['GOOGLE_APPLICATION_CREDENTIALS'],
-    marketDataBucket: fGet(process.env['MARKET_DATA_BUCKET']),
     transientDataBucket: fGet(process.env['TRANSIENT_DATA_BUCKET']),
   },
   postmark: {

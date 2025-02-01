@@ -13,7 +13,6 @@ import { paddingCSS } from '../../../../Utils/Geometry'
 import { AmountInput } from '../../../Common/Inputs/AmountInput'
 import { smartDeltaFnForAmountInput } from '../../../Common/Inputs/SmartDeltaFnForAmountInput'
 import { CenteredModal } from '../../../Common/Modal/CenteredModal'
-import { PortfolioBalanceEstimation } from '../../PlanRootHelpers/PortfolioBalanceEstimation'
 import { useIANATimezoneName } from '../../PlanRootHelpers/WithNonPlanParams'
 import {
   useSimulationInfo,
@@ -24,6 +23,8 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
+import { PortfolioBalanceEstimation } from '../../../../Simulator/SimulateOnServer/SimulateOnServer'
+import { groupBy } from '../../../../Utils/GroupBy'
 
 export const PlanInputCurrentPortfolioBalance = React.memo(
   (props: PlanInputBodyPassThruProps) => {
@@ -180,7 +181,7 @@ const _Popup = React.memo(
     const { ianaTimezoneName, getZonedTime } = useIANATimezoneName()
     const byMonthDetail = useMemo(
       () =>
-        PortfolioBalanceEstimation.getByMonthDetail(detail, ianaTimezoneName),
+        getByMonthDetail(detail, ianaTimezoneName),
       [detail, ianaTimezoneName],
     )
     const { datingInfo } = planParamsNormOfResult
@@ -224,7 +225,7 @@ const _Popup = React.memo(
   },
 )
 
-type MonthInfo = PortfolioBalanceEstimation.ByMonthInfo['monthsDesc'][0]
+type MonthInfo = ByMonthInfo['monthsDesc'][0]
 const _Month = React.memo(
   ({
     className = '',
@@ -463,6 +464,7 @@ const useEstimateInfo = (): EstimateInfo => {
       return { type: 'notAnEstimate' }
     const { detail } = portfolioBalanceEstimationByDated
     if (detail.actions.length === 0) return { type: 'notAnEstimate' }
+    
 
     const lastPortfolioUpdateIndex = _.findLastIndex(
       detail.actions,
@@ -499,4 +501,87 @@ const useEstimateInfo = (): EstimateInfo => {
       return { type: 'notAnEstimate' }
     return result
   }, [simulationResult])
+}
+
+
+
+export type ByMonthInfo = ReturnType<typeof getByMonthDetail>
+
+// Note, this can be empty since info.actions can be empty.
+export const getByMonthDetail = (
+  detail: PortfolioBalanceEstimation.Detail,
+  ianaTimezoneName: string,
+) => {
+  const result = (x: typeof monthsDesc) => ({ ...detail, monthsDesc: x })
+
+  if (detail.actions.length === 0) return result([])
+  const getZonedTime = getZonedTimeFns(ianaTimezoneName)
+  const actionsDesc = _.reverse(detail.actions.slice())
+
+  const actionsDescByMonthMap = groupBy(actionsDesc, (x) =>
+    getZonedTime(x.timestamp).startOf('month').toMillis(),
+  )
+
+  let currState = fGet(_.first(actionsDesc)).stateChange.end
+
+  const monthsDesc = _getDescTimeSeq(
+    ianaTimezoneName,
+    detail.endTimestamp,
+    detail.startTimestamp,
+    'month',
+  )
+    .map((month) => {
+      const actionsDesc = actionsDescByMonthMap.get(month) ?? []
+      actionsDescByMonthMap.delete(month)
+      return { month, actionsDesc }
+    })
+    .map(({ month, actionsDesc }, i) => {
+      const actionsDescByDayMap = groupBy(actionsDesc, (action) =>
+        getZonedTime(action.timestamp).startOf('day').toMillis(),
+      )
+
+      const daysDesc = _getDescTimeSeq(
+        ianaTimezoneName,
+        Math.min(
+          getZonedTime(month).endOf('month').toMillis(),
+          detail.endTimestamp,
+        ),
+        Math.max(month, detail.startTimestamp),
+        'day',
+      ).map((day) => {
+        const actionsDesc = actionsDescByDayMap.get(day) ?? []
+        actionsDescByDayMap.delete(day)
+
+        return { day, actionsDesc }
+      })
+      assert(actionsDescByDayMap.size === 0)
+
+      const stateChange = {
+        end: currState,
+        start: _.last(actionsDesc)?.stateChange.start ?? currState,
+      }
+      currState = stateChange.start
+      return { month, stateChange, daysDesc }
+    })
+  assert(actionsDescByMonthMap.size === 0)
+  return result(monthsDesc)
+}
+
+
+
+const _getDescTimeSeq = (
+  ianaTimezoneName: string,
+  end: number,
+  startIn: number,
+  delta: 'day' | 'month',
+) => {
+  const getZonedTime = getZonedTimeFns(ianaTimezoneName)
+  const result = [] as number[]
+  const start = getZonedTime(startIn).startOf(delta)
+  let curr = getZonedTime(end).startOf(delta)
+  while (curr >= start) {
+    result.push(curr.toMillis())
+    curr = curr.minus({ [delta]: 1 })
+  }
+  return result
 }

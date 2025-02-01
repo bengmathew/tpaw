@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<942178202fa15d32545c6776c50820bf>>
+ * @generated SignedSource<<44020da371971bd3ef84b64bc672321a>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type UserPlanCreateInput = {
   label: string;

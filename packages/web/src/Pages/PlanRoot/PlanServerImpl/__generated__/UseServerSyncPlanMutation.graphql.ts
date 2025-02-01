@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<0fc77fc82bcb3e821d2d9da4cfe234ec>>
+ * @generated SignedSource<<cc93daf198d602fe125e6a537ef3d9a3>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type UserPlanSyncInput = {
   add: ReadonlyArray<UserPlanSyncAddInput>;

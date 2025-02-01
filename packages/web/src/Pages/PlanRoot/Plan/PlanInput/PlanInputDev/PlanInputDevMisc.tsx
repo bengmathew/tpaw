@@ -7,11 +7,17 @@ import {
 import clix from 'clsx'
 import _ from 'lodash'
 import React, { useMemo } from 'react'
+import { appPaths } from '../../../../../AppPaths'
+import { normalizePlanParamsInverse } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParamsInverse'
 import { paddingCSS } from '../../../../../Utils/Geometry'
 import { NumberInput } from '../../../../Common/Inputs/NumberInput'
 import { smartDeltaFnForMonthlyAmountInput } from '../../../../Common/Inputs/SmartDeltaFnForAmountInput'
 import { SwitchAsToggle } from '../../../../Common/Inputs/SwitchAsToggle'
 import { useNonPlanParams } from '../../../PlanRootHelpers/WithNonPlanParams'
+import {
+  useSimulationInfo,
+  useSimulationResultInfo,
+} from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanResultsChartType } from '../../PlanResults/UsePlanResultsChartType'
 import { useChartData } from '../../WithPlanResultsChartData'
 import { PlanInputModifiedBadge } from '../Helpers/PlanInputModifiedBadge'
@@ -19,13 +25,6 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from '../PlanInputBody/PlanInputBody'
-import {
-  useSimulationInfo,
-  useSimulationResultInfo,
-} from '../../../PlanRootHelpers/WithSimulation'
-import { normalizePlanParamsInverse } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParamsInverse'
-import { PortfolioBalanceEstimation } from '../../../PlanRootHelpers/PortfolioBalanceEstimation'
-import { appPaths } from '../../../../../AppPaths'
 
 export const PlanInputDevMisc = React.memo(
   (props: PlanInputBodyPassThruProps) => {

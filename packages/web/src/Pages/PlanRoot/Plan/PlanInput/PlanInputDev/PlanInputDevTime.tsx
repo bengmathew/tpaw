@@ -1,17 +1,15 @@
 import { faCircle as faCircleRegular } from '@fortawesome/pro-regular-svg-icons'
 import { faCircle as faCircleSelected } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { assert, block, fGet, noCase } from '@tpaw/common'
+import { assert } from '@tpaw/common'
 import clix from 'clsx'
 import _, { capitalize } from 'lodash'
 import { DateTime, Duration } from 'luxon'
 import React from 'react'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../../Utils/Geometry'
-import { writableCloneDeep } from '../../../../../Utils/WritableCloneDeep'
 import { NumberInput } from '../../../../Common/Inputs/NumberInput'
 import { SwitchAsToggle } from '../../../../Common/Inputs/SwitchAsToggle'
-import { useMarketData } from '../../../PlanRootHelpers/WithMarketData'
 import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
 import {
   SimulationInfo,
@@ -24,7 +22,6 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from '../PlanInputBody/PlanInputBody'
-import { RadioGroup } from '@headlessui/react'
 import {
   useIsPlanInputDevTimeFastForwardCardModified,
   useIsPlanInputDevTimeSynthesizeMarketDataCardModified,

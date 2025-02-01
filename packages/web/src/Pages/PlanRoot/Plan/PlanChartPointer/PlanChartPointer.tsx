@@ -67,7 +67,7 @@ export const PlanChartPointer = React.memo(
 
     return (
       <div
-        className="absolute overflow-hidden z-[60] pointer-events-none "
+        className="absolute overflow-hidden z-60 pointer-events-none "
         style={{ ...regionCSSStyle(fixedSizing.region) }}
       >
         <ChartReact

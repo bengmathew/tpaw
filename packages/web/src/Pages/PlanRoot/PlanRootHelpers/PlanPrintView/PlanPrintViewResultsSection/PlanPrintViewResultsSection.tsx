@@ -132,7 +132,7 @@ const _MonthlySpendingBreakdownLegend = React.memo(
                 return (
                   <div key={i} className="flex gap-x-2 items-start">
                     <div
-                      className="w-[10px] h-[10px] relative rounded-sm overflow-hidden shrink-0 mt-1"
+                      className="w-[10px] h-[10px] relative rounded-xs overflow-hidden shrink-0 mt-1"
                       style={{ opacity: `${fillPattern.bg.opacity}` }}
                     >
                       <PlanPrintViewSVGBackground

@@ -1,10 +1,10 @@
-import { assert, fGet } from '@tpaw/common'
+import { assert } from '@tpaw/common'
 import clsx from 'clsx'
-import _ from 'lodash'
 import React, { ReactNode } from 'react'
 import { useGetPlanInputVisibility } from '../../Plan/PlanInput/Helpers/UseGetPlanInputVisibility'
 import { PlanInputAgeSummary } from '../../Plan/PlanInput/PlanInputAge/PlanInputAge'
 import { PlanInputCurrentPortfolioBalanceSummary } from '../../Plan/PlanInput/PlanInputCurrentPortfolioBalance'
+import { PlanInputExpectedReturnsAndVolatilitySummary } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { PlanInputExtraSpendingSummary } from '../../Plan/PlanInput/PlanInputExtraSpending'
 import { PlanInputFutureSavingsSummary } from '../../Plan/PlanInput/PlanInputFutureSavings'
 import { PlanInputIncomeDuringRetirementSummary } from '../../Plan/PlanInput/PlanInputIncomeDuringRetirement'
@@ -18,8 +18,6 @@ import { useSimulationResultInfo } from '../WithSimulation'
 import { PlanPrintViewPageGroup } from './Helpers/PlanPrintViewPageGroup'
 import { PlanPrintViewSectionTitlePageGroup } from './Helpers/PlanPrintViewSectionTitlePageGroup'
 import { PlanPrintViewArgs } from './PlanPrintViewArgs'
-import { PortfolioBalanceEstimation } from '../PortfolioBalanceEstimation'
-import { PlanInputExpectedReturnsAndVolatilitySummary } from '../../Plan/PlanInput/PlanInputExpectedReturnsAndVolatility'
 
 // Note: The show/hide should mirror PlanSummary. "None" displays should mirror
 // PlanSummaryButtons's empty attribute from PlanSummary.

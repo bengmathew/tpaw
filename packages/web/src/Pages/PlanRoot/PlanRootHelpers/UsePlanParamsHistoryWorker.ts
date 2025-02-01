@@ -2,9 +2,9 @@ import { PlanParams, assert } from '@tpaw/common'
 import _ from 'lodash'
 import { useEffect, useState } from 'react'
 import {
-  SimulationWorkerArgs,
-  SimulationWorkerResult,
-} from '../../../Simulator/Simulator/SimulationWorkerAPI'
+  WorkerArgs,
+  WorkerResult,
+} from './Worker/WorkerAPI'
 
 export const useParseAndMigratePlanParamsHistoryInWorker = (
   planParamsHistoryStr: readonly { id: string; params: string }[] | null,
@@ -23,7 +23,7 @@ export const useParseAndMigratePlanParamsHistoryInWorker = (
     const start = performance.now()
     const onMessage = ({
       data,
-    }: MessageEvent<SimulationWorkerResult>): void => {
+    }: MessageEvent<WorkerResult>): void => {
       if (data.type === 'error') {
         throw new Error(`Error in worker: ${data.message}`)
       }
@@ -39,7 +39,7 @@ export const useParseAndMigratePlanParamsHistoryInWorker = (
 
     _planParamsCachedInWorker.clear()
     planParamsHistoryStr.forEach((x) => _planParamsCachedInWorker.add(x.id))
-    const message: SimulationWorkerArgs = {
+    const message: WorkerArgs = {
       type: 'parseAndMigratePlanParams',
       taskID: taskID,
       args: { isPreBase: true, planParamsHistoryStr },
@@ -58,7 +58,7 @@ let _workerSingleton: Worker | null = null
 const _getWorkerSingleton = () => {
   if (!_workerSingleton)
     _workerSingleton = new Worker(
-      new URL('../../../Simulator/Simulator/SimulationWorker', import.meta.url),
+      new URL('./Worker/Worker.ts', import.meta.url),
     )
   return _workerSingleton
 }

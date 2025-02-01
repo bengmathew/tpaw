@@ -103,12 +103,12 @@ const Content = ({
     <>
       <h1 className="dialog-heading">Waiting for Results...</h1>
       <div className=" dialog-content-div">
-        <p className="p-base mt-4">
+        <p className=" p-base mt-4">
           The results are taking longer than expected to compute. Please wait
           for the results before continuing.
         </p>
 
-        <p className="p-base mt-2">
+        <p className=" p-base mt-2">
           Status:{' '}
           {onClose ? (
             <span className=" text-successFG">

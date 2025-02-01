@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<6107dc31575daec66c0b8df3e82bf8c3>>
+ * @generated SignedSource<<7af9b49383761d9ecc3fb460d4c270dc>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Query } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type AccountQuery$variables = {
   includeUser: boolean;

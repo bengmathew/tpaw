@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<1b9f63e86b27d3a59e5d8579d4f64768>>
+ * @generated SignedSource<<cda4720b4578826b912ff2b97f396b28>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Query } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type PlanRootLinkQuery$variables = {
   includeUser: boolean;

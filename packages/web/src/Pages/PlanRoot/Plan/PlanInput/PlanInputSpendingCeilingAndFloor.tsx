@@ -1,6 +1,6 @@
 import { faMinus, faPlus } from '@fortawesome/pro-light-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Switch } from '@headlessui/react'
+import { Field, Label, Switch } from '@headlessui/react'
 import _ from 'lodash'
 import React, { useMemo, useState } from 'react'
 import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
@@ -136,9 +136,9 @@ export const _SpendingCeilingCard = React.memo(
           />
         </div>
         <div className="mt-6">
-          <Switch.Group>
+          <Field>
             <div className="flex items-center gap-x-2">
-              <Switch.Label className="">Enable Ceiling</Switch.Label>
+              <Label className="">Enable Ceiling</Label>
               <SwitchAsToggle
                 className=""
                 checked={value !== null}
@@ -147,7 +147,7 @@ export const _SpendingCeilingCard = React.memo(
                 }
               />
             </div>
-          </Switch.Group>
+          </Field>
           {value !== null && (
             <div className="mt-4">
               <div className={`flex items-center`}>
@@ -252,9 +252,9 @@ export const _SpendingFloorCard = React.memo(
           />
         </div>
         <div className="mt-6">
-          <Switch.Group>
+          <Field>
             <div className="flex items-center gap-x-2">
-              <Switch.Label className="">Enable Floor</Switch.Label>
+              <Label className="">Enable Floor</Label>
               <SwitchAsToggle
                 className=""
                 checked={value !== null}
@@ -263,7 +263,7 @@ export const _SpendingFloorCard = React.memo(
                 }
               />
             </div>
-          </Switch.Group>
+          </Field>
           {value !== null && (
             <div className="mt-4 flex items-center">
               <AmountInput

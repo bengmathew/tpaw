@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<7773e25360e6ad737f742158376f0b47>>
+ * @generated SignedSource<<0273260ea646ff21dca9995ead0a1bd3>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 export type GeneratePDFReportInput = {
   auth?: string | null | undefined;
   devicePixelRatio: number;

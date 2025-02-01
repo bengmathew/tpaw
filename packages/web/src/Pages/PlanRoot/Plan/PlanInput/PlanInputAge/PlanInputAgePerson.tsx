@@ -5,7 +5,7 @@ import {
   faTrash,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Switch } from '@headlessui/react'
+import { Field, Label, Switch } from '@headlessui/react'
 import {
   CalendarMonthFns,
   LabeledAmountTimedLocation,
@@ -115,12 +115,12 @@ export const PlanInputAgePerson = React.memo(
           className="flex items-center col-span-2 gap-x-4 mt-4 mb-2"
           onClick={() => setOpenSection('none')}
         >
-          <Switch.Group>
-            <Switch.Label className="">
+          <Field>
+            <Label className="">
               {personId === 'person1'
                 ? 'Are you retired?'
                 : 'Is your partner retired?'}
-            </Switch.Label>
+            </Label>
             <SwitchAsCheckBox
               className=""
               checked={person.retirement.isRetired}
@@ -136,7 +136,7 @@ export const PlanInputAgePerson = React.memo(
                 }
               }}
             />
-          </Switch.Group>
+          </Field>
         </div>
 
         <div

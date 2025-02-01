@@ -1,4 +1,4 @@
-import { Transition } from '@headlessui/react'
+import { Transition, TransitionChild } from '@headlessui/react'
 import React, {
   ReactNode,
   useEffect,
@@ -106,6 +106,7 @@ export const ContextModal = React.memo(
         {ReactDOM.createPortal(
           <Transition
             show={open}
+            as="div"
             // pointer-events-none was needed to get the onPointerLeave to get
             // called on chart card to control the chart hover when the chart
             // menu was open.
@@ -114,7 +115,8 @@ export const ContextModal = React.memo(
               !onOutsideClickOrEscape && 'pointer-events-none',
             )}
           >
-            <Transition.Child
+            <TransitionChild
+              as="div"
               ref={setOuterElement}
               className="absolute inset-0 bg-black/50 transition-opacity duration-300 "
               enterFrom="opacity-0 "
@@ -128,7 +130,8 @@ export const ContextModal = React.memo(
               }}
               onClick={onOutsideClickOrEscape ?? undefined}
             />
-            <Transition.Child
+            <TransitionChild
+              as="div"
               ref={setMenuElement}
               // pointer-events-auto needed to cancel the pointer-events-none above.
               className="absolute z-10  duration-300 pointer-events-auto"
@@ -150,7 +153,7 @@ export const ContextModal = React.memo(
                     })
                   : menuItemsChild}
               </div>
-            </Transition.Child>
+            </TransitionChild>
           </Transition>,
           window.document.body,
         )}

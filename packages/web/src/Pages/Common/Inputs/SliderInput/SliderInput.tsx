@@ -64,7 +64,7 @@ export const SliderInput = React.memo(
         }}
       >
         <svg
-          className="outline-none absolute"
+          className="outline-hidden absolute"
           {...sizing.svgProps}
           style={{ left: `-${maxOverflowHorz.left}px` }}
           {...propsForPointerHTMLElement}

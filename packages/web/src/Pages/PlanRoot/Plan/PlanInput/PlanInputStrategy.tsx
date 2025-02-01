@@ -99,7 +99,7 @@ const _StrategyCard = React.memo(
 
     return (
       <div
-        className={`${className} params-card outline-none relative`}
+        className={`${className} params-card outline-hidden relative`}
         style={{ padding: paddingCSS(props.sizing.cardPadding) }}
       >
         <PlanInputModifiedBadge show={isModified} mainPage={false} />

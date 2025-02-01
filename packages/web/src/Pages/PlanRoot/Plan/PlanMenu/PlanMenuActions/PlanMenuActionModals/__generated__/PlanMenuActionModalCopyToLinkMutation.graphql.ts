@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<2b368988624002c7c0a87b8eb1533aaa>>
+ * @generated SignedSource<<06bdda5e3befc88ed17cf9722bd601fd>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 export type CreateLinkBasedPlanInput = {
   params: string;
 };

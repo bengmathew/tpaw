@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.2
 
 # Primsa needs some libs not there in -slim images.
-FROM node:20
+FROM node:22
 USER root
 WORKDIR /root
 
@@ -13,4 +13,4 @@ RUN npm run build
 
 ENV PORT 8080
 EXPOSE 8080
-ENTRYPOINT node . serve
+ENTRYPOINT node --import ./dist/instrument.js . serve

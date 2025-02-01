@@ -2,9 +2,8 @@ import { faMinus, faPlus } from '@fortawesome/pro-light-svg-icons'
 import { faPlus as faPlusThin } from '@fortawesome/pro-thin-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { PlanParams, generateSmallId } from '@tpaw/common'
-import _ from 'lodash'
 import React, { useState } from 'react'
-import { PlanParamsProcessed } from '../../../../Simulator/PlanParamsProcessed/PlanParamsProcessed'
+import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { Contentful } from '../../../../Utils/Contentful'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { paddingCSSStyle } from '../../../../Utils/Geometry'
@@ -21,7 +20,6 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
-import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 
 type _EditState = { isAdd: boolean; entryId: string; hideInMain: boolean }
 

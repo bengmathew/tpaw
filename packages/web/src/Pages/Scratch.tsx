@@ -1,39 +1,33 @@
-import {
-  PlanParams,
-  currentPlanParamsVersion
-} from '@tpaw/common'
+import { PlanParams, currentPlanParamsVersion } from '@tpaw/common'
 import clsx from 'clsx'
 import React from 'react'
 import { normalizePlanParams } from '../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { CalendarDayFns } from '../Utils/CalendarDayFns'
-import { WithWASM, useWASM } from './PlanRoot/PlanRootHelpers/WithWASM'
+import { errorToast, infoToast, successToast } from '../Utils/CustomToasts'
 
 export const Scratch = React.memo(({ className }: { className?: string }) => {
-  return (
-    <WithWASM>
-      <_Body />
-    </WithWASM>
-  )
+  return <_Body />
 })
 
 export const _Body = React.memo(({ className }: { className?: string }) => {
-  const { wasm } = useWASM()
-
   return (
     <div className={clsx(className)}>
       <button
         className=" btn2-lg btn2-dark rounded-full"
         onClick={() => {
-          const timestamp = 1693440000000
-          const ianaTimezoneName = 'America/Los_Angeles'
+          // errorToast('test')
+          // infoToast('test')
+          successToast('test')
+          // const timestamp = 1693440000000
+          // const ianaTimezoneName = 'America/Los_Angeles'
 
-          const planParamsNorm = normalizePlanParams(problemParams, {
-            timestamp,
-            calendarDay: CalendarDayFns.fromTimestamp(
-              timestamp,
-              ianaTimezoneName,
-            ),
-          })
+          // const planParamsNorm = normalizePlanParams(problemParams, {
+          //   timestamp,
+          //   calendarDay: CalendarDayFns.fromTimestamp(
+          //     timestamp,
+          //     ianaTimezoneName,
+          //   ),
+          // })
         }}
       >
         run

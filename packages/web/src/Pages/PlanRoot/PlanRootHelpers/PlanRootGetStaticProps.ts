@@ -1,7 +1,5 @@
-import { MarketData } from '@tpaw/common'
 import { GetStaticProps } from 'next'
 import { Contentful } from '../../../Utils/Contentful'
-import { getMarketData } from '../../Common/GetMarketData'
 
 type _FetchedInline = Awaited<ReturnType<typeof Contentful.fetchInline>>
 type _Guide = { guide: _FetchedInline }
@@ -73,20 +71,15 @@ export type PlanContent = {
 }
 
 export type PlanStaticProps = {
-  marketData: MarketData.Data
   planContent: PlanContent
 }
 
 export const planRootGetStaticProps: GetStaticProps<
   PlanStaticProps
 > = async () => {
-  const [marketData, planContent] = await Promise.all([
-    getMarketData(),
-    _getPlanContent(),
-  ])
+  const [planContent] = await Promise.all([_getPlanContent()])
   return {
     props: {
-      marketData,
       planContent,
     },
   }

@@ -43,8 +43,8 @@ import {
 } from './PlanInputExpectedReturnsAndVolatilityFns'
 import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
 import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
-import { SimulationResult2 } from '../../../../Simulator/UseSimulator'
-import { PlanParamsProcessed2 } from '../../../../Simulator/SimulateOnServer/SimulateOnServer'
+import { SimulationResult } from '../../../../Simulator/UseSimulator'
+import { PlanParamsProcessed } from '../../../../Simulator/SimulateOnServer/SimulateOnServer'
 
 type ExpectedReturnsForPlanning =
   PlanParams['advanced']['returnsStatsForPlanning']['expectedValue']['empiricalAnnualNonLog']
@@ -340,7 +340,7 @@ const _ExpectedReturnsPresetPopup = React.memo(
   }: {
     show: boolean
     onHide: () => void
-    simulationResult: SimulationResult2
+    simulationResult: SimulationResult
   }) => {
     const { marketDataForPresets } = simulationResult.planParamsProcessed
     const { sourceRounded } = marketDataForPresets
@@ -1244,7 +1244,7 @@ export const _Fixed = React.memo(
 
 const _resolveExpectedReturnPreset = (
   type: _PresetType,
-  marketDataForExpectedReturns: PlanParamsProcessed2['marketDataForPresets']['expectedReturns'],
+  marketDataForExpectedReturns: PlanParamsProcessed['marketDataForPresets']['expectedReturns'],
 ) => {
   const _resolve = (
     stocks: _CustomType['stocks']['base'],
@@ -1276,7 +1276,7 @@ const _resolveExpectedReturnPreset = (
 
 const _resolveExpectedReturnStocksPreset = (
   type: _CustomType['stocks']['base'],
-  marketDataForExpectedReturns: PlanParamsProcessed2['marketDataForPresets']['expectedReturns'],
+  marketDataForExpectedReturns: PlanParamsProcessed['marketDataForPresets']['expectedReturns'],
 ) => {
   switch (type) {
     case 'regressionPrediction':
@@ -1294,7 +1294,7 @@ const _resolveExpectedReturnStocksPreset = (
 
 const _resolveExpectedReturnBondsPreset = (
   type: _CustomType['bonds']['base'],
-  marketDataForExpectedReturns: PlanParamsProcessed2['marketDataForPresets']['expectedReturns'],
+  marketDataForExpectedReturns: PlanParamsProcessed['marketDataForPresets']['expectedReturns'],
 ) => {
   switch (type) {
     case '20YearTIPSYield':

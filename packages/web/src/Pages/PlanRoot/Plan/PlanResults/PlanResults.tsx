@@ -18,7 +18,6 @@ import { ChartAnimation } from '../../../Common/Chart/Chart'
 import { ChartPointerPortal } from '../../../Common/Chart/ChartComponent/ChartPointerPortal'
 import { SwitchAsToggle } from '../../../Common/Inputs/SwitchAsToggle'
 import {
-  useRunTestsInfo,
   useSimulationResultInfo,
 } from '../../PlanRootHelpers/WithSimulation'
 import { PlanSectionName } from '../PlanInput/Helpers/PlanSectionName'
@@ -120,7 +119,6 @@ export const PlanResults = React.forwardRef<HTMLDivElement, _Props>(
     const chartData = useChartData(chartType)
     const { simulationIsRunningInfo } = useSimulationResultInfo()
 
-    const { runTests, setRunTests } = useRunTestsInfo()
     const [mainYRange, setMainYRange] = useState(chartData.displayRange.y)
 
     const [measures, setMeasures] = useState({
@@ -237,12 +235,6 @@ export const PlanResults = React.forwardRef<HTMLDivElement, _Props>(
             dontHide={false}
           />
         </div>
-        {/* {!Config.client.isProduction && (
-          <div className="absolute bottom-0 right-0 flex items-center gap-2 bg-blue-500 p-2 rounded-lg">
-            <h2>Test Suite</h2>
-            <SwitchAsToggle checked={runTests} setChecked={setRunTests} />
-          </div>
-        )} */}
       </NoDisplayOnOpacity0Transition>
     )
   },

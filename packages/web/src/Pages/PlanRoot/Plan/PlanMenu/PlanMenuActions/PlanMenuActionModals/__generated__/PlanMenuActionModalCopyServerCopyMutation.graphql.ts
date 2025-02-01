@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<89dfa9e059feeef6090a5be7c251f9c5>>
+ * @generated SignedSource<<dee69975dd7a61cd3e19528bcf396a8b>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type UserPlanCopyInput = {
   cutAfterId?: string | null | undefined;

@@ -57,7 +57,7 @@ export const SliderPointer = React.memo(
           }}
         />
         <rect
-          className="fill-current text-darkGray"
+          className="fill-current text-gray-800"
           x={-1}
           y={0}
           width={2}
@@ -89,7 +89,7 @@ export const SliderPointer = React.memo(
           {/* path  */}
           <path
             mask={`url(#roundPointerHandleMask-${id})`}
-            className="fill-current text-darkGray pointer-events-none "
+            className="fill-current text-gray-800 pointer-events-none "
             d="M 24 4.051 C 17.172 -2.171 6.169 1.332 4.195 10.356 C 3.239 14.722 4.79 19.257 8.218 22.125 C 11.019 24.454 13.359 27.286 15.118 30.476 C 15.293 30.8 15.632 31.001 16 31 C 16.368 31 16.706 30.798 16.88 30.474 L 16.962 30.32 C 18.733 27.169 21.069 24.37 23.852 22.063 C 29.325 17.333 29.395 8.87 24 4.051 Z"
           />
         </g>

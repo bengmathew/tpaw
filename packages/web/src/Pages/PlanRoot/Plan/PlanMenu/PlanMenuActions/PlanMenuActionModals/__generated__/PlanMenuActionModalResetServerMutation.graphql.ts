@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<8355f6e154ba330568c6d90712f684c3>>
+ * @generated SignedSource<<1cf862ecb495afc1eb60915a92961938>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type UserPlanResetInput = {
   lastSyncAt: number;

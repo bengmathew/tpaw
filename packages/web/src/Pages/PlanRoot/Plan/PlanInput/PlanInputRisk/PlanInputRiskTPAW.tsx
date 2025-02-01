@@ -8,16 +8,16 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   DEFAULT_RISK_TPAW,
   PLAN_PARAMS_CONSTANTS,
-  assert,
   block,
   fGet,
   monthlyToAnnualReturnRate,
-  partialDefaultDatelessPlanParams,
+  partialDefaultDatelessPlanParams
 } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import React, { ReactNode, useState } from 'react'
 import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { SimulationResult } from '../../../../../Simulator/UseSimulator'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSS, paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { SliderInput } from '../../../../Common/Inputs/SliderInput/SliderInput'
@@ -28,8 +28,6 @@ import {
 import { PlanInputModifiedBadge } from '../Helpers/PlanInputModifiedBadge'
 import { PlanInputBodyPassThruProps } from '../PlanInputBody/PlanInputBody'
 import { PlanInputRiskRRASlider } from './PlanInputRiskRRASlider'
-import { SimulationResult } from '../../../../../Simulator/Simulator/Simulator'
-import { SimulationResult2 } from '../../../../../Simulator/UseSimulator'
 
 const RISK_TOLERANCE_VALUES = _.range(
   0,
@@ -319,7 +317,7 @@ const _SpendingTiltCard = React.memo(
 
     const getSpendingTiltAtMFN = (
       mfn: number,
-      { planParamsNormOfResult, tpawSpendingTilt }: SimulationResult2,
+      { planParamsNormOfResult, tpawSpendingTilt }: SimulationResult,
     ) => {
       const total = monthlyToAnnualReturnRate(
         fGet(

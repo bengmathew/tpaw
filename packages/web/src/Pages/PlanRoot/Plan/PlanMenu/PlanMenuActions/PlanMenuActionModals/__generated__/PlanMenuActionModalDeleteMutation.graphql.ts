@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<0ec71fd1a488922cc6fa173eb64dd7c6>>
+ * @generated SignedSource<<690a1fe20eb9b27efd98d803cc239fbc>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type UserPlanDeleteInput = {
   planId: string;

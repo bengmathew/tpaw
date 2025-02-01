@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<0d328156ff9e79b7a5e44e33c9cd7af1>>
+ * @generated SignedSource<<f6db3dc17a1c30c701da7886b94923c7>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type UserPlanUpdateInput = {
   planId: string;

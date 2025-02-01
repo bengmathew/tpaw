@@ -1,6 +1,6 @@
 import { faBars, faHouse, faUser } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Transition } from '@headlessui/react'
+import { Transition, TransitionChild } from '@headlessui/react'
 import clsx from 'clsx'
 import _ from 'lodash'
 import Link from 'next/link'
@@ -56,6 +56,7 @@ export const Header = React.memo(
         {ReactDOM.createPortal(
           <Transition
             show={showMenu}
+            as="div"
             className="fixed inset-0 page overflow-hidden z-20"
             enter="transition-opacity duration-300"
             enterFrom="opacity-0"
@@ -68,7 +69,8 @@ export const Header = React.memo(
               className="absolute inset-0 bg-black bg-opacity-20"
               onClick={() => setShowMenu(false)}
             >
-              <Transition.Child
+              <TransitionChild
+                as="div"
                 className="absolute min-w-[175px]  shadow-2xl bg-pageBG font-semibold  right-0 rounded-bl-2xl py-2 "
                 enter=" transtition-transform duration-300"
                 enterFrom="translate-x-[175px]"
@@ -110,7 +112,7 @@ export const Header = React.memo(
                 <Link className="block px-4 py-2" href="/disclaimer" shallow>
                   Disclaimer
                 </Link>
-              </Transition.Child>
+              </TransitionChild>
             </div>
           </Transition>,
           window.document.body,

@@ -2,7 +2,6 @@ import { PlanParams, fGet } from '@tpaw/common'
 import { default as clix, default as clsx } from 'clsx'
 import _ from 'lodash'
 import React, { CSSProperties, ReactNode, useState } from 'react'
-import { FirstMonthSavingsPortfolioDetail } from '../../../../../Simulator/Simulator/GetFirstMonthSavingsPortfolioDetail'
 import { formatCurrency } from '../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { Padding } from '../../../../../Utils/Geometry'
@@ -10,7 +9,8 @@ import { getPrecision } from '../../../../../Utils/GetPrecision'
 import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
 import { useSimulationResultInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { usePlanColors } from '../../UsePlanColors'
-import { SimulationResult2 } from '../../../../../Simulator/UseSimulator'
+import { SimulationResult } from '../../../../../Simulator/UseSimulator'
+import { FirstMonthSavingsPortfolioDetail } from '../../../../../Simulator/SimulateOnServer/SimulateOnServer'
 
 export const PlanResultsSidePanelTasksCard = React.memo(
   ({
@@ -124,7 +124,7 @@ type _Props = Omit<FirstMonthSavingsPortfolioDetail, 'withdrawals'> & {
   strategy: PlanParams['advanced']['strategy']
 }
 
-const _getProps = (simulationResult: SimulationResult2): _Props => {
+const _getProps = (simulationResult: SimulationResult): _Props => {
   const original = simulationResult.firstMonthOfSomeRun
   const { planParamsNormOfResult } = simulationResult
 

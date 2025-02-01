@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<2e062dc0eb1c633593d4839048b98736>>
+ * @generated SignedSource<<63912ed646b1e6fb9ea598cd643475e0>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Query } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 export type UseServerHistoryFromStartQuery$variables = {
   baseId: string;
   baseTimestamp: number;

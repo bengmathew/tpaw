@@ -1,7 +1,7 @@
 import { faChevronUp, faStream } from '@fortawesome/pro-regular-svg-icons'
 import { faChevronRight, faHomeAlt } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Transition } from '@headlessui/react'
+import { Transition, TransitionChild } from '@headlessui/react'
 import _ from 'lodash'
 import { GetStaticProps, InferGetStaticPropsType } from 'next'
 import Link from 'next/link'
@@ -122,11 +122,13 @@ const _MobileOutline = React.memo(
   }) => {
     return ReactDOM.createPortal(
       <Transition
+        as="div"
         className="page"
         show={showContents}
         onClick={() => setShowContents(false)}
       >
-        <Transition.Child
+        <TransitionChild
+          as="div"
           className="fixed inset-0 bg-black/50 "
           enter="transition-opacity duration-300"
           enterFrom="opacity-0"
@@ -134,7 +136,8 @@ const _MobileOutline = React.memo(
           leaveTo="opacity-0"
         />
 
-        <Transition.Child
+        <TransitionChild
+          as="div"
           className="fixed bottom-0 right-0 w-[600px] max-w-[100vw]  rounded-tl-xl  rounded-tr-xl bg-pageBG  max-h-[70vh] overflow-scroll"
           enter="transition-transfrom duration-300"
           enterFrom=" translate-y-[200px] opacity-0"
@@ -148,7 +151,7 @@ const _MobileOutline = React.memo(
             slug={content.fields.slug}
             onClick={() => setShowContents(false)}
           />
-        </Transition.Child>
+        </TransitionChild>
       </Transition>,
       window.document.body,
     )

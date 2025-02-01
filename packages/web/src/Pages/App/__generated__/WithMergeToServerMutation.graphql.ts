@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<306aea42d59e91081bb657c7cf7fbc82>>
+ * @generated SignedSource<<b4c891fc692000ff55889add069d9d6c>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type UserMergeFromClientInput = {
   guestPlan?: UserPlanCreatePlanInput | null | undefined;

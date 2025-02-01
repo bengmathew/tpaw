@@ -19,6 +19,7 @@ import { PlanInputCurrentPortfolioBalanceSummary } from '../PlanInput/PlanInputC
 import { PlanInputDevMiscSummary } from '../PlanInput/PlanInputDev/PlanInputDevMisc'
 import { PlanInputDevSimulationsSummary } from '../PlanInput/PlanInputDev/PlanInputDevSimulations'
 import { PlanInputDevTimeSummary } from '../PlanInput/PlanInputDev/PlanInputDevTime'
+import { PlanInputExpectedReturnsAndVolatilitySummary } from '../PlanInput/PlanInputExpectedReturnsAndVolatility'
 import { PlanInputExtraSpendingSummary } from '../PlanInput/PlanInputExtraSpending'
 import { PlanInputFutureSavingsSummary } from '../PlanInput/PlanInputFutureSavings'
 import { PlanInputIncomeDuringRetirementSummary } from '../PlanInput/PlanInputIncomeDuringRetirement'
@@ -29,8 +30,6 @@ import { PlanInputSimulationSummary } from '../PlanInput/PlanInputSimulation'
 import { PlanInputSpendingCeilingAndFloorSummary } from '../PlanInput/PlanInputSpendingCeilingAndFloor'
 import { PlanInputStrategySummary } from '../PlanInput/PlanInputStrategy'
 import { usePlanColors } from '../UsePlanColors'
-import { PortfolioBalanceEstimation } from '../../PlanRootHelpers/PortfolioBalanceEstimation'
-import { PlanInputExpectedReturnsAndVolatilitySummary } from '../PlanInput/PlanInputExpectedReturnsAndVolatility'
 
 type _Props = {
   padding: Padding

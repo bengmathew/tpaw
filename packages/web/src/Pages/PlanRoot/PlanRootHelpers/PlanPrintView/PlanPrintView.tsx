@@ -1,6 +1,6 @@
 import { faLeftLong } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { block, getZonedTimeFns, noCase } from '@tpaw/common'
+import { block, noCase } from '@tpaw/common'
 import clsx from 'clsx'
 import _ from 'lodash'
 import Link from 'next/link'
@@ -9,17 +9,15 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { graphql, useMutation } from 'react-relay'
 import { appPaths } from '../../../../AppPaths'
 import { normalizePlanParams } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
-import { CallRust } from '../../../../Simulator/PlanParamsProcessed/CallRust'
-import { processPlanParams } from '../../../../Simulator/PlanParamsProcessed/PlanParamsProcessed'
 import { simulateOnServer } from '../../../../Simulator/SimulateOnServer/SimulateOnServer'
-import { SimulationResult } from '../../../../Simulator/Simulator/Simulator'
+import { getPortfolioBalanceEstimationCacheHandlerForDatelessPlan } from '../../../../Simulator/UsePortfolioBalanceEstimationCache'
+import { SimulationResult } from '../../../../Simulator/UseSimulator'
+import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
 import { setCSSPageValue } from '../../../../Utils/SetCSSPageValue'
 import { useSetGlobalError } from '../../../App/GlobalErrorBoundary'
 import { useSystemInfo } from '../../../App/WithSystemInfo'
-import { getMarketDataForTime } from '../../../Common/GetMarketData'
 import { mainPlanColors } from '../../Plan/UsePlanColors'
 import { WithPlanResultsChartDataForPDF } from '../../Plan/WithPlanResultsChartData'
-import { useMarketData } from '../WithMarketData'
 import { SimulationResultInfoContext } from '../WithSimulation'
 import { PlanPrintViewAppendixSection } from './PlanPrintViewAppendixSection'
 import {
@@ -34,14 +32,11 @@ import { PlanPrintViewResultsSection } from './PlanPrintViewResultsSection/PlanP
 import { PlanPrintViewSettings } from './PlanPrintViewSettings'
 import { PlanPrintViewTasksForThisMonthSection } from './PlanPrintViewTasksForThisMonthSection'
 import { PlanPrintViewGetShortLinkMutation } from './__generated__/PlanPrintViewGetShortLinkMutation.graphql'
-import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
-import { getPortfolioBalanceEstimationCacheHandlerForDatelessPlan } from '../../../../Simulator/UsePortfolioBalanceEstimationCache'
-import { SimulationResult2 } from '../../../../Simulator/UseSimulator'
 
 export type PlanPrintViewProps = {
   fixed: PlanPrintViewArgs['fixed']
   settings: PlanPrintViewArgs['settings']
-  simulationResult: SimulationResult2 | null
+  simulationResult: SimulationResult | null
   updateSettings: (x: PlanPrintViewSettingsControlledClientSide) => void
 }
 
@@ -60,7 +55,7 @@ export const PlanPrintView = React.memo(
     const { pageSize } = settings
     const { setGlobalError } = useSetGlobalError()
     const [simulationResult, setSimulationResult] =
-      useState<SimulationResult2 | null>(simulationResultIn)
+      useState<SimulationResult | null>(simulationResultIn)
 
     const planParamsForLink = useMemo(() => {
       const clone = _.cloneDeep(fixed.planParams)

@@ -25,7 +25,7 @@ import { PlanParamsNormalized } from '../../../Simulator/NormalizePlanParams/Nor
 import { normalizePlanParamsInverse } from '../../../Simulator/NormalizePlanParams/NormalizePlanParamsInverse'
 import { DailyMarketSeriesSrc } from '../../../Simulator/SimulateOnServer/SimulateOnServer'
 import {
-  SimulationResult2,
+  SimulationResult,
   useSimulator,
 } from '../../../Simulator/UseSimulator'
 import { createContext } from '../../../Utils/CreateContext'
@@ -174,7 +174,7 @@ export type SimulationParams = Omit<
         show: (args: {
           fixed: PlanPrintViewArgs['fixed']
           settings: PlanPrintViewSettingsClientSide
-          simulationResult: SimulationResult2 | null
+          simulationResult: SimulationResult | null
           updateSettings: (x: PlanPrintViewSettingsControlledClientSide) => void
         }) => void
       }
@@ -256,16 +256,9 @@ export const useSimulationParamsForHistoryMode = (
 const [SimulationInfoContext, useSimulationInfo] =
   createContext<SimulationInfo>('SimulationInfo')
 
-// TODO: Testing. Remove.
-const [RunTestsInfoContext, useRunTestsInfo] = createContext<{
-  runTests: boolean
-  setRunTests: (x: boolean) => void
-}>('RunTestsInfo')
-export { useRunTestsInfo }
-
 export type SimulationResultInfo = {
   // TODO: Testing. Rename to SimulationResult
-  simulationResult: SimulationResult2
+  simulationResult: SimulationResult
   simulationIsRunningInfo:
     | {
         isRunning: true
@@ -339,8 +332,6 @@ export const WithSimulation = React.memo(
       [planParamsHistoryUpToActualCurrentTimestamp, getHistoryDay],
     )
 
-    const [runTests, setRunTests] = useState(false)
-
     const { simulationResult, isRunningInfo, planParamsId, planParamsNorm } =
       useSimulator(
         params.planId,
@@ -351,7 +342,6 @@ export const WithSimulation = React.memo(
         PERCENTILES,
         numOfSimulationForMonteCarloSampling,
         randomSeed,
-        runTests,
       )
 
     const simulationInfo: SimulationInfo = {
@@ -381,18 +371,16 @@ export const WithSimulation = React.memo(
       <DailyMarketSeriesSrcContext.Provider
         value={{ dailyMarketSeriesSrc, setDailyMarketSeriesSrc }}
       >
-        <RunTestsInfoContext.Provider value={{ runTests, setRunTests }}>
-          <SimulationInfoContext.Provider value={simulationInfo}>
-            <SimulationResultInfoContext.Provider
-              value={{
-                simulationResult,
-                simulationIsRunningInfo: isRunningInfo,
-              }}
-            >
-              <Plan />
-            </SimulationResultInfoContext.Provider>
-          </SimulationInfoContext.Provider>
-        </RunTestsInfoContext.Provider>
+        <SimulationInfoContext.Provider value={simulationInfo}>
+          <SimulationResultInfoContext.Provider
+            value={{
+              simulationResult,
+              simulationIsRunningInfo: isRunningInfo,
+            }}
+          >
+            <Plan />
+          </SimulationResultInfoContext.Provider>
+        </SimulationInfoContext.Provider>
       </DailyMarketSeriesSrcContext.Provider>
     )
   },
@@ -404,7 +392,7 @@ export {
 }
 
 const useShowPDFReportIfNeeded = (
-  simulationResult: SimulationResult2 | null,
+  simulationResult: SimulationResult | null,
   planLabel: string | null,
   pdfReportInfo: SimulationParams['pdfReportInfo'],
 ) => {
@@ -428,7 +416,7 @@ const useShowPDFReportIfNeeded = (
     }
   }, [isLoggedIn, nonPlanParams])
 
-  const handleShowPrintEvent = (simulationResult: SimulationResult2) => {
+  const handleShowPrintEvent = (simulationResult: SimulationResult) => {
     if (pdfReportInfo.isShowing) return
     const printPlanParams = normalizePlanParamsInverse(
       simulationResult.planParamsNormOfResult,

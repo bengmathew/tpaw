@@ -40,7 +40,7 @@ const _Body = React.memo(
     const [showFailureDetail, setShowFailureDetail] = useState(false)
     return (
       <div
-        className="absolute z-[70] right-0 bottom-0 bg-pageBG p-2 rounded-tl-lg "
+        className="absolute z-70 right-0 bottom-0 bg-pageBG p-2 rounded-tl-lg "
         style={{ boxShadow: '-4px -4px 14px 4px rgba(0, 0, 0, 0.1)' }}
       >
         {block(() => {

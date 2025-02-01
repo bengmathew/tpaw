@@ -630,7 +630,7 @@ const _Section = React.memo(
 
         <div className="flex justify-end items-center gap-x-4  pb-2 mt-6">
           <h2 className="text-lg"></h2>
-          <h2 className="border-t-2  border-gray-700  pl-4 py-2  rounded-sm  font-mono">
+          <h2 className="border-t-2  border-gray-700  pl-4 py-2  rounded-xs  font-mono">
             {formatCurrency(total)}
           </h2>
         </div>
@@ -711,7 +711,7 @@ const _ChartLabel = React.memo(
         className={clix(
           className,
           // Thanks: https://stackoverflow.com/a/7993098
-          ' whitespace-nowrap overflow-ellipsis overflow-hidden w-full',
+          ' whitespace-nowrap text-ellipsis overflow-hidden w-full',
           forPrint ? 'text-[10.5px]' : 'text-[12px] font-medium',
         )}
       >

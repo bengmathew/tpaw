@@ -71,6 +71,7 @@ export const PlanInputLaptopAndDesktop = React.memo(
         <Transition
           ref={mainScrollRef}
           show={state.mainOrInput === 'main'}
+          as="div"
           className="absolute inset-0 overflow-y-scroll"
           enterFrom="opacity-0  translate-x-[-15px]"
           enterTo="opacity-100  translate-x-0"
@@ -126,6 +127,7 @@ export const PlanInputLaptopAndDesktop = React.memo(
           <Transition
             ref={inputScrollRef}
             show={state.mainOrInput === 'input'}
+            as="div"
             className={`absolute inset-0  overflow-y-scroll`}
             enterFrom="opacity-0  translate-x-[15px]"
             enterTo="opacity-100  translate-x-0"

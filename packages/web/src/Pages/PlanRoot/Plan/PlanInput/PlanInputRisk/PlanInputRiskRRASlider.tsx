@@ -76,7 +76,7 @@ export const PlanInputRiskRRASlider = React.memo(
           }}
         >
           <svg
-            className="outline-none absolute top-0"
+            className="outline-hidden absolute top-0"
             style={{ left: `-${maxOverflowHorz.left}px` }}
             {...sizing.svgProps}
             {...propsForPointerHTMLElement}

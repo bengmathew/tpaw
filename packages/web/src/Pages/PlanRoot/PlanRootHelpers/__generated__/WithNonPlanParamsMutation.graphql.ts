@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<f9f324da64a385f73dac694a40c435f0>>
+ * @generated SignedSource<<ac39ce9cb127f053d920405c5920f697>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Mutation } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type UserSetNonPlanParamsInput = {
   lastUpdatedAt: number;

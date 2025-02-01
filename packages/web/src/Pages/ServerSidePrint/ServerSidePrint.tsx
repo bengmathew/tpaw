@@ -1,42 +1,33 @@
 import {
-  MarketData,
   assertFalse,
   currentPlanParamsVersion,
   fGet,
-  letIn
+  letIn,
 } from '@tpaw/common'
 import React, { useMemo } from 'react'
 import { useURLParam } from '../../Utils/UseURLParam'
 import { PlanPrintView } from '../PlanRoot/PlanRootHelpers/PlanPrintView/PlanPrintView'
 import { PlanPrintViewArgsServerSide } from '../PlanRoot/PlanRootHelpers/PlanPrintView/PlanPrintViewArgs'
-import { WithMarketData } from '../PlanRoot/PlanRootHelpers/WithMarketData'
-import { WithWASM } from '../PlanRoot/PlanRootHelpers/WithWASM'
 
-export const ServerSidePrint = React.memo(
-  ({ marketData }: { marketData: MarketData.Data }) => {
-    const urlParams = useURLParam('params')
-    const { fixed, settings } = useMemo(
-      () =>
-        urlParams === 'test'
-          ? testParams
-          : (JSON.parse(fGet(urlParams)) as PlanPrintViewArgsServerSide),
-      [urlParams],
-    )
+export const ServerSidePrint = React.memo(() => {
+  const urlParams = useURLParam('params')
+  const { fixed, settings } = useMemo(
+    () =>
+      urlParams === 'test'
+        ? testParams
+        : (JSON.parse(fGet(urlParams)) as PlanPrintViewArgsServerSide),
+    [urlParams],
+  )
 
-    return (
-      <WithWASM>
-        <WithMarketData marketData={marketData}>
-          <PlanPrintView
-            fixed={fixed}
-            settings={settings}
-            simulationResult={null}
-            updateSettings={() => assertFalse()}
-          />
-        </WithMarketData>
-      </WithWASM>
-    )
-  },
-)
+  return (
+    <PlanPrintView
+      fixed={fixed}
+      settings={settings}
+      simulationResult={null}
+      updateSettings={() => assertFalse()}
+    />
+  )
+})
 
 const testParams: PlanPrintViewArgsServerSide = {
   fixed: {

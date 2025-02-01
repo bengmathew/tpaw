@@ -6,14 +6,8 @@ import {
   PlanStaticProps,
 } from '../../src/Pages/PlanRoot/PlanRootHelpers/PlanRootGetStaticProps'
 
-export default React.memo(({ planContent, marketData }: PlanStaticProps) => {
-  return (
-    <PlanRoot
-      planContent={planContent}
-      marketData={marketData}
-      src={{ type: 'link' }}
-    />
-  )
+export default React.memo(({ planContent }: PlanStaticProps) => {
+  return <PlanRoot planContent={planContent} src={{ type: 'link' }} />
 })
 
 export const getStaticProps = planRootGetStaticProps

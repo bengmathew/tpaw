@@ -1,6 +1,6 @@
 import { faGear } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { RadioGroup, Switch } from '@headlessui/react'
+import { Field, Label, RadioGroup, Switch } from '@headlessui/react'
 import { noCase } from '@tpaw/common'
 import clsx from 'clsx'
 import React, { ReactNode, useState } from 'react'
@@ -121,7 +121,7 @@ const _EditSettings = React.memo(
             </_RadioOption>
           </RadioGroup>
           <h2 className="font-bold text-xl mt-10">Add Link</h2>
-          <Switch.Group>
+          <Field>
             <div className="flex  gap-x-2 mt-4">
               <SwitchAsCheckBox
                 className="mr-1 shrink-0 mt-1"
@@ -130,12 +130,12 @@ const _EditSettings = React.memo(
                   updateSettings({ ...currUpdatableSettings, shouldEmbedLink })
                 }
               />
-              <Switch.Label className="p-base cursor-pointer">
+              <Label className="p-base cursor-pointer">
                 Add a link. This creates a copy of the plan and adds a link in
                 the pdf to view the copied plan.
-              </Switch.Label>
+              </Label>
             </div>
-          </Switch.Group>
+          </Field>
 
           <div className=" dialog-button-div">
             <button className=" dialog-button-dark" onClick={onDone}>

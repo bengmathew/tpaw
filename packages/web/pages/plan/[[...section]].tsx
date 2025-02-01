@@ -11,7 +11,7 @@ import { PlanRootLoginOrLocal } from '../../src/Pages/PlanRoot/PlanRootLoginOrLo
 import { useURLParam } from '../../src/Utils/UseURLParam'
 import { useURLUpdater } from '../../src/Utils/UseURLUpdater'
 
-export default React.memo(({ planContent, marketData }: PlanStaticProps) => {
+export default React.memo(({ planContent }: PlanStaticProps) => {
   const firebaseUser = useFirebaseUser()
 
   const urlUpdater = useURLUpdater()
@@ -27,13 +27,7 @@ export default React.memo(({ planContent, marketData }: PlanStaticProps) => {
   if (redirectToLink) return <></>
 
   if (!firebaseUser) return <PlanRootLoginOrLocal />
-  return (
-    <PlanRoot
-      planContent={planContent}
-      marketData={marketData}
-      src={{ type: 'serverMain' }}
-    />
-  )
+  return <PlanRoot planContent={planContent} src={{ type: 'serverMain' }} />
 })
 
 export const getStaticProps = planRootGetStaticProps

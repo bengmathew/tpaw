@@ -20,9 +20,7 @@ import { useAssertConst } from '../../../Utils/UseAssertConst'
 import { Config } from '../../Config'
 import { getPlanParamsChangeActionImpl } from './GetPlanParamsChangeActionImpl/GetPlanParamsChangeActionImpl'
 import { CurrentTimeInfo } from './UseCurrentTime'
-import { useMarketData } from './WithMarketData'
 import { useIANATimezoneName } from './WithNonPlanParams'
-import { useWASM } from './WithWASM'
 
 export type PlanParamsHistoryItem = {
   readonly id: string
@@ -52,8 +50,6 @@ export const useWorkingPlan = (
   planPaths: PlanPaths,
 ) => {
   const { ianaTimezoneName } = useIANATimezoneName()
-  const { marketData } = useMarketData()
-  const { wasm } = useWASM()
 
   const [workingPlan, setWorkingPlan] = useState(src)
   assert(workingPlan.reverseHeadIndex <= TARGET_UNDO_DEPTH)

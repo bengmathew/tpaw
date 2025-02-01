@@ -2,9 +2,8 @@ import { assert, block, noCase } from '@tpaw/common'
 import _ from 'lodash'
 import { PlanParamsNormalized } from '../../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
 import { getPlanParamsServer } from '../../../../../../Simulator/SimulateOnServer/GetPlanParamsServer'
-import { PlanParamsProcessed2 } from '../../../../../../Simulator/SimulateOnServer/SimulateOnServer'
-import { NumberArrByPercentileByMonthsFromNow } from '../../../../../../Simulator/Simulator/Simulator'
-import { SimulationResult2 } from '../../../../../../Simulator/UseSimulator'
+import { NumberArrByPercentileByMonthsFromNow, PlanParamsProcessed } from '../../../../../../Simulator/SimulateOnServer/SimulateOnServer'
+import { SimulationResult } from '../../../../../../Simulator/UseSimulator'
 import { formatCurrency } from '../../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../../Utils/FormatPercentage'
 import { XY } from '../../../../../../Utils/Geometry'
@@ -26,7 +25,7 @@ import {
 export type PlanResultsChartDataForPDF = {
   chartType: PlanResultsChartType
   planParamsNormOfResult: PlanParamsNormalized
-  planParamsProcessed: PlanParamsProcessed2
+  planParamsProcessed: PlanParamsProcessed
   displayRange: { x: SimpleRange; y: SimpleRange }
   formatY: (x: number) => string
   layout: 'laptop' | 'mobile' | 'desktop'
@@ -73,7 +72,7 @@ export type PlanResultsChartData = PlanResultsChartDataForPDF & {
 
 export const getPlanResultsChartDataForPDF = (
   chartType: PlanResultsChartType,
-  simulationResult: SimulationResult2,
+  simulationResult: SimulationResult,
   layout: 'laptop' | 'mobile' | 'desktop',
   // planSizing: PlanSizing,
   // planTransitionState: PlanTransitionState,

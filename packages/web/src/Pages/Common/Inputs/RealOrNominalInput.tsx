@@ -1,7 +1,7 @@
 import { faCircle as faCircleLight } from '@fortawesome/pro-regular-svg-icons'
 import { faCircle as faCircleSolid } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { RadioGroup } from '@headlessui/react'
+import { Description, Label, Radio, RadioGroup } from '@headlessui/react'
 import React, { useState } from 'react'
 import { CenteredModal } from '../Modal/CenteredModal'
 
@@ -24,8 +24,8 @@ export const RealOrNominalInput = React.memo(
           onChange={(type: 'nominal' | 'real') => onChange(type === 'nominal')}
           className="grid gap-y-2"
         >
-          <RadioGroup.Label>This amount is</RadioGroup.Label>
-          <RadioGroup.Option value="real">
+          <Label>This amount is</Label>
+          <Radio value="real">
             {({ checked }) => (
               <div className="flex items-start gap-x-2 cursor-pointer">
                 <FontAwesomeIcon
@@ -35,8 +35,8 @@ export const RealOrNominalInput = React.memo(
                 <h2 className="">adjusted for inflation (real dollars)</h2>
               </div>
             )}
-          </RadioGroup.Option>
-          <RadioGroup.Option value="nominal">
+          </Radio>
+          <Radio value="nominal">
             {({ checked }) => (
               <div className="flex items-start gap-x-2  cursor-pointer">
                 <FontAwesomeIcon
@@ -48,15 +48,15 @@ export const RealOrNominalInput = React.memo(
                 </h2>
               </div>
             )}
-          </RadioGroup.Option>
-          <RadioGroup.Description>
+          </Radio>
+          <Description>
             <button
               className="underline text-sm"
               onClick={() => setShowExplanation(true)}
             >
               What does this mean?
             </button>
-          </RadioGroup.Description>
+          </Description>
         </RadioGroup>
         <CenteredModal
           className=" dialog-outer-div"

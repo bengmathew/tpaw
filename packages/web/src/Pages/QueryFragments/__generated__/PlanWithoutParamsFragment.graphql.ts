@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<832801b06600d08f9986b4051f087e0f>>
+ * @generated SignedSource<<f830a42a6cb2022ca4f41cbe6add17ec>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { Fragment, ReaderFragment } from 'relay-runtime';
+import { ReaderFragment } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type PlanWithoutParamsFragment$data = {
   readonly addedToServerAt: number;

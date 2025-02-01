@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<0d1868e18888acf0556288632c8d2c7f>>
+ * @generated SignedSource<<093adbe0eaf81985eab1ef6ad1793159>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConcreteRequest, Query } from 'relay-runtime';
+import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type ConvertLongLinksQuery$variables = {
   includeUser: boolean;

@@ -181,7 +181,7 @@ export namespace Sankey {
           ref={setOuterDiv}
         >
           <div
-            className="flex-shrink-0"
+            className="shrink-0"
             style={{ width: `${sizing.width}px`, height: `${sizing.height}px` }}
           >
             <svg

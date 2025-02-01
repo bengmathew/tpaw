@@ -3,13 +3,7 @@ import _ from 'lodash'
 import pako from 'pako'
 import { AppError } from '../../Pages/App/AppError'
 import { Config } from '../../Pages/Config'
-import { PortfolioBalanceEstimation } from '../../Pages/PlanRoot/PlanRootHelpers/PortfolioBalanceEstimation'
 import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
-import { FirstMonthSavingsPortfolioDetail } from '../Simulator/GetFirstMonthSavingsPortfolioDetail'
-import {
-  NumberArrByPercentileByMonthsFromNow,
-  NumberArrWithIdByPercentileByMonthsFromNow,
-} from '../Simulator/Simulator'
 import { PortfolioBalanceEstimationCacheHandler } from '../UsePortfolioBalanceEstimationCache'
 import { deWire } from './DeWire'
 import { getPlanParamsServer } from './GetPlanParamsServer'
@@ -17,8 +11,6 @@ import {
   WireSimulationArgs,
   WireSimulationResult,
 } from './Wire/wire_simulate_api'
-
-
 
 const MAX_RETRIES = 5
 const TIMEOUT_MS = 5000
@@ -139,11 +131,18 @@ export const simulateOnServer = async (
   )
 }
 
+export type NumberArrByPercentileByMonthsFromNow = {
+  byPercentileByMonthsFromNow: { data: number[]; percentile: number }[]
+}
+export type NumberArrWithIdByPercentileByMonthsFromNow = {
+  id: string
+  byPercentileByMonthsFromNow: { data: number[]; percentile: number }[]
+}
 const _deWireArrays = (
   wire: AutoDeWiredResult['arrays'],
   numMonths: number,
   percentiles: number[],
-  planParamsProcessed: PlanParamsProcessed2,
+  planParamsProcessed: PlanParamsProcessed,
 ) => {
   const handleByPercentileByMFN = (
     byPercentileByMFNPercentileMajor: number[],
@@ -242,7 +241,7 @@ const _deWireArrays = (
 
 export type AutoDeWiredResult = ReturnType<typeof deWire<WireSimulationResult>>
 
-export type PlanParamsProcessed2 = ReturnType<typeof _fixPlanParamsProcessed>
+export type PlanParamsProcessed = ReturnType<typeof _fixPlanParamsProcessed>
 const _fixPlanParamsProcessed = (
   src: AutoDeWiredResult['planParamsProcessed'],
 ) => {
@@ -314,7 +313,7 @@ const _processResult = (
 }
 
 const _separateExtraWithdrawals = (
-  processedGroup: PlanParamsProcessed2['amountTimed']['wealth']['futureSavings'],
+  processedGroup: PlanParamsProcessed['amountTimed']['wealth']['futureSavings'],
   combinedExtraWithdrawals: Omit<NumberArrByPercentileByMonthsFromNow, 'id'>,
 ): NumberArrWithIdByPercentileByMonthsFromNow[] =>
   processedGroup.byId.map(({ id, values }) => ({
@@ -354,9 +353,36 @@ const _mapByPercentileByMonthsFromNow = (
   })),
 })
 
+export type FirstMonthSavingsPortfolioDetail = {
+  start: { balance: number }
+  contributions: {
+    total: number
+    toWithdrawal: number
+    toSavingsPortfolio: number
+  }
+  afterContributions: {
+    balance: number
+  }
+  withdrawals: {
+    regular: number
+    essential: number
+    discretionary: number
+    total: number
+    fromSavingsPortfolio: number
+    fromContributions: number
+  }
+  afterWithdrawals: {
+    allocation: { stocks: number }
+    balance: number
+  }
+  contributionToOrWithdrawalFromSavingsPortfolio:
+    | { type: 'contribution'; contribution: number }
+    | { type: 'withdrawal'; withdrawal: number }
+}
+
 const _getFirstMonthSavingsPortfolioDetail = (
   full: ReturnType<typeof _deWireArrays>['savingsPortfolio'],
-  planParamsProcessed: PlanParamsProcessed2,
+  planParamsProcessed: PlanParamsProcessed,
 ): FirstMonthSavingsPortfolioDetail => {
   const _get = (x: NumberArrByPercentileByMonthsFromNow) =>
     x.byPercentileByMonthsFromNow[0].data[0]
@@ -420,45 +446,51 @@ const _getFirstMonthSavingsPortfolioDetail = (
   }
 }
 
+export namespace PortfolioBalanceEstimation {
+  export type Detail = Exclude<
+    ReturnType<typeof fixPortfolioBalanceEstimationResult>,
+    null
+  >
+  export type Action = Detail['actions'][number]
+}
+
 export const fixPortfolioBalanceEstimationResult = (
   src: AutoDeWiredResult['portfolioBalanceEstimationResult'],
-): PortfolioBalanceEstimation.Detail | null => {
+) => {
   if (src === null) return null
   return {
     ...src,
-    actions: src.actions.map(
-      (x): PortfolioBalanceEstimation.Action => ({
-        timestamp: x.timestamp,
-        args: block((): PortfolioBalanceEstimation.Action['args'] => {
-          switch (x.args.type) {
-            case 'marketClose':
-              return {
-                type: 'marketClose',
-                marketData: x.args.marketClose,
-              }
-            case 'withdrawalAndContribution':
-              return {
-                type: 'withdrawalAndContribution',
-                netContributionOrWithdrawal:
-                  x.args.withdrawalAndContribution.withdrawalOrContribution,
-              }
-            case 'monthlyRebalance':
-              return {
-                type: 'monthlyRebalance',
-                allocation: x.args.monthlyRebalance.allocation,
-              }
-            case 'planChange':
-              return {
-                type: 'planChange',
-                allocation: x.args.planChange.allocation,
-                portfolioUpdate: x.args.planChange.portfolioUpdate,
-              }
-            default:
-              noCase(x.args)
-          }
-        }),
-        stateChange: x.stateChange,
+    actions: src.actions.map((x) => ({
+      timestamp: x.timestamp,
+      args: block(() => {
+        switch (x.args.type) {
+          case 'marketClose':
+            return {
+              type: 'marketClose' as const,
+              marketData: x.args.marketClose,
+            }
+          case 'withdrawalAndContribution':
+            return {
+              type: 'withdrawalAndContribution' as const,
+              netContributionOrWithdrawal:
+                x.args.withdrawalAndContribution.withdrawalOrContribution,
+            }
+          case 'monthlyRebalance':
+            return {
+              type: 'monthlyRebalance' as const,
+              allocation: x.args.monthlyRebalance.allocation,
+            }
+          case 'planChange':
+            return {
+              type: 'planChange' as const,
+              allocation: x.args.planChange.allocation,
+              portfolioUpdate: x.args.planChange.portfolioUpdate,
+            }
+          default:
+            noCase(x.args)
+        }
       }),
-    ),
+      stateChange: x.stateChange,
+    })),
   }
 }

@@ -1,26 +1,21 @@
 import {
   CalendarDay,
-  MarketData,
   PlanParams,
   PlanParamsHistoryFns,
   assert,
   block,
   fGet,
-  noCase,
 } from '@tpaw/common'
 import _ from 'lodash'
 import { useCallback, useRef } from 'react'
 import { normalizePlanParams } from './NormalizePlanParams/NormalizePlanParams'
 import { getPlanParamsServer } from './SimulateOnServer/GetPlanParamsServer'
+import { PortfolioBalanceEstimation } from './SimulateOnServer/SimulateOnServer'
 import {
   WirePortfolioBalanceEstimationArgs,
   WirePortfolioBalanceEstimationArgsNonMarketActionType,
 } from './SimulateOnServer/Wire/wire_estimate_portfolio_balance_api'
 import { WireSimulationArgs } from './SimulateOnServer/Wire/wire_simulate_api'
-import { PortfolioBalanceEstimation } from '../Pages/PlanRoot/PlanRootHelpers/PortfolioBalanceEstimation'
-import { fWASM } from './Simulator/GetWASM'
-import { useMarketData } from '../Pages/PlanRoot/PlanRootHelpers/WithMarketData'
-import { useIANATimezoneName } from '../Pages/PlanRoot/PlanRootHelpers/WithNonPlanParams'
 
 export type PortfolioBalanceEstimationByDated =
   | {
@@ -53,14 +48,7 @@ export const getPortfolioBalanceEstimationCacheHandlerForDatelessPlan = (
   },
 })
 
-export const usePortfolioBalanceEstimationCache = (
-  planId: string,
-  runTests: boolean,
-) => {
-  // TODO: Testing. Remove
-  const { marketData } = useMarketData()
-  const { ianaTimezoneName } = useIANATimezoneName()
-
+export const usePortfolioBalanceEstimationCache = (planId: string) => {
   const cacheRef = useRef<{
     planId: string
     detail: PortfolioBalanceEstimation.Detail
@@ -108,20 +96,7 @@ export const usePortfolioBalanceEstimationCache = (
           estimation: PortfolioBalanceEstimation.Detail | null,
         ) => {
           const detail = _joinDetails(beforeCut, fGet(estimation))
-
-          // // TODO: Testing. Remove
-          if (runTests) {
-            _checkAgainstLocal(
-              detail,
-              planId,
-              simulationTimestamp,
-              ianaTimezoneName,
-              marketData,
-              planParamsHistory,
-            )
-          }
           cacheRef.current = { detail, planId }
-
           return {
             isDatedPlan: true,
             detail: {
@@ -181,8 +156,8 @@ export const usePortfolioBalanceEstimationCache = (
       if (!cacheCutToSimulationTimestampAndLastKnownPlanChange)
         return getNoCacheResult('four')
 
-      // TODO: Testing. This catches if history is rebased. This is not strictly
-      // necessary. Needed only for testing.
+      // This catches if history is rebased. This is not strictly necessary. 
+      // (was deeded for testing.)
       // {
       //   if (
       //     cacheCutToSimulationTimestampAndLastKnownPlanChange.actions
@@ -214,7 +189,7 @@ export const usePortfolioBalanceEstimationCache = (
         ),
       )
     },
-    [planId, ianaTimezoneName, marketData, runTests],
+    [planId],
   )
   return { applyCache }
 }
@@ -378,173 +353,4 @@ const _getServerArgs = (
     startBalance: startingPortfolioBalance,
   }
   return wireArgs
-}
-
-const _checkAgainstLocal = (
-  remote: PortfolioBalanceEstimation.Detail,
-  planId: string,
-  estimationTimestamp: number,
-  ianaTimezoneName: string,
-  marketData: MarketData.Data,
-  planParamsHistory: readonly { id: string; params: PlanParams }[],
-) => {
-  const local = PortfolioBalanceEstimation.getInfo(
-    planId,
-    planParamsHistory,
-    block(() => {
-      const firstParams = planParamsHistory[0].params
-      assert(firstParams.wealth.portfolioBalance.isDatedPlan)
-      assert(firstParams.wealth.portfolioBalance.updatedHere)
-      return firstParams.wealth.portfolioBalance.amount
-    }),
-    estimationTimestamp,
-    ianaTimezoneName,
-    marketData,
-    fWASM(),
-  )
-
-  const diffInfo = {
-    state: {
-      estimate: 0,
-      allocation: 0,
-    },
-    planChange: {
-      allocation: 0,
-    },
-    marketClose: {
-      vt: 0,
-      bnd: 0,
-    },
-    monthlyRebalance: {
-      allocation: 0,
-    },
-    withdrawalAndContribution: {
-      value: 0,
-    },
-  }
-  const _state = (
-    local: PortfolioBalanceEstimation.Detail['startState'],
-    remote: PortfolioBalanceEstimation.Detail['startState'],
-  ) => {
-    const estimateDiff = Math.abs(local.estimate - remote.estimate)
-    // assert(estimateDiff < 0.00001)
-    const allocationDiff = Math.abs(
-      local.allocation.stocks - remote.allocation.stocks,
-    )
-    // assert(allocationDiff < 0.00001)
-    diffInfo.state.estimate = Math.max(diffInfo.state.estimate, estimateDiff)
-    diffInfo.state.allocation = Math.max(
-      diffInfo.state.allocation,
-      allocationDiff,
-    )
-  }
-
-  const _action = (
-    local: PortfolioBalanceEstimation.Action,
-    remote: PortfolioBalanceEstimation.Action,
-  ) => {
-    assert(local.timestamp === remote.timestamp)
-    switch (local.args.type) {
-      case 'planChange': {
-        assert(remote.args.type === 'planChange')
-        const allocationDiff = Math.abs(
-          local.args.allocation.stocks - remote.args.allocation.stocks,
-        )
-
-        // assert(allocationDiff < 0.0001)
-
-        diffInfo.planChange.allocation = Math.max(
-          diffInfo.planChange.allocation,
-          allocationDiff,
-        )
-        assert(
-          _.isEqual(local.args.portfolioUpdate, remote.args.portfolioUpdate),
-        )
-        break
-      }
-      case 'marketClose': {
-        assert(remote.args.type === 'marketClose')
-        const vtDiff = Math.abs(
-          local.args.marketData.percentageChangeFromLastClose.vt -
-            remote.args.marketData.percentageChangeFromLastClose.vt,
-        )
-        // assert(vtDiff < 0.000001)
-        diffInfo.marketClose.vt = Math.max(diffInfo.marketClose.vt, vtDiff)
-        const bndDiff = Math.abs(
-          local.args.marketData.percentageChangeFromLastClose.bnd -
-            remote.args.marketData.percentageChangeFromLastClose.bnd,
-        )
-        // assert(bndDiff < 0.000001)
-        diffInfo.marketClose.bnd = Math.max(diffInfo.marketClose.bnd, bndDiff)
-        break
-      }
-      case 'monthlyRebalance':
-        assert(remote.args.type === 'monthlyRebalance')
-        const allocationDiff = Math.abs(
-          local.args.allocation.stocks - remote.args.allocation.stocks,
-        )
-        // assert(allocationDiff < 0.000001)
-        diffInfo.monthlyRebalance.allocation = Math.max(
-          diffInfo.monthlyRebalance.allocation,
-          allocationDiff,
-        )
-        break
-      case 'withdrawalAndContribution': {
-        assert(remote.args.type === 'withdrawalAndContribution')
-        assert(
-          local.args.netContributionOrWithdrawal.type ===
-            remote.args.netContributionOrWithdrawal.type,
-        )
-        const localValue =
-          local.args.netContributionOrWithdrawal.type === 'withdrawal'
-            ? -local.args.netContributionOrWithdrawal.withdrawal
-            : local.args.netContributionOrWithdrawal.contribution
-        const remoteValue =
-          remote.args.netContributionOrWithdrawal.type === 'withdrawal'
-            ? -remote.args.netContributionOrWithdrawal.withdrawal
-            : remote.args.netContributionOrWithdrawal.contribution
-        const valueDiff = Math.abs(localValue - remoteValue)
-        // assert(valueDiff < 0.00001)
-        diffInfo.withdrawalAndContribution.value = Math.max(
-          diffInfo.withdrawalAndContribution.value,
-          valueDiff,
-        )
-        break
-      }
-      default:
-        noCase(local.args)
-    }
-    _state(local.stateChange.start, remote.stateChange.start)
-    _state(local.stateChange.end, remote.stateChange.end)
-  }
-
-  assert(local.startTimestamp === remote.startTimestamp)
-  assert(local.endTimestamp === remote.endTimestamp)
-  _state(local.startState, remote.startState)
-  assert(local.actions.length === remote.actions.length)
-  local.actions.forEach((x, i) => _action(x, remote.actions[i]))
-  const diffArray = [
-    diffInfo.state.estimate,
-    diffInfo.state.allocation,
-    diffInfo.planChange.allocation,
-    diffInfo.marketClose.vt,
-    diffInfo.marketClose.bnd,
-    diffInfo.monthlyRebalance.allocation,
-    diffInfo.withdrawalAndContribution.value,
-  ]
-
-  const maxDiff = Math.max(...diffArray)
-
-  console.log(
-    `%c${maxDiff}`,
-    maxDiff < 0.00001
-      ? 'font-weight:bold;color:#16a34a;border-radius:5px;padding:5px'
-      : 'font-weight:bold;color:#e11d48;border-radius:5px;padding:5px',
-    'maxDiff:PortfolioBalanceEstimation',
-    // {
-    //   diffInfo,
-    //   local,
-    //   remote,
-    // },
-  )
 }

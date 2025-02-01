@@ -5,7 +5,7 @@ import {
   faTurnDownLeft,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Listbox } from '@headlessui/react'
+import { Listbox, ListboxOption, ListboxOptions } from '@headlessui/react'
 import {
   CalendarMonth,
   CalendarMonthFns,
@@ -115,14 +115,14 @@ export const MonthInput = React.memo(
                   <FontAwesomeIcon className="ml-2" icon={faCaretDown} />
                 </Listbox.Button>
               )}
-              <Listbox.Options className="context-menu-outer-div">
+              <ListboxOptions className="context-menu-outer-div">
                 {choices.map((choice, i) => {
                   const { label, dash } = getNormalizedMonthStr({
                     isInThePast: false,
                     baseValue: choice,
                   }).forMonthTypeMenu
                   return (
-                    <Listbox.Option
+                    <ListboxOption
                       key={i}
                       className="context-menu-item"
                       value={i}
@@ -138,10 +138,10 @@ export const MonthInput = React.memo(
                           )}
                         </div>
                       )}
-                    </Listbox.Option>
+                    </ListboxOption>
                   )
                 })}
-              </Listbox.Options>
+              </ListboxOptions>
             </ContextModal>
           )}
         </Listbox>

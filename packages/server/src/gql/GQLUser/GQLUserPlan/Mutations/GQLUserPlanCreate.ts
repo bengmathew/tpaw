@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client'
-import Sentry from '@sentry/node'
+import * as Sentry from '@sentry/node'
 import {
   API,
   PlanParamsChangeAction,

@@ -1,4 +1,4 @@
-import { Transition } from '@headlessui/react'
+import { Transition, TransitionChild } from '@headlessui/react'
 import clix from 'clsx'
 import React, { CSSProperties, ReactNode, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
@@ -32,16 +32,19 @@ export const CenteredModal = React.memo(
       <Transition
         show={show}
         appear
+        as="div"
         className="page fixed inset-0  flex justify-center items-center"
         afterLeave={onLeave}
       >
-        <Transition.Child
+        <TransitionChild
+          as="div"
           className="absolute inset-0 bg-black/50 transition-opacity duration-300 "
           enterFrom="opacity-0 "
           leaveTo="opacity-0 "
           onClick={onOutsideClickOrEscape ?? undefined}
         />
-        <Transition.Child
+        <TransitionChild
+          as="div"
           className={clix(
             className,
             'duration-300 bg-pageBG rounded-xl z-10 p-4 max-h-[80vh] overflow-scroll',
@@ -55,7 +58,7 @@ export const CenteredModal = React.memo(
           leaveTo=" -translate-y-4 opacity-0"
         >
           {children}
-        </Transition.Child>
+        </TransitionChild>
       </Transition>,
       document.body,
     )

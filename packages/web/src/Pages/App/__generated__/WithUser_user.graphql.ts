@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<c5a02911bf3b276e06bf572cb5c9c246>>
+ * @generated SignedSource<<b9b775eebea1f5fc9883f2b67a5033dd>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -8,7 +8,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { Fragment, ReaderFragment } from 'relay-runtime';
+import { ReaderFragment } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
 export type WithUser_user$data = {
   readonly id: string;

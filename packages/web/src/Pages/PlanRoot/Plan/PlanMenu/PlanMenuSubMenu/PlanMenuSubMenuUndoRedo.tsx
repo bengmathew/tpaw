@@ -109,7 +109,7 @@ const _MenuItems = React.memo(
       () => _processUndoRedoStack(planParamsUndoRedoStack)[type],
     )
     const [hoverAtItem, setHoverAtItem] = useState(-1)
-    const [popUpElement, setPopUpElement] = useState<HTMLDivElement | null>(
+    const [popUpElement, setPopUpElement] = useState<HTMLElement | null>(
       null,
     )
     const [openTime] = useState(() => Date.now())
