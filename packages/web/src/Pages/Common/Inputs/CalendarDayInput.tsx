@@ -27,15 +27,16 @@ export const CalendarDayInput = React.memo(
         (x) => x.startOf('day').toMillis() === x.toMillis(),
       ),
     )
-    valueInfo.hasValue
-      ? assert(
-          valueInfo.value.startOf('day').toMillis() ===
-            valueInfo.value.toMillis(),
-        )
-      : assert(
-          valueInfo.startingMonth.startOf('month').toMillis() ===
-            valueInfo.startingMonth.toMillis(),
-        )
+    if (valueInfo.hasValue)
+      assert(
+        valueInfo.value.startOf('day').toMillis() ===
+          valueInfo.value.toMillis(),
+      )
+    else
+      assert(
+        valueInfo.startingMonth.startOf('month').toMillis() ===
+          valueInfo.startingMonth.toMillis(),
+      )
 
     const { monthRange, yearRange } = useMemo(() => {
       return {

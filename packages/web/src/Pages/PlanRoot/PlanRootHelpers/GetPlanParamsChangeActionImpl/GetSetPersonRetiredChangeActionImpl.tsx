@@ -171,7 +171,11 @@ const _removeRetirementReferencesFromLabeledAmountTimedList = (
     value: LabeledAmountTimed,
   ) => {
     const curr = changed.get(location)
-    curr ? curr.push(value) : changed.set(location, [value])
+    if (curr) {
+      curr.push(value)
+    } else {
+      changed.set(location, [value])
+    }
   }
 
   PlanParamsHelperFns.mapAllLabeledAmountTimedList(

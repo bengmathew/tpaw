@@ -38,6 +38,7 @@ export const useNavGuard = (isSyncing: boolean, planPaths: PlanPaths) => {
         url: new URL(path, window.location.origin),
       })
       router.events.emit('routeChangeError')
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw errorToKillNavigation_ignore
     }
     router.events.on('routeChangeStart', routerHandler)

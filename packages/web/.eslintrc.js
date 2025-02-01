@@ -17,7 +17,7 @@ module.exports = {
     'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'plugin:promise/recommended',
   ],
-  plugins: ['promise', '@typescript-eslint'],
+  plugins: ['promise', '@typescript-eslint', '@stylistic'],
   rules: {
     // Generally applicable.
     '@typescript-eslint/no-floating-promises': 'error',
@@ -70,7 +70,7 @@ module.exports = {
         allowNullish: false,
       },
     ],
-    '@typescript-eslint/member-delimiter-style': [
+    '@stylistic/member-delimiter-style': [
       'error',
       {
         multiline: {

@@ -107,7 +107,7 @@ export const GlobalErrorBoundary = React.memo(
 )
 
 export const _ErrorFallback = React.memo(({ error }: { error: Error }) => {
-  !Config.client.isProduction && console.dir(error)
+  if (!Config.client.isProduction) console.dir(error)
 
   useEffect(() => {
     return asyncEffect2(async () => {

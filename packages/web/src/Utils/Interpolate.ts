@@ -5,7 +5,7 @@ import { Transition } from './Transition'
 import { zeroOneInterpolate } from './ZeroOneInterpolate'
 
 // Thanks: https://stackoverflow.com/a/47842314
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface InterpolatableObject extends Record<string, Interpolatable> {}
 export type Interpolatable =
   | InterpolatableObject

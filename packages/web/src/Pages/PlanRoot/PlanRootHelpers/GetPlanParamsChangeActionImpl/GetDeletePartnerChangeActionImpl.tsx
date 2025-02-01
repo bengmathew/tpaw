@@ -50,7 +50,9 @@ const _doesMonthReferencePartner = (month: Month | { type: 'inThePast' }) => {
   }
 }
 
-const _removePartnerReferencesFromLabeledAmountTimedList = (clone: PlanParams) => {
+const _removePartnerReferencesFromLabeledAmountTimedList = (
+  clone: PlanParams,
+) => {
   // Returns a new object only if monthRange is changed.
   const doesMonthRangeReferencePartner = (monthRange: MonthRange) => {
     switch (monthRange.type) {
@@ -93,7 +95,11 @@ const _removePartnerReferencesFromLabeledAmountTimedList = (clone: PlanParams) =
     value: LabeledAmountTimed,
   ) => {
     const curr = removed.get(location)
-    curr ? curr.push(value) : removed.set(location, [value])
+    if (curr) {
+      curr.push(value)
+    } else {
+      removed.set(location, [value])
+    }
   }
 
   PLAN_PARAMS_CONSTANTS.labeledAmountTimedLocations.forEach((location) => {
@@ -103,7 +109,9 @@ const _removePartnerReferencesFromLabeledAmountTimedList = (clone: PlanParams) =
       const result: LabeledAmountTimedList = {}
       _.values(amountForMonthRanges).forEach((amountForMonthRange) => {
         if (
-          doesAmountAndTimingReferencePartner(amountForMonthRange.amountAndTiming)
+          doesAmountAndTimingReferencePartner(
+            amountForMonthRange.amountAndTiming,
+          )
         ) {
           addToRemoved(location, amountForMonthRange)
           return

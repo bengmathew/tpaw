@@ -21,9 +21,11 @@ export const usePlanMenuSectionManagePlansNotLoggedIn = () => {
         as="button"
         className="context-menu-item"
         onClick={() => {
-          hasLocal
-            ? setShowLoginNeededModal(true)
-            : urlUpdater.push(appPaths.plan())
+          if (hasLocal) {
+            setShowLoginNeededModal(true)
+          } else {
+            urlUpdater.push(appPaths.plan())
+          }
         }}
       >
         <span className="context-menu-icon">

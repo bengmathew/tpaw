@@ -51,7 +51,7 @@ export namespace Contentful {
 
   // Thanks: https://stackoverflow.com/a/47842314
   type _IndirectIdObj<X> = Record<string, string | X>
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface _IdObj extends _IndirectIdObj<_IdObj> {}
   type _MapIdObj<IdObj extends _IdObj> = {
     [P in keyof IdObj]: IdObj[P] extends string

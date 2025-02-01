@@ -68,10 +68,10 @@ export const WithPlanResultsChartDataForPDF = ({
       )
     }
 
-    _add('spending-total'),
-      (['low', 'mid', 'high'] as const).forEach((percentile) =>
-        _add(`spending-total-funding-sources-${percentile}`),
-      )
+    _add('spending-total')
+    ;(['low', 'mid', 'high'] as const).forEach((percentile) =>
+      _add(`spending-total-funding-sources-${percentile}`),
+    )
     _add('spending-general')
     // Get keys from planParamsProcessed, not planParamsNorm because some keys
     // might be in the past, and not show up in planParamsProcessed. We don't

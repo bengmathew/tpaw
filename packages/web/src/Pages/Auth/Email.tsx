@@ -67,6 +67,7 @@ export const Email = React.memo(() => {
             throw e
           }
         } else {
+          // eslint-disable-next-line @typescript-eslint/only-throw-error
           throw e
         }
       }

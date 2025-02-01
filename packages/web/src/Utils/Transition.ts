@@ -30,7 +30,7 @@ export const transitionArrayDecompose = <T>({
 
 // Thanks: https://stackoverflow.com/a/47842314
 type Indirect<X> = Record<string, number | number[] | X>
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface TransitionObject extends Indirect<TransitionObject> {}
 
 export const chartDataTransitionCurrObj = <Obj extends TransitionObject, Data>(

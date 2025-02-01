@@ -56,6 +56,7 @@ const _withErrorHandling = async <T>(
     // Sentry.captureException(e)
     assert(e !== null)
     const message =
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       e instanceof Error ? e.message : `${String(e)} is not Error type.`
     const reply: WorkerResult = {
       type: 'error',

@@ -61,6 +61,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.1.6",
+    "@stylistic/eslint-plugin": "^3.0.1",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/jest": "^29.5.12",
     "@types/luxon": "^3.4.1",

@@ -41,9 +41,11 @@ export const usePlanMenuSectionManagePlansLoggedIn = ({
         as="button"
         className="context-menu-item"
         onClick={() => {
-          isModified
-            ? setShowModifiedAndCreateModal(true)
-            : setShowCreateModal(true)
+          if (isModified) {
+            setShowModifiedAndCreateModal(true)
+          } else {
+            setShowCreateModal(true)
+          }
         }}
       >
         <span className="context-menu-icon">
