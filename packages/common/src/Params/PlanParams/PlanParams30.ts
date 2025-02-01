@@ -1267,13 +1267,22 @@ export namespace PlanParams30 {
       v: currentVersion,
       wealth: {
         ...prev.wealth,
-        portfolioBalance: prev.wealth.portfolioBalance.isDatedPlan && prev.wealth.portfolioBalance.updatedHere ? {
-          ...prev.wealth.portfolioBalance,
-          // This should have been rounded to start with, but some floating
-          // point has leaked into existing parameters. Rounding to deal with
-          // that.
-          amount: Math.round(prev.wealth.portfolioBalance.amount),
-        } : prev.wealth.portfolioBalance,
+        portfolioBalance: block(() => {
+          const p = prev.wealth.portfolioBalance
+          return !p.isDatedPlan
+            ? { ...p, amount: Math.round(p.amount) }
+            : p.updatedHere
+              ? {
+                  ...p,
+                  // This should have been rounded to start with, but some floating point has leaked into
+                  // existing parameters. Rounding to deal with that.
+                  amount: Math.round(p.amount),
+                }
+              : {
+                ...p,
+                updatedTo:Math.round(p.updatedTo)
+              }
+        }),
       },
       advanced: {
         ...prev.advanced,
@@ -1288,7 +1297,8 @@ export namespace PlanParams30 {
         }),
       },
     }
-    assert(!guard(result).error)
+    const check = guard(result)
+    if (check.error) throw new Error(check.message)
     return result
   }
 }

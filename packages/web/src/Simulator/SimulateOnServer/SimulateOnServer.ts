@@ -68,6 +68,7 @@ export const simulateOnServer = async (
       randomSeed,
     ),
   }
+  console.log('wireArgs', wireArgs)
   const argsEncoded = WireSimulationArgs.encode(wireArgs).finish()
   const argsCompressed = pako.deflate(argsEncoded).buffer as ArrayBuffer
 
