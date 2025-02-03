@@ -121,20 +121,18 @@ const _EditSettings = React.memo(
             </_RadioOption>
           </RadioGroup>
           <h2 className="font-bold text-xl mt-10">Add Link</h2>
-          <Field>
-            <div className="flex  gap-x-2 mt-4">
-              <SwitchAsCheckBox
-                className="mr-1 shrink-0 mt-1"
-                checked={shouldEmbedLink}
-                setChecked={(shouldEmbedLink) =>
-                  updateSettings({ ...currUpdatableSettings, shouldEmbedLink })
-                }
-              />
-              <Label className="p-base cursor-pointer">
-                Add a link. This creates a copy of the plan and adds a link in
-                the pdf to view the copied plan.
-              </Label>
-            </div>
+          <Field className="flex  gap-x-2 mt-4">
+            <SwitchAsCheckBox
+              className="mr-1 shrink-0 mt-1"
+              checked={shouldEmbedLink}
+              setChecked={(shouldEmbedLink) =>
+                updateSettings({ ...currUpdatableSettings, shouldEmbedLink })
+              }
+            />
+            <Label className="p-base cursor-pointer">
+              Add a link. This creates a copy of the plan and adds a link in the
+              pdf to view the copied plan.
+            </Label>
           </Field>
 
           <div className=" dialog-button-div">

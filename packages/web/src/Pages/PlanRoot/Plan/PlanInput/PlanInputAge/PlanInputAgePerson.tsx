@@ -74,7 +74,7 @@ export const PlanInputAgePerson = React.memo(
 
     const deletePartnerAdjustments = useMemo(
       () => getRemovePartnerAdjustments(planParamsNormInstant),
-        [planParamsNormInstant],
+      [planParamsNormInstant],
     )
     const [showDeletePartnerWarnings, setShowDeletePartnerWarnings] =
       useState(false)
@@ -111,33 +111,32 @@ export const PlanInputAgePerson = React.memo(
             </button>
           )}
         </div>
-        <div
+
+        <Field
           className="flex items-center col-span-2 gap-x-4 mt-4 mb-2"
           onClick={() => setOpenSection('none')}
         >
-          <Field>
-            <Label className="">
-              {personId === 'person1'
-                ? 'Are you retired?'
-                : 'Is your partner retired?'}
-            </Label>
-            <SwitchAsCheckBox
-              className=""
-              checked={person.retirement.isRetired}
-              setChecked={(retired) => {
-                if (retired) {
-                  if (retireAdjustments) {
-                    setShowRetireWarnings(true)
-                  } else {
-                    updatePlanParams('setPersonRetired', personId)
-                  }
+          <Label className="">
+            {personId === 'person1'
+              ? 'Are you retired?'
+              : 'Is your partner retired?'}
+          </Label>
+          <SwitchAsCheckBox
+            className=""
+            checked={person.retirement.isRetired}
+            setChecked={(retired) => {
+              if (retired) {
+                if (retireAdjustments) {
+                  setShowRetireWarnings(true)
                 } else {
-                  updatePlanParams('setPersonNotRetired', personId)
+                  updatePlanParams('setPersonRetired', personId)
                 }
-              }}
-            />
-          </Field>
-        </div>
+              } else {
+                updatePlanParams('setPersonNotRetired', personId)
+              }
+            }}
+          />
+        </Field>
 
         <div
           className="grid items-center "

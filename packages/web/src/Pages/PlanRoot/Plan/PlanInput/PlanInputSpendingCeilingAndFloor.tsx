@@ -136,17 +136,15 @@ export const _SpendingCeilingCard = React.memo(
           />
         </div>
         <div className="mt-6">
-          <Field>
-            <div className="flex items-center gap-x-2">
-              <Label className="">Enable Ceiling</Label>
-              <SwitchAsToggle
-                className=""
-                checked={value !== null}
-                setChecked={(enabled) =>
-                  handleAmount(enabled ? entryOnEnabled : null)
-                }
-              />
-            </div>
+          <Field className="flex items-center gap-x-2">
+            <Label className="">Enable Ceiling</Label>
+            <SwitchAsToggle
+              className=""
+              checked={value !== null}
+              setChecked={(enabled) =>
+                handleAmount(enabled ? entryOnEnabled : null)
+              }
+            />
           </Field>
           {value !== null && (
             <div className="mt-4">
@@ -252,17 +250,15 @@ export const _SpendingFloorCard = React.memo(
           />
         </div>
         <div className="mt-6">
-          <Field>
-            <div className="flex items-center gap-x-2">
-              <Label className="">Enable Floor</Label>
-              <SwitchAsToggle
-                className=""
-                checked={value !== null}
-                setChecked={(enabled) =>
-                  handleAmount(enabled ? entryOnEnabled : null)
-                }
-              />
-            </div>
+          <Field className="flex items-center gap-x-2">
+            <Label className="">Enable Floor</Label>
+            <SwitchAsToggle
+              className=""
+              checked={value !== null}
+              setChecked={(enabled) =>
+                handleAmount(enabled ? entryOnEnabled : null)
+              }
+            />
           </Field>
           {value !== null && (
             <div className="mt-4 flex items-center">
