@@ -74,6 +74,13 @@ export const GlobalErrorBoundary = React.memo(
     const [error, setGlobalError] = useState<Error | null>(null)
     useEffect(() => {
       window.onunhandledrejection = (e) => {
+        // DuckDuckGo on Windows throws this error, we can ignore it.
+        if (
+          e.reason.message ===
+          `Failed to execute 'querySelectorAll' on 'Document': The provided selector is empty.`
+        ) {
+          return
+        }
         // FROM: https://github.com/vercel/next.js/discussions/32231#discussioncomment-6351802
         if (e.reason === errorToKillNavigation_ignore) {
           e.preventDefault()
