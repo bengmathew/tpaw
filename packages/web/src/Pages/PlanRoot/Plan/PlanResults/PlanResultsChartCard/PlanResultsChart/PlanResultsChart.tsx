@@ -12,7 +12,7 @@ import { getPlanResultsChartPointer } from './GetPlanResultsChartPointer'
 import { getPlanResultsChartRange } from './GetPlanResultsChartRange'
 import { getPlanResultsChartSalientPoints } from './GetPlanResultsChartSalientPoints'
 import { getPlanResultsChartXAxis } from './GetPlanResultsChartXAxis'
-import { PlanResultsChartCustomComponenet } from './PlanResultsChartCustomComponent'
+import { PlanResultsChartCustomComponent } from './PlanResultsChartCustomComponent'
 import { PlanResultsChartData } from './PlanResultsChartData'
 
 type _ChartData = { data: PlanResultsChartData; yRange: SimpleRange }
@@ -67,7 +67,7 @@ const getComponets =
     return [
       range,
       breakdown,
-      new PlanResultsChartCustomComponenet(planResultChartOutsidePlotAreaSizing.below),
+      new PlanResultsChartCustomComponent(planResultChartOutsidePlotAreaSizing.below),
       getPlanResultsChartXAxis(
         'person1',
         planResultChartOutsidePlotAreaSizing.below,

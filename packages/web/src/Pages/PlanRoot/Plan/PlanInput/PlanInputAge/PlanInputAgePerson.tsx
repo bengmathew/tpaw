@@ -7,9 +7,11 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Field, Label, Switch } from '@headlessui/react'
 import {
+  CalendarMonth,
   CalendarMonthFns,
   LabeledAmountTimedLocation,
   PersonId,
+  PlanParamsChangeActionCurrent,
   assert,
   assertFalse,
   block,
@@ -17,7 +19,7 @@ import {
   noCase,
 } from '@tpaw/common'
 import { clsx } from 'clsx'
-import _ from 'lodash'
+import _, { values } from 'lodash'
 import React, {
   ReactNode,
   useLayoutEffect,
@@ -41,11 +43,21 @@ import {
   RetirePersonAdjustments,
   getRetirePersonAdjustments,
 } from '../../../PlanRootHelpers/GetPlanParamsChangeActionImpl/GetSetPersonRetiredChangeActionImpl'
-import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
+import {
+  UpdatePlanParams,
+  useSimulationInfo,
+} from '../../../PlanRootHelpers/WithSimulation'
 import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
 import { planSectionLabel } from '../Helpers/PlanSectionLabel'
 import { PlanInputAgeOpenableSection } from './PlanInputAge'
 import { NormalizedAges } from '../../../../../Simulator/NormalizePlanParams/NormalizeAges'
+import { normalizePlanParamsInverse } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParamsInverse'
+import { getPlanParamsChangeActionImpl } from '../../../PlanRootHelpers/GetPlanParamsChangeActionImpl/GetPlanParamsChangeActionImpl'
+import {
+  normalizePlanParams,
+  PlanParamsNormalized,
+} from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { errorToast } from '../../../../../Utils/CustomToasts'
 
 export const PlanInputAgePerson = React.memo(
   ({
@@ -287,7 +299,7 @@ export const _MonthOfBirthInput = React.memo(
     currSection: PlanInputAgeOpenableSection
     setCurrSection: (open: PlanInputAgeOpenableSection) => void
   }) => {
-    const { updatePlanParams } = useSimulationInfo()
+    const { planParamsNormInstant, updatePlanParams } = useSimulationInfo()
 
     return (
       <_Section
@@ -302,10 +314,11 @@ export const _MonthOfBirthInput = React.memo(
             className="mt-2 ml-4"
             normValue={currentAgeInfo}
             onChange={(monthOfBirth) =>
-              updatePlanParams('setPersonCurrentAgeInfo', {
-                personId,
-                currentAgeInfo: { isDatedPlan: true as const, monthOfBirth },
-              })
+              updateCurrentAgeInfoIfNotInPast(
+                { personId, monthOfBirth },
+                planParamsNormInstant,
+                updatePlanParams,
+              )
             }
           />
           <h2 className="mb-2 mt-3 ml-4">
@@ -344,6 +357,7 @@ export const _AgeInput = React.memo(
       if (type === 'maxAge') return person.maxAge
       noCase(type)
     })()
+    console.log('age', age)
 
     return (
       <_Section
@@ -357,32 +371,79 @@ export const _AgeInput = React.memo(
           className="mt-2 mb-4 ml-4"
           modalLabel={sectionName}
           normValue={age}
-          onChange={(inMonths) =>
-            type === 'currentAge'
-              ? updatePlanParams('setPersonCurrentAgeInfo', {
-                  personId,
-                  currentAgeInfo: {
-                    isDatedPlan: false,
-                    currentAge: inMonths,
-                  },
-                })
-              : type === 'retirementAge'
-                ? updatePlanParams('setPersonRetirementAge', {
-                    person: personId,
-                    retirementAge: inMonths,
-                  })
-                : type === 'maxAge'
-                  ? updatePlanParams('setPersonMaxAge', {
-                      person: personId,
-                      maxAge: inMonths,
-                    })
-                  : noCase(type)
-          }
+          onChange={(inMonths) => {
+            if (type === 'retirementAge') {
+              updatePlanParams('setPersonRetirementAge', {
+                person: personId,
+                retirementAge: inMonths,
+              })
+            } else if (type === 'maxAge') {
+              updatePlanParams('setPersonMaxAge', {
+                person: personId,
+                maxAge: inMonths,
+              })
+            } else if (type === 'currentAge') {
+              updatePlanParams('setPersonCurrentAgeInfo', {
+                personId,
+                currentAgeInfo: { isDatedPlan: false, currentAge: inMonths },
+              })
+            } else {
+              noCase(type)
+            }
+          }}
         />
       </_Section>
     )
   },
 )
+
+const updateCurrentAgeInfoIfNotInPast = (
+  changeIn: {
+    personId: PersonId
+    monthOfBirth: CalendarMonth
+  },
+  planParamsNormInstant: PlanParamsNormalized,
+  updatePlanParams: UpdatePlanParams,
+) => {
+  const datingInfo = planParamsNormInstant.datingInfo
+  const change: Extract<
+    PlanParamsChangeActionCurrent,
+    { type: 'setPersonCurrentAgeInfo' }
+  >['value'] = {
+    personId: changeIn.personId,
+    currentAgeInfo: { isDatedPlan: true, monthOfBirth: changeIn.monthOfBirth },
+  }
+  if (!datingInfo.isDated) {
+    updatePlanParams('setPersonCurrentAgeInfo', change)
+  } else {
+    const planParamsFromNorm = normalizePlanParamsInverse(
+      planParamsNormInstant,
+      'soft',
+    )
+    const maxAgeAsMFN = fGet(
+      normalizePlanParams(
+        getPlanParamsChangeActionImpl({
+          type: 'setPersonCurrentAgeInfo',
+          value: change,
+        }).applyToClone(planParamsFromNorm, planParamsNormInstant) ??
+          planParamsFromNorm,
+        {
+          timestamp: datingInfo.nowAsTimestamp,
+          calendarDay: datingInfo.nowAsCalendarDay,
+        },
+      ).ages[change.personId],
+    ).maxAge.asMFN
+
+    if (maxAgeAsMFN < 0) {
+      errorToast(
+        `With “Month of Birth” set to ${CalendarMonthFns.toStr(changeIn.monthOfBirth)}, ${yourOrYourPartners(change.personId)} max age will be in the past. To use this month of birth, update ${yourOrYourPartners(change.personId)} max age first.`,
+        { autoClose: 200000000 },
+      )
+    } else {
+      updatePlanParams('setPersonCurrentAgeInfo', change)
+    }
+  }
+}
 
 const RetirementWarningsModal = React.memo(
   ({

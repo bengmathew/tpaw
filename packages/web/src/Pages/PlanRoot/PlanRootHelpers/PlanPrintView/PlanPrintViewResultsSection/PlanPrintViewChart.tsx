@@ -8,7 +8,7 @@ import {
   ChartReactSizing,
   ChartReactStatefull,
 } from '../../../../Common/Chart/ChartReact'
-import { PlanResultsChartCustomComponenet } from '../../../Plan/PlanResults/PlanResultsChartCard/PlanResultsChart/PlanResultsChartCustomComponent'
+import { PlanResultsChartCustomComponent } from '../../../Plan/PlanResults/PlanResultsChartCard/PlanResultsChart/PlanResultsChartCustomComponent'
 import { getPlanResultsChartBreakdown } from '../../../Plan/PlanResults/PlanResultsChartCard/PlanResultsChart/GetPlanResultsChartBreakdown'
 import { getPlanResultsChartRange } from '../../../Plan/PlanResults/PlanResultsChartCard/PlanResultsChart/GetPlanResultsChartRange'
 import { getPlanResultsChartXAxis } from '../../../Plan/PlanResults/PlanResultsChartCard/PlanResultsChart/GetPlanResultsChartXAxis'
@@ -85,7 +85,7 @@ const components = () => {
     getPlanResultsChartRange('print'),
     getPlanResultsChartBreakdown(),
     yAxis,
-    new PlanResultsChartCustomComponenet(
+    new PlanResultsChartCustomComponent(
       planPrintChartOutsidePlotAreaSizing.below,
     ),
     getPlanResultsChartXAxis(

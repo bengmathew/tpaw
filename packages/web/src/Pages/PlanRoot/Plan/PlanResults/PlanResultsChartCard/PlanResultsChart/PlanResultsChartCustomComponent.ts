@@ -3,7 +3,7 @@ import { ChartComponent } from '../../../../../Common/Chart/ChartComponent/Chart
 import { ChartContext } from '../../../../../Common/Chart/ChartContext'
 import { PlanResultsChartDataForPDF } from './PlanResultsChartData'
 
-export class PlanResultsChartCustomComponenet
+export class PlanResultsChartCustomComponent
   implements
     ChartComponent<{
       data: PlanResultsChartDataForPDF

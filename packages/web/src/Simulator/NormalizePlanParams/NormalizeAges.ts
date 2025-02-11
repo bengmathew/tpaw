@@ -204,6 +204,9 @@ const _forPerson = (
     baseValue: orig.maxAge,
     // range:
   }
+  // if (maxAge.asMFN < 0) {
+  //   return { isInThePast: true } as const
+  // }
   const retirement = block(() => {
     switch (orig.type) {
       case 'retiredWithNoRetirementDateSpecified':
@@ -244,6 +247,7 @@ const _forPerson = (
     }
   })
   return {
+    // isInThePast: false as const,
     currentAgeInfo: currentAgeInfo.isDatedPlan
       ? currentAgeInfo
       : {
