@@ -25,58 +25,62 @@ builder.mutationField('userPlanCopy', (t) =>
         API.UserPlanCopy.check(input).force()
 
       const newPlanId = uuid.v4()
-      await serialTransaction(async (tx) => {
-        const currPlans = await tx.planWithHistory.findMany({
-          where: { userId },
-        })
-        assert(currPlans.length <= 100)
+      await serialTransaction(
+        async (tx) => {
+          const currPlans = await tx.planWithHistory.findMany({
+            where: { userId },
+          })
+          assert(currPlans.length <= 100)
 
-        const src = await tx.planWithHistory.findUniqueOrThrow({
-          where: { userId_planId: { userId, planId } },
-          include: { paramsChangeHistory: true },
-        })
+          const src = await tx.planWithHistory.findUniqueOrThrow({
+            where: { userId_planId: { userId, planId } },
+            include: { paramsChangeHistory: true },
+          })
 
-        const now = new Date()
-        await tx.planWithHistory.create({
-          data: {
-            planId: newPlanId,
-            isMain: false,
-            userId,
-            addedToServerAt: now,
-            sortTime: now,
-            lastSyncAt: now,
-            label,
-            slug: getSlug(
+          const now = new Date()
+          await tx.planWithHistory.create({
+            data: {
+              planId: newPlanId,
+              isMain: false,
+              userId,
+              addedToServerAt: now,
+              sortTime: now,
+              lastSyncAt: now,
               label,
-              currPlans.map((x) => x.slug),
-            ),
-            resetCount: 0,
+              slug: getSlug(
+                label,
+                currPlans.map((x) => x.slug),
+              ),
+              resetCount: 0,
 
-            endingParams: fGet(src.endingParams),
-            paramsChangeHistory: {
-              createMany: {
-                data: src.paramsChangeHistory.map((x) => ({
-                  // Intentionally not generating a new uuid here, because we
-                  // want to  ensure that the planParamsChangeId referred to
-                  // other change items (eg. is
-                  // currentPortfolioBalance.updatedAtId) are still valid.
-                  planParamsChangeId: x.planParamsChangeId,
-                  timestamp: x.timestamp,
-                  reverseDiff: fGet(x.reverseDiff),
-                  change: fGet(x.change),
-                })),
+              endingParams: fGet(src.endingParams),
+              paramsChangeHistory: {
+                createMany: {
+                  data: src.paramsChangeHistory.map((x) => ({
+                    // Intentionally not generating a new uuid here, because we
+                    // want to  ensure that the planParamsChangeId referred to
+                    // other change items (eg. is
+                    // currentPortfolioBalance.updatedAtId) are still valid.
+                    planParamsChangeId: x.planParamsChangeId,
+                    timestamp: x.timestamp,
+                    reverseDiff: fGet(x.reverseDiff),
+                    change: fGet(x.change),
+                  })),
+                },
               },
+              reverseHeadIndex: src.reverseHeadIndex,
             },
-            reverseHeadIndex: src.reverseHeadIndex,
-          },
-        })
+          })
 
-        if (cutAfterId) {
-          // 0 is ok for reverseHeadIndex, because if cutting, we expect
-          // cutAfterId to be earlier that the current reverseHeadIndex.
-          await userPlanSync(tx, userId, planId, cutAfterId, [], 0)
-        }
-      })
+          if (cutAfterId) {
+            // 0 is ok for reverseHeadIndex, because if cutting, we expect
+            // cutAfterId to be earlier that the current reverseHeadIndex.
+            await userPlanSync(tx, userId, planId, cutAfterId, [], 0)
+          }
+        },
+        // Copying large plans can take time.
+        { timeout: 30 * 1000 },
+      )
       return { type: 'PlanAndUserResult' as const, userId, planId: newPlanId }
     },
   }),

@@ -13,11 +13,13 @@ export const serialTransaction = async <T>(
     retries = 3,
     onConflict = () => {},
     label,
-  }: { retries?: number; onConflict?: () =>void; label?: string } = {},
+    timeout, 
+  }: { retries?: number; onConflict?: () =>void; label?: string; timeout?: number } = {},
 ): Promise<T> => {
   try {
     return await Clients.prisma.$transaction(fn, {
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      timeout, // Default is 5000ms
     })
   } catch (e) {
     // P2034 is conflict:
