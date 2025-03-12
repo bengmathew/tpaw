@@ -1,6 +1,6 @@
 import { fGet } from '@tpaw/common'
 import { default as React, useRef, useState } from 'react'
-import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '@tpaw/common'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import {
   LabelAmountOptMonthRangeInput,
@@ -13,7 +13,7 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
-import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
+import { CalendarDayFns } from '@tpaw/common'
 
 type _EditState = {
   isAdd: boolean

@@ -1,15 +1,15 @@
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { faExclamationCircle } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { CalendarMonthFns, fGet, noCase } from '@tpaw/common'
+import { CalendarMonthFns, fGet, noCase, yourOrYourPartners } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import React, { useRef, useState } from 'react'
-import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
-import { PlanParamsHelperFns } from '../../../../../Simulator/PlanParamsHelperFns'
+import { PlanParamsNormalized } from '@tpaw/common'
+import { PlanParamsHelperFns } from '@tpaw/common'
 import { paddingCSS } from '../../../../../Utils/Geometry'
+import { InMonthsFns } from '@tpaw/common'
 import { joinWithCommaAnd } from '../../../../../Utils/JoinWithAnd'
-import { yourOrYourPartners } from '../../../../../Utils/YourOrYourPartners'
 import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { planSectionLabel } from '../Helpers/PlanSectionLabel'
 import {
@@ -18,7 +18,6 @@ import {
 } from '../PlanInputBody/PlanInputBody'
 import { PlanInputAgePerson } from './PlanInputAgePerson'
 import { PlanInputAgeWithdrawalStart } from './PlanInputAgeWithdrawalStart'
-import { InMonthsFns } from '../../../../../Utils/InMonthsFns'
 
 export type PlanInputAgeOpenableSection =
   | `${'person1' | 'person2'}-${'currentAgeInfo' | 'retirementAge' | 'maxAge'}`

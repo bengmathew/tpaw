@@ -642,3 +642,13 @@ extern "C" {
         out: *mut ResultCudaArrays,
     ) -> ResultCudaNotArrays;
 }
+extern "C" {
+    pub fn cuda_get_empirical_annual_non_log_mean(
+        seed: u64,
+        num_runs: u32,
+        num_months: u32,
+        historical_monthly_log_returns_stocks: *const f32,
+        historical_monthly_log_returns_bonds: *const f32,
+        historical_returns_series_len: u32,
+    ) -> StocksAndBondsFLOAT;
+}

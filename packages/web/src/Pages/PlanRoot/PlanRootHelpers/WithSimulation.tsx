@@ -21,8 +21,8 @@ import React, {
 } from 'react'
 import { useGlobalSuspenseFallbackContext } from '../../../../pages/_app'
 import { appPaths } from '../../../AppPaths'
-import { PlanParamsNormalized } from '../../../Simulator/NormalizePlanParams/NormalizePlanParams'
-import { normalizePlanParamsInverse } from '../../../Simulator/NormalizePlanParams/NormalizePlanParamsInverse'
+import { PlanParamsNormalized } from '@tpaw/common'
+import { normalizePlanParamsInverse } from '@tpaw/common'
 import { DailyMarketSeriesSrc } from '../../../Simulator/SimulateOnServer/SimulateOnServer'
 import {
   SimulationResult,
@@ -257,7 +257,6 @@ const [SimulationInfoContext, useSimulationInfo] =
   createContext<SimulationInfo>('SimulationInfo')
 
 export type SimulationResultInfo = {
-  // TODO: Testing. Rename to SimulationResult
   simulationResult: SimulationResult
   simulationIsRunningInfo:
     | {

@@ -232,12 +232,6 @@ export const useServerSyncPlan = (
               // 'ConcurrentChangeError' in onCompleted().
               assertFalse()
             case 'clientNeedsUpdate':
-            case '413':
-              if (e.code === '413') {
-                Sentry.captureMessage(
-                  `413 in UseServerSyncPlan.\naddCount: ${add.length}`,
-                )
-              }
               setGlobalError(e)
               return null
             case '404':

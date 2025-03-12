@@ -4,6 +4,7 @@
 #include "src/simulate/cuda_process_sampling.h"
 #include "src/utils/bench_utils.h"
 #include "src/utils/cuda_utils.h"
+#include "src/utils/run_mfn_indexing.h"
 #include <extern/nanobench.h>
 
 // Note, it will be more efficient to skip the intermediate
@@ -108,10 +109,44 @@ namespace {
                      num_months);
                });
     };
-    for (const auto num_runs : bench_num_runs_vec) {
+    // for (const auto num_runs : bench_num_runs_vec) {
+
+    for (uint32_t num_runs : {500, 1000, 2000, 20000}) {
       for (const auto num_years : bench_num_years_vec) {
         do_bench(num_runs, num_years * 12);
       }
+    }
+  }
+
+  TEST_CASE("monte_carlo::block_size=1") {
+    const uint32_t num_runs = 200000;
+    const uint32_t num_months = 50 * 12;
+    const uint32_t historical_returns_series_len = 10;
+    const PlanParamsCuda::Advanced::Sampling::MonteCarlo spec{
+        .seed = 0,
+        .num_runs = num_runs,
+        .block_size = 1,
+        .stagger_run_starts = false,
+    };
+    const SamplingCudaProcessed result =
+        _monte_carlo(spec, historical_returns_series_len, num_months);
+
+    std::vector<uint32_t> host_result =
+        device_vector_to_host(result.index_by_run_by_mfn_simulated);
+
+    std::vector<uint32_t> counts(historical_returns_series_len);
+    for (uint32_t i : host_result) {
+      counts[i]++;
+    }
+    std::vector<double> probabilities(historical_returns_series_len);
+    for (uint32_t i = 0; i < historical_returns_series_len; ++i) {
+      probabilities[i] = static_cast<double>(counts[i]) /
+                         static_cast<double>(num_runs * num_months);
+    }
+    for (uint32_t i = 0; i < historical_returns_series_len; ++i) {
+      printf("%.8f\n ",
+             abs(1 / static_cast<double>(historical_returns_series_len) -
+                 probabilities[i]));
     }
   }
 

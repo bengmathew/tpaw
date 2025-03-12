@@ -7,7 +7,7 @@
     "prod-debug": "next dev -p 10011",
     "dev-fast": "next build && next start -p 10001",
     "dev-link": "npm link @tpaw/common",
-    "bundle-analyze": "ANALYZE=true next build",
+    "bundle-analyze": "ANALYZE=true && next build",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

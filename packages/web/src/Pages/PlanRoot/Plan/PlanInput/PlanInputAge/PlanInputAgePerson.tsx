@@ -5,21 +5,32 @@ import {
   faTrash,
 } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Field, Label, Switch } from '@headlessui/react'
+import { Field, Label } from '@headlessui/react'
 import {
   CalendarMonth,
   CalendarMonthFns,
+  InMonthsFns,
   LabeledAmountTimedLocation,
+  NormalizedAges,
+  NormalizedLabeledAmountTimed,
   PersonId,
   PlanParamsChangeActionCurrent,
+  PlanParamsNormalized,
+  RemovePartnerAdjustments,
+  RetirePersonAdjustments,
   assert,
-  assertFalse,
   block,
   fGet,
+  getPlanParamsChangeActionImpl,
+  getRemovePartnerAdjustments,
+  getRetirePersonAdjustments,
   noCase,
+  normalizePlanParams,
+  normalizePlanParamsInverse,
+  yourOrYourPartners
 } from '@tpaw/common'
 import { clsx } from 'clsx'
-import _, { values } from 'lodash'
+import _ from 'lodash'
 import React, {
   ReactNode,
   useLayoutEffect,
@@ -27,22 +38,12 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { NormalizedLabeledAmountTimed } from '../../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
-import { InMonthsFns } from '../../../../../Utils/InMonthsFns'
-import { yourOrYourPartners } from '../../../../../Utils/YourOrYourPartners'
-import { SwitchAsCheckBox } from '../../../../Common/Inputs/SwitchAsCheckBox'
+import { errorToast } from '../../../../../Utils/CustomToasts'
 import { CalendarMonthInput } from '../../../../Common/Inputs/MonthInput/CalendarMonthInput'
 import { InMonthsInput } from '../../../../Common/Inputs/MonthInput/InMonthsInput'
-import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
+import { SwitchAsCheckBox } from '../../../../Common/Inputs/SwitchAsCheckBox'
 import { LabeledAmountTimedDisplay } from '../../../../Common/LabeledAmountTimedDisplay'
-import {
-  RemovePartnerAdjustments,
-  getRemovePartnerAdjustments,
-} from '../../../PlanRootHelpers/GetPlanParamsChangeActionImpl/GetDeletePartnerChangeActionImpl'
-import {
-  RetirePersonAdjustments,
-  getRetirePersonAdjustments,
-} from '../../../PlanRootHelpers/GetPlanParamsChangeActionImpl/GetSetPersonRetiredChangeActionImpl'
+import { CenteredModal } from '../../../../Common/Modal/CenteredModal'
 import {
   UpdatePlanParams,
   useSimulationInfo,
@@ -50,14 +51,6 @@ import {
 import { PlanInputSummaryGlidePath } from '../Helpers/PlanInputSummaryGlidePath'
 import { planSectionLabel } from '../Helpers/PlanSectionLabel'
 import { PlanInputAgeOpenableSection } from './PlanInputAge'
-import { NormalizedAges } from '../../../../../Simulator/NormalizePlanParams/NormalizeAges'
-import { normalizePlanParamsInverse } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParamsInverse'
-import { getPlanParamsChangeActionImpl } from '../../../PlanRootHelpers/GetPlanParamsChangeActionImpl/GetPlanParamsChangeActionImpl'
-import {
-  normalizePlanParams,
-  PlanParamsNormalized,
-} from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
-import { errorToast } from '../../../../../Utils/CustomToasts'
 
 export const PlanInputAgePerson = React.memo(
   ({
@@ -357,7 +350,6 @@ export const _AgeInput = React.memo(
       if (type === 'maxAge') return person.maxAge
       noCase(type)
     })()
-    console.log('age', age)
 
     return (
       <_Section
@@ -416,10 +408,7 @@ const updateCurrentAgeInfoIfNotInPast = (
   if (!datingInfo.isDated) {
     updatePlanParams('setPersonCurrentAgeInfo', change)
   } else {
-    const planParamsFromNorm = normalizePlanParamsInverse(
-      planParamsNormInstant,
-      'soft',
-    )
+    const planParamsFromNorm = normalizePlanParamsInverse(planParamsNormInstant)
     const maxAgeAsMFN = fGet(
       normalizePlanParams(
         getPlanParamsChangeActionImpl({

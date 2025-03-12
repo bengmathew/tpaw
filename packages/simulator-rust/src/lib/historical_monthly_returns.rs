@@ -31,6 +31,8 @@ use self::data::v5::V5_HISTORICAL_MONTHLY_RETURNS_EFFECTIVE_TIMESTAMP_MS;
 use self::data::{AnnualLogMeanFromOneOverCAPERegressionInfo, EmpiricalStats64};
 use crate::shared_types::YearAndMonth;
 use crate::utils::fget_item_at_or_before_key::FGetItemAtOrBeforeKey;
+use crate::utils::random::generate_random_index_sequences;
+use crate::utils::return_series::Mean;
 use crate::wire::{
     WireHistoricalMonthlyLogReturnsAdjustedInfoArgs, WireHistoricalMonthlyLogReturnsAdjustedStats,
 };
@@ -431,8 +433,13 @@ mod tests {
     use rand_chacha::ChaCha20Rng;
 
     use crate::{
+        cuda_bridge::cuda_get_empirical_annual_non_log_mean,
         expected_value_of_returns::EmpiricalAnnualNonLogExpectedReturnInfo,
-        historical_monthly_returns::data::get_empirical_stats_for_block_size,
+        historical_monthly_returns::data::{get_empirical_stats_for_block_size, EmpiricalStats32},
+        utils::{
+            random::generate_random_index_sequences,
+            return_series::{periodize_log_returns, Mean, Stats},
+        },
     };
 
     use super::{

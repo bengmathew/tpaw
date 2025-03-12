@@ -2,7 +2,7 @@ import { block } from '@tpaw/common'
 import { useMemo } from 'react'
 import { indigo } from '../../../Utils/ColorPalette'
 import { RGB, makeShades } from '../../../Utils/ColorUtils'
-import { Record } from '../../../Utils/Record'
+import { Record } from '@tpaw/common'
 import { useSimulationInfo } from '../PlanRootHelpers/WithSimulation'
 
 export const usePlanColors = () => {

@@ -2,9 +2,9 @@ import { string } from 'json-guard'
 import _ from 'lodash'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function assert(condition: any): asserts condition {
+export function assert(condition: any, message?: string): asserts condition {
   if (!condition) {
-    throw new Error('Assert')
+    throw new Error(message ?? 'Assert')
   }
 }
 
@@ -16,6 +16,10 @@ export function fGet<T>(x: T | null | undefined): T {
   assert(x !== null && x !== undefined)
   return x as T
 }
+
+// Adds the undefined type.
+export const optGet = <T>(x: Record<string, T>, key: string): T | undefined =>
+  x[key]
 
 export function noCase(x: never): never {
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

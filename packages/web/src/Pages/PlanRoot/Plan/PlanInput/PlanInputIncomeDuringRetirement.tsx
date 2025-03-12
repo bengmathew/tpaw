@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '@tpaw/common'
 import { Contentful } from '../../../../Utils/Contentful'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import {
@@ -14,7 +14,7 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
-import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
+import { CalendarDayFns } from '@tpaw/common'
 
 export const PlanInputIncomeDuringRetirement = React.memo(
   (props: PlanInputBodyPassThruProps) => {

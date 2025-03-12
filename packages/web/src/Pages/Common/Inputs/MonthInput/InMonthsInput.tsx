@@ -1,7 +1,7 @@
 import React from 'react'
-import { SimpleRange } from '../../../../Utils/SimpleRange'
+import { SimpleRange } from'@tpaw/common'
 import { NumberInput } from '../NumberInput'
-import { InMonthsFns } from '../../../../Utils/InMonthsFns'
+import { InMonthsFns } from '@tpaw/common'
 import clsx from 'clsx'
 
 export const InMonthsInput = React.memo(

@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import React from 'react'
 import { appPaths } from '../../../../AppPaths'
-import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
+import { CalendarDayFns } from '@tpaw/common'
 import { useSimulationResultInfo } from '../WithSimulation'
 import { PlanPrintViewPageGroup } from './Helpers/PlanPrintViewPageGroup'
 import { PlanPrintViewArgs } from './PlanPrintViewArgs'

@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon'
-import { CalendarMonth } from '../main'
 import { assert, letIn, assertFalse } from '../Utils'
+import { CalendarMonth } from '../Params/PlanParams/PlanParams'
 
 export namespace CalendarMonthFns {
   export const addMonths = (

@@ -1,7 +1,7 @@
 import { faArrowsUpDown } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { useCallback, useEffect } from 'react'
-import { SimpleRange } from '../../../../Utils/SimpleRange'
+import { SimpleRange } from'@tpaw/common'
 import { useNonPlanParams } from '../../PlanRootHelpers/WithNonPlanParams'
 import {
   useSimulationInfo,

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { SimpleRange } from '../../../../../../Utils/SimpleRange'
+import { SimpleRange } from'@tpaw/common'
 import { ChartComponent } from '../../../../../Common/Chart/ChartComponent/ChartComponent'
 import { ChartPointerPortal } from '../../../../../Common/Chart/ChartComponent/ChartPointerPortal'
 import {

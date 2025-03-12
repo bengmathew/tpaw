@@ -2,7 +2,7 @@ import { assert, block, fGet, letIn, linearFnFomPoints } from '@tpaw/common'
 import _ from 'lodash'
 import { rectExt } from '../../../../Utils/Geometry'
 import { interpolate } from '../../../../Utils/Interpolate'
-import { Record } from '../../../../Utils/Record'
+import { Record } from '@tpaw/common'
 import {
   transitionArrayDecompose,
   transitionTransform,

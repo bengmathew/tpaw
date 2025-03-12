@@ -145,7 +145,7 @@ RunResultPadded RunResultPadded::get_test_data_for_block_size(
 RunResultPadded::get_single(const uint32_t run_index,
                             const uint32_t month_index) const {
 
-  const uint32_t n1 = get_run_by_mfn_month_major_index(
+  const uint32_t n1 = MonthMajor::get_run_by_mfn_index(
       this->num_runs_padded, run_index, month_index);
   return RunResult_Single{
       .balance_start = by_run_by_mfn_simulated_month_major_balance_start[n1],

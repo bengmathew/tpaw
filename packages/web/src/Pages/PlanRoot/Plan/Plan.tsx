@@ -38,7 +38,6 @@ import { useGetPlanResultsChartURL } from './PlanResults/UseGetPlanResultsChartU
 import { usePlanResultsChartType } from './PlanResults/UsePlanResultsChartType'
 import { planSizing } from './PlanSizing/PlanSizing'
 import { PlanSummary } from './PlanSummary/PlanSummary'
-import { PlanSyncState } from './PlanSyncState'
 import { usePlanColors } from './UsePlanColors'
 import { WithPlanResultsChartData } from './WithPlanResultsChartData'
 import { PlanSimulationDelayModal } from './PlanSimulationDelayModal'
@@ -237,7 +236,6 @@ const _Plan = React.memo(() => {
                 }}
                 chartHover={chartHover}
               />
-              <PlanSyncState />
               <PlanSimulationDelayModal />
             </>
           )}

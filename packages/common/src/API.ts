@@ -26,11 +26,11 @@ import {
   PlanParamsChangeAction,
   planParamsChangeActionGuard,
   planParamsChangeActionGuardCurrent,
-} from './Params/PlanParams/PlanParamsChangeAction'
+} from './Params/PlanParams/PlanParamsChangeAction/PlanParamsChangeAction'
 import { fGet } from './Utils'
 
 export namespace API {
-  // Update this if the client needs to forced to update.
+  // Update this if the client needs to be forced to update.
   export const version = '3'
   // Update this if the you want to inform the user there is a new version
   // available, if they want to update.
@@ -357,6 +357,7 @@ export namespace API {
         params: chain(string, json, planParamsBackwardsCompatibleGuard),
       })(x)
   }
+
 }
 
 type InputTypeFromCheck<T> = T extends JSONGuard<infer U, infer V> ? U : never

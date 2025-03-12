@@ -8,7 +8,7 @@ import {
 } from '@tpaw/common'
 import _ from 'lodash'
 import { useCallback, useRef } from 'react'
-import { normalizePlanParams } from './NormalizePlanParams/NormalizePlanParams'
+import { normalizePlanParams } from '@tpaw/common'
 import { getPlanParamsServer } from './SimulateOnServer/GetPlanParamsServer'
 import { PortfolioBalanceEstimation } from './SimulateOnServer/SimulateOnServer'
 import {

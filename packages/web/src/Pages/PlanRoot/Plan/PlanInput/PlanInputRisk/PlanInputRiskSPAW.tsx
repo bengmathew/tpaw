@@ -1,6 +1,6 @@
 import { PLAN_PARAMS_CONSTANTS, partialDefaultDatelessPlanParams } from '@tpaw/common'
 import React from 'react'
-import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '@tpaw/common'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSSStyle } from '../../../../../Utils/Geometry'
 import { SliderInput } from '../../../../Common/Inputs/SliderInput/SliderInput'

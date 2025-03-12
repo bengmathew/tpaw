@@ -4,7 +4,7 @@ import { gsap } from 'gsap'
 import _ from 'lodash'
 import { Padding, Rect, Size, XY, rectExt } from '../../../Utils/Geometry'
 import { interpolate } from '../../../Utils/Interpolate'
-import { SimpleRange } from '../../../Utils/SimpleRange'
+import { SimpleRange } from'@tpaw/common'
 import { Transition, transitionTransform } from '../../../Utils/Transition'
 import { assert, fGet } from '../../../Utils/Utils'
 import {

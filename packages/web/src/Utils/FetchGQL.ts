@@ -40,9 +40,6 @@ export const fetchGQL =
     }
 
     if (!response.ok) {
-      if (response.status === 413) {
-        Sentry.captureMessage(`413 error. bodyStr.length: ${bodyStr.length}`)
-      }
       const code = response.headers.get('x-app-error-code')
       switch (code) {
         case 'downForMaintenance':
@@ -54,10 +51,7 @@ export const fetchGQL =
       }
       throw new AppError('networkError')
     }
-    sendAnalyticsEvent('gql', {
-      clock_skew:
-        parseInt(response.headers.get('x-app-server-timestamp')!) - now,
-    })
+
 
     if (response.headers.get('x-app-new-client-version') === 'true') {
       toast(
@@ -71,6 +65,7 @@ export const fetchGQL =
     }
 
     const json = await response.json()
+    console.log('json', json)
     if (json.errors) throw new AppError('serverError')
     return json
   }

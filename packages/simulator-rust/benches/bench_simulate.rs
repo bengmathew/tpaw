@@ -1,13 +1,16 @@
 use criterion::{black_box, criterion_group, Criterion};
 use dotenv::dotenv;
 use simulator::{
-    market_data::downloaded_market_data::get_market_data_series_for_simulation,
+    market_data::downloaded_market_data::{dowload_data, get_market_data_series_for_simulation},
     simulate::{self, plan_params_server::get_test_plan_params_server},
 };
 #[tokio::main]
 pub async fn criterion_benchmark(c: &mut Criterion) {
     dotenv().ok();
-    let market_data_series_for_simulation = get_market_data_series_for_simulation(None).await;
+
+    let downloaded_data = dowload_data().await;
+    let market_data_series_for_simulation =
+        get_market_data_series_for_simulation(None, &downloaded_data).await;
 
     let current_portfolio_balance: f64 = 1000000.0;
     let plan_params_server =

@@ -4,7 +4,7 @@
 #include <thrust/device_vector.h>
 #include <vector>
 
-// Thanks: https://stackoverflow.com/a/10989061/2771609
+// From: https://stackoverflow.com/a/10989061/2771609
 __device__ uint32_t get_random_index(uint32_t array_size,
                                      curandStateXORWOW_t *curand_state) {
   // Don't (possibly) narrow here to uint32_t, it might affect the

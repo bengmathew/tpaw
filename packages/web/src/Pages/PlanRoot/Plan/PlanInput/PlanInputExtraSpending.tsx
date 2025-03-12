@@ -2,7 +2,7 @@ import { LabeledAmountTimed } from '@tpaw/common'
 import { clsx } from 'clsx'
 import _ from 'lodash'
 import React, { useRef, useState } from 'react'
-import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '@tpaw/common'
 import { Contentful } from '../../../../Utils/Contentful'
 import { paddingCSS, paddingCSSStyleHorz } from '../../../../Utils/Geometry'
 import { useURLUpdater } from '../../../../Utils/UseURLUpdater'
@@ -26,7 +26,7 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
-import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
+import { CalendarDayFns } from '@tpaw/common'
 
 export const PlanInputExtraSpending = React.memo(
   (props: PlanInputBodyPassThruProps) => {

@@ -11,8 +11,8 @@ import {
   rectExt,
   regionCSSStyle,
 } from '../../../../../Utils/Geometry'
-import { Record } from '../../../../../Utils/Record'
-import { SimpleRange } from '../../../../../Utils/SimpleRange'
+import { Record } from '@tpaw/common'
+import { SimpleRange } from'@tpaw/common'
 import { useAssertConst } from '../../../../../Utils/UseAssertConst'
 import { noCase } from '../../../../../Utils/Utils'
 import { HeightsForWidths } from '../../../../../Utils/View/HeightsForWidths'

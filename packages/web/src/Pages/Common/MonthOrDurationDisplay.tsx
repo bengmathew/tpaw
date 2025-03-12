@@ -1,18 +1,16 @@
-import { CalendarMonthFns, Month, noCase } from '@tpaw/common'
-import _ from 'lodash'
+import { faTurnDownLeft } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  CalendarMonthFns, Month, noCase, youAreOrYourPartnerIs,
+  yourOrYourPartners
+} from '@tpaw/common'
 import React from 'react'
-import { NormalizedDurationNotInThePast } from '../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
+import { NormalizedDurationNotInThePast } from '@tpaw/common'
 import {
   NormalizedMonthInThePast,
   NormalizedMonthNotInThePast,
-} from '../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizedMonth'
-import {
-  youAreOrYourPartnerIs,
-  yourOrYourPartners,
-} from '../../Utils/YourOrYourPartners'
-import { InMonthsFns } from '../../Utils/InMonthsFns'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTurnDownLeft } from '@fortawesome/pro-solid-svg-icons'
+} from '@tpaw/common'
+import { InMonthsFns } from '@tpaw/common'
 
 export const MonthOrDurationDisplay = React.memo(
   ({

@@ -2,7 +2,7 @@ import { faExclamationCircle } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import clsx from 'clsx'
 import React from 'react'
-import { NormalizedDurationNotInThePast } from '../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
+import { NormalizedDurationNotInThePast } from '@tpaw/common'
 import { InMonthsInput } from './InMonthsInput'
 
 

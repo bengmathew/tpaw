@@ -1,6 +1,7 @@
 #include "run_spaw.h"
 #include "src/public_headers/numeric_types.h"
 #include "src/simulate/run/run_common.h"
+#include "src/utils/run_mfn_indexing.h"
 #include <cstdint>
 #include <cstdio>
 

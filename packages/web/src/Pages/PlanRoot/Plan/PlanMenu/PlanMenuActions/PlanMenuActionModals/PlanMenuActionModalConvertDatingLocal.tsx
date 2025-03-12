@@ -1,6 +1,6 @@
 import { assert, fGet, PlanParams } from '@tpaw/common'
 import React from 'react'
-import { PlanParamsHelperFns } from '../../../../../../Simulator/PlanParamsHelperFns'
+import { PlanParamsHelperFns } from '@tpaw/common'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { useIANATimezoneName } from '../../../../PlanRootHelpers/WithNonPlanParams'
 import {

@@ -9,13 +9,26 @@ use simulator::{
     },
     simulate::{
         plan_params_server::{
-            PlanParamsServer_AmountTimed, PlanParamsServer_AmountTimed_DeltaEveryRecurrence, PlanParamsServer_AnnualInflation, PlanParamsServer_ExpectedReturnsForPlanning, PlanParamsServer_ExpectedReturnsForPlanning_EmpiricalAnnualNonLog, PlanParamsServer_HistoricalReturnsAdjustment, PlanParamsServer_HistoricalReturnsAdjustment_StandardDeviation, PlanParamsServer_ReturnStatsForPlanning, PlanParamsServer_ReturnStatsForPlanning_StandardDeviation, PlanParamsServer_Sampling
+            PlanParamsServer_AmountTimed, PlanParamsServer_AmountTimed_DeltaEveryRecurrence,
+            PlanParamsServer_AnnualInflation, PlanParamsServer_ExpectedReturnsForPlanning,
+            PlanParamsServer_ExpectedReturnsForPlanning_EmpiricalAnnualNonLog,
+            PlanParamsServer_HistoricalReturnsAdjustment,
+            PlanParamsServer_HistoricalReturnsAdjustment_StandardDeviation,
+            PlanParamsServer_ReturnStatsForPlanning,
+            PlanParamsServer_ReturnStatsForPlanning_StandardDeviation, PlanParamsServer_Sampling,
         },
         process_plan_params_server::{
-            process_amount_timed::process_amount_timed, process_annual_inflation::process_annual_inflation, process_historical_returns::process_historical_returns, process_market_data_for_presets::process_market_data_for_presets, process_returns_stats_for_planning::process_returns_stats_for_planning
+            process_amount_timed::process_amount_timed,
+            process_annual_inflation::process_annual_inflation,
+            process_historical_returns::process_historical_returns,
+            process_market_data_for_presets::process_market_data_for_presets,
+            process_returns_stats_for_planning::process_returns_stats_for_planning,
         },
     },
-    wire::{WireLogDouble, WirePlanParamsServerSamplingMonteCarlo, WireScaleLogDouble},
+    wire::{
+        self, wire_plan_params_server_historical_returns_adjustment, WireLogDouble,
+        WirePlanParamsServerSamplingMonteCarlo, WireScaleLogDouble,
+    },
 };
 
 pub fn criterion_benchmark(c: &mut Criterion) {
@@ -93,7 +106,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let amount_times_entry = PlanParamsServer_AmountTimed {
         id: "1".to_string(),
         is_nominal: true,
-        month_range: 12 * 5..=12 * 50,
+        month_range: Some(12 * 5..=12 * 50),
         valid_month_range: 0..=(num_months as i32),
         every_x_months: 1,
         base_amount: 1000.0,
@@ -118,9 +131,14 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     let historical_returns_adjustment_src = PlanParamsServer_HistoricalReturnsAdjustment {
         standard_deviation: PlanParamsServer_HistoricalReturnsAdjustment_StandardDeviation {
-            bonds: WireScaleLogDouble { scale: WireLogDouble { log: 1.0 }, },
-            override_to_fixed_for_testing: false,
+            bonds: WireScaleLogDouble {
+                scale: WireLogDouble { log: 1.0 },
+            },
         },
+        override_to_fixed_for_testing:
+            wire_plan_params_server_historical_returns_adjustment::OverrideToFixedForTesting::None(
+                wire::NoMessage {},
+            ),
     };
     c.bench_function("process_plan_params_server_historical_returns", |b| {
         b.iter(|| {
@@ -131,8 +149,6 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             );
         })
     });
-
-
 }
 
 criterion_group!(bench_process_plan_params_server, criterion_benchmark);

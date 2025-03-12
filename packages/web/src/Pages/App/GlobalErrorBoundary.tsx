@@ -195,7 +195,7 @@ export const _ErrorFallback = React.memo(({ error }: { error: Error }) => {
               ) : error.code === 'networkError' ? (
                 <_Custom
                   title=" Network Error"
-                  message="Cloud not access the network. Please check your internet connection."
+                  message="Could not access the network. Please check your internet connection."
                   action="reload"
                 />
               ) : error.code === 'serverError' ? (
@@ -204,8 +204,6 @@ export const _ErrorFallback = React.memo(({ error }: { error: Error }) => {
                   message="The server is experiencing issues. Please try again later."
                   action="reload"
                 />
-              ) : error.code === '413' ? (
-                <_SomethingWentWrong errorId={errorId} />
               ) : (
                 noCase(error.code)
               )

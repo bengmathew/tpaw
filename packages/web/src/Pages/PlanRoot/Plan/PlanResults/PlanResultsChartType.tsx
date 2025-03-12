@@ -1,7 +1,4 @@
-import { PlanParams, noCase } from '@tpaw/common'
-import _ from 'lodash'
-import { optGet } from '../../../../Utils/optGet'
-import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized, noCase } from '@tpaw/common'
 
 type SpendingTotalFundingSources =
   `spending-total-funding-sources-${'low' | 'mid' | 'high'}`

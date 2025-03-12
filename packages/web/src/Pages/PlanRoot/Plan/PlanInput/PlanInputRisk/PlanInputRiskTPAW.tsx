@@ -16,7 +16,7 @@ import {
 import clix from 'clsx'
 import _ from 'lodash'
 import React, { ReactNode, useState } from 'react'
-import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '@tpaw/common'
 import { SimulationResult } from '../../../../../Simulator/UseSimulator'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSS, paddingCSSStyle } from '../../../../../Utils/Geometry'

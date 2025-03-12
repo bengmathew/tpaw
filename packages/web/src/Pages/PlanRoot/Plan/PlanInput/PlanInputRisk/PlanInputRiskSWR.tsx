@@ -13,7 +13,7 @@ import {
 } from '@tpaw/common'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
-import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '@tpaw/common'
 import { formatCurrency } from '../../../../../Utils/FormatCurrency'
 import { formatPercentage } from '../../../../../Utils/FormatPercentage'
 import { paddingCSSStyle } from '../../../../../Utils/Geometry'

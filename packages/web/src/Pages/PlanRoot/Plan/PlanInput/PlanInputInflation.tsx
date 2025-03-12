@@ -12,7 +12,7 @@ import {
 } from '@tpaw/common'
 import { DateTime } from 'luxon'
 import React from 'react'
-import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '@tpaw/common'
 import { formatPercentage } from '../../../../Utils/FormatPercentage'
 import { paddingCSS } from '../../../../Utils/Geometry'
 import { SliderInput } from '../../../Common/Inputs/SliderInput/SliderInput'
@@ -29,7 +29,7 @@ import {
   inflationTypeLabel,
   useIsPlanInputInflationModified,
 } from './PlanInputInflationFns'
-import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
+import { CalendarDayFns } from '@tpaw/common'
 import { mainPlanColors } from '../UsePlanColors'
 
 export const PlanInputInflation = React.memo(

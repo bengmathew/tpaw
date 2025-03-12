@@ -9,7 +9,7 @@ import { CalendarMonth, CalendarMonthFns, assert } from '@tpaw/common'
 import clsx from 'clsx'
 import _ from 'lodash'
 import React, { useEffect, useMemo, useState } from 'react'
-import { SimpleRange } from '../../../../Utils/SimpleRange'
+import { SimpleRange } from'@tpaw/common'
 import { useSimulationInfo } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { ModalListbox } from '../../Modal/ModalListbox'
 

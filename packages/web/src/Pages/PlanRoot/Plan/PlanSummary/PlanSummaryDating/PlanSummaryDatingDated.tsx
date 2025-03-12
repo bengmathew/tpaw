@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import React, { useMemo } from 'react'
-import { NormalizedDatingInfo } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { NormalizedDatingInfo } from '@tpaw/common'
 import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
 import { DateTime } from 'luxon'

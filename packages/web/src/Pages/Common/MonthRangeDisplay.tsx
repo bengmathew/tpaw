@@ -1,9 +1,9 @@
 import { block, noCase } from '@tpaw/common'
 import clsx from 'clsx'
 import React from 'react'
-import { NormalizedMonthRange } from '../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
+import { NormalizedMonthRange } from '@tpaw/common'
 import { MonthOrDurationDisplay } from './MonthOrDurationDisplay'
-import { InMonthsFns } from '../../Utils/InMonthsFns'
+import { InMonthsFns } from '@tpaw/common'
 
 export const MonthRangeDisplay = React.memo(
   ({

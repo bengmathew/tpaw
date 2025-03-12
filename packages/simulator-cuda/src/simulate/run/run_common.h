@@ -5,7 +5,6 @@
 #include "src/public_headers/stocks_and_bonds_float.h"
 #include "src/simulate/run/run_result_padded.h"
 #include "src/utils/account_for_withdrawal.h"
-#include "src/utils/cuda_utils.h"
 #include <cmath>
 #include <cstdint>
 
@@ -171,7 +170,7 @@ namespace run_common {
                const uint32_t run_index,
                const uint32_t month_index) {
     const uint32_t by_run_by_mfn_simulated_month_major_index =
-        get_run_by_mfn_month_major_index(
+        MonthMajor::get_run_by_mfn_index(
             normal_result.num_runs_padded, run_index, month_index);
     normal_result.by_run_by_mfn_simulated_month_major_balance_start
         [by_run_by_mfn_simulated_month_major_index] = balance_starting;

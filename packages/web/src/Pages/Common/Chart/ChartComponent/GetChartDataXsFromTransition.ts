@@ -1,6 +1,6 @@
 import { letIn } from '@tpaw/common'
 import _ from 'lodash'
-import { SimpleRange } from '../../../../Utils/SimpleRange'
+import { SimpleRange } from'@tpaw/common'
 import { Transition, transitionTransform } from '../../../../Utils/Transition'
 import { ChartDataRange, ChartStateDerived } from '../Chart'
 

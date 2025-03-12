@@ -1,11 +1,10 @@
 export type AppErrorCode =
   | '404'
-  | '413'
   | 'concurrentChange'
   | 'networkError'
   | 'serverError'
   | 'serverDownForMaintenance'
-  | 'serverDownForUpdate'
+  | 'serverDownForUpdate' // FEATURE: Deprecated.
   | 'clientNeedsUpdate'
 export class AppError extends Error {
   code: AppErrorCode

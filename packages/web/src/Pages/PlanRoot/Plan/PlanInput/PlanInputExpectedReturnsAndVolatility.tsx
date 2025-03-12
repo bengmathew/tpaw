@@ -41,8 +41,8 @@ import {
   useIsPlanInputExpectedReturnsCardModified,
   useIsPlanInputStockVolatilityCardModified,
 } from './PlanInputExpectedReturnsAndVolatilityFns'
-import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
-import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { CalendarDayFns } from '@tpaw/common'
+import { PlanParamsNormalized } from '@tpaw/common'
 import { SimulationResult } from '../../../../Simulator/UseSimulator'
 import { PlanParamsProcessed } from '../../../../Simulator/SimulateOnServer/SimulateOnServer'
 

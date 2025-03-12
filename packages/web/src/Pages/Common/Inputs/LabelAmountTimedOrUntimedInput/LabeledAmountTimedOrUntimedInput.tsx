@@ -16,7 +16,7 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { PlanParamsHelperFns } from '../../../../Simulator/PlanParamsHelperFns'
+import { PlanParamsHelperFns } from '@tpaw/common'
 import { formatCurrency } from '../../../../Utils/FormatCurrency'
 import { Padding } from '../../../../Utils/Geometry'
 import { useSimulationInfo } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'

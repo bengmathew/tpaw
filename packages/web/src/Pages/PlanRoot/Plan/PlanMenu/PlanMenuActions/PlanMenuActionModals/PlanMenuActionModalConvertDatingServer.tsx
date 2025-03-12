@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { CenteredModal } from '../../../../../Common/Modal/CenteredModal'
 import { PlanMenuActionModalConvertDatingCommon } from './PlanMenuActionModalConvertDatingCommon'
-import { PlanParamsHelperFns } from '../../../../../../Simulator/PlanParamsHelperFns'
+import { PlanParamsHelperFns } from '@tpaw/common'
 import { useIANATimezoneName } from '../../../../PlanRootHelpers/WithNonPlanParams'
 import {
   SimulationInfoForServerSrc,

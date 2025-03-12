@@ -9,6 +9,7 @@
 #include "src/utils/bench_utils.h"
 #include "src/utils/monthly_to_annual_returns.h"
 #include "src/utils/print_public_types.h"
+#include "src/utils/run_mfn_indexing.h"
 #include <cmath>
 #include <cstddef>
 #include <cstdint>

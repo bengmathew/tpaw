@@ -78,7 +78,9 @@
   ],
   "cSpell.words": [
     "annualization",
+    "annualize",
     "cuda",
+    "NOLINTNEXTLINE",
     "SPAW",
     "TPAW"
   ],

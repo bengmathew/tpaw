@@ -3,13 +3,14 @@ import {
   PlanParamsChangeAction,
   SomePlanParams,
   assert,
+  cloneJSON,
   noCase,
   planParamsMigrate,
 } from '@tpaw/common'
 import jsonpatch, { Operation } from 'fast-json-patch'
 import _ from 'lodash'
-import { cloneJSON } from '../../../Utils/CloneJSON.js'
 
+// TODO: Deprecated. Moved to common.
 export type PlanParamsChangePatched = {
   userId: string
   planId: string
@@ -22,9 +23,10 @@ export type PlanParamsChangePatched = {
 export const patchPlanParams = (
   endingParams: SomePlanParams,
   planParamsHistoryReversed: PlanParamsChange[],
-  filter: (x: PlanParamsChange, reverseIndex: number) => boolean,
-  {checkTimestamps = true}: {checkTimestamps?: boolean} = {}
+  filterIn: 'all' | ((x: PlanParamsChange, reverseIndex: number) => boolean),
+  { checkTimestamps = true }: { checkTimestamps?: boolean } = {},
 ): PlanParamsChangePatched[] => {
+  const filter = filterIn === 'all' ? () => true : filterIn
   const result: (PlanParamsChangePatched | null)[] = []
   const currParams = cloneJSON(endingParams)
   let prevTimestamp = Infinity
@@ -83,8 +85,8 @@ patchPlanParams.generate = (
     currLastHistoryItem.type === 'forAdd'
       ? [currLastHistoryItem.params, currLastHistoryItem.timestamp]
       : currLastHistoryItem.type === 'forCreate'
-      ? [{}, -Infinity]
-      : noCase(currLastHistoryItem)
+        ? [{}, -Infinity]
+        : noCase(currLastHistoryItem)
 
   return newChanges.map((x) => {
     const reverseDiff = jsonpatch.compare(x.params, currEndingParams)

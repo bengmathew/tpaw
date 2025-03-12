@@ -1226,6 +1226,7 @@ export namespace PlanParams30 {
       adjustmentsToSpending: adjustmentsToSpending(planParams),
       risk: risk(planParams),
       advanced,
+      // TODO: Remove
       results: nullable(
         object({
           displayedAssetAllocation: object({

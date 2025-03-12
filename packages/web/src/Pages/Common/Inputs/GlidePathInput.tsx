@@ -14,14 +14,14 @@ import {
   NormalizedGlidePath,
   NormalizedGlidePathEntry,
   normalizeGlidePath,
-} from '../../../Simulator/NormalizePlanParams/NormalizeGlidePath'
-import { getMonthToMFN } from '../../../Simulator/NormalizePlanParams/NormalizeAges'
+} from '@tpaw/common'
+import { getMonthToMFN } from '@tpaw/common'
 import { assert } from '../../../Utils/Utils'
 import { useSimulationInfo } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { getNormalizedMonthStr } from '../MonthOrDurationDisplay'
 import { AmountInput } from './AmountInput'
 import { MonthInput } from './MonthInput/MonthInput'
-import { CalendarDayFns } from '../../../Utils/CalendarDayFns'
+import { CalendarDayFns } from '@tpaw/common'
 
 export const GlidePathInput = React.memo(
   ({

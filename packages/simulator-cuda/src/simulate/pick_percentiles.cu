@@ -7,6 +7,7 @@
 #include "src/utils/bench_utils.h"
 #include "src/utils/cuda_utils.h"
 #include "src/utils/get_result_cuda_for_testing.h"
+#include "src/utils/run_mfn_indexing.h"
 #include <algorithm>
 #include <cstdint>
 
@@ -23,7 +24,7 @@ _kernel(const uint32_t num_runs_padded,
   if (month_index >= num_months_simulated)
     return;
   for (uint32_t j = 0; j < num_percentiles; ++j) {
-    uint32_t src_index = get_run_by_mfn_month_major_index(
+    uint32_t src_index = MonthMajor::get_run_by_mfn_index(
         num_runs_padded, percentile_indices[j], month_index);
     uint32_t result_index = num_months_simulated * j + month_index;
     out_by_percentile_by_mfn_percentile_major[result_index] =

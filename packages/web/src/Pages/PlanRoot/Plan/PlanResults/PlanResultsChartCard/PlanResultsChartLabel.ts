@@ -1,6 +1,6 @@
 import { block, fGet, letIn, noCase } from '@tpaw/common'
-import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
-import { pluralize } from '../../../../../Utils/Pluralize'
+import { PlanParamsNormalized } from '@tpaw/common'
+import { pluralize } from '@tpaw/common'
 import { trimAndNullify } from '../../../../../Utils/TrimAndNullify'
 import {
   PlanResultsChartType,

@@ -7,6 +7,7 @@
 #include "src/utils/annual_to_monthly_returns.h"
 #include "src/utils/bench_utils.h"
 #include "src/utils/cuda_utils.h"
+#include "src/utils/run_mfn_indexing.h"
 #include <cstdint>
 #include <sys/types.h>
 #include <thrust/copy.h>
@@ -206,7 +207,7 @@ TEST_CASE("cuda_process_swr_run_x_mfn_simulated_x_mfn") {
 // BENCHES
 // *****************************************************************************
 
-TEST_CASE("STAR::bench::cuda_process_swr_run_x_mfn_simulated_x_mfn") {
+TEST_CASE("bench::cuda_process_swr_run_x_mfn_simulated_x_mfn") {
 
   const auto do_bench = [](const char *name,
                            const uint32_t num_runs,
@@ -290,9 +291,8 @@ TEST_CASE("STAR::bench::cuda_process_swr_run_x_mfn_simulated_x_mfn") {
   }
 }
 
-TEST_CASE(
-    "STAR::bench::cuda_process_swr_run_x_mfn_simulated_x_mfn::optimize_plan_"
-    "params_mfn") {
+TEST_CASE("bench::cuda_process_swr_run_x_mfn_simulated_x_mfn::optimize_plan_"
+          "params_mfn") {
   const auto do_bench = [](const char *name,
                            const uint32_t num_runs,
                            const uint32_t num_months) {

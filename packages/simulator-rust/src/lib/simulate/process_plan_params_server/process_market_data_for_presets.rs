@@ -136,6 +136,7 @@ pub fn process_market_data_for_presets(
         average_annual_real_earnings_for_sp500_for_10_years,
     } = market_data_at_timestamp_for_simulation;
 
+    // TODO: When removing block size for sampling, should this be the equivalent as None or Some(1)?
     let block_size_effective = None;
     let log_volatility_scale_effective = StocksAndBonds {
         stocks: 1.0,

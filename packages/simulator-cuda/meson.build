@@ -15,19 +15,22 @@ sources = [
   'src/simulate/run/run_tpaw.cu',
   'src/simulate/cuda_process_historical_returns.cu',
   'src/simulate/cuda_process_sampling.cu',
-  'src/simulate/get_historical_returns_annualized_stats.cu',
   'src/simulate/get_result_cuda_not_array.cu',
   'src/simulate/pick_percentiles.cu',
   'src/simulate/plan_params_cuda_vectors.cu',
   'src/simulate/simulate.cu',
   'src/simulate/sort_run_result_padded.cu',
   'src/utils/annual_to_monthly_returns.cu',
+  'src/utils/annualize_series.cu',
   'src/utils/bench_utils.cu',
   'src/utils/cuda_test.cu',
   'src/utils/cuda_utils.cu',
   'src/utils/get_result_cuda_for_testing.cu',
+  'src/utils/get_series_stats.cu',
   'src/utils/monthly_to_annual_returns.cu',
   'src/utils/print_public_types.cu',
+  'src/utils/run_mfn_indexing.cu',
+  'src/get_annualized_stats.cu',
   'src/simulator_cuda.cu',
   ]
 if test_mode
@@ -42,6 +45,7 @@ public_headers = [
   'src/public_headers/result_cuda.h',
   'src/public_headers/simulator_cuda.h',
   'src/public_headers/returns_stats.h',
+  'src/public_headers/stats.h',
   'src/public_headers/stocks_and_bonds_float.h',
   ]
 
@@ -54,7 +58,7 @@ gencode_args = [
 
 # std=c++20 was needed for templates in lambda closures.
 # diag-suppress=445 is needed to suppress warnings about template parameters not being used in function signatures.
-project_args = ['-rdc=true', '-Xcompiler=-Wextra,-Werror=missing-field-initializers', '--std=c++20', '-diag-suppress=445' ] + gencode_args
+project_args = ['-rdc=true', '-Xcompiler=-Wextra,-Werror=missing-field-initializers', '--std=c++20', '-diag-suppress=445', '--extended-lambda' ] + gencode_args
 if not test_mode
   project_args += '-DDOCTEST_CONFIG_DISABLE'
 endif

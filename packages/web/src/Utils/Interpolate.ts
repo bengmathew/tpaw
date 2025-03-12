@@ -1,6 +1,6 @@
 import { assert } from '@tpaw/common'
 import _ from 'lodash'
-import { Record } from './Record'
+import { Record } from '@tpaw/common'
 import { Transition } from './Transition'
 import { zeroOneInterpolate } from './ZeroOneInterpolate'
 

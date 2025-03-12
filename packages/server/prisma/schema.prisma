@@ -11,6 +11,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// NOTES
+// * DateTime is modeled by prisma as timestamp without timezone.
+
 model User {
   id                String             @id
   planWithHistory   PlanWithHistory[]
@@ -21,7 +24,7 @@ model User {
   // actual record of when it changed. This is the time it was last updated *on
   // the server*.
   nonPlanParamsLastUpdatedAt DateTime
-  clientIANATimezoneName     String  
+  clientIANATimezoneName     String
 }
 
 model PlanWithHistory {
@@ -51,7 +54,7 @@ model PlanParamsChange {
   user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   planId             String
   planWithHistory    PlanWithHistory @relation(fields: [userId, planId], references: [userId, planId], onDelete: Cascade)
-  // Note that planParamsChangeId is not unquie on it's own. When copying a
+  // Note that planParamsChangeId is not unique on it's own. When copying a
   // planWithHistory, The planParamsChangeId is copied as well. This is to
   // ensure that the planParamsChangeId referred to other change items (eg. is
   // currentPortfolioBalance.updatedAtId) are still valid.

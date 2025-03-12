@@ -8,6 +8,7 @@
 extern "C" {
 #endif
 
+// TODO: Remove this in favor of Stats
 struct ReturnsStats {
   struct Stats {
     uint32_t n;

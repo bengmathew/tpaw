@@ -1,6 +1,6 @@
 import { noCase } from '@tpaw/common'
 import React from 'react'
-import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '@tpaw/common'
 import { useSimulationInfo } from '../../../PlanRootHelpers/WithSimulation'
 import {
   PlanInputBody,

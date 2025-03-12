@@ -3,7 +3,7 @@ import { clsx } from 'clsx'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import React, { useEffect, useState } from 'react'
-import { pluralize } from '../../../Utils/Pluralize'
+import { pluralize } from '@tpaw/common'
 import { useIANATimezoneName } from '../PlanRootHelpers/WithNonPlanParams'
 import {
   SERVER_SYNC_PLAN_ERROR_WAIT_TIME,

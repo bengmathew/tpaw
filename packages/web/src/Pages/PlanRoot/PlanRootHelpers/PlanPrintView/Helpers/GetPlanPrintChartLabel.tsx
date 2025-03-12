@@ -5,7 +5,7 @@ import {
   getPlanResultsChartSpendingTotalFundingSourcesPercentile,
   isPlanResultsChartSpendingTotalFundingSourcesType,
 } from '../../../Plan/PlanResults/PlanResultsChartType'
-import { PlanParamsNormalized } from '../../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '@tpaw/common'
 
 export const getPlanPrintChartLabel = (
   planParamsNormOfResult: PlanParamsNormalized,

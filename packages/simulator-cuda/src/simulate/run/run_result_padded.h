@@ -3,6 +3,7 @@
 
 #include "src/public_headers/numeric_types.h"
 #include "src/utils/cuda_utils.h"
+#include "src/utils/run_mfn_indexing.h"
 
 struct RunResultPadded_GPU {
   uint32_t num_runs_padded;
@@ -96,7 +97,7 @@ struct RunResultPadded {
 
       for (uint32_t month_index = 0; month_index < num_months; ++month_index) {
         for (uint32_t run_index = 0; run_index < num_runs_padded; ++run_index) {
-          const uint32_t index = get_run_by_mfn_month_major_index(
+          const uint32_t index = MonthMajor::get_run_by_mfn_index(
               num_runs_padded, run_index, month_index);
           result[index] = static_cast<T>(num_runs_padded - run_index +
                                          (month_index + 1) * 10000);

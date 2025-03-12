@@ -7,7 +7,7 @@ import { formatDistance } from 'date-fns'
 import _ from 'lodash'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { ContextModal } from '../../../../Common/Modal/ContextModal'
-import { processPlanParamsChangeActionDeprecated } from '../../../PlanRootHelpers/GetPlanParamsChangeActionImpl/GetPlanParamsChangeActionImplDeprecated'
+import { renderPlanParamsChangeAction } from './RenderPlanParamsChangeAction'
 import {
   TARGET_UNDO_DEPTH,
   WorkingPlanInfo,
@@ -109,9 +109,7 @@ const _MenuItems = React.memo(
       () => _processUndoRedoStack(planParamsUndoRedoStack)[type],
     )
     const [hoverAtItem, setHoverAtItem] = useState(-1)
-    const [popUpElement, setPopUpElement] = useState<HTMLElement | null>(
-      null,
-    )
+    const [popUpElement, setPopUpElement] = useState<HTMLElement | null>(null)
     const [openTime] = useState(() => Date.now())
     const [moved, setMoved] = useState(false)
     const [hoverTopAndWidth, setHoverTopAndWidth] = useState<{
@@ -214,20 +212,15 @@ const _processUndoRedoStack = (
       params: PlanParams
       prevParams: PlanParams
     }[],
-  ): _UndoItem[] => {
-    return arr
-      .map((x, i): _UndoItem => {
-        const { render } = processPlanParamsChangeActionDeprecated(x.change)
-
-        return {
-          head: x.head,
-          id: x.id,
-          render: render(x.prevParams, x.params),
-          timestamp: x.params.timestamp,
-        }
-      })
-      .filter((x) => x.render !== null)
-  }
+  ): _UndoItem[] =>
+    arr.map(
+      (x): _UndoItem => ({
+        head: x.head,
+        id: x.id,
+        render: renderPlanParamsChangeAction(x.prevParams, x.params, x.change),
+        timestamp: x.params.timestamp,
+      }),
+    )
 
   const undo = postProcess(
     _.takeRight(

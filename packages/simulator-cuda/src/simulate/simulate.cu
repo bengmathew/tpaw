@@ -308,7 +308,7 @@ get_test_params(const uint32_t num_runs,
   return std::make_tuple(plan_params, std::move(plan_params_vectors));
 }
 
-TEST_CASE("STAR::simulate") {
+TEST_CASE("simulate") {
 
   const uint32_t num_runs = 1000;
   const uint32_t num_months = 120 * 12;

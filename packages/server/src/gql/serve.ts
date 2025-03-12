@@ -41,7 +41,7 @@ async function _impl() {
     )
   }
   const server = express()
-  
+
   if (!Config.isProduction) server.use(morgan('tiny'))
 
   server.use(
@@ -87,6 +87,12 @@ async function _impl() {
       res.send('db test passed')
     }),
   )
+
+  // server.post(
+  //   '/rpc/v1',
+  //   bodyParser.json({ limit: '10mb' }), // 2kb per planParam allows 5k planParams
+  //   rpcHandler,
+  // )
 
   const apollo = new ApolloServer<Context>({
     schema,

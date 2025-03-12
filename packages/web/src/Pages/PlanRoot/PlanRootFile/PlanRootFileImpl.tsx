@@ -65,10 +65,13 @@ export const PlanRootFileImpl = React.memo(
     const currentTimeInfo = useCurrentTime({
       planId: workingPlanSrc.planId,
     })
-    assert(
-      currentTimeInfo.currentTimestamp >=
-        fGet(_.last(workingPlanSrc.planParamsPostBase)).params.timestamp,
-    )
+    {
+      const lastPlanParams = fGet(_.last(workingPlanSrc.planParamsPostBase))
+      assert(
+        currentTimeInfo.currentTimestamp >= lastPlanParams.params.timestamp,
+        `${new Date(currentTimeInfo.currentTimestamp).toISOString()} is after ${new Date(lastPlanParams.params.timestamp).toISOString()}.`,
+      )
+    }
     const workingPlanInfo = useWorkingPlan(
       currentTimeInfo,
       workingPlanSrc,

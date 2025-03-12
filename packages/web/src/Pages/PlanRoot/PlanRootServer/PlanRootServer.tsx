@@ -18,9 +18,14 @@ export const PlanRootServer = React.memo(
     src: { type: 'serverMain' } | { type: 'serverAlt'; slug: string }
     pdfReportInfo: SimulationParams['pdfReportInfo']
   }) => {
+    
+    
+
     const [key, setKey] = React.useState(0)
 
     const userGQLArgs = useUserGQLArgs()
+
+    
 
     const data = useLazyLoadQuery<PlanRootServerQuery>(
       graphql`

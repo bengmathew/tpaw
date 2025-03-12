@@ -1,5 +1,5 @@
 import React from 'react'
-import { NormalizedLabeledAmountTimed } from '../../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
+import { NormalizedLabeledAmountTimed } from '@tpaw/common'
 import { LabeledAmountTimedDisplay } from '../../../../Common/LabeledAmountTimedDisplay'
 
 export const PlanInputSummaryLabeledAmountTimedList = React.memo(

@@ -7,8 +7,8 @@ import {
 } from '@tpaw/common'
 import clsx from 'clsx'
 import React, { useMemo } from 'react'
-import { NormalizedLabeledAmountTimed } from '../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
-import { PlanParamsHelperFns } from '../../../Simulator/PlanParamsHelperFns'
+import { NormalizedLabeledAmountTimed } from '@tpaw/common'
+import { PlanParamsHelperFns } from '@tpaw/common'
 import { useSimulationInfo } from '../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { LabeledAmountTimedDisplay } from '../LabeledAmountTimedDisplay'
 

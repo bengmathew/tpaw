@@ -1,7 +1,7 @@
-import { assert, fGet } from '@tpaw/common'
+import { fGet } from '@tpaw/common'
+import { table } from 'table'
 import { Clients } from '../../../../Clients.js'
 import { cliDevUserPlan } from './CLIDevUserPlan.js'
-import { table } from 'table'
 
 cliDevUserPlan
   .command('list <email>')
@@ -19,11 +19,25 @@ cliDevUserPlan
     })
 
     console.log('userId', userId)
-    const headers = ['Label', 'Slug', 'Id', 'Is Main', 'Num of Changes', "Created At"]
+    const headers = [
+      'Label',
+      'Slug',
+      'Id',
+      'Is Main',
+      'Num of Changes',
+      'Created At',
+    ]
     console.log(
       table([
         headers,
-        ...plans.map((x) => [x.label, x.slug, x.planId, `${x.isMain}`, x._count.paramsChangeHistory, x.addedToServerAt]),
+        ...plans.map((x) => [
+          x.label,
+          x.slug,
+          x.planId,
+          `${x.isMain}`,
+          x._count.paramsChangeHistory,
+          x.addedToServerAt,
+        ]),
       ]),
     )
   })

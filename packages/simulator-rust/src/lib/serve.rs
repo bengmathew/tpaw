@@ -141,9 +141,7 @@ async fn handle_simulate_current(
     downloaded_data: Arc<RwLock<DownloadedData>>,
     request_body: Bytes,
 ) -> Response {
-    let start = Instant::now();
     let downloaded_data_ref = downloaded_data.read().await;
-    println!("downloaded_data_ref read took {:?}", start.elapsed());
 
     let simulation_args = WireSimulationArgs::decode(&request_body.to_vec()[..]).unwrap();
 

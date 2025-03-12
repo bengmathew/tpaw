@@ -4,7 +4,7 @@ import { getChartBandColor } from '../../../../../../Utils/ColorPalette'
 import { RGB } from '../../../../../../Utils/ColorUtils'
 import { Size, rectExt } from '../../../../../../Utils/Geometry'
 import { interpolate } from '../../../../../../Utils/Interpolate'
-import { SimpleRange } from '../../../../../../Utils/SimpleRange'
+import { SimpleRange } from'@tpaw/common'
 import { Transition } from '../../../../../../Utils/Transition'
 import { ChartBreakdown } from '../../../../../Common/Chart/ChartComponent/ChartBreakdown'
 import {

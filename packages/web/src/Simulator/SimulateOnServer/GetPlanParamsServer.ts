@@ -9,9 +9,9 @@ import {
   noCase,
 } from '@tpaw/common'
 import _ from 'lodash'
-import { NormalizedGlidePath } from '../NormalizePlanParams/NormalizeGlidePath'
-import { NormalizedLabeledAmountTimed } from '../NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
-import { PlanParamsNormalized } from '../NormalizePlanParams/NormalizePlanParams'
+import { NormalizedGlidePath } from '@tpaw/common'
+import { NormalizedLabeledAmountTimed } from '@tpaw/common'
+import { PlanParamsNormalized } from '@tpaw/common'
 import {
   WireGlidePath,
   WireInt32Range,

@@ -18,25 +18,25 @@ import {
 import clsx from 'clsx'
 import _ from 'lodash'
 import React, { useMemo } from 'react'
-import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '@tpaw/common'
 import {
   NormalizedAges,
   getFromMFNToNumericAge,
   getMonthToMFN,
-} from '../../../../Simulator/NormalizePlanParams/NormalizeAges'
+} from '@tpaw/common'
 import {
   NormalizedMonthInThePast,
   NormalizedMonthNotInThePast,
-} from '../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizedMonth'
-import { InMonthsFns } from '../../../../Utils/InMonthsFns'
-import { Record } from '../../../../Utils/Record'
-import { SimpleRange } from '../../../../Utils/SimpleRange'
+} from '@tpaw/common'
+import { InMonthsFns } from '@tpaw/common'
+import { Record } from '@tpaw/common'
+import { SimpleRange } from'@tpaw/common'
 import { useSimulationInfo } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { ContextModal } from '../../Modal/ContextModal'
 import { getNormalizedMonthStr } from '../../MonthOrDurationDisplay'
 import { CalendarMonthInput } from './CalendarMonthInput'
 import { InMonthsInput } from './InMonthsInput'
-import { CalendarDayFns } from '../../../../Utils/CalendarDayFns'
+import { CalendarDayFns } from '@tpaw/common'
 
 export type MonthInputProps = React.ComponentProps<typeof MonthInput>
 

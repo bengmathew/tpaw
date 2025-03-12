@@ -4,14 +4,14 @@ import { CalendarMonthFns, block, fGet, noCase } from '@tpaw/common'
 import clix from 'clsx'
 import _ from 'lodash'
 import React from 'react'
-import { SimpleRange } from '../../../../Utils/SimpleRange'
+import { SimpleRange } from'@tpaw/common'
 import { PlanResultsChartType } from '../../Plan/PlanResults/PlanResultsChartType'
 import { useChartDataForPDF } from '../../Plan/WithPlanResultsChartData'
 import { useSimulationResultInfo } from '../WithSimulation'
 import { getPlanPrintChartLabel } from './Helpers/GetPlanPrintChartLabel'
 import { PlanPrintViewPageGroup } from './Helpers/PlanPrintViewPageGroup'
 import { PlanPrintViewArgs } from './PlanPrintViewArgs'
-import { InMonthsFns } from '../../../../Utils/InMonthsFns'
+import { InMonthsFns } from '@tpaw/common'
 
 export const PlanPrintViewAppendixSection = React.memo(
   ({ settings }: { settings: PlanPrintViewArgs['settings'] }) => {

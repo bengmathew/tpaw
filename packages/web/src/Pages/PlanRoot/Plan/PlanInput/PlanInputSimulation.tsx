@@ -3,7 +3,7 @@ import { faCircle as faCircleSolid } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { PLAN_PARAMS_CONSTANTS, assert, partialDefaultDatelessPlanParams } from '@tpaw/common'
 import React from 'react'
-import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
+import { PlanParamsNormalized } from '@tpaw/common'
 import {
   paddingCSSStyle,
   paddingCSSStyleHorz,
@@ -15,7 +15,7 @@ import {
   PlanInputBody,
   PlanInputBodyPassThruProps,
 } from './PlanInputBody/PlanInputBody'
-import { InMonthsFns } from '../../../../Utils/InMonthsFns'
+import { InMonthsFns } from '@tpaw/common'
 import _ from 'lodash'
 
 export const PlanInputSimulation = React.memo(

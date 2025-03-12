@@ -22,7 +22,7 @@ import {
   amber,
 } from '../../../../../../Utils/ColorPalette'
 import clsx from 'clsx'
-import { NormalizedLabeledAmountTimed } from '../../../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
+import { NormalizedLabeledAmountTimed } from '@tpaw/common'
 
 export const PlanResultsSidePanelMenuBalanceSheet = React.memo(
   ({ show, onHide }: { show: boolean; onHide: () => void }) => {

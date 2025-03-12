@@ -72,7 +72,7 @@ namespace _plain_mertons_formula {
     return results[0];
   }
 
-  TEST_CASE("STAR::plain_mertons_formula") {
+  TEST_CASE("plain_mertons_formula") {
 
     auto do_test = [&](const FLOAT annual_stock_returns,
                        const FLOAT annual_bond_returns,

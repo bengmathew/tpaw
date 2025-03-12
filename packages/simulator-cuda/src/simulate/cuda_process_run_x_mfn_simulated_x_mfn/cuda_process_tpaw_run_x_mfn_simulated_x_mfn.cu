@@ -8,6 +8,7 @@
 #include "src/utils/annual_to_monthly_returns.h"
 #include "src/utils/bench_utils.h"
 #include "src/utils/cuda_utils.h"
+#include "src/utils/run_mfn_indexing.h"
 #include <cstdint>
 #include <sys/types.h>
 #include <thrust/copy.h>

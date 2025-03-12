@@ -31,7 +31,7 @@ import {
   getPlanResultsChartLabelInfoForSpending,
   planResultsChartLabel,
 } from './PlanResultsChartLabel'
-import { NormalizedLabeledAmountTimed } from '../../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
+import { NormalizedLabeledAmountTimed } from '@tpaw/common'
 
 const maxWidth = 700
 export type PlanChartMainCardMenuStateful = {

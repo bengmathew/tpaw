@@ -1,7 +1,7 @@
 import { block, noCase } from '@tpaw/common'
 import { gray } from '../../../../../../Utils/ColorPalette'
 import { RGB } from '../../../../../../Utils/ColorUtils'
-import { Record } from '../../../../../../Utils/Record'
+import { Record } from '@tpaw/common'
 import { ChartRange } from '../../../../../Common/Chart/ChartComponent/ChartRange'
 import { ChartStyling } from '../../../../../Common/Chart/ChartUtils/ChartStyling'
 import { PlanResultsChartDataForPDF } from './PlanResultsChartData'

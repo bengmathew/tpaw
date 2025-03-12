@@ -1,9 +1,11 @@
 #ifndef PRINT_PUBLIC_TYPES_H
 #define PRINT_PUBLIC_TYPES_H
 
-#include "src/public_headers/returns_stats.h"
-#include "src/public_headers/stocks_and_bonds_float.h"
+#include "src/basic_types/log_and_non_log.h"
 #include "src/public_headers/opt_currency.h"
+#include "src/public_headers/returns_stats.h"
+#include "src/public_headers/stats.h"
+#include "src/public_headers/stocks_and_bonds_float.h"
 #include <stdint.h>
 
 __host__ __device__ void
@@ -22,6 +24,6 @@ __host__ __device__ void print_returns_stats(const ReturnsStats &returns_stats,
                                              const uint32_t num_tabs);
 
 __host__ __device__ void print_opt_currency(const OptCURRENCY &opt_currency,
-                                             const uint32_t num_tabs);
+                                            const uint32_t num_tabs);
 
 #endif // PRINT_PUBLIC_TYPES_H

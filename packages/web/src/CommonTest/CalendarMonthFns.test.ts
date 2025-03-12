@@ -1,5 +1,4 @@
 import { CalendarMonthFns } from '@tpaw/common'
-import { createTestScheduler } from 'jest'
 
 describe('CalendarMonthFns', () => {
   test.each([

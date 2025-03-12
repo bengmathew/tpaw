@@ -12,14 +12,14 @@ import {
 } from '@tpaw/common'
 import clsx from 'clsx'
 import React from 'react'
-import { NormalizedMonthRange } from '../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeAmountAndTimingRecurring'
+import { NormalizedMonthRange } from '@tpaw/common'
 import { useSimulationInfo } from '../../../PlanRoot/PlanRootHelpers/WithSimulation'
 import { ContextModal } from '../../Modal/ContextModal'
 import { getMonthRangeDurationStr } from '../../MonthRangeDisplay'
 import { MonthInput, MonthType } from '../MonthInput/MonthInput'
 import { MonthRangeDurationInput } from '../MonthInput/MonthRangeDurationInput'
 import { SimpleModalListbox } from '../../Modal/SimpleModalListbox'
-import { getFromMFNToNumericAge } from '../../../../Simulator/NormalizePlanParams/NormalizeAges'
+import { getFromMFNToNumericAge } from '@tpaw/common'
 
 export type MonthRangeInputProps = React.ComponentProps<typeof MonthRangeInput>
 

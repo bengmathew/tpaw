@@ -3,9 +3,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { MonthLocation, assert, noCase } from '@tpaw/common'
 import _ from 'lodash'
 import React, { ReactNode, useMemo, useState } from 'react'
-import { NormalizedGlidePath } from '../../../../Simulator/NormalizePlanParams/NormalizeGlidePath'
-import { PlanParamsNormalized } from '../../../../Simulator/NormalizePlanParams/NormalizePlanParams'
-import { NormalizedLabeledAmountTimed } from '../../../../Simulator/NormalizePlanParams/NormalizeLabeledAmountTimedList/NormalizeLabeledAmountTimedList'
+import { NormalizedGlidePath } from '@tpaw/common'
+import { PlanParamsNormalized } from '@tpaw/common'
+import { NormalizedLabeledAmountTimed } from '@tpaw/common'
 import {
   Padding,
   Size,

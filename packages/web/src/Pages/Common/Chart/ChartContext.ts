@@ -1,5 +1,5 @@
 import { XY } from '../../../Utils/Geometry'
-import { SimpleRange } from '../../../Utils/SimpleRange'
+import { SimpleRange } from'@tpaw/common'
 import { Transition } from '../../../Utils/Transition'
 import { ChartDataRange, ChartSizing, ChartStateDerived } from './Chart'
 

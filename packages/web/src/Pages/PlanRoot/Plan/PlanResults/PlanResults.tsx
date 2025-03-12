@@ -13,7 +13,7 @@ import {
   regionCSSStyle,
 } from '../../../../Utils/Geometry'
 import { NoDisplayOnOpacity0Transition } from '../../../../Utils/NoDisplayOnOpacity0Transition'
-import { Record } from '../../../../Utils/Record'
+import { Record } from '@tpaw/common'
 import { ChartAnimation } from '../../../Common/Chart/Chart'
 import { ChartPointerPortal } from '../../../Common/Chart/ChartComponent/ChartPointerPortal'
 import { SwitchAsToggle } from '../../../Common/Inputs/SwitchAsToggle'

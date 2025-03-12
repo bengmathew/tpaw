@@ -277,7 +277,7 @@ void sort_run_result_padded(RunResultPadded &run_result_padded,
   fn_single(run_result_padded.by_run_ending_balance);
 }
 
-TEST_CASE("STAR::bench::sort_run_result_padded") {
+TEST_CASE("bench::sort_run_result_padded") {
   auto do_bench = []<uint32_t BLOCK_SIZE>(std::string name) {
     const auto do_bench =
         [](std::string name, uint32_t num_runs, uint32_t num_months) {

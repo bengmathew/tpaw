@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { Rect } from '../../../../Utils/Geometry'
-import { SimpleRange } from '../../../../Utils/SimpleRange'
+import { SimpleRange } from'@tpaw/common'
 import { fGet } from '../../../../Utils/Utils'
 
 export namespace ChartUtils {

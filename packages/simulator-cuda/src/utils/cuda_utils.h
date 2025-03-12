@@ -1,6 +1,7 @@
 #ifndef CUDA_UTILS_H
 #define CUDA_UTILS_H
 
+#include <cuda/std/utility>
 #include <cuda_runtime.h>
 #include <iostream>
 #include <memory>
@@ -45,41 +46,6 @@ device_vector_to_host(const thrust::device_vector<T, A> &device) {
   thrust::copy(device.begin(), device.end(), host.begin());
   return host;
 }
-
-__device__ __host__ __forceinline__ uint32_t get_run_by_mfn_month_major_index(
-    uint32_t num_runs, uint32_t run_index, uint32_t month_index) {
-  return month_index * num_runs + run_index;
-}
-__device__ __host__ __forceinline__ uint32_t get_run_by_mfn_run_major_index(
-    uint32_t num_months, uint32_t run_index, uint32_t month_index) {
-  return run_index * num_months + month_index;
-}
-
-// Simulation is marginally faster with MONTH_MAJOR.
-// #define RUN_MAJOR
-#define MONTH_MAJOR
-
-#ifdef RUN_MAJOR
-
-__device__ __host__ __forceinline__ uint32_t
-get_run_by_mfn_index(__attribute__((unused)) uint32_t num_runs,
-                     uint32_t num_months,
-                     uint32_t run_index,
-                     uint32_t month_index) {
-  return get_run_by_mfn_run_major_index(num_months, run_index, month_index);
-}
-#endif
-
-#ifdef MONTH_MAJOR
-
-__device__ __host__ __forceinline__ uint32_t
-get_run_by_mfn_index(uint32_t num_runs,
-                     __attribute__((unused)) uint32_t num_months,
-                     uint32_t run_index,
-                     uint32_t month_index) {
-  return get_run_by_mfn_month_major_index(num_runs, run_index, month_index);
-}
-#endif
 
 inline double ms_since(clock_t start) {
   return static_cast<double>(clock() - start) / CLOCKS_PER_SEC * 1000;

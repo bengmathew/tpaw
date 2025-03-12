@@ -1,5 +1,5 @@
 import { noCase } from '@tpaw/common'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useURLParam } from '../../Utils/UseURLParam'
 import { PlanPrintView } from './PlanRootHelpers/PlanPrintView/PlanPrintView'
 import { PlanContent } from './PlanRootHelpers/PlanRootGetStaticProps'
@@ -9,6 +9,11 @@ import { PlanRootLink } from './PlanRootLink/PlanRootLink'
 import { PlanRootLocalMain } from './PlanRootLocalMain/PlanRootLocalMain'
 import { PlanRootServer } from './PlanRootServer/PlanRootServer'
 import { PlanRootFile } from './PlanRootFile/PlanRootFile'
+import { useFirebaseUser } from '../App/WithFirebaseUser'
+import { asyncEffect2 } from '../../Utils/AsyncEffect'
+import { useGlobalSuspenseFallbackContext } from '../../../pages/_app'
+import { useAssertConst } from '../../Utils/UseAssertConst'
+import { useSetGlobalError } from '../App/GlobalErrorBoundary'
 
 type t = Extract<SimulationParams['pdfReportInfo'], { isShowing: false }>
 
@@ -25,6 +30,10 @@ export const PlanRoot = React.memo(
       | { type: 'link' }
       | { type: 'file' }
   }) => {
+    const { setGlobalError } = useSetGlobalError()
+    const { setGlobalSuspend } = useGlobalSuspenseFallbackContext()
+
+    const firebaseUser = useFirebaseUser()
     const [pdfReportProps, setPDFReportProps] = useState<
       | Parameters<
           Extract<

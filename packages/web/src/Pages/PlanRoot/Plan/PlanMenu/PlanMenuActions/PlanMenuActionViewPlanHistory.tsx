@@ -6,7 +6,7 @@ import clix from 'clsx'
 import React, { useEffect, useRef, useState } from 'react'
 import { useURLUpdater } from '../../../../../Utils/UseURLUpdater'
 import { SimulationInfoForServerSrc } from '../../../PlanRootHelpers/WithSimulation'
-import { CalendarDayFns } from '../../../../../Utils/CalendarDayFns'
+import { CalendarDayFns } from '@tpaw/common'
 import { useIANATimezoneName } from '../../../PlanRootHelpers/WithNonPlanParams'
 
 export const PlanMenuActionViewPlanHistory = React.memo(

@@ -10,6 +10,7 @@
 #include "src/utils/cuda_utils.h"
 #include "src/utils/monthly_to_annual_returns.h"
 #include "src/utils/print_public_types.h"
+#include "src/utils/run_mfn_indexing.h"
 #include <cstdint>
 #include <cstdio>
 #include <cuda/std/array>
