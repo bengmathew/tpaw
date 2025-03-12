@@ -32,7 +32,7 @@
     "@fortawesome/sharp-solid-svg-icons": "^6.2.0",
     "@headlessui/react": "^2.2.0",
     "@sentry/nextjs": "^8.44.0",
-    "@tpaw/common": "^12.2.0",
+    "@tpaw/common": "^12.3.0",
     "@types/pako": "^2.0.3",
     "@visx/event": "^3.3.0",
     "@visx/shape": "^3.3.0",
