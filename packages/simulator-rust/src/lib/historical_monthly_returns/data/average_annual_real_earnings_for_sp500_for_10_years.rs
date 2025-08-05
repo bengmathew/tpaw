@@ -44,7 +44,7 @@ impl From<AverageAnnualRealEarningsForSP500For10Years>
 // NOTE: added_date_ms is the date it was *added* to the array, not when it was true in the
 // world.
 pub const AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS:
-    [AverageAnnualRealEarningsForSP500For10Years; 6] = [
+    [AverageAnnualRealEarningsForSP500For10Years; 7] = [
     AverageAnnualRealEarningsForSP500For10Years {
         added_date_ms: MIN_PLAN_PARAM_TIME_MS - 30 * 30 * 24 * 60 * 60 * 1000, // ~`30 months before.
         ten_year_duration: TenYearDuration {
@@ -133,5 +133,20 @@ pub const AVERAGE_ANNUAL_REAL_EARNINGS_FOR_SP500_FOR_10_YEARS:
             },
         },
         value: 158.17
+    },
+    AverageAnnualRealEarningsForSP500For10Years {
+        // August 5, 2025 3:00:00 PM GMT-07:00
+        added_date_ms: 1754431200000,
+        ten_year_duration: TenYearDuration {
+            start: YearAndMonth {
+                year: 2015,
+                month: 4,
+            },
+            end: YearAndMonth {
+                year: 2025,
+                month: 3,
+            },
+        },
+        value: 165.20
     },
 ];
