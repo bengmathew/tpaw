@@ -421,7 +421,10 @@ export const renderPlanParamsChangeAction = (
           if (prev.bonds.delta !== value.bonds.delta) {
             return `Set delta for custom expected return of bonds fixed delta to ${formatPercentage(1)(value.bonds.delta)}`
           }
-          assertFalse()
+          // Ran into some instances where no change was made, so assertFalse()
+          // was not working. Using generic message instead of crashing for this
+          // edge case.
+          return `Changed expected return to custom with no actual changes.`
         case 'fixed':
           assert(prev.type === 'fixed')
           if (value.stocks !== prev.stocks) {
