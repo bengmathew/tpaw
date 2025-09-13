@@ -6,7 +6,7 @@ import {
 } from './NormalizeLabeledAmountTimedList/NormalizedMonth'
 import { NormalizedAges, MonthToMFN } from './NormalizeAges'
 import { CalendarMonthFns } from '../../../Misc/CalendarMonthFns'
-import { letIn, fGet, block, linearFnFomPoints } from '../../../Utils'
+import { letIn, fGet, block, linearFnFomPoints, assert } from '../../../Utils'
 import { GlidePath, CalendarMonth } from '../PlanParams'
 
 export type NormalizedGlidePathEntry = {
@@ -79,6 +79,19 @@ export const normalizeGlidePath = (
         .map((x) => ({ mfn: x.month.asMFN, stocks: x.stocks })),
       { mfn: lastMonthAsMFN, stocks: orig.end.stocks },
     ]
+
+    // It is possible that the start might not be mfn === 0 . This can happend
+    // if the timezone reported a particular month when start was updated, but
+    // then user switched to a different timezone (and earlier one) and the new
+    // timezone reports the previous month for the evaluation time. The solution
+    // in this case is to interpret start as being the current month in the new
+    // timezone.
+    const first = fGet(_.first(preNormSimplePath))
+    if (first.mfn > 0) {
+      assert(first.mfn === 1)
+      first.mfn = 0
+    }
+
     const lastAtOrBeforeNow = fGet(
       _.findLast(preNormSimplePath, (x) => x.mfn <= 0),
     )
