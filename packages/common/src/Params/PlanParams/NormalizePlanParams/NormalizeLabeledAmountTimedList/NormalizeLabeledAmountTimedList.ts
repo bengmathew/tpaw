@@ -62,6 +62,7 @@ const _normalizeLabeledAmountTimed = (
             validRangeAsMFN,
             monthToMFN,
             ages,
+            nowAsCalendarDay,
           )
         }
         case 'recurring': {

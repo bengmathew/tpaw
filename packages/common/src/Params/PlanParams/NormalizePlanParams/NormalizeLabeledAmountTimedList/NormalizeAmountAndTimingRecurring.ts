@@ -122,6 +122,13 @@ export const normalizeAmountAndTimingRecurring = (
     delta,
   })
 
+  const nowMonth: Extract<Month, { type: 'now' }> = {
+    type: 'now',
+    monthOfEntry: nowAsCalendarDay
+      ? { isDatedPlan: true, calendarMonth: nowAsCalendarDay }
+      : { isDatedPlan: false },
+  }
+
   const mfnTo = nowAsCalendarDay
     ? ({
         isDatedPlan: true,
@@ -162,6 +169,7 @@ export const normalizeAmountAndTimingRecurring = (
         const start = getNormalizedMonthNotInThePast(
           startInfo.month.asMFN,
           startInfo.month.value,
+          nowMonth,
           {
             includingLocalConstraints: validRangeAsMFN,
             excludingLocalConstraints: validRangeAsMFN,
@@ -189,6 +197,7 @@ export const normalizeAmountAndTimingRecurring = (
             return getNormalizedMonthNotInThePast(
               inputEndAsMFNPastElided,
               monthRange.end,
+              nowMonth,
               {
                 includingLocalConstraints: validRangeAsMFNForEnd,
                 excludingLocalConstraints: validRangeAsMFN,
@@ -226,6 +235,7 @@ export const normalizeAmountAndTimingRecurring = (
       const start = getNormalizedMonthNotInThePast(
         startInfo.month.asMFN,
         startInfo.month.value,
+        nowMonth,
         {
           includingLocalConstraints: validRangeAsMFN,
           excludingLocalConstraints: validRangeAsMFN,
@@ -267,6 +277,7 @@ export const normalizeAmountAndTimingRecurring = (
       const end = getNormalizedMonthNotInThePast(
         inputEndAsMFNNotInPast,
         monthRange.end,
+        nowMonth,
         {
           includingLocalConstraints: validRangeAsMFN,
           excludingLocalConstraints: validRangeAsMFN,
@@ -339,11 +350,24 @@ const _stepStartToCurrent = (
     month: { asMFN: startMonth.asMFNPastNotElided, value: startMonth.value },
     baseAmount,
   }
-  if (startMonth.asMFNPastNotElided > 0) return unchanged
-  const getResult = (asMFN: number, baseAmount: number) => ({
+  if (startMonth.asMFNPastNotElided >= 0) return unchanged
+
+  // Undated plans cannot have been in the past.
+  assert(endMonthAsMFNPastElided !== 'inThePast')
+  const endMonthAsMFNNotInPast = endMonthAsMFNPastElided
+
+  const startSteppedToCurrent = _stepRecurringAmountToCurrent(
+    { monthAsMFN: startMonth.asMFNPastNotElided, value: baseAmount },
+    everyXMonths,
+    delta,
+  )
+  if (startSteppedToCurrent.monthAsMFN > endMonthAsMFNNotInPast) return null
+
+  return {
     month: {
-      asMFN,
+      asMFN:startSteppedToCurrent.monthAsMFN,
       value: block((): Month => {
+        const asMFN = startSteppedToCurrent.monthAsMFN
         if (mfnTo.isDatedPlan) {
           const calendarMonth = mfnTo.calendarMonth(asMFN)
           return asMFN === 0
@@ -358,34 +382,8 @@ const _stepStartToCurrent = (
         }
       }),
     },
-    baseAmount,
-  })
-
-  // We want to rewrite month as 'now' if === 0 and month is 'retired'. We have
-  // to remove the reference to 'retired' because if retirement month is 0, we
-  // will elide retiremed date to 'retiredWithNoRetirementDataSpecified', and
-  // then 'retired' will no longer be resolvable.
-  if (startMonth.asMFNPastNotElided === 0) {
-    return startMonth.value.type === 'namedAge' &&
-      startMonth.value.age === 'retirement'
-      ? getResult(0, baseAmount)
-      : unchanged
+    baseAmount:startSteppedToCurrent.value,
   }
-
-  // Undated plans cannot have been in the past.
-  assert(endMonthAsMFNPastElided !== 'inThePast')
-  const endMonthAsMFNNotInPast = endMonthAsMFNPastElided
-
-  const startSteppedToCurrent = _stepRecurringAmountToCurrent(
-    { monthAsMFN: startMonth.asMFNPastNotElided, value: baseAmount },
-    everyXMonths,
-    delta,
-  )
-  if (startSteppedToCurrent.monthAsMFN > endMonthAsMFNNotInPast) return null
-  return getResult(
-    startSteppedToCurrent.monthAsMFN,
-    startSteppedToCurrent.value,
-  )
 }
 
 const _stepRecurringAmountToCurrent = (

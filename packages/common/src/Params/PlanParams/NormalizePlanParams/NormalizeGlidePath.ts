@@ -1,4 +1,3 @@
-
 import _ from 'lodash'
 import {
   NormalizedMonthNotInThePast,
@@ -7,7 +6,7 @@ import {
 import { NormalizedAges, MonthToMFN } from './NormalizeAges'
 import { CalendarMonthFns } from '../../../Misc/CalendarMonthFns'
 import { letIn, fGet, block, linearFnFomPoints, assert } from '../../../Utils'
-import { GlidePath, CalendarMonth } from '../PlanParams'
+import { GlidePath, CalendarMonth, Month } from '../PlanParams'
 
 export type NormalizedGlidePathEntry = {
   id: string
@@ -35,6 +34,12 @@ export const normalizeGlidePath = (
     includingLocalConstraints: x,
     excludingLocalConstraints: x,
   }))
+  const nowMonth: Extract<Month, { type: 'now' }> = {
+    type: 'now',
+    monthOfEntry: nowAsCalendarDay
+      ? { isDatedPlan: true, calendarMonth: nowAsCalendarDay }
+      : { isDatedPlan: false },
+  }
   const preNormStartAsMFN = orig.start.month.monthOfEntry.isDatedPlan
     ? CalendarMonthFns.getToMFN(fGet(nowAsCalendarDay))(
         orig.start.month.monthOfEntry.calendarMonth,
@@ -61,7 +66,11 @@ export const normalizeGlidePath = (
   const intermediateBeforeElidingPast = beforeEndStage1.map((x, i) => {
     const duplicate =
       i > 0 && x.month.asMFN === fGet(beforeEndStage1[i - 1]).month.asMFN
-    const month = normalizedMonthRangeCheckAndSquishRangeForAge(x.month, ages)
+    const month = normalizedMonthRangeCheckAndSquishRangeForAge(
+      x.month,
+      ages,
+      nowMonth,
+    )
     return {
       ...x,
       ignore: duplicate,
@@ -80,9 +89,9 @@ export const normalizeGlidePath = (
       { mfn: lastMonthAsMFN, stocks: orig.end.stocks },
     ]
 
-    // It is possible that the start might not be mfn === 0 . This can happend
+    // It is possible that the start might not be mfn === 0 . This can happen
     // if the timezone reported a particular month when start was updated, but
-    // then user switched to a different timezone (and earlier one) and the new
+    // then user switched to a different timezone (an earlier one) and the new
     // timezone reports the previous month for the evaluation time. The solution
     // in this case is to interpret start as being the current month in the new
     // timezone.
@@ -110,12 +119,15 @@ export const normalizeGlidePath = (
 
   return {
     now: { stocks: stocksNow },
+
     intermediate: intermediateBeforeElidingPast
       .filter((x) => x.month.asMFN > 0)
+      // TODO: this filter does not seem to be doing anything because
+      // month is already NormalizedMonthNotInThePast?
       .map((x) => ({ ...x, month: { ...x.month, isInThePast: false } })),
     end: { stocks: orig.end.stocks },
     atOrPastEnd: atOrPastEndStage1.map((x) => {
-      const month = normalizedMonthRangeCheckAndSquishRangeForAge(x.month, ages)
+      const month = normalizedMonthRangeCheckAndSquishRangeForAge(x.month, ages, nowMonth)
       return {
         ...x,
         ignore: true,

@@ -22,13 +22,31 @@ export type NormalizedMonthInThePast = {
     includingLocalConstraints: SimpleRange | null
     excludingLocalConstraints: SimpleRange
   }
-  // In the past is and error, so errorMsg cannot be null.
+  // In the past is an error, so errorMsg cannot be null.
   errorMsg: string
 }
+
+// We want to rewrite month as 'now' if === 0 and month is 'retired'. We have
+// to remove the reference to 'retired' because if retirement month is 0, we
+// will elide retired date to 'retiredWithNoRetirementDateSpecified', and
+// then 'retired' will no longer be resolvable.
+const _elideRetirementMonthIfZero = (
+  x: NormalizedMonthNotInThePast,
+  nowMonth: Extract<Month, { type: 'now' }>,
+): NormalizedMonthNotInThePast => ({
+  ...x,
+  baseValue:
+    x.asMFN === 0 &&
+    x.baseValue.type === 'namedAge' &&
+    x.baseValue.age === 'retirement'
+      ? nowMonth
+      : x.baseValue,
+})
 
 export const getNormalizedMonthNotInThePast = (
   asMFN: number,
   baseValue: Month,
+  nowMonth: Extract<Month, { type: 'now' }>,
   validRangeAsMFN: {
     includingLocalConstraints: SimpleRange | null
     excludingLocalConstraints: SimpleRange
@@ -43,13 +61,16 @@ export const getNormalizedMonthNotInThePast = (
     validRangeAsMFN,
   }
   return process.type === 'raw'
-    ? {
-        type: 'normalizedMonth',
-        isInThePast: false,
-        ...data,
-        errorMsg: process.errorMsg,
-      }
-    : normalizedMonthRangeCheckAndSquishRangeForAge(data, process.ages)
+    ? _elideRetirementMonthIfZero(
+        {
+          type: 'normalizedMonth',
+          isInThePast: false,
+          ...data,
+          errorMsg: process.errorMsg,
+        },
+        nowMonth,
+      )
+    : normalizedMonthRangeCheckAndSquishRangeForAge(data, process.ages, nowMonth)
 }
 
 export const normalizedMonthRangeCheckAndSquishRangeForAge = (
@@ -69,6 +90,7 @@ export const normalizedMonthRangeCheckAndSquishRangeForAge = (
     person1: { maxAge: { asMFN: number } }
     person2: { maxAge: { asMFN: number } } | null
   },
+  nowMonth: Extract<Month, { type: 'now' }>,
 ): NormalizedMonthNotInThePast => {
   const ageRangeInfo = block(() => {
     switch (baseValue.type) {
@@ -89,31 +111,34 @@ export const normalizedMonthRangeCheckAndSquishRangeForAge = (
         noCase(baseValue)
     }
   })
-  return {
-    type: 'normalizedMonth',
-    isInThePast: false,
-    asMFN,
-    baseValue,
-    validRangeAsMFN: {
-      includingLocalConstraints: ageRangeInfo.hasAgeRange
-        ? SimpleRange.Closed.intersection(
-            validRangeAsMFN.includingLocalConstraints,
-            ageRangeInfo.ageRangeAsMFN,
-          )
-        : validRangeAsMFN.includingLocalConstraints,
-      excludingLocalConstraints: validRangeAsMFN.excludingLocalConstraints,
-    },
-    // Order of checks is important.
-    errorMsg: !SimpleRange.Closed.isIn(
+  return _elideRetirementMonthIfZero(
+    {
+      type: 'normalizedMonth',
+      isInThePast: false,
       asMFN,
-      validRangeAsMFN.includingLocalConstraints,
-    )
-      ? normalizedMonthErrorMsg.outOfRange
-      : ageRangeInfo.hasAgeRange &&
-          !SimpleRange.Closed.isIn(asMFN, ageRangeInfo.ageRangeAsMFN)
-        ? normalizedMonthErrorMsg.pastMaxAge[ageRangeInfo.personType]
-        : null,
-  }
+      baseValue,
+      validRangeAsMFN: {
+        includingLocalConstraints: ageRangeInfo.hasAgeRange
+          ? SimpleRange.Closed.intersection(
+              validRangeAsMFN.includingLocalConstraints,
+              ageRangeInfo.ageRangeAsMFN,
+            )
+          : validRangeAsMFN.includingLocalConstraints,
+        excludingLocalConstraints: validRangeAsMFN.excludingLocalConstraints,
+      },
+      // Order of checks is important.
+      errorMsg: !SimpleRange.Closed.isIn(
+        asMFN,
+        validRangeAsMFN.includingLocalConstraints,
+      )
+        ? normalizedMonthErrorMsg.outOfRange
+        : ageRangeInfo.hasAgeRange &&
+            !SimpleRange.Closed.isIn(asMFN, ageRangeInfo.ageRangeAsMFN)
+          ? normalizedMonthErrorMsg.pastMaxAge[ageRangeInfo.personType]
+          : null,
+    },
+    nowMonth,
+  )
 }
 
 export const normalizedMonthErrorMsg = {
