@@ -4,7 +4,7 @@
 #include "numeric_types.h"
 #include "plan_params_cuda.h"
 #include "result_cuda.h"
-#include <simulator-cuda/stocks_and_bonds_float.h>
+#include "stocks_and_bonds_float.h"
 #include <stdint.h> // bindgen cannot find cstdint (needed for sized number types).
 
 // bindgen (to generate rust bindings) has trouble with extern "C"

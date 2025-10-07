@@ -52,7 +52,8 @@ public_headers = [
 gencode_args = [
   # '-gencode=arch=compute_80,code=sm_80',
   # A16 supports 8.6
-  '-gencode=arch=compute_86,code=sm_86',
+  # '-gencode=arch=compute_86,code=sm_86',
+  '-gencode=arch=compute_89,code=sm_89',
   # '-gencode=arch=compute_90,code=sm_90'
   ]
 
@@ -70,7 +71,7 @@ link_args = gencode_args
 if test_mode
   executable('simulator-cuda-test', sources + [main_source], link_args:link_args)
 else 
-  lib = library('simulator-cuda', sources, link_args:link_args, install:true)
+  lib = library('simulator-cuda', sources, link_args:link_args, install:true, install_dir:'/usr/local/lib')
   install_headers(public_headers, subdir:'simulator-cuda')
   # Full path to bindgen because meson in Dockerfile was not finding it otherwise, even though it's in the PATH.
   meson.add_install_script('/root/.cargo/bin/bindgen', '--raw-line', '#![allow(non_upper_case_globals)]', '--raw-line', '#![allow(non_camel_case_types)]', '--raw-line', '#![allow(non_snake_case)]', '/usr/local/include/simulator-cuda/simulator_cuda.h', '-o', '../../simulator-rust/src/lib/cuda_bridge.rs')
