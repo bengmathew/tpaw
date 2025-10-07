@@ -8,7 +8,7 @@ import {
   NormalizedAmountAndTimingRecurring,
   normalizeAmountAndTimingRecurring,
 } from './NormalizeAmountAndTimingRecurring'
-import { LabeledAmountTimed, CalendarMonth } from '../../PlanParams'
+import { LabeledAmountTimed, CalendarMonth, CalendarDay } from '../../PlanParams'
 import { LabeledAmountTimedList } from '../../PlanParams'
 import { SimpleRange } from '../../../../Misc/SimpleRange'
 import { block, noCase } from '../../../../Utils'
@@ -30,7 +30,7 @@ export const normalizeLabeledAmountTimedList = (
   validRangeAsMFN: SimpleRange | null,
   monthToMFN: MonthToMFN,
   ages: NormalizedAges,
-  nowAsCalendarDay: CalendarMonth | null,
+  nowAsCalendarDay: CalendarDay | null,
 ): NormalizedLabeledAmountTimed[] =>
   !validRangeAsMFN
     ? []
@@ -51,7 +51,7 @@ const _normalizeLabeledAmountTimed = (
   validRangeAsMFN: SimpleRange,
   monthToMFN: MonthToMFN,
   ages: NormalizedAges,
-  nowAsCalendarDay: CalendarMonth | null,
+  nowAsCalendarDay: CalendarDay | null,
 ): NormalizedLabeledAmountTimed => {
   const amountAndTiming = block(
     (): NormalizedLabeledAmountTimed['amountAndTiming'] | null => {

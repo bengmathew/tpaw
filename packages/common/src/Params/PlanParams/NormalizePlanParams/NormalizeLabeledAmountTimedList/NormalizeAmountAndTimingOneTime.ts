@@ -1,5 +1,9 @@
 import { SimpleRange } from '../../../../Misc/SimpleRange'
-import { CalendarMonth, LabeledAmountTimed } from '../../PlanParams'
+import {
+  CalendarDay,
+  CalendarMonth,
+  LabeledAmountTimed,
+} from '../../PlanParams'
 import { NormalizedAges, MonthToMFN } from '../NormalizeAges'
 import {
   NormalizedMonthNotInThePast,
@@ -20,7 +24,7 @@ export const normalizeAmountAndTimingOneTime = (
   validRangeAsMFN: SimpleRange,
   monthToMFN: MonthToMFN,
   ages: NormalizedAges,
-  nowAsCalendarDay: CalendarMonth | null,
+  nowAsCalendarMonth: CalendarMonth | null,
 ): NormalizedAmountAndTimingOneTime | null => {
   const asMFN = monthToMFN.pastElided(amountAndTiming.month)
   return asMFN === 'inThePast'
@@ -31,12 +35,7 @@ export const normalizeAmountAndTimingOneTime = (
         month: getNormalizedMonthNotInThePast(
           asMFN,
           amountAndTiming.month,
-          {
-            type: 'now',
-            monthOfEntry: nowAsCalendarDay
-              ? { isDatedPlan: true, calendarMonth: nowAsCalendarDay }
-              : { isDatedPlan: false },
-          },
+          nowAsCalendarMonth,
           {
             includingLocalConstraints: validRangeAsMFN,
             excludingLocalConstraints: validRangeAsMFN,

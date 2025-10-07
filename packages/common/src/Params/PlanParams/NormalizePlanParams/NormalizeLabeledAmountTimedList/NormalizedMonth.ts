@@ -1,4 +1,4 @@
-import { Month } from '../../PlanParams'
+import { CalendarMonth, Month } from '../../PlanParams'
 import { NormalizedAges } from '../NormalizeAges'
 import { SimpleRange } from '../../../../Misc/SimpleRange'
 import { block, fGet, noCase } from '../../../../Utils'
@@ -32,21 +32,34 @@ export type NormalizedMonthInThePast = {
 // then 'retired' will no longer be resolvable.
 const _elideRetirementMonthIfZero = (
   x: NormalizedMonthNotInThePast,
-  nowMonth: Extract<Month, { type: 'now' }>,
+  nowAsCalendarMonth: CalendarMonth | null,
 ): NormalizedMonthNotInThePast => ({
   ...x,
   baseValue:
     x.asMFN === 0 &&
     x.baseValue.type === 'namedAge' &&
     x.baseValue.age === 'retirement'
-      ? nowMonth
+      ? {
+          type: 'now',
+          monthOfEntry: nowAsCalendarMonth
+            ? {
+                isDatedPlan: true,
+                // Don't use nowAsCalendarMonth directly because it may be a
+                // CalendarDay which also has the "day" field.
+                calendarMonth: {
+                  month: nowAsCalendarMonth.month,
+                  year: nowAsCalendarMonth.year,
+                },
+              }
+            : { isDatedPlan: false },
+        }
       : x.baseValue,
 })
 
 export const getNormalizedMonthNotInThePast = (
   asMFN: number,
   baseValue: Month,
-  nowMonth: Extract<Month, { type: 'now' }>,
+  nowAsCalendarMonth: CalendarMonth | null,
   validRangeAsMFN: {
     includingLocalConstraints: SimpleRange | null
     excludingLocalConstraints: SimpleRange
@@ -68,9 +81,13 @@ export const getNormalizedMonthNotInThePast = (
           ...data,
           errorMsg: process.errorMsg,
         },
-        nowMonth,
+        nowAsCalendarMonth,
       )
-    : normalizedMonthRangeCheckAndSquishRangeForAge(data, process.ages, nowMonth)
+    : normalizedMonthRangeCheckAndSquishRangeForAge(
+        data,
+        process.ages,
+        nowAsCalendarMonth,
+      )
 }
 
 export const normalizedMonthRangeCheckAndSquishRangeForAge = (
@@ -90,7 +107,7 @@ export const normalizedMonthRangeCheckAndSquishRangeForAge = (
     person1: { maxAge: { asMFN: number } }
     person2: { maxAge: { asMFN: number } } | null
   },
-  nowMonth: Extract<Month, { type: 'now' }>,
+  nowAsCalendarMonth: CalendarMonth | null,
 ): NormalizedMonthNotInThePast => {
   const ageRangeInfo = block(() => {
     switch (baseValue.type) {
@@ -137,7 +154,7 @@ export const normalizedMonthRangeCheckAndSquishRangeForAge = (
           ? normalizedMonthErrorMsg.pastMaxAge[ageRangeInfo.personType]
           : null,
     },
-    nowMonth,
+    nowAsCalendarMonth,
   )
 }
 

@@ -27,21 +27,16 @@ export const normalizeGlidePath = (
   orig: GlidePath,
   monthToMFN: MonthToMFN,
   ages: NormalizedAges,
-  nowAsCalendarDay: CalendarMonth | null,
+  nowAsCalendarMonth: CalendarMonth | null,
 ): NormalizedGlidePath => {
   const { lastMonthAsMFN } = ages.simulationMonths
   const validRangeAsMFN = letIn({ start: 1, end: lastMonthAsMFN - 1 }, (x) => ({
     includingLocalConstraints: x,
     excludingLocalConstraints: x,
   }))
-  const nowMonth: Extract<Month, { type: 'now' }> = {
-    type: 'now',
-    monthOfEntry: nowAsCalendarDay
-      ? { isDatedPlan: true, calendarMonth: nowAsCalendarDay }
-      : { isDatedPlan: false },
-  }
+
   const preNormStartAsMFN = orig.start.month.monthOfEntry.isDatedPlan
-    ? CalendarMonthFns.getToMFN(fGet(nowAsCalendarDay))(
+    ? CalendarMonthFns.getToMFN(fGet(nowAsCalendarMonth))(
         orig.start.month.monthOfEntry.calendarMonth,
       )
     : 0
@@ -69,7 +64,7 @@ export const normalizeGlidePath = (
     const month = normalizedMonthRangeCheckAndSquishRangeForAge(
       x.month,
       ages,
-      nowMonth,
+      nowAsCalendarMonth,
     )
     return {
       ...x,
@@ -127,7 +122,7 @@ export const normalizeGlidePath = (
       .map((x) => ({ ...x, month: { ...x.month, isInThePast: false } })),
     end: { stocks: orig.end.stocks },
     atOrPastEnd: atOrPastEndStage1.map((x) => {
-      const month = normalizedMonthRangeCheckAndSquishRangeForAge(x.month, ages, nowMonth)
+      const month = normalizedMonthRangeCheckAndSquishRangeForAge(x.month, ages, nowAsCalendarMonth)
       return {
         ...x,
         ignore: true,

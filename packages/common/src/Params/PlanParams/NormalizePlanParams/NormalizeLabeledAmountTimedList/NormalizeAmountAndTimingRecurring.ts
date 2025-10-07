@@ -112,7 +112,7 @@ export const normalizeAmountAndTimingRecurring = (
   validRangeAsMFN: SimpleRange,
   monthToMFN: MonthToMFN,
   ages: NormalizedAges,
-  nowAsCalendarDay: CalendarMonth | null,
+  nowAsCalendarMonth: CalendarMonth | null,
 ): NormalizedAmountAndTimingRecurring | null => {
   const result = (monthRange: NormalizedMonthRange, baseAmount: number) => ({
     type: 'recurring' as const,
@@ -122,17 +122,10 @@ export const normalizeAmountAndTimingRecurring = (
     delta,
   })
 
-  const nowMonth: Extract<Month, { type: 'now' }> = {
-    type: 'now',
-    monthOfEntry: nowAsCalendarDay
-      ? { isDatedPlan: true, calendarMonth: nowAsCalendarDay }
-      : { isDatedPlan: false },
-  }
-
-  const mfnTo = nowAsCalendarDay
+  const mfnTo = nowAsCalendarMonth
     ? ({
         isDatedPlan: true,
-        calendarMonth: CalendarMonthFns.getFromMFN(nowAsCalendarDay),
+        calendarMonth: CalendarMonthFns.getFromMFN(nowAsCalendarMonth),
       } as const)
     : ({
         isDatedPlan: false,
@@ -169,7 +162,7 @@ export const normalizeAmountAndTimingRecurring = (
         const start = getNormalizedMonthNotInThePast(
           startInfo.month.asMFN,
           startInfo.month.value,
-          nowMonth,
+          nowAsCalendarMonth,
           {
             includingLocalConstraints: validRangeAsMFN,
             excludingLocalConstraints: validRangeAsMFN,
@@ -197,7 +190,7 @@ export const normalizeAmountAndTimingRecurring = (
             return getNormalizedMonthNotInThePast(
               inputEndAsMFNPastElided,
               monthRange.end,
-              nowMonth,
+              nowAsCalendarMonth,
               {
                 includingLocalConstraints: validRangeAsMFNForEnd,
                 excludingLocalConstraints: validRangeAsMFN,
@@ -235,7 +228,7 @@ export const normalizeAmountAndTimingRecurring = (
       const start = getNormalizedMonthNotInThePast(
         startInfo.month.asMFN,
         startInfo.month.value,
-        nowMonth,
+        nowAsCalendarMonth,
         {
           includingLocalConstraints: validRangeAsMFN,
           excludingLocalConstraints: validRangeAsMFN,
@@ -277,7 +270,7 @@ export const normalizeAmountAndTimingRecurring = (
       const end = getNormalizedMonthNotInThePast(
         inputEndAsMFNNotInPast,
         monthRange.end,
-        nowMonth,
+        nowAsCalendarMonth,
         {
           includingLocalConstraints: validRangeAsMFN,
           excludingLocalConstraints: validRangeAsMFN,
