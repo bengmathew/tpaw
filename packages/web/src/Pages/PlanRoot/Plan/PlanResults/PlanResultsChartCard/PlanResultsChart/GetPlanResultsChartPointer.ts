@@ -669,7 +669,7 @@ const _getBreakdownSection = (
 const _getRangeExplanation = (chartType: PlanResultsChartType) => {
   const proportional = {
     '95': 'if the market does very well',
-    '50': 'the most likely scenario',
+    '50': 'the typical scenario',
     '5': 'if the market does very badly',
   }
   const usuallyProportional = {
