@@ -1,7 +1,6 @@
-use linreg::linear_regression;
-use rayon::prelude::*;
 use crate::{
-    constants::MAX_AGE_IN_MONTHS, historical_monthly_returns::{
+    constants::MAX_AGE_IN_MONTHS,
+    historical_monthly_returns::{
         data::{
             get_empirical_stats_for_block_size, process_raw_monthly_non_log_series,
             v1::v1_raw_monthly_non_log_series::{
@@ -10,17 +9,31 @@ use crate::{
             v2::v2_raw_monthly_non_log_series::{
                 V2_RAW_MONTHLY_NON_LOG_SERIES, V2_RAW_MONTHLY_NON_LOG_SERIES_START,
             },
-            v3::v3_raw_monthly_non_log_series::{V3_RAW_MONTHLY_NON_LOG_SERIES, V3_RAW_MONTHLY_NON_LOG_SERIES_START},
-            v4::v4_raw_monthly_non_log_series::{V4_RAW_MONTHLY_NON_LOG_SERIES, V4_RAW_MONTHLY_NON_LOG_SERIES_START},
-            v5::v5_raw_monthly_non_log_series::{V5_RAW_MONTHLY_NON_LOG_SERIES, V5_RAW_MONTHLY_NON_LOG_SERIES_START},
-            v6::v6_raw_monthly_non_log_series::{V6_RAW_MONTHLY_NON_LOG_SERIES, V6_RAW_MONTHLY_NON_LOG_SERIES_START},
+            v3::v3_raw_monthly_non_log_series::{
+                V3_RAW_MONTHLY_NON_LOG_SERIES, V3_RAW_MONTHLY_NON_LOG_SERIES_START,
+            },
+            v4::v4_raw_monthly_non_log_series::{
+                V4_RAW_MONTHLY_NON_LOG_SERIES, V4_RAW_MONTHLY_NON_LOG_SERIES_START,
+            },
+            v5::v5_raw_monthly_non_log_series::{
+                V5_RAW_MONTHLY_NON_LOG_SERIES, V5_RAW_MONTHLY_NON_LOG_SERIES_START,
+            },
+            v6::v6_raw_monthly_non_log_series::{
+                V6_RAW_MONTHLY_NON_LOG_SERIES, V6_RAW_MONTHLY_NON_LOG_SERIES_START,
+            },
+            v7::v7_raw_monthly_non_log_series::{
+                V7_RAW_MONTHLY_NON_LOG_SERIES, V7_RAW_MONTHLY_NON_LOG_SERIES_START,
+            },
             AnnualLogMeanFromOneOverCAPERegressionInfo, EmpiricalStats32,
             FiveTenTwentyThirtyYearsSlopeAndIntercept, RawCAPESeriesEntry,
             RawMonthlyNonLogSeriesEntry,
         },
         HistoricalReturnsId,
-    }, utils::{return_series::periodize_log_returns, shared_types::SlopeAndIntercept}
+    },
+    utils::{return_series::periodize_log_returns, shared_types::SlopeAndIntercept},
 };
+use linreg::linear_regression;
+use rayon::prelude::*;
 use std::{
     fs::{self, File},
     time::Instant,
@@ -51,6 +64,7 @@ fn get_raw_monthly_non_log_series(
         HistoricalReturnsId::V4 => &V4_RAW_MONTHLY_NON_LOG_SERIES,
         HistoricalReturnsId::V5 => &V5_RAW_MONTHLY_NON_LOG_SERIES,
         HistoricalReturnsId::V6 => &V6_RAW_MONTHLY_NON_LOG_SERIES,
+        HistoricalReturnsId::V7 => &V7_RAW_MONTHLY_NON_LOG_SERIES,
     }
 }
 
@@ -73,6 +87,7 @@ fn generate_regressions(returns_id: &HistoricalReturnsId, base_dir: &str) {
         HistoricalReturnsId::V4 => &V4_RAW_MONTHLY_NON_LOG_SERIES_START,
         HistoricalReturnsId::V5 => &V5_RAW_MONTHLY_NON_LOG_SERIES_START,
         HistoricalReturnsId::V6 => &V6_RAW_MONTHLY_NON_LOG_SERIES_START,
+        HistoricalReturnsId::V7 => &V7_RAW_MONTHLY_NON_LOG_SERIES_START,
     };
 
     assert!(
