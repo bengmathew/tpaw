@@ -22,7 +22,7 @@ Sentry.init({
       }
     }
     if (event.request?.query_string) {
-      const query = new URLSearchParams(event.release.query_string)
+      const query = new URLSearchParams(event.request.query_string)
       if (query.get('params')) {
         query.set('params', 'redacted')
         event.request.query_string = query.toString()
