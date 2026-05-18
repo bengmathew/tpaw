@@ -90,11 +90,25 @@ export const GlobalErrorBoundary = React.memo(
         }
       }
       window.onerror = (event, source, lineno, colno, error) => {
+        // TODO: Handle this at the source, instead of ignoring this error. This
+        // was triggering on transition to PDF report preview (Does not happen
+        // when loading the PDF report directly from the URL, just when
+        // transitioning to it from the plan view.) 
+        if (
+          event ===
+            'ResizeObserver loop completed with undelivered notifications.' ||
+          event === 'ResizeObserver loop limit exceeded'
+        )
+          return true
         setGlobalError(
           error instanceof Error
             ? error
-            : // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              new Error(`Error type was not error: ${error}`),
+            : new Error(
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                `Error type was not error: ${error}. Event: ${
+                  typeof event === 'string' ? event : event.type
+                }. Source: ${source ?? 'unknown'}:${lineno}:${colno}`,
+              ),
         )
       }
     }, [])
