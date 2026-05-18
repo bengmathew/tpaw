@@ -107,7 +107,7 @@ export const GlobalErrorBoundary = React.memo(
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 `Error type was not error: ${error}. Event: ${
                   typeof event === 'string' ? event : event.type
-                }. Source: ${source ?? 'unknown'}:${lineno}:${colno}`,
+                }. Source: ${source ?? 'unknown'}:${lineno?.toString() ?? 'unknown'}:${colno?.toString() ?? 'unknown'}`,
               ),
         )
       }
