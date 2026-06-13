@@ -24,7 +24,7 @@ use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::decompression::RequestDecompressionLayer;
 use tower_http::trace::TraceLayer;
 
-const VERSION: u64 = 2;
+const VERSION: u64 = 3;
 
 pub async fn serve() {
     // Pre-load market data.

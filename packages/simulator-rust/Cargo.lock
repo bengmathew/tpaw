@@ -2483,7 +2483,7 @@ dependencies = [
 
 [[package]]
 name = "simulator"
-version = "2.5.0"
+version = "3.0.0"
 dependencies = [
  "axum",
  "base64 0.22.1",

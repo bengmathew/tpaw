@@ -70,7 +70,7 @@ message WireSimulationResultArrays {
       by_percentile_by_mfn_simulated_percentile_major_after_withdrawals_allocation_total_portfolio_or_zero_if_no_wealth_x10000 =
           8;
   repeated {{float_wire}}
-      tpaw_by_percentile_by_mfn_simulated_percentile_major_spending_tilt_x10000 =
+      tpaw_by_percentile_by_mfn_simulated_percentile_major_spending_tilt_x10000000 =
           9;
   repeated double by_percentile_ending_balance = 10;
 }

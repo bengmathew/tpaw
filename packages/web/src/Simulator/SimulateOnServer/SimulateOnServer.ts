@@ -75,7 +75,7 @@ export const simulateOnServer = async (
   // Note, fetch does not throw on 400, 500, etc., but will throw on
   // network errors.
   const doFetch = async () =>
-    await fetch(`${Config.client.urls.simulator}/2/simulate`, {
+    await fetch(`${Config.client.urls.simulator}/3/simulate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/octet-stream',
