@@ -6,6 +6,9 @@ type _Remove_X1xxx<T extends string> = T extends
   | `${infer P}X100`
   | `${infer P}X1000`
   | `${infer P}X10000`
+  | `${infer P}X100000`
+  | `${infer P}X1000000`
+  | `${infer P}X10000000`
   ? P
   : T
 type _Remove_Opt<T extends string> = T extends `${infer P}Opt` ? `${P}` : T
