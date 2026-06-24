@@ -1,5 +1,7 @@
-CC BY-NC-SA 4.0
+# License
 
-Copyright (c) 2020-2023 Benjamin Mathew and Jacob Mathew
+This software is source-available under the PolyForm Noncommercial License 1.0.0:
 
-This work is openly licensed via [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+https://polyformproject.org/licenses/noncommercial/1.0.0
+
+Required Notice: Copyright (c) 2020-2026 Benjamin Mathew and Jacob Mathew.
