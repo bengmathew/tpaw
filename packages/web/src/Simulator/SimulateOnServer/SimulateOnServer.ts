@@ -37,6 +37,7 @@ export const simulateOnServer = async (
   randomSeed: number,
 ) => {
   const start = performance.now()
+  const simulatorUrl = `${Config.client.urls.simulator}/3/simulate`
   const wireArgs: WireSimulationArgs = {
     marketDailySeriesSrc: block(() => {
       switch (dailyMarketSeriesSrc.type) {
@@ -72,10 +73,18 @@ export const simulateOnServer = async (
   const argsCompressed = pako.deflate(argsEncoded).buffer as ArrayBuffer
 
   const authHeaders = _.compact([Config.client.debug.authHeader])
+  type FetchResult =
+    | { isServerError: true }
+    | {
+        isServerError: false
+        response: Response
+        dataArrayBuffer: ArrayBuffer
+        dataBlobSize: number
+      }
   // Note, fetch does not throw on 400, 500, etc., but will throw on
   // network errors.
-  const doFetch = async () =>
-    await fetch(`${Config.client.urls.simulator}/3/simulate`, {
+  const doFetch = async (): Promise<FetchResult> => {
+    const response = await fetch(simulatorUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/octet-stream',
@@ -85,37 +94,43 @@ export const simulateOnServer = async (
       body: argsCompressed,
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })
+    if (response.status >= 500 && response.status < 600)
+      return { isServerError: true }
+    const dataBlob = await response.blob()
+    const dataArrayBuffer = await dataBlob.arrayBuffer()
+    return {
+      isServerError: false,
+      response,
+      dataArrayBuffer,
+      dataBlobSize: dataBlob.size,
+    }
+  }
+  const simulateFetchStart = performance.now()
   let count = 0
 
-  let response: Response | null = null
-  const isServerError = (response: Response) =>
-    response.status >= 500 && response.status < 600
+  let fetched: FetchResult | null = null
   while (
-    (response === null || isServerError(response)) &&
+    (fetched === null || fetched.isServerError) &&
     count < MAX_RETRIES &&
     !abortSignal.aborted
   ) {
     if (count > 0) await new Promise((resolve) => setTimeout(resolve, 500))
     count++
     try {
-      response = await doFetch()
+      fetched = await doFetch()
     } catch (e) {
-      // So that at the end of the loop the response will reflect the last call.
-      response = null
+      // So that at the end of the loop the result will reflect the last call.
+      fetched = null
     }
   }
   abortSignal.throwIfAborted()
-  if (!response) throw new AppError('networkError')
-  if (isServerError(response)) throw new AppError('serverError')
+  if (!fetched) throw new AppError('networkError')
+  if (fetched.isServerError) throw new AppError('serverError')
+  const { response, dataArrayBuffer, dataBlobSize } = fetched
 
   if (response.headers.get('x-app-error-code') === 'clientNeedsUpdate') {
     throw new AppError('clientNeedsUpdate')
   }
-
-  const dataBlob = await response.blob()
-  abortSignal.throwIfAborted()
-  const dataArrayBuffer = await dataBlob.arrayBuffer()
-  abortSignal.throwIfAborted()
 
   const wireSimulationResult = WireSimulationResult.decode(
     new Uint8Array(dataArrayBuffer),
@@ -127,7 +142,7 @@ export const simulateOnServer = async (
     percentiles,
     performance.now() - start,
     argsCompressed.byteLength,
-    dataBlob.size,
+    dataBlobSize,
   )
 }
 
