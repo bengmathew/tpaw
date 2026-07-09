@@ -317,26 +317,27 @@ const _getRangeSection = (
     const ys = SimpleRange.Closed.isIn(dataX, data.range.xRange)
       ? fGet(data.range.yRangeByX[dataX])
       : null
-    const explanations = _getRangeExplanation(data.chartType)
+    const { percentiles } = data.range
+    const explanations = _getRangeExplanation(data.chartType, percentiles)
     return ys
       ? [
           {
             id: rangeIds.end,
             y: ys.end,
-            label: '95',
-            explain: explanations?.['95'] ?? null,
+            label: `${percentiles.high}`,
+            explain: explanations?.high ?? null,
           },
           {
             id: rangeIds.mid,
             y: ys.mid,
-            label: '50',
-            explain: explanations?.['50'] ?? null,
+            label: `${percentiles.mid}`,
+            explain: explanations?.mid ?? null,
           },
           {
             id: rangeIds.start,
             y: ys.start,
-            label: '5',
-            explain: explanations?.['5'] ?? null,
+            label: `${percentiles.low}`,
+            explain: explanations?.low ?? null,
           },
         ]
       : []
@@ -666,26 +667,34 @@ const _getBreakdownSection = (
   ])
 }
 
-const _getRangeExplanation = (chartType: PlanResultsChartType) => {
-  const proportional = {
-    '95': 'if the market does very well',
-    '50': 'the typical scenario',
-    '5': 'if the market does very badly',
-  }
+const _getRangeExplanation = (
+  chartType: PlanResultsChartType,
+  percentiles: { low: number; mid: number; high: number },
+) => {
+  // How extreme the outcome reads scales with how far the percentile is from
+  // the median: e.g. 5th/95th → "very", 25th/75th → "somewhat".
+  const intensity = (percentile: number) =>
+    Math.abs(percentile - 50) >= 40 ? 'very' : 'somewhat'
+  const well = (p: number) => `if the market does ${intensity(p)} well`
+  const badly = (p: number) => `if the market does ${intensity(p)} badly`
+  const usuallyWell = (p: number) =>
+    `usually if the market does ${intensity(p)} well`
+  const usuallyBadly = (p: number) =>
+    `usually if the market does ${intensity(p)} badly`
+  const typical = 'the typical scenario'
+  const { low, high } = percentiles
+
+  const proportional = { high: well(high), mid: typical, low: badly(low) }
   const usuallyProportional = {
-    '95': 'usually if the market does well',
-    '50': proportional['50'],
-    '5': 'usually if the market does badly',
+    high: usuallyWell(high),
+    mid: typical,
+    low: usuallyBadly(low),
   }
-  const inverse = {
-    '95': proportional['5'],
-    '50': proportional['50'],
-    '5': proportional['95'],
-  }
+  const inverse = { high: badly(high), mid: typical, low: well(low) }
   const usuallyInverse = {
-    '95': usuallyProportional['5'],
-    '50': usuallyProportional['50'],
-    '5': usuallyProportional['95'],
+    high: usuallyBadly(high),
+    mid: typical,
+    low: usuallyWell(low),
   }
   switch (chartType) {
     case 'spending-total':

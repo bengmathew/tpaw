@@ -40,6 +40,7 @@ import {
 } from './PlanResultsChart/PlanResultsChart'
 import { PlanResultsChartData } from './PlanResultsChart/PlanResultsChartData'
 import { PlanResultsChartCardFundingSourcesToggle } from './PlanResultsChartCardFundingSourcesToggle'
+import { PlanResultsChartCardPercentilePicker } from './PlanResultsChartCardPercentilePicker'
 import { PlanResultsChartCardMenu } from './PlanResultsChartCardMenu'
 import { PlanResultsChartCardMenuButton } from './PlanResultsChartCardMenuButton'
 import { planResultsChartLabel } from './PlanResultsChartLabel'
@@ -303,15 +304,26 @@ export const PlanResultsChartCard = React.memo(
         )}
 
         {showFundingSourcesToggle && (
-          <PlanResultsChartCardFundingSourcesToggle
-            className="absolute"
-            layout={layout}
-            style={{
-              left: `${targetSizing.breakdownMenu.x}px`,
-              top: `${targetSizing.breakdownMenu.y}px`,
-              width: `${targetSizing.breakdownMenu.width}px`,
-            }}
-          />
+          <>
+            <PlanResultsChartCardFundingSourcesToggle
+              className="absolute"
+              layout={layout}
+              style={{
+                left: `${targetSizing.breakdownMenu.x}px`,
+                top: `${targetSizing.breakdownMenu.y}px`,
+                width: `${targetSizing.breakdownMenu.width}px`,
+              }}
+            />
+            <PlanResultsChartCardPercentilePicker
+              className="absolute"
+              layout={layout}
+              style={{
+                left: `${targetSizing.breakdownMenu.x}px`,
+                top: `${targetSizing.breakdownMenu.y}px`,
+                width: `${targetSizing.breakdownMenu.width}px`,
+              }}
+            />
+          </>
         )}
 
         <PlanResultsChart

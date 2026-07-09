@@ -47,7 +47,23 @@ import { WorkingPlanInfo } from './UseWorkingPlan'
 import { useIANATimezoneName, useNonPlanParams } from './WithNonPlanParams'
 
 export const DEFAULT_MONTE_CARLO_SIMULATION_SEED = 860336713
-const PERCENTILES = { low: 5, mid: 50, high: 95 }
+
+// The low/mid/high percentiles used for the fan charts. These are configurable
+// by the user via a picker near the spending graphs (see
+// PlanResultsChartCardPercentilePicker). The simulation engine already accepts
+// arbitrary percentiles, so changing these simply re-runs the simulation with
+// the new bands.
+export type SimulationPercentiles = { low: number; mid: number; high: number }
+export const DEFAULT_PERCENTILES: SimulationPercentiles = {
+  low: 5,
+  mid: 50,
+  high: 95,
+}
+export const PERCENTILE_PRESETS: readonly SimulationPercentiles[] = [
+  { low: 5, mid: 50, high: 95 },
+  { low: 10, mid: 50, high: 90 },
+  { low: 25, mid: 50, high: 75 },
+]
 type UpdatePlanParamsFromAction<T> = UnionToIntersection<
   T extends PlanParamsChangeActionCurrent
     ? (x: T['type'], v: T['value']) => void
@@ -115,6 +131,11 @@ export type SimulationInfo = {
   numOfSimulationForMonteCarloSampling: number
   randomSeed: number
 
+  // The percentiles currently selected by the user for the fan charts, along
+  // with a setter. Changing these re-runs the simulation with the new bands.
+  percentiles: SimulationPercentiles
+  setPercentiles: (percentiles: SimulationPercentiles) => void
+
   reRun: (seed: 'random' | number) => void
 }
 
@@ -158,6 +179,8 @@ export type SimulationParams = Omit<
   | 'planParamsHistoryDays'
   | 'numOfSimulationForMonteCarloSampling'
   | 'randomSeed'
+  | 'percentiles'
+  | 'setPercentiles'
   | 'reRun'
 > & {
   simulationTimestamp: number
@@ -299,6 +322,8 @@ export const WithSimulation = React.memo(
         seed === 'random' ? Math.floor(Math.random() * 1000000000) : seed,
       )
     }, [])
+    const [percentiles, setPercentiles] =
+      useState<SimulationPercentiles>(DEFAULT_PERCENTILES)
     const { ianaTimezoneName } = useIANATimezoneName()
     const [dailyMarketSeriesSrc, setDailyMarketSeriesSrc] =
       useState<DailyMarketSeriesSrc>({
@@ -338,7 +363,7 @@ export const WithSimulation = React.memo(
         planParamsHistoryUpToActualCurrentTimestamp,
         params.simulationTimestamp,
         ianaTimezoneName,
-        PERCENTILES,
+        percentiles,
         numOfSimulationForMonteCarloSampling,
         randomSeed,
       )
@@ -349,6 +374,8 @@ export const WithSimulation = React.memo(
       planParamsId,
       planParamsHistoryDays,
       numOfSimulationForMonteCarloSampling,
+      percentiles,
+      setPercentiles,
       reRun,
       randomSeed,
     }

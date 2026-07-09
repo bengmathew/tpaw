@@ -37,6 +37,7 @@ export type PlanResultsChartDataForPDF = {
         yRangeByX: ((SimpleRange & { mid: number }) | null)[]
         xRange: SimpleRange
         minMax: { min: XY; max: XY }
+        percentiles: { low: number; mid: number; high: number }
       }
     }
   | {
@@ -194,6 +195,11 @@ export const getPlanResultsChartDataForPDF = (
         ),
         xRange: mfnRange,
         minMax: minMax,
+        percentiles: {
+          low: percentilesOfResult.low,
+          mid: percentilesOfResult.mid,
+          high: percentilesOfResult.high,
+        },
       },
     }
   }
