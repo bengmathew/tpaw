@@ -6,7 +6,6 @@ import { applicationDefault } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import postmark from 'postmark'
 import { Config } from './Config.js'
-import { addPostmarkDiagnostics } from './Utils/PostmarkDiagnostics.js'
 
 export class Clients {
   private static _prisma: PrismaClient | null = null
@@ -32,11 +31,8 @@ export class Clients {
 
   private static _postmark: postmark.ServerClient | null = null
   static get postmark() {
-    if (!this._postmark) {
-      const client = new postmark.ServerClient(Config.postmark.apiToken)
-      addPostmarkDiagnostics(client)
-      this._postmark = client
-    }
+    if (!this._postmark)
+      this._postmark = new postmark.ServerClient(Config.postmark.apiToken)
     return this._postmark
   }
 
