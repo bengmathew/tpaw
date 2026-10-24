@@ -84,6 +84,6 @@
     "SPAW",
     "TPAW"
   ],
-  "clangd.path": "clangd-19",
+  "clangd.path": "clangd-21",
   
 }

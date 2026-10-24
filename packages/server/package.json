@@ -25,7 +25,7 @@
     "@prisma/client": "^6.3.0",
     "@sentry/node": "^9.5.0",
     "@sentry/tracing": "^7.17.4",
-    "@tpaw/common": "^12.7.0",
+    "@tpaw/common": "^12.8.0",
     "@types/compression": "^1.7.2",
     "chalk": "^5.1.2",
     "commander": "^13.1.0",
@@ -69,5 +69,13 @@
     "prisma": "^6.3.0",
     "tsc-watch": "^6.0.4",
     "typescript": "^5.8.2"
+  },
+  "allowScripts": {
+    "@prisma/client": true,
+    "prisma": true,
+    "@prisma/engines": true,
+    "@apollo/protobufjs": true,
+    "protobufjs": true,
+    "@firebase/util": true
   }
 }
