@@ -5,12 +5,13 @@ import {
   letIn,
 } from '@tpaw/common'
 import React, { useMemo } from 'react'
-import { useURLParam } from '../../Utils/UseURLParam'
 import { PlanPrintView } from '../PlanRoot/PlanRootHelpers/PlanPrintView/PlanPrintView'
 import { PlanPrintViewArgsServerSide } from '../PlanRoot/PlanRootHelpers/PlanPrintView/PlanPrintViewArgs'
 
 export const ServerSidePrint = React.memo(() => {
-  const urlParams = useURLParam('params')
+  const urlParams = new URLSearchParams(window.location.hash.slice(1)).get(
+    'params',
+  )
   const { fixed, settings } = useMemo(
     () =>
       urlParams === 'test'

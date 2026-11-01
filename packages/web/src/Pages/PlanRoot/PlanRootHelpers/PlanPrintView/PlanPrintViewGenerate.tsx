@@ -65,7 +65,10 @@ export const PlanPrintViewGenerate = React.memo(
         }
         const appPaths = getAppPaths(new URL(Config.client.urls.deployment))
         const url = new URL(appPaths.serverSidePrint())
-        url.searchParams.set('params', JSON.stringify(params))
+        // Fragments stay in the browser, avoiding the CDN's request URL limit.
+        url.hash = new URLSearchParams({
+          params: JSON.stringify(params),
+        }).toString()
         return url.toString()
       })
       const { dispose } = commit({
