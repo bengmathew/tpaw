@@ -74,6 +74,9 @@ export const GlobalErrorBoundary = React.memo(
     const [error, setGlobalError] = useState<Error | null>(null)
     useEffect(() => {
       window.onunhandledrejection = (e) => {
+        // Scripts we don't control, like browser extensions, can dispatch this
+        // event without a reason.
+        if (e.reason === undefined || e.reason === null) return
         // DuckDuckGo on Windows throws this error, we can ignore it.
         if (
           e.reason.message ===
@@ -90,6 +93,10 @@ export const GlobalErrorBoundary = React.memo(
         }
       }
       window.onerror = (event, source, lineno, colno, error) => {
+        // The browser hides the details of errors from scripts the page can't
+        // inspect, which are not ours because ours are same-origin. Seen on
+        // Brave on iOS, where it was crashing the planner.
+        if (event === 'Script error.' && !error) return true
         // TODO: Handle this at the source, instead of ignoring this error. This
         // was triggering on transition to PDF report preview (Does not happen
         // when loading the PDF report directly from the URL, just when

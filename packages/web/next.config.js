@@ -24,5 +24,6 @@ module.exports = withSentryConfig(withBundleAnalyzer(nextConfig), {
     deleteSourcemapsAfterUpload: false,
   },
   widenClientFileUpload: true,
-  tunnelRoute: '/__sentry_tunnel',
+  // Must match the matcher in middleware.ts.
+  tunnelRoute: '/__ingress',
 })

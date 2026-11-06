@@ -22,7 +22,8 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      source: '/__sentry_tunnel',
+      // Must match tunnelRoute in next.config.js.
+      source: '/__ingress',
       has: [{ type: 'header', key: 'authorization' }],
     },
   ],
