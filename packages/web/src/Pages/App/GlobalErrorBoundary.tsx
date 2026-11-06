@@ -93,10 +93,13 @@ export const GlobalErrorBoundary = React.memo(
         }
       }
       window.onerror = (event, source, lineno, colno, error) => {
-        // The browser hides the details of errors from scripts the page can't
-        // inspect, which are not ours because ours are same-origin. Seen on
-        // Brave on iOS, where it was crashing the planner.
-        if (event === 'Script error.' && !error) return true
+        // Everything we ship runs from /_next/ (webpack-internal in dev). Errors
+        // from anywhere else come from scripts injected by the browser or
+        // extensions, so they should not crash the planner. For example, Brave
+        // on iOS runs window.ethereum.selectedAddress = undefined when
+        // window.ethereum does not exist, and can report errors as "Script
+        // error." with no source.
+        if (!source || !/\/_next\/|webpack-internal:/.test(source)) return true
         // TODO: Handle this at the source, instead of ignoring this error. This
         // was triggering on transition to PDF report preview (Does not happen
         // when loading the PDF report directly from the URL, just when
